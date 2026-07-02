@@ -243,7 +243,7 @@ const customerValidationState = (
 
 const customerWindow = (start: string, end: string) => ({ start, end });
 
-const setCustomerDataModelProjectionBoundaryHeaders = (res: Response) => {
+export const setCustomerDataModelProjectionBoundaryHeaders = (res: Response) => {
   res.set("cache-control", "no-store");
   res.set(
     "x-ai-value-customer-projection-boundary",

@@ -260,6 +260,8 @@ const BOUNDARY_POLICY_FIELDS = [
 
 const ALLOWED_INPUT_FIELDS = new Set([
   "source_runtime",
+  "source_gate",
+  "aggregate_measurement_cell_windows",
   "reviewed_diagnostics_source_evidence",
   "generated_at"
 ]);
@@ -393,10 +395,20 @@ function safeHash(value) {
 function sourceRuntimeFromInput(input) {
   const record = asRecord(input);
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  if (Object.prototype.hasOwnProperty.call(sourceRuntimeEnvelope, "source_runtime")) {
-    return sourceRuntimeEnvelope.source_runtime;
-  }
+  if (sourceRuntimeEnvelope.source_runtime) return sourceRuntimeEnvelope.source_runtime;
   return record.source_runtime ?? input;
+}
+
+function sourceRuntimeValidationOptions(input) {
+  const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  return {
+    sourceGate: source.source_gate ?? source.sourceGate,
+    aggregateMeasurementCellWindows:
+      source.aggregate_measurement_cell_windows ??
+      source.aggregateMeasurementCellWindows
+  };
 }
 
 function reviewedEvidenceFromInput(input) {
@@ -529,13 +541,13 @@ function sourceRuntimeRef(sourceRuntime) {
   };
 }
 
-function sourceRuntimeGaps(sourceRuntime) {
+function sourceRuntimeGaps(sourceRuntime, validationOptions = {}) {
   const runtime = asRecord(sourceRuntime);
   const design = asRecord(runtime.aggregate_design_matrix);
   const artifact = asRecord(runtime.internal_fit_artifact);
   const gaps = [];
   const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
-    allowSelfContainedSourceValidation: true
+    ...validationOptions
   });
   if (validation.valid !== true) {
     gaps.push("source_runtime failed internal Bayesian execution runtime validation");
@@ -930,13 +942,17 @@ function buildEvidenceReadinessReconciliation(sourceRuntime, reviewedEvidence, s
   };
 }
 
-function buildSource(sourceRuntime, reviewedEvidence, state, gaps) {
+function buildSource(sourceRuntime, reviewedEvidence, state, gaps, sourceGapsOverride, evidenceGapsOverride) {
   const ready = state === READY_STATE;
   const dimensions = buildDimensions(sourceRuntime, reviewedEvidence, ready);
-  const sourceGaps = sourceRuntimeGaps(sourceRuntime);
-  const evidenceGaps = reviewedEvidence
-    ? reviewedEvidenceGaps(sourceRuntime, reviewedEvidence)
-    : ["reviewed diagnostics source evidence is required"];
+  const sourceGaps = sourceGapsOverride ?? sourceRuntimeGaps(sourceRuntime);
+  const evidenceGaps =
+    evidenceGapsOverride ??
+    (
+      reviewedEvidence
+        ? reviewedEvidenceGaps(sourceRuntime, reviewedEvidence)
+        : ["reviewed diagnostics source evidence is required"]
+    );
   const source = {
     schema_version:
       CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_SCHEMA_VERSION,
@@ -1145,9 +1161,10 @@ export function buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidence
   const wrapperGaps = inputBoundaryGaps(input);
   if (wrapperGaps.length > 0) return rejectedSource();
   const sourceRuntime = sourceRuntimeFromInput(input);
+  const runtimeValidationOptions = sourceRuntimeValidationOptions(input);
   const reviewedEvidence = reviewedEvidenceFromInput(input);
   if (reviewedEvidenceContentGaps(reviewedEvidence).length > 0) return rejectedSource();
-  const sourceGaps = sourceRuntimeGaps(sourceRuntime);
+  const sourceGaps = sourceRuntimeGaps(sourceRuntime, runtimeValidationOptions);
   const evidenceGaps = reviewedEvidence
     ? reviewedEvidenceGaps(sourceRuntime, reviewedEvidence)
     : ["reviewed diagnostics source evidence is required"];
@@ -1156,7 +1173,7 @@ export function buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidence
     sourceGaps.length === 0 && reviewedEvidence && allEvidenceReady(sourceRuntime, reviewedEvidence)
       ? READY_STATE
       : HOLD_STATE;
-  return buildSource(sourceRuntime, reviewedEvidence, state, gaps);
+  return buildSource(sourceRuntime, reviewedEvidence, state, gaps, sourceGaps, evidenceGaps);
 }
 
 function collectAllowedFieldsGaps(record, fields, label) {
@@ -1488,7 +1505,8 @@ function validateAgainstSources(source, options = {}) {
     gaps.push("reviewedDiagnosticsSourceEvidence is required for ready governed diagnostics sufficiency evidence validation");
   }
   if (options.sourceRuntime) {
-    gaps.push(...sourceRuntimeGaps(options.sourceRuntime));
+    const runtimeValidationOptions = sourceRuntimeValidationOptions(options);
+    gaps.push(...sourceRuntimeGaps(options.sourceRuntime, runtimeValidationOptions));
     const actualRuntimeRef = asRecord(source.source_runtime_ref);
     const expectedRuntimeRef = sourceRuntimeRef(options.sourceRuntime);
     for (const field of SOURCE_RUNTIME_REF_FIELDS) {
@@ -1504,6 +1522,8 @@ function validateAgainstSources(source, options = {}) {
     ));
     const expected = buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
       source_runtime: options.sourceRuntime,
+      source_gate: options.sourceGate,
+      aggregate_measurement_cell_windows: options.aggregateMeasurementCellWindows,
       reviewed_diagnostics_source_evidence: options.reviewedDiagnosticsSourceEvidence
     });
     const actualWithoutHash = clone(source);

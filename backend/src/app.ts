@@ -36,8 +36,17 @@ import {
   ObservabilityResponseSchema,
   RoleSchema as AuthRoleSchema
 } from "@fluencytracr/shared";
-import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@fluencytracr/shared";import { authMiddleware, orgScopeMiddleware, rbacMiddleware, enforceAggregation } from "./rbac";
-import { registerAiValueRoutes } from "./ai_value_routes";
+import type { FluencyEvent, FluencyWindow, UnifiedTelemetryEvent } from "@fluencytracr/shared";
+import {
+  authMiddleware,
+  orgScopeMiddleware,
+  rbacMiddleware,
+  enforceAggregation
+} from "./rbac";
+import {
+  registerAiValueRoutes,
+  setCustomerDataModelProjectionBoundaryHeaders
+} from "./ai_value_routes";
 import { forbiddenFieldsMiddleware } from "./middleware/forbiddenFieldsMiddleware";
 import { schemaVersionMiddleware } from "./middleware/schemaVersionMiddleware";
 import {
@@ -266,6 +275,10 @@ app.post("/auth/token", (req, res) => {
 });
 
 app.use(authMiddleware);
+app.use("/api/v1/ai-value/customer-data-model/projections", (_req, res, next) => {
+  setCustomerDataModelProjectionBoundaryHeaders(res);
+  next();
+});
 app.use(orgScopeMiddleware);
 
 const strictLimiter = rateLimit({

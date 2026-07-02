@@ -455,6 +455,15 @@ describe("AI value customer data model projection API", () => {
       "INVALID_CUSTOMER_DATA_MODEL_PROJECTION_QUERY"
     );
     expect(tenantSideDoor.status).toBe(403);
+    expect(tenantSideDoor.headers["cache-control"]).toContain("no-store");
+    expect(tenantSideDoor.headers["x-ai-value-customer-projection-boundary"]).toBe(
+      "source_bound_customer_data_model_projection"
+    );
+    expect(tenantSideDoor.headers["x-ai-value-live-connectors"]).toBe("false");
+    expect(tenantSideDoor.headers["x-ai-value-export-authorized"]).toBe("false");
+    expect(tenantSideDoor.headers["x-ai-value-customer-facing-economic-output"]).toBe(
+      "false"
+    );
   });
 
   it("does not open the internal Measurement Cell snapshot route", async () => {

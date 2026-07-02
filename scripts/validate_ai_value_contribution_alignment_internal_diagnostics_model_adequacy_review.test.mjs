@@ -112,7 +112,7 @@ const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_CLASS =
 const DIAGNOSTICS_SUFFICIENCY_EVIDENCE_VERSION =
   "diagnostics_sufficiency_evidence_2026_06";
 
-let cachedRuntime = null;
+let cachedRuntimeSource = null;
 
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
@@ -299,10 +299,10 @@ function governedReviewedEvidenceInput(runtime, overrides = {}) {
 }
 
 function governedDiagnosticsSufficiencyEvidenceSource(runtime, overrides = {}) {
-  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+  return buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
     source_runtime: runtime,
     reviewed_diagnostics_source_evidence: governedReviewedEvidenceInput(runtime, overrides)
-  });
+  }));
 }
 
 function sourceDataModel() {
@@ -320,7 +320,7 @@ function sourceDataModel() {
 }
 
 function sourceRuntime() {
-  if (cachedRuntime) return JSON.parse(JSON.stringify(cachedRuntime));
+  if (cachedRuntimeSource) return clone(cachedRuntimeSource.source_runtime);
   const sourceFeatureStabilityReview =
     buildContributionAlignmentFeatureStabilityReviewFromObject(sourceDataModel());
   const sourceWeightDecision =
@@ -349,20 +349,49 @@ function sourceRuntime() {
     sourceSpecification,
     { sourceReadinessReview, sourceFrame }
   );
-  cachedRuntime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  return JSON.parse(JSON.stringify(cachedRuntime));
+  cachedRuntimeSource = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  };
+  return clone(cachedRuntimeSource.source_runtime);
+}
+
+function sourceRuntimeSource() {
+  if (!cachedRuntimeSource) sourceRuntime();
+  return clone(cachedRuntimeSource);
+}
+
+function sourceRuntimeEnvelope(overrides = {}) {
+  return {
+    ...sourceRuntimeSource(),
+    ...overrides
+  };
+}
+
+function sourceRuntimeValidationOptions(overrides = {}) {
+  const source = sourceRuntimeSource();
+  return {
+    sourceRuntime: source.source_runtime,
+    sourceGate: source.source_gate,
+    aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+    ...overrides
+  };
 }
 
 test("internal diagnostics and model adequacy review completes with promotion still blocked", () => {
   const runtime = sourceRuntime();
   const review =
-    buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(runtime);
+    buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(
+      sourceRuntimeEnvelope()
+    );
   const validation = validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(
     review,
-    { sourceRuntime: runtime, expectedReview: review }
+    sourceRuntimeValidationOptions({ expectedReview: review })
   );
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
@@ -420,14 +449,13 @@ test("internal diagnostics and model adequacy review records governed sufficienc
   const sourceDiagnosticsSufficiencyEvidence =
     governedDiagnosticsSufficiencyEvidenceSource(runtime);
   const review =
-    buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(sourceRuntimeEnvelope({
       source_diagnostics_sufficiency_evidence: sourceDiagnosticsSufficiencyEvidence
-    });
+    }));
   const validation = validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(
     review,
     {
-      sourceRuntime: runtime,
+      ...sourceRuntimeValidationOptions(),
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: sourceDiagnosticsSufficiencyEvidence
     }
   );
@@ -711,9 +739,10 @@ test("internal diagnostics and model adequacy review validation rejects forged w
 });
 
 test("internal diagnostics and model adequacy review validation requires source runtime for completed records", () => {
-  const runtime = sourceRuntime();
   const review =
-    buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(runtime);
+    buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(
+      sourceRuntimeEnvelope()
+    );
   const validation = validateContributionAlignmentInternalDiagnosticsModelAdequacyReview(review);
 
   assert.equal(validation.valid, false);

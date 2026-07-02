@@ -446,6 +446,8 @@ const BOUNDARY_POLICY_FIELDS = [
 const ALLOWED_INPUT_FIELDS = new Set([
   "source_diagnostics_review",
   "source_runtime",
+  "source_gate",
+  "aggregate_measurement_cell_windows",
   "source_diagnostics_evidence_packet",
   "generated_at"
 ]);
@@ -568,7 +570,22 @@ function sourceDiagnosticsReviewFromInput(input) {
 }
 
 function sourceRuntimeFromInput(input) {
-  return asRecord(input).source_runtime ?? null;
+  const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  if (sourceRuntimeEnvelope.source_runtime) return sourceRuntimeEnvelope.source_runtime;
+  return record.source_runtime ?? null;
+}
+
+function sourceRuntimeValidationOptions(input) {
+  const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  return {
+    sourceGate: source.source_gate ?? source.sourceGate,
+    aggregateMeasurementCellWindows:
+      source.aggregate_measurement_cell_windows ??
+      source.aggregateMeasurementCellWindows
+  };
 }
 
 function sourceDiagnosticsEvidencePacketFromInput(input) {
@@ -881,12 +898,12 @@ function artifactHash(artifact) {
   return sha256Json(withoutHash);
 }
 
-function sourceRuntimeGaps(sourceRuntime, review) {
+function sourceRuntimeGaps(sourceRuntime, review, validationOptions = {}) {
   const gaps = [];
   const runtime = asRecord(sourceRuntime);
   if (!sourceRuntime) return ["sourceRuntime is required for Bayesian promotion decision source binding"];
   const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
-    allowSelfContainedSourceValidation: true
+    ...validationOptions
   });
   if (validation.valid !== true) {
     gaps.push("sourceRuntime failed internal Bayesian execution runtime validation");
@@ -954,7 +971,7 @@ function sourceReviewLeakageGaps(review) {
   return sanitizeGaps(gaps);
 }
 
-function sourceDiagnosticsReviewGaps(review, sourceRuntime) {
+function sourceDiagnosticsReviewGaps(review, sourceRuntime, runtimeValidationOptions = {}) {
   const gaps = [];
   gaps.push(...collectAllowedFieldsGaps(review, SOURCE_REVIEW_TOP_LEVEL_FIELDS, "sourceDiagnosticsReview"));
   gaps.push(...hasForbiddenSourceDiagnosticsReviewContent(review));
@@ -1063,7 +1080,7 @@ function sourceDiagnosticsReviewGaps(review, sourceRuntime) {
     }
   }
 
-  gaps.push(...sourceRuntimeGaps(sourceRuntime, review));
+  gaps.push(...sourceRuntimeGaps(sourceRuntime, review, runtimeValidationOptions));
   return sanitizeGaps(gaps);
 }
 
@@ -1369,9 +1386,14 @@ export function buildContributionAlignmentBayesianPromotionDecisionGateFromObjec
   const sourceDiagnosticsReview = sourceDiagnosticsReviewFromInput(input);
   if (sourceReviewRejectedForBoundary(sourceDiagnosticsReview)) return rejectedGate();
   const sourceRuntime = sourceRuntimeFromInput(input);
+  const runtimeValidationOptions = sourceRuntimeValidationOptions(input);
   const sourceDiagnosticsEvidencePacket = sourceDiagnosticsEvidencePacketFromInput(input);
   const sourceGaps = sanitizeGaps([
-    ...sourceDiagnosticsReviewGaps(sourceDiagnosticsReview, sourceRuntime),
+    ...sourceDiagnosticsReviewGaps(
+      sourceDiagnosticsReview,
+      sourceRuntime,
+      runtimeValidationOptions
+    ),
     ...sourceDiagnosticsEvidencePacketGaps(
       sourceDiagnosticsEvidencePacket,
       sourceDiagnosticsReview,
@@ -1568,9 +1590,11 @@ function collectSourceBindingGaps(gate, options = {}) {
     gaps.push("sourceDiagnosticsEvidencePacket is required for Bayesian promotion decision gate validation");
   }
   if (options.sourceDiagnosticsReview) {
+    const runtimeValidationOptions = sourceRuntimeValidationOptions(options);
     const sourceGaps = sourceDiagnosticsReviewGaps(
       options.sourceDiagnosticsReview,
-      options.sourceRuntime
+      options.sourceRuntime,
+      runtimeValidationOptions
     );
     if (sourceGaps.length > 0) gaps.push(...sourceGaps);
     const actualRef = asRecord(gate.source_diagnostics_review_ref);
@@ -1582,7 +1606,12 @@ function collectSourceBindingGaps(gate, options = {}) {
     }
   }
   if (options.sourceRuntime) {
-    const runtimeGaps = sourceRuntimeGaps(options.sourceRuntime, options.sourceDiagnosticsReview);
+    const runtimeValidationOptions = sourceRuntimeValidationOptions(options);
+    const runtimeGaps = sourceRuntimeGaps(
+      options.sourceRuntime,
+      options.sourceDiagnosticsReview,
+      runtimeValidationOptions
+    );
     if (runtimeGaps.length > 0) gaps.push(...runtimeGaps);
     const actualRuntimeRef = asRecord(gate.source_runtime_ref);
     const expectedRuntimeRef = sourceRuntimeRef(options.sourceRuntime, options.sourceDiagnosticsReview);

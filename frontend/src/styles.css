@@ -1951,6 +1951,606 @@ body {
   color: #eef3fb;
 }
 
+.ai-value-workspace-report-app {
+  min-height: 100vh;
+  background: #f8f5ee;
+  color: #111827;
+}
+
+.ai-value-workspace-report-frame {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr);
+}
+
+.ai-value-workspace-report-main {
+  min-width: 0;
+}
+
+.ai-value-workspace-report-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-height: 100vh;
+  padding: 18px 12px;
+  background: #071832;
+  color: #d9e6ff;
+}
+
+.ai-value-workspace-report-brand {
+  display: grid;
+  gap: 5px;
+  padding: 0 6px 18px;
+  border-bottom: 1px solid rgba(217, 230, 255, 0.16);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.ai-value-workspace-report-brand strong {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.ai-value-workspace-report-brand span,
+.ai-value-workspace-report-sidebar nav p,
+.ai-value-workspace-report-boundaries p {
+  margin: 0;
+  color: #9fb1cf;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-value-workspace-report-sidebar nav {
+  display: grid;
+  gap: 6px;
+}
+
+.ai-value-workspace-report-boundaries {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-value-workspace-report-boundaries ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-value-workspace-report-boundaries li {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(217, 230, 255, 0.14);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d9e6ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-value-workspace-report-sidebar nav a {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 5px;
+  color: #e8efff;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.ai-value-workspace-report-sidebar nav a:hover,
+.ai-value-workspace-report-sidebar nav a:focus-visible {
+  background: rgba(76, 118, 204, 0.28);
+  outline: none;
+}
+
+.ai-value-workspace-report-sidebar nav a.active {
+  background: #244da9;
+  color: #ffffff;
+}
+
+.ai-value-workspace-report-toolbar {
+  min-height: 96px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 28px 0;
+  border-bottom: 1px solid #dfddd6;
+  background: #fffdf8;
+}
+
+.ai-value-workspace-report-toolbar-main {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.ai-value-workspace-report-kicker {
+  margin: 0;
+  color: #051c55;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ai-value-workspace-report-toolbar h1 {
+  margin: 0;
+  color: #051c55;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.ai-value-workspace-report-toolbar h1 + p {
+  margin: 3px 0 0;
+  color: #4b5563;
+  font-weight: 750;
+}
+
+.ai-value-workspace-report-tabs {
+  display: flex;
+  gap: 22px;
+}
+
+.ai-value-workspace-report-tabs a {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  border-bottom: 3px solid transparent;
+  color: #344054;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.ai-value-workspace-report-tabs a.active,
+.ai-value-workspace-report-tabs a[aria-current="page"] {
+  color: #09276e;
+  border-bottom-color: #09276e;
+}
+
+.ai-value-workspace-report-caveat-strip {
+  max-width: 820px;
+  margin: 0;
+  padding: 7px 0 7px 10px;
+  border-left: 3px solid #09276e;
+  color: #27364f;
+  font-size: 12.5px;
+  font-weight: 750;
+  line-height: 1.38;
+}
+
+.ai-value-workspace-report-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.ai-value-workspace-report-toolbar-actions button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #cacfd8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ai-value-workspace-report-toolbar-actions button:disabled {
+  cursor: not-allowed;
+  background: #f8fafc;
+  color: #334155;
+  opacity: 1;
+}
+
+.ai-value-workspace-report-toolbar-actions button:focus-visible,
+.ai-value-workspace-report-tabs a:focus-visible {
+  outline: 3px solid rgba(52, 60, 237, 0.24);
+  outline-offset: 2px;
+}
+
+.ai-value-workspace-report-surface {
+  display: grid;
+  gap: 14px;
+  padding: 22px 28px 32px;
+}
+
+.ai-value-workspace-report-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
+}
+
+.ai-value-workspace-report-layout .ai-value-active-workspace {
+  min-width: 0;
+}
+
+.ai-value-workspace-report-frame .ai-value-next-action {
+  margin: 0;
+  border-color: #d8ded4;
+  background: linear-gradient(135deg, #fffffb, #f2f6ff);
+  color: #111827;
+  box-shadow: 0 16px 38px rgba(7, 12, 21, 0.08);
+}
+
+.ai-value-workspace-report-frame .ai-value-next-action span {
+  color: #09276e;
+}
+
+.ai-value-workspace-report-frame .ai-value-next-action strong {
+  color: #051c55;
+}
+
+.ai-value-workspace-report-frame .ai-value-next-action p {
+  color: #4b5563;
+}
+
+.ai-value-workspace-report-frame .ai-value-context-bar {
+  margin: 0;
+  border-color: #d8ded4;
+  background: #fffffb;
+}
+
+.ai-value-workspace-report-frame .ai-value-context-bar > div {
+  border-right-color: #e5e1d6;
+}
+
+.ai-value-workspace-report-frame .ai-value-context-bar strong {
+  color: #111827;
+}
+
+.ai-value-workspace-report-frame .ai-value-source-command,
+.ai-value-workspace-report-frame .ai-value-source-package-queue {
+  border-color: #d8ded4;
+  background: #fffffb;
+  color: #111827;
+  box-shadow: 0 18px 50px rgba(7, 12, 21, 0.1);
+}
+
+.ai-value-workspace-report-frame .ai-value-source-command h2,
+.ai-value-workspace-report-frame .ai-value-source-package-queue h3,
+.ai-value-workspace-report-frame .ai-value-source-package-lane h4,
+.ai-value-workspace-report-frame .ai-value-source-package-footer strong,
+.ai-value-workspace-report-frame .ai-value-source-coverage-grid strong {
+  color: #051c55;
+}
+
+.ai-value-workspace-report-frame .ai-value-source-command p,
+.ai-value-workspace-report-frame .ai-value-source-package-queue p,
+.ai-value-workspace-report-frame .ai-value-source-package-facts dd,
+.ai-value-workspace-report-frame .ai-value-source-package-caveat,
+.ai-value-workspace-report-frame .ai-value-source-coverage-grid p {
+  color: #4b5563;
+}
+
+.ai-value-workspace-report-frame .ai-value-source-package-summary,
+.ai-value-workspace-report-frame .ai-value-source-package-lane,
+.ai-value-workspace-report-frame .ai-value-source-coverage-grid article {
+  border-color: #deded5;
+  background: #ffffff;
+}
+
+.ai-value-workspace-report-frame .ai-value-source-package-action {
+  border-top-color: #e7e3d8;
+}
+
+.ai-value-workspace-report-frame .ai-value-source-package-footer {
+  border-color: #e4d7b8;
+  background: #fff9ed;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-primary,
+.ai-value-workspace-report-frame .ai-value-blueprint-side,
+.ai-value-workspace-report-frame .ai-value-checkpoint-panel,
+.ai-value-workspace-report-frame .ai-value-assistant-panel {
+  border-color: #d8ded4;
+  background: #fffffb;
+  color: #111827;
+  box-shadow: 0 18px 50px rgba(7, 12, 21, 0.1);
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-primary h2,
+.ai-value-workspace-report-frame .ai-value-checkpoint-panel h2,
+.ai-value-workspace-report-frame .ai-value-assistant-panel h2 {
+  color: #051c55;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-side h3 {
+  color: #051c55;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-pathways article,
+.ai-value-workspace-report-frame .ai-value-checkpoint-grid article,
+.ai-value-workspace-report-frame .ai-value-source-coverage-grid article,
+.ai-value-workspace-report-frame .ai-value-assistant-block {
+  border-color: #deded5;
+  background: #ffffff;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-pathways strong,
+.ai-value-workspace-report-frame .ai-value-checkpoint-grid strong,
+.ai-value-workspace-report-frame .ai-value-source-coverage-grid strong,
+.ai-value-workspace-report-frame .ai-value-assistant-block h3 {
+  color: #051c55;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-pathways p,
+.ai-value-workspace-report-frame .ai-value-checkpoint-grid p,
+.ai-value-workspace-report-frame .ai-value-source-coverage-grid p,
+.ai-value-workspace-report-frame .ai-value-assistant-head p,
+.ai-value-workspace-report-frame .ai-value-assistant-block p,
+.ai-value-workspace-report-frame .ai-value-assistant-block li {
+  color: #4b5563;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-primary .eyebrow,
+.ai-value-workspace-report-frame .ai-value-blueprint-side .eyebrow {
+  color: #334155;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-primary p,
+.ai-value-workspace-report-frame .ai-value-blueprint-side p {
+  color: #374151;
+}
+
+.ai-value-workspace-report-frame .ai-value-assistant-prompts button {
+  border-color: #d7dce8;
+  background: #f8fafc;
+  color: #172033;
+}
+
+.ai-value-workspace-report-frame .ai-value-assistant-boundary {
+  border-color: #e4d7b8;
+  background: #fff9ed;
+}
+
+.ai-value-workspace-report-frame .ai-value-map-label,
+.ai-value-workspace-report-frame .ai-value-source-package-facts dt,
+.ai-value-workspace-report-frame .ai-value-source-package-action .ai-value-map-label,
+.ai-value-workspace-report-frame .ai-value-guide-kicker {
+  color: #334155;
+}
+
+.ai-value-workspace-report-frame .ai-value-map-cell {
+  border-color: #d9dee8;
+  background: #f8fafc;
+}
+
+.ai-value-workspace-report-frame .ai-value-map-cell p,
+.ai-value-workspace-report-frame .ai-value-map-cell small,
+.ai-value-workspace-report-frame .ai-value-map-cell strong {
+  color: #111827;
+}
+
+.ai-value-workspace-report-frame .ai-value-blueprint-side li {
+  color: #374151;
+}
+
+.ai-value-workspace-report-frame .ai-value-workspace-card-status {
+  color: #334155;
+}
+
+.ai-value-workspace-report-frame .ai-value-workspace-card-status-good {
+  color: #14532d;
+}
+
+.ai-value-workspace-report-frame .ai-value-workspace-card-status-warn {
+  color: #7a4b0a;
+}
+
+.ai-value-workspace-report-frame .ai-value-pill {
+  border-color: #bfdbfe;
+  background: #eef3ff;
+  color: #09276e;
+}
+
+.ai-value-workspace-report-frame .ai-value-pill-good {
+  border-color: #9dd9b5;
+  background: #ecfdf3;
+  color: #14532d;
+}
+
+.ai-value-workspace-report-frame .ai-value-pill-warn {
+  border-color: #f1c46d;
+  background: #fff7dc;
+  color: #7a4b0a;
+}
+
+.ai-value-workspace-report-frame .ai-value-page-handoff {
+  border-color: #d8ded4;
+  background: #fffffb;
+  color: #111827;
+  box-shadow: 0 12px 34px rgba(7, 12, 21, 0.08);
+}
+
+.ai-value-workspace-report-frame .ai-value-page-handoff p {
+  color: #1f2937;
+}
+
+.ai-value-workspace-report-frame .ai-value-page-handoff .eyebrow {
+  color: #334155;
+}
+
+.ai-value-workspace-report-frame .ai-value-page-handoff .ai-value-step {
+  border-color: #cbd5e8;
+  background: #ffffff;
+  color: #09276e;
+}
+
+.ai-value-workspace-report-frame .ai-value-page-handoff .ai-value-step.active {
+  border-color: #09276e;
+  background: #09276e;
+  color: #ffffff;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-bridge .ai-value-map-label,
+.ai-value-workspace-report-frame .ai-value-report-posture-grid .ai-value-map-label {
+  color: #8ea0bd;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-y-axis {
+  border-right-color: #5f718f;
+  color: #8ea0bd;
+}
+
+.ai-value-workspace-report-frame .ai-fluency-framework-quadrant strong,
+.ai-value-workspace-report-frame .ai-value-customer-projection-panel h3,
+.ai-value-workspace-report-frame .ai-value-checkpoint-panel .ai-value-section-head h2,
+.ai-value-workspace-report-frame .ai-value-roi-access-panel h3,
+.ai-value-workspace-report-frame .ai-value-question-metric-bridge-panel h2,
+.ai-value-workspace-report-frame .ai-value-metric-options h3,
+.ai-value-workspace-report-frame .ai-value-metric-watch-plan h3,
+.ai-value-workspace-report-frame .ai-value-case-intake h3,
+.ai-value-workspace-report-frame .ai-value-decision-preview h3,
+.ai-value-workspace-report-frame .ai-value-decision-bundle h3,
+.ai-value-workspace-report-frame .ai-value-agent-handoff h3 {
+  color: #051c55;
+}
+
+.ai-value-workspace-report-frame .ai-fluency-framework-quadrant p,
+.ai-value-workspace-report-frame .ai-fluency-framework-quadrant li,
+.ai-value-workspace-report-frame .ai-fluency-framework-quadrant span:not(.ai-fluency-framework-icon),
+.ai-value-workspace-report-frame .ai-value-customer-projection-panel .ai-value-section-head p:not(.eyebrow),
+.ai-value-workspace-report-frame .ai-value-checkpoint-panel .ai-value-section-head p:not(.eyebrow),
+.ai-value-workspace-report-frame .ai-value-roi-access-panel p,
+.ai-value-workspace-report-frame .ai-value-question-metric-bridge-panel .ai-value-section-head p:not(.eyebrow),
+.ai-value-workspace-report-frame .ai-value-metric-options p,
+.ai-value-workspace-report-frame .ai-value-metric-watch-plan p,
+.ai-value-workspace-report-frame .ai-value-metrics-flow p,
+.ai-value-workspace-report-frame .ai-value-case-intake p,
+.ai-value-workspace-report-frame .ai-value-case-intake li,
+.ai-value-workspace-report-frame .ai-value-decision-preview p,
+.ai-value-workspace-report-frame .ai-value-decision-bundle p,
+.ai-value-workspace-report-frame .ai-value-agent-handoff p,
+.ai-value-workspace-report-frame .ai-value-agent-handoff small {
+  color: #4b5563;
+}
+
+.ai-value-workspace-report-frame .ai-value-customer-projection-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-checkpoint-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-roi-access-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-question-metric-bridge-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-case-intake .eyebrow,
+.ai-value-workspace-report-frame .ai-value-decision-preview .eyebrow,
+.ai-value-workspace-report-frame .ai-value-decision-bundle .eyebrow {
+  color: #334155;
+}
+
+.ai-value-workspace-report-frame .ai-value-inline-alert {
+  color: #382a06;
+}
+
+.ai-value-workspace-report-frame .ai-value-case-metric-handoff li span,
+.ai-value-workspace-report-frame .ai-value-metric-choice small,
+.ai-value-workspace-report-frame .ai-value-metric-choice p,
+.ai-value-workspace-report-frame .ai-value-metric-choice em,
+.ai-value-workspace-report-frame .ai-value-metric-watch-plan li span {
+  color: #4b5563;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-panel,
+.ai-value-workspace-report-frame .ai-fluency-framework-panel,
+.ai-value-workspace-report-frame .ai-value-question-metric-bridge-panel,
+.ai-value-workspace-report-frame .ai-value-signal-shortlist-panel,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel,
+.ai-value-workspace-report-frame .ai-value-roi-access-panel,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] {
+  border-color: #d8ded4;
+  background: #fffffb;
+  color: #111827;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-y-axis {
+  color: #334155;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-panel > .ai-value-section-head p:not(.eyebrow),
+.ai-value-workspace-report-frame .ai-value-vbd-footer p,
+.ai-value-workspace-report-frame .ai-value-vbd-definition-legend p,
+.ai-value-workspace-report-frame .ai-value-vbd-definition-legend span,
+.ai-value-workspace-report-frame .ai-value-vbd-definition-legend small,
+.ai-value-workspace-report-frame .ai-value-vbd-definition-legend em,
+.ai-value-workspace-report-frame .ai-value-vbd-surface-note,
+.ai-value-workspace-report-frame .ai-value-selected-function-summary p,
+.ai-value-workspace-report-frame .ai-value-question-metric-item p,
+.ai-value-workspace-report-frame .ai-value-question-metric-item small,
+.ai-value-workspace-report-frame .ai-value-question-metric-bridge-panel > p,
+.ai-value-workspace-report-frame .ai-value-signal-shortlist-panel > .ai-value-section-head p:not(.eyebrow),
+.ai-value-workspace-report-frame .ai-value-signal-card p,
+.ai-value-workspace-report-frame .ai-value-signal-card small,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel p,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel li,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel small,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] p,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] li,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel p,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel li,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel small,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel p,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel li,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel small {
+  color: #4b5563;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-panel > .ai-value-section-head h3,
+.ai-value-workspace-report-frame .ai-value-vbd-panel > .ai-value-section-head h4,
+.ai-value-workspace-report-frame .ai-value-vbd-definition-legend h4,
+.ai-value-workspace-report-frame .ai-value-vbd-definition-legend strong,
+.ai-value-workspace-report-frame .ai-value-vbd-surface-note strong,
+.ai-value-workspace-report-frame .ai-value-question-metric-item h4,
+.ai-value-workspace-report-frame .ai-value-question-metric-item strong,
+.ai-value-workspace-report-frame .ai-value-signal-shortlist-panel > .ai-value-section-head h3,
+.ai-value-workspace-report-frame .ai-value-signal-card h4,
+.ai-value-workspace-report-frame .ai-value-signal-card strong,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel h3,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel h4,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel strong,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] h2,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] h3,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] h4,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] strong,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel h2,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel h3,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel h4,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel strong,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel h2,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel h3,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel h4,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel strong {
+  color: #051c55;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-signal-shortlist-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-token-pilot-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-panel[aria-label="AI contribution reporting spine"] .eyebrow,
+.ai-value-workspace-report-frame .ai-value-sponsor-decision-panel .eyebrow,
+.ai-value-workspace-report-frame .ai-value-improvement-loop-panel .eyebrow {
+  color: #334155;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-bridge p,
+.ai-value-workspace-report-frame .ai-value-vbd-score-summary p,
+.ai-value-workspace-report-frame .ai-value-vbd-token-overlay-head p {
+  color: #c4cee1;
+}
+
+.ai-value-workspace-report-frame .ai-value-vbd-token-overlay .eyebrow {
+  color: #8ea0bd;
+}
+
 .ai-value-topbar {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) auto;
@@ -2082,42 +2682,6 @@ body {
   margin-bottom: 16px;
 }
 
-.ai-value-workspace-nav {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  align-content: start;
-  position: sticky;
-  top: 18px;
-}
-
-.ai-value-workspace-nav a {
-  text-decoration: none;
-}
-
-.ai-value-workspace-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-  width: auto;
-  min-width: 0;
-  min-height: 52px;
-  padding: 10px;
-}
-
-.ai-value-workspace-card-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.ai-value-workspace-card-copy strong {
-  font-size: 13px;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
 .ai-value-step {
   min-height: 44px;
   border: 1px solid #2a3952;
@@ -2128,18 +2692,6 @@ body {
   font-weight: 700;
   text-align: left;
   padding: 9px;
-}
-
-.ai-value-workspace-index {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #233255;
-  color: #b6ccff;
-  font-size: 12px;
-  font-weight: 800;
 }
 
 .ai-value-workspace-card-status {
@@ -2345,6 +2897,10 @@ body {
   grid-template-columns: minmax(170px, 0.58fr) minmax(0, 2.35fr) minmax(300px, 0.9fr);
   gap: 16px;
   align-items: start;
+}
+
+.ai-value-console-layout.ai-value-workspace-report-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
 }
 
 .ai-value-active-workspace {
@@ -2866,21 +3422,206 @@ body {
   text-align: center;
 }
 
-.ai-fluency-example-panel {
+.ai-value-panel.ai-fluency-evidence-panel {
   display: grid;
-  gap: 14px;
+  gap: 18px;
+  border-color: #d8ded4;
+  background: #fffffb;
+  color: #111827;
+  box-shadow: 0 18px 50px rgba(7, 12, 21, 0.1);
 }
 
-.ai-fluency-preview-frame {
-  width: 100%;
-  min-height: 720px;
-  border: 1px solid #dbe0ef;
+.ai-value-panel.ai-fluency-evidence-panel h3,
+.ai-value-panel.ai-fluency-evidence-panel h4,
+.ai-value-panel.ai-fluency-evidence-panel strong {
+  color: #051c55;
+}
+
+.ai-value-panel.ai-fluency-evidence-panel p,
+.ai-value-panel.ai-fluency-evidence-panel small {
+  color: #4b5563;
+}
+
+.ai-fluency-evidence-status-stack {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ai-fluency-evidence-switcher {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ai-fluency-evidence-switcher button {
+  min-height: 74px;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ai-fluency-evidence-switcher button[aria-pressed="true"] {
+  border-color: #b8c7e8;
+  background: #ffffff;
+  color: #09276e;
+  box-shadow: 0 8px 18px rgba(7, 12, 21, 0.08);
+}
+
+.ai-fluency-evidence-switcher button:focus-visible {
+  outline: 3px solid rgba(52, 60, 237, 0.24);
+  outline-offset: 2px;
+}
+
+.ai-fluency-evidence-switcher span {
+  color: inherit;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ai-fluency-evidence-switcher small {
+  display: block;
+  color: #526174;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.ai-fluency-evidence-active-view {
+  border: 1px solid #d9dee8;
   border-radius: 8px;
   background: #ffffff;
 }
 
-.ai-fluency-org-example-frame {
-  min-height: 860px;
+.ai-fluency-evidence-view {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.ai-fluency-evidence-view-head {
+  display: grid;
+  gap: 5px;
+  max-width: 860px;
+}
+
+.ai-fluency-evidence-view-head h4 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.ai-fluency-evidence-view-head p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.ai-fluency-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ai-fluency-evidence-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ai-fluency-evidence-grid article,
+.ai-fluency-factor-list article,
+.ai-fluency-report-read-list article {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dfe4ed;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ai-fluency-evidence-grid article strong {
+  font-size: 18px;
+}
+
+.ai-fluency-factor-list,
+.ai-fluency-report-read-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-fluency-factor-list article {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.ai-fluency-factor-list article p,
+.ai-fluency-report-read-list article p,
+.ai-fluency-evidence-grid article p {
+  margin: 0;
+  line-height: 1.42;
+}
+
+.ai-fluency-factor-list article span {
+  min-width: 72px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #eef3ff;
+  color: #09276e;
+  font-weight: 900;
+  text-align: center;
+}
+
+.ai-fluency-evidence-note {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid #e4d7b8;
+  border-radius: 8px;
+  background: #fff9ed;
+}
+
+.ai-fluency-evidence-note p {
+  margin: 0;
+  color: #374151;
+  line-height: 1.42;
+}
+
+@media (max-width: 680px) {
+  .ai-fluency-evidence-status-stack {
+    justify-content: flex-start;
+  }
+
+  .ai-fluency-evidence-switcher {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-fluency-evidence-switcher button {
+    min-height: 82px;
+  }
+
+  .ai-fluency-evidence-grid,
+  .ai-fluency-evidence-grid-three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ai-fluency-factor-list article {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .ai-fluency-factor-list article span {
+    justify-self: start;
+  }
 }
 
 .ai-fluency-framework-panel {
@@ -5402,10 +6143,171 @@ body {
   overflow-wrap: anywhere;
 }
 
+.ai-value-readout-report-frame {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin-top: 18px;
+}
+
+.ai-value-readout-report-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.34fr);
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+}
+
+.ai-value-readout-document,
+.ai-value-readout-annex,
+.ai-value-readout-export-bar {
+  min-width: 0;
+  border: 1px solid #d8ded4;
+  border-radius: 8px;
+  background: #fffffb;
+  box-shadow: 0 18px 50px rgba(7, 12, 21, 0.12);
+}
+
+.ai-value-readout-document {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.ai-value-readout-report-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.38fr);
+  gap: 16px;
+  align-items: stretch;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #d7e2cb;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f9fbef, #eef6ff);
+}
+
+.ai-value-readout-report-hero > * {
+  min-width: 0;
+}
+
+.ai-value-readout-report-hero h2 {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.02;
+}
+
+.ai-value-readout-report-hero p {
+  max-width: 760px;
+  margin: 8px 0 0;
+}
+
+.ai-value-readout-report-hero aside {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e6d39a;
+  border-radius: 8px;
+  background: #fff8df;
+}
+
+.ai-value-readout-report-hero aside strong,
+.ai-value-readout-export-bar strong {
+  overflow-wrap: anywhere;
+}
+
+.ai-value-readout-report-hero aside span:not(.ai-value-pill),
+.ai-value-readout-annex p,
+.ai-value-readout-annex li span:not(.ai-value-pill) {
+  color: #555f70;
+}
+
+.ai-value-readout-report-frame .ai-value-panel {
+  border-color: #d8ded4;
+  background: #fffffb;
+  color: #111827;
+}
+
+.ai-value-readout-report-frame .ai-value-map-cell {
+  border-color: #d9dee8;
+  background: #f8fafc;
+  color: #111827;
+}
+
+.ai-value-readout-report-frame .ai-value-readout-report-hero h2,
+.ai-value-readout-report-frame .ai-value-readout-report-hero aside strong,
+.ai-value-readout-report-frame .ai-value-readout-summary strong,
+.ai-value-readout-report-frame .ai-value-readout-score-grid strong,
+.ai-value-readout-report-frame .ai-value-readout-annex h2,
+.ai-value-readout-report-frame .ai-value-readout-annex strong,
+.ai-value-readout-report-frame .ai-value-panel h2,
+.ai-value-readout-report-frame .ai-value-panel h3,
+.ai-value-readout-report-frame .ai-value-panel h4,
+.ai-value-readout-report-frame .ai-value-panel strong,
+.ai-value-readout-report-frame .ai-value-map-cell h3,
+.ai-value-readout-report-frame .ai-value-map-cell h4,
+.ai-value-readout-report-frame .ai-value-map-cell strong,
+.ai-value-readout-report-frame .ai-value-readout-facts dd {
+  color: #051c55;
+}
+
+.ai-value-readout-report-frame .ai-value-readout-report-hero p,
+.ai-value-readout-report-frame .ai-value-readout-report-hero aside span:not(.ai-value-pill),
+.ai-value-readout-report-frame .ai-value-panel p,
+.ai-value-readout-report-frame .ai-value-panel li,
+.ai-value-readout-report-frame .ai-value-map-cell p,
+.ai-value-readout-report-frame .ai-value-map-cell li,
+.ai-value-readout-report-frame .ai-value-map-cell small,
+.ai-value-readout-report-frame .ai-value-readout-facts dt,
+.ai-value-readout-report-frame .ai-value-blocked-claim-list span {
+  color: #4b5563;
+}
+
+.ai-value-readout-report-frame .eyebrow,
+.ai-value-readout-report-frame .ai-value-map-label {
+  color: #334155;
+}
+
+.ai-value-readout-report-frame .ai-value-inline-alert {
+  color: #382a06;
+}
+
+.ai-value-readout-report-frame .ai-value-readout-warning {
+  color: #7a2e0e;
+}
+
+.ai-value-readout-report-frame .ai-value-readout-permissions span {
+  color: #1f2937;
+}
+
+.ai-value-readout-report-frame .ai-value-readout-export-bar .ai-value-map-label {
+  color: #334155;
+}
+
+.ai-value-readout-report-frame .ai-value-readout-export-bar strong {
+  color: #051c55;
+}
+
+.ai-value-readout-report-frame .ai-value-readout-export-actions .ai-value-step:disabled {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  opacity: 1;
+}
+
 .ai-value-readout-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.ai-value-readout-spine {
+  grid-column: 1 / -1;
+}
+
+.ai-value-readout-spine > .ai-value-panel {
+  height: auto;
 }
 
 .ai-value-readout-score-grid,
@@ -5528,6 +6430,69 @@ body {
   gap: 18px;
 }
 
+.ai-value-readout-annex {
+  position: sticky;
+  top: 18px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.ai-value-readout-annex h2 {
+  margin: 0 0 8px;
+}
+
+.ai-value-readout-annex ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-value-readout-annex li {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid #e7e7de;
+}
+
+.ai-value-readout-annex li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.ai-value-readout-annex li div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ai-value-readout-export-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.ai-value-readout-export-bar > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.ai-value-readout-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ai-value-readout-export-actions .ai-value-step {
+  min-width: 172px;
+  text-align: center;
+}
+
 @media (max-width: 1120px) {
   .ai-value-topbar,
   .ai-value-next-action,
@@ -5573,15 +6538,85 @@ body {
   .ai-value-carry-forward,
   .ai-value-readout-summary,
   .ai-value-readout-grid,
+  .ai-value-readout-report-main,
+  .ai-value-readout-report-hero,
   .ai-value-readout-score-grid,
   .ai-value-output-columns,
   .ai-value-readout-permissions,
-  .ai-value-readout-actions {
+  .ai-value-readout-actions,
+  .ai-value-readout-export-bar {
     grid-template-columns: 1fr;
   }
 
-  .ai-value-assistant-panel,
-  .ai-value-workspace-nav {
+  .ai-value-readout-annex {
+    position: static;
+  }
+
+  .ai-value-readout-export-actions {
+    justify-content: stretch;
+  }
+
+  .ai-value-readout-export-actions .ai-value-step {
+    flex: 1 1 190px;
+  }
+
+  .ai-value-readout-report-hero h2 {
+    font-size: 30px;
+  }
+
+  .ai-value-console-layout.ai-value-workspace-report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-value-workspace-report-frame {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-value-workspace-report-sidebar {
+    min-height: 0;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .ai-value-workspace-report-sidebar nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-value-workspace-report-sidebar nav p {
+    grid-column: 1 / -1;
+  }
+
+  .ai-value-workspace-report-toolbar {
+    min-height: 0;
+    flex-direction: column;
+    padding: 18px 18px 0;
+  }
+
+  .ai-value-workspace-report-toolbar-actions {
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .ai-value-workspace-report-surface {
+    padding: 18px;
+  }
+
+  .ai-value-workspace-report-frame .ai-value-section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-value-workspace-report-frame .ai-value-section-head .ai-value-pill,
+  .ai-value-workspace-report-frame .ai-value-source-package-head-actions .ai-value-pill {
+    flex: 1 1 auto;
+    white-space: normal;
+  }
+
+  .ai-value-workspace-report-frame .ai-value-source-package-head-actions {
+    justify-content: flex-start;
+  }
+
+  .ai-value-assistant-panel {
     position: static;
     max-height: none;
     overflow: visible;
@@ -5611,17 +6646,6 @@ body {
 
   .ai-value-spine {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .ai-value-workspace-nav {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    overflow-x: visible;
-    padding-bottom: 4px;
-  }
-
-  .ai-value-workspace-card {
-    min-width: 0;
   }
 
   .ai-value-evidence-timeline-wide {
@@ -5735,14 +6759,6 @@ body {
 
   .ai-value-intake-footer .ai-value-step {
     width: 100%;
-  }
-
-  .ai-fluency-preview-frame {
-    min-height: 640px;
-  }
-
-  .ai-fluency-org-example-frame {
-    min-height: 720px;
   }
 
   .ai-value-row {

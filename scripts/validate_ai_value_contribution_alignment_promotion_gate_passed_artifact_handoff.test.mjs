@@ -160,7 +160,7 @@ function sourceDataModel() {
 }
 
 function sourceRuntime() {
-  if (cachedRuntime) return clone(cachedRuntime);
+  if (cachedRuntime) return clone(cachedRuntime.source_runtime);
   const sourceFeatureStabilityReview =
     buildContributionAlignmentFeatureStabilityReviewFromObject(sourceDataModel());
   const sourceWeightDecision =
@@ -189,11 +189,23 @@ function sourceRuntime() {
     sourceSpecification,
     { sourceReadinessReview, sourceFrame }
   );
-  cachedRuntime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  return clone(cachedRuntime);
+  cachedRuntime = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  };
+  return clone(cachedRuntime.source_runtime);
+}
+
+function sourceRuntimeEnvelope(runtime = null) {
+  if (!cachedRuntime) sourceRuntime();
+  const envelope = clone(cachedRuntime);
+  if (runtime) envelope.source_runtime = runtime;
+  return envelope;
 }
 
 function reviewedSourceEvidenceRef(dimension) {
@@ -293,22 +305,23 @@ function reviewedEvidenceInput(runtime, overrides = {}) {
 }
 
 function explicitPromotionPath(runtime, reviewedEvidence = reviewedEvidenceInput(runtime)) {
+  const runtimeInput = sourceRuntimeEnvelope(runtime);
   const governedSource =
     buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+      source_runtime: runtimeInput,
       reviewed_diagnostics_source_evidence: reviewedEvidence
     });
   const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_sufficiency_evidence: governedSource
   });
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_sufficiency_evidence: governedSource
   });
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_evidence_packet: packet
   });
   return { governedSource, review, packet, gate };
@@ -318,11 +331,11 @@ test("promotion gate passed artifact handoff defaults to hold", () => {
   const runtime = sourceRuntime();
   const handoff =
     buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-      source_runtime: runtime
+      source_runtime: sourceRuntimeEnvelope(runtime)
     });
   const validation = validateContributionAlignmentPromotionGatePassedArtifactHandoff(
     handoff,
-    { sourceRuntime: runtime }
+    { sourceRuntime: sourceRuntimeEnvelope(runtime) }
   );
 
   assert.equal(handoff.handoff_state, HOLD_HANDOFF_STATE);
@@ -341,7 +354,7 @@ test("promotion gate passed artifact handoff records explicit governed-evidence 
   const { governedSource, review, packet, gate } = explicitPromotionPath(runtime, reviewedEvidence);
   const handoff =
     buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-      source_runtime: runtime,
+      source_runtime: sourceRuntimeEnvelope(runtime),
       source_governed_diagnostics_sufficiency_evidence_source: governedSource,
       source_diagnostics_review: review,
       source_diagnostics_evidence_packet: packet,
@@ -349,7 +362,7 @@ test("promotion gate passed artifact handoff records explicit governed-evidence 
     });
   const validation = validateContributionAlignmentPromotionGatePassedArtifactHandoff(
     handoff,
-    { sourceRuntime: runtime, governedSource, diagnosticsReview: review, diagnosticsEvidencePacket: packet, promotionGate: gate }
+    { sourceRuntime: sourceRuntimeEnvelope(runtime), governedSource, diagnosticsReview: review, diagnosticsEvidencePacket: packet, promotionGate: gate }
   );
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
@@ -386,7 +399,7 @@ test("promotion gate passed artifact handoff rejects forged governed evidence", 
 
   const handoff =
     buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-      source_runtime: runtime,
+      source_runtime: sourceRuntimeEnvelope(runtime),
       source_governed_diagnostics_sufficiency_evidence_source: forgedGovernedSource,
       source_diagnostics_review: review,
       source_diagnostics_evidence_packet: packet,
@@ -394,7 +407,7 @@ test("promotion gate passed artifact handoff rejects forged governed evidence", 
     });
   const validation = validateContributionAlignmentPromotionGatePassedArtifactHandoff(
     handoff,
-    { sourceRuntime: runtime }
+    { sourceRuntime: sourceRuntimeEnvelope(runtime) }
   );
 
   assert.equal(handoff.handoff_state, HOLD_HANDOFF_STATE);
@@ -415,7 +428,7 @@ test("promotion gate passed artifact handoff rejects non-gate promotion side doo
 
   const handoff =
     buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-      source_runtime: runtime,
+      source_runtime: sourceRuntimeEnvelope(runtime),
       source_governed_diagnostics_sufficiency_evidence_source: governedSource,
       source_diagnostics_review: review,
       source_diagnostics_evidence_packet: packet,
@@ -438,7 +451,7 @@ test("promotion gate passed artifact handoff does not create or feed execution a
     explicitPromotionPath(runtime, reviewedEvidenceInput(runtime));
   const handoff =
     buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-      source_runtime: runtime,
+      source_runtime: sourceRuntimeEnvelope(runtime),
       source_governed_diagnostics_sufficiency_evidence_source: governedSource,
       source_diagnostics_review: review,
       source_diagnostics_evidence_packet: packet,

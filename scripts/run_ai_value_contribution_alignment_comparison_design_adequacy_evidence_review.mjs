@@ -56,6 +56,8 @@ const REQUIRED_RUNTIME_CLASS = "internal_fixture_prototype_only";
 
 const ALLOWED_INPUT_FIELDS = new Set([
   "source_runtime",
+  "source_gate",
+  "aggregate_measurement_cell_windows",
   "comparison_design_source_evidence",
   "generated_at"
 ]);
@@ -583,7 +585,21 @@ function safeCollectionScalar(value) {
 
 function sourceRuntimeFromInput(input) {
   const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  if (sourceRuntimeEnvelope.source_runtime) return sourceRuntimeEnvelope.source_runtime;
   return record.source_runtime ?? input;
+}
+
+function sourceRuntimeValidationOptions(input) {
+  const record = asRecord(input);
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  return {
+    sourceGate: source.source_gate ?? source.sourceGate,
+    aggregateMeasurementCellWindows:
+      source.aggregate_measurement_cell_windows ??
+      source.aggregateMeasurementCellWindows
+  };
 }
 
 function comparisonSourceEvidenceFromInput(input) {
@@ -705,13 +721,13 @@ function sourceRuntimeRef(sourceRuntime) {
   };
 }
 
-function sourceRuntimeGaps(sourceRuntime) {
+function sourceRuntimeGaps(sourceRuntime, validationOptions = {}) {
   const runtime = asRecord(sourceRuntime);
   const design = asRecord(runtime.aggregate_design_matrix);
   const artifact = asRecord(runtime.internal_fit_artifact);
   const gaps = [];
   const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
-    allowSelfContainedSourceValidation: true
+    ...validationOptions
   });
   if (validation.valid !== true) {
     gaps.push("source_runtime failed internal Bayesian execution runtime validation");
@@ -1180,7 +1196,7 @@ function buildEvidenceSatisfaction(sourceRuntime, sourcePackage, ready, missing)
   };
 }
 
-function buildReview(sourceRuntime, sourcePackage, state, gaps) {
+function buildReview(sourceRuntime, sourcePackage, state, gaps, runtimeGaps = sourceRuntimeGaps(sourceRuntime)) {
   const ready = state === READY_STATE;
   const missing = missingEvidence(sourceRuntime, sourcePackage);
   const review = {
@@ -1204,7 +1220,7 @@ function buildReview(sourceRuntime, sourcePackage, state, gaps) {
     review_version: REVIEW_VERSION,
     review_policy: {
       internal_only: true,
-      aggregate_only: sourceRuntimeGaps(sourceRuntime).length === 0,
+      aggregate_only: runtimeGaps.length === 0,
       review_only: true,
       evidence_source_binding_authorized: ready,
       promotion_authorized: false,
@@ -1289,15 +1305,16 @@ function rejectedReview() {
 export function buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject(input) {
   if (inputBoundaryGaps(input).length > 0) return rejectedReview();
   const sourceRuntime = sourceRuntimeFromInput(input);
+  const runtimeValidationOptions = sourceRuntimeValidationOptions(input);
   const sourcePackage = comparisonSourceEvidenceFromInput(input);
   if (!isReviewerOwnedCollection(sourcePackage) && sourcePackageContentGaps(sourcePackage).length > 0) {
     return rejectedReview();
   }
-  const runtimeGaps = sourceRuntimeGaps(sourceRuntime);
+  const runtimeGaps = sourceRuntimeGaps(sourceRuntime, runtimeValidationOptions);
   const packageGaps = sourcePackageGaps(sourceRuntime, sourcePackage);
   const gaps = sanitizeGaps([...runtimeGaps, ...packageGaps]);
   const state = gaps.length === 0 ? READY_STATE : HOLD_STATE;
-  return buildReview(sourceRuntime, sourcePackage, state, gaps);
+  return buildReview(sourceRuntime, sourcePackage, state, gaps, runtimeGaps);
 }
 
 function hasForbiddenContent(value, path = "review") {
@@ -1496,7 +1513,8 @@ function validateAgainstSources(review, options = {}) {
     gaps.push("comparisonDesignSourceEvidence is required for ready comparison-design evidence review validation");
   }
   if (options.sourceRuntime) {
-    gaps.push(...sourceRuntimeGaps(options.sourceRuntime));
+    const runtimeValidationOptions = sourceRuntimeValidationOptions(options);
+    gaps.push(...sourceRuntimeGaps(options.sourceRuntime, runtimeValidationOptions));
     const actualRuntimeRef = asRecord(review.source_runtime_ref);
     const expectedRuntimeRef = sourceRuntimeRef(options.sourceRuntime);
     for (const [field, expected] of Object.entries(expectedRuntimeRef)) {
@@ -1512,6 +1530,8 @@ function validateAgainstSources(review, options = {}) {
     ));
     const expected = buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
       source_runtime: options.sourceRuntime,
+      source_gate: options.sourceGate,
+      aggregate_measurement_cell_windows: options.aggregateMeasurementCellWindows,
       comparison_design_source_evidence: options.comparisonDesignSourceEvidence
     });
     const actualWithoutHash = clone(review);

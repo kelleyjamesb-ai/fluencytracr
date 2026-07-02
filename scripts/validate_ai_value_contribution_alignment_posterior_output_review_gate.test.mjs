@@ -97,7 +97,7 @@ const FALSE_FEEDS = [
   "live_connector_execution"
 ];
 
-let cachedRuntime = null;
+let cachedRuntimeSource = null;
 
 function sourceDataModel() {
   const output = execFileSync(
@@ -114,7 +114,7 @@ function sourceDataModel() {
 }
 
 function sourceRuntime() {
-  if (cachedRuntime) return JSON.parse(JSON.stringify(cachedRuntime));
+  if (cachedRuntimeSource) return JSON.parse(JSON.stringify(cachedRuntimeSource.source_runtime));
   const sourceFeatureStabilityReview =
     buildContributionAlignmentFeatureStabilityReviewFromObject(sourceDataModel());
   const sourceWeightDecision =
@@ -143,18 +143,47 @@ function sourceRuntime() {
     sourceSpecification,
     { sourceReadinessReview, sourceFrame }
   );
-  cachedRuntime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  return JSON.parse(JSON.stringify(cachedRuntime));
+  cachedRuntimeSource = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  };
+  return JSON.parse(JSON.stringify(cachedRuntimeSource.source_runtime));
+}
+
+function sourceRuntimeSource() {
+  if (!cachedRuntimeSource) sourceRuntime();
+  return JSON.parse(JSON.stringify(cachedRuntimeSource));
+}
+
+function sourceRuntimeEnvelope(overrides = {}) {
+  return {
+    ...sourceRuntimeSource(),
+    ...overrides
+  };
+}
+
+function sourceRuntimeValidationOptions(overrides = {}) {
+  const source = sourceRuntimeSource();
+  return {
+    sourceRuntime: source.source_runtime,
+    sourceGate: source.source_gate,
+    aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+    ...overrides
+  };
 }
 
 test("posterior output review gate contains fixture artifact without authorizing interpretation", () => {
   const runtime = sourceRuntime();
-  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime);
+  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(
+    sourceRuntimeEnvelope()
+  );
   const validation = validateContributionAlignmentPosteriorOutputReviewGate(review, {
-    sourceRuntime: runtime,
+    ...sourceRuntimeValidationOptions(),
     expectedReview: review
   });
 
@@ -281,8 +310,9 @@ test("posterior output review gate validation rejects forged confidence after re
 });
 
 test("posterior output review gate validation requires source runtime for passed records", () => {
-  const runtime = sourceRuntime();
-  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(runtime);
+  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject(
+    sourceRuntimeEnvelope()
+  );
   const validation = validateContributionAlignmentPosteriorOutputReviewGate(review);
 
   assert.equal(validation.valid, false);

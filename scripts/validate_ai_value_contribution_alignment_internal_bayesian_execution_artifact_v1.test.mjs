@@ -172,7 +172,7 @@ function sourceDataModel() {
 }
 
 function sourceRuntime() {
-  if (cachedRuntime) return clone(cachedRuntime);
+  if (cachedRuntime) return clone(cachedRuntime.source_runtime);
   const sourceFeatureStabilityReview =
     buildContributionAlignmentFeatureStabilityReviewFromObject(sourceDataModel());
   const sourceWeightDecision =
@@ -201,11 +201,23 @@ function sourceRuntime() {
     sourceSpecification,
     { sourceReadinessReview, sourceFrame }
   );
-  cachedRuntime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  return clone(cachedRuntime);
+  cachedRuntime = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  };
+  return clone(cachedRuntime.source_runtime);
+}
+
+function sourceRuntimeEnvelope(runtime = null) {
+  if (!cachedRuntime) sourceRuntime();
+  const envelope = clone(cachedRuntime);
+  if (runtime) envelope.source_runtime = runtime;
+  return envelope;
 }
 
 function reviewedSourceEvidenceRef(dimension) {
@@ -305,26 +317,27 @@ function reviewedEvidenceInput(runtime, overrides = {}) {
 }
 
 function explicitPromotionPath(runtime = sourceRuntime()) {
+  const runtimeInput = sourceRuntimeEnvelope(runtime);
   const governedSource =
     buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+      source_runtime: runtimeInput,
       reviewed_diagnostics_source_evidence: reviewedEvidenceInput(runtime)
     });
   const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_sufficiency_evidence: governedSource
   });
   const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_sufficiency_evidence: governedSource
   });
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_diagnostics_evidence_packet: packet
   });
   const handoff = buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-    source_runtime: runtime,
+    source_runtime: runtimeInput,
     source_governed_diagnostics_sufficiency_evidence_source: governedSource,
     source_diagnostics_review: review,
     source_diagnostics_evidence_packet: packet,
@@ -337,7 +350,7 @@ function artifactInput(path = explicitPromotionPath()) {
   return {
     source_promotion_handoff: path.handoff,
     source_promotion_gate: path.gate,
-    source_runtime: path.runtime,
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
     source_diagnostics_review: path.review,
     source_diagnostics_evidence_packet: path.packet,
     source_governed_diagnostics_sufficiency_evidence_source: path.governedSource
@@ -347,16 +360,16 @@ function artifactInput(path = explicitPromotionPath()) {
 test("internal Bayesian execution artifact v1 fails closed without a passed promotion handoff", () => {
   const runtime = sourceRuntime();
   const heldHandoff = buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
-    source_runtime: runtime
+    source_runtime: sourceRuntimeEnvelope(runtime)
   });
   const artifact =
     buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject({
       source_promotion_handoff: heldHandoff,
-      source_runtime: runtime
+      source_runtime: sourceRuntimeEnvelope(runtime)
     });
   const validation = validateContributionAlignmentInternalBayesianExecutionArtifactV1(
     artifact,
-    { sourcePromotionHandoff: heldHandoff, sourceRuntime: runtime }
+    { sourcePromotionHandoff: heldHandoff, sourceRuntime: sourceRuntimeEnvelope(runtime) }
   );
 
   assert.equal(artifact.artifact_state, HOLD_ARTIFACT_STATE);
@@ -394,7 +407,7 @@ test("internal Bayesian execution artifact v1 is created only from a passed hand
     {
       sourcePromotionHandoff: path.handoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource
@@ -472,7 +485,7 @@ test("internal Bayesian execution artifact v1 rejects forged promotion handoff h
     {
       sourcePromotionHandoff: forgedHandoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource
@@ -504,7 +517,7 @@ test("internal Bayesian execution artifact v1 rejects forged promotion gate hash
     {
       sourcePromotionHandoff: forgedHandoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource
@@ -615,7 +628,7 @@ test("internal Bayesian execution artifact v1 rejects unrecognized sidecar wrapp
     {
       sourcePromotionHandoff: path.handoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource
@@ -647,7 +660,7 @@ test("internal Bayesian execution artifact v1 validation redacts ungoverned fiel
     {
       sourcePromotionHandoff: path.handoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource
@@ -677,7 +690,7 @@ test("internal Bayesian execution artifact v1 validation rejects forged output a
     {
       sourcePromotionHandoff: path.handoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource
@@ -706,7 +719,7 @@ test("internal Bayesian execution artifact v1 rejects nested ungoverned leakage 
     {
       sourcePromotionHandoff: path.handoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource
@@ -741,7 +754,7 @@ test("internal Bayesian execution artifact v1 rejects promotion authority side d
     {
       sourcePromotionHandoff: path.handoff,
       sourcePromotionGate: path.gate,
-      sourceRuntime: path.runtime,
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
       sourceDiagnosticsReview: path.review,
       sourceDiagnosticsEvidencePacket: path.packet,
       sourceGovernedDiagnosticsSufficiencyEvidenceSource: path.governedSource

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -29,6 +30,8 @@ const READY_STATE =
 const HOLD_STATE =
   "HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE";
 const REJECT_STATE = "REJECTED_FOR_BOUNDARY_LEAKAGE";
+const AGGREGATE_WINDOWS_PATH =
+  "docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/examples/aggregate-window-runtime-fixture.json";
 
 const DIMENSIONS = [
   "comparison_design_adequacy",
@@ -62,7 +65,7 @@ const FALSE_FEEDS = [
   "live_connector_execution"
 ];
 
-let cachedRuntime = null;
+let cachedRuntimeSource = null;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -80,16 +83,51 @@ function sha256Json(value) {
   return createHash("sha256").update(stableStringify(value)).digest("hex");
 }
 
-function sourceRuntime() {
-  if (cachedRuntime) return clone(cachedRuntime);
-  cachedRuntime = JSON.parse(
+function sourceRuntimeSource() {
+  if (cachedRuntimeSource) return clone(cachedRuntimeSource);
+  const sourceGate = JSON.parse(
+    execFileSync("npm", [
+      "run",
+      "--silent",
+      "run:ai-value-contribution-alignment-internal-bayesian-execution-gate"
+    ], { encoding: "utf8" })
+  );
+  const runtime = JSON.parse(
     execFileSync("npm", [
       "run",
       "--silent",
       "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime"
     ], { encoding: "utf8" })
   );
-  return clone(cachedRuntime);
+  cachedRuntimeSource = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: JSON.parse(
+      readFileSync(AGGREGATE_WINDOWS_PATH, "utf8")
+    )
+  };
+  return clone(cachedRuntimeSource);
+}
+
+function sourceRuntime() {
+  return sourceRuntimeSource().source_runtime;
+}
+
+function sourceRuntimeEnvelope(overrides = {}) {
+  return {
+    ...sourceRuntimeSource(),
+    ...overrides
+  };
+}
+
+function sourceRuntimeValidationOptions(overrides = {}) {
+  const source = sourceRuntimeSource();
+  return {
+    sourceRuntime: source.source_runtime,
+    sourceGate: source.source_gate,
+    aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+    ...overrides
+  };
 }
 
 function reviewedSourceEvidenceRef(dimension) {
@@ -209,12 +247,13 @@ function governedEvidenceInput(runtime, overrides = {}) {
 }
 
 test("governed diagnostics sufficiency evidence source defaults to unsatisfied hold", () => {
-  const runtime = sourceRuntime();
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(runtime);
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(
+      sourceRuntimeEnvelope()
+    );
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime }
+    sourceRuntimeValidationOptions()
   );
 
   assert.equal(validation.valid, false);
@@ -269,13 +308,12 @@ test("governed diagnostics sufficiency evidence source accepts only explicit gov
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
@@ -349,13 +387,12 @@ test("governed diagnostics sufficiency evidence source rejects runtime-only self
     legacyRuntimeOnlyDimensionHash(runtime, dimension, sourceEvidenceRef);
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(source.source_state, HOLD_STATE);
@@ -384,24 +421,20 @@ test("governed diagnostics sufficiency evidence source rejects arbitrary reviewe
   }
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
-  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-    source_runtime: runtime,
+    }));
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence:
       buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source)
-  });
-  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-    source_runtime: runtime,
+  }));
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence:
       buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source)
-  });
+  }));
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
-    source_runtime: runtime,
-    source_diagnostics_evidence_packet: packet
+    ...sourceRuntimeEnvelope({ source_diagnostics_evidence_packet: packet })
   });
 
   assert.equal(source.source_state, HOLD_STATE);
@@ -435,28 +468,24 @@ test("governed diagnostics sufficiency evidence source rejects self-consistent f
     sourceEvidenceRefs.reviewed_evidence_manifest.manifest_hash;
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
-  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-    source_runtime: runtime,
+    }));
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence:
       buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source)
-  });
-  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-    source_runtime: runtime,
+  }));
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence:
       buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source)
-  });
+  }));
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
-    source_runtime: runtime,
-    source_diagnostics_evidence_packet: packet
+    ...sourceRuntimeEnvelope({ source_diagnostics_evidence_packet: packet })
   });
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(source.source_state, HOLD_STATE);
@@ -475,24 +504,20 @@ test("governed diagnostics sufficiency evidence source feeds packet through hash
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const packetSideEvidence =
     buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source);
-  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-    source_runtime: runtime,
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence: source
-  });
-  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-    source_runtime: runtime,
+  }));
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence: source
-  });
+  }));
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
-    source_runtime: runtime,
-    source_diagnostics_evidence_packet: packet
+    ...sourceRuntimeEnvelope({ source_diagnostics_evidence_packet: packet })
   });
 
   assert.equal(source.source_policy.promotion_authorized, false);
@@ -520,10 +545,9 @@ test("governed diagnostics packet projection rejects forged ready source with re
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const forged = clone(source);
   const dimension = "convergence_diagnostics";
   const forgedReviewedHash = sha256Json({
@@ -549,7 +573,7 @@ test("governed diagnostics packet projection rejects forged ready source with re
   );
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     forged,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
   assert.equal(validation.valid, false);
   assert.ok(
@@ -565,13 +589,12 @@ test("governed diagnostics sufficiency evidence source rejects placeholder gener
   sourceEvidenceRefs.evidence_dimensions.convergence_diagnostics.generated_fixture_evidence = true;
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(source.source_state, HOLD_STATE);
@@ -599,13 +622,12 @@ test("governed diagnostics sufficiency evidence source rejects placeholder refs 
     );
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(source.source_state, REJECT_STATE);
@@ -622,24 +644,20 @@ test("governed diagnostics sufficiency evidence source holds partial evidence an
   delete sourceEvidenceRefs.evidence_dimensions.prior_sensitivity.source_evidence_hash;
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
-  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-    source_runtime: runtime,
+    }));
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence:
       buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source)
-  });
-  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-    source_runtime: runtime,
+  }));
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject(sourceRuntimeEnvelope({
     source_diagnostics_sufficiency_evidence:
       buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source)
-  });
+  }));
   const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
     source_diagnostics_review: review,
-    source_runtime: runtime,
-    source_diagnostics_evidence_packet: packet
+    ...sourceRuntimeEnvelope({ source_diagnostics_evidence_packet: packet })
   });
 
   assert.equal(source.source_state, HOLD_STATE);
@@ -669,10 +687,9 @@ test("governed diagnostics sufficiency evidence source rejects unsafe reviewed e
   });
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
   const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
 
@@ -693,10 +710,9 @@ test("governed diagnostics sufficiency evidence source rejects reviewed evidence
   sourceEvidenceRefs.evidence_dimensions.convergence_diagnostics.probability_output_authorized = true;
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
   const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
 
@@ -717,10 +733,10 @@ test("governed diagnostics sufficiency evidence source holds when source runtime
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
 
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       source_runtime: runtime,
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
 
   assert.equal(source.source_state, HOLD_STATE);
   assert.equal(source.evidence_sufficiency.all_required_evidence_satisfied, false);
@@ -733,8 +749,7 @@ test("governed diagnostics sufficiency evidence source holds when source runtime
 test("governed diagnostics sufficiency evidence source rejects promotion and output side doors without echo", () => {
   const runtime = sourceRuntime();
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: governedEvidenceInput(runtime),
       promotion_authorized: true,
       confidence_output: "high",
@@ -745,7 +760,7 @@ test("governed diagnostics sufficiency evidence source rejects promotion and out
       productivity_output: "productivity",
       query_text: "SELECT user_id FROM raw_rows",
       raw_rows: [{ email: "person@example.com" }]
-    });
+    }));
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
   const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
 
@@ -806,10 +821,9 @@ test("governed diagnostics sufficiency evidence source keeps feature weights str
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
 
   assert.equal(source.feature_weight_provenance.weights_structural_internal_only, true);
   assert.equal(source.feature_weight_provenance.weights_not_confidence_scores, true);
@@ -820,7 +834,7 @@ test("governed diagnostics sufficiency evidence source keeps feature weights str
   source.source_hash = contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash(source);
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(validation.valid, false);
@@ -834,10 +848,9 @@ test("governed diagnostics sufficiency evidence source rejects tampered ready re
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
 
   source.evidence_readiness_reconciliation.satisfied_dimensions = ["convergence_diagnostics"];
   source.evidence_readiness_reconciliation.unsatisfied_dimensions = ["prior_sensitivity"];
@@ -848,7 +861,7 @@ test("governed diagnostics sufficiency evidence source rejects tampered ready re
 
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(validation.valid, false);
@@ -863,17 +876,16 @@ test("governed diagnostics sufficiency evidence source rejects false ready suppl
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
   const source =
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
-      source_runtime: runtime,
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
       reviewed_diagnostics_source_evidence: sourceEvidenceRefs
-    });
+    }));
 
   source.evidence_readiness_reconciliation.governed_reviewed_evidence_supplied = false;
   source.evidence_hash = contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash(source);
 
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
     source,
-    { sourceRuntime: runtime, reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs }
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
   );
 
   assert.equal(validation.valid, false);

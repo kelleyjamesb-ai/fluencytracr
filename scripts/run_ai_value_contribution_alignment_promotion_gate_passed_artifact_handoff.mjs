@@ -176,8 +176,44 @@ function safeHash(value) {
   return typeof value === "string" && /^[0-9a-f]{64}$/.test(value) ? value : null;
 }
 
+function sourceRuntimeSourceFromInput(input) {
+  const record = asRecord(input);
+  const supplied = Object.prototype.hasOwnProperty.call(record, "source_runtime")
+    ? record.source_runtime
+    : input;
+  const envelope = asRecord(supplied);
+  if (envelope.source_runtime) {
+    return {
+      sourceRuntime: envelope.source_runtime,
+      sourceRuntimeInput: envelope,
+      sourceGate: envelope.source_gate ?? envelope.sourceGate,
+      aggregateMeasurementCellWindows:
+        envelope.aggregate_measurement_cell_windows ??
+        envelope.aggregateMeasurementCellWindows
+    };
+  }
+  const sourceGate = record.source_gate ?? record.sourceGate;
+  const aggregateMeasurementCellWindows =
+    record.aggregate_measurement_cell_windows ??
+    record.aggregateMeasurementCellWindows;
+  const sourceRuntimeInput =
+    supplied && sourceGate && Array.isArray(aggregateMeasurementCellWindows)
+      ? {
+          source_runtime: supplied,
+          source_gate: sourceGate,
+          aggregate_measurement_cell_windows: aggregateMeasurementCellWindows
+        }
+      : supplied;
+  return {
+    sourceRuntime: supplied,
+    sourceRuntimeInput,
+    sourceGate,
+    aggregateMeasurementCellWindows
+  };
+}
+
 function sourceRuntimeFromInput(input) {
-  return asRecord(input).source_runtime ?? input;
+  return sourceRuntimeSourceFromInput(input).sourceRuntime;
 }
 
 function inputBoundaryGaps(input) {
@@ -189,31 +225,37 @@ function inputBoundaryGaps(input) {
 
 function buildSources(input) {
   const record = asRecord(input);
-  const sourceRuntime = sourceRuntimeFromInput(input);
+  const sourceRuntimeSource = sourceRuntimeSourceFromInput(input);
+  const sourceRuntime = sourceRuntimeSource.sourceRuntime;
+  const sourceRuntimeInput = sourceRuntimeSource.sourceRuntimeInput;
   const governedSource =
     record.source_governed_diagnostics_sufficiency_evidence_source ??
-    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntime);
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(
+      sourceRuntimeInput
+    );
   const diagnosticsReview =
     record.source_diagnostics_review ??
     buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
-      source_runtime: sourceRuntime,
+      source_runtime: sourceRuntimeInput,
       source_diagnostics_sufficiency_evidence: governedSource
     });
   const diagnosticsEvidencePacket =
     record.source_diagnostics_evidence_packet ??
     buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
-      source_runtime: sourceRuntime,
+      source_runtime: sourceRuntimeInput,
       source_diagnostics_sufficiency_evidence: governedSource
     });
   const promotionGate =
     record.source_promotion_gate ??
     buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
       source_diagnostics_review: diagnosticsReview,
-      source_runtime: sourceRuntime,
+      source_runtime: sourceRuntimeInput,
       source_diagnostics_evidence_packet: diagnosticsEvidencePacket
     });
   return {
     sourceRuntime,
+    sourceGate: sourceRuntimeSource.sourceGate,
+    aggregateMeasurementCellWindows: sourceRuntimeSource.aggregateMeasurementCellWindows,
     governedSource,
     diagnosticsReview,
     diagnosticsEvidencePacket,
@@ -336,6 +378,8 @@ function sourceGaps(sources) {
     {
       sourceDiagnosticsReview: sources.diagnosticsReview,
       sourceRuntime: sources.sourceRuntime,
+      sourceGate: sources.sourceGate,
+      aggregateMeasurementCellWindows: sources.aggregateMeasurementCellWindows,
       sourceDiagnosticsEvidencePacket: sources.diagnosticsEvidencePacket
     }
   );
@@ -505,14 +549,21 @@ function collectAllowedFieldsGaps(record, fields, label) {
 
 function validateAgainstSources(handoff, options) {
   const gaps = [];
+  const sourceRuntimeSource = sourceRuntimeSourceFromInput({
+    source_runtime: options.sourceRuntime,
+    source_gate: options.sourceGate,
+    aggregate_measurement_cell_windows: options.aggregateMeasurementCellWindows
+  });
   const sources = {
-    sourceRuntime: options.sourceRuntime,
+    sourceRuntime: sourceRuntimeSource.sourceRuntime,
+    sourceGate: sourceRuntimeSource.sourceGate,
+    aggregateMeasurementCellWindows: sourceRuntimeSource.aggregateMeasurementCellWindows,
     governedSource: options.governedSource,
     diagnosticsReview: options.diagnosticsReview,
     diagnosticsEvidencePacket: options.diagnosticsEvidencePacket,
     promotionGate: options.promotionGate
   };
-  if (options.sourceRuntime && handoff.source_hashes?.runtime_hash !== options.sourceRuntime.runtime_hash) {
+  if (sources.sourceRuntime && handoff.source_hashes?.runtime_hash !== sources.sourceRuntime.runtime_hash) {
     gaps.push("handoff source runtime hash does not match sourceRuntime");
   }
   if (options.governedSource && handoff.source_hashes?.governed_diagnostics_sufficiency_evidence_source_hash !== options.governedSource.evidence_hash) {

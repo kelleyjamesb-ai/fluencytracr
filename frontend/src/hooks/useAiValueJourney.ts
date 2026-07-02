@@ -16,6 +16,7 @@ import {
   buildAiContributionReportingSpineViewModel,
   type AiContributionReportingSpineViewModel
 } from "../lib/aiValueContributionReportingSpine";
+import { displaySafeValuePhrase } from "../lib/aiValueLanguageGuard";
 
 export type JourneyStageKey =
   | "readiness"
@@ -1062,14 +1063,14 @@ function buildExecutiveReadoutPreview(params: {
       statusLabel: "Review pending",
       statusTone: "warn",
       whatWillOpen:
-        "The opened readout will include Blueprint, outcome mapping, scenario language, and a pending evidence section.",
+        "The internal preview stays held until the submitted evidence is accepted or rejected.",
       heldLanguage:
         `Stronger value language stays held until ${reviewer} accepts or rejects the export.`,
       nextOwner: reviewer,
       nextAction: customerEvidenceReview.nextAction,
       caveat:
         "Submitted evidence does not validate value yet.",
-      canOpen: true
+      canOpen: false
     };
   }
 
@@ -1078,14 +1079,14 @@ function buildExecutiveReadoutPreview(params: {
       statusLabel: "Corrected export needed",
       statusTone: "warn",
       whatWillOpen:
-        "The opened readout will include the corrected-export request and blocked value language.",
+        "The internal preview stays held until a corrected aggregate export is accepted.",
       heldLanguage:
         "Validated value language stays held until a corrected aggregate export is accepted.",
       nextOwner: reviewer,
       nextAction: customerEvidenceReview.nextAction,
       caveat:
         "Rejected evidence cannot support value claims.",
-      canOpen: true
+      canOpen: false
     };
   }
 
@@ -1093,14 +1094,14 @@ function buildExecutiveReadoutPreview(params: {
     statusLabel: "Data owner request needed",
     statusTone: "neutral",
     whatWillOpen:
-      "The opened readout will include modeled opportunity language, the customer evidence request, and required caveats.",
+      "The internal preview stays held until the aggregate export arrives and passes review.",
     heldLanguage:
       "Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review.",
     nextOwner: reviewer,
     nextAction: customerEvidenceReview.nextAction,
     caveat:
       "Missing evidence keeps the readout in planning status.",
-    canOpen: true
+    canOpen: false
   };
 }
 
@@ -1789,13 +1790,16 @@ function buildRoiScenarioReadiness(params: {
       : []
     )
       .map(requiredCaveatLabel)
+      .map((caveat) => displaySafeValuePhrase(caveat, { preserveBlockingCaveat: true }))
       .filter(Boolean)
   );
   const allowedPhrases = unique(
     (Array.isArray(roiScenario.safe_value_language?.allowed_phrases)
       ? roiScenario.safe_value_language.allowed_phrases
       : []
-    ).map((phrase: unknown) => String(phrase ?? "").trim()).filter(Boolean)
+    )
+      .map((phrase: unknown) => displaySafeValuePhrase(String(phrase ?? "").trim()))
+      .filter(Boolean)
   );
   const blockedOutputs = unique([
     ...(Array.isArray(roiScenario.safe_value_language?.blocked_claims)

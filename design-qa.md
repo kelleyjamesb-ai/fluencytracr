@@ -31,7 +31,7 @@ final result: passed
 - Shared styling is scoped to AI Value report surfaces to avoid changing unrelated application pages.
 - Home, Workflows, Discovery, Evidence, Metrics, Risks, Decisions, and Value Cases now sit inside the same report-style AI Value frame so the left rail and top toolbar do not change when navigating from the Value Cases screen.
 - Responsive pass verified the shared frame at desktop, tablet, and phone sizes. Desktop keeps the left rail; tablet and phone use wrapped top navigation instead of hidden side navigation or sideways scrolling.
-- Mobile caveat order is preserved: caveated-review language appears before report/share controls, and Decisions report actions carry caveated labels before download/share controls.
+- Mobile caveat order is preserved: caveated-review language appears before report action controls, and Decisions report actions carry blocked-output labels before any report action controls.
 - The report shell now uses normal page scrolling instead of a fixed-height nested-scroll frame.
 
 ## Remaining Polish

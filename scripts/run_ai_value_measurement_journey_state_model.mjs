@@ -422,6 +422,14 @@ function sourceAliases(input) {
       input.source_reviewer_owned_comparison_design_source_package_collection ??
       null,
     sourceRuntime: input.sourceRuntime ?? input.source_runtime ?? null,
+    sourceGate:
+      input.sourceGate ??
+      input.source_gate ??
+      null,
+    aggregateMeasurementCellWindows:
+      input.aggregateMeasurementCellWindows ??
+      input.aggregate_measurement_cell_windows ??
+      null,
     sourceComparisonDesignAdequacyReview:
       input.sourceComparisonDesignAdequacyReview ??
       input.source_comparison_design_adequacy_review ??
@@ -616,6 +624,8 @@ function comparisonReviewReady(sources) {
   if (!review) return { ready: false, gaps: ["missing_source_comparison_design_adequacy_review"] };
   const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review, {
     sourceRuntime: sources.sourceRuntime,
+    sourceGate: sources.sourceGate,
+    aggregateMeasurementCellWindows: sources.aggregateMeasurementCellWindows,
     comparisonDesignSourceEvidence:
       sources.sourceReviewerOwnedComparisonDesignSourcePackageCollection
   });
