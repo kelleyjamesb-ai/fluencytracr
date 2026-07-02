@@ -388,6 +388,12 @@ test("comparison-design evidence review binds to reviewer-owned package collecti
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
   assert.equal(review.review_state, READY_STATE);
+  assert.equal(review.source_bound, true);
+  assert.equal(review.source_runtime_ref.runtime_hash, runtime.runtime_hash);
+  assert.equal(
+    review.source_runtime_ref.fixture_artifact_hash,
+    runtime.internal_fit_artifact.artifact_hash
+  );
   assert.equal(review.source_package_ref.source_package_id, collection.reviewer_owned_source_package_ref);
   assert.equal(review.source_package_ref.source_package_hash, collection.reviewer_owned_source_package_hash);
   assert.equal(review.source_package_ref.collection_hash, collection.collection_hash);

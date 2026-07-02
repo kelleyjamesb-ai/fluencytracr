@@ -407,6 +407,17 @@ describe("GET /api/v1/quality-multiplier", () => {
 });
 
 describe("computeQualityMultiplierFromForwardedDistribution", () => {
+  it("accepts legacy forwarded distributions without surface taxonomy ids and defaults to workflow id", () => {
+    const legacy = forwardedDistribution();
+    delete (legacy as Partial<ForwardedDistribution>).surface_taxonomy_ids;
+
+    const parsed = ForwardedDistributionSchema.safeParse(legacy);
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) throw new Error(parsed.error.message);
+    expect(parsed.data.surface_taxonomy_ids).toEqual([legacy.workflow_id]);
+  });
+
   it("rejects forbidden forwarded distribution fields and raw-text shaped tokens", () => {
     const forbiddenPayloads = [
       { prompt: "summarize the account plan" },
@@ -419,7 +430,11 @@ describe("computeQualityMultiplierFromForwardedDistribution", () => {
       { transcript: "long transcript" },
       { body: "raw text body" },
       { quality_signals: { ...forwardedDistribution().quality_signals, prompt: "raw nested prompt" } },
-      { surface_taxonomy_ids: ["this is a raw natural language surface label"] }
+      { surface_taxonomy_ids: ["this is a raw natural language surface label"] },
+      { workflow_id: "query_text:select_user_id_from_raw_rows" },
+      { cohort_id: "user_id:123" },
+      { calibration_id: "roi:ready" },
+      { surface_taxonomy_ids: ["productivity_score"] }
     ];
 
     for (const override of forbiddenPayloads) {
