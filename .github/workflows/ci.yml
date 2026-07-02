@@ -41,7 +41,7 @@ jobs:
           node-version: "20"
           package-manager-cache: false
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
       - name: Build shared workspace
@@ -76,3 +76,23 @@ jobs:
           name: suppression-evidence
           path: artifacts/phase3/suppression
           if-no-files-found: warn
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          package-manager-cache: false
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint backend
+        run: npm run lint --workspace backend
+      - name: Lint frontend
+        run: npm run lint --workspace frontend
+      - name: Lint shared
+        run: npx eslint shared/src --ext .ts
