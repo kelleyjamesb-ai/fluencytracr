@@ -20,6 +20,13 @@ input, including schema version strings, state tokens, and hash values.
 - **THEN** it produces the same output as before by delegating to the
   workspace build
 
+#### Scenario: Existing module importers keep working
+
+- **WHEN** peer runners or tests import named builders, validators, constants,
+  or hash helpers from a cutover `.mjs` wrapper
+- **THEN** the wrapper exposes the same named public module API as the
+  predecessor script, or every importer is updated in the same cutover
+
 ### Requirement: Held engine posture preserved
 
 The workspace port SHALL NOT change any gate semantics or held states: the
@@ -42,8 +49,10 @@ contract describing prior provenance (Blueprint-derived, with the current
 standard-normal placeholder explicitly labeled as a placeholder), evidence
 admission (gate-cleared observations only, each carrying a machine-readable
 admission or exclusion reason code aligned to the confidence-engine series
-read-path decision), and posterior representation as credible intervals. The
-contract module SHALL NOT execute inference.
+read-path decision contract in
+`docs/contracts/ai-value-confidence-engine-series-read-path-decision/README.md`),
+and posterior representation as credible intervals. The contract module SHALL
+NOT execute inference.
 
 #### Scenario: Contract validates an admissible observation shape
 

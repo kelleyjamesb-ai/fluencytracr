@@ -7,11 +7,16 @@ evidence → metric movement over time → bounded contribution-alignment
 confidence) runs on the contribution-alignment Bayesian chain, which today
 lives as 29 runner scripts plus 31 test files in `scripts/` — outside backend
 versioning, outside TypeScript type checking, and wired together through
-fragile relative imports. The approved change
-`add-ai-value-series-confidence-read-path` opened the governed observation
-lane for this engine; before real observations ever flow, the engine itself
-must live in a typed, workspace-versioned module with the same CI gates as
-the rest of the product spine.
+fragile relative imports. The approved change is anchored in the contract
+artifact
+`docs/contracts/ai-value-confidence-engine-series-read-path-decision/README.md`
+and its runner/test pair
+`scripts/run_ai_value_confidence_engine_series_read_path_decision.mjs` /
+`scripts/validate_ai_value_confidence_engine_series_read_path_decision.test.mjs`;
+that artifact opened the governed observation lane for this engine. Before
+real observations ever flow, the engine itself must live in a typed,
+workspace-versioned module with the same CI gates as the rest of the product
+spine.
 
 The import graph splits into two clusters with different obligations:
 
@@ -29,8 +34,9 @@ The import graph splits into two clusters with different obligations:
    governed diagnostics sufficiency evidence source → diagnostics evidence
    packet → internal diagnostics model adequacy review → posterior output
    review gate → Bayesian promotion decision gate → promotion-gate-passed
-   artifact handoff → Bayesian hardening orchestrator; ~15 modules). This is
-   the live engine chain and the promotion target.
+   artifact handoff → internal Bayesian execution artifact V1 → Bayesian
+   hardening orchestrator; ~16 modules). This is the live engine chain and the
+   promotion target.
 
 ## What Changes
 
@@ -45,15 +51,16 @@ The import graph splits into two clusters with different obligations:
 - The existing spine `run_ai_value_contribution_alignment_*.mjs` scripts
   become thin CLI wrappers that import the workspace build, so every current
   `npm run run:*` / `test:*` entry point and CI invocation keeps working
-  unchanged.
+  unchanged. Wrappers preserve the same named public module exports used by
+  peer runners and tests, or every importer is updated in the same cutover.
 - Add a `ConfidenceModel` contract module (types + Zod schemas only): prior
   (Blueprint-derived; the current standard-normal placeholder is named as a
   placeholder), evidence admission (gate-cleared observations only, with
   machine-readable admission/exclusion reason codes aligned to the
-  confidence-engine series read-path decision), and posterior representation
-  (credible intervals, never point estimates). Contract only — no new
-  execution behavior.
-- Migrate the spine's 15+ validation test suites into the workspace test
+  confidence-engine series read-path decision contract artifact named above),
+  and posterior representation (credible intervals, never point estimates).
+  Contract only — no new execution behavior.
+- Migrate the spine's 16+ validation test suites into the workspace test
   runner; root npm script names stay as aliases.
 - **No behavior change**: the runtime stays
   `INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW`; no gate
@@ -67,7 +74,7 @@ The import graph splits into two clusters with different obligations:
 - Affected specs: `confidence-engine` (new capability spec)
 - Affected code:
   - New: `packages/confidence-engine/` (source, tests, build config)
-  - Modified: the ~15 spine `scripts/run_ai_value_contribution_alignment_*.mjs`
+  - Modified: the ~16 spine `scripts/run_ai_value_contribution_alignment_*.mjs`
     files (become wrappers), root `package.json` (workspace entry + script
     aliases), CI workflow test invocation if needed
   - Untouched: the research/prototype decision-record scripts, all

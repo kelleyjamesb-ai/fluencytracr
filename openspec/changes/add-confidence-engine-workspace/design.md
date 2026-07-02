@@ -3,12 +3,13 @@
 The contribution-alignment Bayesian chain is the future core of the
 trust→confidence arc, but it accreted as one script per governance slice:
 29 runners + 31 test files in `scripts/`, plain JavaScript, hash-chained by
-relative imports. The confidence-engine series read-path decision (approved
-2026-07-02) now names this engine as a governed read-path consumer, which
-makes its current packaging the weakest link: untyped, un-versioned, and
-invisible to backend CI. This change is a packaging/promotion refactor — the
-statistical methodology itself is a separate workstream and is explicitly not
-redesigned here.
+relative imports. The confidence-engine series read-path decision contract
+at `docs/contracts/ai-value-confidence-engine-series-read-path-decision/README.md`
+(approved 2026-07-02) now names this engine as a governed read-path consumer,
+which makes its current packaging the weakest link: untyped, un-versioned,
+and invisible to backend CI. This change is a packaging/promotion refactor —
+the statistical methodology itself is a separate workstream and is explicitly
+not redesigned here.
 
 ## Goals / Non-Goals
 
@@ -31,7 +32,7 @@ redesigned here.
 
 - Decision: new `packages/confidence-engine` workspace rather than
   `backend/src/value_realization/`. Rationale: the backend consumes the
-  engine later via a normal dependency without absorbing 15 modules into its
+  engine later via a normal dependency without absorbing 16 modules into its
   build; scripts can wrap the same build for CLI use; mirrors the existing
   `shared/` precedent for cross-consumer code.
 - Decision: golden-fixture parity tests as the porting gate, module by module
