@@ -20,7 +20,15 @@ The V3 ingest posture chooses structural privacy over procedural privacy. If per
 
 The customer-side transformer runs in the customer's GCP, AWS, or equivalent controlled environment. It reads approved GCE exports or warehouse tables, computes per-user usage statistics only inside that environment, aggregates the results into cohort distributions, and emits aggregate records to FluencyTracr.
 
-The transformer is responsible for applying the surface taxonomy, joining verification signals to parent records, computing velocity dimensions, and producing only cohort-level output. It may compute over individual rows, but it must not emit individual rows. Its output is a compact set of distributions and aggregate rates by workflow, surface, JBTD, persona, and window.
+The transformer is responsible for applying the surface taxonomy, joining verification signals to parent records, computing velocity dimensions, and producing only cohort-level output. It may compute over individual rows, but it must not emit individual rows. Its output is a compact set of distributions and aggregate rates by governed surface/workflow key, JBTD, persona, and window.
+
+In the current V3 wire contract, the governed surface/workflow key is carried in
+`workflow_id` for backward compatibility with existing verdict, suppression,
+velocity, and replay consumers. That field may contain a workflow surface key
+such as `workflow:CHAT` or a standalone non-workflow AI surface taxonomy key
+such as `surface:SEARCH`. This compatibility name does not authorize raw
+workflow-run telemetry ingestion; it is the stable aggregate slice key at the
+FluencyTracr boundary.
 
 ### Aggregate Ingest Endpoint
 
@@ -29,6 +37,12 @@ The aggregate ingest endpoint is the FluencyTracr boundary. The future endpoint 
 `POST /api/v3/ingest/aggregate`
 
 It accepts pre-computed cohort distributions and aggregate counts only. Its schema must reject any field that looks like a person-level identifier, raw event body, raw prompt, document text, message content, IP address, session trace, or row-level event list. The endpoint is not a convenience wrapper around raw event ingestion. It is the enforcement point that makes the privacy boundary real.
+
+The endpoint does not rename `workflow_id` in V3. It treats `workflow_id` as the
+backward-compatible aggregate key for the governed surface/workflow record. When
+a V3 verdict is surfaced, forwarded distributions preserve the same key in
+`surface_taxonomy_ids` so downstream consumers can interpret the broader surface
+taxonomy without a new public ingest field.
 
 ### Scheduled Orchestrator
 
@@ -70,7 +84,7 @@ The privacy boundary strengthens the governance posture because FluencyTracr can
 
 The customer runs the transformer in their own environment. They approve the data source, scheduler, service account, warehouse permissions, and retention policy. They can inspect the transformer query or script, review its output schema, and decide which surfaces and slices are eligible.
 
-The customer sees the raw GCE because it remains in their systems. They also see the aggregate records emitted by the transformer and the FluencyTracr verdicts returned from those records. FluencyTracr receives aggregate distributions, cohort sizes, window metadata, surface labels, calibration references, and suppression-compatible evidence.
+The customer sees the raw GCE because it remains in their systems. They also see the aggregate records emitted by the transformer and the FluencyTracr verdicts returned from those records. FluencyTracr receives aggregate distributions, cohort sizes, window metadata, governed surface/workflow keys, calibration references, and suppression-compatible evidence.
 
 The customer does not send raw prompts, document content, user-identifiable fields, per-session traces, or per-user usage rows to FluencyTracr. FluencyTracr does not need access to the customer's raw warehouse tables after the transformer is installed.
 

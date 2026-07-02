@@ -166,6 +166,45 @@ describe("POST /api/v3/ingest/aggregate", () => {
     expect(verdicts.body.verdicts[0].forwarded_distribution.workflow_id).toBe("workflow:FORWARDABLE");
   });
 
+  it("accepts standalone surface-style aggregate keys through the compatibility workflow_id field", async () => {
+    const res = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({
+        cohort_id: "cohort-standalone-surface",
+        workflow_id: "surface:SEARCH"
+      }));
+
+    expect(res.status).toBe(202);
+    expect(res.body.verdict).toMatchObject({
+      cohort_id: "cohort-standalone-surface",
+      workflow_id: "surface:SEARCH",
+      verdict: "SURFACE",
+      suppression_reason: null
+    });
+    expect(res.body.verdict.forwarded_distribution).toMatchObject({
+      workflow_id: "surface:SEARCH",
+      surface_taxonomy_ids: ["surface:SEARCH"],
+      privacy: {
+        aggregate_only: true,
+        person_level_fields_included: false
+      }
+    });
+
+    const serialized = JSON.stringify(res.body.verdict.forwarded_distribution).toLowerCase();
+    for (const forbidden of ["prompt", "transcript", "user_id", "email", "raw_rows", "row_level"]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+
+    const velocity = await request(app)
+      .get("/api/v2/velocity-index?workflow_id=surface:SEARCH&window_days=60")
+      .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-v3" });
+
+    expect(velocity.status).toBe(200);
+    expect(velocity.body.workflow_id).toBe("surface:SEARCH");
+    expect(velocity.body.verdict).toBe("SURFACE");
+  });
+
   it("rejects person-level fields at the boundary", async () => {
     const res = await request(app)
       .post("/api/v3/ingest/aggregate")

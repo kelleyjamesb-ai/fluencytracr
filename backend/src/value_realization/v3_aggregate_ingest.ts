@@ -61,6 +61,9 @@ const QualitySignalsSchema = z.object({
 export const V3AggregateIngestSchema = z.object({
   schema_version: z.literal("FT_V3_2026_05"),
   cohort_id: ForwardedDistributionMachineTokenSchema,
+  // Backward-compatible V3 wire key: this may be a workflow surface
+  // (`workflow:CHAT`) or standalone AI surface taxonomy key (`surface:SEARCH`).
+  // Do not rename it without an additive contract migration.
   workflow_id: ForwardedDistributionMachineTokenSchema,
   jbtd_id: FluencyJoinKeySchema.nullable().optional(),
   persona_id: FluencyJoinKeySchema.nullable().optional(),
@@ -165,6 +168,8 @@ export const forwardedDistributionFromV3Aggregate = (
     cohort_size: input.cohort_size,
     ambiguity_rate: input.ambiguity_rate ?? 0,
     calibration_id: input.calibration_id,
+    // Preserve the broader surface interpretation for downstream consumers
+    // while keeping `workflow_id` as the V3 ingest and suppression key.
     surface_taxonomy_ids: [input.workflow_id],
     velocity: input.velocity,
     quality_signals: input.quality_signals,

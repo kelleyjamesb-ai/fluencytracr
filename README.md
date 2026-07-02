@@ -134,6 +134,23 @@ documented value-realization layers:
   schema, migration, repository path, route, UI, export, rendered readout, live
   wiring, model output, finance output, ROI, causality, productivity, or
   customer-facing economic output.
+- **AI Value confidence-engine Series read-path decision:** names the held
+  internal contribution-alignment Bayesian execution runtime as a distinct
+  durable-series read-path consumer and, per the approved OpenSpec change
+  `add-ai-value-series-confidence-read-path`, authorizes Measurement Cell
+  Series persistence solely as append-only internal confidence-engine
+  observation input at Day 0/30/60/90/180/365 milestones. It narrows exactly
+  one feed — `research_model_feed` becomes the scoped token
+  `internal_confidence_engine_only` — while the durable customer-history
+  decision stays unchanged and the promotion gate gains an
+  `internal_confidence_observation` lane that can reach READY only from a
+  fully source-bound authorized decision. It does not create
+  `measurement_cell_series_snapshots`, schemas, migrations, repositories,
+  routes, UI, exports, rendered readouts, live BigQuery/Sigma/Glean execution,
+  customer connectors, customer-facing model/confidence/probability/score
+  output, finance output, ROI, causality, productivity, or customer-facing
+  economic output; physical persistence still requires the separate
+  exact-scope implementation decision behind the promotion gate.
 - **AI Value data model spine readiness lock:** records that the compact
   customer data model spine is ready for hardening toward real source wiring
   only as a Boolean readiness contract. The implemented equation is

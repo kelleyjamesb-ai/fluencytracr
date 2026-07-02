@@ -17,7 +17,7 @@ confidence output.
 2. Transformer reads the approved GCE export or warehouse table.
 3. Transformer computes per-user velocity locally, then aggregates to p10, p50,
    p90, and p99 distributions.
-4. Transformer writes one JSON payload per `(cohort_id, workflow_id, window)`.
+4. Transformer writes one JSON payload per `(cohort_id, governed surface/workflow key, window)`.
 5. Customer posts each payload to `POST /api/v3/ingest/aggregate`.
 6. FluencyTracr validates the calibration baseline, rejects person-level fields,
    computes a fail-closed verdict, and stores the immutable verdict.
@@ -66,12 +66,16 @@ python transformer/glean_gce_transformer.py \
   --output-dir ./out/fluencytracr-v3
 ```
 
-For local dry runs with pre-aggregated data:
+For local dry runs with pre-aggregated data, `workflow_id` remains the V3 wire
+field for backward compatibility. It carries the governed aggregate key and may
+represent either a workflow surface such as `workflow:CHAT` or a standalone
+non-workflow AI surface such as `surface:SEARCH`.
 
 ```bash
 cat > /tmp/customer-aggregate.csv <<'CSV'
 workflow_id,cohort_size,completion_rate,error_rate,abandonment_rate,recovery_rate,verification_rate,p50_latency_ms,p95_latency_ms,freq_p10,freq_p50,freq_p90,freq_p99,engagement_p10,engagement_p50,engagement_p90,engagement_p99,breadth_p10,breadth_p50,breadth_p90,breadth_p99
 workflow:CHAT,50,0.92,0.03,0.01,0.8,0.4,1000,3000,3,14,40,80,5,30,55,60,1,3,7,10
+surface:SEARCH,75,0.96,0.02,0.01,0.7,0.35,700,1800,5,22,75,120,8,35,70,95,2,4,8,12
 CSV
 
 python transformer/glean_gce_transformer.py \
@@ -87,6 +91,10 @@ python transformer/glean_gce_transformer.py \
 ```
 
 ## 3. Aggregate Payload Shape
+
+The V3 public payload keeps `workflow_id` as the stable wire field. In this
+contract, read it as the governed aggregate surface/workflow key. Existing
+workflow-surface payloads continue to use values such as `workflow:CHAT`:
 
 ```json
 {
@@ -115,12 +123,45 @@ python transformer/glean_gce_transformer.py \
 }
 ```
 
+Standalone surface aggregate payloads use the same field with a standalone
+surface taxonomy key. This does not mean FluencyTracr receives raw search rows;
+the payload is still one pre-aggregated cohort distribution:
+
+```json
+{
+  "schema_version": "FT_V3_2026_05",
+  "cohort_id": "customer-aiom-60d",
+  "workflow_id": "surface:SEARCH",
+  "window_start": "2026-03-23T00:00:00.000Z",
+  "window_end": "2026-05-22T00:00:00.000Z",
+  "cohort_size": 75,
+  "calibration_id": "scio-prod-60d-2026-05",
+  "velocity": {
+    "frequency": { "p10": 5, "p50": 22, "p90": 75, "p99": 120 },
+    "engagement": { "p10": 8, "p50": 35, "p90": 70, "p99": 95 },
+    "breadth": { "p10": 2, "p50": 4, "p90": 8, "p99": 12 }
+  },
+  "quality_signals": {
+    "completion_rate": 0.96,
+    "error_rate": 0.02,
+    "abandonment_rate": 0.01,
+    "recovery_rate": 0.7,
+    "verification_rate": 0.35,
+    "p50_latency_ms": 700,
+    "p95_latency_ms": 1800
+  },
+  "privacy": { "person_level_fields_included": false }
+}
+```
+
 Any person-level field, raw prompt, raw output, message text, or raw event list
 is rejected at the boundary.
 `cohort_id`, `workflow_id`, and `calibration_id` must be machine-safe tokens
 using only letters, numbers, colons, underscores, and hyphens; free-text labels
 belong in customer-side mapping documentation, not forwarded aggregate
-evidence.
+evidence. `workflow_id` is intentionally not renamed in V3. A future additive
+`surface_id` or `surface_taxonomy_id` field would require a separate
+backward-compatible contract decision and tests for existing consumers.
 
 ## 4. Post Aggregate Payloads
 
@@ -154,6 +195,7 @@ Successful response:
       "workflow_id": "workflow:CHAT",
       "cohort_size": 50,
       "calibration_id": "scio-prod-60d-2026-05",
+      "surface_taxonomy_ids": ["workflow:CHAT"],
       "value_type": "UNCLASSIFIED",
       "evidence_grade": "OBJECTIVE",
       "privacy": {

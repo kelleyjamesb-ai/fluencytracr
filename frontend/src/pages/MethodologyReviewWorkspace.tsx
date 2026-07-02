@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import * as methodologySchemas from "@fluencytracr/shared/dist/aiWorkValueGraphSchemas";
-import * as claimPacketSchemas from "@fluencytracr/shared/dist/gleanClaimPacketSchemas";
-import * as realSourceReadinessSchemas from "@fluencytracr/shared/dist/realSourceReadinessSchemas";
-import * as aggregateEvidenceImportSchemas from "@fluencytracr/shared/dist/aggregateEvidenceImportSchemas";
+import * as methodologySchemas from "../../../shared/dist/aiWorkValueGraphSchemas";
+import * as claimPacketSchemas from "../../../shared/dist/gleanClaimPacketSchemas";
+import * as realSourceReadinessSchemas from "../../../shared/dist/realSourceReadinessSchemas";
+import * as aggregateEvidenceImportSchemas from "../../../shared/dist/aggregateEvidenceImportSchemas";
 import {
   NIELSEN_CLAIM_PACKET_AI_WORK_VALUE_GRAPH,
   NIELSEN_CLAIM_PACKET_STRONGEST_SAFE_CLAIM,
