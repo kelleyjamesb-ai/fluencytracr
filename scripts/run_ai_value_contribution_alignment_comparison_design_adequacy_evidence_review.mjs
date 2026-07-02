@@ -834,7 +834,6 @@ function sourceRuntimeGaps(sourceRuntime, validationOptions = {}) {
   const artifact = asRecord(runtime.internal_fit_artifact);
   const gaps = [];
   const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
-    allowSelfContainedSourceValidation: true,
     ...validationOptions
   });
   if (validation.valid !== true) {

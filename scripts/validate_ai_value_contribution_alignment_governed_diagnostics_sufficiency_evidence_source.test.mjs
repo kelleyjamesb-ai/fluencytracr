@@ -787,7 +787,7 @@ test("governed diagnostics sufficiency evidence source rejects nested runtime en
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
   const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
 
-  assert.equal(source.source_state, REJECT_STATE);
+  assert.equal(source.source_state, HOLD_STATE);
   assert.equal(validation.valid, false);
   assert.equal(source.promotion_boundary.promotion_authorized, false);
   assert.equal(serialized.includes("\"promotion_authorized\":true"), false);
@@ -809,7 +809,7 @@ test("governed diagnostics sufficiency evidence source rejects low-count metadat
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
   const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
 
-  assert.equal(source.source_state, REJECT_STATE);
+  assert.equal(source.source_state, HOLD_STATE);
   assert.equal(validation.valid, false);
   assert.equal(source.promotion_boundary.promotion_authorized, false);
   assert.equal(serialized.includes("source_window_metadata"), false);

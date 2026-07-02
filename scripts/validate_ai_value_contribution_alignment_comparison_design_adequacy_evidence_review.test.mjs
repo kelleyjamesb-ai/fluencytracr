@@ -685,7 +685,7 @@ test("comparison-design adequacy review keeps non-authorization outputs blocked"
   assert.equal(review.boundary_policy.runs_live_connectors, false);
 });
 
-test("comparison-design adequacy review preserves plain runtime compatibility for reviewer-owned packages", () => {
+test("comparison-design adequacy review requires source binding for reviewer-owned packages", () => {
   const runtime = sourceRuntime();
   const { collection } = reviewerOwnedCollection();
   const review =
@@ -694,10 +694,13 @@ test("comparison-design adequacy review preserves plain runtime compatibility fo
       comparison_design_source_evidence: collection
     });
 
-  assert.equal(review.review_state, READY_STATE);
-  assert.equal(review.evidence_satisfaction.evidence_satisfied, true);
-  assert.equal(review.validation_summary.valid, true);
-  assert.deepEqual(review.validation_summary.gaps, []);
+  assert.equal(review.review_state, HOLD_STATE);
+  assert.equal(review.evidence_satisfaction.evidence_satisfied, false);
+  assert.equal(review.validation_summary.valid, false);
+  assert.ok(
+    review.validation_summary.gaps.some((gap) => /source_runtime\./.test(gap)),
+    review.validation_summary.gaps.join("; ")
+  );
 });
 
 test("comparison-design adequacy review rejects unsafe siblings inside source runtime envelope", () => {
