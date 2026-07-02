@@ -2,6 +2,25 @@
 
 ## Last Completed
 
+- PR #380 review-comment fixes (2026-07-01): addressed the review comments on
+  plain runtime compatibility, legacy forwarded distributions, and nested
+  source-runtime envelope boundary checks. Comparison-design adequacy review
+  keeps the existing plain `source_runtime` path covered and ready when paired
+  with a valid reviewer-owned package. Forwarded V3 distributions now accept
+  legacy payloads without `surface_taxonomy_ids` and default them to the
+  governed `workflow_id`, while rejecting machine-token-shaped raw,
+  person-level, or value-claim terms. Governed diagnostics source envelopes now
+  unwrap only after exact envelope validation and reject unsafe sibling or
+  nested metadata without echoing raw rows, identifiers, prompts, or query text.
+  No canonical events, suppression reasons, routes, schemas, persistence, live
+  connectors, ROI, causality, productivity, person-level output, ranking, or
+  customer-facing financial output was added. Verification passed:
+  `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`;
+  `npm run test:ai-value-contribution-alignment-governed-diagnostics-sufficiency-evidence-source`;
+  `npm run test --workspace backend -- --runTestsByPath tests/quality_multiplier_api.test.ts`;
+  `npm run test --workspace backend -- --runTestsByPath tests/v3_ingest_api.test.ts`;
+  `python3 scripts/ci_v1_governance_gates.py`; `npm run build --workspace backend`;
+  and `git diff --check`.
 - AI Value Platform Responsive Frame pass (2026-06-28): made the shared AI
   Value report frame responsive across desktop, tablet, and phone. Desktop
   keeps the left rail; tablet and phone use wrapped top navigation for app

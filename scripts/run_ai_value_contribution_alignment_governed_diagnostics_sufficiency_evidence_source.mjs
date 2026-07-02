@@ -274,6 +274,12 @@ const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
   "generated_at"
 ]);
 
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+  "source_runtime",
+  "source_gate",
+  "aggregate_windows"
+]);
+
 const REQUIRED_BLOCKED_USES = [
   "promotion_authorization",
   "internal_bayesian_execution_artifact_v1_creation",
@@ -417,24 +423,54 @@ function reviewedEvidenceFromInput(input) {
   return asRecord(input).reviewed_diagnostics_source_evidence ?? null;
 }
 
+function runtimeEnvelopeContentGaps(value, path = "source_runtime envelope") {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => runtimeEnvelopeContentGaps(item, `${path}[${index}]`));
+  }
+  if (value && typeof value === "object") {
+    const gaps = [];
+    for (const [key, nested] of Object.entries(value)) {
+      if (FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+        continue;
+      }
+      gaps.push(...runtimeEnvelopeContentGaps(nested, `${path}.${key}`));
+    }
+    return gaps;
+  }
+  if (typeof value !== "string") return [];
+  return FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(value))
+    ? ["source_runtime envelope rejected unsafe or unsupported content"]
+    : [];
+}
+
 function inputBoundaryGaps(input) {
   const record = asRecord(input);
   if (!Object.prototype.hasOwnProperty.call(record, "source_runtime")) return [];
+  const gaps = [];
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
+  if (Object.keys(sidecar).length > 0) {
+    gaps.push("input wrapper rejected unsafe or unsupported content");
+  }
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  const nestedSidecar =
-    sourceRuntimeEnvelope.source_runtime
-      ? Object.fromEntries(
-          Object.entries(sourceRuntimeEnvelope).filter(
-            ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
-          )
-        )
-      : {};
-  return Object.keys(sidecar).length > 0 || Object.keys(nestedSidecar).length > 0
-    ? ["input wrapper rejected unsafe or unsupported content"]
-    : [];
+  if (Object.prototype.hasOwnProperty.call(sourceRuntimeEnvelope, "source_runtime")) {
+    const envelopeSidecar = Object.fromEntries(
+      Object.entries(sourceRuntimeEnvelope).filter(
+        ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
+      )
+    );
+    if (Object.keys(envelopeSidecar).length > 0) {
+      gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+    }
+    for (const [key, nested] of Object.entries(sourceRuntimeEnvelope)) {
+      if (key !== "source_runtime") {
+        gaps.push(...runtimeEnvelopeContentGaps(nested, `source_runtime envelope.${key}`));
+      }
+    }
+  }
+  return sanitizeGaps(gaps);
 }
 
 function artifactHash(artifact) {
