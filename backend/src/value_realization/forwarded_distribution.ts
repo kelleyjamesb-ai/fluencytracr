@@ -3,14 +3,13 @@ import { z } from "zod";
 export const FORWARDED_DISTRIBUTION_SCHEMA_VERSION = "FT_V3_FORWARDED_DISTRIBUTION_2026_06";
 
 const ForbiddenForwardedTokenPatterns = [
-  /(?:^|[:_-])actor(?:[:_-]?(?:id|identifier))?(?=[:_-]|$)/i,
-  /(?:^|[:_-])users?(?=[:_-]|$)/i,
-  /(?:^|[:_-])user[:_-]?(?:id|identifier|email|name)s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])employee(?:[:_-]?(?:id|identifier|email|name))?s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])person(?:[:_-]?(?:id|identifier|email|name))?s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])email(?=[:_-]|$)/i,
-  /(?:^|[:_-])skill(?:[:_-]?(?:id|name|identifier|reader))?s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])raw[:_-]?skill(?:[:_-]?(?:id|name|identifier))?s?(?=[:_-]|$)/i
+  /(?:^|[:_-])actor[:_-]?(?:id|identifier)(?=[:_-]|$)/i,
+  /(?:^|[:_-])user[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])employee[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])person[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])email[:_-]?(?:id|identifier|address|hash)(?=[:_-]|$)/i,
+  /(?:^|[:_-])skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])raw[:_-]?skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i
 ];
 
 export const ForwardedDistributionMachineTokenSchema = z.string()
@@ -101,6 +100,12 @@ export type ForwardedDistributionSliceBinding = {
   calibrationId?: string;
 };
 
+const sameInstant = (left: string, right: string): boolean => {
+  const leftMs = Date.parse(left);
+  const rightMs = Date.parse(right);
+  return Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs === rightMs;
+};
+
 export const forwardedDistributionMatchesSlice = (
   distribution: ForwardedDistribution,
   binding: ForwardedDistributionSliceBinding
@@ -109,10 +114,10 @@ export const forwardedDistributionMatchesSlice = (
   if (distribution.workflow_id !== binding.workflowId) return false;
   if (distribution.jbtd_id !== (binding.jbtdId ?? null)) return false;
   if (distribution.persona_id !== (binding.personaId ?? null)) return false;
-  if (binding.windowStart !== undefined && distribution.window_start !== binding.windowStart) {
+  if (binding.windowStart !== undefined && !sameInstant(distribution.window_start, binding.windowStart)) {
     return false;
   }
-  if (binding.windowEnd !== undefined && distribution.window_end !== binding.windowEnd) {
+  if (binding.windowEnd !== undefined && !sameInstant(distribution.window_end, binding.windowEnd)) {
     return false;
   }
   if (binding.calibrationId !== undefined && distribution.calibration_id !== binding.calibrationId) {
