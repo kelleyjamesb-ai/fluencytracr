@@ -6,7 +6,10 @@ import {
   computeQualityMultiplierFromForwardedDistribution,
   type ForwardedDistribution
 } from "../src/value_realization/quality_multiplier";
-import { ForwardedDistributionSchema } from "../src/value_realization/forwarded_distribution";
+import {
+  ForwardedDistributionLegacyCompatibleSchema,
+  ForwardedDistributionSchema
+} from "../src/value_realization/forwarded_distribution";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const BASE_NOW = Date.now();
@@ -419,7 +422,13 @@ describe("computeQualityMultiplierFromForwardedDistribution", () => {
       { transcript: "long transcript" },
       { body: "raw text body" },
       { quality_signals: { ...forwardedDistribution().quality_signals, prompt: "raw nested prompt" } },
-      { surface_taxonomy_ids: ["this is a raw natural language surface label"] }
+      { surface_taxonomy_ids: ["this is a raw natural language surface label"] },
+      { workflow_id: "actor_id:123" },
+      { workflow_id: "user_identifier:abc" },
+      { calibration_id: "employee-email:person-example" },
+      { calibration_id: "person_name:jane" },
+      { surface_taxonomy_ids: ["skill_name:personal"] },
+      { surface_taxonomy_ids: ["raw_skill_identifier:personal"] }
     ];
 
     for (const override of forbiddenPayloads) {
@@ -446,6 +455,52 @@ describe("computeQualityMultiplierFromForwardedDistribution", () => {
     });
     expect(result.multiplier).toBeGreaterThanOrEqual(0.5);
     expect(result.multiplier).toBeLessThanOrEqual(1.5);
+  });
+
+  it("defaults legacy forwarded distribution surface taxonomy from workflow id", () => {
+    const legacyPayload = forwardedDistribution() as Partial<ForwardedDistribution>;
+    delete legacyPayload.surface_taxonomy_ids;
+    const canonicalParsed = ForwardedDistributionSchema.safeParse(legacyPayload);
+    const parsed = ForwardedDistributionLegacyCompatibleSchema.safeParse(legacyPayload);
+
+    expect(canonicalParsed.success).toBe(false);
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.surface_taxonomy_ids).toEqual(["wf-forwarded-qm"]);
+
+    const result = computeQualityMultiplierFromForwardedDistribution({
+      forwardedDistribution: legacyPayload as ForwardedDistribution
+    });
+
+    expect(result).toMatchObject({
+      workflow_id: "wf-forwarded-qm",
+      verdict: "SURFACE",
+      suppression_reason: null,
+      value_type: "QUALITY_PREMIUM",
+      evidence_grade: "CALIBRATED"
+    });
+  });
+
+  it("does not default legacy forwarded distribution surface taxonomy from unsafe workflow tokens", () => {
+    const legacyPayload = forwardedDistribution({
+      workflow_id: "actor_id:123"
+    }) as Partial<ForwardedDistribution>;
+    delete legacyPayload.surface_taxonomy_ids;
+    const parsed = ForwardedDistributionLegacyCompatibleSchema.safeParse(legacyPayload);
+
+    expect(parsed.success).toBe(false);
+
+    const result = computeQualityMultiplierFromForwardedDistribution({
+      forwardedDistribution: legacyPayload as ForwardedDistribution
+    });
+
+    expect(result).toMatchObject({
+      workflow_id: "actor_id:123",
+      verdict: "SUPPRESS",
+      multiplier: null,
+      suppression_reason: "NO_CONVERGENCE",
+      evidence_grade: "QUALITATIVE"
+    });
   });
 
   it.each([

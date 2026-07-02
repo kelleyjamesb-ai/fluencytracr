@@ -12,7 +12,7 @@ import type {
   FluencyTracrVerdictRecord,
   OutcomeEvidenceStoredRecord
 } from "./store";
-import { ForwardedDistributionSchema } from "./value_realization/forwarded_distribution";
+import { ForwardedDistributionLegacyCompatibleSchema } from "./value_realization/forwarded_distribution";
 
 type SourceCoverageLane =
   | "ai_activity"
@@ -295,7 +295,7 @@ const evidenceCoverageFromVerdict = (
     return { overrides: {}, evidenceRefs, forwardedDistributionUsed: false };
   }
 
-  const parsed = ForwardedDistributionSchema.safeParse(
+  const parsed = ForwardedDistributionLegacyCompatibleSchema.safeParse(
     verdict.payload_json.forwarded_distribution
   );
   if (!parsed.success) {

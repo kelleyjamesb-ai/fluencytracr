@@ -188,6 +188,28 @@ describe("AI Value real evidence materializer", () => {
     }
   });
 
+  it("materializes legacy surfaced aggregate evidence without surface taxonomy ids", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+    const storedVerdict = Array.from(store.fluencyTracrVerdicts.values())[0];
+    delete (storedVerdict.payload_json.forwarded_distribution as Record<string, unknown>)
+      .surface_taxonomy_ids;
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.evidence_summary).toMatchObject({
+      forwarded_distribution_used: true,
+      velocity_observation_count: 3
+    });
+    expect(response.body.objects.evidence_readiness.source_coverage).toMatchObject({
+      ai_activity: "PRESENT",
+      workflow: "PRESENT",
+      trust: "PRESENT",
+      suppression: "PRESENT"
+    });
+  });
+
   it("keeps suppressed aggregate evidence from upgrading source coverage", async () => {
     await postUpstreamObjects();
     await postV3Aggregate(v3Payload({ cohort_size: 4 })).expect(202);

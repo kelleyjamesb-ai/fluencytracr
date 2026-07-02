@@ -407,28 +407,16 @@ test("comparison-design evidence review binds to reviewer-owned package collecti
   assert.equal(review.feeds.bayesian_promotion_decision_gate, false);
 });
 
-test("plain source_runtime wrapper stays held without source binding envelope", () => {
+test("plain source_runtime compatibility does not satisfy runtime-only source evidence", () => {
   const runtime = sourceRuntime();
-  const { collection } = reviewerOwnedCollection();
   const review =
     buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
       source_runtime: runtime,
-      comparison_design_source_evidence: collection
+      comparison_design_source_evidence: runtime.aggregate_design_matrix
     });
 
-  assert.equal(review.review_state, HOLD_STATE);
-  assert.equal(review.review_hash, null);
-  assert.equal(review.evidence_satisfaction.evidence_satisfied, false);
-  assert.ok(
-    review.validation_summary.gaps.includes(
-      "source_runtime.sourceGate is required for ready internal Bayesian execution runtime validation"
-    )
-  );
-  assert.ok(
-    review.validation_summary.gaps.includes(
-      "source_runtime.aggregateMeasurementCellWindows is required for ready internal Bayesian execution runtime validation"
-    )
-  );
+  assert.equal(review.review_state, REJECT_STATE);
+  assert.equal(review.promotion_boundary.promotion_authorized, false);
 });
 
 test("direct legacy adequacy source package no longer satisfies without reviewer-owned collection", () => {
@@ -695,6 +683,67 @@ test("comparison-design adequacy review keeps non-authorization outputs blocked"
   assert.equal(review.boundary_policy.persists_review, false);
   assert.equal(review.boundary_policy.creates_exports, false);
   assert.equal(review.boundary_policy.runs_live_connectors, false);
+});
+
+test("comparison-design adequacy review preserves plain runtime compatibility for reviewer-owned packages", () => {
+  const runtime = sourceRuntime();
+  const { collection } = reviewerOwnedCollection();
+  const review =
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+      source_runtime: runtime,
+      comparison_design_source_evidence: collection
+    });
+
+  assert.equal(review.review_state, READY_STATE);
+  assert.equal(review.evidence_satisfaction.evidence_satisfied, true);
+  assert.equal(review.validation_summary.valid, true);
+  assert.deepEqual(review.validation_summary.gaps, []);
+});
+
+test("comparison-design adequacy review rejects unsafe siblings inside source runtime envelope", () => {
+  const { collection } = reviewerOwnedCollection();
+  const review =
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+      source_runtime: {
+        ...sourceRuntimeEnvelope(),
+        raw_rows: [{ user_id: "user-123" }]
+      },
+      comparison_design_source_evidence: collection
+    });
+  const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, REJECT_STATE);
+  assert.equal(validation.valid, false);
+  assert.equal(review.promotion_boundary.promotion_authorized, false);
+  assert.equal(serialized.includes("raw_rows"), false);
+  assert.equal(serialized.includes("user-123"), false);
+});
+
+test("comparison-design adequacy review rejects nested authorization sidecars inside allowed runtime envelope siblings", () => {
+  const { collection } = reviewerOwnedCollection();
+  const envelope = sourceRuntimeEnvelope();
+  envelope.source_gate = {
+    ...envelope.source_gate,
+    promotion_authorized: true,
+    customer_output_authorized: true,
+    low_count_metadata: { cohort_size: 4 }
+  };
+  const review =
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+      source_runtime: envelope,
+      comparison_design_source_evidence: collection
+    });
+  const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, REJECT_STATE);
+  assert.equal(validation.valid, false);
+  assert.equal(review.promotion_boundary.promotion_authorized, false);
+  assert.equal(serialized.includes("\"promotion_authorized\":true"), false);
+  assert.equal(serialized.includes("\"customer_output_authorized\":true"), false);
+  assert.equal(serialized.includes("low_count_metadata"), false);
+  assert.equal(serialized.includes("\"cohort_size\":4"), false);
 });
 
 test("comparison-design evidence review does not satisfy evidence from runtime design matrix alone", () => {

@@ -98,7 +98,7 @@ import {
   computeQualityMultiplierFromForwardedDistribution,
   failClosedQualityMultiplierResponse
 } from "./value_realization/quality_multiplier";
-import { ForwardedDistributionSchema } from "./value_realization/forwarded_distribution";
+import { ForwardedDistributionLegacyCompatibleSchema } from "./value_realization/forwarded_distribution";
 import {
   computeVelocityIndex,
   findVelocityPersonField,
@@ -4285,7 +4285,7 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
       }
       return typeof payload.forwarded_distribution === "object" && payload.forwarded_distribution !== null;
     });
-    const parsedForwarded = ForwardedDistributionSchema.safeParse(
+    const parsedForwarded = ForwardedDistributionLegacyCompatibleSchema.safeParse(
       forwardedVerdict?.payload_json.forwarded_distribution
     );
     if (parsedForwarded.success && parsedForwarded.data.window_days >= parsed.data.window_days) {

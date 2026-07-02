@@ -2,7 +2,25 @@ import { z } from "zod";
 
 export const FORWARDED_DISTRIBUTION_SCHEMA_VERSION = "FT_V3_FORWARDED_DISTRIBUTION_2026_06";
 
-export const ForwardedDistributionMachineTokenSchema = z.string().min(1).max(180).regex(/^[A-Za-z0-9:_-]+$/);
+const ForbiddenForwardedTokenPatterns = [
+  /(?:^|[:_-])actor(?:[:_-]?(?:id|identifier))?(?=[:_-]|$)/i,
+  /(?:^|[:_-])users?(?=[:_-]|$)/i,
+  /(?:^|[:_-])user[:_-]?(?:id|identifier|email|name)s?(?=[:_-]|$)/i,
+  /(?:^|[:_-])employee(?:[:_-]?(?:id|identifier|email|name))?s?(?=[:_-]|$)/i,
+  /(?:^|[:_-])person(?:[:_-]?(?:id|identifier|email|name))?s?(?=[:_-]|$)/i,
+  /(?:^|[:_-])email(?=[:_-]|$)/i,
+  /(?:^|[:_-])skill(?:[:_-]?(?:id|name|identifier|reader))?s?(?=[:_-]|$)/i,
+  /(?:^|[:_-])raw[:_-]?skill(?:[:_-]?(?:id|name|identifier))?s?(?=[:_-]|$)/i
+];
+
+export const ForwardedDistributionMachineTokenSchema = z.string()
+  .min(1)
+  .max(180)
+  .regex(/^[A-Za-z0-9:_-]+$/)
+  .refine(
+    (value) => !ForbiddenForwardedTokenPatterns.some((pattern) => pattern.test(value)),
+    { message: "machine token must not carry actor, person, email, or raw skill identifiers" }
+  );
 
 const DistributionValueSchema = z.object({
   p10: z.number().finite().nonnegative(),
@@ -60,5 +78,15 @@ export const ForwardedDistributionSchema = z.object({
   (value) => Date.parse(value.window_end) > Date.parse(value.window_start),
   { message: "window_end must be after window_start", path: ["window_end"] }
 );
+
+export const ForwardedDistributionLegacyCompatibleSchema = z.preprocess((value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(record, "surface_taxonomy_ids")) return value;
+  return {
+    ...record,
+    surface_taxonomy_ids: [record.workflow_id]
+  };
+}, ForwardedDistributionSchema);
 
 export type ForwardedDistribution = z.infer<typeof ForwardedDistributionSchema>;

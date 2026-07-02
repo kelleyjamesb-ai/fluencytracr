@@ -183,6 +183,25 @@ describe("POST /api/v3/ingest/aggregate", () => {
     expect(res.body.details.fieldErrors.workflow_id[0]).toContain("Invalid");
   });
 
+  it("rejects actor and skill identifier tokens before forwarding can occur", async () => {
+    const cases = [
+      { field: "workflow_id", payload: { workflow_id: "actor_id:123" } },
+      { field: "cohort_id", payload: { cohort_id: "user_identifier:abc" } },
+      { field: "calibration_id", payload: { calibration_id: "skill_name:personal" } }
+    ];
+
+    for (const { field, payload } of cases) {
+      const res = await request(app)
+        .post("/api/v3/ingest/aggregate")
+        .set(headers)
+        .send(validPayload(payload));
+
+      expect(res.status).toBe(400);
+      expect(res.body.reason_code).toBe("invalid_aggregate_ingest_payload");
+      expect(res.body.details.fieldErrors[field][0]).toContain("machine token must not carry");
+    }
+  });
+
   it("rejects unknown calibration ids", async () => {
     const res = await request(app)
       .post("/api/v3/ingest/aggregate")

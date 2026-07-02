@@ -265,6 +265,11 @@ const ALLOWED_INPUT_FIELDS = new Set([
   "reviewed_diagnostics_source_evidence",
   "generated_at"
 ]);
+const SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+  "source_runtime",
+  "source_gate",
+  "aggregate_measurement_cell_windows"
+]);
 
 const REQUIRED_BLOCKED_USES = [
   "promotion_authorization",
@@ -347,6 +352,43 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /\bproductivity\b/i
 ];
 
+const RUNTIME_ENVELOPE_TRUE_AUTHORIZATION_PATTERNS = [
+  /promotion_authorized/i,
+  /bayesian_.*authorized/i,
+  /model_.*authorized/i,
+  /posterior_.*authorized/i,
+  /confidence_.*authorized/i,
+  /probability_.*authorized/i,
+  /customer_.*authorized/i,
+  /economic_.*authorized/i,
+  /roi_.*authorized/i,
+  /productivity_.*authorized/i,
+  /causality_.*authorized/i,
+  /finance_.*authorized/i,
+  /customer[-_\s]?facing/i,
+  /economic[_-\s]?output/i
+];
+
+const RUNTIME_ENVELOPE_FORBIDDEN_KEY_PATTERNS = [
+  /raw_?rows?/i,
+  /^rows$/i,
+  /^records$/i,
+  /query_?text/i,
+  /\bsql\b/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /user_?id/i,
+  /employee/i,
+  /person_?id/i,
+  /^email$/i,
+  /payload_?json/i,
+  /feature_?table/i,
+  /warehouse/i,
+  /dataset/i,
+  /dashboard/i
+];
+
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
   if (value && typeof value === "object") {
@@ -415,8 +457,70 @@ function inputBoundaryGaps(input) {
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
-  return Object.keys(sidecar).length > 0
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const nestedSidecar = sourceRuntimeEnvelope.source_runtime
+    ? Object.fromEntries(
+        Object.entries(sourceRuntimeEnvelope).filter(([key]) => !SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key))
+      )
+    : {};
+  const nestedContentGaps = sourceRuntimeEnvelope.source_runtime
+    ? Object.entries(sourceRuntimeEnvelope)
+        .filter(([key]) => key !== "source_runtime")
+        .flatMap(([key, nested]) => runtimeEnvelopeContentGaps(nested, `source_runtime envelope.${key}`))
+    : [];
+  return Object.keys(sidecar).length > 0 ||
+    Object.keys(nestedSidecar).length > 0 ||
+    nestedContentGaps.length > 0
     ? ["input wrapper rejected unsafe or unsupported content"]
+    : [];
+}
+
+function runtimeEnvelopeContentGaps(value, path = "source_runtime envelope") {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => runtimeEnvelopeContentGaps(item, `${path}[${index}]`));
+  }
+  if (value && typeof value === "object") {
+    const gaps = [];
+    for (const [key, nested] of Object.entries(value)) {
+      if (
+        nested === true &&
+        RUNTIME_ENVELOPE_TRUE_AUTHORIZATION_PATTERNS.some((pattern) => pattern.test(key))
+      ) {
+        gaps.push(`${path} contains authorization side-door content`);
+        continue;
+      }
+      if (
+        key === "cohort_size" &&
+        typeof nested === "number" &&
+        nested > 0 &&
+        nested < 5
+      ) {
+        gaps.push(`${path} contains low-count window metadata`);
+        continue;
+      }
+      if (
+        (key === "raw_row_count" || key === "identifier_count") &&
+        typeof nested === "number" &&
+        nested > 0
+      ) {
+        gaps.push(`${path} contains raw or identifier count metadata`);
+        continue;
+      }
+      if (key === "query_text_present" && nested === true) {
+        gaps.push(`${path} contains query text metadata`);
+        continue;
+      }
+      if (RUNTIME_ENVELOPE_FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+        gaps.push(`${path} contains forbidden field name`);
+        continue;
+      }
+      gaps.push(...runtimeEnvelopeContentGaps(nested, `${path}.${key}`));
+    }
+    return gaps;
+  }
+  if (typeof value !== "string") return [];
+  return FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(value))
+    ? [`${path} contains unsafe source or output content`]
     : [];
 }
 
