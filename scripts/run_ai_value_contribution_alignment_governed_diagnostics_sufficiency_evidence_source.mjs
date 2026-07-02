@@ -265,6 +265,14 @@ const ALLOWED_INPUT_FIELDS = new Set([
   "reviewed_diagnostics_source_evidence",
   "generated_at"
 ]);
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+  "source_runtime",
+  "source_gate",
+  "sourceGate",
+  "aggregate_measurement_cell_windows",
+  "aggregateMeasurementCellWindows",
+  "generated_at"
+]);
 
 const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
   "source_runtime",

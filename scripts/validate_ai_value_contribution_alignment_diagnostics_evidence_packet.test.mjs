@@ -575,6 +575,25 @@ test("diagnostics evidence packet rejects unsafe wrapper side doors without echo
   }
 });
 
+test("diagnostics evidence packet rejects unsafe nested runtime envelope sidecars", () => {
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+    source_runtime: {
+      ...sourceRuntimeSource(),
+      raw_rows: [{ email: "person@example.com" }],
+      query_text: "SELECT user_id FROM raw_rows",
+      user_id: "person-123"
+    }
+  });
+  const validation = validateContributionAlignmentDiagnosticsEvidencePacket(packet);
+  const serialized = `${JSON.stringify(packet)} ${JSON.stringify(validation)}`;
+
+  assert.equal(packet.packet_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("diagnostics evidence packet can mark diagnostics satisfied only from governed sufficiency evidence hashes", () => {
   const runtime = sourceRuntime();
   const sourceDiagnosticsSufficiencyEvidence =

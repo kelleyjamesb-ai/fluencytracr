@@ -206,6 +206,38 @@ describe("AI Value real evidence materializer", () => {
     });
   });
 
+  it("uses legacy surfaced forwarded distributions that predate surface taxonomy ids", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+
+    const verdict = Array.from(store.fluencyTracrVerdicts.values()).find(
+      (record) => record.cohort_id === "cohort-real-evidence" && record.workflow_id === "workflow:CHAT"
+    );
+    expect(verdict).toBeDefined();
+    const forwardedDistribution = verdict?.payload_json.forwarded_distribution as
+      | Record<string, unknown>
+      | undefined;
+    expect(forwardedDistribution).toBeDefined();
+    delete forwardedDistribution?.surface_taxonomy_ids;
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.evidence_summary).toMatchObject({
+      forwarded_distribution_used: true
+    });
+    expect(response.body.held_reasons).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("forwarded_distribution is missing or invalid")
+      ])
+    );
+    expect(response.body.objects.evidence_readiness.source_coverage).toMatchObject({
+      ai_activity: "PRESENT",
+      workflow: "PRESENT",
+      suppression: "PRESENT"
+    });
+  });
+
   it("keeps missing aggregate evidence held instead of synthesizing readiness upgrades", async () => {
     await postUpstreamObjects();
 

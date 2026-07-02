@@ -778,6 +778,35 @@ test("Bayesian hardening orchestrator rejects fabricated governed evidence input
   assert.equal(serialized.includes("fabricated_customer_probability_evidence"), false);
 });
 
+test("Bayesian hardening orchestrator rejects unsafe nested runtime envelope sidecars", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: {
+        ...sourceRuntimeEnvelope(path.runtime),
+        raw_rows: [{ email: "person@example.com" }],
+        query_text: "SELECT user_id FROM raw_rows",
+        user_id: "person-123"
+      },
+      explicit_governed_path: {
+        source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
+        source_diagnostics_evidence_packet: path.packet,
+        source_diagnostics_review: path.review,
+        source_promotion_gate: path.gate,
+        source_promotion_handoff: path.handoff,
+        source_internal_bayesian_execution_artifact_v1: path.artifact
+      }
+    });
+  const validation = validateContributionAlignmentBayesianHardeningOrchestratorReport(report);
+  const serialized = `${JSON.stringify(report)} ${JSON.stringify(validation)}`;
+
+  assert.equal(report.report_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("Bayesian hardening orchestrator rejects nested fabricated evidence sidecars", () => {
   const path = explicitPromotionPath();
   const report =

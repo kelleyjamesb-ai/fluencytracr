@@ -810,6 +810,28 @@ test("Bayesian promotion decision gate rejects unsafe wrapper side doors without
   }
 });
 
+test("Bayesian promotion decision gate rejects unsafe nested runtime envelope sidecars", () => {
+  const runtime = sourceRuntime();
+  const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
+    source_diagnostics_review: promotableDiagnosticsReview(runtime),
+    source_runtime: {
+      ...sourceRuntimeSource(),
+      raw_rows: [{ email: "person@example.com" }],
+      query_text: "SELECT user_id FROM raw_rows",
+      user_id: "person-123"
+    },
+    source_diagnostics_evidence_packet: promotableDiagnosticsEvidencePacket(runtime)
+  });
+  const validation = validateContributionAlignmentBayesianPromotionDecisionGate(gate);
+  const serialized = `${JSON.stringify(gate)} ${JSON.stringify(validation)}`;
+
+  assert.equal(gate.gate_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("Bayesian promotion decision gate rejects unsafe source diagnostics review side doors after rehash", () => {
   const runtime = sourceRuntime();
   const review = promotableDiagnosticsReview(runtime);

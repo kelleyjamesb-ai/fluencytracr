@@ -446,6 +446,29 @@ describe("computeQualityMultiplierFromForwardedDistribution", () => {
     }
   });
 
+  it("accepts legacy persisted forwarded distributions that predate surface taxonomy ids", () => {
+    const legacyDistribution = {
+      ...forwardedDistribution()
+    } as Record<string, unknown>;
+    delete legacyDistribution.surface_taxonomy_ids;
+
+    const parsed = ForwardedDistributionSchema.safeParse(legacyDistribution);
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.surface_taxonomy_ids).toEqual([parsed.data.workflow_id]);
+
+    const result = computeQualityMultiplierFromForwardedDistribution({
+      forwardedDistribution: legacyDistribution as ForwardedDistribution
+    });
+
+    expect(result).toMatchObject({
+      workflow_id: "wf-forwarded-qm",
+      verdict: "SURFACE",
+      suppression_reason: null,
+      evidence_grade: "CALIBRATED"
+    });
+  });
+
   it("re-checks gates and emits calibrated quality-premium evidence for surfaced distributions", () => {
     const result = computeQualityMultiplierFromForwardedDistribution({
       forwardedDistribution: forwardedDistribution()

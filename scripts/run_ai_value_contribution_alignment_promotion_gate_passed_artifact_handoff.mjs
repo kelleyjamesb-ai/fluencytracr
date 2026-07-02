@@ -143,6 +143,14 @@ const FORBIDDEN_INPUT_FIELDS = [
   "reviewed_diagnostics_source_evidence"
 ];
 
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+  "source_runtime",
+  "source_gate",
+  "sourceGate",
+  "aggregate_measurement_cell_windows",
+  "aggregateMeasurementCellWindows"
+]);
+
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
   if (value && typeof value === "object") {
@@ -218,7 +226,17 @@ function sourceRuntimeFromInput(input) {
 
 function inputBoundaryGaps(input) {
   const record = asRecord(input);
-  return FORBIDDEN_INPUT_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(record, field))
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const nestedSidecar =
+    sourceRuntimeEnvelope.source_runtime
+      ? Object.fromEntries(
+          Object.entries(sourceRuntimeEnvelope).filter(
+            ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
+          )
+        )
+      : {};
+  return FORBIDDEN_INPUT_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(record, field)) ||
+    Object.keys(nestedSidecar).length > 0
     ? ["promotion gate passed artifact handoff input contains blocked output or raw source side door"]
     : [];
 }
