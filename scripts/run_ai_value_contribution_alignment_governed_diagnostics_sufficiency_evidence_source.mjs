@@ -271,6 +271,7 @@ const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
   "sourceGate",
   "aggregate_measurement_cell_windows",
   "aggregateMeasurementCellWindows",
+  "aggregate_windows",
   "generated_at"
 ]);
 
@@ -425,18 +426,26 @@ function inputBoundaryGaps(input) {
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
+  if (Object.keys(sidecar).length > 0) {
+    gaps.push("input wrapper rejected unsafe or unsupported content");
+  }
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  const nestedSidecar =
-    sourceRuntimeEnvelope.source_runtime
-      ? Object.fromEntries(
-          Object.entries(sourceRuntimeEnvelope).filter(
-            ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
-          )
-        )
-      : {};
-  return Object.keys(sidecar).length > 0 || Object.keys(nestedSidecar).length > 0
-    ? ["input wrapper rejected unsafe or unsupported content"]
-    : [];
+  if (Object.prototype.hasOwnProperty.call(sourceRuntimeEnvelope, "source_runtime")) {
+    const envelopeSidecar = Object.fromEntries(
+      Object.entries(sourceRuntimeEnvelope).filter(
+        ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
+      )
+    );
+    if (Object.keys(envelopeSidecar).length > 0) {
+      gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+    }
+    for (const [key, nested] of Object.entries(sourceRuntimeEnvelope)) {
+      if (key !== "source_runtime") {
+        gaps.push(...runtimeEnvelopeContentGaps(nested, `source_runtime envelope.${key}`));
+      }
+    }
+  }
+  return sanitizeGaps(gaps);
 }
 
 function artifactHash(artifact) {
