@@ -42,3 +42,10 @@ export {
   contributionAlignmentInternalBayesianReadinessReviewHash,
   validateContributionAlignmentInternalBayesianReadinessReview
 } from "./internalBayesianReadinessReview";
+
+export {
+  CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_SCHEMA_VERSION,
+  buildContributionAlignmentBayesianModelSpecificationFromObject,
+  contributionAlignmentBayesianModelSpecificationHash,
+  validateContributionAlignmentBayesianModelSpecification
+} from "./bayesianModelSpecification";
