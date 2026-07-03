@@ -1,6 +1,6 @@
 {
   "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_ARTIFACT_V1_2026_06",
-  "artifact_id": "contribution_alignment_internal_bayesian_execution_artifact_v1_ef3f5f43b724b5ae",
+  "artifact_id": "contribution_alignment_internal_bayesian_execution_artifact_v1_9d07511a73221a69",
   "artifact_state": "HOLD_FOR_INTERNAL_BAYESIAN_EXECUTION_ARTIFACT_V1",
   "artifact_class": null,
   "generated_at": "2026-06-26T00:00:00.000Z",
@@ -10,7 +10,7 @@
     "schema_version": null,
     "handoff_id": null,
     "handoff_state": null,
-    "handoff_hash": "986bfd386351c521777042bbfb656d482d3d3a87206ed335a72c8dd0d7fefc51",
+    "handoff_hash": "3b423df91d23162f0d8c0c3c59df30e1f6ec58732260bfbb0cf5e1e95a82dffc",
     "source_bound": false,
     "promotion_authorized": false,
     "allowed_next_step": null
@@ -19,7 +19,7 @@
     "schema_version": null,
     "gate_id": null,
     "gate_state": null,
-    "gate_hash": "93f070682f6b79b0e0f1ced656bdbe7643e03e9b70455697d20fc2e36e29205b",
+    "gate_hash": "54d8bdf6aacc3a737b5a6875bd0ef4a38db0758e19fbf7832c30049aa05fbdc4",
     "promotion_authorized": false,
     "allowed_next_step": null
   },
@@ -27,10 +27,10 @@
     "runtime_hash": "d4f34bb8d1fcd7e774ef6b25ac2d9bf70b8afddf0795bd1b79472ac2876c1d43"
   },
   "source_diagnostics_review_ref": {
-    "review_hash": "55e84763ad1b4f29f55243d7bad0844a22a1875d9b4a9148f6629d2d1a8d9179"
+    "review_hash": "324e718cc26478bb40d83da249dc112e5b88f01f53501b9bbd4abb0a660368d4"
   },
   "source_diagnostics_evidence_packet_ref": {
-    "packet_hash": "ae9fc4c15768fb983a64f0a9a95005c330291adc7261fabc2842da0049afb307"
+    "packet_hash": "375d04550f5ec50129d6159b80a3e502460faf1248f3f583a952d54b5fd431bf"
   },
   "source_governed_diagnostics_sufficiency_evidence_source_ref": {
     "evidence_hash": "f9aa7a3ae0ff6ce7f0a84c856852589a7c322966198cac4be51924f2a14d7954"
@@ -56,11 +56,11 @@
     "identifiers_ingested": false
   },
   "diagnostic_evidence_binding": {
-    "promotion_handoff_hash": "986bfd386351c521777042bbfb656d482d3d3a87206ed335a72c8dd0d7fefc51",
-    "promotion_gate_hash": "93f070682f6b79b0e0f1ced656bdbe7643e03e9b70455697d20fc2e36e29205b",
+    "promotion_handoff_hash": "3b423df91d23162f0d8c0c3c59df30e1f6ec58732260bfbb0cf5e1e95a82dffc",
+    "promotion_gate_hash": "54d8bdf6aacc3a737b5a6875bd0ef4a38db0758e19fbf7832c30049aa05fbdc4",
     "runtime_hash": "d4f34bb8d1fcd7e774ef6b25ac2d9bf70b8afddf0795bd1b79472ac2876c1d43",
-    "diagnostics_review_hash": "55e84763ad1b4f29f55243d7bad0844a22a1875d9b4a9148f6629d2d1a8d9179",
-    "diagnostics_evidence_packet_hash": "ae9fc4c15768fb983a64f0a9a95005c330291adc7261fabc2842da0049afb307",
+    "diagnostics_review_hash": "324e718cc26478bb40d83da249dc112e5b88f01f53501b9bbd4abb0a660368d4",
+    "diagnostics_evidence_packet_hash": "375d04550f5ec50129d6159b80a3e502460faf1248f3f583a952d54b5fd431bf",
     "governed_diagnostics_sufficiency_evidence_source_hash": "f9aa7a3ae0ff6ce7f0a84c856852589a7c322966198cac4be51924f2a14d7954",
     "passed_handoff_required": true,
     "passed_promotion_gate_required": true,
@@ -235,34 +235,54 @@
       "promotion_handoff.Bayesian Promotion Decision Gate failed validation against supplied source chain",
       "promotion_handoff.Promotion Gate allowed_next_step is not Internal Bayesian Execution Artifact v1 only",
       "promotion_handoff.Promotion Gate did not pass for Internal Bayesian Execution Artifact v1 handoff",
-      "promotion_handoff.diagnostics evidence packet is not bound to governed diagnostics source hash",
-      "promotion_handoff.diagnostics/model adequacy review is not bound to governed diagnostics source hash",
+      "promotion_handoff.handoff diagnostics evidence packet hash does not match diagnosticsEvidencePacket",
+      "promotion_handoff.handoff diagnostics review hash does not match diagnosticsReview",
+      "promotion_handoff.handoff promotion gate hash does not match promotionGate",
+      "promotion_handoff.promotion_gate.gate.validation_summary.gaps[25] contains unsafe source or output language",
+      "promotion_handoff.promotion_gate.gate.validation_summary.gaps[26] contains unsafe source or output language",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket allowed_next_step is outside Bayesian Promotion Decision Gate",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket feature weights must remain structural/internal",
-      "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket governed diagnostics sufficiency evidence source hash must match diagnostics review",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket is not source-bound",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket must feed Bayesian Promotion Decision Gate",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket projected diagnostics sufficiency evidence hash must match diagnostics review",
-      "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket suppressed/missing/held window review must match diagnostics review",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.evidence_sufficiency.all_required_evidence_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.evidence_sufficiency.comparison_design_adequacy_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.evidence_sufficiency.data_adequacy_satisfied must be true",
-      "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.evidence_sufficiency.data_adequacy_satisfied must match diagnostics review",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.evidence_sufficiency.feature_weight_provenance_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.evidence_sufficiency.model_diagnostics_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.evidence_sufficiency.suppressed_missing_held_windows_clear must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.packet_state is not ready for promotion decision review",
       "promotion_handoff.promotion_gate.sourceDiagnosticsEvidencePacket.validation_summary.valid must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview allowed_next_step is outside Bayesian Promotion Decision Gate",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview is not source-bound",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview must feed Bayesian Promotion Decision Gate",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.boundary_checks.posterior_numeric_values_withheld must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.boundary_checks.posterior_values_contained must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.boundary_checks.runtime_fixture_prototype_only must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsReview.comparison_design_adequacy_satisfied must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.data_adequacy_satisfied must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.held_window_count_zero must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.identifier_count_zero must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.missing_or_suppressed_windows_fail_closed must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.missing_window_count_zero must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.query_text_absent must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.raw_row_count_zero must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.data_adequacy.suppressed_window_count_zero must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.model_diagnostics.all_required_diagnostic_fields_present must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsReview.model_diagnostics.calibration_backtest_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsReview.model_diagnostics.convergence_diagnostics_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsReview.model_diagnostics.model_diagnostics_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsReview.model_diagnostics.posterior_predictive_checks_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsReview.model_diagnostics.prior_sensitivity_satisfied must be true",
       "promotion_handoff.promotion_gate.sourceDiagnosticsReview.model_diagnostics.residual_fit_checks_satisfied must be true",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.review_state is not completed promotion-blocked review",
+      "promotion_handoff.promotion_gate.sourceDiagnosticsReview.validation_summary.valid must be true",
+      "source diagnostics evidence packet hash does not match handoff source hashes",
+      "source diagnostics review hash does not match handoff source hashes",
       "source promotion gate allowed_next_step must be internal Bayesian execution artifact v1 only",
       "source promotion gate did not authorize Artifact v1",
       "source promotion gate failed validation",
+      "source promotion gate hash does not match handoff gate ref",
       "source promotion gate is not passed",
       "source promotion gate object did not authorize Artifact v1",
       "source promotion gate object is not passed",
@@ -272,5 +292,5 @@
       "source promotion handoff must be source_bound"
     ]
   },
-  "artifact_hash": "42a5d775fd8c7b88a4480a4637956e9525956d7db0b7cb0a482bd13c5c44d4ff"
+  "artifact_hash": "042d2a336b1bbf21a609488fcbd6c773c59551a563433eccbf2cd1dd3a3e2167"
 }

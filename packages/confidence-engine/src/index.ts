@@ -99,3 +99,10 @@ export {
   contributionAlignmentBayesianPromotionDecisionGateHash,
   validateContributionAlignmentBayesianPromotionDecisionGate
 } from "./bayesianPromotionDecisionGate";
+
+export {
+  CONTRIBUTION_ALIGNMENT_PROMOTION_GATE_PASSED_ARTIFACT_HANDOFF_SCHEMA_VERSION,
+  buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject,
+  contributionAlignmentPromotionGatePassedArtifactHandoffHash,
+  validateContributionAlignmentPromotionGatePassedArtifactHandoff
+} from "./promotionGatePassedArtifactHandoff";
