@@ -113,3 +113,10 @@ export {
   contributionAlignmentInternalBayesianExecutionArtifactV1Hash,
   validateContributionAlignmentInternalBayesianExecutionArtifactV1
 } from "./internalBayesianExecutionArtifactV1";
+
+export {
+  CONTRIBUTION_ALIGNMENT_BAYESIAN_HARDENING_ORCHESTRATOR_SCHEMA_VERSION,
+  buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject,
+  contributionAlignmentBayesianHardeningOrchestratorReportHash,
+  validateContributionAlignmentBayesianHardeningOrchestratorReport
+} from "./bayesianHardeningOrchestrator";
