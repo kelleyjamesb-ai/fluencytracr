@@ -1,0 +1,230 @@
+{
+  "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_EVIDENCE_PACKET_2026_06",
+  "packet_id": "contribution_alignment_diagnostics_evidence_packet_dacbdceabcd4106e",
+  "packet_state": "HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE",
+  "packet_class": null,
+  "generated_at": "2026-06-25T00:00:00.000Z",
+  "derivation_version": "ai_value_contribution_alignment_diagnostics_evidence_packet_2026_06",
+  "source_bound": false,
+  "source_runtime_ref": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_2026_06",
+    "runtime_id": "contribution_alignment_internal_bayesian_execution_runtime_4bb920b551522032",
+    "runtime_state": "INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW",
+    "runtime_execution_class": "internal_fixture_prototype_only",
+    "runtime_version": "internal_bayesian_execution_runtime_2026_06",
+    "runtime_hash": "d4f34bb8d1fcd7e774ef6b25ac2d9bf70b8afddf0795bd1b79472ac2876c1d43"
+  },
+  "source_governed_diagnostics_sufficiency_evidence_source_ref": {
+    "schema_version": null,
+    "source_id": null,
+    "source_state": null,
+    "allowed_next_step": null,
+    "evidence_hash": null,
+    "projected_evidence_hash": null
+  },
+  "source_diagnostics_sufficiency_evidence_ref": {
+    "schema_version": null,
+    "evidence_state": null,
+    "evidence_class": null,
+    "evidence_hash": null
+  },
+  "packet_version": null,
+  "packet_policy": {
+    "internal_only": true,
+    "aggregate_only": false,
+    "evidence_packet_only": true,
+    "promotion_authorized": false,
+    "posterior_interpretation_authorized": false,
+    "posterior_output_authorized": false,
+    "confidence_output_authorized": false,
+    "probability_output_authorized": false,
+    "customer_output_authorized": false,
+    "economic_output_authorized": false,
+    "roi_output_authorized": false,
+    "productivity_output_authorized": false,
+    "causality_output_authorized": false,
+    "finance_output_authorized": false
+  },
+  "data_adequacy_evidence": {
+    "minimum_eligible_aggregate_windows_present": false,
+    "pre_post_window_sufficiency_present": false,
+    "treatment_comparison_available": false,
+    "suppression_status_respected": false,
+    "raw_row_count_zero": false,
+    "identifier_count_zero": false,
+    "query_text_absent": false,
+    "data_adequacy_satisfied": false,
+    "source_evidence_hash": null
+  },
+  "suppressed_missing_held_window_review": {
+    "missing_window_count_zero": false,
+    "suppressed_window_count_zero": false,
+    "held_window_count_zero": false,
+    "suppressed_missing_held_windows_clear": false,
+    "source_evidence_hash": null
+  },
+  "comparison_design_evidence": {
+    "aggregate_measurement_cell_grain": false,
+    "treatment_group_defined": false,
+    "comparison_group_defined": false,
+    "no_person_level_fields": false,
+    "no_unsupported_cross_slice_aggregation": false,
+    "comparison_design_review_present": false,
+    "comparison_design_adequacy_satisfied": false,
+    "causal_claim_authorized": false,
+    "source_evidence_ref": null,
+    "reviewed_source_evidence_hash": null,
+    "source_evidence_hash": null
+  },
+  "model_diagnostics_evidence": {
+    "convergence_diagnostics": {
+      "required": true,
+      "evidence_present": false,
+      "evidence_satisfied": false,
+      "source_evidence_ref": null,
+      "reviewed_source_evidence_hash": null,
+      "source_evidence_hash": null
+    },
+    "posterior_predictive_checks": {
+      "required": true,
+      "evidence_present": false,
+      "evidence_satisfied": false,
+      "source_evidence_ref": null,
+      "reviewed_source_evidence_hash": null,
+      "source_evidence_hash": null
+    },
+    "prior_sensitivity": {
+      "required": true,
+      "evidence_present": false,
+      "evidence_satisfied": false,
+      "source_evidence_ref": null,
+      "reviewed_source_evidence_hash": null,
+      "source_evidence_hash": null
+    },
+    "residual_fit_checks": {
+      "required": true,
+      "evidence_present": false,
+      "evidence_satisfied": false,
+      "source_evidence_ref": null,
+      "reviewed_source_evidence_hash": null,
+      "source_evidence_hash": null
+    },
+    "calibration_backtest": {
+      "required": true,
+      "evidence_present": false,
+      "evidence_satisfied": false,
+      "source_evidence_ref": null,
+      "reviewed_source_evidence_hash": null,
+      "source_evidence_hash": null
+    },
+    "all_required_model_diagnostics_represented": false,
+    "all_required_model_diagnostics_satisfied": false
+  },
+  "feature_weight_provenance": {
+    "weights_structural_internal_only": false,
+    "weights_not_confidence_scores": true,
+    "weight_provenance_version_present": true,
+    "weight_provenance_version": "internal_structural_equal_weights_2026_06",
+    "customer_facing_weight_output": false,
+    "source_evidence_hash": null
+  },
+  "evidence_sufficiency": {
+    "data_adequacy_satisfied": false,
+    "suppressed_missing_held_windows_clear": false,
+    "comparison_design_adequacy_satisfied": false,
+    "model_diagnostics_satisfied": false,
+    "feature_weight_provenance_satisfied": false,
+    "all_required_evidence_represented": false,
+    "all_required_evidence_satisfied": false
+  },
+  "promotion_boundary": {
+    "promotion_authorized": false,
+    "promotion_blocked": true,
+    "posterior_interpretation_authorized": false,
+    "confidence_probability_authorized": false,
+    "customer_economic_output_authorized": false,
+    "internal_bayesian_execution_artifact_v1_authorized": false
+  },
+  "allowed_next_step": "complete_diagnostics_evidence_source",
+  "blocked_uses": [
+    "promotion_authorization",
+    "internal_bayesian_execution_artifact_v1_creation",
+    "posterior_interpretation",
+    "posterior_output",
+    "confidence_output",
+    "probability_output",
+    "score_like_output",
+    "customer_facing_output",
+    "economic_output",
+    "finance_output",
+    "roi",
+    "causality_claim",
+    "productivity_measurement",
+    "route_creation",
+    "ui_creation",
+    "schema_creation",
+    "persistence_write",
+    "export_creation",
+    "live_connector_execution",
+    "raw_data_storage"
+  ],
+  "required_caveats": [
+    "Diagnostics Evidence Packet is internal-only and aggregate-only.",
+    "The packet represents diagnostics and comparison-design evidence; it does not fabricate model adequacy.",
+    "The packet may feed promotion-decision review but cannot authorize promotion by itself.",
+    "Confidence, probability, customer-facing, economic, ROI, finance, causality, productivity, live connector, route, UI, schema, export, and persistence behavior remains blocked."
+  ],
+  "feeds": {
+    "bayesian_promotion_decision_gate": false,
+    "internal_diagnostics_model_adequacy_review": false,
+    "internal_bayesian_execution_artifact_v1": false,
+    "posterior_interpretation": false,
+    "posterior_output": false,
+    "confidence_output": false,
+    "probability_output": false,
+    "score_like_output": false,
+    "customer_facing_output": false,
+    "economic_output": false,
+    "roi_output": false,
+    "finance_output": false,
+    "causality_output": false,
+    "productivity_output": false,
+    "route_creation": false,
+    "ui_creation": false,
+    "schema_creation": false,
+    "persistence_write": false,
+    "export_creation": false,
+    "live_connector_execution": false
+  },
+  "boundary_policy": {
+    "receives_internal_bayesian_fixture_runtime_only": true,
+    "receives_aggregate_measurement_cell_windows": true,
+    "receives_diagnostic_evidence_refs": false,
+    "receives_raw_rows": false,
+    "receives_query_text": false,
+    "receives_identifiers": false,
+    "persists_packet": false,
+    "creates_routes": false,
+    "creates_ui": false,
+    "creates_schemas": false,
+    "creates_exports": false,
+    "runs_live_connectors": false,
+    "emits_posterior_output": false,
+    "emits_confidence_output": false,
+    "emits_probability": false,
+    "emits_customer_facing_output": false,
+    "emits_economic_output": false,
+    "computes_roi": false,
+    "claims_causality": false,
+    "measures_productivity": false
+  },
+  "validation_summary": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_EVIDENCE_PACKET_2026_06_SUMMARY",
+    "valid": false,
+    "packet_state": "HOLD_FOR_DIAGNOSTICS_EVIDENCE_SOURCE",
+    "gaps": [
+      "governed diagnostics sufficiency evidence source is required"
+    ]
+  },
+  "packet_hash": "ae9fc4c15768fb983a64f0a9a95005c330291adc7261fabc2842da0049afb307"
+}
