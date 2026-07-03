@@ -365,3 +365,82 @@ export type ConfidenceModelBlockedUse = z.infer<
 export type ConfidenceModelContract = z.infer<
   typeof ConfidenceModelContractSchema
 >;
+
+// ---------------------------------------------------------------------------
+// 5. Internal-only probability representations — ADDITIVE (types + Zod only)
+//
+// Added under OpenSpec change add-bayesian-inference-proof-harness (task 2.2,
+// slice 1). Both representations are internal diagnostic shapes for the
+// inference methodology contract: threshold probability
+// P(effect > minimum worthwhile threshold) and expected loss for the
+// stop/act decision rule. Neither shape is customer output; both pin
+// `internal_only: true`, `customer_output_authorized: false`, and a
+// `promotion_decision_ref` that MUST be null — exposure of any probability
+// language requires a separate later recorded human promotion decision,
+// and no promotion ref may be carried by these schemas.
+// ---------------------------------------------------------------------------
+
+export const THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONFIDENCE_THRESHOLD_PROBABILITY_REPRESENTATION_2026_07";
+
+export const EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONFIDENCE_EXPECTED_LOSS_REPRESENTATION_2026_07";
+
+// Internal diagnostic representation of P(effect > minimum worthwhile
+// threshold). Derives from the credible-interval-only posterior
+// representation above and never authorizes customer-facing output.
+export const ThresholdProbabilityRepresentationSchema = z
+  .object({
+    schema_version: z.literal(
+      THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION
+    ),
+    representation_class: z.literal(
+      "internal_diagnostic_representation_only"
+    ),
+    internal_only: z.literal(true),
+    customer_output_authorized: z.literal(false),
+    // Null until a separate later human promotion decision. This schema
+    // intentionally cannot carry a non-null promotion reference: promotion
+    // is recorded elsewhere, by a human, after this artifact exists.
+    promotion_decision_ref: z.null(),
+    parameter_name: z.string().min(1),
+    minimum_worthwhile_threshold_declared: z.literal(true),
+    // P(effect > minimum worthwhile threshold), bounded [0, 1].
+    threshold_probability: z.number().gte(0).lte(1),
+    // The credible-interval level context this diagnostic derives from
+    // (must be one of CREDIBLE_INTERVAL_LEVELS).
+    credible_interval_level_context: CredibleIntervalLevelSchema,
+    // Linkage pin: this representation is derived from the
+    // PosteriorWithCredibleIntervals shape, never computed independently.
+    derived_from_posterior_with_credible_intervals: z.literal(true)
+  })
+  .strict();
+
+// Internal expected-loss representation for the stop/act decision rule.
+// Same governance pins as the threshold-probability representation.
+export const ExpectedLossRepresentationSchema = z
+  .object({
+    schema_version: z.literal(EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION),
+    representation_class: z.literal(
+      "internal_diagnostic_representation_only"
+    ),
+    internal_only: z.literal(true),
+    customer_output_authorized: z.literal(false),
+    // Null until a separate later human promotion decision (see above).
+    promotion_decision_ref: z.null(),
+    parameter_name: z.string().min(1),
+    loss_function_declared: z.literal(true),
+    expected_loss: z.number().gte(0),
+    decision_threshold_epsilon: z.number().positive(),
+    decision_rule: z.literal(
+      "act_when_expected_loss_below_epsilon_internal_only"
+    )
+  })
+  .strict();
+
+export type ThresholdProbabilityRepresentation = z.infer<
+  typeof ThresholdProbabilityRepresentationSchema
+>;
+export type ExpectedLossRepresentation = z.infer<
+  typeof ExpectedLossRepresentationSchema
+>;

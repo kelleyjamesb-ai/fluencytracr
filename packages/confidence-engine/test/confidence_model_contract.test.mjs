@@ -16,7 +16,11 @@ import {
   BlueprintDerivedPriorProvenanceSchema,
   EvidenceAdmissionSchema,
   PosteriorWithCredibleIntervalsSchema,
-  ConfidenceModelContractSchema
+  ConfidenceModelContractSchema,
+  THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION,
+  EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION,
+  ThresholdProbabilityRepresentationSchema,
+  ExpectedLossRepresentationSchema
 } from "../dist/index.js";
 
 function clone(value) {
@@ -318,4 +322,180 @@ test("contract with unknown top-level key rejects (strict)", () => {
   const contract = clone(validContract);
   contract.compute_posterior = true;
   assert.equal(ConfidenceModelContractSchema.safeParse(contract).success, false);
+});
+
+// ---------------------------------------------------------------------------
+// Internal-only probability representations
+// (add-bayesian-inference-proof-harness, task 2.2)
+// ---------------------------------------------------------------------------
+
+const validThresholdProbability = {
+  schema_version: THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION,
+  representation_class: "internal_diagnostic_representation_only",
+  internal_only: true,
+  customer_output_authorized: false,
+  promotion_decision_ref: null,
+  parameter_name: "contribution_alignment_effect",
+  minimum_worthwhile_threshold_declared: true,
+  threshold_probability: 0.82,
+  credible_interval_level_context: 0.8,
+  derived_from_posterior_with_credible_intervals: true
+};
+
+const validExpectedLoss = {
+  schema_version: EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION,
+  representation_class: "internal_diagnostic_representation_only",
+  internal_only: true,
+  customer_output_authorized: false,
+  promotion_decision_ref: null,
+  parameter_name: "contribution_alignment_effect",
+  loss_function_declared: true,
+  expected_loss: 0.03,
+  decision_threshold_epsilon: 0.05,
+  decision_rule: "act_when_expected_loss_below_epsilon_internal_only"
+};
+
+// (c) schema_version constants match the pinned literals
+
+test("internal probability representation schema_version constants are pinned", () => {
+  assert.equal(
+    THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION,
+    "FT_AI_VALUE_CONFIDENCE_THRESHOLD_PROBABILITY_REPRESENTATION_2026_07"
+  );
+  assert.equal(
+    EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION,
+    "FT_AI_VALUE_CONFIDENCE_EXPECTED_LOSS_REPRESENTATION_2026_07"
+  );
+});
+
+// (a) valid examples parse
+
+test("valid threshold-probability representation parses", () => {
+  const parsed = ThresholdProbabilityRepresentationSchema.parse(
+    validThresholdProbability
+  );
+  assert.equal(parsed.internal_only, true);
+  assert.equal(parsed.customer_output_authorized, false);
+  assert.equal(parsed.promotion_decision_ref, null);
+});
+
+test("valid expected-loss representation parses", () => {
+  const parsed = ExpectedLossRepresentationSchema.parse(validExpectedLoss);
+  assert.equal(parsed.internal_only, true);
+  assert.equal(parsed.customer_output_authorized, false);
+  assert.equal(parsed.promotion_decision_ref, null);
+});
+
+// (b) governance violations reject
+
+test("threshold-probability representation claiming customer authorization rejects", () => {
+  const representation = clone(validThresholdProbability);
+  representation.customer_output_authorized = true;
+  assert.equal(
+    ThresholdProbabilityRepresentationSchema.safeParse(representation).success,
+    false
+  );
+});
+
+test("expected-loss representation claiming customer authorization rejects", () => {
+  const representation = clone(validExpectedLoss);
+  representation.customer_output_authorized = true;
+  assert.equal(
+    ExpectedLossRepresentationSchema.safeParse(representation).success,
+    false
+  );
+});
+
+test("internal_only: false rejects for both internal representations", () => {
+  const thresholdRepresentation = clone(validThresholdProbability);
+  thresholdRepresentation.internal_only = false;
+  assert.equal(
+    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation)
+      .success,
+    false
+  );
+
+  const lossRepresentation = clone(validExpectedLoss);
+  lossRepresentation.internal_only = false;
+  assert.equal(
+    ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success,
+    false
+  );
+});
+
+test("non-null promotion_decision_ref rejects (promotion is a separate human decision)", () => {
+  const thresholdRepresentation = clone(validThresholdProbability);
+  thresholdRepresentation.promotion_decision_ref = "promotion-decision-001";
+  assert.equal(
+    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation)
+      .success,
+    false
+  );
+
+  const lossRepresentation = clone(validExpectedLoss);
+  lossRepresentation.promotion_decision_ref = "promotion-decision-001";
+  assert.equal(
+    ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success,
+    false
+  );
+});
+
+test("unknown keys reject on internal representations (strict)", () => {
+  const thresholdRepresentation = clone(validThresholdProbability);
+  thresholdRepresentation.customer_dashboard_copy = "82% likely";
+  assert.equal(
+    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation)
+      .success,
+    false
+  );
+
+  const lossRepresentation = clone(validExpectedLoss);
+  lossRepresentation.roi_estimate = 1.2;
+  assert.equal(
+    ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success,
+    false
+  );
+});
+
+test("threshold_probability outside [0, 1] rejects", () => {
+  const above = clone(validThresholdProbability);
+  above.threshold_probability = 1.5;
+  assert.equal(
+    ThresholdProbabilityRepresentationSchema.safeParse(above).success,
+    false
+  );
+
+  const below = clone(validThresholdProbability);
+  below.threshold_probability = -0.1;
+  assert.equal(
+    ThresholdProbabilityRepresentationSchema.safeParse(below).success,
+    false
+  );
+});
+
+test("negative expected_loss rejects", () => {
+  const representation = clone(validExpectedLoss);
+  representation.expected_loss = -0.01;
+  assert.equal(
+    ExpectedLossRepresentationSchema.safeParse(representation).success,
+    false
+  );
+});
+
+test("non-positive decision_threshold_epsilon rejects", () => {
+  const representation = clone(validExpectedLoss);
+  representation.decision_threshold_epsilon = 0;
+  assert.equal(
+    ExpectedLossRepresentationSchema.safeParse(representation).success,
+    false
+  );
+});
+
+test("credible_interval_level_context outside CREDIBLE_INTERVAL_LEVELS rejects", () => {
+  const representation = clone(validThresholdProbability);
+  representation.credible_interval_level_context = 0.9;
+  assert.equal(
+    ThresholdProbabilityRepresentationSchema.safeParse(representation).success,
+    false
+  );
 });

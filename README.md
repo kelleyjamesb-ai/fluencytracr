@@ -452,6 +452,21 @@ documented value-realization layers:
   confidence/probability/score output, finance output, ROI, causality,
   productivity, customer-facing output, routes, UI, schemas, persistence,
   exports, and live connectors remain blocked.
+- **Confidence inference methodology contract:** the normative specification
+  for the future statistical engine
+  (`docs/contracts/confidence-inference-methodology/README.md`): a
+  hierarchical Bayesian difference-in-differences estimand over aggregate
+  Measurement Cell windows, a Python-owns-statistics /
+  TypeScript-owns-governance boundary, seven diagnostics as computed values
+  with hard numeric gates (any failure holds the artifact), the verbatim
+  comparison-cohort rule ("no credible comparison cohort, no causal number —
+  evidence-tier label only"), milestone peeking control aligned to the
+  internal A/B testing playbook, empirically justified weakly-informative
+  priors with mandatory sensitivity reporting, k>=5/k>=10 aggregate floors,
+  and Value-Playbook-aligned claim language. Threshold-probability and
+  expected-loss representations exist as internal-only types with customer
+  output pinned false; no probability language is exposed anywhere pending a
+  separate recorded human promotion decision.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns

@@ -146,7 +146,11 @@ export {
   CredibleIntervalLevelSchema,
   PosteriorWithCredibleIntervalsSchema,
   ConfidenceModelBlockedUseSchema,
-  ConfidenceModelContractSchema
+  ConfidenceModelContractSchema,
+  THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION,
+  EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION,
+  ThresholdProbabilityRepresentationSchema,
+  ExpectedLossRepresentationSchema
 } from "./confidenceModel";
 
 export type {
@@ -162,5 +166,7 @@ export type {
   CredibleIntervalLevel,
   PosteriorWithCredibleIntervals,
   ConfidenceModelBlockedUse,
-  ConfidenceModelContract
+  ConfidenceModelContract,
+  ThresholdProbabilityRepresentation,
+  ExpectedLossRepresentation
 } from "./confidenceModel";
