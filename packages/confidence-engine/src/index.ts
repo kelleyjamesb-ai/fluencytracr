@@ -85,3 +85,10 @@ export {
   contributionAlignmentInternalDiagnosticsModelAdequacyReviewHash,
   validateContributionAlignmentInternalDiagnosticsModelAdequacyReview
 } from "./internalDiagnosticsModelAdequacyReview";
+
+export {
+  CONTRIBUTION_ALIGNMENT_POSTERIOR_OUTPUT_REVIEW_GATE_SCHEMA_VERSION,
+  buildContributionAlignmentPosteriorOutputReviewGateFromObject,
+  contributionAlignmentPosteriorOutputReviewGateHash,
+  validateContributionAlignmentPosteriorOutputReviewGate
+} from "./posteriorOutputReviewGate";
