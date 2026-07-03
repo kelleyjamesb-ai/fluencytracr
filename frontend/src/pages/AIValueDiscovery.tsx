@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -96,6 +96,89 @@ interface ObjectiveDraft {
   ownerRole: string;
   measures: string;
 }
+
+type RequiredFieldOptions = {
+  required?: boolean;
+  errorMessage?: string;
+};
+
+type DiscoveryInputOptions = InputHTMLAttributes<HTMLInputElement> & RequiredFieldOptions;
+type DiscoveryAreaOptions = TextareaHTMLAttributes<HTMLTextAreaElement> & RequiredFieldOptions;
+
+const requiredCopy = (label: string) =>
+  `Required: complete ${label.toLowerCase()} before this step can continue.`;
+
+const requiredState = (
+  id: string,
+  label: string,
+  value: string,
+  required?: boolean,
+  errorMessage?: string
+) => {
+  const isInvalid = Boolean(required && !value.trim());
+  return {
+    errorId: `${id}-error`,
+    isInvalid,
+    message: errorMessage ?? requiredCopy(label)
+  };
+};
+
+const RequiredFieldError = ({ id, message }: { id: string; message: string }) => (
+  <p className="ai-value-field-error" id={id}>
+    {message}
+  </p>
+);
+
+type RequiredTextFieldProps = {
+  ariaLabel?: string;
+  errorMessage: string;
+  id: string;
+  label: string;
+  multiline?: boolean;
+  onChange: (value: string) => void;
+  value: string;
+};
+
+const RequiredTextField = ({
+  ariaLabel,
+  errorMessage,
+  id,
+  label,
+  multiline = false,
+  onChange,
+  value
+}: RequiredTextFieldProps) => {
+  const requiredStatus = requiredState(id, label, value, true, errorMessage);
+  const sharedProps = {
+    "aria-describedby": requiredStatus.isInvalid ? requiredStatus.errorId : undefined,
+    "aria-invalid": requiredStatus.isInvalid,
+    "aria-label": ariaLabel,
+    "aria-required": true,
+    id,
+    required: true,
+    value
+  };
+
+  return (
+    <div>
+      <label htmlFor={id}>{label}</label>
+      {multiline ? (
+        <textarea
+          {...sharedProps}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      ) : (
+        <input
+          {...sharedProps}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      )}
+      {requiredStatus.isInvalid && (
+        <RequiredFieldError id={requiredStatus.errorId} message={requiredStatus.message} />
+      )}
+    </div>
+  );
+};
 
 const emptyObjective = (): ObjectiveDraft => ({
   statement: "",
@@ -450,29 +533,65 @@ export const AIValueDiscovery = () => {
     }
   };
 
-  const field = (label: string, name: keyof typeof form, props: Record<string, unknown> = {}) => (
+  const field = (label: string, name: keyof typeof form, props: DiscoveryInputOptions = {}) => {
+    const { required, errorMessage, ...inputProps } = props;
+    const id = `f-${String(name)}`;
+    const value = String(form[name]);
+    const requiredStatus = requiredState(id, label, value, required, errorMessage);
+    return (
     <div>
-      <label htmlFor={`f-${String(name)}`}>{label}</label>
+      <label htmlFor={id}>
+        {label}
+      </label>
       <input
-        id={`f-${String(name)}`}
-        value={String(form[name])}
+        aria-describedby={requiredStatus.isInvalid ? requiredStatus.errorId : undefined}
+        aria-invalid={required ? requiredStatus.isInvalid : undefined}
+        aria-required={required}
+        id={id}
+        required={required}
+        value={value}
         onChange={(event) => set(String(name), event.target.value)}
-        {...props}
+        {...inputProps}
       />
+      {requiredStatus.isInvalid && (
+        <RequiredFieldError id={requiredStatus.errorId} message={requiredStatus.message} />
+      )}
     </div>
-  );
+    );
+  };
 
-  const area = (label: string, name: keyof typeof form, hint?: string) => (
+  const area = (
+    label: string,
+    name: keyof typeof form,
+    hint?: string,
+    props: DiscoveryAreaOptions = {}
+  ) => {
+    const { required, errorMessage, ...textareaProps } = props;
+    const id = `f-${String(name)}`;
+    const value = String(form[name]);
+    const requiredStatus = requiredState(id, label, value, required, errorMessage);
+    return (
     <div>
-      <label htmlFor={`f-${String(name)}`}>{label}</label>
+      <label htmlFor={id}>
+        {label}
+      </label>
       <textarea
-        id={`f-${String(name)}`}
-        value={String(form[name])}
+        aria-describedby={requiredStatus.isInvalid ? requiredStatus.errorId : undefined}
+        aria-invalid={required ? requiredStatus.isInvalid : undefined}
+        aria-required={required}
+        id={id}
+        required={required}
+        value={value}
         onChange={(event) => set(String(name), event.target.value)}
+        {...textareaProps}
       />
+      {requiredStatus.isInvalid && (
+        <RequiredFieldError id={requiredStatus.errorId} message={requiredStatus.message} />
+      )}
       {hint && <p className="ai-value-discovery-hint">{hint}</p>}
     </div>
-  );
+    );
+  };
 
   const routeLabel =
     VALUE_ROUTES.find((route) => route.value === form.primaryRoute)?.label ?? "Value route to confirm";
@@ -530,9 +649,9 @@ export const AIValueDiscovery = () => {
 
       <AiValueJourneyRail stages={journey.stages} current="discovery" />
 
-      {notice && <p role="status" className="ai-value-panel">{notice}</p>}
+      {notice && <p role="status" aria-live="polite" className="ai-value-panel">{notice}</p>}
       {gaps.length > 0 && (
-        <article className="ai-value-panel" role="alert">
+        <article className="ai-value-panel" role="alert" aria-live="polite">
           <h3>Still needed</h3>
           <ul>
             {gaps.map((gap) => (
@@ -580,13 +699,18 @@ export const AIValueDiscovery = () => {
               </div>
             </section>
             <div className="ai-value-field-grid">
-              {field("Client name", "clientName")}
-              {field("Industry", "industry")}
-              {field("Company size", "companySize")}
-              {field("Executive sponsor (role)", "sponsorRole")}
+              {field("Client name", "clientName", {
+                required: true,
+                errorMessage: "Required: enter the client name."
+              })}
+              {field("Industry", "industry", { required: true })}
+              {field("Company size", "companySize", { required: true })}
+              {field("Executive sponsor (role)", "sponsorRole", { required: true })}
               {field("Technical champion (role)", "championRole")}
             </div>
-            {area("Strategic objectives (one per line)", "strategicObjectives")}
+            {area("Strategic objectives (one per line)", "strategicObjectives", undefined, {
+              required: true
+            })}
             <h4>Business objectives — the value review is held against these</h4>
             <p>
               Capture every objective the client wants measured. Each one gets owners and the
@@ -594,54 +718,59 @@ export const AIValueDiscovery = () => {
             </p>
             {form.objectives.map((objective, index) => (
               <div className="ai-value-usecase-card" key={index}>
-                <label>Objective statement</label>
-                <input
-                  aria-label={`Objective ${index + 1} statement`}
+                <RequiredTextField
+                  ariaLabel={`Objective ${index + 1} statement`}
+                  errorMessage="Required: capture the objective statement."
+                  id={`objective-${index}-statement`}
+                  label="Objective statement"
                   value={objective.statement}
-                  onChange={(event) => setObjective(index, "statement", event.target.value)}
+                  onChange={(value) => setObjective(index, "statement", value)}
                 />
                 <div className="ai-value-field-grid">
-                  <div>
-                    <label>The challenge in the client's words</label>
-                    <input
-                      value={objective.challenge}
-                      onChange={(event) => setObjective(index, "challenge", event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>The initiative</label>
-                    <input
-                      value={objective.initiative}
-                      onChange={(event) => setObjective(index, "initiative", event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Outcome the sponsor cares about</label>
-                    <input
-                      value={objective.outcome}
-                      onChange={(event) => setObjective(index, "outcome", event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Objective owner (role)</label>
-                    <input
-                      value={objective.ownerRole}
-                      onChange={(event) => setObjective(index, "ownerRole", event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Decision timeline</label>
-                    <input
-                      value={objective.timeline}
-                      onChange={(event) => setObjective(index, "timeline", event.target.value)}
-                    />
-                  </div>
+                  <RequiredTextField
+                    errorMessage="Required: capture the challenge in the client's words."
+                    id={`objective-${index}-challenge`}
+                    label="The challenge in the client's words"
+                    value={objective.challenge}
+                    onChange={(value) => setObjective(index, "challenge", value)}
+                  />
+                  <RequiredTextField
+                    errorMessage="Required: name the initiative."
+                    id={`objective-${index}-initiative`}
+                    label="The initiative"
+                    value={objective.initiative}
+                    onChange={(value) => setObjective(index, "initiative", value)}
+                  />
+                  <RequiredTextField
+                    errorMessage="Required: capture the sponsor outcome."
+                    id={`objective-${index}-outcome`}
+                    label="Outcome the sponsor cares about"
+                    value={objective.outcome}
+                    onChange={(value) => setObjective(index, "outcome", value)}
+                  />
+                  <RequiredTextField
+                    errorMessage="Required: identify the objective owner role."
+                    id={`objective-${index}-owner-role`}
+                    label="Objective owner (role)"
+                    value={objective.ownerRole}
+                    onChange={(value) => setObjective(index, "ownerRole", value)}
+                  />
+                  <RequiredTextField
+                    errorMessage="Required: capture the decision timeline."
+                    id={`objective-${index}-timeline`}
+                    label="Decision timeline"
+                    value={objective.timeline}
+                    onChange={(value) => setObjective(index, "timeline", value)}
+                  />
                 </div>
-                <label>{`What the sponsor will measure (one per line, optionally "| improve", "| reduce", or "| hold")`}</label>
-                <textarea
-                  aria-label={`Objective ${index + 1} measures`}
+                <RequiredTextField
+                  ariaLabel={`Objective ${index + 1} measures`}
+                  errorMessage="Required: capture what the sponsor will measure."
+                  id={`objective-${index}-measures`}
+                  label={`What the sponsor will measure (one per line, optionally "| improve", "| reduce", or "| hold")`}
+                  multiline
                   value={objective.measures}
-                  onChange={(event) => setObjective(index, "measures", event.target.value)}
+                  onChange={(value) => setObjective(index, "measures", value)}
                 />
               </div>
             ))}
@@ -663,11 +792,15 @@ export const AIValueDiscovery = () => {
           <article className="ai-value-panel">
             <h3>Where will we look first?</h3>
             <div className="ai-value-field-grid">
-              {field("Function or department", "workstreamFunction")}
-              {field("People in scope (count)", "usersInScope")}
+              {field("Function or department", "workstreamFunction", { required: true })}
+              {field("People in scope (count)", "usersInScope", { required: true })}
             </div>
-            {area("Role families (comma separated)", "roleFamilies")}
-            {area("Systems in scope (comma separated)", "systemsInScope")}
+            {area("Role families (comma separated)", "roleFamilies", undefined, {
+              required: true
+            })}
+            {area("Systems in scope (comma separated)", "systemsInScope", undefined, {
+              required: true
+            })}
           </article>
         )}
 
@@ -676,46 +809,51 @@ export const AIValueDiscovery = () => {
             <h3>Where could AI make work measurably easier?</h3>
             {form.useCases.map((useCase, index) => (
               <div className="ai-value-usecase-card" key={index}>
-                <label>Use case name</label>
-                <input
-                  aria-label={`Use case ${index + 1} name`}
+                <RequiredTextField
+                  ariaLabel={`Use case ${index + 1} name`}
+                  errorMessage="Required: name the use case."
+                  id={`use-case-${index}-name`}
+                  label="Use case name"
                   value={useCase.name}
-                  onChange={(event) => setUseCase(index, "name", event.target.value)}
+                  onChange={(value) => setUseCase(index, "name", value)}
                 />
-                <label>What changes for the people doing the work?</label>
-                <textarea
+                <RequiredTextField
+                  errorMessage="Required: describe what changes for the people doing the work."
+                  id={`use-case-${index}-description`}
+                  label="What changes for the people doing the work?"
+                  multiline
                   value={useCase.description}
-                  onChange={(event) => setUseCase(index, "description", event.target.value)}
+                  onChange={(value) => setUseCase(index, "description", value)}
                 />
                 <div className="ai-value-field-grid">
-                  <div>
-                    <label>Why it matters (impact)</label>
-                    <input
-                      value={useCase.impactRationale}
-                      onChange={(event) => setUseCase(index, "impactRationale", event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>What it takes (effort)</label>
-                    <input
-                      value={useCase.effortRationale}
-                      onChange={(event) => setUseCase(index, "effortRationale", event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Functions touched (comma separated)</label>
-                    <input
-                      value={useCase.impactedFunctions}
-                      onChange={(event) => setUseCase(index, "impactedFunctions", event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Evidence sources (comma separated)</label>
-                    <input
-                      value={useCase.dataSources}
-                      onChange={(event) => setUseCase(index, "dataSources", event.target.value)}
-                    />
-                  </div>
+                  <RequiredTextField
+                    errorMessage="Required: capture why this use case matters."
+                    id={`use-case-${index}-impact`}
+                    label="Why it matters (impact)"
+                    value={useCase.impactRationale}
+                    onChange={(value) => setUseCase(index, "impactRationale", value)}
+                  />
+                  <RequiredTextField
+                    errorMessage="Required: capture what this use case takes."
+                    id={`use-case-${index}-effort`}
+                    label="What it takes (effort)"
+                    value={useCase.effortRationale}
+                    onChange={(value) => setUseCase(index, "effortRationale", value)}
+                  />
+                  <RequiredTextField
+                    errorMessage="Required: list the functions touched."
+                    id={`use-case-${index}-functions`}
+                    label="Functions touched (comma separated)"
+                    value={useCase.impactedFunctions}
+                    onChange={(value) => setUseCase(index, "impactedFunctions", value)}
+                  />
+                  <RequiredTextField
+                    errorMessage="Required: list the aggregate evidence sources."
+                    id={`use-case-${index}-sources`}
+                    label="Evidence sources (comma separated)"
+                    value={useCase.dataSources}
+                    onChange={(value) => setUseCase(index, "dataSources", value)}
+                  />
                 </div>
                 <label htmlFor={`uc-objective-${index}`}>Which objective does this serve?</label>
                 <select
@@ -866,14 +1004,17 @@ export const AIValueDiscovery = () => {
                 </div>
               </div>
             </section>
-            {area("The client question on the wall", "clientQuestion")}
+            {area("The client question on the wall", "clientQuestion", undefined, {
+              required: true,
+              errorMessage: "Required: capture the client question."
+            })}
             <div className="ai-value-field-grid">
-              <div>{area("How the work happens today (one step per line)", "currentSteps")}</div>
-              <div>{area("The target workflow (one step per line)", "futureSteps")}</div>
+              <div>{area("How the work happens today (one step per line)", "currentSteps", undefined, { required: true })}</div>
+              <div>{area("The target workflow (one step per line)", "futureSteps", undefined, { required: true })}</div>
             </div>
-            {area("Friction the team named (one per line)", "frictionPoints")}
-            {area("How the work itself changes", "expectedChange")}
-            {area("The value hypothesis", "valueHypothesis")}
+            {area("Friction the team named (one per line)", "frictionPoints", undefined, { required: true })}
+            {area("How the work itself changes", "expectedChange", undefined, { required: true })}
+            {area("The value hypothesis", "valueHypothesis", undefined, { required: true })}
             <div className="ai-value-field-grid">
               <div>
                 <label htmlFor="f-primaryRoute">Primary value route</label>
@@ -889,13 +1030,21 @@ export const AIValueDiscovery = () => {
                   ))}
                 </select>
               </div>
-              {field("Baseline window", "baselineWindow", { placeholder: "2026-02-01_to_2026-03-31" })}
-              {field("Comparison window", "comparisonWindow", { placeholder: "2026-04-01_to_2026-05-31" })}
-              {field("Eligible work items in scope", "eligibleCases")}
-              {field("Assistant sessions (aggregate)", "assistantSessions")}
-              {field("Search sessions (aggregate)", "searchSessions")}
+              {field("Baseline window", "baselineWindow", {
+                placeholder: "2026-02-01_to_2026-03-31",
+                required: true
+              })}
+              {field("Comparison window", "comparisonWindow", {
+                placeholder: "2026-04-01_to_2026-05-31",
+                required: true
+              })}
+              {field("Eligible work items in scope", "eligibleCases", { required: true })}
+              {field("Assistant sessions (aggregate)", "assistantSessions", { required: true })}
+              {field("Search sessions (aggregate)", "searchSessions", { required: true })}
             </div>
-            {area("Outcome signals the client will report (comma separated)", "plannedSignals")}
+            {area("Outcome signals the client will report (comma separated)", "plannedSignals", undefined, {
+              required: true
+            })}
 
             <h4>Evidence coverage today</h4>
             <div className="ai-value-field-grid">

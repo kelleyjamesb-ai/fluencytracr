@@ -248,6 +248,42 @@ const defaultMetricEvidenceDraft: MetricEvidenceDraft = {
 
 const DEFAULT_METRIC_DRAFT_KEY = "__default_metric_evidence__";
 
+const metricEvidenceRequiredFields: Array<keyof MetricEvidenceDraft> = [
+  "outcomeMetric",
+  "sourceSystem",
+  "measurementUnit",
+  "baselineWindow",
+  "comparisonWindow",
+  "baselineValue",
+  "currentValue",
+  "eligiblePopulation",
+  "owner"
+];
+
+const metricEvidenceFieldLabels: Record<keyof MetricEvidenceDraft, string> = {
+  outcomeMetric: "Outcome metric",
+  sourceSystem: "Source system",
+  measurementUnit: "Measurement unit",
+  baselineWindow: "Baseline window",
+  comparisonWindow: "Comparison window",
+  baselineValue: "Baseline value",
+  currentValue: "Current value",
+  eligiblePopulation: "Eligible population",
+  owner: "Evidence owner"
+};
+
+const metricEvidenceFieldErrors: Record<keyof MetricEvidenceDraft, string> = {
+  outcomeMetric: "Required: name the client-owned outcome metric.",
+  sourceSystem: "Required: identify the customer-owned source system.",
+  measurementUnit: "Required: provide the metric unit for aggregate comparison.",
+  baselineWindow: "Required: provide the approved baseline window.",
+  comparisonWindow: "Required: provide the approved comparison window.",
+  baselineValue: "Required: add the aggregate baseline value.",
+  currentValue: "Required: add the aggregate comparison value.",
+  eligiblePopulation: "Required: add the aggregate eligible population.",
+  owner: "Required: name the evidence owner for customer review."
+};
+
 type MetricEvidenceQueueItem = {
   key: string;
   functionArea: string;
@@ -307,12 +343,7 @@ const metricEvidenceDraftsFromQueue = (
 };
 
 const isMetricEvidenceReady = (draft: MetricEvidenceDraft): boolean =>
-  Boolean(
-    draft.baselineValue.trim() &&
-      draft.currentValue.trim() &&
-      draft.eligiblePopulation.trim() &&
-      draft.owner.trim()
-  );
+  metricEvidenceRequiredFields.every((field) => draft[field].trim());
 
 const MetricEvidenceIntake = ({
   metricSelection,
@@ -357,6 +388,40 @@ const MetricEvidenceIntake = ({
       }));
     };
 
+  const draftId = draftKey.replace(/[^a-zA-Z0-9_-]/g, "-") || DEFAULT_METRIC_DRAFT_KEY;
+  const renderMetricInput = (
+    field: keyof MetricEvidenceDraft,
+    options: { inputMode?: "decimal" | "numeric" } = {}
+  ) => {
+    const fieldId = `metric-evidence-${draftId}-${field}`;
+    const errorId = `${fieldId}-error`;
+    const isRequired = metricEvidenceRequiredFields.includes(field);
+    const hasError = isRequired && !draft[field].trim();
+
+    return (
+      <div className="ai-value-case-intake-field">
+        <label htmlFor={fieldId}>
+          {metricEvidenceFieldLabels[field]}
+        </label>
+        <input
+          aria-describedby={hasError ? errorId : undefined}
+          aria-invalid={isRequired ? hasError : undefined}
+          aria-required={isRequired}
+          id={fieldId}
+          inputMode={options.inputMode}
+          required={isRequired}
+          value={draft[field]}
+          onChange={updateDraft(field)}
+        />
+        {hasError && (
+          <span className="ai-value-field-error" id={errorId}>
+            {metricEvidenceFieldErrors[field]}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <section className="ai-value-case-intake" aria-label="Metric evidence intake">
       <div className="ai-value-case-intake-head">
@@ -368,10 +433,12 @@ const MetricEvidenceIntake = ({
             approved export from the system of record.
           </p>
         </div>
-        <StatusPill
-          label={evidenceReady ? "Evidence staged locally" : "Needs metric values"}
-          tone={evidenceReady ? "good" : "warn"}
-        />
+        <span aria-live="polite">
+          <StatusPill
+            label={evidenceReady ? "Evidence staged locally" : "Needs metric values"}
+            tone={evidenceReady ? "good" : "warn"}
+          />
+        </span>
       </div>
 
       {metricQueue.length > 0 && (
@@ -418,54 +485,15 @@ const MetricEvidenceIntake = ({
       )}
 
       <div className="ai-value-case-intake-grid">
-        <label>
-          Outcome metric
-          <input value={draft.outcomeMetric} onChange={updateDraft("outcomeMetric")} />
-        </label>
-        <label>
-          Source system
-          <input value={draft.sourceSystem} onChange={updateDraft("sourceSystem")} />
-        </label>
-        <label>
-          Measurement unit
-          <input value={draft.measurementUnit} onChange={updateDraft("measurementUnit")} />
-        </label>
-        <label>
-          Evidence owner
-          <input value={draft.owner} onChange={updateDraft("owner")} />
-        </label>
-        <label>
-          Baseline window
-          <input value={draft.baselineWindow} onChange={updateDraft("baselineWindow")} />
-        </label>
-        <label>
-          Comparison window
-          <input value={draft.comparisonWindow} onChange={updateDraft("comparisonWindow")} />
-        </label>
-        <label>
-          Baseline value
-          <input
-            inputMode="decimal"
-            value={draft.baselineValue}
-            onChange={updateDraft("baselineValue")}
-          />
-        </label>
-        <label>
-          Current value
-          <input
-            inputMode="decimal"
-            value={draft.currentValue}
-            onChange={updateDraft("currentValue")}
-          />
-        </label>
-        <label>
-          Eligible population
-          <input
-            inputMode="numeric"
-            value={draft.eligiblePopulation}
-            onChange={updateDraft("eligiblePopulation")}
-          />
-        </label>
+        {renderMetricInput("outcomeMetric")}
+        {renderMetricInput("sourceSystem")}
+        {renderMetricInput("measurementUnit")}
+        {renderMetricInput("owner")}
+        {renderMetricInput("baselineWindow")}
+        {renderMetricInput("comparisonWindow")}
+        {renderMetricInput("baselineValue", { inputMode: "decimal" })}
+        {renderMetricInput("currentValue", { inputMode: "decimal" })}
+        {renderMetricInput("eligiblePopulation", { inputMode: "numeric" })}
         <label>
           Import aggregate evidence file
           <input
@@ -797,7 +825,7 @@ export const ValueEvidenceCasePanel = () => {
 
   if (state === "loading") {
     return (
-      <section className="ai-value-panel" aria-label="Value evidence case">
+      <section className="ai-value-panel" aria-label="Value evidence case" aria-live="polite">
         <p>Loading the value evidence cases…</p>
       </section>
     );
@@ -811,14 +839,15 @@ export const ValueEvidenceCasePanel = () => {
             <p className="eyebrow">Value Evidence Case</p>
             <h2>Evidence case not connected yet</h2>
             <p>
-              Start by staging the aggregate metric evidence for the outcome selected on the
-              previous page. The governed case can be assembled once the evidence service is
-              available.
+              Missing: the Evidence Checkpoint service response for this workflow. Why: this
+              case can support planning only when aggregate metric evidence is assembled through
+              the governed checkpoint path. Next action: stage the selected aggregate metric
+              evidence below, then reconnect the Evidence Checkpoint service.
             </p>
           </div>
           <StatusPill label="Needs evidence connection" tone="warn" />
         </div>
-        <p className="ai-value-inline-alert" role="alert">
+        <p className="ai-value-inline-alert" role="alert" aria-live="polite">
           Case records are unavailable in this local session, so this page is showing the evidence
           intake instead.
         </p>
@@ -835,9 +864,10 @@ export const ValueEvidenceCasePanel = () => {
             <p className="eyebrow">Value Evidence Case</p>
             <h2>No evidence case yet</h2>
             <p>
-              Start by staging the aggregate metric evidence for the outcome selected on the
-              previous page. Once the customer reviewer accepts the evidence package, this page can
-              assemble the case and show what value language is allowed.
+              Missing: an Evidence Checkpoint for the selected workflow and outcome metric.
+              Why: this case can support planning only after aggregate metric evidence and
+              reviewer status are available. Next action: create an Evidence Checkpoint in the
+              previous stage, then return here to review allowed value language.
             </p>
           </div>
         </div>
