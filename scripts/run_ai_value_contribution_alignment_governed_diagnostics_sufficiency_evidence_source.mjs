@@ -356,6 +356,40 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /\bproductivity\b/i
 ];
 
+const FORBIDDEN_RUNTIME_ENVELOPE_SIDECAR_KEY_PATTERNS = [
+  /raw_?rows?/i,
+  /^rows$/i,
+  /^records$/i,
+  /query_?text/i,
+  /\bsql\b/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /user_?id/i,
+  /employee/i,
+  /person_?id/i,
+  /^email$/i,
+  /payload_?json/i,
+  /feature_?table/i,
+  /warehouse/i,
+  /dataset/i
+];
+
+const FORBIDDEN_RUNTIME_ENVELOPE_SIDECAR_VALUE_PATTERNS = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /\bselect\b[\s\S]+\bfrom\b/i,
+  /\bsql\b/i,
+  /\bbquxjob_/i,
+  /https?:\/\//i,
+  /secret:\/\//i,
+  /raw[_-\s]?rows?/i,
+  /query[_-\s]?text/i,
+  /payload_json/i,
+  /feature[_-\s]?table/i,
+  /warehouse/i,
+  /dataset/i
+];
+
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
   if (value && typeof value === "object") {
@@ -420,9 +454,33 @@ function reviewedEvidenceFromInput(input) {
   return asRecord(input).reviewed_diagnostics_source_evidence ?? null;
 }
 
+function runtimeEnvelopeSidecarContentGaps(value, path = "source_runtime_envelope") {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) =>
+      runtimeEnvelopeSidecarContentGaps(item, `${path}[${index}]`)
+    );
+  }
+  if (value && typeof value === "object") {
+    const gaps = [];
+    for (const [key, nested] of Object.entries(value)) {
+      if (FORBIDDEN_RUNTIME_ENVELOPE_SIDECAR_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+        gaps.push(`${path}.${key} contains unsafe source wrapper field`);
+        continue;
+      }
+      gaps.push(...runtimeEnvelopeSidecarContentGaps(nested, `${path}.${key}`));
+    }
+    return gaps;
+  }
+  if (typeof value !== "string") return [];
+  return FORBIDDEN_RUNTIME_ENVELOPE_SIDECAR_VALUE_PATTERNS.some((pattern) => pattern.test(value))
+    ? [`${path} contains unsafe source wrapper content`]
+    : [];
+}
+
 function inputBoundaryGaps(input) {
   const record = asRecord(input);
   if (!Object.prototype.hasOwnProperty.call(record, "source_runtime")) return [];
+  const gaps = [];
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
@@ -440,9 +498,9 @@ function inputBoundaryGaps(input) {
       gaps.push("source_runtime envelope rejected unsafe or unsupported content");
     }
     for (const [key, nested] of Object.entries(sourceRuntimeEnvelope)) {
-      if (key !== "source_runtime") {
-        gaps.push(...runtimeEnvelopeContentGaps(nested, `source_runtime envelope.${key}`));
-      }
+      if (key === "source_runtime") continue;
+      if (!ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)) continue;
+      gaps.push(...runtimeEnvelopeSidecarContentGaps(nested, `source_runtime envelope.${key}`));
     }
   }
   return sanitizeGaps(gaps);
