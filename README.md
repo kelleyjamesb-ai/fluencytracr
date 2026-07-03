@@ -439,6 +439,19 @@ documented value-realization layers:
   causality, productivity, persistence, exports, live connectors, UI, routes,
   and schemas blocked. Its allowed next step is derived from the validated
   existing gate chain only.
+- **AI Value confidence-engine workspace:** promotes the 16-module
+  contribution-alignment Bayesian execution spine into the typed
+  `packages/confidence-engine` workspace with byte-identical outputs: every
+  schema version, state token, hash, and property insertion order is preserved
+  and enforced by golden-fixture parity gates plus the migrated validation
+  suites (`npm run test:confidence-engine-workspace`); the spine `scripts/`
+  runners remain as thin wrappers preserving CLI usage and named exports, and
+  the `ConfidenceModel` contract module is types + Zod schemas only. The port
+  changes no model math or gate semantics: all held states stay held,
+  promotion stays blocked, and posterior interpretation,
+  confidence/probability/score output, finance output, ROI, causality,
+  productivity, customer-facing output, routes, UI, schemas, persistence,
+  exports, and live connectors remain blocked.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns
