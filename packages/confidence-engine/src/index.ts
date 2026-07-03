@@ -28,3 +28,10 @@ export {
   contributionAlignmentVersionedWeightObjectHash,
   validateContributionAlignmentVersionedWeightObject
 } from "./versionedWeightObject";
+
+export {
+  CONTRIBUTION_ALIGNMENT_WEIGHTED_INTERNAL_MODEL_FRAME_SCHEMA_VERSION,
+  buildContributionAlignmentWeightedInternalModelFrameFromObject,
+  contributionAlignmentWeightedInternalModelFrameHash,
+  validateContributionAlignmentWeightedInternalModelFrame
+} from "./weightedInternalModelFrame";
