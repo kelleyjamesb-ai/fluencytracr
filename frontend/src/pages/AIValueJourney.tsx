@@ -70,7 +70,7 @@ export const AIValueJourney = () => {
               : "A whole-system path from AI readiness to governed value realization."}
           </p>
         </div>
-        <div className="ai-value-status-strip">
+        <div className="ai-value-status-strip" aria-live="polite">
           <StatusPill label={`${completeCount}/${journey.stages.length} phases ready`} tone="good" />
           <button
             type="button"
@@ -84,7 +84,7 @@ export const AIValueJourney = () => {
       </header>
 
       {journey.errorMessage && (
-        <p role="alert" className="ai-value-panel">
+        <p role="alert" aria-live="polite" className="ai-value-panel">
           {journey.errorMessage}
         </p>
       )}

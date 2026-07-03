@@ -1286,15 +1286,19 @@ const visibleEvidenceCoverage = (journey: Journey) =>
 const WorkspaceReportToolbar = ({
   activePage,
   activePageSlug,
+  activeStepNumber,
   connectLiveEvidence,
   mode,
-  statusTone
+  statusTone,
+  stepCount
 }: {
   activePage: WorkspacePage;
   activePageSlug: WorkspacePageSlug;
+  activeStepNumber: number;
   connectLiveEvidence: () => Promise<void>;
   mode: ReturnType<typeof useAiValueWorkspace>["mode"];
   statusTone: "good" | "warn" | "neutral";
+  stepCount: number;
 }) => (
   <header
     className="ai-value-workspace-report-toolbar"
@@ -1305,6 +1309,13 @@ const WorkspaceReportToolbar = ({
       <div>
         <h1>Value Case: AI Assistant Value Assessment</h1>
         <p>{activePage.label}</p>
+      </div>
+      <div
+        className="ai-value-workspace-step-indicator"
+        aria-label={`Step ${activeStepNumber} of ${stepCount}: ${activePage.navLabel}`}
+      >
+        <span>Step {activeStepNumber} of {stepCount}</span>
+        <strong>{activePage.navLabel}</strong>
       </div>
       <nav className="ai-value-workspace-report-tabs" aria-label="Value case modes">
         <Link
@@ -1331,6 +1342,7 @@ const WorkspaceReportToolbar = ({
       className="ai-value-workspace-report-toolbar-actions"
       role="group"
       aria-label="Report frame actions"
+      aria-live="polite"
     >
       <StatusPill
         label="Read-only status"
@@ -1443,9 +1455,11 @@ export const AIValueWorkspace = () => {
           <WorkspaceReportToolbar
             activePage={activePage}
             activePageSlug={activePageSlug}
+            activeStepNumber={activeStepNumber}
             connectLiveEvidence={connectLiveEvidence}
             mode={mode}
             statusTone={journey.realEvidenceStatus.statusTone}
+            stepCount={workspacePages.length}
           />
 
           <section className="ai-value-workspace-report-surface">
@@ -1478,12 +1492,12 @@ export const AIValueWorkspace = () => {
             </section>
 
             {journey.errorMessage && (
-              <p role="alert" className="ai-value-inline-alert">
+              <p role="alert" aria-live="polite" className="ai-value-inline-alert">
                 {journey.errorMessage}
               </p>
             )}
             {errorMessage && (
-              <p role="alert" className="ai-value-inline-alert">
+              <p role="alert" aria-live="polite" className="ai-value-inline-alert">
                 {errorMessage}
               </p>
             )}
@@ -1808,7 +1822,7 @@ const EvidenceSourcesPage = ({ journey }: { journey: Journey }) => (
       </div>
 
       {journey.realEvidenceStatus.heldReasons.length > 0 && (
-        <div className="ai-value-source-held" role="alert">
+        <div className="ai-value-source-held" role="alert" aria-live="polite">
           <strong>Held reasons</strong>
           <ul>
             {journey.realEvidenceStatus.heldReasons.map((reason) => (
@@ -2004,6 +2018,7 @@ const CustomerDataModelProjectionPanel = () => {
     <section
       className="ai-value-customer-projection-panel"
       aria-label="Customer evidence projection"
+      aria-live="polite"
     >
       <div className="ai-value-section-head">
         <div>
@@ -2073,8 +2088,12 @@ const CustomerDataModelProjectionPanel = () => {
         <div className="ai-value-customer-projection-held">
           <strong>No governed customer projection available</strong>
           <p>
-            A compact customer data model snapshot must exist first. Until then,
-            this surface stays empty instead of substituting example values.
+            Missing: a compact, source-bound customer data model snapshot for
+            this measurement route. Why: this panel can support planning only
+            when governed aggregate snapshots are available and source-bound.
+            Next action: create the governed customer projection in the
+            previous stage, then return here to review aggregate evidence
+            status.
           </p>
         </div>
       )}

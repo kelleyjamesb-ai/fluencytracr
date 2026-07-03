@@ -222,6 +222,12 @@ describe("AIValueWorkspace executive spine", () => {
     expect(
       screen.getByRole("heading", { name: /Value Case: AI Assistant Value Assessment/i })
     ).toBeInTheDocument();
+    const reportHeader = screen
+      .getByRole("heading", { name: /Value Case: AI Assistant Value Assessment/i })
+      .closest("header") as HTMLElement;
+    expect(within(reportHeader).getByLabelText(/Step 1 of 7: Blueprint/i)).toHaveTextContent(
+      "Step 1 of 7"
+    );
     expect(
       screen.queryByRole("heading", { name: /Value Evidence Console/i })
     ).not.toBeInTheDocument();
@@ -243,6 +249,9 @@ describe("AIValueWorkspace executive spine", () => {
     const modeNav = screen.getByRole("navigation", { name: /Value case modes/i });
     expect(within(modeNav).getByRole("link", { name: /Cockpit/i })).toBeInTheDocument();
     expect(within(modeNav).getByRole("link", { name: /Report/i })).toBeInTheDocument();
+    expect(
+      within(workspaceNav).getAllByRole("link", { current: "page" })
+    ).toHaveLength(1);
     expect(screen.getByRole("region", { name: /Current guided action/i })).toHaveTextContent("Blueprint Hypothesis");
     expect(screen.getByRole("region", { name: /Blueprint hypothesis summary/i })).toBeInTheDocument();
     const journeyPreview = screen.getByRole("region", { name: /Value journey preview/i });
@@ -270,6 +279,9 @@ describe("AIValueWorkspace executive spine", () => {
     expect(reportHeader).toHaveAttribute("aria-label", "AI value report header");
     expect(within(reportHeader).getByText(/AI Value Platform/i)).toBeInTheDocument();
     expect(within(reportHeader).getByText(/^Evidence Sources$/i)).toBeInTheDocument();
+    expect(within(reportHeader).getByLabelText(/Step 3 of 7: Sources/i)).toHaveTextContent(
+      "Step 3 of 7"
+    );
     expect(
       within(reportHeader).getByText(/Caveated review only: aggregate source readiness supports planning/i)
     ).toBeInTheDocument();
@@ -496,8 +508,11 @@ describe("AIValueWorkspace executive spine", () => {
       name: /Customer evidence projection/i
     });
 
+    expect(panel).toHaveAttribute("aria-live", "polite");
     expect(within(panel).getByText(/No governed customer projection available/i)).toBeInTheDocument();
-    expect(within(panel).getByText(/A compact customer data model snapshot must exist first/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Missing: a compact, source-bound customer data model snapshot/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Why: this panel can support planning only/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Next action: create the governed customer projection/i)).toBeInTheDocument();
     expect(within(panel).queryByText(/Customer Success account health review/i)).not.toBeInTheDocument();
     expectNoUnsafeUiLanguage(container.textContent, [
       "customer-facing financial output",

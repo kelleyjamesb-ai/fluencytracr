@@ -377,12 +377,24 @@ describe("ValueEvidenceCasePanel", () => {
     await waitFor(() =>
       expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
     );
+    const panel = screen.getByRole("region", { name: /Value evidence case/i });
+    expect(panel).toHaveAttribute("aria-live", "polite");
+    expect(within(panel).getByText(/Missing: an Evidence Checkpoint/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Why: this case can support planning only/i)).toBeInTheDocument();
+    expect(within(panel).getByText(/Next action: create an Evidence Checkpoint/i)).toBeInTheDocument();
 
     const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
+    expect(intake).toHaveAttribute("aria-live", "polite");
     expect(within(intake).getByText(/Add aggregate metric evidence/i)).toBeInTheDocument();
-    expect(within(intake).getByLabelText(/Outcome metric/i)).toHaveValue("Median resolution time");
+    const outcomeMetric = within(intake).getByLabelText(/Outcome metric/i);
+    expect(outcomeMetric).toHaveValue("Median resolution time");
+    expect(outcomeMetric).toHaveAttribute("aria-required", "true");
+    expect(outcomeMetric).toHaveAttribute("aria-invalid", "false");
     expect(within(intake).getByLabelText(/Source system/i)).toHaveValue("Support case management system");
-    expect(within(intake).getByLabelText(/Baseline value/i)).toBeInTheDocument();
+    const baselineValue = within(intake).getByLabelText(/Baseline value/i);
+    expect(baselineValue).toHaveAttribute("aria-required", "true");
+    expect(baselineValue).toHaveAttribute("aria-invalid", "true");
+    expect(baselineValue).toHaveAccessibleDescription(/Required: add the aggregate baseline value/i);
     expect(within(intake).getByLabelText(/Current value/i)).toBeInTheDocument();
     expect(within(intake).getByLabelText(/Eligible population/i)).toBeInTheDocument();
     expect(within(intake).getByLabelText(/Evidence owner/i)).toBeInTheDocument();
@@ -391,6 +403,8 @@ describe("ValueEvidenceCasePanel", () => {
     fireEvent.change(within(intake).getByLabelText(/Baseline value/i), {
       target: { value: "18.4" }
     });
+    expect(baselineValue).toHaveAttribute("aria-invalid", "false");
+    expect(baselineValue).not.toHaveAccessibleDescription(/Required: add the aggregate baseline value/i);
     fireEvent.change(within(intake).getByLabelText(/Current value/i), {
       target: { value: "15.1" }
     });
