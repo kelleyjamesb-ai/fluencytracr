@@ -93,7 +93,12 @@ Enforcement is the golden-fixture chain plus per-module parity gates:
 - `scripts/run_ai_value_contribution_alignment_*.mjs` (spine modules only) —
   thin wrappers over the workspace build at cutover; every existing
   `npm run run:ai-value-contribution-alignment-*` chain and CLI invocation
-  keeps working unchanged.
+  keeps working unchanged. The wrappers import
+  `packages/confidence-engine/dist/`, which is not committed; the workspace
+  `prepare` script compiles it automatically during `npm ci` / `npm install`
+  at the repo root, so standalone `node scripts/run_*.mjs` works from a fresh
+  checkout after install. Running a wrapper before any install requires
+  `npm run build --workspace packages/confidence-engine` first.
 - Root `package.json` — workspace entry plus
   `test:confidence-engine-workspace`, which runs the workspace build and its
   full test suite (`npm run test --workspace packages/confidence-engine`).
