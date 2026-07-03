@@ -282,23 +282,21 @@ test("internal Bayesian execution runtime validation rejects forged probability 
   );
 });
 
-test("internal Bayesian execution runtime validation requires source gate for ready records unless self-contained fallback is explicit", () => {
+test("internal Bayesian execution runtime validation requires source gate for ready records", () => {
   const chain = runtimeGateChain();
   const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
     source_gate: chain.sourceGate,
     aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
   });
-  const strictValidation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime);
-  const selfContainedValidation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
     allowSelfContainedSourceValidation: true
   });
 
-  assert.equal(strictValidation.valid, false);
+  assert.equal(validation.valid, false);
   assert.ok(
-    strictValidation.gaps.some((gap) => /sourceGate|required/.test(gap)),
-    strictValidation.gaps.join("; ")
+    validation.gaps.some((gap) => /sourceGate|required/.test(gap)),
+    validation.gaps.join("; ")
   );
-  assert.equal(selfContainedValidation.valid, true, selfContainedValidation.gaps.join("; "));
 });
 
 test("internal Bayesian execution runtime validation requires deterministic rebuild source for ready records", () => {

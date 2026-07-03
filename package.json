@@ -4,6 +4,7 @@
     "backend",
     "frontend",
     "shared",
+    "packages/confidence-engine",
     "packages/fluencytracr-mcp",
     "packages/glean-publisher",
     "integrations/openai-agents"
@@ -197,6 +198,8 @@
     "run:ai-value-customer-evidence-history-read-path-proof": "npm run build --workspace shared && node scripts/run_ai_value_customer_evidence_history_read_path_proof.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
     "test:ai-value-customer-evidence-history-read-path-proof": "npm run build --workspace shared && node --test scripts/validate_ai_value_customer_evidence_history_read_path_proof.test.mjs",
     "run:ai-value-durable-series-read-path-decision": "npm run build --workspace shared && node scripts/run_ai_value_durable_series_read_path_decision.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
+    "run:ai-value-confidence-engine-series-read-path-decision": "npm run build --workspace shared && node scripts/run_ai_value_confidence_engine_series_read_path_decision.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
+    "test:ai-value-confidence-engine-series-read-path-decision": "npm run build --workspace shared && node --test scripts/validate_ai_value_confidence_engine_series_read_path_decision.test.mjs",
     "test:ai-value-durable-series-read-path-decision": "npm run build --workspace shared && node --test scripts/validate_ai_value_durable_series_read_path_decision.test.mjs",
     "run:ai-value-data-model-spine-readiness-lock": "npm run build --workspace shared && node scripts/run_ai_value_data_model_spine_readiness_lock.mjs docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json",
     "test:ai-value-data-model-spine-readiness-lock": "npm run build --workspace shared && node --test scripts/validate_ai_value_data_model_spine_readiness_lock.test.mjs",
@@ -241,7 +244,8 @@
     "test:ai-value-aggregate-api-push": "node --test scripts/prepare_ai_value_aggregate_api_push.test.mjs",
     "seed:ai-value": "node scripts/seed_ai_value_demo.mjs",
     "seed:ai-value-enterprise": "npm run build --workspace shared && node scripts/seed_ai_value_enterprise.mjs",
-    "db:baseline": "node scripts/baseline_migrations.mjs"
+    "db:baseline": "node scripts/baseline_migrations.mjs",
+    "test:confidence-engine-workspace": "npm run test --workspace packages/confidence-engine"
   },
   "devDependencies": {
     "@fission-ai/openspec": "^1.2.0",

@@ -647,6 +647,28 @@ test("internal Bayesian execution artifact v1 rejects unrecognized sidecar wrapp
   assert.equal(serialized.includes("export.csv"), false);
 });
 
+test("internal Bayesian execution artifact v1 rejects unsafe nested runtime envelope sidecars", () => {
+  const path = explicitPromotionPath();
+  const artifact =
+    buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject({
+      ...artifactInput(path),
+      source_runtime: {
+        ...sourceRuntimeEnvelope(path.runtime),
+        raw_rows: [{ email: "person@example.com" }],
+        query_text: "SELECT user_id FROM raw_rows",
+        user_id: "person-123"
+      }
+    });
+  const validation = validateContributionAlignmentInternalBayesianExecutionArtifactV1(artifact);
+  const serialized = `${JSON.stringify(artifact)} ${JSON.stringify(validation)}`;
+
+  assert.equal(artifact.artifact_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("internal Bayesian execution artifact v1 validation redacts ungoverned field names", () => {
   const path = explicitPromotionPath();
   const artifact =

@@ -12,6 +12,10 @@ import {
   customerEvidenceHistoryReadPathProofHash,
   validateCustomerEvidenceHistoryReadPathProof
 } from "./run_ai_value_customer_evidence_history_read_path_proof.mjs";
+import {
+  CONFIDENCE_SERIES_AUTHORIZED_STATE,
+  validateConfidenceEngineSeriesReadPathDecision
+} from "./run_ai_value_confidence_engine_series_read_path_decision.mjs";
 
 export const DURABLE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION =
   "FT_AI_VALUE_DURABLE_SERIES_READ_PATH_DECISION_2026_06";
@@ -754,6 +758,59 @@ export function validateDurableSeriesReadPathDecision(decision, options = {}) {
     gaps.length === 0 && record.decision_state === SATISFIED_HOLD_STATE,
     [...new Set(gaps)]
   );
+}
+
+const COEXISTENCE_VALIDATION_SCHEMA_VERSION =
+  `${DURABLE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION}_CONFIDENCE_COEXISTENCE_VALIDATION`;
+
+export function validateDurableSeriesConfidenceCoexistence(
+  durableDecision,
+  confidenceDecision,
+  options = {}
+) {
+  const gaps = [];
+  const durableRecord = asRecord(durableDecision);
+  const confidenceRecord = asRecord(confidenceDecision);
+  const durableValidation = validateDurableSeriesReadPathDecision(
+    durableDecision,
+    asRecord(options.durable)
+  );
+  if (durableValidation.valid !== true) {
+    gaps.push("durable_series_read_path_decision_not_valid");
+  }
+  if (durableRecord.decision_state !== SATISFIED_HOLD_STATE) {
+    gaps.push("durable_series_read_path_decision_must_hold_customer_history_on_compact_snapshots");
+  }
+  const confidenceValidation = validateConfidenceEngineSeriesReadPathDecision(
+    confidenceDecision,
+    asRecord(options.confidence)
+  );
+  if (confidenceValidation.valid !== true) {
+    gaps.push("confidence_engine_series_read_path_decision_not_valid");
+  }
+  if (confidenceRecord.decision_state !== CONFIDENCE_SERIES_AUTHORIZED_STATE) {
+    gaps.push("confidence_engine_series_read_path_decision_not_authorized");
+  }
+  const durableHistoryHash = asRecord(durableRecord.source_proof_ref).customer_history_hash;
+  const confidenceHistoryHash = asRecord(confidenceRecord.source_proof_ref).customer_history_hash;
+  if (
+    !durableHistoryHash ||
+    !confidenceHistoryHash ||
+    durableHistoryHash !== confidenceHistoryHash
+  ) {
+    gaps.push("decisions_not_bound_to_same_customer_history");
+  }
+  if (asRecord(durableRecord.feeds).research_model_feed !== false) {
+    gaps.push("durable_decision_research_model_feed_must_stay_false");
+  }
+  if (durableRecord.allowed_next_step !== ALLOWED_NEXT_STEP) {
+    gaps.push("durable_decision_customer_history_read_path_must_stay_on_compact_snapshots");
+  }
+  return {
+    schema_version: COEXISTENCE_VALIDATION_SCHEMA_VERSION,
+    valid: gaps.length === 0,
+    gaps: [...new Set(gaps)]
+  };
 }
 
 function main() {

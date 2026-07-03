@@ -1,0 +1,223 @@
+{
+  "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_GATE_2026_06",
+  "gate_id": "contribution_alignment_internal_bayesian_execution_gate_5ef2d2e5f4dbfe44",
+  "gate_state": "INTERNAL_BAYESIAN_EXECUTION_GATE_READY",
+  "generated_at": "2026-06-25T00:00:00.000Z",
+  "derivation_version": "ai_value_contribution_alignment_internal_bayesian_execution_gate_2026_06",
+  "source_bound": true,
+  "source_specification_ref": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_2026_06",
+    "specification_id": "contribution_alignment_bayesian_model_specification_d11504a7e8d9543c",
+    "specification_state": "BAYESIAN_MODEL_SPECIFICATION_READY",
+    "specification_version": "bayesian_hierarchical_did_spec_2026_06",
+    "specification_hash": "ca83233debd3746717808039cc8b92fa1f76b6d3ba4f29b5d07651fd5b1c58bb"
+  },
+  "source_readiness_review_ref": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_READINESS_REVIEW_2026_06",
+    "review_id": "contribution_alignment_internal_bayesian_readiness_review_0ccc2e86a3903202",
+    "review_state": "INTERNAL_BAYESIAN_READINESS_REVIEW_PASSED_FOR_MODEL_SPECIFICATION",
+    "review_version": "internal_bayesian_readiness_review_2026_06",
+    "review_hash": "a965028dbee6d99d9347f577ff639fbd00fa858262ede3780fe9288d594d5fbc"
+  },
+  "source_frame_ref": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_WEIGHTED_INTERNAL_MODEL_FRAME_2026_06",
+    "frame_id": "contribution_alignment_weighted_internal_model_frame_0d95a2fce5be0b97",
+    "frame_state": "WEIGHTED_INTERNAL_MODEL_FRAME_READY",
+    "frame_version": "internal_weighted_feature_composition_frame_2026_06",
+    "frame_hash": "43509a94ee9b672c61527626aff284e4b68606a7a5d62ef40d36352e782fb9f9"
+  },
+  "gate_version": "internal_bayesian_execution_gate_2026_06",
+  "candidate_model_family": "bayesian_hierarchical_difference_in_differences_candidate",
+  "gate_policy": {
+    "internal_only": true,
+    "execution_gate_only": true,
+    "runtime_implementation_authorized": true,
+    "bayesian_execution_authorized": false,
+    "bayesian_model_output_authorized": false,
+    "posterior_output_authorized": false,
+    "confidence_output_authorized": false,
+    "probability_output_authorized": false,
+    "finance_output_authorized": false,
+    "customer_output_authorized": false
+  },
+  "runtime_prerequisites": {
+    "aggregate_measurement_cell_windows_only": true,
+    "source_specification_hash_bound": true,
+    "governed_feature_weights_only": true,
+    "deterministic_fixture_or_snapshot_only": true,
+    "no_raw_rows_or_records": true,
+    "no_identifiers": true,
+    "no_query_text": true,
+    "no_live_connectors": true,
+    "posterior_output_review_required": true,
+    "confidence_probability_language_blocked": true,
+    "customer_output_blocked": true
+  },
+  "execution_contract": {
+    "unit_of_analysis": "aggregate_measurement_cell_window",
+    "estimand": "aggregate_selected_metric_movement_difference_in_differences_candidate",
+    "prior_specification_state": "weakly_regularizing_internal_placeholder_not_calibrated",
+    "likelihood_specification_state": "aggregate_window_likelihood_placeholder_not_executed",
+    "execution_scope": "internal_deterministic_runtime_implementation_candidate",
+    "execution_state": "not_executed"
+  },
+  "gated_feature_weights": [
+    {
+      "feature_id": "hypothesis_binding",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "source_coverage",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "milestone_continuity",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "ai_fluency_construct_context_integrity",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "psychological_context_integrity",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "observed_vbd_alignment",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "selected_metric_movement",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "comparison_design_strength",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "assumption_governance",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "boundary_clearance",
+      "weight": 0.1,
+      "source_bound": true,
+      "gate_role": "eligible_for_later_internal_runtime_fixture",
+      "output_value_present": false
+    }
+  ],
+  "allowed_next_step": "internal_bayesian_execution_runtime_only",
+  "blocked_uses": [
+    "bayesian_execution",
+    "bayesian_model_output",
+    "posterior_output",
+    "confidence_output",
+    "probability_output",
+    "score_like_output",
+    "weighted_internal_model_output",
+    "aggregate_score_output",
+    "research_model_feed",
+    "finance_output",
+    "roi",
+    "causality_claim",
+    "productivity_measurement",
+    "customer_facing_output",
+    "route_creation",
+    "ui_creation",
+    "schema_creation",
+    "persistence_write",
+    "export_creation",
+    "live_connector_execution",
+    "raw_data_storage"
+  ],
+  "required_caveats": [
+    "Internal Bayesian Execution Gate authorizes only a later internal Bayesian execution runtime implementation.",
+    "This gate does not run Bayesian execution or emit posterior, confidence, probability, score, ROI, finance, causality, productivity, or customer-facing output.",
+    "Runtime inputs must remain aggregate measurement-cell-window fixtures or reviewed internal snapshots with no raw rows, query text, identifiers, live connectors, schemas, UI, exports, or persistence writes.",
+    "Any posterior or output language must pass a later posterior/output review gate before confidence or probability language can appear."
+  ],
+  "feeds": {
+    "internal_bayesian_execution_runtime": true,
+    "bayesian_execution": false,
+    "bayesian_model_output": false,
+    "posterior_output": false,
+    "confidence_output": false,
+    "probability_output": false,
+    "score_like_output": false,
+    "weighted_internal_model_output": false,
+    "aggregate_score_output": false,
+    "research_model_feed": false,
+    "finance_output": false,
+    "roi_output": false,
+    "causality_output": false,
+    "productivity_output": false,
+    "customer_facing_output": false,
+    "route_creation": false,
+    "ui_creation": false,
+    "schema_creation": false,
+    "persistence_write": false,
+    "export_creation": false,
+    "live_connector_execution": false
+  },
+  "boundary_policy": {
+    "receives_bayesian_model_specification_only": true,
+    "receives_bayesian_readiness_review_ref": true,
+    "receives_weighted_frame_ref": true,
+    "receives_full_source_payload": false,
+    "receives_raw_rows": false,
+    "receives_query_text": false,
+    "receives_identifiers": false,
+    "persists_gate": false,
+    "creates_routes": false,
+    "creates_ui": false,
+    "creates_schemas": false,
+    "creates_exports": false,
+    "runs_live_connectors": false,
+    "implements_bayesian_runtime": false,
+    "implements_bayesian_execution": false,
+    "emits_bayesian_model_output": false,
+    "emits_posterior_output": false,
+    "emits_confidence_output": false,
+    "emits_probability": false,
+    "emits_score_like_output": false,
+    "emits_finance_output": false,
+    "emits_customer_facing_output": false,
+    "computes_roi": false,
+    "claims_causality": false,
+    "measures_productivity": false
+  },
+  "validation_summary": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_GATE_2026_06_SUMMARY",
+    "valid": true,
+    "gate_state": "INTERNAL_BAYESIAN_EXECUTION_GATE_READY",
+    "gaps": []
+  },
+  "gate_hash": "2aa45da0be22e70c0b0f02089fea2b2080c093314558a6418f418d81eff0bbcf"
+}

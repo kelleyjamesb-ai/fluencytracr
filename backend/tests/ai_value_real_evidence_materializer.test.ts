@@ -210,6 +210,62 @@ describe("AI Value real evidence materializer", () => {
     });
   });
 
+  it("keeps surfaced aggregate evidence held when the nested forwarded distribution slice drifts", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+    const storedVerdict = Array.from(store.fluencyTracrVerdicts.values())[0];
+    (storedVerdict.payload_json.forwarded_distribution as Record<string, unknown>).workflow_id =
+      "workflow:OTHER";
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.evidence_summary).toMatchObject({
+      forwarded_distribution_used: false,
+      velocity_observation_count: 3
+    });
+    expect(response.body.held_reasons).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("forwarded_distribution slice does not match verdict row")
+      ])
+    );
+    expect(response.body.objects.evidence_readiness.source_coverage).toMatchObject({
+      ai_activity: "MISSING",
+      workflow: "MISSING",
+      trust: "MISSING",
+      suppression: "MISSING"
+    });
+  });
+
+  it("keeps surfaced aggregate evidence held when nested forwarded window or calibration drifts", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+    const storedVerdict = Array.from(store.fluencyTracrVerdicts.values())[0];
+    Object.assign(storedVerdict.payload_json.forwarded_distribution as Record<string, unknown>, {
+      window_start: "2026-04-02T00:00:00.000Z",
+      calibration_id: "scio-prod-60d-2026-06"
+    });
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.evidence_summary).toMatchObject({
+      forwarded_distribution_used: false,
+      velocity_observation_count: 3
+    });
+    expect(response.body.held_reasons).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("forwarded_distribution slice does not match verdict row")
+      ])
+    );
+    expect(response.body.objects.evidence_readiness.source_coverage).toMatchObject({
+      ai_activity: "MISSING",
+      workflow: "MISSING",
+      trust: "MISSING",
+      suppression: "MISSING"
+    });
+  });
+
   it("keeps suppressed aggregate evidence from upgrading source coverage", async () => {
     await postUpstreamObjects();
     await postV3Aggregate(v3Payload({ cohort_size: 4 })).expect(202);
@@ -225,6 +281,38 @@ describe("AI Value real evidence materializer", () => {
       workflow: "MISSING",
       trust: "MISSING",
       suppression: "MISSING"
+    });
+  });
+
+  it("uses legacy surfaced forwarded distributions that predate surface taxonomy ids", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+
+    const verdict = Array.from(store.fluencyTracrVerdicts.values()).find(
+      (record) => record.cohort_id === "cohort-real-evidence" && record.workflow_id === "workflow:CHAT"
+    );
+    expect(verdict).toBeDefined();
+    const forwardedDistribution = verdict?.payload_json.forwarded_distribution as
+      | Record<string, unknown>
+      | undefined;
+    expect(forwardedDistribution).toBeDefined();
+    delete forwardedDistribution?.surface_taxonomy_ids;
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.evidence_summary).toMatchObject({
+      forwarded_distribution_used: true
+    });
+    expect(response.body.held_reasons).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("forwarded_distribution is missing or invalid")
+      ])
+    );
+    expect(response.body.objects.evidence_readiness.source_coverage).toMatchObject({
+      ai_activity: "PRESENT",
+      workflow: "PRESENT",
+      suppression: "PRESENT"
     });
   });
 

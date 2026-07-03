@@ -224,6 +224,14 @@ const ALLOWED_INPUT_FIELDS = new Set([
   "source_governed_diagnostics_sufficiency_evidence_source"
 ]);
 
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+  "source_runtime",
+  "source_gate",
+  "sourceGate",
+  "aggregate_measurement_cell_windows",
+  "aggregateMeasurementCellWindows"
+]);
+
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
   if (value && typeof value === "object") {
@@ -267,6 +275,14 @@ function inputBoundaryGaps(input) {
   }
   if (FORBIDDEN_INPUT_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(record, field))) {
     gaps.push("internal Bayesian execution artifact v1 input contains blocked output or raw source side door");
+  }
+  const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  if (sourceRuntimeEnvelope.source_runtime) {
+    for (const key of Object.keys(sourceRuntimeEnvelope)) {
+      if (!ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)) {
+        gaps.push("internal Bayesian execution artifact v1 input contains blocked output or raw source side door");
+      }
+    }
   }
   return sanitizeGaps(gaps);
 }

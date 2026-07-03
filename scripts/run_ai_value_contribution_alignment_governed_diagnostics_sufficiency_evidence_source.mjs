@@ -265,10 +265,13 @@ const ALLOWED_INPUT_FIELDS = new Set([
   "reviewed_diagnostics_source_evidence",
   "generated_at"
 ]);
-const SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
   "source_runtime",
   "source_gate",
-  "aggregate_measurement_cell_windows"
+  "sourceGate",
+  "aggregate_measurement_cell_windows",
+  "aggregateMeasurementCellWindows",
+  "generated_at"
 ]);
 
 const REQUIRED_BLOCKED_USES = [
@@ -402,12 +405,14 @@ function sourceRuntimeValidationOptions(input) {
   const record = asRecord(input);
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
   const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
-  return {
-    sourceGate: source.source_gate ?? source.sourceGate,
-    aggregateMeasurementCellWindows:
-      source.aggregate_measurement_cell_windows ??
-      source.aggregateMeasurementCellWindows
-  };
+  const sourceGate = source.source_gate ?? source.sourceGate;
+  const aggregateMeasurementCellWindows =
+    source.aggregate_measurement_cell_windows ??
+    source.aggregateMeasurementCellWindows;
+  if (sourceGate !== undefined && aggregateMeasurementCellWindows !== undefined) {
+    return { sourceGate, aggregateMeasurementCellWindows };
+  }
+  return { allowSelfContainedSourceValidation: true };
 }
 
 function reviewedEvidenceFromInput(input) {
@@ -421,13 +426,15 @@ function inputBoundaryGaps(input) {
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  const nestedSidecar = sourceRuntimeEnvelope.source_runtime
-    ? Object.fromEntries(
-        Object.entries(sourceRuntimeEnvelope).filter(([key]) => !SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key))
-      )
-    : {};
-  return Object.keys(sidecar).length > 0 ||
-    Object.keys(nestedSidecar).length > 0
+  const nestedSidecar =
+    sourceRuntimeEnvelope.source_runtime
+      ? Object.fromEntries(
+          Object.entries(sourceRuntimeEnvelope).filter(
+            ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
+          )
+        )
+      : {};
+  return Object.keys(sidecar).length > 0 || Object.keys(nestedSidecar).length > 0
     ? ["input wrapper rejected unsafe or unsupported content"]
     : [];
 }

@@ -5,6 +5,10 @@ import request from "supertest";
 
 import { app } from "../src/app";
 import { loadCalibrationBaselines } from "../src/value_realization/calibration_registry";
+import {
+  ForwardedDistributionSchema,
+  FORWARDED_DISTRIBUTION_SCHEMA_VERSION
+} from "../src/value_realization/forwarded_distribution";
 import { store } from "../src/store";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -162,6 +166,45 @@ describe("POST /api/v3/ingest/aggregate", () => {
     expect(verdicts.body.verdicts[0].forwarded_distribution.workflow_id).toBe("workflow:FORWARDABLE");
   });
 
+  it("accepts standalone surface-style aggregate keys through the compatibility workflow_id field", async () => {
+    const res = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({
+        cohort_id: "cohort-standalone-surface",
+        workflow_id: "surface:SEARCH"
+      }));
+
+    expect(res.status).toBe(202);
+    expect(res.body.verdict).toMatchObject({
+      cohort_id: "cohort-standalone-surface",
+      workflow_id: "surface:SEARCH",
+      verdict: "SURFACE",
+      suppression_reason: null
+    });
+    expect(res.body.verdict.forwarded_distribution).toMatchObject({
+      workflow_id: "surface:SEARCH",
+      surface_taxonomy_ids: ["surface:SEARCH"],
+      privacy: {
+        aggregate_only: true,
+        person_level_fields_included: false
+      }
+    });
+
+    const serialized = JSON.stringify(res.body.verdict.forwarded_distribution).toLowerCase();
+    for (const forbidden of ["prompt", "transcript", "user_id", "email", "raw_rows", "row_level"]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+
+    const velocity = await request(app)
+      .get("/api/v2/velocity-index?workflow_id=surface:SEARCH&window_days=60")
+      .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-v3" });
+
+    expect(velocity.status).toBe(200);
+    expect(velocity.body.workflow_id).toBe("surface:SEARCH");
+    expect(velocity.body.verdict).toBe("SURFACE");
+  });
+
   it("rejects person-level fields at the boundary", async () => {
     const res = await request(app)
       .post("/api/v3/ingest/aggregate")
@@ -200,6 +243,57 @@ describe("POST /api/v3/ingest/aggregate", () => {
       expect(res.body.reason_code).toBe("invalid_aggregate_ingest_payload");
       expect(res.body.details.fieldErrors[field][0]).toContain("machine token must not carry");
     }
+  });
+
+  it("allows aggregate workflow and surface labels that mention common work surfaces", async () => {
+    const res = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({
+        cohort_id: "user_onboarding",
+        workflow_id: "workflow:email_drafting"
+      }));
+
+    expect(res.status).toBe(202);
+    expect(res.body.verdict.forwarded_distribution).toMatchObject({
+      cohort_id: "user_onboarding",
+      workflow_id: "workflow:email_drafting",
+      surface_taxonomy_ids: ["workflow:email_drafting"]
+    });
+  });
+
+  it("allows aggregate forwarded surface taxonomy labels that are not raw identifiers", () => {
+    const parsed = ForwardedDistributionSchema.safeParse({
+      schema_version: FORWARDED_DISTRIBUTION_SCHEMA_VERSION,
+      source_schema_version: "FT_V3_2026_05",
+      cohort_id: "cohort:aggregate_user_onboarding",
+      workflow_id: "workflow:email_drafting",
+      jbtd_id: null,
+      persona_id: null,
+      ...rollingWindow(90),
+      window_days: 90,
+      cohort_size: 50,
+      ambiguity_rate: 0,
+      calibration_id: "scio-prod-60d-2026-05",
+      surface_taxonomy_ids: ["surface:skills", "surface:email"],
+      velocity: {
+        frequency: baseDistribution,
+        engagement: { p10: 30, p50: 61, p90: 61, p99: 61 },
+        breadth: { p10: 3, p50: 7, p90: 10, p99: 12 }
+      },
+      quality_signals: validPayload().quality_signals,
+      distribution_moments: {
+        frequency_mean: 120,
+        engagement_mean: 61,
+        breadth_mean: 8
+      },
+      baseline_stable: true,
+      value_type: "UNCLASSIFIED",
+      evidence_grade: "OBJECTIVE",
+      privacy: { aggregate_only: true, person_level_fields_included: false }
+    });
+
+    expect(parsed.success).toBe(true);
   });
 
   it("rejects unknown calibration ids", async () => {

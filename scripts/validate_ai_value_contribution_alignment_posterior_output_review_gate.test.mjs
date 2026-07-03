@@ -252,6 +252,25 @@ test("posterior output review gate rejects unsafe wrapper side doors without ech
   }
 });
 
+test("posterior output review gate rejects unsafe nested runtime envelope sidecars", () => {
+  const review = buildContributionAlignmentPosteriorOutputReviewGateFromObject({
+    source_runtime: {
+      ...sourceRuntimeSource(),
+      raw_rows: [{ email: "person@example.com" }],
+      query_text: "SELECT user_id FROM raw_rows",
+      user_id: "person-123"
+    }
+  });
+  const validation = validateContributionAlignmentPosteriorOutputReviewGate(review);
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("posterior output review gate holds on runtime drift", () => {
   const runtime = sourceRuntime();
   runtime.feeds.posterior_output_review_gate = false;
