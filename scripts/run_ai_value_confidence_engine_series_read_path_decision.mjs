@@ -44,6 +44,14 @@ const HELD_NEXT_STEP =
   "complete_confidence_observation_requirement_statement_and_customer_evidence_history_proof";
 
 const REQUIRED_MILESTONE_DAYS = [0, 30, 60, 90, 180, 365];
+const REQUIRED_SOURCE_PROOF_RESULT = {
+  compact_snapshot_projection_state:
+    "COMPACT_SNAPSHOT_ROWS_SATISFY_CUSTOMER_HISTORY_READ_PATH",
+  customer_history_projection_state:
+    "CUSTOMER_HISTORY_CONTINUITY_CAN_BE_SERVED_FROM_COMPACT_SNAPSHOTS",
+  evidence_continuity_placement_state:
+    "KEEP_EVIDENCE_CONTINUITY_INSIDE_MEASUREMENT_CELL_SERIES_CONTRACT_OUTPUT"
+};
 
 export const REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT = {
   schema_version: CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION,
@@ -344,11 +352,12 @@ function pathContains(path, name) {
 }
 
 function keyIsKnownPosture(path, key) {
-  if (path.length !== 1) return false;
+  const parent = path[path.length - 1];
   return (
-    (path[0] === "feeds" && FEED_FIELDS.includes(key)) ||
-    (path[0] === "boundary_policy" && BOUNDARY_POLICY_FIELDS.includes(key)) ||
-    (path[0] === "decision_scope" && DECISION_SCOPE_FIELDS.includes(key))
+    (parent === "feeds" && FEED_FIELDS.includes(key)) ||
+    (parent === "boundary_policy" && BOUNDARY_POLICY_FIELDS.includes(key)) ||
+    (parent === "decision_scope" && DECISION_SCOPE_FIELDS.includes(key)) ||
+    parent === "proof_scope"
   );
 }
 
@@ -438,7 +447,10 @@ function inputRequirement(input) {
 function inputBoundaryGaps(input, generatedAtGaps) {
   const record = asRecord(input);
   if (record.schema_version === CUSTOMER_EVIDENCE_HISTORY_READ_PATH_PROOF_SCHEMA_VERSION) {
-    return generatedAtGaps;
+    return [
+      ...generatedAtGaps,
+      ...collectBoundaryLeakage(record)
+    ];
   }
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
@@ -449,6 +461,10 @@ function inputBoundaryGaps(input, generatedAtGaps) {
     ...Object.keys(sidecar)
       .filter((key) => !FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key)))
       .map((key) => `${key} is not allowed`),
+    ...collectBoundaryLeakage(
+      inputProof(input),
+      ["customer_evidence_history_read_path_proof"]
+    ),
     ...collectBoundaryLeakage(
       inputRequirement(input),
       ["confidence_observation_requirement"]
@@ -728,6 +744,29 @@ function collectDecisionShapeGaps(decision) {
     }
   }
   if (authorized) {
+    if (record.decision_id !== `confidence_engine_series_read_path_decision:${ref.customer_history_hash}`) {
+      gaps.push("decision_id must bind to source_proof_ref.customer_history_hash");
+    }
+    if (ref.proof_state !== SOURCE_PROOF_READY_STATE) {
+      gaps.push(`source_proof_ref.proof_state must be ${SOURCE_PROOF_READY_STATE}`);
+    }
+    if (stableStringify(ref.required_milestone_days) !== stableStringify(REQUIRED_MILESTONE_DAYS)) {
+      gaps.push("source_proof_ref.required_milestone_days must be [0,30,60,90,180,365]");
+    }
+    if (stableStringify(ref.observed_milestone_days) !== stableStringify(REQUIRED_MILESTONE_DAYS)) {
+      gaps.push("source_proof_ref.observed_milestone_days must be [0,30,60,90,180,365]");
+    }
+    if (!Array.isArray(ref.missing_milestone_days) || ref.missing_milestone_days.length !== 0) {
+      gaps.push("source_proof_ref.missing_milestone_days must be empty");
+    }
+    if (ref.latest_clear_milestone_count !== REQUIRED_MILESTONE_DAYS.length) {
+      gaps.push("source_proof_ref.latest_clear_milestone_count must be 6");
+    }
+    for (const [field, expected] of Object.entries(REQUIRED_SOURCE_PROOF_RESULT)) {
+      if (ref[field] !== expected) {
+        gaps.push(`source_proof_ref.${field} must be ${expected}`);
+      }
+    }
     if (requirementRef.consumer !== INTERNAL_CONFIDENCE_CONSUMER_TOKEN) {
       gaps.push(`observation_requirement_ref.consumer must be ${INTERNAL_CONFIDENCE_CONSUMER_TOKEN}`);
     }
@@ -750,6 +789,20 @@ function collectDecisionShapeGaps(decision) {
     }
     if (requirementRef.compact_snapshot_rows_sufficient !== false) {
       gaps.push("observation_requirement_ref.compact_snapshot_rows_sufficient must be false");
+    }
+    if (
+      requirementRef.compact_snapshot_gap_state !==
+      REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT.compact_snapshot_gap_state
+    ) {
+      gaps.push(
+        `observation_requirement_ref.compact_snapshot_gap_state must be ${REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT.compact_snapshot_gap_state}`
+      );
+    }
+    if (
+      requirementRef.requirement_hash !==
+      confidenceObservationRequirementHash(REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT)
+    ) {
+      gaps.push("observation_requirement_ref.requirement_hash must match the required confidence observation requirement");
     }
   }
 
@@ -888,6 +941,7 @@ function collectSourceBindingGaps(decision, options = {}) {
   );
   for (const field of [
     "decision_state",
+    "decision_id",
     "source_bound",
     "prerequisites",
     "decision_scope",

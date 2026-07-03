@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
@@ -86,9 +88,15 @@ function sourceFixture() {
   return readJson(FIXTURE_PATH);
 }
 
-function customerHistoryProof() {
+function alternateSourceFixture() {
+  const fixture = clone(sourceFixture());
+  fixture.fixture_id = "controlled_aggregate_fixture_review_support_alt";
+  return fixture;
+}
+
+function customerHistoryProof(fixture = sourceFixture()) {
   return buildCustomerEvidenceHistoryReadPathProofFromObject(
-    buildDemoCustomerEvidenceHistoryInputFromSourceFixture(sourceFixture(), {
+    buildDemoCustomerEvidenceHistoryInputFromSourceFixture(fixture, {
       cwd: process.cwd()
     }),
     { cwd: process.cwd() }
@@ -261,6 +269,36 @@ test("confidence-engine series read-path decision rejects unsafe side doors with
   assert.deepEqual(decision.hold_reasons, ["boundary_leakage_rejected"]);
 });
 
+test("confidence-engine series read-path decision rejects unsafe direct proof refs before copying", () => {
+  const proof = clone(customerHistoryProof());
+  proof.proof_id = "person@example.com";
+  const decision = buildConfidenceEngineSeriesReadPathDecisionFromObject(
+    {
+      customer_evidence_history_read_path_proof: proof,
+      confidence_observation_requirement: buildDemoConfidenceObservationRequirement()
+    },
+    { cwd: process.cwd() }
+  );
+  const serialized = JSON.stringify(decision);
+
+  assert.equal(decision.decision_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(serialized.includes("person@example.com"), false);
+  assert.deepEqual(decision.hold_reasons, ["boundary_leakage_rejected"]);
+
+  const dir = mkdtempSync(join(tmpdir(), "fluencytracr-confidence-proof-"));
+  const inputPath = join(dir, "proof.json");
+  writeFileSync(inputPath, JSON.stringify(proof));
+  const output = execFileSync(
+    process.execPath,
+    ["scripts/run_ai_value_confidence_engine_series_read_path_decision.mjs", inputPath],
+    { cwd: process.cwd(), encoding: "utf8" }
+  );
+  const cliDecision = JSON.parse(output);
+
+  assert.equal(cliDecision.decision_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(JSON.stringify(cliDecision).includes("person@example.com"), false);
+});
+
 test("confidence-engine series read-path decision rejects forged feeds and stale states after rehash", () => {
   const proof = customerHistoryProof();
   const decision = authorizedDecision(proof);
@@ -301,6 +339,30 @@ test("confidence-engine series read-path decision rejects forged feeds and stale
     staleValidation.gaps.some((gap) => /decision_hash/.test(gap)),
     staleValidation.gaps.join("; ")
   );
+
+  const staleProofRef = clone(decision);
+  staleProofRef.source_proof_ref.observed_milestone_days = [0, 30, 60, 90, 180];
+  staleProofRef.decision_hash = confidenceEngineSeriesReadPathDecisionHash(staleProofRef);
+  const staleProofRefValidation = validateConfidenceEngineSeriesReadPathDecision(staleProofRef);
+  assert.equal(staleProofRefValidation.valid, false);
+  assert.ok(
+    staleProofRefValidation.gaps.some((gap) => /source_proof_ref\.observed_milestone_days/.test(gap)),
+    staleProofRefValidation.gaps.join("; ")
+  );
+
+  const staleRequirementRef = clone(decision);
+  staleRequirementRef.observation_requirement_ref.requirement_hash = "b".repeat(64);
+  staleRequirementRef.decision_hash =
+    confidenceEngineSeriesReadPathDecisionHash(staleRequirementRef);
+  const staleRequirementRefValidation =
+    validateConfidenceEngineSeriesReadPathDecision(staleRequirementRef);
+  assert.equal(staleRequirementRefValidation.valid, false);
+  assert.ok(
+    staleRequirementRefValidation.gaps.some((gap) =>
+      /observation_requirement_ref\.requirement_hash/.test(gap)
+    ),
+    staleRequirementRefValidation.gaps.join("; ")
+  );
 });
 
 test("confidence-engine series read-path decision source binding rejects proof or requirement drift", () => {
@@ -319,6 +381,23 @@ test("confidence-engine series read-path decision source binding rejects proof o
   assert.ok(
     validation.gaps.some((gap) => /binding mismatch/.test(gap)),
     validation.gaps.join("; ")
+  );
+
+  const driftedDecisionId = clone(decision);
+  driftedDecisionId.decision_id = "confidence_engine_series_read_path_decision:safe-but-drifted";
+  driftedDecisionId.decision_hash =
+    confidenceEngineSeriesReadPathDecisionHash(driftedDecisionId);
+  const driftedDecisionIdValidation = validateConfidenceEngineSeriesReadPathDecision(
+    driftedDecisionId,
+    {
+      sourceCustomerEvidenceHistoryReadPathProof: proof,
+      sourceConfidenceObservationRequirement: buildDemoConfidenceObservationRequirement()
+    }
+  );
+  assert.equal(driftedDecisionIdValidation.valid, false);
+  assert.ok(
+    driftedDecisionIdValidation.gaps.some((gap) => /decision_id/.test(gap)),
+    driftedDecisionIdValidation.gaps.join("; ")
   );
 });
 
@@ -455,6 +534,21 @@ test("series persistence promotion gate confidence lane fails closed on held, fo
   assert.equal(forgedGate.gate_state, "HOLD_FOR_DURABLE_SERIES_READ_PATH_PROOF");
   assert.equal(forgedGate.feeds.measurement_cell_series_snapshot_implementation_decision, false);
 
+  const decisionOnlyGate = buildMeasurementCellSeriesPersistencePromotionGateFromObject(source, {
+    cwd: process.cwd(),
+    readPathProof: CONFIDENCE_READY_PROOF_STATES,
+    readPathProofRefs: confidenceProofRefs(),
+    confidenceSeriesReadPathBinding: {
+      decision: authorizedDecision(proof)
+    }
+  });
+  assert.equal(decisionOnlyGate.gate_state, "HOLD_FOR_DURABLE_SERIES_READ_PATH_PROOF");
+  assert.equal(decisionOnlyGate.read_path_lane, "customer_history");
+  assert.equal(
+    decisionOnlyGate.feeds.measurement_cell_series_snapshot_implementation_decision,
+    false
+  );
+
   const binding = confidenceBinding(proof);
   const readyGate = buildMeasurementCellSeriesPersistencePromotionGateFromObject(source, {
     cwd: process.cwd(),
@@ -478,6 +572,31 @@ test("series persistence promotion gate confidence lane fails closed on held, fo
     missingBindingValidation.gaps.join("; ")
   );
 
+  const decisionOnlyBindingValidation = validateMeasurementCellSeriesPersistencePromotionGate(
+    readyGate,
+    {
+      cwd: process.cwd(),
+      sourceRepeatedPilotEvidencePackage: source,
+      sourceFixture: fixture,
+      confidenceSeriesReadPathBinding: {
+        decision: binding.decision
+      }
+    }
+  );
+  assert.equal(decisionOnlyBindingValidation.valid, false);
+  assert.ok(
+    decisionOnlyBindingValidation.gaps.some((gap) =>
+      /sourceCustomerEvidenceHistoryReadPathProof is required/.test(gap)
+    ),
+    decisionOnlyBindingValidation.gaps.join("; ")
+  );
+  assert.ok(
+    decisionOnlyBindingValidation.gaps.some((gap) =>
+      /sourceConfidenceObservationRequirement is required/.test(gap)
+    ),
+    decisionOnlyBindingValidation.gaps.join("; ")
+  );
+
   const driftedRef = clone(readyGate);
   driftedRef.internal_confidence_observation_decision_ref.requirement_hash = "b".repeat(64);
   driftedRef.gate_hash = measurementCellSeriesPersistencePromotionGateHash(driftedRef);
@@ -493,6 +612,47 @@ test("series persistence promotion gate confidence lane fails closed on held, fo
       /internal_confidence_observation_decision_ref\.requirement_hash/.test(gap)
     ),
     driftedValidation.gaps.join("; ")
+  );
+});
+
+test("series persistence promotion gate binds confidence decisions to the gated source series", () => {
+  const sourceA = runControlledRepeatedPilotEvidencePackageFromObject(sourceFixture(), {
+    cwd: process.cwd()
+  });
+  const sourceB = runControlledRepeatedPilotEvidencePackageFromObject(alternateSourceFixture(), {
+    cwd: process.cwd()
+  });
+  const bindingA = confidenceBinding(customerHistoryProof(sourceFixture()));
+
+  const gate = buildMeasurementCellSeriesPersistencePromotionGateFromObject(sourceB, {
+    cwd: process.cwd(),
+    readPathProof: CONFIDENCE_READY_PROOF_STATES,
+    readPathProofRefs: confidenceProofRefs(),
+    confidenceSeriesReadPathBinding: bindingA
+  });
+
+  assert.equal(gate.gate_state, "HOLD_FOR_DURABLE_SERIES_READ_PATH_PROOF");
+  assert.equal(gate.read_path_lane, "customer_history");
+  assert.equal(gate.internal_confidence_observation_decision_ref, null);
+  assert.equal(gate.feeds.measurement_cell_series_snapshot_implementation_decision, false);
+
+  const readyGateA = buildMeasurementCellSeriesPersistencePromotionGateFromObject(sourceA, {
+    cwd: process.cwd(),
+    readPathProof: CONFIDENCE_READY_PROOF_STATES,
+    readPathProofRefs: confidenceProofRefs(),
+    confidenceSeriesReadPathBinding: bindingA
+  });
+  const mismatchedValidation = validateMeasurementCellSeriesPersistencePromotionGate(readyGateA, {
+    cwd: process.cwd(),
+    sourceRepeatedPilotEvidencePackage: sourceB,
+    sourceFixture: alternateSourceFixture(),
+    confidenceSeriesReadPathBinding: bindingA
+  });
+
+  assert.equal(mismatchedValidation.valid, false);
+  assert.ok(
+    mismatchedValidation.gaps.some((gap) => /source_series_ref\./.test(gap)),
+    mismatchedValidation.gaps.join("; ")
   );
 });
 
