@@ -1342,13 +1342,14 @@ const WorkspaceReportToolbar = ({
       className="ai-value-workspace-report-toolbar-actions"
       role="group"
       aria-label="Report frame actions"
-      aria-live="polite"
     >
-      <StatusPill
-        label="Read-only status"
-        tone={mode === "live" ? "good" : "neutral"}
-      />
-      <StatusPill label="Source review queue" tone={statusTone} />
+      <span aria-live="polite">
+        <StatusPill
+          label="Read-only status"
+          tone={mode === "live" ? "good" : "neutral"}
+        />
+        <StatusPill label="Source review queue" tone={statusTone} />
+      </span>
       <button
         type="button"
         onClick={() => void connectLiveEvidence()}

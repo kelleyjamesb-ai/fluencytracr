@@ -378,13 +378,17 @@ describe("ValueEvidenceCasePanel", () => {
       expect(screen.getByText(/No evidence case yet/i)).toBeInTheDocument()
     );
     const panel = screen.getByRole("region", { name: /Value evidence case/i });
-    expect(panel).toHaveAttribute("aria-live", "polite");
+    // The panel and intake wrap controlled inputs, so they must not be live
+    // regions; only the small staged-status pill announces politely.
+    expect(panel).not.toHaveAttribute("aria-live");
     expect(within(panel).getByText(/Missing: an Evidence Checkpoint/i)).toBeInTheDocument();
     expect(within(panel).getByText(/Why: this case can support planning only/i)).toBeInTheDocument();
     expect(within(panel).getByText(/Next action: create an Evidence Checkpoint/i)).toBeInTheDocument();
 
     const intake = screen.getByRole("region", { name: /Metric evidence intake/i });
-    expect(intake).toHaveAttribute("aria-live", "polite");
+    expect(intake).not.toHaveAttribute("aria-live");
+    const stagedStatus = within(intake).getByText(/Needs metric values|Evidence staged locally/i);
+    expect(stagedStatus.closest("[aria-live=\"polite\"]")).not.toBeNull();
     expect(within(intake).getByText(/Add aggregate metric evidence/i)).toBeInTheDocument();
     const outcomeMetric = within(intake).getByLabelText(/Outcome metric/i);
     expect(outcomeMetric).toHaveValue("Median resolution time");

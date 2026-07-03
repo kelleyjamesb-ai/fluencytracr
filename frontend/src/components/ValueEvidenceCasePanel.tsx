@@ -423,7 +423,7 @@ const MetricEvidenceIntake = ({
   };
 
   return (
-    <section className="ai-value-case-intake" aria-label="Metric evidence intake" aria-live="polite">
+    <section className="ai-value-case-intake" aria-label="Metric evidence intake">
       <div className="ai-value-case-intake-head">
         <div>
           <p className="eyebrow">Evidence intake</p>
@@ -433,10 +433,12 @@ const MetricEvidenceIntake = ({
             approved export from the system of record.
           </p>
         </div>
-        <StatusPill
-          label={evidenceReady ? "Evidence staged locally" : "Needs metric values"}
-          tone={evidenceReady ? "good" : "warn"}
-        />
+        <span aria-live="polite">
+          <StatusPill
+            label={evidenceReady ? "Evidence staged locally" : "Needs metric values"}
+            tone={evidenceReady ? "good" : "warn"}
+          />
+        </span>
       </div>
 
       {metricQueue.length > 0 && (
@@ -831,7 +833,7 @@ export const ValueEvidenceCasePanel = () => {
 
   if (state === "error") {
     return (
-      <section className="ai-value-panel" aria-label="Value evidence case" aria-live="polite">
+      <section className="ai-value-panel" aria-label="Value evidence case">
         <div className="ai-value-section-head">
           <div>
             <p className="eyebrow">Value Evidence Case</p>
@@ -856,7 +858,7 @@ export const ValueEvidenceCasePanel = () => {
 
   if (state === "empty" || !selected) {
     return (
-      <section className="ai-value-panel" aria-label="Value evidence case" aria-live="polite">
+      <section className="ai-value-panel" aria-label="Value evidence case">
         <div className="ai-value-section-head">
           <div>
             <p className="eyebrow">Value Evidence Case</p>
