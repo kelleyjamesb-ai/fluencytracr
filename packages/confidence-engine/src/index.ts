@@ -78,3 +78,10 @@ export {
   contributionAlignmentDiagnosticsEvidencePacketHash,
   validateContributionAlignmentDiagnosticsEvidencePacket
 } from "./diagnosticsEvidencePacket";
+
+export {
+  CONTRIBUTION_ALIGNMENT_INTERNAL_DIAGNOSTICS_MODEL_ADEQUACY_REVIEW_SCHEMA_VERSION,
+  buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject,
+  contributionAlignmentInternalDiagnosticsModelAdequacyReviewHash,
+  validateContributionAlignmentInternalDiagnosticsModelAdequacyReview
+} from "./internalDiagnosticsModelAdequacyReview";
