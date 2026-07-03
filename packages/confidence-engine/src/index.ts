@@ -49,3 +49,10 @@ export {
   contributionAlignmentBayesianModelSpecificationHash,
   validateContributionAlignmentBayesianModelSpecification
 } from "./bayesianModelSpecification";
+
+export {
+  CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_GATE_SCHEMA_VERSION,
+  buildContributionAlignmentInternalBayesianExecutionGateFromObject,
+  contributionAlignmentInternalBayesianExecutionGateHash,
+  validateContributionAlignmentInternalBayesianExecutionGate
+} from "./internalBayesianExecutionGate";
