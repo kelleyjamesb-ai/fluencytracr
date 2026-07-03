@@ -20,14 +20,14 @@
 
 ## 3. Module-by-module port with parity gates
 
-- [ ] 3.1 Port in dependency order: feature stability review → numeric weight
+- [x] 3.1 Port in dependency order: feature stability review → numeric weight
       decision → versioned weight object → weighted internal model frame →
       model specification → readiness review → execution gate → execution
       runtime → diagnostics sufficiency source → diagnostics evidence packet
       → diagnostics model adequacy review → posterior output review gate →
       promotion decision gate → artifact handoff → internal Bayesian execution
       artifact V1 → hardening orchestrator.
-- [ ] 3.2 After each module: golden-fixture parity test (ported output ===
+- [x] 3.2 After each module: golden-fixture parity test (ported output ===
       `.mjs` output, including hashes) must pass before porting the next.
 - [ ] 3.3 Migrate each module's validation test suite into the workspace.
 
