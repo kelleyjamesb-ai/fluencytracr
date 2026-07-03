@@ -182,12 +182,16 @@ inherit them.
 - **Applied Science FY27Q2 roadmap** (Paul Li, Jul 2026): causal inference
   must become "a reusable team asset, not a bottlenecked skill." This
   harness is positioned as a contribution to that objective.
-- **Stakeholders**: methodology review — Paul Li, Karthik Rajkumar, Onder
-  Polat; governance audience — the Value Realization Pod (Varun Tilva,
-  Brendan Reece, Ross Fasman, Logan Moore); downstream — Justin Swadling's
-  ROIbot (FluencyTracr is the evidence-readiness layer beneath it) and
-  Miribel Wu's Agent ROI product, which needs claim-defensibility
-  infrastructure. CSG customer pilot approved (James/Logan 1:1, Jun 29).
+- **Stakeholders**: the planning research identified individual reviewers
+  and a governance pod, but the decision owner confirmed on 2026-07-03 that
+  those individuals are no longer part of the project. Review is therefore
+  organized by role (statistical methodology, value governance, downstream
+  tooling interface), with reviewers assigned or waived by the decision
+  owner; the contract's review record tracks assignment. The downstream
+  need the research surfaced remains valid: value tooling that consumes
+  claim-defensibility outputs (ROI modeling, agent-impact reporting) sits
+  beneath this methodology as its consumer. CSG customer pilot approved
+  (James/Logan 1:1, Jun 29).
 - **Claim-status framing**: James's May 2026 value-measurement picture
   already uses customer-safe / caveated / internal-only / withheld; the
   evidence-tier ladder in Decision 6 maps onto it directly.
@@ -195,9 +199,10 @@ inherit them.
 ## Risks / Trade-offs
 
 - Risk: first Bayesian PPL in the org — no internal precedent to review
-  against. → Mitigation: named expert review (Paul Li, Karthik Rajkumar,
-  Onder Polat) of the slice-1 methodology contract before any slice-2
-  implementation begins.
+  against. → Mitigation: expert review of the slice-1 methodology contract
+  before any slice-2 implementation begins, via the role-based review
+  record (statistical methodology reviewer assigned or explicitly waived
+  by the decision owner).
 - Risk: MCMC nondeterminism collides with the repo's byte-determinism
   culture. → Mitigation: seeded runs, tolerance-banded assertions, and
   numeric diagnostics gates for the Python side rather than byte-golden

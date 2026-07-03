@@ -82,8 +82,9 @@ explicit human promotion decision.
   `packages/confidence-engine/src/confidenceModel.ts`; new statistical
   correctness tests (synthetic-effect recovery, calibration coverage) —
   a test class the repo currently lacks.
-- Review audience (from enterprise research): methodology — Paul Li,
-  Karthik Rajkumar, Onder Polat (Data Science / Applied Science); value
-  governance — the Value Realization Pod (Varun Tilva, Brendan Reece,
-  Ross Fasman, Logan Moore); interfaces — Justin Swadling (ROIbot),
-  Miribel Wu (Agent ROI). Decision owner: James Kelley.
+- Review audience: three review roles — statistical methodology, value
+  governance, and downstream tooling interface — assigned (or explicitly
+  waived) by the decision owner. The individuals surfaced by the original
+  planning research (2026-07-03) are no longer part of the project; the
+  contract's review record tracks the roles as UNASSIGNED until the
+  decision owner names reviewers. Decision owner: James Kelley.

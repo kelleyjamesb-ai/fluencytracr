@@ -154,14 +154,16 @@ and `probability_output` remain in `CONFIDENCE_MODEL_BLOCKED_USES`.
 
 Per task 1.2 of the change, each review outcome (approve /
 approve-with-changes / reject) is recorded here with reviewer and date.
+Review roles are assigned by the decision owner (James Kelley); the
+individuals originally identified during planning research are no longer
+part of the project, so each role remains unassigned until the decision
+owner names a reviewer or explicitly waives the role.
 
-| Reviewer | Scope | Outcome | Date |
-| --- | --- | --- | --- |
-| Paul Li | Methodology | PENDING | — |
-| Karthik Rajkumar | Methodology | PENDING | — |
-| Onder Polat | Methodology | PENDING | — |
-| Value Realization Pod | Value governance | PENDING | — |
-| Justin Swadling | ROIbot interface | PENDING | — |
+| Review role | Scope | Assigned reviewer | Outcome | Date |
+| --- | --- | --- | --- | --- |
+| Statistical methodology reviewer | Estimand, diagnostics gates, prior policy, calibration criteria | UNASSIGNED | PENDING | — |
+| Value governance reviewer | Claim language, evidence tiers, non-authorizations | UNASSIGNED | PENDING | — |
+| Downstream tooling interface reviewer | Consumption of evidence-tier outputs by downstream value tooling | UNASSIGNED | PENDING | — |
 
 ## What this contract does not change or authorize
 

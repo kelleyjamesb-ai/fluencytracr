@@ -1,7 +1,7 @@
 ## 1. Approval and review
 
 - [x] 1.1 Record explicit human approval from the decision owner (James Kelley) in the change record before any implementation work begins; no slice-1 or slice-2 task starts without it. — Approved by James Kelley on 2026-07-03 ("go" directive in the working session, following the proposal review and the adopted two-slice split).
-- [ ] 1.2 Circulate the inference methodology contract for expert review — methodology: Paul Li, Karthik Rajkumar, Onder Polat; value governance: the Value Realization Pod; ROIbot interface: Justin Swadling — and record each review outcome (approve / approve-with-changes / reject, with date and reviewer) in the contract doc.
+- [ ] 1.2 Circulate the inference methodology contract for expert review across three roles — statistical methodology, value governance, and downstream tooling interface — with reviewers assigned (or explicitly waived) by the decision owner, and record each review outcome (approve / approve-with-changes / reject, with date and reviewer) in the contract doc's review record. (The individuals named in the original planning research are no longer part of the project; roles are unassigned until the decision owner names reviewers.)
 
 ## 2. Inference methodology contract (slice 1 — this PR)
 
