@@ -92,3 +92,10 @@ export {
   contributionAlignmentPosteriorOutputReviewGateHash,
   validateContributionAlignmentPosteriorOutputReviewGate
 } from "./posteriorOutputReviewGate";
+
+export {
+  CONTRIBUTION_ALIGNMENT_BAYESIAN_PROMOTION_DECISION_GATE_SCHEMA_VERSION,
+  buildContributionAlignmentBayesianPromotionDecisionGateFromObject,
+  contributionAlignmentBayesianPromotionDecisionGateHash,
+  validateContributionAlignmentBayesianPromotionDecisionGate
+} from "./bayesianPromotionDecisionGate";
