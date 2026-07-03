@@ -12,6 +12,7 @@ mkdir -p "$OUT"
 rm -f "$OUT/16-bayesian-hardening-orchestrator.json"
 
 npm run build --workspace shared > /dev/null
+npm run build --workspace packages/confidence-engine > /dev/null
 
 PACKET="docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json"
 FIXTURE="docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json"

@@ -29,26 +29,26 @@
       artifact V1 → hardening orchestrator.
 - [x] 3.2 After each module: golden-fixture parity test (ported output ===
       `.mjs` output, including hashes) must pass before porting the next.
-- [ ] 3.3 Migrate each module's validation test suite into the workspace.
+- [x] 3.3 Migrate each module's validation test suite into the workspace.
 
 ## 4. Cutover and contracts
 
-- [ ] 4.1 Convert spine `.mjs` runners to thin wrappers over the workspace
+- [x] 4.1 Convert spine `.mjs` runners to thin wrappers over the workspace
       build; keep CLI usage, npm script names, and the same named public
       module exports byte-for-byte compatible, or update every importer in
       the same cutover.
-- [ ] 4.2 Add the `ConfidenceModel` contract module (prior, evidence
+- [x] 4.2 Add the `ConfidenceModel` contract module (prior, evidence
       admission with reason codes aligned to the confidence-engine series
       read-path decision contract at
       `docs/contracts/ai-value-confidence-engine-series-read-path-decision/README.md`
       plus its runner/test, posterior-with-credible-intervals representation)
       — types and Zod schemas only, no execution.
-- [ ] 4.3 Full-suite verification: workspace tests, wrapped-CLI smoke runs,
+- [x] 4.3 Full-suite verification: workspace tests, wrapped-CLI smoke runs,
       docs contract sweep, V1 governance gates, semantic drift guard,
       Bayesian hardening orchestrator read-only hold check.
 
 ## 5. Governance and docs
 
-- [ ] 5.1 Add `docs/contracts/confidence-engine-workspace/README.md`; update
+- [x] 5.1 Add `docs/contracts/confidence-engine-workspace/README.md`; update
       the README capability ledger and `.project/PROGRESS.md` per slice.
-- [ ] 5.2 Run `openspec validate add-confidence-engine-workspace --strict`.
+- [x] 5.2 Run `openspec validate add-confidence-engine-workspace --strict`.
