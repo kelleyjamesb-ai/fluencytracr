@@ -11,6 +11,10 @@ import {
   contributionAlignmentInternalBayesianExecutionRuntimeHash,
   validateContributionAlignmentInternalBayesianExecutionRuntime
 } from "./internalBayesianExecutionRuntime";
+import {
+  CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_GATE_SCHEMA_VERSION,
+  contributionAlignmentInternalBayesianExecutionGateHash
+} from "./internalBayesianExecutionGate";
 
 type AnyRecord = Record<string, any>;
 
@@ -479,6 +483,14 @@ function runtimeEnvelopeSidecarContentGaps(value: unknown, path = "source_runtim
     : [];
 }
 
+function isHashBoundExecutionGate(value: unknown): boolean {
+  const gate = asRecord(value);
+  return (
+    gate.schema_version === CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_GATE_SCHEMA_VERSION &&
+    gate.gate_hash === contributionAlignmentInternalBayesianExecutionGateHash(gate)
+  );
+}
+
 function inputBoundaryGaps(input: unknown): string[] {
   const record = asRecord(input);
   if (!Object.prototype.hasOwnProperty.call(record, "source_runtime")) return [];
@@ -502,6 +514,10 @@ function inputBoundaryGaps(input: unknown): string[] {
     for (const [key, nested] of Object.entries(sourceRuntimeEnvelope)) {
       if (key === "source_runtime") continue;
       if (!ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)) continue;
+      // A hash-bound execution gate is byte-exactly the governed module output;
+      // its own boundary fields (no_raw_rows_or_records, receives_query_text)
+      // legitimately match the sidecar patterns, so only unbound content is walked.
+      if (isHashBoundExecutionGate(nested)) continue;
       gaps.push(...runtimeEnvelopeSidecarContentGaps(nested, `source_runtime envelope.${key}`));
     }
   }
