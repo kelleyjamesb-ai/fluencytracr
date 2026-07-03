@@ -3,56 +3,31 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
-  buildContributionAlignmentFeatureStabilityReviewFromObject
-} from "./run_ai_value_contribution_alignment_feature_stability_review.mjs";
-import {
-  buildContributionAlignmentInternalNumericWeightDecisionFromObject
-} from "./run_ai_value_contribution_alignment_internal_numeric_weight_decision.mjs";
-import {
-  buildContributionAlignmentVersionedWeightObjectFromObject
-} from "./run_ai_value_contribution_alignment_versioned_weight_object.mjs";
-import {
-  buildContributionAlignmentWeightedInternalModelFrameFromObject
-} from "./run_ai_value_contribution_alignment_weighted_internal_model_frame.mjs";
-import {
-  buildContributionAlignmentInternalBayesianReadinessReviewFromObject
-} from "./run_ai_value_contribution_alignment_internal_bayesian_readiness_review.mjs";
-import {
-  buildContributionAlignmentBayesianModelSpecificationFromObject
-} from "./run_ai_value_contribution_alignment_bayesian_model_specification.mjs";
-import {
-  buildContributionAlignmentInternalBayesianExecutionGateFromObject
-} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_gate.mjs";
-import {
-  buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject
-} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
-import {
-  buildContributionAlignmentBayesianPromotionDecisionGateFromObject
-} from "./run_ai_value_contribution_alignment_bayesian_promotion_decision_gate.mjs";
-import {
-  buildContributionAlignmentDiagnosticsEvidencePacketFromObject
-} from "./run_ai_value_contribution_alignment_diagnostics_evidence_packet.mjs";
-import {
-  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject
-} from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
-import {
-  buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject
-} from "./run_ai_value_contribution_alignment_internal_diagnostics_model_adequacy_review.mjs";
-import {
-  buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject
-} from "./run_ai_value_contribution_alignment_promotion_gate_passed_artifact_handoff.mjs";
-import {
-  buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject
-} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_artifact_v1.mjs";
-import {
+  buildContributionAlignmentFeatureStabilityReviewFromObject,
+  buildContributionAlignmentInternalNumericWeightDecisionFromObject,
+  buildContributionAlignmentVersionedWeightObjectFromObject,
+  buildContributionAlignmentWeightedInternalModelFrameFromObject,
+  buildContributionAlignmentInternalBayesianReadinessReviewFromObject,
+  buildContributionAlignmentBayesianModelSpecificationFromObject,
+  buildContributionAlignmentInternalBayesianExecutionGateFromObject,
+  buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject,
+  buildContributionAlignmentBayesianPromotionDecisionGateFromObject,
+  buildContributionAlignmentDiagnosticsEvidencePacketFromObject,
+  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject,
+  buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject,
+  buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject,
+  buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject,
   buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject,
   contributionAlignmentBayesianHardeningOrchestratorReportHash,
   validateContributionAlignmentBayesianHardeningOrchestratorReport
-} from "./run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs";
+} from "../dist/index.js";
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 const REPORT_READY_STATE = "BAYESIAN_HARDENING_ORCHESTRATOR_REPORT_READY";
 const DEFAULT_NEXT_STEP = "complete_governed_diagnostics_sufficiency_evidence_source";
@@ -107,12 +82,18 @@ const BLOCKED_OUTPUT_FIELDS = [
   "person_level_data"
 ];
 
-const FIXTURE_PATH =
-  "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
-const PACKET_PATH =
-  "docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json";
-const RESEARCH_DESIGN_PATH =
-  "docs/research/AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_DESIGN.md";
+const FIXTURE_PATH = join(
+  REPO_ROOT,
+  "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json"
+);
+const PACKET_PATH = join(
+  REPO_ROOT,
+  "docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json"
+);
+const RESEARCH_DESIGN_PATH = join(
+  REPO_ROOT,
+  "docs/research/AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_DESIGN.md"
+);
 
 const AGGREGATE_WINDOWS = [
   {
@@ -171,12 +152,12 @@ function sourceDataModel() {
   const output = execFileSync(
     "node",
     [
-      "scripts/run_ai_value_contribution_alignment_internal_research_math_data_model.mjs",
+      join(REPO_ROOT, "scripts/run_ai_value_contribution_alignment_internal_research_math_data_model.mjs"),
       PACKET_PATH,
       `--source-fixture=${FIXTURE_PATH}`,
       `--research-design=${RESEARCH_DESIGN_PATH}`
     ],
-    { encoding: "utf8" }
+    { cwd: REPO_ROOT, encoding: "utf8" }
   );
   return JSON.parse(output);
 }
@@ -879,10 +860,11 @@ test("Bayesian hardening orchestrator rejects unsafe nested reviewed evidence wi
 test("Bayesian hardening orchestrator runner remains report-only without write/export/live behavior", () => {
   const runner = execFileSync(
     "sed",
-    ["-n", "1,760p", "scripts/run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs"],
-    { encoding: "utf8" }
+    ["-n", "1,760p", join(REPO_ROOT, "scripts/run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs")],
+    { cwd: REPO_ROOT, encoding: "utf8" }
   );
-  const packageJson = execFileSync("sed", ["-n", "1,260p", "package.json"], {
+  const packageJson = execFileSync("sed", ["-n", "1,260p", join(REPO_ROOT, "package.json")], {
+    cwd: REPO_ROOT,
     encoding: "utf8"
   });
   const forbidden = [
@@ -935,7 +917,7 @@ test("Bayesian hardening orchestrator CLI accepts reviewed diagnostics evidence 
   const output = execFileSync(
     "node",
     [
-      "scripts/run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs",
+      join(REPO_ROOT, "scripts/run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs"),
       files.runtime,
       "--reviewed-diagnostics-source-evidence",
       files.reviewedEvidence,
@@ -946,7 +928,7 @@ test("Bayesian hardening orchestrator CLI accepts reviewed diagnostics evidence 
       files.handoff,
       files.artifact
     ],
-    { encoding: "utf8" }
+    { cwd: REPO_ROOT, encoding: "utf8" }
   );
   const report = JSON.parse(output);
   const validation =

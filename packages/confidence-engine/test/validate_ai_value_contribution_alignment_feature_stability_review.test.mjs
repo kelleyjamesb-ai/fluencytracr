@@ -1,19 +1,29 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   buildContributionAlignmentFeatureStabilityReviewFromObject,
   contributionAlignmentFeatureStabilityReviewHash,
   validateContributionAlignmentFeatureStabilityReview
-} from "./run_ai_value_contribution_alignment_feature_stability_review.mjs";
+} from "../dist/index.js";
 
-const FIXTURE_PATH =
-  "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json";
-const PACKET_PATH =
-  "docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json";
-const RESEARCH_DESIGN_PATH =
-  "docs/research/AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_DESIGN.md";
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+
+const FIXTURE_PATH = join(
+  REPO_ROOT,
+  "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json"
+);
+const PACKET_PATH = join(
+  REPO_ROOT,
+  "docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json"
+);
+const RESEARCH_DESIGN_PATH = join(
+  REPO_ROOT,
+  "docs/research/AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_DESIGN.md"
+);
 
 const EXPECTED_FEATURES = [
   "hypothesis_binding",
@@ -59,12 +69,15 @@ function sourceDataModel() {
   const output = execFileSync(
     "node",
     [
-      "scripts/run_ai_value_contribution_alignment_internal_research_math_data_model.mjs",
+      join(
+        REPO_ROOT,
+        "scripts/run_ai_value_contribution_alignment_internal_research_math_data_model.mjs"
+      ),
       PACKET_PATH,
       `--source-fixture=${FIXTURE_PATH}`,
       `--research-design=${RESEARCH_DESIGN_PATH}`
     ],
-    { encoding: "utf8" }
+    { cwd: REPO_ROOT, encoding: "utf8" }
   );
   cachedSourceDataModel = JSON.parse(output);
   return JSON.parse(JSON.stringify(cachedSourceDataModel));

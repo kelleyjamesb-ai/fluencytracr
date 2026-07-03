@@ -2,26 +2,22 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
-  buildContributionAlignmentBayesianPromotionDecisionGateFromObject
-} from "./run_ai_value_contribution_alignment_bayesian_promotion_decision_gate.mjs";
-import {
-  buildContributionAlignmentDiagnosticsEvidencePacketFromObject
-} from "./run_ai_value_contribution_alignment_diagnostics_evidence_packet.mjs";
-import {
-  buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject
-} from "./run_ai_value_contribution_alignment_internal_diagnostics_model_adequacy_review.mjs";
-import {
+  buildContributionAlignmentBayesianPromotionDecisionGateFromObject,
+  buildContributionAlignmentDiagnosticsEvidencePacketFromObject,
+  buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject,
   buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource,
   buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject,
   contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash,
-  validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource
-} from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
-import {
+  validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource,
   contributionAlignmentInternalBayesianExecutionRuntimeHash
-} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
+} from "../dist/index.js";
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 const SOURCE_SCHEMA_VERSION =
   "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_2026_06";
@@ -30,8 +26,10 @@ const READY_STATE =
 const HOLD_STATE =
   "HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE";
 const REJECT_STATE = "REJECTED_FOR_BOUNDARY_LEAKAGE";
-const AGGREGATE_WINDOWS_PATH =
-  "docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/examples/aggregate-window-runtime-fixture.json";
+const AGGREGATE_WINDOWS_PATH = join(
+  REPO_ROOT,
+  "docs/contracts/ai-value-contribution-alignment-internal-bayesian-execution-runtime/examples/aggregate-window-runtime-fixture.json"
+);
 
 const DIMENSIONS = [
   "comparison_design_adequacy",
@@ -90,14 +88,14 @@ function sourceRuntimeSource() {
       "run",
       "--silent",
       "run:ai-value-contribution-alignment-internal-bayesian-execution-gate"
-    ], { encoding: "utf8" })
+    ], { cwd: REPO_ROOT, encoding: "utf8" })
   );
   const runtime = JSON.parse(
     execFileSync("npm", [
       "run",
       "--silent",
       "run:ai-value-contribution-alignment-internal-bayesian-execution-runtime"
-    ], { encoding: "utf8" })
+    ], { cwd: REPO_ROOT, encoding: "utf8" })
   );
   cachedRuntimeSource = {
     source_runtime: runtime,
