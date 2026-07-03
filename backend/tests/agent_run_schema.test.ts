@@ -9,7 +9,7 @@ const baseEvent = {
   event_kind: "SESSION_START",
   event_timestamp: "2026-05-01T16:00:00.000Z",
   repo_id: "fluencytracr",
-  branch_name: "codex/OrgFluency-openai-agents-harness",
+  branch_name: "codex/OrgFluency-fluencytracr-agent-run-harness",
   session_id: "cursor-session-1",
   run_id: "run-1",
   model: "composer-2",
