@@ -71,3 +71,10 @@ export {
   contributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceHash,
   validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource
 } from "./governedDiagnosticsSufficiencyEvidenceSource";
+
+export {
+  CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_EVIDENCE_PACKET_SCHEMA_VERSION,
+  buildContributionAlignmentDiagnosticsEvidencePacketFromObject,
+  contributionAlignmentDiagnosticsEvidencePacketHash,
+  validateContributionAlignmentDiagnosticsEvidencePacket
+} from "./diagnosticsEvidencePacket";
