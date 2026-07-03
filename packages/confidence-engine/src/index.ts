@@ -14,3 +14,10 @@ export {
   contributionAlignmentFeatureStabilityReviewHash,
   validateContributionAlignmentFeatureStabilityReview
 } from "./featureStabilityReview";
+
+export {
+  CONTRIBUTION_ALIGNMENT_INTERNAL_NUMERIC_WEIGHT_DECISION_SCHEMA_VERSION,
+  buildContributionAlignmentInternalNumericWeightDecisionFromObject,
+  contributionAlignmentInternalNumericWeightDecisionHash,
+  validateContributionAlignmentInternalNumericWeightDecision
+} from "./internalNumericWeightDecision";
