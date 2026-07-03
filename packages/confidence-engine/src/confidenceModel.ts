@@ -386,6 +386,23 @@ export const THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION =
 export const EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION =
   "FT_AI_VALUE_CONFIDENCE_EXPECTED_LOSS_REPRESENTATION_2026_07";
 
+// Provisional compiled constant: the act/hold decision boundary for the
+// expected-loss decision rule. Thresholds are compiled constants, never
+// runtime-tunable; revising this value requires a contract change (the
+// slice-1 methodology contract's expert review may adjust it).
+export const EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON = 0.01;
+
+// Provisional compiled constant: the minimum worthwhile effect threshold,
+// in standardized effect (SD) units — matches the harness's injected
+// effect grid {0, 0.2, 0.5}. Thresholds are compiled constants, never
+// runtime-tunable; revising this value requires a contract change (the
+// slice-1 methodology contract's expert review may adjust it).
+export const MINIMUM_WORTHWHILE_EFFECT_THRESHOLD = 0.2;
+
+// SHA-256 hex digest shape used to hash-bind these representations to the
+// posterior artifact they derive from.
+const Sha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/);
+
 // Internal diagnostic representation of P(effect > minimum worthwhile
 // threshold). Derives from the credible-interval-only posterior
 // representation above and never authorizes customer-facing output.
@@ -399,12 +416,22 @@ export const ThresholdProbabilityRepresentationSchema = z
     ),
     internal_only: z.literal(true),
     customer_output_authorized: z.literal(false),
+    // Same output-authorization pins as PosteriorWithCredibleIntervalsSchema:
+    // no probability, confidence, or finance output may be authorized.
+    probability_output_authorized: z.literal(false),
+    confidence_output_authorized: z.literal(false),
+    finance_output_authorized: z.literal(false),
     // Null until a separate later human promotion decision. This schema
     // intentionally cannot carry a non-null promotion reference: promotion
     // is recorded elsewhere, by a human, after this artifact exists.
     promotion_decision_ref: z.null(),
     parameter_name: z.string().min(1),
-    minimum_worthwhile_threshold_declared: z.literal(true),
+    // Pinned compiled threshold with explicit units — the threshold value
+    // travels with the artifact so P(effect > threshold) stays auditable.
+    minimum_worthwhile_threshold: z.literal(
+      MINIMUM_WORTHWHILE_EFFECT_THRESHOLD
+    ),
+    threshold_units: z.literal("standardized_effect_sd"),
     // P(effect > minimum worthwhile threshold), bounded [0, 1].
     threshold_probability: z.number().gte(0).lte(1),
     // The credible-interval level context this diagnostic derives from
@@ -412,9 +439,27 @@ export const ThresholdProbabilityRepresentationSchema = z
     credible_interval_level_context: CredibleIntervalLevelSchema,
     // Linkage pin: this representation is derived from the
     // PosteriorWithCredibleIntervals shape, never computed independently.
-    derived_from_posterior_with_credible_intervals: z.literal(true)
+    derived_from_posterior_with_credible_intervals: z.literal(true),
+    // Hash binding to the source posterior artifact. The schema enforces
+    // internal consistency (parameter names must match); the TS gate
+    // verifies the hash against the actual posterior artifact.
+    source_posterior_parameter_name: z.string().min(1),
+    source_posterior_artifact_hash: Sha256HexSchema
   })
-  .strict();
+  .strict()
+  .superRefine((representation, ctx) => {
+    if (
+      representation.source_posterior_parameter_name !==
+      representation.parameter_name
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          `source_posterior_parameter_name "${representation.source_posterior_parameter_name}" ` +
+          `does not match parameter_name "${representation.parameter_name}"`
+      });
+    }
+  });
 
 // Internal expected-loss representation for the stop/act decision rule.
 // Same governance pins as the threshold-probability representation.
@@ -426,17 +471,42 @@ export const ExpectedLossRepresentationSchema = z
     ),
     internal_only: z.literal(true),
     customer_output_authorized: z.literal(false),
+    // Same output-authorization pins as PosteriorWithCredibleIntervalsSchema:
+    // no probability, confidence, or finance output may be authorized.
+    probability_output_authorized: z.literal(false),
+    confidence_output_authorized: z.literal(false),
+    finance_output_authorized: z.literal(false),
     // Null until a separate later human promotion decision (see above).
     promotion_decision_ref: z.null(),
     parameter_name: z.string().min(1),
     loss_function_declared: z.literal(true),
     expected_loss: z.number().gte(0),
-    decision_threshold_epsilon: z.number().positive(),
+    // Pinned compiled act/hold boundary — never runtime-tunable.
+    decision_threshold_epsilon: z.literal(
+      EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON
+    ),
     decision_rule: z.literal(
       "act_when_expected_loss_below_epsilon_internal_only"
-    )
+    ),
+    // Hash binding to the same source posterior artifact (expected loss
+    // derives from the same posterior and has the same forgery surface).
+    source_posterior_parameter_name: z.string().min(1),
+    source_posterior_artifact_hash: Sha256HexSchema
   })
-  .strict();
+  .strict()
+  .superRefine((representation, ctx) => {
+    if (
+      representation.source_posterior_parameter_name !==
+      representation.parameter_name
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          `source_posterior_parameter_name "${representation.source_posterior_parameter_name}" ` +
+          `does not match parameter_name "${representation.parameter_name}"`
+      });
+    }
+  });
 
 export type ThresholdProbabilityRepresentation = z.infer<
   typeof ThresholdProbabilityRepresentationSchema

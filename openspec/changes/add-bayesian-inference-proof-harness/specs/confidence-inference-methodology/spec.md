@@ -24,7 +24,7 @@ The system SHALL compute all statistics exclusively in the pinned Python inferen
 
 ### Requirement: Computed Diagnostics Gate
 
-The system SHALL emit a confidence-bearing artifact only when every required diagnostic is computed as a real value and passes its numeric gate: R-hat <= 1.05 as a hard fail bound with <= 1.01 as target, bulk-ESS >= 400, posterior predictive p-values within [0.05, 0.95], prior-sensitivity posterior-mean shift < 0.5 posterior SD, and the pre-period pseudo-effect 80% credible interval including 0.
+The system SHALL emit a confidence-bearing artifact only when every required diagnostic is computed as a real value and passes its numeric gate: R-hat <= 1.01 for all parameters (if any parameter's R-hat > 1.01 the artifact HOLDS naming R-hat), bulk-ESS >= 400, posterior predictive p-values within [0.05, 0.95], prior-sensitivity posterior-mean shift < 0.5 posterior SD, and the pre-period pseudo-effect 80% credible interval including 0.
 
 #### Scenario: All diagnostics computed and passing
 
@@ -46,11 +46,11 @@ The system SHALL emit a confidence-bearing artifact only when every required dia
 
 ### Requirement: Synthetic Proof Before Real Data
 
-The proof harness SHALL demonstrate known-effect recovery and calibration coverage on synthetic data — with the 80% credible interval covering the injected effect in 74–86% of at least 200 seeded replications and null-effect false-eligibility at or below 5% — before any real-observation execution is proposed.
+The proof harness SHALL demonstrate known-effect recovery and calibration coverage on synthetic data — with the 80% credible interval covering the injected effect in 74–86% of at least 200 seeded replications and null-effect false-eligibility at or below 5%, both computed on floor-eligible cohorts only (cohort counts k = 12 and k = 16) — before any real-observation execution is proposed. Synthetic cohorts at and around the floors SHALL test floor enforcement itself: k = 4 cohorts as floor-rejection tests (below the k>=5 schema floor, artifacts rejected) and k = 8 cohorts as internal-only-path tests (passing the k>=5 schema floor but below the k>=10 series display floor — valid but display-ineligible).
 
 #### Scenario: Calibration within band records proof
 
-- **GIVEN** at least 200 seeded synthetic replications with injected known effects
+- **GIVEN** at least 200 seeded synthetic replications with injected known effects on floor-eligible cohorts (k = 12 and k = 16)
 - **WHEN** the 80% credible interval covers the injected effect in 74–86% of replications and null-effect false-eligibility is at or below 5%
 - **THEN** the harness records the calibration proof
 
@@ -68,24 +68,24 @@ The proof harness SHALL demonstrate known-effect recovery and calibration covera
 
 ### Requirement: Comparison Cohort Rule
 
-The system SHALL emit no causal number when no credible comparison cohort exists; in that case only an evidence-tier label MAY be emitted.
+The system SHALL emit no comparison-supported contribution estimate when no credible comparison cohort exists; in that case only an evidence-tier label MAY be emitted. Causal language remains separately gated by the claim ladder (approved comparison evidence design at the validated rung); this rule's outputs are contribution estimates, never causal claims.
 
-#### Scenario: Adequate cohort enables causal-number eligibility
+#### Scenario: Adequate cohort enables contribution-estimate eligibility
 
 - **GIVEN** an analysis with a present and credible comparison cohort
 - **WHEN** the artifact is evaluated for emission
-- **THEN** the artifact is eligible to carry a causal number
+- **THEN** the artifact is eligible to carry a comparison-supported contribution estimate
 
 #### Scenario: Absent or inadequate cohort limits output to an evidence-tier label
 
 - **GIVEN** an analysis with no comparison cohort or an inadequate one
 - **WHEN** the artifact is evaluated for emission
-- **THEN** only an evidence-tier label is emitted and no causal number is present
+- **THEN** only an evidence-tier label is emitted and no comparison-supported contribution estimate is present
 
-#### Scenario: Forcing a causal number without a cohort is rejected
+#### Scenario: Forcing a contribution estimate without a cohort is rejected
 
 - **GIVEN** an analysis with no credible comparison cohort
-- **WHEN** a caller attempts to force emission of a causal number
+- **WHEN** a caller attempts to force emission of a comparison-supported contribution estimate
 - **THEN** the attempt is rejected
 
 ### Requirement: Milestone Peeking Control

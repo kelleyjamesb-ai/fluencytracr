@@ -458,9 +458,10 @@ documented value-realization layers:
   hierarchical Bayesian difference-in-differences estimand over aggregate
   Measurement Cell windows, a Python-owns-statistics /
   TypeScript-owns-governance boundary, seven diagnostics as computed values
-  with hard numeric gates (any failure holds the artifact), the verbatim
-  comparison-cohort rule ("no credible comparison cohort, no causal number —
-  evidence-tier label only"), milestone peeking control aligned to the
+  with hard numeric gates (any failure holds the artifact), the
+  comparison-cohort rule ("no credible comparison cohort, no
+  comparison-supported contribution estimate — evidence-tier label only"),
+  milestone peeking control aligned to the
   internal A/B testing playbook, empirically justified weakly-informative
   priors with mandatory sensitivity reporting, k>=5/k>=10 aggregate floors,
   and Value-Playbook-aligned claim language. Threshold-probability and

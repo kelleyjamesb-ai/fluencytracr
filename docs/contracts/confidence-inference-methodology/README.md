@@ -68,7 +68,7 @@ structurally un-emittable unless all gates pass.
 
 | Diagnostic | Gate |
 | --- | --- |
-| R-hat (all parameters) | <= 1.01 target; hard fail at > 1.05 |
+| R-hat (all parameters) | <= 1.01 for all parameters; if any parameter's R-hat > 1.01 the artifact HOLDS naming R-hat |
 | Bulk effective sample size | >= 400 chain-total per parameter |
 | Posterior predictive checks | p-values within [0.05, 0.95] for the designated test statistics |
 | Prior sensitivity | posterior-mean shift < 0.5 posterior SD across the declared prior family |
@@ -82,24 +82,35 @@ diagnostic named in the artifact.
 
 ## Comparison-cohort rule
 
-No credible comparison cohort, no causal number — evidence-tier label only.
+No credible comparison cohort, no comparison-supported contribution
+estimate — evidence-tier label only.
 
 Difference-in-differences without a defensible comparison is a before/after
 story, and before/after stories are precisely the overclaims the Glean Value
-Playbook discounts. Attempts to force a causal number without a credible
-comparison cohort are rejected; the artifact carries only its evidence-tier
-label.
+Playbook discounts. Attempts to force a comparison-supported contribution
+estimate without a credible comparison cohort are rejected; the artifact
+carries only its evidence-tier label. Causal language remains separately
+gated by the claim ladder (approved comparison evidence design at the
+validated rung); this contract's outputs are contribution estimates, never
+causal claims.
 
 ## Milestone peeking control
 
 Evaluation occurs at the milestone cadence Day 0 / 30 / 60 / 90 / 180 / 365
 (`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`, matching the series read-path
 decision contract). Six scheduled looks at accumulating evidence is repeated
-testing: any repeated evaluation across milestones or across multiple metrics
-MUST use always-valid / sequential-correction methods, aligned with the
-internal "Playbook: A/B testing @ Glean" (Confluence, Engineering space)
-rather than a parallel standard invented here. Naive repeated evaluation
-marks the artifact ineligible.
+testing. The enforceable rule, stated normatively here so it is
+implementable without Confluence access: any repeated evaluation across the
+six milestones, or across multiple metrics or cohorts, MUST use an
+always-valid sequential procedure — e.g. mSPRT-style always-valid
+p-values/e-values, or an equivalently valid sequential credible-interval
+procedure — such that the overall false-eligibility rate across all looks
+stays within the declared bound (the <= 5% null false-eligibility gate in
+the diagnostics table above). A one-look, fixed-horizon evaluation needs no
+correction. Naive repeated evaluation marks the artifact ineligible. The
+internal "Playbook: A/B testing @ Glean" (Confluence, Engineering space) is
+cited as provenance and alignment for this rule, not as its normative
+source.
 
 ## Prior policy
 
@@ -140,8 +151,8 @@ evidence-tier ladder (`shared/src/aiValueEngine/valueHypothesisReadiness.ts`):
 | --- | --- | --- |
 | `NONE` | withheld | No claim. |
 | `DIRECTIONAL_ALIGNMENT` | internal-only | Directional language only; no numbers. |
-| `PRE_POST_SUPPORTED` | internal-only | Pre/post movement described; no causal number (comparison-cohort rule). |
-| `MATCHED_COMPARISON_READY` | caveated | Causal-number-eligible with design caveats stated, all diagnostic gates passing. |
+| `PRE_POST_SUPPORTED` | internal-only | Pre/post movement described; no comparison-supported contribution estimate (comparison-cohort rule). |
+| `MATCHED_COMPARISON_READY` | caveated | Contribution-estimate-eligible with design caveats stated, all diagnostic gates passing. |
 | `CONTROLLED_TEST_READY` | customer-safe | Measured effect with the test design named. |
 | `CALIBRATED_ATTRIBUTION_READY` | customer-safe | Calibrated attribution claims. |
 

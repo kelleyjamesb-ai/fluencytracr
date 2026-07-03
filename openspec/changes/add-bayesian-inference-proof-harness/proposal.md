@@ -40,7 +40,8 @@ This change delivers the methodology and its proof, in two bounded slices
    confidence-engine gates); the seven diagnostics as computed
    requirements with explicit numeric gates; the synthetic-first proof
    obligation; the comparison-cohort rule ("no credible comparison
-   cohort, no causal number — evidence-tier label only"); milestone
+   cohort, no comparison-supported contribution estimate — evidence-tier
+   label only"); milestone
    peeking control aligned to the internal A/B testing playbook;
    empirically justified weakly-informative priors with mandatory
    sensitivity reporting; aggregate-only floors; and claim language

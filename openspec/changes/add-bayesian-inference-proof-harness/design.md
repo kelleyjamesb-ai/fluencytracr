@@ -102,24 +102,36 @@ gap; flags attest nothing. Alternative rejected: advisory diagnostics with
 human sign-off only — that reintroduces the drift the fail-closed culture of
 this repo exists to prevent.
 
-### 6. Comparison-cohort rule (verbatim)
+### 6. Comparison-cohort rule
 
-No credible comparison cohort → no causal number; the artifact carries an
-evidence-tier label only. Adopted verbatim from the methodology review.
-Rationale: DiD without a defensible comparison is a before/after story, and
+No credible comparison cohort → no comparison-supported contribution
+estimate; the artifact carries an evidence-tier label only. Adopted from the
+methodology review. Causal language remains separately gated by the claim
+ladder (approved comparison evidence design at the validated rung); this
+rule's outputs are contribution estimates, never causal claims. Rationale:
+DiD without a defensible comparison is a before/after story, and
 before/after stories are precisely the overclaims the Value Playbook
 discounts. No alternative was seriously entertained.
 
 ### 7. Peeking control at milestone cadence
 
 Milestone-cadence evaluation (Day 0/30/60/90/180/365, matching
-`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`) must use always-valid /
-sequential-correction methods, aligned with Glean's internal A/B testing
-playbook ("Playbook: A/B testing @ Glean", Confluence, Engineering space).
-Rationale: six scheduled looks at accumulating evidence is repeated testing;
-uncorrected milestone reads would fail the org's own experimentation
-standard. Alternative rejected: single fixed-horizon analysis at Day 365 —
-it forfeits the early-signal value the milestone contract was created for.
+`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`) is repeated testing. The enforceable
+rule is stated normatively in the slice-1 contract so it is implementable
+without Confluence access: any repeated evaluation across the six
+milestones, or across multiple metrics or cohorts, must use an always-valid
+sequential procedure — e.g. mSPRT-style always-valid p-values/e-values, or
+an equivalently valid sequential credible-interval procedure — such that
+the overall false-eligibility rate across all looks stays within the
+declared <= 5% null false-eligibility bound. A one-look, fixed-horizon
+evaluation needs no correction; naive repeated evaluation marks the artifact
+ineligible. The internal "Playbook: A/B testing @ Glean" (Confluence,
+Engineering space) is cited as provenance and alignment for this rule, not
+as its normative source. Rationale: six scheduled looks at accumulating
+evidence is repeated testing; uncorrected milestone reads would fail the
+org's own experimentation standard. Alternative rejected: single
+fixed-horizon analysis at Day 365 — it forfeits the early-signal value the
+milestone contract was created for.
 
 ### 8. Priors: weakly informative, empirically justified
 
