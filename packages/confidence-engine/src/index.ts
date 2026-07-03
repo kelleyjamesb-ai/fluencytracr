@@ -106,3 +106,10 @@ export {
   contributionAlignmentPromotionGatePassedArtifactHandoffHash,
   validateContributionAlignmentPromotionGatePassedArtifactHandoff
 } from "./promotionGatePassedArtifactHandoff";
+
+export {
+  CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_ARTIFACT_V1_SCHEMA_VERSION,
+  buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject,
+  contributionAlignmentInternalBayesianExecutionArtifactV1Hash,
+  validateContributionAlignmentInternalBayesianExecutionArtifactV1
+} from "./internalBayesianExecutionArtifactV1";
