@@ -12,7 +12,10 @@ import type {
   FluencyTracrVerdictRecord,
   OutcomeEvidenceStoredRecord
 } from "./store";
-import { ForwardedDistributionLegacyCompatibleSchema } from "./value_realization/forwarded_distribution";
+import {
+  ForwardedDistributionLegacyCompatibleSchema,
+  forwardedDistributionMatchesSlice
+} from "./value_realization/forwarded_distribution";
 
 type SourceCoverageLane =
   | "ai_activity"
@@ -300,6 +303,18 @@ const evidenceCoverageFromVerdict = (
   );
   if (!parsed.success) {
     heldReasons.push("V3 verdict is SURFACE but forwarded_distribution is missing or invalid");
+    return { overrides: {}, evidenceRefs, forwardedDistributionUsed: false };
+  }
+  if (!forwardedDistributionMatchesSlice(parsed.data, {
+    cohortId: verdict.cohort_id,
+    workflowId: verdict.workflow_id,
+    jbtdId: verdict.jbtd_id,
+    personaId: verdict.persona_id,
+    windowStart: verdict.window_start,
+    windowEnd: verdict.window_end,
+    calibrationId: verdict.calibration_id
+  })) {
+    heldReasons.push("V3 verdict is SURFACE but forwarded_distribution slice does not match verdict row");
     return { overrides: {}, evidenceRefs, forwardedDistributionUsed: false };
   }
 

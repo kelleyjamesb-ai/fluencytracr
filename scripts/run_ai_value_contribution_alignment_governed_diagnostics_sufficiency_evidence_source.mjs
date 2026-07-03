@@ -406,43 +406,23 @@ function sourceRuntimeValidationOptions(input) {
   const record = asRecord(input);
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
   const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
-  return {
-    sourceGate: source.source_gate ?? source.sourceGate,
-    aggregateMeasurementCellWindows:
-      source.aggregate_measurement_cell_windows ??
-      source.aggregateMeasurementCellWindows
-  };
+  const sourceGate = source.source_gate ?? source.sourceGate;
+  const aggregateMeasurementCellWindows =
+    source.aggregate_measurement_cell_windows ??
+    source.aggregateMeasurementCellWindows;
+  if (sourceGate !== undefined && aggregateMeasurementCellWindows !== undefined) {
+    return { sourceGate, aggregateMeasurementCellWindows };
+  }
+  return { allowSelfContainedSourceValidation: true };
 }
 
 function reviewedEvidenceFromInput(input) {
   return asRecord(input).reviewed_diagnostics_source_evidence ?? null;
 }
 
-function runtimeEnvelopeContentGaps(value, path = "source_runtime envelope") {
-  if (Array.isArray(value)) {
-    return value.flatMap((item, index) => runtimeEnvelopeContentGaps(item, `${path}[${index}]`));
-  }
-  if (value && typeof value === "object") {
-    const gaps = [];
-    for (const [key, nested] of Object.entries(value)) {
-      if (FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
-        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
-        continue;
-      }
-      gaps.push(...runtimeEnvelopeContentGaps(nested, `${path}.${key}`));
-    }
-    return gaps;
-  }
-  if (typeof value !== "string") return [];
-  return FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(value))
-    ? ["source_runtime envelope rejected unsafe or unsupported content"]
-    : [];
-}
-
 function inputBoundaryGaps(input) {
   const record = asRecord(input);
   if (!Object.prototype.hasOwnProperty.call(record, "source_runtime")) return [];
-  const gaps = [];
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );

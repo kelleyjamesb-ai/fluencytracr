@@ -1,0 +1,203 @@
+{
+  "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_READINESS_REVIEW_2026_06",
+  "review_id": "contribution_alignment_internal_bayesian_readiness_review_0ccc2e86a3903202",
+  "review_state": "INTERNAL_BAYESIAN_READINESS_REVIEW_PASSED_FOR_MODEL_SPECIFICATION",
+  "generated_at": "2026-06-25T00:00:00.000Z",
+  "derivation_version": "ai_value_contribution_alignment_internal_bayesian_readiness_review_2026_06",
+  "source_bound": true,
+  "source_frame_ref": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_WEIGHTED_INTERNAL_MODEL_FRAME_2026_06",
+    "frame_id": "contribution_alignment_weighted_internal_model_frame_0d95a2fce5be0b97",
+    "frame_state": "WEIGHTED_INTERNAL_MODEL_FRAME_READY",
+    "frame_version": "internal_weighted_feature_composition_frame_2026_06",
+    "frame_hash": "43509a94ee9b672c61527626aff284e4b68606a7a5d62ef40d36352e782fb9f9"
+  },
+  "source_weight_object_ref": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_VERSIONED_WEIGHT_OBJECT_2026_06",
+    "weight_object_id": "contribution_alignment_versioned_weight_object_f9f6282f0cc30cb9",
+    "weight_object_state": "VERSIONED_INTERNAL_WEIGHT_OBJECT_READY",
+    "weight_version": "internal_structural_equal_weights_2026_06",
+    "weight_object_hash": "dcf17005788d8989e3bbfe4cb8e218ecc86a1190f8e16219409c778f72904026"
+  },
+  "review_version": "internal_bayesian_readiness_review_2026_06",
+  "candidate_model_family": "bayesian_hierarchical_difference_in_differences_candidate",
+  "review_policy": {
+    "internal_only": true,
+    "readiness_review_only": true,
+    "model_specification_authorized": true,
+    "bayesian_execution_authorized": false,
+    "bayesian_model_output_authorized": false,
+    "posterior_output_authorized": false,
+    "confidence_output_authorized": false,
+    "probability_output_authorized": false,
+    "finance_output_authorized": false,
+    "customer_output_authorized": false
+  },
+  "readiness_checks": {
+    "weighted_frame_source_bound": true,
+    "weighted_composition_present": true,
+    "weights_sum_to_one": true,
+    "repeated_milestone_context_required": true,
+    "selected_metric_context_required": true,
+    "comparison_design_strength_required": true,
+    "no_score_or_output_present": true,
+    "privacy_boundary_clear": true
+  },
+  "reviewed_feature_weights": [
+    {
+      "feature_id": "hypothesis_binding",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "source_coverage",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "milestone_continuity",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "ai_fluency_construct_context_integrity",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "psychological_context_integrity",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "observed_vbd_alignment",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "selected_metric_movement",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "comparison_design_strength",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "assumption_governance",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    },
+    {
+      "feature_id": "boundary_clearance",
+      "weight": 0.1,
+      "source_bound": true,
+      "readiness_role": "eligible_for_later_model_specification",
+      "output_value_present": false
+    }
+  ],
+  "allowed_next_step": "bayesian_model_specification_only",
+  "blocked_uses": [
+    "bayesian_execution",
+    "bayesian_model_output",
+    "posterior_output",
+    "confidence_output",
+    "probability_output",
+    "score_like_output",
+    "weighted_internal_model_output",
+    "aggregate_score_output",
+    "research_model_feed",
+    "finance_output",
+    "roi",
+    "causality_claim",
+    "productivity_measurement",
+    "customer_facing_output",
+    "route_creation",
+    "ui_creation",
+    "schema_creation",
+    "persistence_write",
+    "export_creation",
+    "live_connector_execution",
+    "raw_data_storage"
+  ],
+  "required_caveats": [
+    "Internal Bayesian Readiness Review authorizes only a later Bayesian model specification.",
+    "This review does not run Bayesian execution or emit posterior, confidence, probability, score, ROI, finance, causality, productivity, or customer-facing output.",
+    "The candidate family is Bayesian hierarchical difference-in-differences, but priors, likelihood, estimands, and execution remain unimplemented.",
+    "The review must remain bound to the Weighted Internal Model Frame and Versioned Weight Object refs."
+  ],
+  "feeds": {
+    "bayesian_model_specification": true,
+    "bayesian_execution": false,
+    "bayesian_model_output": false,
+    "posterior_output": false,
+    "confidence_output": false,
+    "probability_output": false,
+    "score_like_output": false,
+    "weighted_internal_model_output": false,
+    "aggregate_score_output": false,
+    "research_model_feed": false,
+    "finance_output": false,
+    "roi_output": false,
+    "causality_output": false,
+    "productivity_output": false,
+    "customer_facing_output": false,
+    "route_creation": false,
+    "ui_creation": false,
+    "schema_creation": false,
+    "persistence_write": false,
+    "export_creation": false,
+    "live_connector_execution": false
+  },
+  "boundary_policy": {
+    "receives_weighted_internal_model_frame_only": true,
+    "receives_versioned_weight_object_ref": true,
+    "receives_full_source_payload": false,
+    "receives_raw_rows": false,
+    "receives_query_text": false,
+    "receives_identifiers": false,
+    "persists_review": false,
+    "creates_routes": false,
+    "creates_ui": false,
+    "creates_schemas": false,
+    "creates_exports": false,
+    "runs_live_connectors": false,
+    "implements_bayesian_execution": false,
+    "emits_bayesian_model_output": false,
+    "emits_posterior_output": false,
+    "emits_confidence_output": false,
+    "emits_probability": false,
+    "emits_score_like_output": false,
+    "emits_finance_output": false,
+    "emits_customer_facing_output": false,
+    "computes_roi": false,
+    "claims_causality": false,
+    "measures_productivity": false
+  },
+  "validation_summary": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_READINESS_REVIEW_2026_06_SUMMARY",
+    "valid": true,
+    "review_state": "INTERNAL_BAYESIAN_READINESS_REVIEW_PASSED_FOR_MODEL_SPECIFICATION",
+    "gaps": []
+  },
+  "review_hash": "a965028dbee6d99d9347f577ff639fbd00fa858262ede3780fe9288d594d5fbc"
+}

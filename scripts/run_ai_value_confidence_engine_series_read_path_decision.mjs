@@ -13,30 +13,69 @@ import {
   validateCustomerEvidenceHistoryReadPathProof
 } from "./run_ai_value_customer_evidence_history_read_path_proof.mjs";
 import {
-  CONFIDENCE_SERIES_AUTHORIZED_STATE,
-  validateConfidenceEngineSeriesReadPathDecision
-} from "./run_ai_value_confidence_engine_series_read_path_decision.mjs";
+  CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION
+} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
 
-export const DURABLE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION =
-  "FT_AI_VALUE_DURABLE_SERIES_READ_PATH_DECISION_2026_06";
+export const CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_2026_07";
+
+export const CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONFIDENCE_OBSERVATION_REQUIREMENT_2026_07";
 
 const VALIDATION_SCHEMA_VERSION =
-  `${DURABLE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION}_VALIDATION`;
+  `${CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION}_VALIDATION`;
 
 const DERIVATION_VERSION =
-  "ai_value_durable_series_read_path_decision_2026_06";
+  "ai_value_confidence_engine_series_read_path_decision_2026_07";
 
-const SATISFIED_HOLD_STATE =
-  "HOLD_SERIES_PERSISTENCE_COMPACT_CUSTOMER_HISTORY_READ_PATH_SATISFIED";
-const HOLD_PROOF_STATE = "HOLD_FOR_CUSTOMER_EVIDENCE_HISTORY_READ_PATH_PROOF";
+export const CONFIDENCE_SERIES_AUTHORIZED_STATE =
+  "SERIES_PERSISTENCE_AUTHORIZED_FOR_INTERNAL_CONFIDENCE_OBSERVATIONS";
+export const CONFIDENCE_SERIES_HOLD_STATE =
+  "HOLD_FOR_CONFIDENCE_OBSERVATION_REQUIREMENT";
 const REJECTED_STATE = "REJECTED_FOR_BOUNDARY_LEAKAGE";
 
 const SOURCE_PROOF_READY_STATE = "COMPACT_CUSTOMER_HISTORY_READ_PATH_PROVEN";
 
-const ALLOWED_NEXT_STEP =
-  "continue_customer_history_reads_from_ai_value_customer_data_model_snapshots";
+export const INTERNAL_CONFIDENCE_CONSUMER_TOKEN = "internal_confidence_engine_only";
+
+const AUTHORIZED_NEXT_STEP =
+  "measurement_cell_series_persistence_promotion_gate_confidence_path_review";
 const HELD_NEXT_STEP =
-  "complete_customer_evidence_history_read_path_proof_before_series_persistence_reconsideration";
+  "complete_confidence_observation_requirement_statement_and_customer_evidence_history_proof";
+
+const REQUIRED_MILESTONE_DAYS = [0, 30, 60, 90, 180, 365];
+const REQUIRED_SOURCE_PROOF_RESULT = {
+  compact_snapshot_projection_state:
+    "COMPACT_SNAPSHOT_ROWS_SATISFY_CUSTOMER_HISTORY_READ_PATH",
+  customer_history_projection_state:
+    "CUSTOMER_HISTORY_CONTINUITY_CAN_BE_SERVED_FROM_COMPACT_SNAPSHOTS",
+  evidence_continuity_placement_state:
+    "KEEP_EVIDENCE_CONTINUITY_INSIDE_MEASUREMENT_CELL_SERIES_CONTRACT_OUTPUT"
+};
+
+export const REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT = {
+  schema_version: CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION,
+  consumer: INTERNAL_CONFIDENCE_CONSUMER_TOKEN,
+  consumer_runtime_schema_version:
+    CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION,
+  required_milestone_days: REQUIRED_MILESTONE_DAYS,
+  requires_append_only_observations: true,
+  requires_admission_reason_codes: true,
+  requires_gate_cleared_observations_only: true,
+  requires_compact_refs_only: true,
+  requires_org_scoped_storage: true,
+  minimum_cohort_size: 10,
+  compact_snapshot_rows_sufficient: false,
+  compact_snapshot_gap_state: "COMPACT_ROWS_SUPERSEDE_AND_LACK_ADMISSION_METADATA"
+};
+
+export function buildDemoConfidenceObservationRequirement() {
+  return JSON.parse(JSON.stringify(REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT));
+}
+
+const SCOPED_FEED_FIELD = "research_model_feed";
+const GATE_PATH_FEED_FIELD =
+  "measurement_cell_series_persistence_promotion_gate_confidence_path";
 
 const FALSE_FEEDS = [
   "measurement_cell_series_snapshot_implementation_decision",
@@ -55,19 +94,21 @@ const FALSE_FEEDS = [
   "live_sigma_execution",
   "live_glean_query",
   "customer_connector_execution",
-  "research_model_feed",
   "model_output",
   "probability_output",
   "score_like_output",
   "finance_output"
 ];
 
+const FEED_FIELDS = [GATE_PATH_FEED_FIELD, SCOPED_FEED_FIELD, ...FALSE_FEEDS];
+
 const DECISION_SCOPE_FIELDS = [
   "internal_review_only",
   "source_bound",
   "compact_refs_only",
   "status_posture_only",
-  "measurement_cell_series_persistence_authorized",
+  "internal_confidence_observation_store_authorized",
+  "series_persistence_authorized_beyond_confidence_observations",
   "schema_authorized",
   "migration_authorized",
   "repository_write_authorized",
@@ -116,9 +157,9 @@ const PREREQUISITE_FIELDS = [
   "customer_evidence_history_proof_valid",
   "source_proof_bound",
   "complete_customer_history_milestones",
-  "compact_snapshot_history_satisfies_read_path",
-  "series_snapshot_read_model_required",
-  "evidence_continuity_stays_in_series_contract",
+  "confidence_observation_requirement_valid",
+  "consumer_runtime_bound",
+  "compact_snapshot_rows_insufficient_for_confidence_observations",
   "live_wiring_boundary_held"
 ];
 
@@ -139,6 +180,17 @@ const SOURCE_PROOF_REF_FIELDS = [
   "evidence_continuity_placement_state"
 ];
 
+const REQUIREMENT_REF_FIELDS = [
+  "requirement_schema_version",
+  "consumer",
+  "consumer_runtime_schema_version",
+  "required_milestone_days",
+  "minimum_cohort_size",
+  "compact_snapshot_rows_sufficient",
+  "compact_snapshot_gap_state",
+  "requirement_hash"
+];
+
 const TOP_LEVEL_FIELDS = new Set([
   "schema_version",
   "decision_id",
@@ -147,6 +199,7 @@ const TOP_LEVEL_FIELDS = new Set([
   "derivation_version",
   "source_bound",
   "source_proof_ref",
+  "observation_requirement_ref",
   "prerequisites",
   "decision_scope",
   "allowed_next_step",
@@ -176,8 +229,8 @@ const REQUIRED_BLOCKED_USES = [
   "live_bigquery_execution",
   "live_sigma_execution",
   "live_glean_query",
-  "research_model_feed",
-  "contribution_model",
+  "research_model_feed_beyond_internal_confidence_engine",
+  "contribution_model_execution",
   "probability_output",
   "score_output",
   "realized_roi",
@@ -191,13 +244,15 @@ const REQUIRED_BLOCKED_USES = [
 ];
 
 const REQUIRED_CAVEATS = [
-  "Durable Series Read-Path Decision is an internal decision record only; it does not create measurement_cell_series_snapshots, schemas, migrations, repositories, routes, UI, exports, rendered readouts, live connectors, model output, finance output, or customer-facing economic output.",
-  "When compact customer data model snapshots satisfy customer evidence history reads, Series persistence remains held.",
-  "A later compact-gap decision would require new source-bound proof; caller-edited proof states or hashes do not authorize implementation."
+  "Confidence-Engine Series Read-Path Decision is an internal decision record only; it does not create measurement_cell_series_snapshots, schemas, migrations, repositories, routes, UI, exports, rendered readouts, live connectors, customer-facing model output, finance output, or customer-facing economic output.",
+  "Series persistence is authorized solely as append-only internal confidence-engine observation input at Day 0/30/60/90/180/365 milestones; physical implementation still requires the separate exact-scope implementation decision behind the Measurement Cell Series persistence promotion gate.",
+  "The customer evidence history read path continues to be served from compact ai_value_customer_data_model_snapshots rows; this decision does not weaken or replace the durable Series read-path decision for that consumer.",
+  "research_model_feed is narrowed to internal_confidence_engine_only; any other model consumer requires a new exact-scope decision."
 ];
 
 const ALLOWED_INPUT_FIELDS = new Set([
   "customer_evidence_history_read_path_proof",
+  "confidence_observation_requirement",
   "generated_at"
 ]);
 
@@ -227,10 +282,8 @@ const FORBIDDEN_KEY_PATTERNS = [
   /export_?creation/i,
   /rendered_?readout/i,
   /live_?(?:bigquery|sigma|glean|connector)/i,
-  /^confidence/i,
-  /confidence_?score/i,
+  /confidence_?(?:score|band|interval|percent)/i,
   /model_?output/i,
-  /research_?model_?feed/i,
   /^probability$/i,
   /probability_?score/i,
   /^score$/i,
@@ -298,12 +351,13 @@ function pathContains(path, name) {
   return path.some((part) => part === name);
 }
 
-function keyIsFalsePosture(path, key) {
-  if (path.length !== 1) return false;
+function keyIsKnownPosture(path, key) {
+  const parent = path[path.length - 1];
   return (
-    (path[0] === "feeds" && FALSE_FEEDS.includes(key)) ||
-    (path[0] === "boundary_policy" && BOUNDARY_POLICY_FIELDS.includes(key)) ||
-    (path[0] === "decision_scope" && DECISION_SCOPE_FIELDS.includes(key))
+    (parent === "feeds" && FEED_FIELDS.includes(key)) ||
+    (parent === "boundary_policy" && BOUNDARY_POLICY_FIELDS.includes(key)) ||
+    (parent === "decision_scope" && DECISION_SCOPE_FIELDS.includes(key)) ||
+    parent === "proof_scope"
   );
 }
 
@@ -331,7 +385,7 @@ function collectBoundaryLeakage(value, path = []) {
     if (
       !pathContains(path, "blocked_uses") &&
       !pathContains(path, "required_caveats") &&
-      !keyIsFalsePosture(path, key) &&
+      !keyIsKnownPosture(path, key) &&
       FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))
     ) {
       gaps.push(`${nextPath.join(".")} is not allowed`);
@@ -382,10 +436,21 @@ function inputProof(input) {
   return asRecord(record.customer_evidence_history_read_path_proof);
 }
 
+function inputRequirement(input) {
+  const record = asRecord(input);
+  if (record.schema_version === CUSTOMER_EVIDENCE_HISTORY_READ_PATH_PROOF_SCHEMA_VERSION) {
+    return {};
+  }
+  return asRecord(record.confidence_observation_requirement);
+}
+
 function inputBoundaryGaps(input, generatedAtGaps) {
   const record = asRecord(input);
   if (record.schema_version === CUSTOMER_EVIDENCE_HISTORY_READ_PATH_PROOF_SCHEMA_VERSION) {
-    return generatedAtGaps;
+    return [
+      ...generatedAtGaps,
+      ...collectBoundaryLeakage(record)
+    ];
   }
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
@@ -395,7 +460,15 @@ function inputBoundaryGaps(input, generatedAtGaps) {
     ...collectBoundaryLeakage(sidecar),
     ...Object.keys(sidecar)
       .filter((key) => !FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key)))
-      .map((key) => `${key} is not allowed`)
+      .map((key) => `${key} is not allowed`),
+    ...collectBoundaryLeakage(
+      inputProof(input),
+      ["customer_evidence_history_read_path_proof"]
+    ),
+    ...collectBoundaryLeakage(
+      inputRequirement(input),
+      ["confidence_observation_requirement"]
+    )
   ];
 }
 
@@ -427,39 +500,66 @@ function sourceProofRef(proof) {
   };
 }
 
-function prerequisitesForProof(proof, proofValidation) {
+export function confidenceObservationRequirementHash(requirement) {
+  return sha256Json(asRecord(requirement));
+}
+
+function observationRequirementRef(requirement) {
+  const record = asRecord(requirement);
+  return {
+    requirement_schema_version: record.schema_version ?? null,
+    consumer: record.consumer ?? null,
+    consumer_runtime_schema_version: record.consumer_runtime_schema_version ?? null,
+    required_milestone_days: Array.isArray(record.required_milestone_days)
+      ? [...record.required_milestone_days]
+      : [],
+    minimum_cohort_size: Number.isFinite(Number(record.minimum_cohort_size))
+      ? Number(record.minimum_cohort_size)
+      : null,
+    compact_snapshot_rows_sufficient:
+      typeof record.compact_snapshot_rows_sufficient === "boolean"
+        ? record.compact_snapshot_rows_sufficient
+        : null,
+    compact_snapshot_gap_state: record.compact_snapshot_gap_state ?? null,
+    requirement_hash: confidenceObservationRequirementHash(record)
+  };
+}
+
+function prerequisitesFor(proof, proofValidation, requirement) {
   const ref = sourceProofRef(proof);
   const proofValid =
     proofValidation.valid === true &&
     proof.proof_state === SOURCE_PROOF_READY_STATE &&
     proof.proof_hash === customerEvidenceHistoryReadPathProofHash(proof);
+  const requirementValid =
+    stableStringify(asRecord(requirement)) ===
+    stableStringify(REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT);
+  const requirementRecord = asRecord(requirement);
   return {
     customer_evidence_history_proof_valid: proofValid,
     source_proof_bound: proofValid,
     complete_customer_history_milestones:
       proofValid &&
-      stableStringify(ref.required_milestone_days) ===
-        stableStringify([0, 30, 60, 90, 180, 365]) &&
-      stableStringify(ref.observed_milestone_days) ===
-        stableStringify([0, 30, 60, 90, 180, 365]) &&
+      stableStringify(ref.required_milestone_days) === stableStringify(REQUIRED_MILESTONE_DAYS) &&
+      stableStringify(ref.observed_milestone_days) === stableStringify(REQUIRED_MILESTONE_DAYS) &&
       ref.missing_milestone_days.length === 0 &&
-      ref.latest_clear_milestone_count === 6,
-    compact_snapshot_history_satisfies_read_path:
-      proofValid &&
-      ref.compact_snapshot_projection_state ===
-        "COMPACT_SNAPSHOT_ROWS_SATISFY_CUSTOMER_HISTORY_READ_PATH" &&
-      ref.customer_history_projection_state ===
-        "CUSTOMER_HISTORY_CONTINUITY_CAN_BE_SERVED_FROM_COMPACT_SNAPSHOTS",
-    series_snapshot_read_model_required: false,
-    evidence_continuity_stays_in_series_contract:
-      proofValid &&
-      ref.evidence_continuity_placement_state ===
-        "KEEP_EVIDENCE_CONTINUITY_INSIDE_MEASUREMENT_CELL_SERIES_CONTRACT_OUTPUT",
+      ref.latest_clear_milestone_count === REQUIRED_MILESTONE_DAYS.length,
+    confidence_observation_requirement_valid: requirementValid,
+    consumer_runtime_bound:
+      requirementValid &&
+      requirementRecord.consumer === INTERNAL_CONFIDENCE_CONSUMER_TOKEN &&
+      requirementRecord.consumer_runtime_schema_version ===
+        CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION,
+    compact_snapshot_rows_insufficient_for_confidence_observations:
+      requirementValid &&
+      requirementRecord.compact_snapshot_rows_sufficient === false &&
+      requirementRecord.compact_snapshot_gap_state ===
+        REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT.compact_snapshot_gap_state,
     live_wiring_boundary_held: proofValid
   };
 }
 
-function holdReasons(prerequisites, proofValidation) {
+function holdReasonsFor(prerequisites, proofValidation) {
   const reasons = [];
   if (!prerequisites.customer_evidence_history_proof_valid) {
     reasons.push("customer_evidence_history_proof_not_valid");
@@ -467,11 +567,14 @@ function holdReasons(prerequisites, proofValidation) {
   if (!prerequisites.complete_customer_history_milestones) {
     reasons.push("complete_customer_history_milestones_not_proven");
   }
-  if (!prerequisites.compact_snapshot_history_satisfies_read_path) {
-    reasons.push("compact_snapshot_history_read_path_not_satisfied");
+  if (!prerequisites.confidence_observation_requirement_valid) {
+    reasons.push("confidence_observation_requirement_not_valid");
   }
-  if (!prerequisites.evidence_continuity_stays_in_series_contract) {
-    reasons.push("evidence_continuity_placement_not_bound");
+  if (!prerequisites.consumer_runtime_bound) {
+    reasons.push("consumer_runtime_not_bound");
+  }
+  if (!prerequisites.compact_snapshot_rows_insufficient_for_confidence_observations) {
+    reasons.push("compact_snapshot_confidence_gap_not_stated");
   }
   if (!prerequisites.live_wiring_boundary_held) {
     reasons.push("live_wiring_boundary_not_held");
@@ -479,21 +582,29 @@ function holdReasons(prerequisites, proofValidation) {
   return [...new Set([...reasons, ...asArray(proofValidation.gaps)])];
 }
 
-function baseDecision(state, valid, gaps, generatedAt) {
-  const sourceBound = state === SATISFIED_HOLD_STATE && valid;
+function decisionFeeds(authorized) {
   return {
-    schema_version: DURABLE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION,
-    decision_id: `durable_series_read_path_decision:${state.toLowerCase()}`,
+    [GATE_PATH_FEED_FIELD]: authorized,
+    [SCOPED_FEED_FIELD]: authorized ? INTERNAL_CONFIDENCE_CONSUMER_TOKEN : false,
+    ...falseMap(FALSE_FEEDS)
+  };
+}
+
+function baseDecision(state, authorized, gaps, generatedAt) {
+  return {
+    schema_version: CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION,
+    decision_id: `confidence_engine_series_read_path_decision:${state.toLowerCase()}`,
     decision_state: state,
     generated_at: generatedAt,
     derivation_version: DERIVATION_VERSION,
-    source_bound: sourceBound,
+    source_bound: authorized,
     decision_scope: {
       internal_review_only: true,
-      source_bound: sourceBound,
+      source_bound: authorized,
       compact_refs_only: true,
       status_posture_only: true,
-      measurement_cell_series_persistence_authorized: false,
+      internal_confidence_observation_store_authorized: authorized,
+      series_persistence_authorized_beyond_confidence_observations: false,
       schema_authorized: false,
       migration_authorized: false,
       repository_write_authorized: false,
@@ -509,13 +620,13 @@ function baseDecision(state, valid, gaps, generatedAt) {
       model_output_authorized: false,
       finance_output_authorized: false
     },
-    allowed_next_step: sourceBound ? ALLOWED_NEXT_STEP : HELD_NEXT_STEP,
-    feeds: falseMap(FALSE_FEEDS),
+    allowed_next_step: authorized ? AUTHORIZED_NEXT_STEP : HELD_NEXT_STEP,
+    feeds: decisionFeeds(authorized),
     boundary_policy: falseMap(BOUNDARY_POLICY_FIELDS),
     required_caveats: REQUIRED_CAVEATS,
     blocked_uses: REQUIRED_BLOCKED_USES,
     hold_reasons: gaps,
-    validation_summary: validationSummary(valid, gaps)
+    validation_summary: validationSummary(authorized, gaps)
   };
 }
 
@@ -523,21 +634,22 @@ function rejectedDecision(gaps, generatedAt) {
   const decision = {
     ...baseDecision(REJECTED_STATE, false, gaps, generatedAt),
     source_proof_ref: null,
+    observation_requirement_ref: null,
     prerequisites: Object.fromEntries(PREREQUISITE_FIELDS.map((field) => [field, false])),
     hold_reasons: ["boundary_leakage_rejected"]
   };
   decision.validation_summary = validationSummary(false, decision.hold_reasons);
-  decision.decision_hash = durableSeriesReadPathDecisionHash(decision);
+  decision.decision_hash = confidenceEngineSeriesReadPathDecisionHash(decision);
   return decision;
 }
 
-export function durableSeriesReadPathDecisionHash(decision) {
+export function confidenceEngineSeriesReadPathDecisionHash(decision) {
   const clone = JSON.parse(JSON.stringify(decision));
   delete clone.decision_hash;
   return sha256Json(clone);
 }
 
-export function buildDurableSeriesReadPathDecisionFromObject(input, options = {}) {
+export function buildConfidenceEngineSeriesReadPathDecisionFromObject(input, options = {}) {
   const generatedAtResult = safeGeneratedAt(input, options);
   const generatedAt = generatedAtResult.value;
   const wrapperGaps = inputBoundaryGaps(input, generatedAtResult.gaps);
@@ -546,29 +658,26 @@ export function buildDurableSeriesReadPathDecisionFromObject(input, options = {}
   }
 
   const proof = inputProof(input);
+  const requirement = inputRequirement(input);
   const proofValidation = validateCustomerEvidenceHistoryReadPathProof(proof, {
     cwd: options.cwd ?? process.cwd()
   });
-  const prerequisites = prerequisitesForProof(proof, proofValidation);
-  const reasons = holdReasons(prerequisites, proofValidation);
-  const valid =
-    prerequisites.customer_evidence_history_proof_valid &&
-    prerequisites.complete_customer_history_milestones &&
-    prerequisites.compact_snapshot_history_satisfies_read_path &&
-    prerequisites.evidence_continuity_stays_in_series_contract &&
-    prerequisites.live_wiring_boundary_held;
-  const state = valid ? SATISFIED_HOLD_STATE : HOLD_PROOF_STATE;
+  const prerequisites = prerequisitesFor(proof, proofValidation, requirement);
+  const reasons = holdReasonsFor(prerequisites, proofValidation);
+  const authorized = PREREQUISITE_FIELDS.every((field) => prerequisites[field] === true);
+  const state = authorized ? CONFIDENCE_SERIES_AUTHORIZED_STATE : CONFIDENCE_SERIES_HOLD_STATE;
   const decision = {
-    ...baseDecision(state, valid, valid ? [] : reasons, generatedAt),
+    ...baseDecision(state, authorized, authorized ? [] : reasons, generatedAt),
     source_proof_ref: sourceProofRef(proof),
+    observation_requirement_ref: observationRequirementRef(requirement),
     prerequisites,
-    hold_reasons: valid ? [] : reasons
+    hold_reasons: authorized ? [] : reasons
   };
   if (decision.source_proof_ref?.customer_history_hash) {
     decision.decision_id =
-      `durable_series_read_path_decision:${decision.source_proof_ref.customer_history_hash}`;
+      `confidence_engine_series_read_path_decision:${decision.source_proof_ref.customer_history_hash}`;
   }
-  decision.decision_hash = durableSeriesReadPathDecisionHash(decision);
+  decision.decision_hash = confidenceEngineSeriesReadPathDecisionHash(decision);
   return decision;
 }
 
@@ -588,17 +697,28 @@ function collectDecisionShapeGaps(decision) {
   const gaps = [];
   const record = asRecord(decision);
   gaps.push(...collectAllowedFieldsGaps(record, TOP_LEVEL_FIELDS, "decision"));
-  if (record.schema_version !== DURABLE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION) {
+  if (record.schema_version !== CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION) {
     gaps.push("schema_version is unsupported");
   }
-  if (![SATISFIED_HOLD_STATE, HOLD_PROOF_STATE, REJECTED_STATE].includes(record.decision_state)) {
+  if (
+    ![CONFIDENCE_SERIES_AUTHORIZED_STATE, CONFIDENCE_SERIES_HOLD_STATE, REJECTED_STATE].includes(
+      record.decision_state
+    )
+  ) {
     gaps.push("decision_state is unsupported");
   }
-  const sourceBound = record.decision_state === SATISFIED_HOLD_STATE;
-  if (record.source_bound !== sourceBound) {
-    gaps.push(`source_bound must be ${sourceBound}`);
+  const authorized = record.decision_state === CONFIDENCE_SERIES_AUTHORIZED_STATE;
+  if (record.source_bound !== authorized) {
+    gaps.push(`source_bound must be ${authorized}`);
   }
   gaps.push(...collectRefShapeGaps(record.source_proof_ref, SOURCE_PROOF_REF_FIELDS, "source_proof_ref"));
+  gaps.push(
+    ...collectRefShapeGaps(
+      record.observation_requirement_ref,
+      REQUIREMENT_REF_FIELDS,
+      "observation_requirement_ref"
+    )
+  );
   gaps.push(...collectRefShapeGaps(record.prerequisites, PREREQUISITE_FIELDS, "prerequisites"));
   gaps.push(...collectRefShapeGaps(record.decision_scope, DECISION_SCOPE_FIELDS, "decision_scope"));
 
@@ -613,30 +733,92 @@ function collectDecisionShapeGaps(decision) {
       gaps.push(`source_proof_ref.${field} must be safe compact metadata`);
     }
   }
-  for (const field of [
-    "required_milestone_days",
-    "observed_milestone_days",
-    "missing_milestone_days"
-  ]) {
-    if (!Array.isArray(ref[field])) {
-      gaps.push(`source_proof_ref.${field} must be an array`);
+
+  const requirementRef = asRecord(record.observation_requirement_ref);
+  if (!SHA256_PATTERN.test(String(requirementRef.requirement_hash ?? ""))) {
+    gaps.push("observation_requirement_ref.requirement_hash must be a sha256 hash");
+  }
+  for (const field of ["requirement_schema_version", "consumer", "consumer_runtime_schema_version", "compact_snapshot_gap_state"]) {
+    if (requirementRef[field] !== null && !isSafeRef(String(requirementRef[field]))) {
+      gaps.push(`observation_requirement_ref.${field} must be safe compact metadata`);
     }
   }
-  if (sourceBound && record.allowed_next_step !== ALLOWED_NEXT_STEP) {
-    gaps.push(`allowed_next_step must be ${ALLOWED_NEXT_STEP}`);
+  if (authorized) {
+    if (record.decision_id !== `confidence_engine_series_read_path_decision:${ref.customer_history_hash}`) {
+      gaps.push("decision_id must bind to source_proof_ref.customer_history_hash");
+    }
+    if (ref.proof_state !== SOURCE_PROOF_READY_STATE) {
+      gaps.push(`source_proof_ref.proof_state must be ${SOURCE_PROOF_READY_STATE}`);
+    }
+    if (stableStringify(ref.required_milestone_days) !== stableStringify(REQUIRED_MILESTONE_DAYS)) {
+      gaps.push("source_proof_ref.required_milestone_days must be [0,30,60,90,180,365]");
+    }
+    if (stableStringify(ref.observed_milestone_days) !== stableStringify(REQUIRED_MILESTONE_DAYS)) {
+      gaps.push("source_proof_ref.observed_milestone_days must be [0,30,60,90,180,365]");
+    }
+    if (!Array.isArray(ref.missing_milestone_days) || ref.missing_milestone_days.length !== 0) {
+      gaps.push("source_proof_ref.missing_milestone_days must be empty");
+    }
+    if (ref.latest_clear_milestone_count !== REQUIRED_MILESTONE_DAYS.length) {
+      gaps.push("source_proof_ref.latest_clear_milestone_count must be 6");
+    }
+    for (const [field, expected] of Object.entries(REQUIRED_SOURCE_PROOF_RESULT)) {
+      if (ref[field] !== expected) {
+        gaps.push(`source_proof_ref.${field} must be ${expected}`);
+      }
+    }
+    if (requirementRef.consumer !== INTERNAL_CONFIDENCE_CONSUMER_TOKEN) {
+      gaps.push(`observation_requirement_ref.consumer must be ${INTERNAL_CONFIDENCE_CONSUMER_TOKEN}`);
+    }
+    if (
+      requirementRef.consumer_runtime_schema_version !==
+      CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION
+    ) {
+      gaps.push(
+        "observation_requirement_ref.consumer_runtime_schema_version must match the internal Bayesian execution runtime schema version"
+      );
+    }
+    if (
+      stableStringify(requirementRef.required_milestone_days) !==
+      stableStringify(REQUIRED_MILESTONE_DAYS)
+    ) {
+      gaps.push("observation_requirement_ref.required_milestone_days must be [0,30,60,90,180,365]");
+    }
+    if (requirementRef.minimum_cohort_size !== 10) {
+      gaps.push("observation_requirement_ref.minimum_cohort_size must be 10");
+    }
+    if (requirementRef.compact_snapshot_rows_sufficient !== false) {
+      gaps.push("observation_requirement_ref.compact_snapshot_rows_sufficient must be false");
+    }
+    if (
+      requirementRef.compact_snapshot_gap_state !==
+      REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT.compact_snapshot_gap_state
+    ) {
+      gaps.push(
+        `observation_requirement_ref.compact_snapshot_gap_state must be ${REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT.compact_snapshot_gap_state}`
+      );
+    }
+    if (
+      requirementRef.requirement_hash !==
+      confidenceObservationRequirementHash(REQUIRED_CONFIDENCE_OBSERVATION_REQUIREMENT)
+    ) {
+      gaps.push("observation_requirement_ref.requirement_hash must match the required confidence observation requirement");
+    }
   }
-  if (!sourceBound && record.allowed_next_step !== HELD_NEXT_STEP) {
+
+  if (authorized && record.allowed_next_step !== AUTHORIZED_NEXT_STEP) {
+    gaps.push(`allowed_next_step must be ${AUTHORIZED_NEXT_STEP}`);
+  }
+  if (!authorized && record.decision_state === CONFIDENCE_SERIES_HOLD_STATE && record.allowed_next_step !== HELD_NEXT_STEP) {
     gaps.push(`allowed_next_step must be ${HELD_NEXT_STEP}`);
   }
 
-  const prerequisites = asRecord(record.prerequisites);
-  for (const field of PREREQUISITE_FIELDS) {
-    const expected =
-      sourceBound && field !== "series_snapshot_read_model_required"
-        ? true
-        : false;
-    if (prerequisites[field] !== expected) {
-      gaps.push(`prerequisites.${field} must be ${expected}`);
+  if (authorized) {
+    const prerequisites = asRecord(record.prerequisites);
+    for (const field of PREREQUISITE_FIELDS) {
+      if (prerequisites[field] !== true) {
+        gaps.push(`prerequisites.${field} must be true for authorized decisions`);
+      }
     }
   }
 
@@ -646,8 +828,8 @@ function collectDecisionShapeGaps(decision) {
     if (["internal_review_only", "compact_refs_only", "status_posture_only"].includes(field)) {
       expected = true;
     }
-    if (field === "source_bound") {
-      expected = sourceBound;
+    if (["source_bound", "internal_confidence_observation_store_authorized"].includes(field)) {
+      expected = authorized;
     }
     if (decisionScope[field] !== expected) {
       gaps.push(`decision_scope.${field} must be ${expected}`);
@@ -655,11 +837,20 @@ function collectDecisionShapeGaps(decision) {
   }
 
   const feeds = asRecord(record.feeds);
-  gaps.push(...collectAllowedFieldsGaps(feeds, new Set(FALSE_FEEDS), "feeds"));
+  gaps.push(...collectAllowedFieldsGaps(feeds, new Set(FEED_FIELDS), "feeds"));
   for (const field of FALSE_FEEDS) {
     if (feeds[field] !== false) {
       gaps.push(`feeds.${field} must be false`);
     }
+  }
+  const expectedScopedFeed = authorized ? INTERNAL_CONFIDENCE_CONSUMER_TOKEN : false;
+  if (feeds[SCOPED_FEED_FIELD] !== expectedScopedFeed) {
+    gaps.push(
+      `feeds.${SCOPED_FEED_FIELD} must be ${authorized ? INTERNAL_CONFIDENCE_CONSUMER_TOKEN : false}`
+    );
+  }
+  if (feeds[GATE_PATH_FEED_FIELD] !== authorized) {
+    gaps.push(`feeds.${GATE_PATH_FEED_FIELD} must be ${authorized}`);
   }
 
   const boundaryPolicy = asRecord(record.boundary_policy);
@@ -670,19 +861,15 @@ function collectDecisionShapeGaps(decision) {
     }
   }
 
-  for (const caveat of REQUIRED_CAVEATS) {
-    if (!asArray(record.required_caveats).includes(caveat)) {
-      gaps.push(`required_caveats must include: ${caveat}`);
-    }
+  if (stableStringify(record.required_caveats) !== stableStringify(REQUIRED_CAVEATS)) {
+    gaps.push("required_caveats must match the required safe caveat set exactly");
   }
-  for (const blockedUse of REQUIRED_BLOCKED_USES) {
-    if (!asArray(record.blocked_uses).includes(blockedUse)) {
-      gaps.push(`blocked_uses must include ${blockedUse}`);
-    }
+  if (stableStringify(record.blocked_uses) !== stableStringify(REQUIRED_BLOCKED_USES)) {
+    gaps.push("blocked_uses must match the required safe blocked-use set exactly");
   }
   gaps.push(...collectBoundaryLeakage(record));
 
-  const expectedHash = durableSeriesReadPathDecisionHash(record);
+  const expectedHash = confidenceEngineSeriesReadPathDecisionHash(record);
   if (record.decision_hash !== expectedHash) {
     gaps.push("decision_hash must match decision body");
   }
@@ -691,28 +878,36 @@ function collectDecisionShapeGaps(decision) {
   if (summary.schema_version !== VALIDATION_SCHEMA_VERSION) {
     gaps.push("validation_summary.schema_version is unsupported");
   }
-  if (summary.valid !== sourceBound) {
-    gaps.push(`validation_summary.valid must be ${sourceBound}`);
+  if (summary.valid !== authorized) {
+    gaps.push(`validation_summary.valid must be ${authorized}`);
   }
-  if (sourceBound && asArray(summary.gaps).length !== 0) {
-    gaps.push("validation_summary.gaps must be empty for source-bound hold decisions");
+  if (authorized && asArray(summary.gaps).length !== 0) {
+    gaps.push("validation_summary.gaps must be empty for authorized decisions");
   }
-  if (!sourceBound && stableStringify(summary.gaps) !== stableStringify(record.hold_reasons ?? [])) {
+  if (!authorized && stableStringify(summary.gaps) !== stableStringify(record.hold_reasons ?? [])) {
     gaps.push("validation_summary.gaps must match hold_reasons for held decisions");
+  }
+  if (authorized && (!Array.isArray(record.hold_reasons) || record.hold_reasons.length !== 0)) {
+    gaps.push("hold_reasons must be empty for authorized decisions");
   }
 
   return [...new Set(gaps)];
 }
 
-function collectSourceProofBindingGaps(decision, options = {}) {
+function collectSourceBindingGaps(decision, options = {}) {
   const record = asRecord(decision);
   const proof = asRecord(options.sourceCustomerEvidenceHistoryReadPathProof);
-  if (Object.keys(proof).length === 0) return [];
+  const requirement = asRecord(options.sourceConfidenceObservationRequirement);
+  if (Object.keys(proof).length === 0 && Object.keys(requirement).length === 0) return [];
+  const gaps = [];
+  if (Object.keys(proof).length === 0) {
+    gaps.push("sourceCustomerEvidenceHistoryReadPathProof is required when binding");
+    return gaps;
+  }
   const proofValidation = validateCustomerEvidenceHistoryReadPathProof(proof, {
     cwd: options.cwd ?? process.cwd(),
     sourceInput: options.sourceInput
   });
-  const gaps = [];
   if (proofValidation.valid !== true) {
     gaps.push("sourceCustomerEvidenceHistoryReadPathProof must validate before binding");
   }
@@ -725,11 +920,28 @@ function collectSourceProofBindingGaps(decision, options = {}) {
       );
     }
   }
-  const expectedDecision = buildDurableSeriesReadPathDecisionFromObject(proof, {
-    cwd: options.cwd ?? process.cwd()
-  });
+  const expectedRequirementRef = observationRequirementRef(requirement);
+  const actualRequirementRef = asRecord(record.observation_requirement_ref);
+  for (const field of REQUIREMENT_REF_FIELDS) {
+    if (
+      stableStringify(actualRequirementRef[field]) !==
+      stableStringify(expectedRequirementRef[field])
+    ) {
+      gaps.push(
+        `sourceConfidenceObservationRequirement binding mismatch for observation_requirement_ref.${field}`
+      );
+    }
+  }
+  const expectedDecision = buildConfidenceEngineSeriesReadPathDecisionFromObject(
+    {
+      customer_evidence_history_read_path_proof: proof,
+      confidence_observation_requirement: requirement
+    },
+    { cwd: options.cwd ?? process.cwd() }
+  );
   for (const field of [
     "decision_state",
+    "decision_id",
     "source_bound",
     "prerequisites",
     "decision_scope",
@@ -742,82 +954,29 @@ function collectSourceProofBindingGaps(decision, options = {}) {
     "validation_summary"
   ]) {
     if (stableStringify(record[field]) !== stableStringify(expectedDecision[field])) {
-      gaps.push(`sourceCustomerEvidenceHistoryReadPathProof binding mismatch for ${field}`);
+      gaps.push(`source binding mismatch for ${field}`);
     }
   }
   return gaps;
 }
 
-export function validateDurableSeriesReadPathDecision(decision, options = {}) {
+export function validateConfidenceEngineSeriesReadPathDecision(decision, options = {}) {
   const record = asRecord(decision);
   const gaps = [
     ...collectDecisionShapeGaps(decision),
-    ...collectSourceProofBindingGaps(decision, options)
+    ...collectSourceBindingGaps(decision, options)
   ];
   return validationSummary(
-    gaps.length === 0 && record.decision_state === SATISFIED_HOLD_STATE,
+    gaps.length === 0 && record.decision_state === CONFIDENCE_SERIES_AUTHORIZED_STATE,
     [...new Set(gaps)]
   );
-}
-
-const COEXISTENCE_VALIDATION_SCHEMA_VERSION =
-  `${DURABLE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION}_CONFIDENCE_COEXISTENCE_VALIDATION`;
-
-export function validateDurableSeriesConfidenceCoexistence(
-  durableDecision,
-  confidenceDecision,
-  options = {}
-) {
-  const gaps = [];
-  const durableRecord = asRecord(durableDecision);
-  const confidenceRecord = asRecord(confidenceDecision);
-  const durableValidation = validateDurableSeriesReadPathDecision(
-    durableDecision,
-    asRecord(options.durable)
-  );
-  if (durableValidation.valid !== true) {
-    gaps.push("durable_series_read_path_decision_not_valid");
-  }
-  if (durableRecord.decision_state !== SATISFIED_HOLD_STATE) {
-    gaps.push("durable_series_read_path_decision_must_hold_customer_history_on_compact_snapshots");
-  }
-  const confidenceValidation = validateConfidenceEngineSeriesReadPathDecision(
-    confidenceDecision,
-    asRecord(options.confidence)
-  );
-  if (confidenceValidation.valid !== true) {
-    gaps.push("confidence_engine_series_read_path_decision_not_valid");
-  }
-  if (confidenceRecord.decision_state !== CONFIDENCE_SERIES_AUTHORIZED_STATE) {
-    gaps.push("confidence_engine_series_read_path_decision_not_authorized");
-  }
-  const durableHistoryHash = asRecord(durableRecord.source_proof_ref).customer_history_hash;
-  const confidenceHistoryHash = asRecord(confidenceRecord.source_proof_ref).customer_history_hash;
-  if (
-    !durableHistoryHash ||
-    !confidenceHistoryHash ||
-    durableHistoryHash !== confidenceHistoryHash
-  ) {
-    gaps.push("decisions_not_bound_to_same_customer_history");
-  }
-  if (asRecord(durableRecord.feeds).research_model_feed !== false) {
-    gaps.push("durable_decision_research_model_feed_must_stay_false");
-  }
-  if (durableRecord.allowed_next_step !== ALLOWED_NEXT_STEP) {
-    gaps.push("durable_decision_customer_history_read_path_must_stay_on_compact_snapshots");
-  }
-  return {
-    schema_version: COEXISTENCE_VALIDATION_SCHEMA_VERSION,
-    valid: gaps.length === 0,
-    gaps: [...new Set(gaps)]
-  };
 }
 
 function main() {
   const [, , inputPath] = process.argv;
   if (!inputPath) {
     console.error(
-      "Usage: node scripts/run_ai_value_durable_series_read_path_decision.mjs <proof-json-or-history-input-json>"
+      "Usage: node scripts/run_ai_value_confidence_engine_series_read_path_decision.mjs <proof-json-or-history-input-json-or-fixture-json>"
     );
     process.exit(1);
   }
@@ -835,9 +994,13 @@ function main() {
             cwd: process.cwd()
           }
         );
-  const decision = buildDurableSeriesReadPathDecisionFromObject(proof, {
-    cwd: process.cwd()
-  });
+  const decision = buildConfidenceEngineSeriesReadPathDecisionFromObject(
+    {
+      customer_evidence_history_read_path_proof: proof,
+      confidence_observation_requirement: buildDemoConfidenceObservationRequirement()
+    },
+    { cwd: process.cwd() }
+  );
   process.stdout.write(`${JSON.stringify(decision, null, 2)}\n`);
 }
 

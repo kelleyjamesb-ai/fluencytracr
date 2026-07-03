@@ -98,7 +98,10 @@ import {
   computeQualityMultiplierFromForwardedDistribution,
   failClosedQualityMultiplierResponse
 } from "./value_realization/quality_multiplier";
-import { ForwardedDistributionLegacyCompatibleSchema } from "./value_realization/forwarded_distribution";
+import {
+  ForwardedDistributionLegacyCompatibleSchema,
+  forwardedDistributionMatchesSlice
+} from "./value_realization/forwarded_distribution";
 import {
   computeVelocityIndex,
   findVelocityPersonField,
@@ -4266,35 +4269,53 @@ app.get("/api/v1/quality-multiplier", async (req, res) => {
     );
   }
 
-  if (parsed.data.use_forwarded_distribution && parsed.data.cohort_id && req.authOrgId) {
-    const verdicts = await listFluencyTracrVerdicts({
-      orgId: req.authOrgId,
-      cohortId: parsed.data.cohort_id,
-      workflowId: parsed.data.workflow_id
-    });
-    const forwardedVerdict = verdicts.find((row) => {
-      const payload = row.payload_json as Record<string, unknown>;
-      if (payload.verdict !== "SURFACE") {
-        return false;
-      }
-      if ((payload.jbtd_id ?? null) !== (parsed.data.jbtd_id ?? null)) {
-        return false;
-      }
-      if ((payload.persona_id ?? null) !== (parsed.data.persona_id ?? null)) {
-        return false;
-      }
-      return typeof payload.forwarded_distribution === "object" && payload.forwarded_distribution !== null;
-    });
-    const parsedForwarded = ForwardedDistributionLegacyCompatibleSchema.safeParse(
-      forwardedVerdict?.payload_json.forwarded_distribution
-    );
-    if (parsedForwarded.success && parsedForwarded.data.window_days >= parsed.data.window_days) {
-      return res.json(
-        computeQualityMultiplierFromForwardedDistribution({
-          forwardedDistribution: parsedForwarded.data
-        })
+  if (parsed.data.use_forwarded_distribution) {
+    if (parsed.data.cohort_id && req.authOrgId) {
+      const verdicts = await listFluencyTracrVerdicts({
+        orgId: req.authOrgId,
+        cohortId: parsed.data.cohort_id,
+        workflowId: parsed.data.workflow_id
+      });
+      const forwardedVerdict = verdicts.find((row) => {
+        const payload = row.payload_json as Record<string, unknown>;
+        if (payload.verdict !== "SURFACE") {
+          return false;
+        }
+        if ((payload.jbtd_id ?? null) !== (parsed.data.jbtd_id ?? null)) {
+          return false;
+        }
+        if ((payload.persona_id ?? null) !== (parsed.data.persona_id ?? null)) {
+          return false;
+        }
+        return typeof payload.forwarded_distribution === "object" && payload.forwarded_distribution !== null;
+      });
+      const parsedForwarded = ForwardedDistributionLegacyCompatibleSchema.safeParse(
+        forwardedVerdict?.payload_json.forwarded_distribution
       );
+      if (
+        forwardedVerdict &&
+        parsedForwarded.success &&
+        forwardedDistributionMatchesSlice(parsedForwarded.data, {
+          cohortId: parsed.data.cohort_id,
+          workflowId: parsed.data.workflow_id,
+          jbtdId: parsed.data.jbtd_id ?? null,
+          personaId: parsed.data.persona_id ?? null,
+          windowStart: forwardedVerdict.window_start,
+          windowEnd: forwardedVerdict.window_end,
+          calibrationId: forwardedVerdict.calibration_id
+        }) &&
+        parsedForwarded.data.window_days >= parsed.data.window_days
+      ) {
+        return res.json(
+          computeQualityMultiplierFromForwardedDistribution({
+            forwardedDistribution: parsedForwarded.data
+          })
+        );
+      }
     }
+    return res.json(
+      failClosedQualityMultiplierResponse(parsed.data.workflow_id, parsed.data.window_days)
+    );
   }
 
   const loadedEvents = await loadFluencyEventRecords({ dbOrgId: req.authOrgId });

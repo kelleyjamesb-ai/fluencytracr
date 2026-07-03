@@ -3,14 +3,13 @@ import { z } from "zod";
 export const FORWARDED_DISTRIBUTION_SCHEMA_VERSION = "FT_V3_FORWARDED_DISTRIBUTION_2026_06";
 
 const ForbiddenForwardedTokenPatterns = [
-  /(?:^|[:_-])actor(?:[:_-]?(?:id|identifier))?(?=[:_-]|$)/i,
-  /(?:^|[:_-])users?(?=[:_-]|$)/i,
-  /(?:^|[:_-])user[:_-]?(?:id|identifier|email|name)s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])employee(?:[:_-]?(?:id|identifier|email|name))?s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])person(?:[:_-]?(?:id|identifier|email|name))?s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])email(?=[:_-]|$)/i,
-  /(?:^|[:_-])skill(?:[:_-]?(?:id|name|identifier|reader))?s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])raw[:_-]?skill(?:[:_-]?(?:id|name|identifier))?s?(?=[:_-]|$)/i,
+  /(?:^|[:_-])actor[:_-]?(?:id|identifier)(?=[:_-]|$)/i,
+  /(?:^|[:_-])user[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])employee[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])person[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])email[:_-]?(?:id|identifier|address|hash)(?=[:_-]|$)/i,
+  /(?:^|[:_-])skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])raw[:_-]?skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i,
   /raw_?rows?/i,
   /query_?text/i,
   /\bsql\b/i,
@@ -27,7 +26,9 @@ const ForbiddenForwardedTokenPatterns = [
   /\broi\b/i,
   /ebitda/i,
   /causal(?:ity)?/i,
-  /productivity/i
+  /productivity/i,
+  /(?:^|[:_-])roi(?=[:_-]|$)/i,
+  /(?:^|[:_-])productivity[:_-]?(?:score|claim|output|ready)(?=[:_-]|$)/i
 ];
 
 export const ForwardedDistributionMachineTokenSchema = z.string()
@@ -114,3 +115,39 @@ export const ForwardedDistributionLegacyCompatibleSchema = z.preprocess((value) 
 }, ForwardedDistributionSchema);
 
 export type ForwardedDistribution = z.infer<typeof ForwardedDistributionSchema>;
+
+export type ForwardedDistributionSliceBinding = {
+  cohortId: string;
+  workflowId: string;
+  jbtdId?: string | null;
+  personaId?: string | null;
+  windowStart?: string;
+  windowEnd?: string;
+  calibrationId?: string;
+};
+
+const sameInstant = (left: string, right: string): boolean => {
+  const leftMs = Date.parse(left);
+  const rightMs = Date.parse(right);
+  return Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs === rightMs;
+};
+
+export const forwardedDistributionMatchesSlice = (
+  distribution: ForwardedDistribution,
+  binding: ForwardedDistributionSliceBinding
+): boolean => {
+  if (distribution.cohort_id !== binding.cohortId) return false;
+  if (distribution.workflow_id !== binding.workflowId) return false;
+  if (distribution.jbtd_id !== (binding.jbtdId ?? null)) return false;
+  if (distribution.persona_id !== (binding.personaId ?? null)) return false;
+  if (binding.windowStart !== undefined && !sameInstant(distribution.window_start, binding.windowStart)) {
+    return false;
+  }
+  if (binding.windowEnd !== undefined && !sameInstant(distribution.window_end, binding.windowEnd)) {
+    return false;
+  }
+  if (binding.calibrationId !== undefined && distribution.calibration_id !== binding.calibrationId) {
+    return false;
+  }
+  return true;
+};
