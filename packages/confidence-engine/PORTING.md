@@ -17,16 +17,14 @@ port is a porting defect, not an update.
 | 6 | `bayesian_model_specification` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_2026_06` | 971 |
 | 7 | `internal_bayesian_execution_gate` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_GATE_2026_06` | 947 |
 | 8 | `internal_bayesian_execution_runtime` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_2026_06` | 979 |
-| 9 | `governed_diagnostics_sufficiency_evidence_source` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_2026_06` | 1594 |
+| 9 | `governed_diagnostics_sufficiency_evidence_source` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_2026_06` | 1626 |
 | 10 | `diagnostics_evidence_packet` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_EVIDENCE_PACKET_2026_06` | 1490 |
 | 11 | `internal_diagnostics_model_adequacy_review` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_DIAGNOSTICS_MODEL_ADEQUACY_REVIEW_2026_06` | 1573 |
 | 12 | `posterior_output_review_gate` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_POSTERIOR_OUTPUT_REVIEW_GATE_2026_06` | 844 |
 | 13 | `bayesian_promotion_decision_gate` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_PROMOTION_DECISION_GATE_2026_06` | 1796 |
 | 14 | `promotion_gate_passed_artifact_handoff` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_PROMOTION_GATE_PASSED_ARTIFACT_HANDOFF_2026_06` | 744 |
-| 15 | `bayesian_hardening_orchestrator` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_HARDENING_ORCHESTRATOR_2026_06` | 1167 |
-
-Also consumed by the orchestrator (port with #15):
-`internal_bayesian_execution_artifact_v1`.
+| 15 | `internal_bayesian_execution_artifact_v1` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_ARTIFACT_V1_2026_06` | 1139 |
+| 16 | `bayesian_hardening_orchestrator` | `FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_HARDENING_ORCHESTRATOR_2026_06` | 1167 |
 
 Out of scope (immutable research lineage, stays in `scripts/`):
 `internal_prototype_runner`, `runner_review_packet`,
@@ -53,7 +51,8 @@ internal_bayesian_execution_runtime (+ aggregate-window fixture, and the
 `--source-envelope` variant) → { governed_diagnostics_sufficiency_evidence_source,
 diagnostics_evidence_packet, internal_diagnostics_model_adequacy_review,
 posterior_output_review_gate } → bayesian_promotion_decision_gate →
-promotion_gate_passed_artifact_handoff → bayesian_hardening_orchestrator.
+promotion_gate_passed_artifact_handoff →
+internal_bayesian_execution_artifact_v1 → bayesian_hardening_orchestrator.
 
 ## Determinism contract
 
@@ -68,9 +67,11 @@ parity suite comparing self-hashes, and by `git status` after regeneration).
 - Modules 1–7 read stdin (`-`) or a file path.
 - Module 8 takes `<gate.json> <aggregate-window-fixture.json>` positional
   args plus the `--source-envelope` flag variant.
-- Modules 9–12, 15 read the runtime source envelope (stdin or path).
+- Modules 9–12, 16 read the runtime source envelope (stdin or path).
 - Module 13 takes `<adequacy-review.json> <envelope.json> <packet.json>`.
 - Module 14 takes `<envelope.json>`.
+- Module 15 takes `<promotion-handoff.json>` plus optional governed predecessor
+  artifacts.
 - npm script chains (see root `package.json` `run:ai-value-contribution-
   alignment-*`) pipe stage-to-stage and use `/tmp/fluencytracr-*` temp files;
   these invocations must work unchanged against the wrappers.
@@ -82,4 +83,4 @@ parity suite comparing self-hashes, and by `git status` after regeneration).
 between commits 711ef915 and b4e7a0ff), which is a SyntaxError: the module —
 and every downstream spine stage — could not load at all. The resolution
 recorded in this branch restores loadability and is arbitrated by the
-module's own test suite plus golden chain stages 10–16.
+module's own test suite plus golden chain stages 10–17.

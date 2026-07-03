@@ -9,6 +9,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 OUT="packages/confidence-engine/test/golden"
 mkdir -p "$OUT"
+rm -f "$OUT/16-bayesian-hardening-orchestrator.json"
 
 npm run build --workspace shared > /dev/null
 
@@ -64,8 +65,22 @@ run bayesian_promotion_decision_gate \
 run promotion_gate_passed_artifact_handoff \
   "$OUT/09-internal-bayesian-execution-runtime-source-envelope.json" \
   > "$OUT/15-promotion-gate-passed-artifact-handoff.json"
+run internal_bayesian_execution_artifact_v1 \
+  "$OUT/15-promotion-gate-passed-artifact-handoff.json" \
+  "$OUT/14-bayesian-promotion-decision-gate.json" \
+  "$OUT/09-internal-bayesian-execution-runtime-source-envelope.json" \
+  "$OUT/12-internal-diagnostics-model-adequacy-review.json" \
+  "$OUT/11-diagnostics-evidence-packet.json" \
+  "$OUT/10-governed-diagnostics-sufficiency-evidence-source.json" \
+  > "$OUT/16-internal-bayesian-execution-artifact-v1.json"
 run bayesian_hardening_orchestrator - \
   < "$OUT/09-internal-bayesian-execution-runtime-source-envelope.json" \
-  > "$OUT/16-bayesian-hardening-orchestrator.json"
+  "$OUT/10-governed-diagnostics-sufficiency-evidence-source.json" \
+  "$OUT/11-diagnostics-evidence-packet.json" \
+  "$OUT/12-internal-diagnostics-model-adequacy-review.json" \
+  "$OUT/14-bayesian-promotion-decision-gate.json" \
+  "$OUT/15-promotion-gate-passed-artifact-handoff.json" \
+  "$OUT/16-internal-bayesian-execution-artifact-v1.json" \
+  > "$OUT/17-bayesian-hardening-orchestrator.json"
 
 echo "golden fixtures written to $OUT"
