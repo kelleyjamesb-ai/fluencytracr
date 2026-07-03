@@ -21,3 +21,10 @@ export {
   contributionAlignmentInternalNumericWeightDecisionHash,
   validateContributionAlignmentInternalNumericWeightDecision
 } from "./internalNumericWeightDecision";
+
+export {
+  CONTRIBUTION_ALIGNMENT_VERSIONED_WEIGHT_OBJECT_SCHEMA_VERSION,
+  buildContributionAlignmentVersionedWeightObjectFromObject,
+  contributionAlignmentVersionedWeightObjectHash,
+  validateContributionAlignmentVersionedWeightObject
+} from "./versionedWeightObject";
