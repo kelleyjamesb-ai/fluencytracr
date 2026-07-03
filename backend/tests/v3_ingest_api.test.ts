@@ -5,6 +5,10 @@ import request from "supertest";
 
 import { app } from "../src/app";
 import { loadCalibrationBaselines } from "../src/value_realization/calibration_registry";
+import {
+  ForwardedDistributionSchema,
+  FORWARDED_DISTRIBUTION_SCHEMA_VERSION
+} from "../src/value_realization/forwarded_distribution";
 import { store } from "../src/store";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -220,6 +224,76 @@ describe("POST /api/v3/ingest/aggregate", () => {
     expect(res.status).toBe(400);
     expect(res.body.reason_code).toBe("invalid_aggregate_ingest_payload");
     expect(res.body.details.fieldErrors.workflow_id[0]).toContain("Invalid");
+  });
+
+  it("rejects actor and skill identifier tokens before forwarding can occur", async () => {
+    const cases = [
+      { field: "workflow_id", payload: { workflow_id: "actor_id:123" } },
+      { field: "cohort_id", payload: { cohort_id: "user_identifier:abc" } },
+      { field: "calibration_id", payload: { calibration_id: "skill_name:personal" } }
+    ];
+
+    for (const { field, payload } of cases) {
+      const res = await request(app)
+        .post("/api/v3/ingest/aggregate")
+        .set(headers)
+        .send(validPayload(payload));
+
+      expect(res.status).toBe(400);
+      expect(res.body.reason_code).toBe("invalid_aggregate_ingest_payload");
+      expect(res.body.details.fieldErrors[field][0]).toContain("machine token must not carry");
+    }
+  });
+
+  it("allows aggregate workflow and surface labels that mention common work surfaces", async () => {
+    const res = await request(app)
+      .post("/api/v3/ingest/aggregate")
+      .set(headers)
+      .send(validPayload({
+        cohort_id: "user_onboarding",
+        workflow_id: "workflow:email_drafting"
+      }));
+
+    expect(res.status).toBe(202);
+    expect(res.body.verdict.forwarded_distribution).toMatchObject({
+      cohort_id: "user_onboarding",
+      workflow_id: "workflow:email_drafting",
+      surface_taxonomy_ids: ["workflow:email_drafting"]
+    });
+  });
+
+  it("allows aggregate forwarded surface taxonomy labels that are not raw identifiers", () => {
+    const parsed = ForwardedDistributionSchema.safeParse({
+      schema_version: FORWARDED_DISTRIBUTION_SCHEMA_VERSION,
+      source_schema_version: "FT_V3_2026_05",
+      cohort_id: "cohort:aggregate_user_onboarding",
+      workflow_id: "workflow:email_drafting",
+      jbtd_id: null,
+      persona_id: null,
+      ...rollingWindow(90),
+      window_days: 90,
+      cohort_size: 50,
+      ambiguity_rate: 0,
+      calibration_id: "scio-prod-60d-2026-05",
+      surface_taxonomy_ids: ["surface:skills", "surface:email"],
+      velocity: {
+        frequency: baseDistribution,
+        engagement: { p10: 30, p50: 61, p90: 61, p99: 61 },
+        breadth: { p10: 3, p50: 7, p90: 10, p99: 12 }
+      },
+      quality_signals: validPayload().quality_signals,
+      distribution_moments: {
+        frequency_mean: 120,
+        engagement_mean: 61,
+        breadth_mean: 8
+      },
+      baseline_stable: true,
+      value_type: "UNCLASSIFIED",
+      evidence_grade: "OBJECTIVE",
+      privacy: { aggregate_only: true, person_level_fields_included: false }
+    });
+
+    expect(parsed.success).toBe(true);
   });
 
   it("rejects unknown calibration ids", async () => {
