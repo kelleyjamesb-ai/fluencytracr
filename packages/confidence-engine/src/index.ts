@@ -120,3 +120,47 @@ export {
   contributionAlignmentBayesianHardeningOrchestratorReportHash,
   validateContributionAlignmentBayesianHardeningOrchestratorReport
 } from "./bayesianHardeningOrchestrator";
+
+export {
+  CONFIDENCE_MODEL_CONTRACT_SCHEMA_VERSION,
+  CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION_REF,
+  CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION_REF,
+  INTERNAL_CONFIDENCE_CONSUMER_TOKEN,
+  CONFIDENCE_OBSERVATION_MILESTONE_DAYS,
+  CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR,
+  CONFIDENCE_MODEL_RUNTIME_HOLD_STATE,
+  WEAKLY_REGULARIZING_PLACEHOLDER_STATE,
+  EVIDENCE_ADMISSION_REASON_CODES,
+  EVIDENCE_REJECTION_REASON_CODES,
+  CONFIDENCE_MODEL_BLOCKED_USES,
+  CREDIBLE_INTERVAL_LEVELS,
+  BlueprintHypothesisRefSchema,
+  BlueprintDerivedPriorProvenanceSchema,
+  MilestoneDaySchema,
+  EvidenceAdmissionReasonCodeSchema,
+  EvidenceRejectionReasonCodeSchema,
+  CompactObservationSourceRefSchema,
+  EvidenceAdmittedSchema,
+  EvidenceRejectedSchema,
+  EvidenceAdmissionSchema,
+  CredibleIntervalLevelSchema,
+  PosteriorWithCredibleIntervalsSchema,
+  ConfidenceModelBlockedUseSchema,
+  ConfidenceModelContractSchema
+} from "./confidenceModel";
+
+export type {
+  BlueprintHypothesisRef,
+  BlueprintDerivedPriorProvenance,
+  MilestoneDay,
+  EvidenceAdmissionReasonCode,
+  EvidenceRejectionReasonCode,
+  CompactObservationSourceRef,
+  EvidenceAdmitted,
+  EvidenceRejected,
+  EvidenceAdmission,
+  CredibleIntervalLevel,
+  PosteriorWithCredibleIntervals,
+  ConfidenceModelBlockedUse,
+  ConfidenceModelContract
+} from "./confidenceModel";
