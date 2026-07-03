@@ -3,7 +3,7 @@ import { computeExecutionSignals, DEFAULT_PHASE2_THRESHOLDS } from "../execution
 import type { FluencyEventRecord } from "../store";
 import { groupEventsByExecution, reconstructTrace } from "../trace_engine";
 import {
-  ForwardedDistributionSchema,
+  ForwardedDistributionLegacyCompatibleSchema,
   type ForwardedDistribution
 } from "./forwarded_distribution";
 
@@ -381,7 +381,7 @@ export const computeQualityMultiplierFromForwardedDistribution = ({
   now?: Date;
 }): QualityMultiplierResponse => {
   const computedAt = now.toISOString();
-  const parsed = ForwardedDistributionSchema.safeParse(forwardedDistribution);
+  const parsed = ForwardedDistributionLegacyCompatibleSchema.safeParse(forwardedDistribution);
   if (!parsed.success) {
     return {
       workflow_id: forwardedDistribution.workflow_id ?? "",

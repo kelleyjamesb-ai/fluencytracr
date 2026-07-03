@@ -3,23 +3,15 @@ import { z } from "zod";
 export const FORWARDED_DISTRIBUTION_SCHEMA_VERSION = "FT_V3_FORWARDED_DISTRIBUTION_2026_06";
 
 const ForbiddenForwardedDistributionTokenPatterns = [
-  /raw_?rows?/i,
-  /query_?text/i,
-  /\bsql\b/i,
-  /prompt/i,
-  /response/i,
-  /transcript/i,
-  /user_?id/i,
-  /employee/i,
-  /person_?id/i,
-  /^email$/i,
-  /confidence/i,
-  /probability/i,
-  /score(?:_like)?/i,
-  /\broi\b/i,
-  /ebitda/i,
-  /causal(?:ity)?/i,
-  /productivity/i
+  /(?:^|[:_-])actor[:_-]?(?:id|identifier)(?=[:_-]|$)/i,
+  /(?:^|[:_-])user[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])employee[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])person[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])email[:_-]?(?:id|identifier|address|hash)(?=[:_-]|$)/i,
+  /(?:^|[:_-])skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])raw[:_-]?skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i,
+  /(?:^|[:_-])roi(?=[:_-]|$)/i,
+  /(?:^|[:_-])productivity[:_-]?(?:score|claim|output|ready)(?=[:_-]|$)/i
 ];
 
 export const ForwardedDistributionMachineTokenSchema = z.string()
@@ -28,7 +20,7 @@ export const ForwardedDistributionMachineTokenSchema = z.string()
   .regex(/^[A-Za-z0-9:_-]+$/)
   .refine(
     (value) => !ForbiddenForwardedDistributionTokenPatterns.some((pattern) => pattern.test(value)),
-    { message: "machine token contains forbidden raw, person-level, or value-claim language" }
+    { message: "machine token must not carry actor, person, email, or raw skill identifiers" }
   );
 
 const DistributionValueSchema = z.object({
@@ -95,4 +87,50 @@ export const ForwardedDistributionSchema = ForwardedDistributionBaseSchema.refin
   surface_taxonomy_ids: value.surface_taxonomy_ids ?? [value.workflow_id]
 }));
 
+export const ForwardedDistributionLegacyCompatibleSchema = z.preprocess((value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(record, "surface_taxonomy_ids")) return value;
+  return {
+    ...record,
+    surface_taxonomy_ids: [record.workflow_id]
+  };
+}, ForwardedDistributionSchema);
+
 export type ForwardedDistribution = z.infer<typeof ForwardedDistributionSchema>;
+
+export type ForwardedDistributionSliceBinding = {
+  cohortId: string;
+  workflowId: string;
+  jbtdId?: string | null;
+  personaId?: string | null;
+  windowStart?: string;
+  windowEnd?: string;
+  calibrationId?: string;
+};
+
+const sameInstant = (left: string, right: string): boolean => {
+  const leftMs = Date.parse(left);
+  const rightMs = Date.parse(right);
+  return Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs === rightMs;
+};
+
+export const forwardedDistributionMatchesSlice = (
+  distribution: ForwardedDistribution,
+  binding: ForwardedDistributionSliceBinding
+): boolean => {
+  if (distribution.cohort_id !== binding.cohortId) return false;
+  if (distribution.workflow_id !== binding.workflowId) return false;
+  if (distribution.jbtd_id !== (binding.jbtdId ?? null)) return false;
+  if (distribution.persona_id !== (binding.personaId ?? null)) return false;
+  if (binding.windowStart !== undefined && !sameInstant(distribution.window_start, binding.windowStart)) {
+    return false;
+  }
+  if (binding.windowEnd !== undefined && !sameInstant(distribution.window_end, binding.windowEnd)) {
+    return false;
+  }
+  if (binding.calibrationId !== undefined && distribution.calibration_id !== binding.calibrationId) {
+    return false;
+  }
+  return true;
+};
