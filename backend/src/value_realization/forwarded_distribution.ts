@@ -10,7 +10,24 @@ const ForbiddenForwardedTokenPatterns = [
   /(?:^|[:_-])person(?:[:_-]?(?:id|identifier|email|name))?s?(?=[:_-]|$)/i,
   /(?:^|[:_-])email(?=[:_-]|$)/i,
   /(?:^|[:_-])skill(?:[:_-]?(?:id|name|identifier|reader))?s?(?=[:_-]|$)/i,
-  /(?:^|[:_-])raw[:_-]?skill(?:[:_-]?(?:id|name|identifier))?s?(?=[:_-]|$)/i
+  /(?:^|[:_-])raw[:_-]?skill(?:[:_-]?(?:id|name|identifier))?s?(?=[:_-]|$)/i,
+  /raw_?rows?/i,
+  /query_?text/i,
+  /\bsql\b/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /user_?id/i,
+  /employee/i,
+  /person_?id/i,
+  /^email$/i,
+  /confidence/i,
+  /probability/i,
+  /score(?:_like)?/i,
+  /\broi\b/i,
+  /ebitda/i,
+  /causal(?:ity)?/i,
+  /productivity/i
 ];
 
 export const ForwardedDistributionMachineTokenSchema = z.string()
@@ -19,7 +36,7 @@ export const ForwardedDistributionMachineTokenSchema = z.string()
   .regex(/^[A-Za-z0-9:_-]+$/)
   .refine(
     (value) => !ForbiddenForwardedTokenPatterns.some((pattern) => pattern.test(value)),
-    { message: "machine token must not carry actor, person, email, or raw skill identifiers" }
+    { message: "machine token must not carry raw, person-level, skill, or value-claim language" }
   );
 
 const DistributionValueSchema = z.object({
@@ -42,10 +59,12 @@ const QualitySignalsSchema = z.object({
   p95_latency_ms: z.number().int().nonnegative()
 }).strict();
 
-export const ForwardedDistributionSchema = z.object({
+const ForwardedDistributionBaseSchema = z.object({
   schema_version: z.literal(FORWARDED_DISTRIBUTION_SCHEMA_VERSION),
   source_schema_version: z.literal("FT_V3_2026_05"),
   cohort_id: ForwardedDistributionMachineTokenSchema,
+  // V3 compatibility key. The name stays `workflow_id`, but values may be
+  // governed workflow or standalone surface taxonomy keys.
   workflow_id: ForwardedDistributionMachineTokenSchema,
   jbtd_id: z.string().max(64).regex(/^[a-z0-9_-]+$/).nullable(),
   persona_id: z.string().max(64).regex(/^[a-z0-9_-]+$/).nullable(),
@@ -55,7 +74,7 @@ export const ForwardedDistributionSchema = z.object({
   cohort_size: z.number().int().positive(),
   ambiguity_rate: z.number().min(0).max(1),
   calibration_id: ForwardedDistributionMachineTokenSchema,
-  surface_taxonomy_ids: z.array(ForwardedDistributionMachineTokenSchema).min(1).max(20),
+  surface_taxonomy_ids: z.array(ForwardedDistributionMachineTokenSchema).min(1).max(20).optional(),
   velocity: z.object({
     frequency: DistributionValueSchema,
     engagement: DistributionValueSchema,
@@ -74,10 +93,15 @@ export const ForwardedDistributionSchema = z.object({
     aggregate_only: z.literal(true),
     person_level_fields_included: z.literal(false)
   }).strict()
-}).strict().refine(
+}).strict();
+
+export const ForwardedDistributionSchema = ForwardedDistributionBaseSchema.refine(
   (value) => Date.parse(value.window_end) > Date.parse(value.window_start),
   { message: "window_end must be after window_start", path: ["window_end"] }
-);
+).transform((value) => ({
+  ...value,
+  surface_taxonomy_ids: value.surface_taxonomy_ids ?? [value.workflow_id]
+}));
 
 export const ForwardedDistributionLegacyCompatibleSchema = z.preprocess((value) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;

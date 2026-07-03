@@ -388,6 +388,12 @@ test("comparison-design evidence review binds to reviewer-owned package collecti
 
   assert.equal(validation.valid, true, validation.gaps.join("; "));
   assert.equal(review.review_state, READY_STATE);
+  assert.equal(review.source_bound, true);
+  assert.equal(review.source_runtime_ref.runtime_hash, runtime.runtime_hash);
+  assert.equal(
+    review.source_runtime_ref.fixture_artifact_hash,
+    runtime.internal_fit_artifact.artifact_hash
+  );
   assert.equal(review.source_package_ref.source_package_id, collection.reviewer_owned_source_package_ref);
   assert.equal(review.source_package_ref.source_package_hash, collection.reviewer_owned_source_package_hash);
   assert.equal(review.source_package_ref.collection_hash, collection.collection_hash);
@@ -886,6 +892,29 @@ test("comparison-design evidence review rejects forbidden source sidecar names e
 
   assert.equal(review.review_state, REJECT_STATE);
   assert.equal(review.promotion_boundary.promotion_authorized, false);
+});
+
+test("comparison-design evidence review rejects unsafe nested runtime envelope sidecars", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const runtime = runtimeSource.source_runtime;
+  const { collection } = reviewerOwnedCollection();
+  const review =
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+      source_runtime: {
+        ...runtimeSource,
+        raw_rows: [{ email: "person@example.com" }],
+        query_text: "SELECT user_id FROM raw_rows"
+      },
+      comparison_design_source_evidence: collection
+    });
+  const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, REJECT_STATE);
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "raw_rows", "query_text"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
 });
 
 test("comparison-design review alone cannot complete governed diagnostics sufficiency source", () => {

@@ -349,6 +349,27 @@ test("governed diagnostics sufficiency evidence source accepts only explicit gov
   }
 });
 
+test("governed diagnostics sufficiency evidence source accepts a safe source runtime envelope", () => {
+  const runtime = sourceRuntime();
+  const sourceEvidenceRefs = governedEvidenceInput(runtime);
+  const source =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(sourceRuntimeEnvelope({
+      reviewed_diagnostics_source_evidence: sourceEvidenceRefs
+    }));
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
+    source,
+    sourceRuntimeValidationOptions({ reviewedDiagnosticsSourceEvidence: sourceEvidenceRefs })
+  );
+
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(source.source_state, READY_STATE);
+  assert.equal(source.source_runtime_ref.runtime_hash, runtime.runtime_hash);
+  assert.equal(
+    source.source_runtime_ref.fixture_artifact_hash,
+    runtime.internal_fit_artifact.artifact_hash
+  );
+});
+
 test("governed diagnostics sufficiency evidence source rejects runtime-only self-manufactured hashes", () => {
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
@@ -697,6 +718,28 @@ test("governed diagnostics sufficiency evidence source rejects reviewed evidence
   assert.equal(serialized.includes("\"probability_output_authorized\":true"), false);
 });
 
+test("governed diagnostics sufficiency evidence source rejects unsafe nested runtime envelope sidecars", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const runtime = runtimeSource.source_runtime;
+  const source =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: {
+        ...runtimeSource,
+        raw_rows: [{ email: "person@example.com" }],
+        query_text: "SELECT user_id FROM raw_rows"
+      },
+      reviewed_diagnostics_source_evidence: governedEvidenceInput(runtime)
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
+  const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
+
+  assert.equal(source.source_state, REJECT_STATE);
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "raw_rows", "query_text"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("governed diagnostics sufficiency evidence source holds when source runtime has suppressed windows", () => {
   const runtime = sourceRuntime();
   runtime.aggregate_design_matrix.suppressed_window_count = 1;
@@ -787,7 +830,7 @@ test("governed diagnostics sufficiency evidence source rejects nested runtime en
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
   const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
 
-  assert.equal(source.source_state, HOLD_STATE);
+  assert.equal(source.source_state, REJECT_STATE);
   assert.equal(validation.valid, false);
   assert.equal(source.promotion_boundary.promotion_authorized, false);
   assert.equal(serialized.includes("\"promotion_authorized\":true"), false);
@@ -809,11 +852,48 @@ test("governed diagnostics sufficiency evidence source rejects low-count metadat
   const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
   const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
 
-  assert.equal(source.source_state, HOLD_STATE);
+  assert.equal(source.source_state, REJECT_STATE);
   assert.equal(validation.valid, false);
   assert.equal(source.promotion_boundary.promotion_authorized, false);
   assert.equal(serialized.includes("source_window_metadata"), false);
   assert.equal(serialized.includes("\"cohort_size\":4"), false);
+});
+
+test("governed diagnostics sufficiency evidence source rejects unsafe nested source runtime envelope without echo", () => {
+  const runtime = sourceRuntime();
+  const sourceEvidenceRefs = governedEvidenceInput(runtime);
+
+  for (const unsafeSibling of [
+    { raw_rows: [{ email: "person@example.com" }] },
+    { user_id: "user-123" },
+    { source_gate: { prompt: "summarize the account plan" } },
+    { aggregate_windows: [{ query_text: "SELECT user_id FROM raw_rows" }] }
+  ]) {
+    const source =
+      buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+        source_runtime: {
+          source_runtime: runtime,
+          ...unsafeSibling
+        },
+        reviewed_diagnostics_source_evidence: sourceEvidenceRefs
+      });
+    const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
+    const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
+
+    assert.equal(source.source_state, REJECT_STATE);
+    assert.equal(validation.valid, false);
+    assert.equal(source.promotion_boundary.promotion_authorized, false);
+    for (const unsafe of [
+      "raw_rows",
+      "person@example.com",
+      "user_id",
+      "user-123",
+      "prompt",
+      "SELECT user_id"
+    ]) {
+      assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+    }
+  }
 });
 
 test("governed diagnostics sufficiency evidence source keeps feature weights structural internal only", () => {

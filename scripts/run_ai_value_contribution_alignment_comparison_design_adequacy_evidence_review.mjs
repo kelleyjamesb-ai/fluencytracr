@@ -61,10 +61,13 @@ const ALLOWED_INPUT_FIELDS = new Set([
   "comparison_design_source_evidence",
   "generated_at"
 ]);
-const SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
+const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
   "source_runtime",
   "source_gate",
-  "aggregate_measurement_cell_windows"
+  "sourceGate",
+  "aggregate_measurement_cell_windows",
+  "aggregateMeasurementCellWindows",
+  "generated_at"
 ]);
 
 const SOURCE_PACKAGE_FIELDS = new Set([
@@ -658,11 +661,14 @@ function inputBoundaryGaps(input) {
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  const nestedSidecar = sourceRuntimeEnvelope.source_runtime
-    ? Object.fromEntries(
-        Object.entries(sourceRuntimeEnvelope).filter(([key]) => !SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key))
-      )
-    : {};
+  const nestedSidecar =
+    sourceRuntimeEnvelope.source_runtime
+      ? Object.fromEntries(
+          Object.entries(sourceRuntimeEnvelope).filter(
+            ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
+          )
+        )
+      : {};
   const nestedContentGaps = sourceRuntimeEnvelope.source_runtime
     ? Object.entries(sourceRuntimeEnvelope)
         .filter(([key]) => key !== "source_runtime")

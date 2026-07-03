@@ -410,6 +410,17 @@ describe("GET /api/v1/quality-multiplier", () => {
 });
 
 describe("computeQualityMultiplierFromForwardedDistribution", () => {
+  it("accepts legacy forwarded distributions without surface taxonomy ids and defaults to workflow id", () => {
+    const legacy = forwardedDistribution();
+    delete (legacy as Partial<ForwardedDistribution>).surface_taxonomy_ids;
+
+    const parsed = ForwardedDistributionSchema.safeParse(legacy);
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) throw new Error(parsed.error.message);
+    expect(parsed.data.surface_taxonomy_ids).toEqual([legacy.workflow_id]);
+  });
+
   it("rejects forbidden forwarded distribution fields and raw-text shaped tokens", () => {
     const forbiddenPayloads = [
       { prompt: "summarize the account plan" },
@@ -428,7 +439,11 @@ describe("computeQualityMultiplierFromForwardedDistribution", () => {
       { calibration_id: "employee-email:person-example" },
       { calibration_id: "person_name:jane" },
       { surface_taxonomy_ids: ["skill_name:personal"] },
-      { surface_taxonomy_ids: ["raw_skill_identifier:personal"] }
+      { surface_taxonomy_ids: ["raw_skill_identifier:personal"] },
+      { workflow_id: "query_text:select_user_id_from_raw_rows" },
+      { cohort_id: "user_id:123" },
+      { calibration_id: "roi:ready" },
+      { surface_taxonomy_ids: ["productivity_score"] }
     ];
 
     for (const override of forbiddenPayloads) {
@@ -438,6 +453,29 @@ describe("computeQualityMultiplierFromForwardedDistribution", () => {
       });
       expect(parsed.success).toBe(false);
     }
+  });
+
+  it("accepts legacy persisted forwarded distributions that predate surface taxonomy ids", () => {
+    const legacyDistribution = {
+      ...forwardedDistribution()
+    } as Record<string, unknown>;
+    delete legacyDistribution.surface_taxonomy_ids;
+
+    const parsed = ForwardedDistributionSchema.safeParse(legacyDistribution);
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.surface_taxonomy_ids).toEqual([parsed.data.workflow_id]);
+
+    const result = computeQualityMultiplierFromForwardedDistribution({
+      forwardedDistribution: legacyDistribution as ForwardedDistribution
+    });
+
+    expect(result).toMatchObject({
+      workflow_id: "wf-forwarded-qm",
+      verdict: "SURFACE",
+      suppression_reason: null,
+      evidence_grade: "CALIBRATED"
+    });
   });
 
   it("re-checks gates and emits calibrated quality-premium evidence for surfaced distributions", () => {
@@ -463,7 +501,9 @@ describe("computeQualityMultiplierFromForwardedDistribution", () => {
     const canonicalParsed = ForwardedDistributionSchema.safeParse(legacyPayload);
     const parsed = ForwardedDistributionLegacyCompatibleSchema.safeParse(legacyPayload);
 
-    expect(canonicalParsed.success).toBe(false);
+    expect(canonicalParsed.success).toBe(true);
+    if (!canonicalParsed.success) return;
+    expect(canonicalParsed.data.surface_taxonomy_ids).toEqual(["wf-forwarded-qm"]);
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
     expect(parsed.data.surface_taxonomy_ids).toEqual(["wf-forwarded-qm"]);
