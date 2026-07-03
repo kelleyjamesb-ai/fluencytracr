@@ -727,21 +727,87 @@ function confidenceObservationDecisionRef(decision) {
   };
 }
 
-function confidenceBindingBound(options = {}) {
+function confidenceProofSourceSeriesRef(packageRecord) {
+  const seriesBoundary = asRecord(packageRecord.series_boundary);
+  return {
+    schema_version: packageRecord.schema_version ?? null,
+    pilot_decision: packageRecord.pilot_decision ?? null,
+    series_boundary_decision: seriesBoundary.decision ?? null,
+    complete_milestone_series: seriesBoundary.complete_milestone_series === true,
+    required_milestone_days: Array.isArray(seriesBoundary.required_milestones)
+      ? [...seriesBoundary.required_milestones]
+      : [],
+    observed_milestone_days: Array.isArray(seriesBoundary.observed_milestones)
+      ? [...seriesBoundary.observed_milestones]
+      : [],
+    missing_milestone_days: Array.isArray(seriesBoundary.missing_milestones)
+      ? [...seriesBoundary.missing_milestones]
+      : [],
+    ready_windows: Number(seriesBoundary.ready_windows ?? 0),
+    held_windows: Number(seriesBoundary.held_windows ?? 0),
+    suppressed_windows: Number(seriesBoundary.suppressed_windows ?? 0),
+    missing_windows: Number(seriesBoundary.missing_windows ?? 0),
+    blocked_windows: Number(seriesBoundary.blocked_windows ?? 0),
+    alignment_state: seriesBoundary.alignment_state ?? null,
+    validation_valid: seriesBoundary.validation_valid === true,
+    series_ref_hash: sha256Json({
+      package_integrity_hash: packageRecord.package_integrity_hash ?? null,
+      compact_refs: seriesBoundary.compact_refs ?? [],
+      required_milestones: seriesBoundary.required_milestones ?? [],
+      observed_milestones: seriesBoundary.observed_milestones ?? []
+    })
+  };
+}
+
+function confidenceBindingGaps(options = {}, packageRecord = null, requireDecision = false) {
   const binding = asRecord(options.confidenceSeriesReadPathBinding);
   const decision = asRecord(binding.decision);
-  if (Object.keys(decision).length === 0) return false;
+  if (Object.keys(decision).length === 0) {
+    return requireDecision
+      ? ["confidenceSeriesReadPathBinding.decision is required to validate ready confidence-lane Series persistence promotion gates"]
+      : [];
+  }
+  const proof = asRecord(binding.sourceCustomerEvidenceHistoryReadPathProof);
+  const requirement = asRecord(binding.sourceConfidenceObservationRequirement);
+  const gaps = [];
+  if (Object.keys(proof).length === 0) {
+    gaps.push("confidenceSeriesReadPathBinding.sourceCustomerEvidenceHistoryReadPathProof is required");
+  }
+  if (Object.keys(requirement).length === 0) {
+    gaps.push("confidenceSeriesReadPathBinding.sourceConfidenceObservationRequirement is required");
+  }
+  if (packageRecord && Object.keys(proof).length > 0) {
+    const expectedProofSeriesRef = confidenceProofSourceSeriesRef(packageRecord);
+    const actualProofSeriesRef = asRecord(proof.source_series_ref);
+    for (const [field, expected] of Object.entries(expectedProofSeriesRef)) {
+      if (stableStringify(actualProofSeriesRef[field]) !== stableStringify(expected)) {
+        gaps.push(
+          `confidenceSeriesReadPathBinding.sourceCustomerEvidenceHistoryReadPathProof.source_series_ref.${field} does not match gated source series`
+        );
+      }
+    }
+  }
+  if (gaps.length > 0) return gaps;
   const validation = validateConfidenceEngineSeriesReadPathDecision(decision, {
     cwd: options.cwd ?? process.cwd(),
-    sourceCustomerEvidenceHistoryReadPathProof:
-      binding.sourceCustomerEvidenceHistoryReadPathProof,
-    sourceConfidenceObservationRequirement:
-      binding.sourceConfidenceObservationRequirement
+    sourceCustomerEvidenceHistoryReadPathProof: proof,
+    sourceConfidenceObservationRequirement: requirement
   });
-  return (
-    validation.valid === true &&
-    decision.decision_state === CONFIDENCE_SERIES_AUTHORIZED_STATE
-  );
+  if (validation.valid !== true) {
+    gaps.push(
+      "confidenceSeriesReadPathBinding.decision must validate as an authorized confidence-engine series read-path decision"
+    );
+    gaps.push(...validation.gaps.map((gap) => `confidenceSeriesReadPathBinding.${gap}`));
+  }
+  if (decision.decision_state !== CONFIDENCE_SERIES_AUTHORIZED_STATE) {
+    gaps.push(`confidenceSeriesReadPathBinding.decision_state must be ${CONFIDENCE_SERIES_AUTHORIZED_STATE}`);
+  }
+  return gaps;
+}
+
+function confidenceBindingBound(options = {}, packageRecord = null) {
+  return confidenceBindingGaps(options, packageRecord).length === 0 &&
+    Object.keys(asRecord(asRecord(options.confidenceSeriesReadPathBinding).decision)).length > 0;
 }
 
 function holdReasons(prerequisites, sourceValid) {
@@ -912,7 +978,7 @@ export function buildMeasurementCellSeriesPersistencePromotionGateFromObject(
     cwd: options.cwd ?? process.cwd()
   });
   const sourceValid = packageHasCompleteSeries(packageRecord, packageValidation);
-  const confidenceBound = confidenceBindingBound(options);
+  const confidenceBound = confidenceBindingBound(options, packageRecord);
   const readPathLane = confidenceBound
     ? READ_PATH_LANE_CONFIDENCE
     : READ_PATH_LANE_CUSTOMER_HISTORY;
@@ -1003,24 +1069,14 @@ function collectDurableReadPathDecisionBindingGaps(gate, options = {}) {
   if (record.read_path_lane === READ_PATH_LANE_CONFIDENCE) {
     const binding = asRecord(options.confidenceSeriesReadPathBinding);
     const decision = asRecord(binding.decision);
-    if (Object.keys(decision).length === 0) {
-      return [
-        "confidenceSeriesReadPathBinding.decision is required to validate ready confidence-lane Series persistence promotion gates"
-      ];
-    }
     const gaps = [];
-    const validation = validateConfidenceEngineSeriesReadPathDecision(decision, {
-      cwd: options.cwd ?? process.cwd(),
-      sourceCustomerEvidenceHistoryReadPathProof:
-        binding.sourceCustomerEvidenceHistoryReadPathProof,
-      sourceConfidenceObservationRequirement:
-        binding.sourceConfidenceObservationRequirement
-    });
-    if (validation.valid !== true) {
-      gaps.push(
-        "confidenceSeriesReadPathBinding.decision must validate as an authorized confidence-engine series read-path decision"
-      );
-    }
+    gaps.push(
+      ...confidenceBindingGaps(
+        options,
+        sourcePackageFromInput(options.sourceRepeatedPilotEvidencePackage),
+        true
+      )
+    );
     if (decision.decision_hash !== confidenceEngineSeriesReadPathDecisionHash(decision)) {
       gaps.push("confidenceSeriesReadPathBinding.decision hash must match decision body");
     }

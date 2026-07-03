@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-      - run: npm install
+      - run: npm ci
       - run: npm run build --workspace @fluencytracr/glean-publisher
       - name: Publish bundles
         env:

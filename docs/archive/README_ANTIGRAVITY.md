@@ -1,3 +1,5 @@
+> Archived snapshot: this unmaintained Antigravity README is retained for historical reference only; use the root README and current FluencyTracr docs for active guidance.
+
 # Deprecation Notice
 This document is retained for backwards compatibility only. FluencyTracr is now the primary product surface, and new implementation work should target FluencyTracr contracts and workflows.
 
