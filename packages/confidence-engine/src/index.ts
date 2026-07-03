@@ -56,3 +56,10 @@ export {
   contributionAlignmentInternalBayesianExecutionGateHash,
   validateContributionAlignmentInternalBayesianExecutionGate
 } from "./internalBayesianExecutionGate";
+
+export {
+  CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION,
+  buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject,
+  contributionAlignmentInternalBayesianExecutionRuntimeHash,
+  validateContributionAlignmentInternalBayesianExecutionRuntime
+} from "./internalBayesianExecutionRuntime";
