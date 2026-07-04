@@ -106,9 +106,15 @@ The proof harness SHALL demonstrate known-effect recovery and calibration covera
 - **WHEN** the input is real customer or production observation data rather than synthetic data
 - **THEN** the harness rejects the input and does not fit the model
 
+#### Scenario: Negative controls prove fail-closed behavior
+
+- **GIVEN** synthetic negative-control inputs for no credible comparison cohort, violated pre-trend, badly mismatched comparison cohort, prior-dominated weak data, missing or suppressed windows, and naive repeated milestone peeking
+- **WHEN** the harness evaluates those inputs
+- **THEN** each artifact is rejected, HOLD, or evidence-tier-only with the relevant failing condition named
+
 ### Requirement: Comparison Cohort Rule
 
-The system SHALL emit no comparison-supported contribution estimate when no credible comparison cohort exists; in that case only an evidence-tier label MAY be emitted. Causal language remains separately gated by the claim ladder (approved comparison evidence design at the validated rung); this rule's outputs are contribution estimates, never causal claims.
+The system SHALL emit no comparison-supported contribution estimate when no credible comparison cohort exists; in that case only an evidence-tier label MAY be emitted. A credible comparison cohort SHALL pass the runnable rubric in the methodology contract: same selected metric definition, aligned milestone windows, same metric direction, approved lag handling, same expectation path/workflow/function/cohort context unless explicitly justified by a reviewer-owned comparison-design adequacy reference, similar pre-period level/trend, no contamination, adequate aggregate floors, and no suppressed or stale windows. Causal language remains separately gated by the claim ladder (approved comparison evidence design at the validated rung); this rule's outputs are contribution estimates, never causal claims.
 
 #### Scenario: Adequate cohort enables contribution-estimate eligibility
 
@@ -127,6 +133,12 @@ The system SHALL emit no comparison-supported contribution estimate when no cred
 - **GIVEN** an analysis with no credible comparison cohort
 - **WHEN** a caller attempts to force emission of a comparison-supported contribution estimate
 - **THEN** the attempt is rejected
+
+#### Scenario: Missing comparison rubric check blocks contribution estimate
+
+- **GIVEN** an analysis whose comparison cohort fails any required rubric check
+- **WHEN** the artifact is evaluated for contribution-estimate eligibility
+- **THEN** the artifact HOLDS or emits evidence-tier-only status and does not carry a comparison-supported contribution estimate
 
 ### Requirement: Milestone Peeking Control
 

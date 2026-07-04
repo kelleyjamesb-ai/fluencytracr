@@ -71,8 +71,9 @@ methodological gain at this scale.
 
 The harness must prove itself on synthetic data before any real observation
 is considered: inject known effects, verify the model recovers them within
-stated tolerance, and verify credible-interval calibration coverage across
-repeated simulated datasets. Real observations, Measurement Cell Series
+stated tolerance, verify credible-interval calibration coverage across
+repeated simulated datasets, and prove fail-closed behavior with negative
+controls for violated assumptions. Real observations, Measurement Cell Series
 persistence, and output promotion are explicitly separate later changes.
 Rationale: a method that cannot recover effects it is known to contain has no
 business near customer data; this is also the cheapest point to catch
@@ -123,11 +124,16 @@ fail-closed culture of this repo exists to prevent.
 ### 6. Comparison-cohort rule
 
 No credible comparison cohort → no comparison-supported contribution
-estimate; the artifact carries an evidence-tier label only. Adopted from the
-methodology review. Causal language remains separately gated by the claim
-ladder (approved comparison evidence design at the validated rung); this
-rule's outputs are contribution estimates, never causal claims. Rationale:
-DiD without a defensible comparison is a before/after story, and
+estimate; the artifact carries an evidence-tier label only. "Credible" is a
+runnable rubric: same selected metric definition, aligned milestone windows,
+same metric direction, approved lag handling, same expectation-path/workflow/
+function/cohort context unless a reviewer-owned comparison-design adequacy
+reference justifies the difference, similar pre-period level/trend, no
+contamination, aggregate floors met, and no suppressed/stale windows. Adopted
+from the methodology review. Causal language remains separately gated by the
+claim ladder (approved comparison evidence design at the validated rung);
+this rule's outputs are contribution estimates, never causal claims.
+Rationale: DiD without a defensible comparison is a before/after story, and
 before/after stories are precisely the overclaims the Value Playbook
 discounts. No alternative was seriously entertained.
 
