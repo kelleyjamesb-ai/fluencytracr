@@ -413,6 +413,9 @@ export const THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION =
 export const EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION =
   "FT_AI_VALUE_CONFIDENCE_EXPECTED_LOSS_REPRESENTATION_2026_07";
 
+export const INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION =
+  "FT_AI_VALUE_CONFIDENCE_INFERENCE_PROOF_ARTIFACT_2026_07";
+
 // Provisional compiled constant: the act/hold decision boundary for the
 // expected-loss decision rule. Thresholds are compiled constants, never
 // runtime-tunable; revising this value requires a contract change (the
@@ -425,6 +428,18 @@ export const EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON = 0.01;
 // runtime-tunable; revising this value requires a contract change (the
 // slice-1 methodology contract's expert review may adjust it).
 export const MINIMUM_WORTHWHILE_EFFECT_THRESHOLD = 0.2;
+
+export const INFERENCE_PROOF_RHAT_MAX = 1.01;
+export const INFERENCE_PROOF_ESS_MIN = 400;
+export const INFERENCE_PROOF_PPC_P_VALUE_MIN = 0.05;
+export const INFERENCE_PROOF_PPC_P_VALUE_MAX = 0.95;
+export const INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD = 0.5;
+export const INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN = 0.74;
+export const INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX = 0.86;
+export const INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN = 200;
+export const INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX = 0.05;
+export const INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX = 0.1;
+export const INFERENCE_PROOF_FLOAT_TOLERANCE = 1e-12;
 
 // Internal diagnostic representation of P(effect > minimum worthwhile
 // threshold). Derives from the credible-interval-only posterior
@@ -536,4 +551,861 @@ export type ThresholdProbabilityRepresentation = z.infer<
 >;
 export type ExpectedLossRepresentation = z.infer<
   typeof ExpectedLossRepresentationSchema
+>;
+
+// ---------------------------------------------------------------------------
+// 6. InferenceProofArtifact — internal synthetic proof boundary
+//
+// This schema is the TypeScript boundary for the future Slice 2 Python proof
+// harness. It is NOT a customer-facing emitted artifact and does not authorize
+// inference execution in TypeScript. Python may carry numeric diagnostic values
+// here so TypeScript can validate/hold them; PosteriorWithCredibleIntervals
+// above remains numeric-values-withheld for any readout-shaped contract.
+// ---------------------------------------------------------------------------
+
+const OrderedConfidenceModelBlockedUsesSchema = z
+  .array(ConfidenceModelBlockedUseSchema)
+  .superRefine((uses, ctx) => {
+    const expected = CONFIDENCE_MODEL_BLOCKED_USES;
+    const matches =
+      uses.length === expected.length &&
+      uses.every((use, index) => use === expected[index]);
+    if (!matches) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "blocked_uses must pin the full CONFIDENCE_MODEL_BLOCKED_USES list in order"
+      });
+    }
+  });
+
+export const InferenceProofGovernanceStateSchema = z.enum([
+  "eligible_internal_only",
+  "HOLD"
+]);
+
+export const InferenceProofFailingDiagnosticSchema = z.enum([
+  "r_hat",
+  "bulk_ess",
+  "tail_ess",
+  "divergences",
+  "max_treedepth_saturation",
+  "energy_bfmi",
+  "mcse",
+  "unsupported_likelihood_family",
+  "posterior_predictive_check",
+  "prior_sensitivity",
+  "pre_trend",
+  "calibration_coverage",
+  "null_false_eligibility",
+  "floor_check",
+  "peeking_control",
+  "comparison_cohort_adequacy",
+  "missing_or_suppressed_windows"
+]);
+
+export const InferenceProofLikelihoodFamilySchema = z.enum([
+  "normal_continuous_aggregate",
+  "binomial_rate_aggregate",
+  "beta_binomial_rate_aggregate",
+  "poisson_count_aggregate",
+  "negative_binomial_count_aggregate"
+]);
+
+export const INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA = [
+  "same_selected_metric_definition",
+  "aligned_milestone_windows",
+  "same_metric_direction",
+  "approved_lag_handling",
+  "same_expectation_path_and_context",
+  "similar_pre_period_level_trend",
+  "no_contamination",
+  "adequate_aggregate_floors",
+  "no_suppressed_or_stale_windows"
+] as const;
+
+export const InferenceProofComparisonCohortCriterionSchema = z.enum(
+  INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA
+);
+
+const NonNegativeFiniteNumberSchema = z.number().finite().gte(0);
+const FiniteNumberSchema = z.number().finite();
+
+const InferenceProofSeedRangeSchema = z
+  .object({
+    start_seed: z.number().int().nonnegative(),
+    end_seed: z.number().int().nonnegative()
+  })
+  .strict()
+  .superRefine((range, ctx) => {
+    if (range.end_seed < range.start_seed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["end_seed"],
+        message: "end_seed must be greater than or equal to start_seed"
+      });
+    }
+  });
+
+export const InferenceProofSyntheticGeneratorSchema = z
+  .object({
+    generator_id: z.string().min(1),
+    generator_version: z.string().min(1),
+    seed_range: InferenceProofSeedRangeSchema,
+    synthetic_input_hash: Sha256HexSchema,
+    real_data_present: z.literal(false),
+    customer_data_present: z.literal(false),
+    production_data_present: z.literal(false),
+    live_data_source_present: z.literal(false)
+  })
+  .strict();
+
+export const InferenceProofModelSpecBindingSchema = z
+  .object({
+    model_family: z.literal(
+      "bayesian_hierarchical_difference_in_differences_candidate"
+    ),
+    estimand_name: z.literal("aggregate_selected_metric_movement"),
+    estimand_units: z.enum([
+      "standardized_effect_sd",
+      "raw_metric_units_internal_only"
+    ]),
+    likelihood_family: InferenceProofLikelihoodFamilySchema,
+    link_function: z.enum(["identity", "logit", "log"]),
+    aggregate_cell_variance_mode: z.enum([
+      "cohort_size_weighted_known_variance",
+      "estimated_overdispersion_internal_only"
+    ]),
+    cohort_size_enters_likelihood: z.literal(true),
+    missing_or_suppressed_windows_hold: z.literal(true),
+    treatment_effect_pooling: z.enum([
+      "global",
+      "workflow",
+      "function",
+      "cohort"
+    ]),
+    pooling_structure: z
+      .object({
+        expectation_path: z.literal(true),
+        workflow: z.literal(true),
+        function: z.literal(true),
+        cohort: z.literal(true),
+        organization: z.literal(true)
+      })
+      .strict()
+  })
+  .strict();
+
+const InferenceProofCredibleInterval80Schema = z
+  .object({
+    lower: FiniteNumberSchema,
+    upper: FiniteNumberSchema
+  })
+  .strict()
+  .superRefine((interval, ctx) => {
+    if (interval.upper < interval.lower) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["upper"],
+        message: "credible interval upper bound must be >= lower bound"
+      });
+    }
+  });
+
+export const InferenceProofParameterDiagnosticSchema = z
+  .object({
+    parameter_name: z.string().min(1),
+    r_hat: NonNegativeFiniteNumberSchema,
+    bulk_ess: NonNegativeFiniteNumberSchema,
+    tail_ess: NonNegativeFiniteNumberSchema,
+    posterior_mean_mcse: NonNegativeFiniteNumberSchema,
+    interval_endpoint_mcse: NonNegativeFiniteNumberSchema,
+    posterior_sd: NonNegativeFiniteNumberSchema,
+    max_mcse_to_posterior_sd_ratio: NonNegativeFiniteNumberSchema
+  })
+  .strict();
+
+export const InferenceProofSamplerDiagnosticsSchema = z
+  .object({
+    parameters: z.array(InferenceProofParameterDiagnosticSchema).nonempty(),
+    post_warmup_divergences: z.number().int().nonnegative(),
+    max_treedepth_saturation_rate: z.number().finite().gte(0).lte(1),
+    max_treedepth_warning: z.boolean(),
+    energy_bfmi_min: NonNegativeFiniteNumberSchema,
+    energy_bfmi_warning: z.boolean(),
+    rank_plots_recorded: z.literal(true),
+    energy_plots_recorded: z.literal(true)
+  })
+  .strict();
+
+export const InferenceProofPpcStatisticSchema = z
+  .object({
+    statistic_name: z.enum([
+      "pre_post_mean_movement",
+      "between_cohort_variance",
+      "within_cohort_variance",
+      "tail_or_extreme_cell_statistic",
+      "difference_in_differences_contrast"
+    ]),
+    observed_value: FiniteNumberSchema,
+    posterior_predictive_summary: z
+      .object({
+        mean: FiniteNumberSchema,
+        credible_interval_80: InferenceProofCredibleInterval80Schema
+      })
+      .strict(),
+    p_value: z.number().finite().gte(0).lte(1),
+    pass: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofPriorSensitivitySchema = z
+  .object({
+    posterior_mean_shift_in_posterior_sd: NonNegativeFiniteNumberSchema,
+    pass: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofPreTrendCheckSchema = z
+  .object({
+    pseudo_effect_credible_interval_80: InferenceProofCredibleInterval80Schema,
+    includes_zero: z.boolean(),
+    pass: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofDiagnosticsSchema = z
+  .object({
+    sampler: InferenceProofSamplerDiagnosticsSchema,
+    posterior_predictive_checks: z
+      .array(InferenceProofPpcStatisticSchema)
+      .nonempty(),
+    prior_sensitivity: InferenceProofPriorSensitivitySchema,
+    pre_trend: InferenceProofPreTrendCheckSchema
+  })
+  .strict()
+  .superRefine((diagnostics, ctx) => {
+    const expected = [
+      "pre_post_mean_movement",
+      "between_cohort_variance",
+      "within_cohort_variance",
+      "tail_or_extreme_cell_statistic",
+      "difference_in_differences_contrast"
+    ] as const;
+    const observed = diagnostics.posterior_predictive_checks.map(
+      (statistic) => statistic.statistic_name
+    );
+    for (const statisticName of expected) {
+      if (!observed.includes(statisticName)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["posterior_predictive_checks"],
+          message: `posterior_predictive_checks must include ${statisticName}`
+        });
+      }
+    }
+    if (new Set(observed).size !== observed.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["posterior_predictive_checks"],
+        message: "posterior_predictive_checks must not duplicate statistic_name"
+      });
+    }
+  });
+
+export const InferenceProofCalibrationScenarioSchema = z
+  .object({
+    scenario_id: z.string().min(1),
+    injected_effect_size_sd: z.union([
+      z.literal(0),
+      z.literal(0.2),
+      z.literal(0.5)
+    ]),
+    cohort_size: z.union([z.literal(12), z.literal(16)]),
+    replication_count: z
+      .number()
+      .int()
+      .gte(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN),
+    credible_interval_level: z.literal(0.8),
+    coverage_rate: z.number().finite().gte(0).lte(1),
+    coverage_standard_error: NonNegativeFiniteNumberSchema,
+    pass: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofCalibrationSchema = z
+  .object({
+    scenarios: z.array(InferenceProofCalibrationScenarioSchema).nonempty(),
+    per_scenario_required: z.literal(true)
+  })
+  .strict()
+  .superRefine((calibration, ctx) => {
+    const required = [
+      "0:12",
+      "0:16",
+      "0.2:12",
+      "0.2:16",
+      "0.5:12",
+      "0.5:16"
+    ];
+    const observed = calibration.scenarios.map(
+      (scenario) => `${scenario.injected_effect_size_sd}:${scenario.cohort_size}`
+    );
+    for (const cell of required) {
+      if (!observed.includes(cell)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["scenarios"],
+          message:
+            "calibration scenarios must include every effect-size/cohort-size cell"
+        });
+      }
+    }
+    if (new Set(observed).size !== observed.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scenarios"],
+        message: "calibration scenarios must not duplicate effect/cohort cells"
+      });
+    }
+  });
+
+export const InferenceProofNullChecksSchema = z
+  .object({
+    null_effect_scenario_count: z
+      .number()
+      .int()
+      .gte(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN),
+    false_eligibility_rate: z.number().finite().gte(0).lte(1),
+    pass: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofFloorChecksSchema = z
+  .object({
+    k4_rejected: z
+      .object({
+        cohort_size: z.literal(4),
+        outcome: z.literal("rejected_below_schema_floor"),
+        pass: z.literal(true)
+      })
+      .strict(),
+    k8_internal_only: z
+      .object({
+        cohort_size: z.literal(8),
+        outcome: z.literal("internal_only_display_ineligible"),
+        valid_internal: z.literal(true),
+        display_eligible: z.literal(false),
+        pass: z.literal(true)
+      })
+      .strict(),
+    eligible_floor_cases: z
+      .array(
+        z
+          .object({
+            cohort_size: z.union([z.literal(12), z.literal(16)]),
+            valid_internal: z.literal(true),
+            display_eligible: z.literal(true),
+            pass: z.literal(true)
+          })
+          .strict()
+      )
+      .length(2)
+  })
+  .strict()
+  .superRefine((checks, ctx) => {
+    const sizes = checks.eligible_floor_cases.map((check) => check.cohort_size);
+    if (!sizes.includes(12) || !sizes.includes(16)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["eligible_floor_cases"],
+        message: "eligible_floor_cases must include k=12 and k=16"
+      });
+    }
+  });
+
+export const InferenceProofPeekingControlSchema = z
+  .object({
+    procedure: z.enum([
+      "fixed_horizon_one_look_only",
+      "always_valid_sequential_procedure_proven"
+    ]),
+    repeated_evaluation: z.boolean(),
+    look_index: z.number().int().positive(),
+    total_planned_looks: z.number().int().positive(),
+    milestone_days_included: z.array(MilestoneDaySchema).nonempty(),
+    metrics_included: z.array(z.string().min(1)).nonempty(),
+    cohorts_included: z.array(z.string().min(1)).nonempty(),
+    sequential_method_name: z.string().min(1).nullable(),
+    synthetic_null_proof_hash: Sha256HexSchema.nullable(),
+    false_eligibility_bound: z.literal(
+      INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+    ),
+    pass: z.boolean()
+  })
+  .strict()
+  .superRefine((control, ctx) => {
+    if (control.procedure === "fixed_horizon_one_look_only") {
+      if (control.repeated_evaluation) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["repeated_evaluation"],
+          message: "fixed-horizon proof artifacts must not use repeated evaluation"
+        });
+      }
+      if (control.look_index !== 1 || control.total_planned_looks !== 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["look_index"],
+          message: "fixed-horizon proof artifacts must carry exactly one look"
+        });
+      }
+      if (control.milestone_days_included.length !== 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["milestone_days_included"],
+          message: "fixed-horizon proof artifacts must include exactly one milestone"
+        });
+      }
+      if (control.metrics_included.length !== 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["metrics_included"],
+          message: "fixed-horizon proof artifacts must include exactly one metric"
+        });
+      }
+      if (control.cohorts_included.length !== 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cohorts_included"],
+          message: "fixed-horizon proof artifacts must include exactly one cohort"
+        });
+      }
+      if (
+        control.sequential_method_name !== null ||
+        control.synthetic_null_proof_hash !== null
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["sequential_method_name"],
+          message: "fixed-horizon proof artifacts must not claim sequential proof"
+        });
+      }
+    }
+    if (control.procedure === "always_valid_sequential_procedure_proven") {
+      if (!control.repeated_evaluation) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["repeated_evaluation"],
+          message: "always-valid proof must declare repeated evaluation"
+        });
+      }
+      if (
+        control.sequential_method_name === null ||
+        control.synthetic_null_proof_hash === null
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["synthetic_null_proof_hash"],
+          message:
+            "always-valid proof requires a named method and synthetic null proof hash"
+        });
+      }
+    }
+  });
+
+export const InferenceProofComparisonAdequacyCheckSchema = z
+  .object({
+    criterion: InferenceProofComparisonCohortCriterionSchema,
+    pass: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofComparisonAdequacySchema = z
+  .object({
+    comparison_cohort_present: z.boolean(),
+    adequacy_proof_hash: Sha256HexSchema,
+    reviewer_owned_comparison_design_adequacy_ref: z.string().min(1).nullable(),
+    required_checks: z
+      .array(InferenceProofComparisonAdequacyCheckSchema)
+      .length(INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA.length),
+    all_required_checks_pass: z.boolean()
+  })
+  .strict()
+  .superRefine((adequacy, ctx) => {
+    const seen = new Set<string>();
+    for (const [index, check] of adequacy.required_checks.entries()) {
+      if (seen.has(check.criterion)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["required_checks", index, "criterion"],
+          message: "comparison adequacy criteria must not repeat"
+        });
+      }
+      seen.add(check.criterion);
+    }
+
+    for (const criterion of INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA) {
+      if (!seen.has(criterion)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["required_checks"],
+          message: `comparison adequacy must include criterion ${criterion}`
+        });
+      }
+    }
+
+    const computedAllChecksPass =
+      adequacy.comparison_cohort_present &&
+      adequacy.required_checks.every((check) => check.pass);
+    if (adequacy.all_required_checks_pass !== computedAllChecksPass) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["all_required_checks_pass"],
+        message:
+          "all_required_checks_pass must be derived from comparison presence and every rubric check"
+      });
+    }
+  });
+
+export const InferenceProofGovernanceSchema = z
+  .object({
+    state: InferenceProofGovernanceStateSchema,
+    failing_diagnostics: z.array(InferenceProofFailingDiagnosticSchema),
+    comparison_supported_contribution_estimate_authorized: z.boolean(),
+    evidence_tier_only: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofHashBindingsSchema = z
+  .object({
+    source_posterior_hash: Sha256HexSchema,
+    synthetic_input_hash: Sha256HexSchema,
+    artifact_self_hash: Sha256HexSchema
+  })
+  .strict();
+
+export const InferenceProofArtifactSchema = z
+  .object({
+    schema_version: z.literal(INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION),
+    artifact_class: z.literal("internal_synthetic_inference_proof"),
+    generated_at: z.string().min(1),
+    harness_version: z.string().min(1),
+    lockfile_hash: Sha256HexSchema,
+    synthetic_generator: InferenceProofSyntheticGeneratorSchema,
+    model_spec_binding: InferenceProofModelSpecBindingSchema,
+    diagnostics: InferenceProofDiagnosticsSchema,
+    calibration: InferenceProofCalibrationSchema,
+    null_checks: InferenceProofNullChecksSchema,
+    floor_checks: InferenceProofFloorChecksSchema,
+    peeking_control: InferenceProofPeekingControlSchema,
+    comparison_adequacy: InferenceProofComparisonAdequacySchema,
+    governance_state: InferenceProofGovernanceSchema,
+    hash_bindings: InferenceProofHashBindingsSchema,
+    blocked_uses: OrderedConfidenceModelBlockedUsesSchema,
+    numeric_values_role: z.literal("internal_validation_inputs_not_output"),
+    numeric_posterior_values_customer_authorized: z.literal(false),
+    internal_only: z.literal(true),
+    customer_output_authorized: z.literal(false),
+    probability_output_authorized: z.literal(false),
+    confidence_output_authorized: z.literal(false),
+    finance_output_authorized: z.literal(false),
+    creates_route: z.literal(false),
+    creates_ui: z.literal(false),
+    writes_persistence: z.literal(false),
+    creates_export: z.literal(false),
+    renders_readout: z.literal(false),
+    executes_connector: z.literal(false),
+    promotion_decision_ref: z.null()
+  })
+  .strict()
+  .superRefine((artifact, ctx) => {
+    if (
+      artifact.hash_bindings.synthetic_input_hash !==
+      artifact.synthetic_generator.synthetic_input_hash
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hash_bindings", "synthetic_input_hash"],
+        message:
+          "hash_bindings.synthetic_input_hash must match synthetic_generator.synthetic_input_hash"
+      });
+    }
+
+    const failing = new Set(artifact.governance_state.failing_diagnostics);
+    if (
+      artifact.governance_state.state === "eligible_internal_only" &&
+      failing.size > 0
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "failing_diagnostics"],
+        message: "eligible_internal_only artifacts must not name failing diagnostics"
+      });
+    }
+    if (artifact.governance_state.state === "HOLD" && failing.size === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "failing_diagnostics"],
+        message: "HOLD artifacts must name at least one failing diagnostic"
+      });
+    }
+
+    const failOrIssue = (
+      diagnostic: z.infer<typeof InferenceProofFailingDiagnosticSchema>,
+      path: (string | number)[],
+      message: string
+    ) => {
+      if (artifact.governance_state.state === "eligible_internal_only") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path,
+          message
+        });
+      } else if (!failing.has(diagnostic)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["governance_state", "failing_diagnostics"],
+          message: `HOLD artifacts must name failing diagnostic ${diagnostic}`
+        });
+      }
+    };
+
+    const comparisonEstimateAuthorized =
+      artifact.governance_state
+        .comparison_supported_contribution_estimate_authorized;
+    const evidenceTierOnly = artifact.governance_state.evidence_tier_only;
+
+    if (comparisonEstimateAuthorized === evidenceTierOnly) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "evidence_tier_only"],
+        message:
+          "comparison-supported estimate authorization and evidence-tier-only status are mutually exclusive"
+      });
+    }
+    if (
+      artifact.governance_state.state === "HOLD" &&
+      comparisonEstimateAuthorized
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [
+          "governance_state",
+          "comparison_supported_contribution_estimate_authorized"
+        ],
+        message: "HOLD artifacts must not authorize comparison-supported estimates"
+      });
+    }
+    if (!artifact.comparison_adequacy.all_required_checks_pass) {
+      failOrIssue(
+        "comparison_cohort_adequacy",
+        ["comparison_adequacy"],
+        "comparison-supported estimates require every comparison adequacy rubric check to pass"
+      );
+    }
+
+    if (
+      artifact.model_spec_binding.likelihood_family !==
+      "normal_continuous_aggregate"
+    ) {
+      failOrIssue(
+        "unsupported_likelihood_family",
+        ["model_spec_binding", "likelihood_family"],
+        "non-normal likelihood families must HOLD until their sampler, diagnostics, and synthetic recovery suite are implemented"
+      );
+    }
+
+    for (const [index, parameter] of artifact.diagnostics.sampler.parameters.entries()) {
+      const maxObservedMcse = Math.max(
+        parameter.posterior_mean_mcse,
+        parameter.interval_endpoint_mcse
+      );
+      const computedMcseRatio =
+        parameter.posterior_sd === 0
+          ? maxObservedMcse === 0
+            ? 0
+            : Number.POSITIVE_INFINITY
+          : maxObservedMcse / parameter.posterior_sd;
+      if (
+        !Number.isFinite(computedMcseRatio) ||
+        Math.abs(
+          parameter.max_mcse_to_posterior_sd_ratio - computedMcseRatio
+        ) > INFERENCE_PROOF_FLOAT_TOLERANCE
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [
+            "diagnostics",
+            "sampler",
+            "parameters",
+            index,
+            "max_mcse_to_posterior_sd_ratio"
+          ],
+          message:
+            "max_mcse_to_posterior_sd_ratio must be derived from posterior_mean_mcse, interval_endpoint_mcse, and posterior_sd"
+        });
+      }
+      if (parameter.r_hat > INFERENCE_PROOF_RHAT_MAX) {
+        failOrIssue(
+          "r_hat",
+          ["diagnostics", "sampler", "parameters", index, "r_hat"],
+          `r_hat must be <= ${INFERENCE_PROOF_RHAT_MAX} for eligible artifacts`
+        );
+      }
+      if (parameter.bulk_ess < INFERENCE_PROOF_ESS_MIN) {
+        failOrIssue(
+          "bulk_ess",
+          ["diagnostics", "sampler", "parameters", index, "bulk_ess"],
+          `bulk_ess must be >= ${INFERENCE_PROOF_ESS_MIN} for eligible artifacts`
+        );
+      }
+      if (parameter.tail_ess < INFERENCE_PROOF_ESS_MIN) {
+        failOrIssue(
+          "tail_ess",
+          ["diagnostics", "sampler", "parameters", index, "tail_ess"],
+          `tail_ess must be >= ${INFERENCE_PROOF_ESS_MIN} for eligible artifacts`
+        );
+      }
+      if (
+        parameter.max_mcse_to_posterior_sd_ratio >
+        INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX ||
+        computedMcseRatio >
+        INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX
+      ) {
+        failOrIssue(
+          "mcse",
+          [
+            "diagnostics",
+            "sampler",
+            "parameters",
+            index,
+            "max_mcse_to_posterior_sd_ratio"
+          ],
+          "MCSE must be small relative to posterior SD for eligible artifacts"
+        );
+      }
+    }
+
+    if (artifact.diagnostics.sampler.max_treedepth_warning) {
+      failOrIssue(
+        "max_treedepth_saturation",
+        ["diagnostics", "sampler", "max_treedepth_warning"],
+        "eligible artifacts must not silently carry max-treedepth warnings"
+      );
+    }
+    if (artifact.diagnostics.sampler.energy_bfmi_warning) {
+      failOrIssue(
+        "energy_bfmi",
+        ["diagnostics", "sampler", "energy_bfmi_warning"],
+        "eligible artifacts must not silently carry energy BFMI warnings"
+      );
+    }
+
+    if (artifact.diagnostics.sampler.post_warmup_divergences > 0) {
+      failOrIssue(
+        "divergences",
+        ["diagnostics", "sampler", "post_warmup_divergences"],
+        "eligible artifacts must have zero post-warmup divergences"
+      );
+    }
+
+    for (const [index, statistic] of artifact.diagnostics.posterior_predictive_checks.entries()) {
+      if (
+        !statistic.pass ||
+        statistic.p_value < INFERENCE_PROOF_PPC_P_VALUE_MIN ||
+        statistic.p_value > INFERENCE_PROOF_PPC_P_VALUE_MAX
+      ) {
+        failOrIssue(
+          "posterior_predictive_check",
+          ["diagnostics", "posterior_predictive_checks", index, "p_value"],
+          "posterior predictive checks must pass within the configured p-value band"
+        );
+      }
+    }
+
+    if (
+      !artifact.diagnostics.prior_sensitivity.pass ||
+      artifact.diagnostics.prior_sensitivity
+        .posterior_mean_shift_in_posterior_sd >=
+        INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD
+    ) {
+      failOrIssue(
+        "prior_sensitivity",
+        ["diagnostics", "prior_sensitivity"],
+        "prior sensitivity must stay below the posterior-SD shift gate"
+      );
+    }
+
+    const preTrendInterval =
+      artifact.diagnostics.pre_trend.pseudo_effect_credible_interval_80;
+    const preTrendIncludesZero =
+      preTrendInterval.lower <= 0 && preTrendInterval.upper >= 0;
+    if (
+      artifact.diagnostics.pre_trend.includes_zero !== preTrendIncludesZero
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["diagnostics", "pre_trend", "includes_zero"],
+        message:
+          "pre_trend.includes_zero must be derived from the 80% credible interval bounds"
+      });
+    }
+    if (!artifact.diagnostics.pre_trend.pass || !preTrendIncludesZero) {
+      failOrIssue(
+        "pre_trend",
+        ["diagnostics", "pre_trend"],
+        "pre-trend 80% credible interval must include zero"
+      );
+    }
+
+    for (const [index, scenario] of artifact.calibration.scenarios.entries()) {
+      if (
+        !scenario.pass ||
+        scenario.coverage_rate < INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN ||
+        scenario.coverage_rate > INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX
+      ) {
+        failOrIssue(
+          "calibration_coverage",
+          ["calibration", "scenarios", index, "coverage_rate"],
+          "calibration coverage must pass within the configured per-scenario band"
+        );
+      }
+    }
+
+    if (
+      !artifact.null_checks.pass ||
+      artifact.null_checks.false_eligibility_rate >
+        INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+    ) {
+      failOrIssue(
+        "null_false_eligibility",
+        ["null_checks", "false_eligibility_rate"],
+        "null false-eligibility must stay within the configured bound"
+      );
+    }
+
+    if (!artifact.peeking_control.pass) {
+      failOrIssue(
+        "peeking_control",
+        ["peeking_control", "pass"],
+        "peeking control must pass for eligible artifacts"
+      );
+    }
+  });
+
+export type InferenceProofGovernanceState = z.infer<
+  typeof InferenceProofGovernanceStateSchema
+>;
+export type InferenceProofFailingDiagnostic = z.infer<
+  typeof InferenceProofFailingDiagnosticSchema
+>;
+export type InferenceProofLikelihoodFamily = z.infer<
+  typeof InferenceProofLikelihoodFamilySchema
+>;
+export type InferenceProofComparisonCohortCriterion = z.infer<
+  typeof InferenceProofComparisonCohortCriterionSchema
+>;
+export type InferenceProofArtifact = z.infer<
+  typeof InferenceProofArtifactSchema
 >;
