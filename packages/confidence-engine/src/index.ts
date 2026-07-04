@@ -8,6 +8,11 @@ export {
 } from "./internal/hashing";
 
 export {
+  inferenceProofArtifactSelfHash,
+  inferenceProofArtifactSelfHashBody
+} from "./inferenceProofArtifactHash";
+
+export {
   CONTRIBUTION_ALIGNMENT_FEATURE_STABILITY_REVIEW_SCHEMA_VERSION,
   CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_SCHEMA_VERSION,
   buildContributionAlignmentFeatureStabilityReviewFromObject,
@@ -150,10 +155,40 @@ export {
   ConfidenceModelContractSchema,
   THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION,
   EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION,
+  INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
   EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON,
   MINIMUM_WORTHWHILE_EFFECT_THRESHOLD,
+  INFERENCE_PROOF_RHAT_MAX,
+  INFERENCE_PROOF_ESS_MIN,
+  INFERENCE_PROOF_PPC_P_VALUE_MIN,
+  INFERENCE_PROOF_PPC_P_VALUE_MAX,
+  INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD,
+  INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN,
+  INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX,
+  INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+  INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
+  INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX,
   ThresholdProbabilityRepresentationSchema,
-  ExpectedLossRepresentationSchema
+  ExpectedLossRepresentationSchema,
+  InferenceProofGovernanceStateSchema,
+  InferenceProofFailingDiagnosticSchema,
+  InferenceProofLikelihoodFamilySchema,
+  InferenceProofSyntheticGeneratorSchema,
+  InferenceProofModelSpecBindingSchema,
+  InferenceProofParameterDiagnosticSchema,
+  InferenceProofSamplerDiagnosticsSchema,
+  InferenceProofPpcStatisticSchema,
+  InferenceProofPriorSensitivitySchema,
+  InferenceProofPreTrendCheckSchema,
+  InferenceProofDiagnosticsSchema,
+  InferenceProofCalibrationScenarioSchema,
+  InferenceProofCalibrationSchema,
+  InferenceProofNullChecksSchema,
+  InferenceProofFloorChecksSchema,
+  InferenceProofPeekingControlSchema,
+  InferenceProofGovernanceSchema,
+  InferenceProofHashBindingsSchema,
+  InferenceProofArtifactSchema
 } from "./confidenceModel";
 
 export type {
@@ -171,5 +206,9 @@ export type {
   ConfidenceModelBlockedUse,
   ConfidenceModelContract,
   ThresholdProbabilityRepresentation,
-  ExpectedLossRepresentation
+  ExpectedLossRepresentation,
+  InferenceProofGovernanceState,
+  InferenceProofFailingDiagnostic,
+  InferenceProofLikelihoodFamily,
+  InferenceProofArtifact
 } from "./confidenceModel";

@@ -44,10 +44,14 @@ Statistical computation (model fitting, sampling, diagnostics) lives in
 Python; admission, validation, hold semantics, and blocked-use enforcement
 stay in the existing TypeScript confidence-engine gates. Artifacts cross the
 boundary only as JSON that must parse against the `ConfidenceModel` Zod
-schemas (`PosteriorWithCredibleIntervalsSchema`, `EvidenceAdmissionSchema`)
-and clear the sixteen governed gates. Rationale: the boundary already exists
-and is tested; reusing it means the harness inherits fail-closed behavior for
-free. Alternative rejected: hand-rolling inference in Node. There is no
+schemas (`InferenceProofArtifactSchema`,
+`PosteriorWithCredibleIntervalsSchema`, `EvidenceAdmissionSchema`) and clear
+the governed gates. Numeric posterior and diagnostic values may appear only
+inside the internal proof artifact as validation inputs; customer/readout
+posterior shapes remain numeric-values-withheld. Rationale: the boundary
+already exists and is tested; reusing it means the harness inherits
+fail-closed behavior for free. Alternative rejected: hand-rolling inference
+in Node. There is no
 credible Node PPL ecosystem, and a hand-rolled sampler would repeat exactly
 the placeholder mistake this change exists to retire.
 
@@ -67,8 +71,9 @@ methodological gain at this scale.
 
 The harness must prove itself on synthetic data before any real observation
 is considered: inject known effects, verify the model recovers them within
-stated tolerance, and verify credible-interval calibration coverage across
-repeated simulated datasets. Real observations, Measurement Cell Series
+stated tolerance, verify credible-interval calibration coverage across
+repeated simulated datasets, and prove fail-closed behavior with negative
+controls for violated assumptions. Real observations, Measurement Cell Series
 persistence, and output promotion are explicitly separate later changes.
 Rationale: a method that cannot recover effects it is known to contain has no
 business near customer data; this is also the cheapest point to catch
@@ -79,10 +84,20 @@ authorizations this change deliberately does not request.
 ### 4. Model family: hierarchical Bayesian difference-in-differences
 
 Per the existing `bayesian_model_specification` contract: hierarchical DiD
-with partial pooling by workflow, function, and cohort; aggregate Measurement
-Cell windows (not persons) as the unit of analysis. Rationale: partial
-pooling stabilizes small-cohort estimates without discarding them, matching
-the aggregate-only posture; DiD is the estimand the contract already names.
+with partial pooling by expectation path, workflow, function, cohort, and
+organization; aggregate Measurement Cell windows (not persons) as the unit of
+analysis. Slice 2 implements the normal continuous aggregate metric path
+first: `y_i ~ Normal(mu_i, phi_i)` with identity link and cohort-size-weighted
+aggregate variance. The linear predictor is
+`alpha + beta_post * post_i + beta_treated * treated_i + delta * post_i *
+treated_i + u_expectation_path + u_workflow + u_function + u_cohort +
+u_organization + optional approved offset/exposure`. `delta` is the
+contribution-alignment estimand, not a causal, ROI, productivity, confidence,
+or probability claim. Non-normal likelihood families are named for artifact
+binding but remain held unless the same implementation adds their samplers,
+diagnostics, and synthetic recovery tests. Rationale: partial pooling
+stabilizes small-cohort estimates without discarding them, matching the
+aggregate-only posture; DiD is the estimand the contract already names.
 Alternatives considered: flat per-cohort models (unstable at contract-minimum
 cohort sizes), synthetic-control methods (deferred — viable later, but the
 contract binds DiD now and the comparison-cohort rule in Decision 6 covers
@@ -93,45 +108,53 @@ the failure mode synthetic control addresses).
 The seven required diagnostics — R-hat, effective sample size, posterior
 predictive checks, prior sensitivity, pre-period trend check, calibration
 coverage, and known-effect recovery — are computed numbers checked against
-explicit numeric gates, not boolean flags. A confidence-bearing artifact must
-be structurally un-emittable unless all gates pass: the emit path requires
-the diagnostics block, and the TypeScript gates reject artifacts whose gate
-values fail or are absent. Rationale: the current spine records all seven as
-`false` flags, which the 2026-07-03 methodology review flagged as the core
-gap; flags attest nothing. Alternative rejected: advisory diagnostics with
-human sign-off only — that reintroduces the drift the fail-closed culture of
-this repo exists to prevent.
+explicit numeric gates, not boolean flags. Convergence includes zero
+post-warmup divergences and recorded rank/energy plots; effective sample
+size includes bulk ESS, tail ESS, and MCSE relative to posterior SD. PPCs use
+the fixed statistic set named in the contract rather than an arbitrary
+caller-selected statistic. A confidence-bearing artifact must be
+structurally un-emittable unless all gates pass: the emit path requires the
+diagnostics block, and the TypeScript gates reject or HOLD artifacts whose
+gate values fail or are absent. Rationale: the current spine records all
+seven as `false` flags, which the 2026-07-03 methodology review flagged as
+the core gap; flags attest nothing. Alternative rejected: advisory
+diagnostics with human sign-off only — that reintroduces the drift the
+fail-closed culture of this repo exists to prevent.
 
 ### 6. Comparison-cohort rule
 
 No credible comparison cohort → no comparison-supported contribution
-estimate; the artifact carries an evidence-tier label only. Adopted from the
-methodology review. Causal language remains separately gated by the claim
-ladder (approved comparison evidence design at the validated rung); this
-rule's outputs are contribution estimates, never causal claims. Rationale:
-DiD without a defensible comparison is a before/after story, and
+estimate; the artifact carries an evidence-tier label only. "Credible" is a
+runnable rubric: same selected metric definition, aligned milestone windows,
+same metric direction, approved lag handling, same expectation-path/workflow/
+function/cohort context unless a reviewer-owned comparison-design adequacy
+reference justifies the difference, similar pre-period level/trend, no
+contamination, aggregate floors met, and no suppressed/stale windows. Adopted
+from the methodology review. Causal language remains separately gated by the
+claim ladder (approved comparison evidence design at the validated rung);
+this rule's outputs are contribution estimates, never causal claims.
+Rationale: DiD without a defensible comparison is a before/after story, and
 before/after stories are precisely the overclaims the Value Playbook
 discounts. No alternative was seriously entertained.
 
 ### 7. Peeking control at milestone cadence
 
 Milestone-cadence evaluation (Day 0/30/60/90/180/365, matching
-`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`) is repeated testing. The enforceable
-rule is stated normatively in the slice-1 contract so it is implementable
-without Confluence access: any repeated evaluation across the six
-milestones, or across multiple metrics or cohorts, must use an always-valid
-sequential procedure — e.g. mSPRT-style always-valid p-values/e-values, or
-an equivalently valid sequential credible-interval procedure — such that
-the overall false-eligibility rate across all looks stays within the
-declared <= 5% null false-eligibility bound. A one-look, fixed-horizon
-evaluation needs no correction; naive repeated evaluation marks the artifact
-ineligible. The internal "Playbook: A/B testing @ Glean" (Confluence,
-Engineering space) is cited as provenance and alignment for this rule, not
-as its normative source. Rationale: six scheduled looks at accumulating
-evidence is repeated testing; uncorrected milestone reads would fail the
-org's own experimentation standard. Alternative rejected: single
-fixed-horizon analysis at Day 365 — it forfeits the early-signal value the
-milestone contract was created for.
+`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`) is repeated testing. Slice 2 uses
+the conservative executable rule: artifacts are fixed-horizon, one-look only
+unless the same implementation proves a named always-valid sequential
+procedure in synthetic null simulations across the full look, metric, and
+cohort family. The internal proof artifact records look index, total planned
+looks, milestones included, metrics included, cohorts included, procedure
+name, whether repeated evaluation occurred, and the false-eligibility bound.
+Naive repeated evaluation marks the artifact ineligible. The internal
+"Playbook: A/B testing @ Glean" (Confluence, Engineering space) is cited as
+provenance and alignment for this rule, not as its normative source.
+Rationale: six scheduled looks at accumulating evidence is repeated testing;
+uncorrected milestone reads would fail the org's own experimentation
+standard. Alternative rejected: accepting "mSPRT-style" or "equivalent"
+language without an implemented procedure and synthetic null proof — that is
+not executable enough for Slice 2.
 
 ### 8. Priors: weakly informative, empirically justified
 
@@ -236,6 +259,6 @@ and its golden chain are untouched in both slices.
 ## Open Questions
 
 - Exact numeric gate values (R-hat threshold, minimum ESS, coverage
-  tolerance) are proposed in the slice-1 methodology contract and settled in
-  expert review, not here.
+  tolerance) are recorded normatively in the slice-1 methodology contract;
+  expert review may approve them or request changes before Slice 2 starts.
 - Whether the NumPyro fallback is exercised in CI or documented only.
