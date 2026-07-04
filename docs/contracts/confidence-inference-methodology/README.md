@@ -121,9 +121,9 @@ structurally un-emittable unless all gates pass.
 
 | Diagnostic | Gate |
 | --- | --- |
-| R-hat (all parameters) | <= 1.01 for all parameters; if any parameter's R-hat > 1.01 the artifact HOLDS naming R-hat |
-| Bulk effective sample size | >= 400 chain-total per parameter |
-| Posterior predictive checks | p-values within [0.05, 0.95] for the designated test statistics |
+| R-hat and sampler convergence | R-hat <= 1.01 for every sampled parameter; post-warmup divergent transitions = 0; rank and energy plots recorded in the internal report artifact. |
+| Effective sample size and Monte Carlo error | Bulk ESS >= 400 chain-total per parameter; tail ESS >= 400 chain-total per parameter; MCSE for posterior mean and interval endpoints <= 0.1 posterior SD. |
+| Posterior predictive checks | Every designated PPC statistic below carries statistic name, observed value, posterior predictive 80% interval summary, p-value, and pass/fail; p-values must be within [0.05, 0.95]. |
 | Prior sensitivity | posterior-mean shift < 0.5 posterior SD across the declared prior family |
 | Pre-period trend check | pre-window pseudo-effect 80% credible interval must include 0 |
 | Calibration coverage | 80% credible interval covers the injected effect in 74–86% of >= 200 seeded synthetic replications |
@@ -132,6 +132,22 @@ structurally un-emittable unless all gates pass.
 Any gate failure — or any diagnostic absent or not computed as a real
 value — emits the artifact only in HOLD state, with every failing or missing
 diagnostic named in the artifact.
+
+Designated posterior predictive check statistics are fixed for Slice 2:
+
+| Statistic | Purpose |
+| --- | --- |
+| `pre_post_mean_movement` | Checks central tendency recovery across pre/post windows. |
+| `between_cohort_variance` | Checks whether partial pooling is masking between-cohort heterogeneity. |
+| `within_cohort_variance` | Checks aggregate noise within cohort windows. |
+| `tail_or_extreme_cell_statistic` | Checks outliers, heavy tails, or boundary cells for the selected likelihood family. |
+| `difference_in_differences_contrast` | Checks fit at the estimand level. |
+
+Max-treedepth saturation and BFMI are recorded when exposed by the active
+PyMC/ArviZ backend. If either backend emits a warning, the artifact HOLDS
+unless the warning is explicitly represented as a failing diagnostic in the
+internal proof artifact. A clean eligible artifact may not silently carry
+sampler warnings.
 
 ## Comparison-cohort rule
 
