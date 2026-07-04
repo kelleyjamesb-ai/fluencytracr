@@ -117,7 +117,10 @@ The internal artifact carries structural proof fields for the gates below:
 `comparison_adequacy` records the runnable comparison-cohort rubric and its
 proof hash; sampler diagnostics record explicit max-treedepth and BFMI warning
 flags; fixed-horizon peeking control records exactly one milestone, one metric,
-and one cohort. These fields are validation inputs only, not output fields.
+and one cohort; model binding records observed, missing, and suppressed/stale
+milestone evidence; prior sensitivity records a documented empirical prior
+justification; and `artifact_self_hash` is recomputed from the artifact body
+before acceptance. These fields are validation inputs only, not output fields.
 
 ## Diagnostics: computed values with numeric gates
 
@@ -159,7 +162,9 @@ Calibration is reported per scenario cell, not pooled across unlike
 conditions. The clean simulator must cover every combination of injected
 effect size `{0, 0.2, 0.5}` SD and floor-eligible cohort size `{12, 16}`,
 with at least 200 seeded replications per cell. The artifact reports the
-observed coverage rate and binomial standard error for each cell. Negative
+observed coverage rate and the derived binomial standard error for each cell.
+The standard error must equal
+`sqrt(coverage_rate * (1 - coverage_rate) / replication_count)`. Negative
 controls may use a smaller declared replication count only when they are
 separately labeled as negative controls and never pooled into the clean
 calibration coverage claim.
@@ -225,6 +230,8 @@ metric, and cohort family. The artifact must record look index, total planned
 looks, milestones included, metrics included, cohorts included, procedure
 name, whether repeated evaluation occurred, and the false-eligibility bound.
 A fixed-horizon artifact must have exactly one look and exactly one milestone.
+An always-valid sequential artifact must bind the completed Day 0 / 30 / 60 /
+90 / 180 / 365 schedule, with non-duplicated metric and cohort bindings.
 Naive repeated evaluation across milestones, metrics, or cohorts marks the
 artifact ineligible/HOLD. The internal "Playbook: A/B testing @ Glean"
 (Confluence, Engineering space) is cited as provenance and alignment for this
@@ -237,7 +244,9 @@ dogfood aggregates. Prior-sensitivity analysis is always run and reported as
 one of the diagnostics above; an artifact whose conclusion is prior-driven
 (posterior-mean shift at or above 0.5 posterior SD across the declared prior
 family) holds, naming prior sensitivity as the cause. Priors lacking
-documented empirical justification also hold. The spine's `N(0,1)`
+documented empirical justification also hold, and artifacts must carry the
+documented prior-family and empirical-justification flags plus a prior
+justification reference. The spine's `N(0,1)`
 placeholder (state `weakly_regularizing_internal_placeholder_not_calibrated`)
 is retired only inside the harness; the spine itself stays byte-stable as a
 governed decision record.

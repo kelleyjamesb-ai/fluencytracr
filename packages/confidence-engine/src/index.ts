@@ -183,6 +183,7 @@ export {
   InferenceProofPeekingControlSchema,
   InferenceProofGovernanceSchema,
   InferenceProofHashBindingsSchema,
+  computeInferenceProofArtifactSelfHash,
   InferenceProofArtifactSchema
 } from "./confidenceModel";
 

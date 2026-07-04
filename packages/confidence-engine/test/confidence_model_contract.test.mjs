@@ -26,6 +26,7 @@ import {
   INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
   ThresholdProbabilityRepresentationSchema,
   ExpectedLossRepresentationSchema,
+  computeInferenceProofArtifactSelfHash,
   InferenceProofArtifactSchema
 } from "../dist/index.js";
 
@@ -33,12 +34,17 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function bindInferenceProofSelfHash(artifact) {
+  artifact.hash_bindings.artifact_self_hash =
+    computeInferenceProofArtifactSelfHash(artifact);
+  return artifact;
+}
+
 function markInferenceProofHold(artifact, failingDiagnostics) {
   artifact.governance_state.state = "HOLD";
   artifact.governance_state.failing_diagnostics = failingDiagnostics;
   artifact.governance_state.comparison_supported_contribution_estimate_authorized =
     false;
-  artifact.governance_state.evidence_tier_only = true;
 }
 
 // ---------------------------------------------------------------------------
@@ -689,6 +695,10 @@ const ppcSummary = {
   }
 };
 
+const validCalibrationCoverageStandardError = Math.sqrt(
+  (0.8 * (1 - 0.8)) / INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+);
+
 const validInferenceProofArtifact = {
   schema_version: INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
   artifact_class: "internal_synthetic_inference_proof",
@@ -717,6 +727,12 @@ const validInferenceProofArtifact = {
     aggregate_cell_variance_mode: "cohort_size_weighted_known_variance",
     cohort_size_enters_likelihood: true,
     missing_or_suppressed_windows_hold: true,
+    missing_or_suppressed_window_evidence: {
+      observed_milestone_days: [90],
+      missing_milestone_days: [],
+      suppressed_or_stale_milestone_days: [],
+      source_evidence_hash: "f".repeat(64)
+    },
     treatment_effect_pooling: "workflow",
     pooling_structure: {
       expectation_path: true,
@@ -786,6 +802,9 @@ const validInferenceProofArtifact = {
       }
     ],
     prior_sensitivity: {
+      prior_family_documented: true,
+      empirical_prior_justification_documented: true,
+      prior_justification_ref: "docs/research/synthetic-prior-justification-001",
       posterior_mean_shift_in_posterior_sd: 0.2,
       pass: true
     },
@@ -808,7 +827,7 @@ const validInferenceProofArtifact = {
         replication_count: INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
         credible_interval_level: 0.8,
         coverage_rate: 0.8,
-        coverage_standard_error: 0.028,
+        coverage_standard_error: validCalibrationCoverageStandardError,
         pass: true
       }))
     )
@@ -913,7 +932,7 @@ const validInferenceProofArtifact = {
   hash_bindings: {
     source_posterior_hash: "d".repeat(64),
     synthetic_input_hash: "c".repeat(64),
-    artifact_self_hash: "e".repeat(64)
+    artifact_self_hash: "0".repeat(64)
   },
   blocked_uses: [...CONFIDENCE_MODEL_BLOCKED_USES],
   numeric_values_role: "internal_validation_inputs_not_output",
@@ -931,6 +950,8 @@ const validInferenceProofArtifact = {
   executes_connector: false,
   promotion_decision_ref: null
 };
+
+bindInferenceProofSelfHash(validInferenceProofArtifact);
 
 test("inference proof artifact schema_version constant is pinned", () => {
   assert.equal(
@@ -1024,6 +1045,13 @@ test("inference proof artifact rejects malformed hashes and mismatched synthetic
   const mismatched = clone(validInferenceProofArtifact);
   mismatched.hash_bindings.synthetic_input_hash = "f".repeat(64);
   assert.equal(InferenceProofArtifactSchema.safeParse(mismatched).success, false);
+
+  const staleSelfHash = clone(validInferenceProofArtifact);
+  staleSelfHash.hash_bindings.artifact_self_hash = "e".repeat(64);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(staleSelfHash).success,
+    false
+  );
 });
 
 test("inference proof artifact pins blocked uses in full order", () => {
@@ -1056,6 +1084,7 @@ test("inference proof artifact enforces HOLD and eligible diagnostic naming", ()
   const validHold = clone(validInferenceProofArtifact);
   markInferenceProofHold(validHold, ["divergences"]);
   validHold.diagnostics.sampler.post_warmup_divergences = 1;
+  bindInferenceProofSelfHash(validHold);
   assert.equal(InferenceProofArtifactSchema.safeParse(validHold).success, true);
 });
 
@@ -1085,6 +1114,8 @@ test("inference proof artifact requires comparison adequacy before contribution-
 
   const failedRubricHeld = clone(failedRubricStillEligible);
   markInferenceProofHold(failedRubricHeld, ["comparison_cohort_adequacy"]);
+  failedRubricHeld.governance_state.evidence_tier_only = true;
+  bindInferenceProofSelfHash(failedRubricHeld);
   assert.equal(InferenceProofArtifactSchema.safeParse(failedRubricHeld).success, true);
 
   const holdStillAuthorizesComparisonEstimate = clone(failedRubricHeld);
@@ -1158,6 +1189,14 @@ test("inference proof artifact forces failing MCMC diagnostics into HOLD", () =>
 });
 
 test("inference proof artifact forces unsupported likelihood families into HOLD", () => {
+  const normalWithLogitLink = clone(validInferenceProofArtifact);
+  normalWithLogitLink.model_spec_binding.link_function = "logit";
+  bindInferenceProofSelfHash(normalWithLogitLink);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(normalWithLogitLink).success,
+    false
+  );
+
   const unsupportedEligible = clone(validInferenceProofArtifact);
   unsupportedEligible.model_spec_binding.likelihood_family =
     "poisson_count_aggregate";
@@ -1169,7 +1208,52 @@ test("inference proof artifact forces unsupported likelihood families into HOLD"
 
   const unsupportedHeld = clone(unsupportedEligible);
   markInferenceProofHold(unsupportedHeld, ["unsupported_likelihood_family"]);
+  bindInferenceProofSelfHash(unsupportedHeld);
   assert.equal(InferenceProofArtifactSchema.safeParse(unsupportedHeld).success, true);
+});
+
+test("inference proof artifact requires documented prior justification", () => {
+  const missingPriorRef = clone(validInferenceProofArtifact);
+  delete missingPriorRef.diagnostics.prior_sensitivity.prior_justification_ref;
+  bindInferenceProofSelfHash(missingPriorRef);
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingPriorRef).success, false);
+
+  const undocumentedPrior = clone(validInferenceProofArtifact);
+  undocumentedPrior.diagnostics.prior_sensitivity.empirical_prior_justification_documented =
+    false;
+  bindInferenceProofSelfHash(undocumentedPrior);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(undocumentedPrior).success,
+    false
+  );
+});
+
+test("inference proof artifact validates missing and suppressed window evidence", () => {
+  const missingWindowEligible = clone(validInferenceProofArtifact);
+  missingWindowEligible.model_spec_binding.missing_or_suppressed_window_evidence.missing_milestone_days =
+    [30];
+  bindInferenceProofSelfHash(missingWindowEligible);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(missingWindowEligible).success,
+    false
+  );
+
+  const missingWindowHeld = clone(missingWindowEligible);
+  markInferenceProofHold(missingWindowHeld, ["missing_or_suppressed_windows"]);
+  bindInferenceProofSelfHash(missingWindowHeld);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(missingWindowHeld).success,
+    true
+  );
+
+  const contradictoryWindowEvidence = clone(validInferenceProofArtifact);
+  contradictoryWindowEvidence.model_spec_binding.missing_or_suppressed_window_evidence.missing_milestone_days =
+    [90];
+  bindInferenceProofSelfHash(contradictoryWindowEvidence);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(contradictoryWindowEvidence).success,
+    false
+  );
 });
 
 test("inference proof artifact requires complete PPC statistics and gate values", () => {
@@ -1209,6 +1293,7 @@ test("inference proof artifact cross-checks pre-trend interval values", () => {
   heldPreTrend.diagnostics.pre_trend.includes_zero = false;
   heldPreTrend.diagnostics.pre_trend.pass = false;
   markInferenceProofHold(heldPreTrend, ["pre_trend"]);
+  bindInferenceProofSelfHash(heldPreTrend);
   assert.equal(InferenceProofArtifactSchema.safeParse(heldPreTrend).success, true);
 });
 
@@ -1229,6 +1314,12 @@ test("inference proof artifact enforces calibration and null proof gates", () =>
 
   const highCoverageEligible = clone(validInferenceProofArtifact);
   highCoverageEligible.calibration.scenarios[0].coverage_rate = 0.9;
+  highCoverageEligible.calibration.scenarios[0].coverage_standard_error =
+    Math.sqrt(
+      (0.9 * (1 - 0.9)) /
+        highCoverageEligible.calibration.scenarios[0].replication_count
+    );
+  bindInferenceProofSelfHash(highCoverageEligible);
   assert.equal(
     InferenceProofArtifactSchema.safeParse(highCoverageEligible).success,
     false
@@ -1236,7 +1327,16 @@ test("inference proof artifact enforces calibration and null proof gates", () =>
 
   const highCoverageHold = clone(highCoverageEligible);
   markInferenceProofHold(highCoverageHold, ["calibration_coverage"]);
+  bindInferenceProofSelfHash(highCoverageHold);
   assert.equal(InferenceProofArtifactSchema.safeParse(highCoverageHold).success, true);
+
+  const forgedCoverageStandardError = clone(validInferenceProofArtifact);
+  forgedCoverageStandardError.calibration.scenarios[0].coverage_standard_error = 0;
+  bindInferenceProofSelfHash(forgedCoverageStandardError);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(forgedCoverageStandardError).success,
+    false
+  );
 
   const highNullFalseEligibility = clone(validInferenceProofArtifact);
   highNullFalseEligibility.null_checks.false_eligibility_rate = 0.06;
@@ -1321,7 +1421,18 @@ test("inference proof artifact rejects naive repeated-look peeking", () => {
   alwaysValid.peeking_control.sequential_method_name =
     "synthetic_null_validated_e_value";
   alwaysValid.peeking_control.synthetic_null_proof_hash = "f".repeat(64);
+  bindInferenceProofSelfHash(alwaysValid);
   assert.equal(InferenceProofArtifactSchema.safeParse(alwaysValid).success, true);
+
+  const partialAlwaysValid = clone(alwaysValid);
+  partialAlwaysValid.peeking_control.look_index = 3;
+  partialAlwaysValid.peeking_control.total_planned_looks = 6;
+  partialAlwaysValid.peeking_control.milestone_days_included = [0, 30, 60];
+  bindInferenceProofSelfHash(partialAlwaysValid);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(partialAlwaysValid).success,
+    false
+  );
 });
 
 test("inference proof artifact rejects causality, ROI, productivity, and confidence sidecars", () => {

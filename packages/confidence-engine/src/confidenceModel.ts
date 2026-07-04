@@ -20,6 +20,8 @@
 
 import { z } from "zod";
 
+import { sha256Json } from "./internal/hashing";
+
 // ---------------------------------------------------------------------------
 // Schema version + aligned contract constants
 // ---------------------------------------------------------------------------
@@ -41,6 +43,9 @@ export const INTERNAL_CONFIDENCE_CONSUMER_TOKEN =
 export const CONFIDENCE_OBSERVATION_MILESTONE_DAYS = [
   0, 30, 60, 90, 180, 365
 ] as const;
+const INFERENCE_PROOF_REPEATED_LOOK_MILESTONE_DAYS = [
+  ...CONFIDENCE_OBSERVATION_MILESTONE_DAYS
+];
 
 // Aggregate-only cohort floor (SCOPE_GUARDRAILS aggregation-first posture;
 // matches the repo-wide minimum_cohort_threshold >= 5 convention). This is
@@ -678,6 +683,14 @@ export const InferenceProofModelSpecBindingSchema = z
     ]),
     cohort_size_enters_likelihood: z.literal(true),
     missing_or_suppressed_windows_hold: z.literal(true),
+    missing_or_suppressed_window_evidence: z
+      .object({
+        observed_milestone_days: z.array(MilestoneDaySchema).nonempty(),
+        missing_milestone_days: z.array(MilestoneDaySchema),
+        suppressed_or_stale_milestone_days: z.array(MilestoneDaySchema),
+        source_evidence_hash: Sha256HexSchema
+      })
+      .strict(),
     treatment_effect_pooling: z.enum([
       "global",
       "workflow",
@@ -694,7 +707,37 @@ export const InferenceProofModelSpecBindingSchema = z
       })
       .strict()
   })
-  .strict();
+  .strict()
+  .superRefine((binding, ctx) => {
+    if (
+      binding.likelihood_family === "normal_continuous_aggregate" &&
+      binding.link_function !== "identity"
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["link_function"],
+        message:
+          "normal continuous aggregate likelihoods must use the identity link"
+      });
+    }
+
+    const windowEvidence = binding.missing_or_suppressed_window_evidence;
+    const observed = new Set(windowEvidence.observed_milestone_days);
+    const unavailable = [
+      ...windowEvidence.missing_milestone_days,
+      ...windowEvidence.suppressed_or_stale_milestone_days
+    ];
+    for (const day of unavailable) {
+      if (observed.has(day)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["missing_or_suppressed_window_evidence"],
+          message:
+            "missing or suppressed milestone days must not also be recorded as observed"
+        });
+      }
+    }
+  });
 
 const InferenceProofCredibleInterval80Schema = z
   .object({
@@ -761,6 +804,9 @@ export const InferenceProofPpcStatisticSchema = z
 
 export const InferenceProofPriorSensitivitySchema = z
   .object({
+    prior_family_documented: z.literal(true),
+    empirical_prior_justification_documented: z.literal(true),
+    prior_justification_ref: z.string().min(1),
     posterior_mean_shift_in_posterior_sd: NonNegativeFiniteNumberSchema,
     pass: z.boolean()
   })
@@ -867,6 +913,25 @@ export const InferenceProofCalibrationSchema = z
         path: ["scenarios"],
         message: "calibration scenarios must not duplicate effect/cohort cells"
       });
+    }
+
+    for (const [index, scenario] of calibration.scenarios.entries()) {
+      const expectedStandardError = Math.sqrt(
+        (scenario.coverage_rate * (1 - scenario.coverage_rate)) /
+          scenario.replication_count
+      );
+      if (
+        Math.abs(
+          scenario.coverage_standard_error - expectedStandardError
+        ) > INFERENCE_PROOF_FLOAT_TOLERANCE
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["scenarios", index, "coverage_standard_error"],
+          message:
+            "coverage_standard_error must be derived from coverage_rate and replication_count"
+        });
+      }
     }
   });
 
@@ -1011,6 +1076,47 @@ export const InferenceProofPeekingControlSchema = z
             "always-valid proof requires a named method and synthetic null proof hash"
         });
       }
+      const matchesRepeatedLookMilestones =
+        control.milestone_days_included.length ===
+          INFERENCE_PROOF_REPEATED_LOOK_MILESTONE_DAYS.length &&
+        control.milestone_days_included.every(
+          (day, index) =>
+            day === INFERENCE_PROOF_REPEATED_LOOK_MILESTONE_DAYS[index]
+        );
+      if (!matchesRepeatedLookMilestones) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["milestone_days_included"],
+          message:
+            "always-valid proof must bind the full Day 0/30/60/90/180/365 milestone schedule"
+        });
+      }
+      if (
+        control.total_planned_looks !==
+          INFERENCE_PROOF_REPEATED_LOOK_MILESTONE_DAYS.length ||
+        control.look_index !== control.total_planned_looks
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["total_planned_looks"],
+          message:
+            "always-valid proof must bind the completed repeated-look schedule"
+        });
+      }
+    }
+    if (new Set(control.metrics_included).size !== control.metrics_included.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["metrics_included"],
+        message: "peeking control metrics must not duplicate bindings"
+      });
+    }
+    if (new Set(control.cohorts_included).size !== control.cohorts_included.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cohorts_included"],
+        message: "peeking control cohorts must not duplicate bindings"
+      });
     }
   });
 
@@ -1084,6 +1190,20 @@ export const InferenceProofHashBindingsSchema = z
     artifact_self_hash: Sha256HexSchema
   })
   .strict();
+
+function inferenceProofArtifactHashPayload(artifact: unknown): unknown {
+  const clone = JSON.parse(JSON.stringify(artifact)) as {
+    hash_bindings?: Record<string, unknown>;
+  };
+  if (clone.hash_bindings) {
+    delete clone.hash_bindings.artifact_self_hash;
+  }
+  return clone;
+}
+
+export function computeInferenceProofArtifactSelfHash(artifact: unknown): string {
+  return sha256Json(inferenceProofArtifactHashPayload(artifact));
+}
 
 export const InferenceProofArtifactSchema = z
   .object({
@@ -1175,13 +1295,37 @@ export const InferenceProofArtifactSchema = z
       artifact.governance_state
         .comparison_supported_contribution_estimate_authorized;
     const evidenceTierOnly = artifact.governance_state.evidence_tier_only;
+    const comparisonAdequacyPassed =
+      artifact.comparison_adequacy.all_required_checks_pass;
 
-    if (comparisonEstimateAuthorized === evidenceTierOnly) {
+    if (comparisonEstimateAuthorized && evidenceTierOnly) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["governance_state", "evidence_tier_only"],
         message:
           "comparison-supported estimate authorization and evidence-tier-only status are mutually exclusive"
+      });
+    }
+    if (
+      artifact.governance_state.state === "eligible_internal_only" &&
+      !comparisonEstimateAuthorized
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [
+          "governance_state",
+          "comparison_supported_contribution_estimate_authorized"
+        ],
+        message:
+          "eligible_internal_only artifacts must authorize only comparison-supported estimates"
+      });
+    }
+    if (evidenceTierOnly !== !comparisonAdequacyPassed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "evidence_tier_only"],
+        message:
+          "evidence_tier_only is reserved for artifacts without adequate comparison support"
       });
     }
     if (
@@ -1197,7 +1341,7 @@ export const InferenceProofArtifactSchema = z
         message: "HOLD artifacts must not authorize comparison-supported estimates"
       });
     }
-    if (!artifact.comparison_adequacy.all_required_checks_pass) {
+    if (!comparisonAdequacyPassed) {
       failOrIssue(
         "comparison_cohort_adequacy",
         ["comparison_adequacy"],
@@ -1214,6 +1358,34 @@ export const InferenceProofArtifactSchema = z
         ["model_spec_binding", "likelihood_family"],
         "non-normal likelihood families must HOLD until their sampler, diagnostics, and synthetic recovery suite are implemented"
       );
+    }
+    if (
+      artifact.model_spec_binding.missing_or_suppressed_window_evidence
+        .missing_milestone_days.length > 0 ||
+      artifact.model_spec_binding.missing_or_suppressed_window_evidence
+        .suppressed_or_stale_milestone_days.length > 0
+    ) {
+      failOrIssue(
+        "missing_or_suppressed_windows",
+        [
+          "model_spec_binding",
+          "missing_or_suppressed_window_evidence"
+        ],
+        "eligible artifacts must carry observed evidence that no required milestone windows are missing, suppressed, or stale"
+      );
+    }
+
+    const expectedArtifactSelfHash =
+      computeInferenceProofArtifactSelfHash(artifact);
+    if (
+      artifact.hash_bindings.artifact_self_hash !== expectedArtifactSelfHash
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hash_bindings", "artifact_self_hash"],
+        message:
+          "artifact_self_hash must equal the canonical hash of the artifact body"
+      });
     }
 
     for (const [index, parameter] of artifact.diagnostics.sampler.parameters.entries()) {

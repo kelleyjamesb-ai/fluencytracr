@@ -16,6 +16,12 @@ The system SHALL compute all statistics exclusively in the pinned Python inferen
 - **WHEN** the TypeScript side validates the artifact
 - **THEN** validation rejects the artifact and no governance processing occurs
 
+#### Scenario: Artifact self-hash is recomputed before acceptance
+
+- **GIVEN** a JSON artifact whose `hash_bindings.artifact_self_hash` does not match the canonical hash of the artifact body
+- **WHEN** the TypeScript side validates the artifact
+- **THEN** validation rejects the artifact and no governance processing occurs
+
 #### Scenario: No statistics computed in Node
 
 - **GIVEN** the TypeScript governance code path is processing an inference artifact
@@ -49,6 +55,12 @@ The proof harness SHALL implement the hierarchical Bayesian difference-in-differ
 - **GIVEN** an aggregate Measurement Cell window is suppressed, stale, or missing
 - **WHEN** the proof harness evaluates the model input
 - **THEN** the artifact HOLDS naming missing or suppressed windows rather than imputing the window
+
+#### Scenario: Missing-window evidence is explicit
+
+- **GIVEN** a proof artifact declares missing-or-suppressed windows hold semantics
+- **WHEN** the artifact is validated
+- **THEN** it records observed, missing, and suppressed-or-stale milestone evidence, and any unavailable milestone blocks eligibility unless the artifact HOLDS naming missing or suppressed windows
 
 ### Requirement: Computed Diagnostics Gate
 
@@ -91,7 +103,7 @@ The proof harness SHALL demonstrate known-effect recovery and calibration covera
 #### Scenario: Calibration within band records proof
 
 - **GIVEN** at least 200 seeded synthetic replications per injected-effect and cohort-size scenario cell on floor-eligible cohorts (k = 12 and k = 16)
-- **WHEN** the 80% credible interval covers the injected effect in 74–86% of replications and null-effect false-eligibility is at or below 5%
+- **WHEN** the 80% credible interval covers the injected effect in 74–86% of replications, the reported coverage standard error is derived from coverage rate and replication count, and null-effect false-eligibility is at or below 5%
 - **THEN** the harness records the calibration proof
 
 #### Scenario: Calibration outside band blocks real-data proposals
@@ -154,7 +166,7 @@ The system SHALL treat Slice 2 inference proof artifacts as fixed-horizon, one-l
 
 - **GIVEN** repeated evaluation of an effect across multiple milestones, metrics, or cohorts
 - **WHEN** a named always-valid sequential procedure is implemented and its synthetic null proof demonstrates the declared false-eligibility bound
-- **THEN** the evaluation may proceed and the artifact records the method name, look family, and proof hash
+- **THEN** the evaluation may proceed only when the artifact records the method name, proof hash, completed Day 0/30/60/90/180/365 milestone schedule, and non-duplicated metric and cohort bindings
 
 #### Scenario: Naive repeated evaluation marks the artifact ineligible
 
