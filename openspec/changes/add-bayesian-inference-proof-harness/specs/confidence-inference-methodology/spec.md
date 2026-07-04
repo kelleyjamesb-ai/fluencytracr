@@ -2,7 +2,7 @@
 
 ### Requirement: Inference Boundary Separation
 
-The system SHALL compute all statistics exclusively in the pinned Python inference package and perform all governance and artifact validation exclusively in TypeScript, with artifacts crossing the boundary only as JSON validated by the `ConfidenceModel` schemas and the existing confidence-engine gates.
+The system SHALL compute all statistics exclusively in the pinned Python inference package and perform all governance and artifact validation exclusively in TypeScript, with artifacts crossing the boundary only as JSON validated by the `ConfidenceModel` schemas, including the internal-only `InferenceProofArtifactSchema`, and the existing confidence-engine gates.
 
 #### Scenario: Valid artifact crosses the boundary
 
@@ -21,6 +21,34 @@ The system SHALL compute all statistics exclusively in the pinned Python inferen
 - **GIVEN** the TypeScript governance code path is processing an inference artifact
 - **WHEN** any posterior, diagnostic, or other statistical quantity is required
 - **THEN** the value is read from the validated Python-emitted artifact and is never computed in Node
+
+#### Scenario: Numeric proof values remain internal validation inputs
+
+- **GIVEN** the Python inference package emits computed posterior and diagnostic values in an internal proof artifact
+- **WHEN** the TypeScript side validates that artifact
+- **THEN** numeric values are accepted only inside the internal-only proof schema, with customer, confidence, and probability output authorization pinned false
+
+### Requirement: Model Equation Binding
+
+The proof harness SHALL implement the hierarchical Bayesian difference-in-differences equation recorded in the methodology contract: aggregate Measurement Cell window outcomes are modeled with an approved likelihood family and link; the linear predictor includes baseline, post-period, treatment, treatment-by-post `delta`, expectation-path, workflow, function, cohort, and organization effects; and suppressed, stale, or missing windows HOLD rather than being imputed.
+
+#### Scenario: Normal continuous aggregate path is implemented first
+
+- **GIVEN** a Slice 2 synthetic proof run for the normal continuous aggregate metric family
+- **WHEN** the model is fitted
+- **THEN** the harness uses the contract equation with identity link, cohort-size-weighted aggregate variance, and no person-level rows
+
+#### Scenario: Unsupported likelihood family cannot become eligible by declaration alone
+
+- **GIVEN** an artifact declares a non-normal likelihood family
+- **WHEN** the Slice 2 implementation has not implemented that sampler, diagnostics, and synthetic recovery suite
+- **THEN** the artifact HOLDS and cannot become contribution-estimate eligible
+
+#### Scenario: Missing or suppressed windows do not impute into eligibility
+
+- **GIVEN** an aggregate Measurement Cell window is suppressed, stale, or missing
+- **WHEN** the proof harness evaluates the model input
+- **THEN** the artifact HOLDS naming missing or suppressed windows rather than imputing the window
 
 ### Requirement: Computed Diagnostics Gate
 

@@ -44,10 +44,14 @@ Statistical computation (model fitting, sampling, diagnostics) lives in
 Python; admission, validation, hold semantics, and blocked-use enforcement
 stay in the existing TypeScript confidence-engine gates. Artifacts cross the
 boundary only as JSON that must parse against the `ConfidenceModel` Zod
-schemas (`PosteriorWithCredibleIntervalsSchema`, `EvidenceAdmissionSchema`)
-and clear the sixteen governed gates. Rationale: the boundary already exists
-and is tested; reusing it means the harness inherits fail-closed behavior for
-free. Alternative rejected: hand-rolling inference in Node. There is no
+schemas (`InferenceProofArtifactSchema`,
+`PosteriorWithCredibleIntervalsSchema`, `EvidenceAdmissionSchema`) and clear
+the governed gates. Numeric posterior and diagnostic values may appear only
+inside the internal proof artifact as validation inputs; customer/readout
+posterior shapes remain numeric-values-withheld. Rationale: the boundary
+already exists and is tested; reusing it means the harness inherits
+fail-closed behavior for free. Alternative rejected: hand-rolling inference
+in Node. There is no
 credible Node PPL ecosystem, and a hand-rolled sampler would repeat exactly
 the placeholder mistake this change exists to retire.
 
@@ -79,10 +83,20 @@ authorizations this change deliberately does not request.
 ### 4. Model family: hierarchical Bayesian difference-in-differences
 
 Per the existing `bayesian_model_specification` contract: hierarchical DiD
-with partial pooling by workflow, function, and cohort; aggregate Measurement
-Cell windows (not persons) as the unit of analysis. Rationale: partial
-pooling stabilizes small-cohort estimates without discarding them, matching
-the aggregate-only posture; DiD is the estimand the contract already names.
+with partial pooling by expectation path, workflow, function, cohort, and
+organization; aggregate Measurement Cell windows (not persons) as the unit of
+analysis. Slice 2 implements the normal continuous aggregate metric path
+first: `y_i ~ Normal(mu_i, phi_i)` with identity link and cohort-size-weighted
+aggregate variance. The linear predictor is
+`alpha + beta_post * post_i + beta_treated * treated_i + delta * post_i *
+treated_i + u_expectation_path + u_workflow + u_function + u_cohort +
+u_organization + optional approved offset/exposure`. `delta` is the
+contribution-alignment estimand, not a causal, ROI, productivity, confidence,
+or probability claim. Non-normal likelihood families are named for artifact
+binding but remain held unless the same implementation adds their samplers,
+diagnostics, and synthetic recovery tests. Rationale: partial pooling
+stabilizes small-cohort estimates without discarding them, matching the
+aggregate-only posture; DiD is the estimand the contract already names.
 Alternatives considered: flat per-cohort models (unstable at contract-minimum
 cohort sizes), synthetic-control methods (deferred — viable later, but the
 contract binds DiD now and the comparison-cohort rule in Decision 6 covers
@@ -236,6 +250,6 @@ and its golden chain are untouched in both slices.
 ## Open Questions
 
 - Exact numeric gate values (R-hat threshold, minimum ESS, coverage
-  tolerance) are proposed in the slice-1 methodology contract and settled in
-  expert review, not here.
+  tolerance) are recorded normatively in the slice-1 methodology contract;
+  expert review may approve them or request changes before Slice 2 starts.
 - Whether the NumPyro fallback is exercised in CI or documented only.

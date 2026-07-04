@@ -39,6 +39,50 @@ discarding them, matching the aggregate-only posture. Flat per-cohort models
 and synthetic-control methods were considered and rejected/deferred in the
 change's design record.
 
+### Implementation-grade model equation
+
+For aggregate Measurement Cell window `i`, the proof harness uses:
+
+```text
+y_i ~ likelihood_family(mu_i, phi_i)
+
+g_i(mu_i) =
+    alpha
+  + beta_post * post_i
+  + beta_treated * treated_i
+  + delta * post_i * treated_i
+  + u_expectation_path[expectation_path_i]
+  + u_workflow[workflow_i]
+  + u_function[function_i]
+  + u_cohort[cohort_i]
+  + u_organization[organization_i]
+  + optional approved offset_or_exposure_i
+```
+
+The estimand is `delta`: aggregate selected-metric movement for the approved
+expectation path under a governed comparison condition. It is not a causal
+claim, ROI claim, productivity claim, customer-facing confidence score, or
+probability output. Random effects are mean-zero partially pooled effects with
+hierarchical scale priors; the harness reports pooling factors so reviewers
+can see when pooling is driving the result rather than the synthetic evidence.
+
+Slice 2 proves the normal continuous aggregate path first, with all other
+families held unless the same PR implements their samplers, diagnostics, and
+synthetic recovery tests. The model binding still names the supported family
+vocabulary so artifacts cannot invent shapes later:
+
+| Metric family | Likelihood / link | Cohort-size handling |
+| --- | --- | --- |
+| Continuous aggregate metric | Normal with identity link | Aggregate standard error is weighted by cohort size; overdispersion is estimated only if declared in the artifact. |
+| Rate / proportion | Binomial with logit link, or beta-binomial when overdispersion is declared | `n_i` is the aggregate denominator; no person rows enter the model. |
+| Count metric | Poisson with log link, or negative-binomial when overdispersion is declared | Exposure/offset is explicit and approved; missing exposure HOLDS. |
+
+Lag windows must be declared before fitting and bound into the artifact.
+Suppressed, stale, or missing windows HOLD; the harness must not impute them
+into eligibility. Treatment effects may be pooled globally, by workflow, by
+function, or by cohort only when the artifact declares that pooling level and
+the synthetic calibration suite covers it.
+
 ## Python/TypeScript boundary
 
 Python owns all statistical computation; TypeScript owns all governance and
@@ -52,13 +96,22 @@ validation. Specifically:
 - **TypeScript** — the existing confidence-engine gates perform admission,
   validation, hold semantics, and blocked-use enforcement, unchanged.
 - **The boundary** — artifacts cross only as JSON that must parse against
-  the `ConfidenceModel` Zod schemas (`PosteriorWithCredibleIntervalsSchema`,
-  `EvidenceAdmissionSchema`) and clear the confidence-engine gates. Unknown
-  fields are rejected; rejected artifacts receive no governance processing.
+  the `ConfidenceModel` Zod schemas, including the internal-only
+  `InferenceProofArtifactSchema`, `PosteriorWithCredibleIntervalsSchema`,
+  and `EvidenceAdmissionSchema`, and clear the confidence-engine gates.
+  Unknown fields are rejected; rejected artifacts receive no governance
+  processing.
 
 Computing any posterior, diagnostic, or other statistical quantity in Node
 is a contract violation, not a convenience: statistical values are read from
 the validated Python-emitted artifact or they do not exist.
+
+Numeric posterior and diagnostic values are allowed only inside the internal
+synthetic proof artifact as validation inputs. They are not readout outputs.
+`PosteriorWithCredibleIntervalsSchema` remains numeric-values-withheld, and
+every proof artifact pins `internal_only: true`,
+`customer_output_authorized: false`, `probability_output_authorized: false`,
+`confidence_output_authorized: false`, and `promotion_decision_ref: null`.
 
 ## Diagnostics: computed values with numeric gates
 
@@ -185,9 +238,11 @@ owner names a reviewer or explicitly waives the role.
 
 - No customer-facing output of any kind. No confidence percentages, no
   probability language exposure, no ROI computation, no causality claims.
-- No routes, no UI, no new emitted-artifact schemas, no persistence, no
-  exports, no rendered readouts, no live BigQuery/Sigma/Glean/customer
-  connector execution.
+- No routes, no UI, no customer/readout emitted-artifact schemas, no
+  persistence, no exports, no rendered readouts, no live
+  BigQuery/Sigma/Glean/customer connector execution. The internal
+  `InferenceProofArtifactSchema` is a validation-only proof boundary, not a
+  customer-facing emitted artifact.
 - No real customer or production data enters the proof harness; harness
   inputs come from synthetic generators only, and real-data input is
   rejected.
