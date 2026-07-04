@@ -126,7 +126,7 @@ structurally un-emittable unless all gates pass.
 | Posterior predictive checks | Every designated PPC statistic below carries statistic name, observed value, posterior predictive 80% interval summary, p-value, and pass/fail; p-values must be within [0.05, 0.95]. |
 | Prior sensitivity | posterior-mean shift < 0.5 posterior SD across the declared prior family |
 | Pre-period trend check | pre-window pseudo-effect 80% credible interval must include 0 |
-| Calibration coverage | 80% credible interval covers the injected effect in 74–86% of >= 200 seeded synthetic replications |
+| Calibration coverage | 80% credible interval covers the injected effect in 74–86% of >= 200 seeded synthetic replications per effect-size/cohort-size/scenario cell; binomial uncertainty around observed coverage is reported. |
 | Known-effect recovery (null case) | null-effect false-eligibility <= 5% of replications |
 
 Any gate failure — or any diagnostic absent or not computed as a real
@@ -149,6 +149,15 @@ unless the warning is explicitly represented as a failing diagnostic in the
 internal proof artifact. A clean eligible artifact may not silently carry
 sampler warnings.
 
+Calibration is reported per scenario cell, not pooled across unlike
+conditions. The clean simulator must cover every combination of injected
+effect size `{0, 0.2, 0.5}` SD and floor-eligible cohort size `{12, 16}`,
+with at least 200 seeded replications per cell. The artifact reports the
+observed coverage rate and binomial standard error for each cell. Negative
+controls may use a smaller declared replication count only when they are
+separately labeled as negative controls and never pooled into the clean
+calibration coverage claim.
+
 ## Comparison-cohort rule
 
 No credible comparison cohort, no comparison-supported contribution
@@ -168,18 +177,19 @@ causal claims.
 Evaluation occurs at the milestone cadence Day 0 / 30 / 60 / 90 / 180 / 365
 (`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`, matching the series read-path
 decision contract). Six scheduled looks at accumulating evidence is repeated
-testing. The enforceable rule, stated normatively here so it is
-implementable without Confluence access: any repeated evaluation across the
-six milestones, or across multiple metrics or cohorts, MUST use an
-always-valid sequential procedure — e.g. mSPRT-style always-valid
-p-values/e-values, or an equivalently valid sequential credible-interval
-procedure — such that the overall false-eligibility rate across all looks
-stays within the declared bound (the <= 5% null false-eligibility gate in
-the diagnostics table above). A one-look, fixed-horizon evaluation needs no
-correction. Naive repeated evaluation marks the artifact ineligible. The
-internal "Playbook: A/B testing @ Glean" (Confluence, Engineering space) is
-cited as provenance and alignment for this rule, not as its normative
-source.
+testing.
+
+Slice 2 uses the conservative executable rule: artifacts are fixed-horizon,
+one-look only unless the implementation proves a named always-valid
+sequential procedure in synthetic null simulations across the full look,
+metric, and cohort family. The artifact must record look index, total planned
+looks, milestones included, metrics included, cohorts included, procedure
+name, whether repeated evaluation occurred, and the false-eligibility bound.
+A fixed-horizon artifact must have exactly one look and exactly one milestone.
+Naive repeated evaluation across milestones, metrics, or cohorts marks the
+artifact ineligible/HOLD. The internal "Playbook: A/B testing @ Glean"
+(Confluence, Engineering space) is cited as provenance and alignment for this
+rule, not as its normative source.
 
 ## Prior policy
 

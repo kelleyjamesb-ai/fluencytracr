@@ -134,22 +134,21 @@ discounts. No alternative was seriously entertained.
 ### 7. Peeking control at milestone cadence
 
 Milestone-cadence evaluation (Day 0/30/60/90/180/365, matching
-`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`) is repeated testing. The enforceable
-rule is stated normatively in the slice-1 contract so it is implementable
-without Confluence access: any repeated evaluation across the six
-milestones, or across multiple metrics or cohorts, must use an always-valid
-sequential procedure — e.g. mSPRT-style always-valid p-values/e-values, or
-an equivalently valid sequential credible-interval procedure — such that
-the overall false-eligibility rate across all looks stays within the
-declared <= 5% null false-eligibility bound. A one-look, fixed-horizon
-evaluation needs no correction; naive repeated evaluation marks the artifact
-ineligible. The internal "Playbook: A/B testing @ Glean" (Confluence,
-Engineering space) is cited as provenance and alignment for this rule, not
-as its normative source. Rationale: six scheduled looks at accumulating
-evidence is repeated testing; uncorrected milestone reads would fail the
-org's own experimentation standard. Alternative rejected: single
-fixed-horizon analysis at Day 365 — it forfeits the early-signal value the
-milestone contract was created for.
+`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`) is repeated testing. Slice 2 uses
+the conservative executable rule: artifacts are fixed-horizon, one-look only
+unless the same implementation proves a named always-valid sequential
+procedure in synthetic null simulations across the full look, metric, and
+cohort family. The internal proof artifact records look index, total planned
+looks, milestones included, metrics included, cohorts included, procedure
+name, whether repeated evaluation occurred, and the false-eligibility bound.
+Naive repeated evaluation marks the artifact ineligible. The internal
+"Playbook: A/B testing @ Glean" (Confluence, Engineering space) is cited as
+provenance and alignment for this rule, not as its normative source.
+Rationale: six scheduled looks at accumulating evidence is repeated testing;
+uncorrected milestone reads would fail the org's own experimentation
+standard. Alternative rejected: accepting "mSPRT-style" or "equivalent"
+language without an implemented procedure and synthetic null proof — that is
+not executable enough for Slice 2.
 
 ### 8. Priors: weakly informative, empirically justified
 

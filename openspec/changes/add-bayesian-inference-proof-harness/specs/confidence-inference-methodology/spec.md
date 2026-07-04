@@ -86,11 +86,11 @@ The system SHALL emit a confidence-bearing artifact only when every required dia
 
 ### Requirement: Synthetic Proof Before Real Data
 
-The proof harness SHALL demonstrate known-effect recovery and calibration coverage on synthetic data — with the 80% credible interval covering the injected effect in 74–86% of at least 200 seeded replications and null-effect false-eligibility at or below 5%, both computed on floor-eligible cohorts only (cohort counts k = 12 and k = 16) — before any real-observation execution is proposed. Synthetic cohorts at and around the floors SHALL test floor enforcement itself: k = 4 cohorts as floor-rejection tests (below the k>=5 schema floor, artifacts rejected) and k = 8 cohorts as internal-only-path tests (passing the k>=5 schema floor but below the k>=10 series display floor — valid but display-ineligible).
+The proof harness SHALL demonstrate known-effect recovery and calibration coverage on synthetic data — with the 80% credible interval covering the injected effect in 74–86% of at least 200 seeded replications per effect-size/cohort-size/scenario cell and null-effect false-eligibility at or below 5%, both computed on floor-eligible cohorts only (cohort counts k = 12 and k = 16) — before any real-observation execution is proposed. Synthetic cohorts at and around the floors SHALL test floor enforcement itself: k = 4 cohorts as floor-rejection tests (below the k>=5 schema floor, artifacts rejected) and k = 8 cohorts as internal-only-path tests (passing the k>=5 schema floor but below the k>=10 series display floor — valid but display-ineligible). The artifact SHALL report binomial uncertainty around observed coverage for every calibration cell.
 
 #### Scenario: Calibration within band records proof
 
-- **GIVEN** at least 200 seeded synthetic replications with injected known effects on floor-eligible cohorts (k = 12 and k = 16)
+- **GIVEN** at least 200 seeded synthetic replications per injected-effect and cohort-size scenario cell on floor-eligible cohorts (k = 12 and k = 16)
 - **WHEN** the 80% credible interval covers the injected effect in 74–86% of replications and null-effect false-eligibility is at or below 5%
 - **THEN** the harness records the calibration proof
 
@@ -130,18 +130,24 @@ The system SHALL emit no comparison-supported contribution estimate when no cred
 
 ### Requirement: Milestone Peeking Control
 
-The system SHALL apply always-valid or sequential correction, consistent with the internal A/B testing playbook, to any repeated evaluation across the Day 0/30/60/90/180/365 milestones and across multiple metrics.
+The system SHALL treat Slice 2 inference proof artifacts as fixed-horizon, one-look artifacts unless the implementation proves a named always-valid sequential procedure in synthetic null simulations across the full Day 0/30/60/90/180/365 milestone, metric, and cohort family.
 
-#### Scenario: Corrected sequential evaluation is allowed
+#### Scenario: Fixed-horizon one-look artifact is allowed
 
-- **GIVEN** repeated evaluation of an effect across multiple milestones and metrics
-- **WHEN** always-valid or sequential correction consistent with the internal A/B testing playbook is applied
-- **THEN** the evaluation proceeds and the artifact remains eligible
+- **GIVEN** a proof artifact with exactly one planned look and one included milestone
+- **WHEN** no repeated evaluation across milestones, metrics, or cohorts occurred
+- **THEN** the fixed-horizon artifact remains eligible if all other gates pass
+
+#### Scenario: Proven sequential evaluation is allowed only with null proof
+
+- **GIVEN** repeated evaluation of an effect across multiple milestones, metrics, or cohorts
+- **WHEN** a named always-valid sequential procedure is implemented and its synthetic null proof demonstrates the declared false-eligibility bound
+- **THEN** the evaluation may proceed and the artifact records the method name, look family, and proof hash
 
 #### Scenario: Naive repeated evaluation marks the artifact ineligible
 
-- **GIVEN** repeated evaluation across milestones or metrics
-- **WHEN** no always-valid or sequential correction is applied
+- **GIVEN** repeated evaluation across milestones, metrics, or cohorts
+- **WHEN** no named always-valid procedure and synthetic null proof is present
 - **THEN** the artifact is marked ineligible
 
 ### Requirement: Prior Policy
