@@ -172,6 +172,39 @@ gated by the claim ladder (approved comparison evidence design at the
 validated rung); this contract's outputs are contribution estimates, never
 causal claims.
 
+A credible comparison cohort is not a judgment phrase; it is the following
+runnable rubric. Missing any required check HOLDS the artifact or limits it
+to evidence-tier-only status.
+
+| Criterion | Required check |
+| --- | --- |
+| Same selected metric definition | Exact metric identity and aggregation definition match. |
+| Same milestone windows | Baseline and comparison milestone windows align exactly. |
+| Same metric direction | Direction is owner-approved and identical across treatment/comparison. |
+| Same lag handling | Lag window is declared and owner-approved before fitting. |
+| Same expectation path and context | Expectation path, workflow, function, and cohort context match unless a reviewer-owned comparison-design adequacy reference explicitly justifies the difference. |
+| Similar pre-period level/trend | Pre-period level and trend are checked and reported; violated pre-trend HOLDS. |
+| No contamination | Treatment and comparison conditions are not mixed, reused, or cross-exposed. |
+| Adequate aggregate floors | k-floor and stated-floor checks pass independently for treatment and comparison cells. |
+| No suppressed/stale windows | Suppressed, stale, or missing windows HOLD; no imputation rescue. |
+
+## Negative controls
+
+The proof harness must show fail-closed behavior when assumptions fail. In
+addition to clean known-effect recovery, Slice 2 must include synthetic
+negative controls for:
+
+| Failure mode | Expected result |
+| --- | --- |
+| No credible comparison cohort | No comparison-supported contribution estimate; evidence-tier-only or HOLD. |
+| Violated pre-trend | HOLD naming pre-trend. |
+| Badly mismatched comparison cohort | HOLD or comparison-ineligible. |
+| Prior-dominated weak data | HOLD naming prior sensitivity. |
+| Underpowered floor case `k=4` | Rejected below schema floor. |
+| Internal-only floor case `k=8` | Valid internally, display-ineligible. |
+| Missing or suppressed windows | HOLD, with no imputation rescue. |
+| Naive repeated milestone peeking | Ineligible/HOLD naming peeking control. |
+
 ## Milestone peeking control
 
 Evaluation occurs at the milestone cadence Day 0 / 30 / 60 / 90 / 180 / 365
