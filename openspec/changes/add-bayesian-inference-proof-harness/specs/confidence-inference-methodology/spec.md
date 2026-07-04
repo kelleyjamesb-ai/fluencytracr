@@ -52,7 +52,7 @@ The proof harness SHALL implement the hierarchical Bayesian difference-in-differ
 
 ### Requirement: Computed Diagnostics Gate
 
-The system SHALL emit a confidence-bearing artifact only when every required diagnostic is computed as a real value and passes its numeric gate: R-hat <= 1.01 for all parameters (if any parameter's R-hat > 1.01 the artifact HOLDS naming R-hat), bulk-ESS >= 400, posterior predictive p-values within [0.05, 0.95], prior-sensitivity posterior-mean shift < 0.5 posterior SD, and the pre-period pseudo-effect 80% credible interval including 0.
+The system SHALL emit a confidence-bearing artifact only when every required diagnostic is computed as a real value and passes its numeric gate: R-hat <= 1.01 for all parameters (if any parameter's R-hat > 1.01 the artifact HOLDS naming R-hat), post-warmup divergent transitions = 0, bulk-ESS >= 400, tail-ESS >= 400, MCSE for posterior mean and interval endpoints <= 0.1 posterior SD, posterior predictive p-values within [0.05, 0.95] for the fixed designated statistics, prior-sensitivity posterior-mean shift < 0.5 posterior SD, and the pre-period pseudo-effect 80% credible interval including 0. Rank and energy plots SHALL be recorded in the internal report artifact.
 
 #### Scenario: All diagnostics computed and passing
 
@@ -71,6 +71,18 @@ The system SHALL emit a confidence-bearing artifact only when every required dia
 - **GIVEN** a fitted model where at least one required diagnostic is absent or not computed as a real value
 - **WHEN** the artifact is emitted
 - **THEN** the artifact is in HOLD state and identifies the missing diagnostic
+
+#### Scenario: Divergence or weak tail support yields HOLD
+
+- **GIVEN** a fitted model with any post-warmup divergent transition, tail-ESS below 400, or MCSE above the declared relative threshold
+- **WHEN** the artifact is emitted
+- **THEN** the artifact is in HOLD state and names the failing sampler diagnostic
+
+#### Scenario: Posterior predictive statistics are fixed and complete
+
+- **GIVEN** a fitted model with posterior predictive checks
+- **WHEN** the artifact is emitted
+- **THEN** it includes `pre_post_mean_movement`, `between_cohort_variance`, `within_cohort_variance`, `tail_or_extreme_cell_statistic`, and `difference_in_differences_contrast`, each with statistic name, observed value, posterior predictive 80% interval summary, p-value, and pass/fail
 
 ### Requirement: Synthetic Proof Before Real Data
 

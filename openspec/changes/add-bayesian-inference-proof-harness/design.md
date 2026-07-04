@@ -107,14 +107,18 @@ the failure mode synthetic control addresses).
 The seven required diagnostics — R-hat, effective sample size, posterior
 predictive checks, prior sensitivity, pre-period trend check, calibration
 coverage, and known-effect recovery — are computed numbers checked against
-explicit numeric gates, not boolean flags. A confidence-bearing artifact must
-be structurally un-emittable unless all gates pass: the emit path requires
-the diagnostics block, and the TypeScript gates reject artifacts whose gate
-values fail or are absent. Rationale: the current spine records all seven as
-`false` flags, which the 2026-07-03 methodology review flagged as the core
-gap; flags attest nothing. Alternative rejected: advisory diagnostics with
-human sign-off only — that reintroduces the drift the fail-closed culture of
-this repo exists to prevent.
+explicit numeric gates, not boolean flags. Convergence includes zero
+post-warmup divergences and recorded rank/energy plots; effective sample
+size includes bulk ESS, tail ESS, and MCSE relative to posterior SD. PPCs use
+the fixed statistic set named in the contract rather than an arbitrary
+caller-selected statistic. A confidence-bearing artifact must be
+structurally un-emittable unless all gates pass: the emit path requires the
+diagnostics block, and the TypeScript gates reject or HOLD artifacts whose
+gate values fail or are absent. Rationale: the current spine records all
+seven as `false` flags, which the 2026-07-03 methodology review flagged as
+the core gap; flags attest nothing. Alternative rejected: advisory
+diagnostics with human sign-off only — that reintroduces the drift the
+fail-closed culture of this repo exists to prevent.
 
 ### 6. Comparison-cohort rule
 
