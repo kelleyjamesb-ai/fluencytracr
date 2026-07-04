@@ -33,6 +33,14 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function markInferenceProofHold(artifact, failingDiagnostics) {
+  artifact.governance_state.state = "HOLD";
+  artifact.governance_state.failing_diagnostics = failingDiagnostics;
+  artifact.governance_state.comparison_supported_contribution_estimate_authorized =
+    false;
+  artifact.governance_state.evidence_tier_only = true;
+}
+
 // ---------------------------------------------------------------------------
 // Valid example fixtures
 // ---------------------------------------------------------------------------
@@ -849,6 +857,51 @@ const validInferenceProofArtifact = {
     false_eligibility_bound: 0.05,
     pass: true
   },
+  comparison_adequacy: {
+    comparison_cohort_present: true,
+    adequacy_proof_hash: "b".repeat(64),
+    reviewer_owned_comparison_design_adequacy_ref:
+      "comparison-design-adequacy-review-001",
+    required_checks: [
+      {
+        criterion: "same_selected_metric_definition",
+        pass: true
+      },
+      {
+        criterion: "aligned_milestone_windows",
+        pass: true
+      },
+      {
+        criterion: "same_metric_direction",
+        pass: true
+      },
+      {
+        criterion: "approved_lag_handling",
+        pass: true
+      },
+      {
+        criterion: "same_expectation_path_and_context",
+        pass: true
+      },
+      {
+        criterion: "similar_pre_period_level_trend",
+        pass: true
+      },
+      {
+        criterion: "no_contamination",
+        pass: true
+      },
+      {
+        criterion: "adequate_aggregate_floors",
+        pass: true
+      },
+      {
+        criterion: "no_suppressed_or_stale_windows",
+        pass: true
+      }
+    ],
+    all_required_checks_pass: true
+  },
   governance_state: {
     state: "eligible_internal_only",
     failing_diagnostics: [],
@@ -999,10 +1052,65 @@ test("inference proof artifact enforces HOLD and eligible diagnostic naming", ()
   );
 
   const validHold = clone(validInferenceProofArtifact);
-  validHold.governance_state.state = "HOLD";
-  validHold.governance_state.failing_diagnostics = ["divergences"];
+  markInferenceProofHold(validHold, ["divergences"]);
   validHold.diagnostics.sampler.post_warmup_divergences = 1;
   assert.equal(InferenceProofArtifactSchema.safeParse(validHold).success, true);
+});
+
+test("inference proof artifact requires comparison adequacy before contribution-estimate authorization", () => {
+  const missingComparisonProof = clone(validInferenceProofArtifact);
+  delete missingComparisonProof.comparison_adequacy;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(missingComparisonProof).success,
+    false
+  );
+
+  const evidenceTierAndComparisonEstimate = clone(validInferenceProofArtifact);
+  evidenceTierAndComparisonEstimate.governance_state.evidence_tier_only = true;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(evidenceTierAndComparisonEstimate)
+      .success,
+    false
+  );
+
+  const failedRubricStillEligible = clone(validInferenceProofArtifact);
+  failedRubricStillEligible.comparison_adequacy.required_checks[0].pass = false;
+  failedRubricStillEligible.comparison_adequacy.all_required_checks_pass = false;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(failedRubricStillEligible).success,
+    false
+  );
+
+  const failedRubricHeld = clone(failedRubricStillEligible);
+  markInferenceProofHold(failedRubricHeld, ["comparison_cohort_adequacy"]);
+  assert.equal(InferenceProofArtifactSchema.safeParse(failedRubricHeld).success, true);
+
+  const holdStillAuthorizesComparisonEstimate = clone(failedRubricHeld);
+  holdStillAuthorizesComparisonEstimate.governance_state.comparison_supported_contribution_estimate_authorized =
+    true;
+  holdStillAuthorizesComparisonEstimate.governance_state.evidence_tier_only =
+    false;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(holdStillAuthorizesComparisonEstimate)
+      .success,
+    false
+  );
+
+  const missingRubricCriterion = clone(validInferenceProofArtifact);
+  missingRubricCriterion.comparison_adequacy.required_checks =
+    missingRubricCriterion.comparison_adequacy.required_checks.slice(0, -1);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(missingRubricCriterion).success,
+    false
+  );
+
+  const duplicateRubricCriterion = clone(validInferenceProofArtifact);
+  duplicateRubricCriterion.comparison_adequacy.required_checks[8].criterion =
+    "same_selected_metric_definition";
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(duplicateRubricCriterion).success,
+    false
+  );
 });
 
 test("inference proof artifact forces failing MCMC diagnostics into HOLD", () => {
@@ -1072,10 +1180,7 @@ test("inference proof artifact enforces calibration and null proof gates", () =>
   );
 
   const highCoverageHold = clone(highCoverageEligible);
-  highCoverageHold.governance_state.state = "HOLD";
-  highCoverageHold.governance_state.failing_diagnostics = [
-    "calibration_coverage"
-  ];
+  markInferenceProofHold(highCoverageHold, ["calibration_coverage"]);
   assert.equal(InferenceProofArtifactSchema.safeParse(highCoverageHold).success, true);
 
   const highNullFalseEligibility = clone(validInferenceProofArtifact);

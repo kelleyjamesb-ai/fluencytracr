@@ -608,6 +608,22 @@ export const InferenceProofLikelihoodFamilySchema = z.enum([
   "negative_binomial_count_aggregate"
 ]);
 
+export const INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA = [
+  "same_selected_metric_definition",
+  "aligned_milestone_windows",
+  "same_metric_direction",
+  "approved_lag_handling",
+  "same_expectation_path_and_context",
+  "similar_pre_period_level_trend",
+  "no_contamination",
+  "adequate_aggregate_floors",
+  "no_suppressed_or_stale_windows"
+] as const;
+
+export const InferenceProofComparisonCohortCriterionSchema = z.enum(
+  INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA
+);
+
 const NonNegativeFiniteNumberSchema = z.number().finite().gte(0);
 const FiniteNumberSchema = z.number().finite();
 
@@ -978,6 +994,60 @@ export const InferenceProofPeekingControlSchema = z
     }
   });
 
+export const InferenceProofComparisonAdequacyCheckSchema = z
+  .object({
+    criterion: InferenceProofComparisonCohortCriterionSchema,
+    pass: z.boolean()
+  })
+  .strict();
+
+export const InferenceProofComparisonAdequacySchema = z
+  .object({
+    comparison_cohort_present: z.boolean(),
+    adequacy_proof_hash: Sha256HexSchema,
+    reviewer_owned_comparison_design_adequacy_ref: z.string().min(1).nullable(),
+    required_checks: z
+      .array(InferenceProofComparisonAdequacyCheckSchema)
+      .length(INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA.length),
+    all_required_checks_pass: z.boolean()
+  })
+  .strict()
+  .superRefine((adequacy, ctx) => {
+    const seen = new Set<string>();
+    for (const [index, check] of adequacy.required_checks.entries()) {
+      if (seen.has(check.criterion)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["required_checks", index, "criterion"],
+          message: "comparison adequacy criteria must not repeat"
+        });
+      }
+      seen.add(check.criterion);
+    }
+
+    for (const criterion of INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA) {
+      if (!seen.has(criterion)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["required_checks"],
+          message: `comparison adequacy must include criterion ${criterion}`
+        });
+      }
+    }
+
+    const computedAllChecksPass =
+      adequacy.comparison_cohort_present &&
+      adequacy.required_checks.every((check) => check.pass);
+    if (adequacy.all_required_checks_pass !== computedAllChecksPass) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["all_required_checks_pass"],
+        message:
+          "all_required_checks_pass must be derived from comparison presence and every rubric check"
+      });
+    }
+  });
+
 export const InferenceProofGovernanceSchema = z
   .object({
     state: InferenceProofGovernanceStateSchema,
@@ -1009,6 +1079,7 @@ export const InferenceProofArtifactSchema = z
     null_checks: InferenceProofNullChecksSchema,
     floor_checks: InferenceProofFloorChecksSchema,
     peeking_control: InferenceProofPeekingControlSchema,
+    comparison_adequacy: InferenceProofComparisonAdequacySchema,
     governance_state: InferenceProofGovernanceSchema,
     hash_bindings: InferenceProofHashBindingsSchema,
     blocked_uses: OrderedConfidenceModelBlockedUsesSchema,
@@ -1079,6 +1150,40 @@ export const InferenceProofArtifactSchema = z
         });
       }
     };
+
+    const comparisonEstimateAuthorized =
+      artifact.governance_state
+        .comparison_supported_contribution_estimate_authorized;
+    const evidenceTierOnly = artifact.governance_state.evidence_tier_only;
+
+    if (comparisonEstimateAuthorized === evidenceTierOnly) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "evidence_tier_only"],
+        message:
+          "comparison-supported estimate authorization and evidence-tier-only status are mutually exclusive"
+      });
+    }
+    if (
+      artifact.governance_state.state === "HOLD" &&
+      comparisonEstimateAuthorized
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [
+          "governance_state",
+          "comparison_supported_contribution_estimate_authorized"
+        ],
+        message: "HOLD artifacts must not authorize comparison-supported estimates"
+      });
+    }
+    if (!artifact.comparison_adequacy.all_required_checks_pass) {
+      failOrIssue(
+        "comparison_cohort_adequacy",
+        ["comparison_adequacy"],
+        "comparison-supported estimates require every comparison adequacy rubric check to pass"
+      );
+    }
 
     for (const [index, parameter] of artifact.diagnostics.sampler.parameters.entries()) {
       if (parameter.r_hat > INFERENCE_PROOF_RHAT_MAX) {
@@ -1209,6 +1314,9 @@ export type InferenceProofFailingDiagnostic = z.infer<
 >;
 export type InferenceProofLikelihoodFamily = z.infer<
   typeof InferenceProofLikelihoodFamilySchema
+>;
+export type InferenceProofComparisonCohortCriterion = z.infer<
+  typeof InferenceProofComparisonCohortCriterionSchema
 >;
 export type InferenceProofArtifact = z.infer<
   typeof InferenceProofArtifactSchema
