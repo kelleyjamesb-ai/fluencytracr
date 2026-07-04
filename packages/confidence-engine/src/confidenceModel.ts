@@ -439,6 +439,7 @@ export const INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX = 0.86;
 export const INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN = 200;
 export const INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX = 0.05;
 export const INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX = 0.1;
+export const INFERENCE_PROOF_FLOAT_TOLERANCE = 1e-12;
 
 // Internal diagnostic representation of P(effect > minimum worthwhile
 // threshold). Derives from the credible-interval-only posterior
@@ -588,7 +589,10 @@ export const InferenceProofFailingDiagnosticSchema = z.enum([
   "bulk_ess",
   "tail_ess",
   "divergences",
+  "max_treedepth_saturation",
+  "energy_bfmi",
   "mcse",
+  "unsupported_likelihood_family",
   "posterior_predictive_check",
   "prior_sensitivity",
   "pre_trend",
@@ -726,7 +730,9 @@ export const InferenceProofSamplerDiagnosticsSchema = z
     parameters: z.array(InferenceProofParameterDiagnosticSchema).nonempty(),
     post_warmup_divergences: z.number().int().nonnegative(),
     max_treedepth_saturation_rate: z.number().finite().gte(0).lte(1),
+    max_treedepth_warning: z.boolean(),
     energy_bfmi_min: NonNegativeFiniteNumberSchema,
+    energy_bfmi_warning: z.boolean(),
     rank_plots_recorded: z.literal(true),
     energy_plots_recorded: z.literal(true)
   })
@@ -961,6 +967,20 @@ export const InferenceProofPeekingControlSchema = z
           message: "fixed-horizon proof artifacts must include exactly one milestone"
         });
       }
+      if (control.metrics_included.length !== 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["metrics_included"],
+          message: "fixed-horizon proof artifacts must include exactly one metric"
+        });
+      }
+      if (control.cohorts_included.length !== 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["cohorts_included"],
+          message: "fixed-horizon proof artifacts must include exactly one cohort"
+        });
+      }
       if (
         control.sequential_method_name !== null ||
         control.synthetic_null_proof_hash !== null
@@ -1185,7 +1205,47 @@ export const InferenceProofArtifactSchema = z
       );
     }
 
+    if (
+      artifact.model_spec_binding.likelihood_family !==
+      "normal_continuous_aggregate"
+    ) {
+      failOrIssue(
+        "unsupported_likelihood_family",
+        ["model_spec_binding", "likelihood_family"],
+        "non-normal likelihood families must HOLD until their sampler, diagnostics, and synthetic recovery suite are implemented"
+      );
+    }
+
     for (const [index, parameter] of artifact.diagnostics.sampler.parameters.entries()) {
+      const maxObservedMcse = Math.max(
+        parameter.posterior_mean_mcse,
+        parameter.interval_endpoint_mcse
+      );
+      const computedMcseRatio =
+        parameter.posterior_sd === 0
+          ? maxObservedMcse === 0
+            ? 0
+            : Number.POSITIVE_INFINITY
+          : maxObservedMcse / parameter.posterior_sd;
+      if (
+        !Number.isFinite(computedMcseRatio) ||
+        Math.abs(
+          parameter.max_mcse_to_posterior_sd_ratio - computedMcseRatio
+        ) > INFERENCE_PROOF_FLOAT_TOLERANCE
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [
+            "diagnostics",
+            "sampler",
+            "parameters",
+            index,
+            "max_mcse_to_posterior_sd_ratio"
+          ],
+          message:
+            "max_mcse_to_posterior_sd_ratio must be derived from posterior_mean_mcse, interval_endpoint_mcse, and posterior_sd"
+        });
+      }
       if (parameter.r_hat > INFERENCE_PROOF_RHAT_MAX) {
         failOrIssue(
           "r_hat",
@@ -1209,6 +1269,8 @@ export const InferenceProofArtifactSchema = z
       }
       if (
         parameter.max_mcse_to_posterior_sd_ratio >
+        INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX ||
+        computedMcseRatio >
         INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX
       ) {
         failOrIssue(
@@ -1223,6 +1285,21 @@ export const InferenceProofArtifactSchema = z
           "MCSE must be small relative to posterior SD for eligible artifacts"
         );
       }
+    }
+
+    if (artifact.diagnostics.sampler.max_treedepth_warning) {
+      failOrIssue(
+        "max_treedepth_saturation",
+        ["diagnostics", "sampler", "max_treedepth_warning"],
+        "eligible artifacts must not silently carry max-treedepth warnings"
+      );
+    }
+    if (artifact.diagnostics.sampler.energy_bfmi_warning) {
+      failOrIssue(
+        "energy_bfmi",
+        ["diagnostics", "sampler", "energy_bfmi_warning"],
+        "eligible artifacts must not silently carry energy BFMI warnings"
+      );
     }
 
     if (artifact.diagnostics.sampler.post_warmup_divergences > 0) {
@@ -1260,10 +1337,21 @@ export const InferenceProofArtifactSchema = z
       );
     }
 
+    const preTrendInterval =
+      artifact.diagnostics.pre_trend.pseudo_effect_credible_interval_80;
+    const preTrendIncludesZero =
+      preTrendInterval.lower <= 0 && preTrendInterval.upper >= 0;
     if (
-      !artifact.diagnostics.pre_trend.pass ||
-      !artifact.diagnostics.pre_trend.includes_zero
+      artifact.diagnostics.pre_trend.includes_zero !== preTrendIncludesZero
     ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["diagnostics", "pre_trend", "includes_zero"],
+        message:
+          "pre_trend.includes_zero must be derived from the 80% credible interval bounds"
+      });
+    }
+    if (!artifact.diagnostics.pre_trend.pass || !preTrendIncludesZero) {
       failOrIssue(
         "pre_trend",
         ["diagnostics", "pre_trend"],
