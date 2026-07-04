@@ -737,12 +737,14 @@ const validInferenceProofArtifact = {
           posterior_mean_mcse: 0.01,
           interval_endpoint_mcse: 0.02,
           posterior_sd: 0.3,
-          max_mcse_to_posterior_sd_ratio: 0.06
+          max_mcse_to_posterior_sd_ratio: 0.06666666666666667
         }
       ],
       post_warmup_divergences: 0,
       max_treedepth_saturation_rate: 0,
+      max_treedepth_warning: false,
       energy_bfmi_min: 0.6,
+      energy_bfmi_warning: false,
       rank_plots_recorded: true,
       energy_plots_recorded: true
     },
@@ -1128,13 +1130,46 @@ test("inference proof artifact forces failing MCMC diagnostics into HOLD", () =>
       artifact.diagnostics.sampler.parameters[0].max_mcse_to_posterior_sd_ratio = 0.11;
     },
     (artifact) => {
+      artifact.diagnostics.sampler.parameters[0].posterior_mean_mcse = 10;
+      artifact.diagnostics.sampler.parameters[0].interval_endpoint_mcse = 10;
+      artifact.diagnostics.sampler.parameters[0].posterior_sd = 0.3;
+      artifact.diagnostics.sampler.parameters[0].max_mcse_to_posterior_sd_ratio = 0.06;
+    },
+    (artifact) => {
+      artifact.diagnostics.sampler.parameters[0].posterior_mean_mcse = 0.04;
+      artifact.diagnostics.sampler.parameters[0].interval_endpoint_mcse = 0.02;
+      artifact.diagnostics.sampler.parameters[0].posterior_sd = 1;
+      artifact.diagnostics.sampler.parameters[0].max_mcse_to_posterior_sd_ratio = 0.01;
+    },
+    (artifact) => {
       artifact.diagnostics.sampler.post_warmup_divergences = 1;
+    },
+    (artifact) => {
+      artifact.diagnostics.sampler.max_treedepth_warning = true;
+    },
+    (artifact) => {
+      artifact.diagnostics.sampler.energy_bfmi_warning = true;
     }
   ]) {
     const artifact = clone(validInferenceProofArtifact);
     mutate(artifact);
     assert.equal(InferenceProofArtifactSchema.safeParse(artifact).success, false);
   }
+});
+
+test("inference proof artifact forces unsupported likelihood families into HOLD", () => {
+  const unsupportedEligible = clone(validInferenceProofArtifact);
+  unsupportedEligible.model_spec_binding.likelihood_family =
+    "poisson_count_aggregate";
+  unsupportedEligible.model_spec_binding.link_function = "log";
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(unsupportedEligible).success,
+    false
+  );
+
+  const unsupportedHeld = clone(unsupportedEligible);
+  markInferenceProofHold(unsupportedHeld, ["unsupported_likelihood_family"]);
+  assert.equal(InferenceProofArtifactSchema.safeParse(unsupportedHeld).success, true);
 });
 
 test("inference proof artifact requires complete PPC statistics and gate values", () => {
@@ -1155,6 +1190,26 @@ test("inference proof artifact requires complete PPC statistics and gate values"
   const failingPpc = clone(validInferenceProofArtifact);
   failingPpc.diagnostics.posterior_predictive_checks[0].p_value = 0.99;
   assert.equal(InferenceProofArtifactSchema.safeParse(failingPpc).success, false);
+});
+
+test("inference proof artifact cross-checks pre-trend interval values", () => {
+  const forgedPreTrend = clone(validInferenceProofArtifact);
+  forgedPreTrend.diagnostics.pre_trend.pseudo_effect_credible_interval_80 = {
+    lower: 0.1,
+    upper: 0.2
+  };
+  forgedPreTrend.diagnostics.pre_trend.includes_zero = true;
+  forgedPreTrend.diagnostics.pre_trend.pass = true;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(forgedPreTrend).success,
+    false
+  );
+
+  const heldPreTrend = clone(forgedPreTrend);
+  heldPreTrend.diagnostics.pre_trend.includes_zero = false;
+  heldPreTrend.diagnostics.pre_trend.pass = false;
+  markInferenceProofHold(heldPreTrend, ["pre_trend"]);
+  assert.equal(InferenceProofArtifactSchema.safeParse(heldPreTrend).success, true);
 });
 
 test("inference proof artifact enforces calibration and null proof gates", () => {
@@ -1226,6 +1281,26 @@ test("inference proof artifact rejects naive repeated-look peeking", () => {
   ];
   assert.equal(
     InferenceProofArtifactSchema.safeParse(repeatedWithoutProof).success,
+    false
+  );
+
+  const fixedHorizonMultiMetric = clone(validInferenceProofArtifact);
+  fixedHorizonMultiMetric.peeking_control.metrics_included = [
+    "selected_metric",
+    "second_metric"
+  ];
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(fixedHorizonMultiMetric).success,
+    false
+  );
+
+  const fixedHorizonMultiCohort = clone(validInferenceProofArtifact);
+  fixedHorizonMultiCohort.peeking_control.cohorts_included = [
+    "synthetic-treated-vs-comparison",
+    "second-comparison"
+  ];
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(fixedHorizonMultiCohort).success,
     false
   );
 

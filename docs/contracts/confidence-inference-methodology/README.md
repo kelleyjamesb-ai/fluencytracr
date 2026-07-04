@@ -113,6 +113,12 @@ every proof artifact pins `internal_only: true`,
 `customer_output_authorized: false`, `probability_output_authorized: false`,
 `confidence_output_authorized: false`, and `promotion_decision_ref: null`.
 
+The internal artifact carries structural proof fields for the gates below:
+`comparison_adequacy` records the runnable comparison-cohort rubric and its
+proof hash; sampler diagnostics record explicit max-treedepth and BFMI warning
+flags; fixed-horizon peeking control records exactly one milestone, one metric,
+and one cohort. These fields are validation inputs only, not output fields.
+
 ## Diagnostics: computed values with numeric gates
 
 Every required diagnostic is a computed number checked against an explicit
