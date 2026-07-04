@@ -264,19 +264,23 @@ always separated from time-saved measurement — a measured time-saved number
 is never silently multiplied into an ROI claim. Claim statuses map to the
 evidence-tier ladder (`shared/src/aiValueEngine/valueHypothesisReadiness.ts`):
 
-| Evidence tier | Claim status | Permitted language |
-| --- | --- | --- |
-| `NONE` | withheld | No claim. |
-| `DIRECTIONAL_ALIGNMENT` | internal-only | Directional language only; no numbers. |
-| `PRE_POST_SUPPORTED` | internal-only | Pre/post movement described; no comparison-supported contribution estimate (comparison-cohort rule). |
-| `MATCHED_COMPARISON_READY` | caveated | Contribution-estimate-eligible with design caveats stated, all diagnostic gates passing. |
-| `CONTROLLED_TEST_READY` | customer-safe | Measured effect with the test design named. |
-| `CALIBRATED_ATTRIBUTION_READY` | customer-safe | Calibrated attribution claims. |
+**These statuses describe the maximum future claim ceiling only. For Slice 2,
+every tier remains internal-only or withheld unless a separate recorded human
+promotion decision authorizes a narrower customer-facing claim.**
 
-The status column states the ceiling each tier could reach. Until a separate
-recorded human promotion decision exists, the effective status of every tier
-is capped at internal-only: `customer_facing_output`, `confidence_output`,
-and `probability_output` remain in `CONFIDENCE_MODEL_BLOCKED_USES`.
+| Evidence tier | Theoretical ceiling after later promotion | Effective status in this contract | Permitted Slice 1 / Slice 2 language |
+| --- | --- | --- | --- |
+| `NONE` | withheld | withheld | No claim. |
+| `DIRECTIONAL_ALIGNMENT` | internal-only | internal-only | Directional internal language only; no numbers. |
+| `PRE_POST_SUPPORTED` | internal-only | internal-only | Internal pre/post movement described; no comparison-supported contribution estimate (comparison-cohort rule). |
+| `MATCHED_COMPARISON_READY` | future caveated ceiling only - not currently authorized | internal-only | Internal contribution-estimate eligibility with design caveats stated, all diagnostic gates passing. |
+| `CONTROLLED_TEST_READY` | future customer-safe ceiling only - not currently authorized | internal-only | Internal measured-effect language with the test design named; no customer-facing output. |
+| `CALIBRATED_ATTRIBUTION_READY` | future customer-safe ceiling only - not currently authorized | internal-only | Internal calibrated-attribution language only after later promotion; no customer-facing output. |
+
+Until a separate recorded human promotion decision exists, the effective
+status of every non-withheld tier is capped at internal-only:
+`customer_facing_output`, `confidence_output`, and `probability_output`
+remain in `CONFIDENCE_MODEL_BLOCKED_USES`.
 
 ## Expert review record
 
