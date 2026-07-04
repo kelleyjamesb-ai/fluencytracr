@@ -20,10 +20,13 @@ import {
   ConfidenceModelContractSchema,
   THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION,
   EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION,
+  INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
   EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON,
   MINIMUM_WORTHWHILE_EFFECT_THRESHOLD,
+  INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
   ThresholdProbabilityRepresentationSchema,
-  ExpectedLossRepresentationSchema
+  ExpectedLossRepresentationSchema,
+  InferenceProofArtifactSchema
 } from "../dist/index.js";
 
 function clone(value) {
@@ -664,4 +667,498 @@ test("credible_interval_level_context outside CREDIBLE_INTERVAL_LEVELS rejects",
     ThresholdProbabilityRepresentationSchema.safeParse(representation).success,
     false
   );
+});
+
+// ---------------------------------------------------------------------------
+// Internal synthetic inference proof artifact
+// ---------------------------------------------------------------------------
+
+const ppcSummary = {
+  mean: 0.12,
+  credible_interval_80: {
+    lower: -0.05,
+    upper: 0.28
+  }
+};
+
+const validInferenceProofArtifact = {
+  schema_version: INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
+  artifact_class: "internal_synthetic_inference_proof",
+  generated_at: "2026-07-04T00:00:00Z",
+  harness_version: "confidence-inference-proof-harness-2026-07",
+  lockfile_hash: "b".repeat(64),
+  synthetic_generator: {
+    generator_id: "synthetic-hierarchical-did-v1",
+    generator_version: "2026.07.04",
+    seed_range: {
+      start_seed: 1000,
+      end_seed: 1599
+    },
+    synthetic_input_hash: "c".repeat(64),
+    real_data_present: false,
+    customer_data_present: false,
+    production_data_present: false,
+    live_data_source_present: false
+  },
+  model_spec_binding: {
+    model_family: "bayesian_hierarchical_difference_in_differences_candidate",
+    estimand_name: "aggregate_selected_metric_movement",
+    estimand_units: "standardized_effect_sd",
+    likelihood_family: "normal_continuous_aggregate",
+    link_function: "identity",
+    aggregate_cell_variance_mode: "cohort_size_weighted_known_variance",
+    cohort_size_enters_likelihood: true,
+    missing_or_suppressed_windows_hold: true,
+    treatment_effect_pooling: "workflow",
+    pooling_structure: {
+      expectation_path: true,
+      workflow: true,
+      function: true,
+      cohort: true,
+      organization: true
+    }
+  },
+  diagnostics: {
+    sampler: {
+      parameters: [
+        {
+          parameter_name: "contribution_alignment_effect",
+          r_hat: 1.0,
+          bulk_ess: 800,
+          tail_ess: 650,
+          posterior_mean_mcse: 0.01,
+          interval_endpoint_mcse: 0.02,
+          posterior_sd: 0.3,
+          max_mcse_to_posterior_sd_ratio: 0.06
+        }
+      ],
+      post_warmup_divergences: 0,
+      max_treedepth_saturation_rate: 0,
+      energy_bfmi_min: 0.6,
+      rank_plots_recorded: true,
+      energy_plots_recorded: true
+    },
+    posterior_predictive_checks: [
+      {
+        statistic_name: "pre_post_mean_movement",
+        observed_value: 0.13,
+        posterior_predictive_summary: ppcSummary,
+        p_value: 0.52,
+        pass: true
+      },
+      {
+        statistic_name: "between_cohort_variance",
+        observed_value: 0.09,
+        posterior_predictive_summary: ppcSummary,
+        p_value: 0.41,
+        pass: true
+      },
+      {
+        statistic_name: "within_cohort_variance",
+        observed_value: 0.2,
+        posterior_predictive_summary: ppcSummary,
+        p_value: 0.63,
+        pass: true
+      },
+      {
+        statistic_name: "tail_or_extreme_cell_statistic",
+        observed_value: 0.31,
+        posterior_predictive_summary: ppcSummary,
+        p_value: 0.71,
+        pass: true
+      },
+      {
+        statistic_name: "difference_in_differences_contrast",
+        observed_value: 0.21,
+        posterior_predictive_summary: ppcSummary,
+        p_value: 0.57,
+        pass: true
+      }
+    ],
+    prior_sensitivity: {
+      posterior_mean_shift_in_posterior_sd: 0.2,
+      pass: true
+    },
+    pre_trend: {
+      pseudo_effect_credible_interval_80: {
+        lower: -0.08,
+        upper: 0.07
+      },
+      includes_zero: true,
+      pass: true
+    }
+  },
+  calibration: {
+    per_scenario_required: true,
+    scenarios: [0, 0.2, 0.5].flatMap((effect) =>
+      [12, 16].map((cohortSize) => ({
+        scenario_id: `effect-${effect}-k-${cohortSize}`,
+        injected_effect_size_sd: effect,
+        cohort_size: cohortSize,
+        replication_count: INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+        credible_interval_level: 0.8,
+        coverage_rate: 0.8,
+        coverage_standard_error: 0.028,
+        pass: true
+      }))
+    )
+  },
+  null_checks: {
+    null_effect_scenario_count: INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+    false_eligibility_rate: 0.02,
+    pass: true
+  },
+  floor_checks: {
+    k4_rejected: {
+      cohort_size: 4,
+      outcome: "rejected_below_schema_floor",
+      pass: true
+    },
+    k8_internal_only: {
+      cohort_size: 8,
+      outcome: "internal_only_display_ineligible",
+      valid_internal: true,
+      display_eligible: false,
+      pass: true
+    },
+    eligible_floor_cases: [
+      {
+        cohort_size: 12,
+        valid_internal: true,
+        display_eligible: true,
+        pass: true
+      },
+      {
+        cohort_size: 16,
+        valid_internal: true,
+        display_eligible: true,
+        pass: true
+      }
+    ]
+  },
+  peeking_control: {
+    procedure: "fixed_horizon_one_look_only",
+    repeated_evaluation: false,
+    look_index: 1,
+    total_planned_looks: 1,
+    milestone_days_included: [90],
+    metrics_included: ["selected_metric"],
+    cohorts_included: ["synthetic-treated-vs-comparison"],
+    sequential_method_name: null,
+    synthetic_null_proof_hash: null,
+    false_eligibility_bound: 0.05,
+    pass: true
+  },
+  governance_state: {
+    state: "eligible_internal_only",
+    failing_diagnostics: [],
+    comparison_supported_contribution_estimate_authorized: true,
+    evidence_tier_only: false
+  },
+  hash_bindings: {
+    source_posterior_hash: "d".repeat(64),
+    synthetic_input_hash: "c".repeat(64),
+    artifact_self_hash: "e".repeat(64)
+  },
+  blocked_uses: [...CONFIDENCE_MODEL_BLOCKED_USES],
+  numeric_values_role: "internal_validation_inputs_not_output",
+  numeric_posterior_values_customer_authorized: false,
+  internal_only: true,
+  customer_output_authorized: false,
+  probability_output_authorized: false,
+  confidence_output_authorized: false,
+  finance_output_authorized: false,
+  creates_route: false,
+  creates_ui: false,
+  writes_persistence: false,
+  creates_export: false,
+  renders_readout: false,
+  executes_connector: false,
+  promotion_decision_ref: null
+};
+
+test("inference proof artifact schema_version constant is pinned", () => {
+  assert.equal(
+    INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
+    "FT_AI_VALUE_CONFIDENCE_INFERENCE_PROOF_ARTIFACT_2026_07"
+  );
+});
+
+test("valid internal synthetic inference proof artifact parses", () => {
+  const parsed = InferenceProofArtifactSchema.parse(validInferenceProofArtifact);
+  assert.equal(parsed.artifact_class, "internal_synthetic_inference_proof");
+  assert.equal(parsed.internal_only, true);
+  assert.equal(parsed.customer_output_authorized, false);
+});
+
+test("inference proof artifact rejects unknown top-level and nested keys", () => {
+  const topLevel = clone(validInferenceProofArtifact);
+  topLevel.customer_safe_claim = "AI impacted your business";
+  assert.equal(InferenceProofArtifactSchema.safeParse(topLevel).success, false);
+
+  const nested = clone(validInferenceProofArtifact);
+  nested.diagnostics.sampler.parameters[0].confidence_score = 0.91;
+  assert.equal(InferenceProofArtifactSchema.safeParse(nested).success, false);
+});
+
+test("inference proof artifact rejects real or live data flags", () => {
+  for (const flag of [
+    "real_data_present",
+    "customer_data_present",
+    "production_data_present",
+    "live_data_source_present"
+  ]) {
+    const artifact = clone(validInferenceProofArtifact);
+    artifact.synthetic_generator[flag] = true;
+    assert.equal(
+      InferenceProofArtifactSchema.safeParse(artifact).success,
+      false
+    );
+  }
+});
+
+test("inference proof artifact rejects output, route, persistence, and promotion side doors", () => {
+  for (const flag of [
+    "customer_output_authorized",
+    "probability_output_authorized",
+    "confidence_output_authorized",
+    "finance_output_authorized",
+    "numeric_posterior_values_customer_authorized",
+    "creates_route",
+    "creates_ui",
+    "writes_persistence",
+    "creates_export",
+    "renders_readout",
+    "executes_connector"
+  ]) {
+    const artifact = clone(validInferenceProofArtifact);
+    artifact[flag] = true;
+    assert.equal(
+      InferenceProofArtifactSchema.safeParse(artifact).success,
+      false,
+      `${flag} should reject`
+    );
+  }
+
+  const promoted = clone(validInferenceProofArtifact);
+  promoted.promotion_decision_ref = "promotion-decision-001";
+  assert.equal(InferenceProofArtifactSchema.safeParse(promoted).success, false);
+});
+
+test("inference proof artifact rejects malformed hashes and mismatched synthetic hash binding", () => {
+  for (const path of [
+    ["lockfile_hash"],
+    ["synthetic_generator", "synthetic_input_hash"],
+    ["hash_bindings", "source_posterior_hash"],
+    ["hash_bindings", "synthetic_input_hash"],
+    ["hash_bindings", "artifact_self_hash"]
+  ]) {
+    const artifact = clone(validInferenceProofArtifact);
+    let target = artifact;
+    for (const key of path.slice(0, -1)) {
+      target = target[key];
+    }
+    target[path[path.length - 1]] = "not-a-sha";
+    assert.equal(
+      InferenceProofArtifactSchema.safeParse(artifact).success,
+      false,
+      `${path.join(".")} should reject malformed hashes`
+    );
+  }
+
+  const mismatched = clone(validInferenceProofArtifact);
+  mismatched.hash_bindings.synthetic_input_hash = "f".repeat(64);
+  assert.equal(InferenceProofArtifactSchema.safeParse(mismatched).success, false);
+});
+
+test("inference proof artifact pins blocked uses in full order", () => {
+  const weakened = clone(validInferenceProofArtifact);
+  weakened.blocked_uses = weakened.blocked_uses.filter(
+    (use) => use !== "customer_facing_output"
+  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(weakened).success, false);
+
+  const reordered = clone(validInferenceProofArtifact);
+  reordered.blocked_uses = [...reordered.blocked_uses].reverse();
+  assert.equal(InferenceProofArtifactSchema.safeParse(reordered).success, false);
+});
+
+test("inference proof artifact enforces HOLD and eligible diagnostic naming", () => {
+  const holdWithoutDiagnostic = clone(validInferenceProofArtifact);
+  holdWithoutDiagnostic.governance_state.state = "HOLD";
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(holdWithoutDiagnostic).success,
+    false
+  );
+
+  const eligibleWithDiagnostic = clone(validInferenceProofArtifact);
+  eligibleWithDiagnostic.governance_state.failing_diagnostics = ["r_hat"];
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(eligibleWithDiagnostic).success,
+    false
+  );
+
+  const validHold = clone(validInferenceProofArtifact);
+  validHold.governance_state.state = "HOLD";
+  validHold.governance_state.failing_diagnostics = ["divergences"];
+  validHold.diagnostics.sampler.post_warmup_divergences = 1;
+  assert.equal(InferenceProofArtifactSchema.safeParse(validHold).success, true);
+});
+
+test("inference proof artifact forces failing MCMC diagnostics into HOLD", () => {
+  for (const mutate of [
+    (artifact) => {
+      artifact.diagnostics.sampler.parameters[0].r_hat = 1.02;
+    },
+    (artifact) => {
+      artifact.diagnostics.sampler.parameters[0].bulk_ess = 399;
+    },
+    (artifact) => {
+      artifact.diagnostics.sampler.parameters[0].tail_ess = 399;
+    },
+    (artifact) => {
+      artifact.diagnostics.sampler.parameters[0].max_mcse_to_posterior_sd_ratio = 0.11;
+    },
+    (artifact) => {
+      artifact.diagnostics.sampler.post_warmup_divergences = 1;
+    }
+  ]) {
+    const artifact = clone(validInferenceProofArtifact);
+    mutate(artifact);
+    assert.equal(InferenceProofArtifactSchema.safeParse(artifact).success, false);
+  }
+});
+
+test("inference proof artifact requires complete PPC statistics and gate values", () => {
+  const missingField = clone(validInferenceProofArtifact);
+  delete missingField.diagnostics.posterior_predictive_checks[0].observed_value;
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingField).success, false);
+
+  const missingDesignatedStat = clone(validInferenceProofArtifact);
+  missingDesignatedStat.diagnostics.posterior_predictive_checks =
+    missingDesignatedStat.diagnostics.posterior_predictive_checks.filter(
+      (stat) => stat.statistic_name !== "difference_in_differences_contrast"
+    );
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(missingDesignatedStat).success,
+    false
+  );
+
+  const failingPpc = clone(validInferenceProofArtifact);
+  failingPpc.diagnostics.posterior_predictive_checks[0].p_value = 0.99;
+  assert.equal(InferenceProofArtifactSchema.safeParse(failingPpc).success, false);
+});
+
+test("inference proof artifact enforces calibration and null proof gates", () => {
+  const tooFewReplications = clone(validInferenceProofArtifact);
+  tooFewReplications.calibration.scenarios[0].replication_count = 199;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(tooFewReplications).success,
+    false
+  );
+
+  const missingCell = clone(validInferenceProofArtifact);
+  missingCell.calibration.scenarios = missingCell.calibration.scenarios.filter(
+    (scenario) =>
+      !(scenario.injected_effect_size_sd === 0.5 && scenario.cohort_size === 16)
+  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingCell).success, false);
+
+  const highCoverageEligible = clone(validInferenceProofArtifact);
+  highCoverageEligible.calibration.scenarios[0].coverage_rate = 0.9;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(highCoverageEligible).success,
+    false
+  );
+
+  const highCoverageHold = clone(highCoverageEligible);
+  highCoverageHold.governance_state.state = "HOLD";
+  highCoverageHold.governance_state.failing_diagnostics = [
+    "calibration_coverage"
+  ];
+  assert.equal(InferenceProofArtifactSchema.safeParse(highCoverageHold).success, true);
+
+  const highNullFalseEligibility = clone(validInferenceProofArtifact);
+  highNullFalseEligibility.null_checks.false_eligibility_rate = 0.06;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(highNullFalseEligibility).success,
+    false
+  );
+});
+
+test("inference proof artifact enforces floor cases", () => {
+  const k4NotRejected = clone(validInferenceProofArtifact);
+  k4NotRejected.floor_checks.k4_rejected.outcome =
+    "internal_only_display_ineligible";
+  assert.equal(InferenceProofArtifactSchema.safeParse(k4NotRejected).success, false);
+
+  const k8DisplayEligible = clone(validInferenceProofArtifact);
+  k8DisplayEligible.floor_checks.k8_internal_only.display_eligible = true;
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(k8DisplayEligible).success,
+    false
+  );
+
+  const missingK16 = clone(validInferenceProofArtifact);
+  missingK16.floor_checks.eligible_floor_cases = [
+    missingK16.floor_checks.eligible_floor_cases[0],
+    missingK16.floor_checks.eligible_floor_cases[0]
+  ];
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingK16).success, false);
+});
+
+test("inference proof artifact rejects naive repeated-look peeking", () => {
+  const repeatedWithoutProof = clone(validInferenceProofArtifact);
+  repeatedWithoutProof.peeking_control.repeated_evaluation = true;
+  repeatedWithoutProof.peeking_control.total_planned_looks = 6;
+  repeatedWithoutProof.peeking_control.milestone_days_included = [
+    0,
+    30,
+    60,
+    90,
+    180,
+    365
+  ];
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(repeatedWithoutProof).success,
+    false
+  );
+
+  const alwaysValid = clone(validInferenceProofArtifact);
+  alwaysValid.peeking_control.procedure =
+    "always_valid_sequential_procedure_proven";
+  alwaysValid.peeking_control.repeated_evaluation = true;
+  alwaysValid.peeking_control.look_index = 6;
+  alwaysValid.peeking_control.total_planned_looks = 6;
+  alwaysValid.peeking_control.milestone_days_included = [
+    0,
+    30,
+    60,
+    90,
+    180,
+    365
+  ];
+  alwaysValid.peeking_control.sequential_method_name =
+    "synthetic_null_validated_e_value";
+  alwaysValid.peeking_control.synthetic_null_proof_hash = "f".repeat(64);
+  assert.equal(InferenceProofArtifactSchema.safeParse(alwaysValid).success, true);
+});
+
+test("inference proof artifact rejects causality, ROI, productivity, and confidence sidecars", () => {
+  for (const field of [
+    "causal_effect",
+    "roi",
+    "productivity",
+    "value_attributed",
+    "impact_probability",
+    "confidence_score"
+  ]) {
+    const artifact = clone(validInferenceProofArtifact);
+    artifact[field] = 1;
+    assert.equal(
+      InferenceProofArtifactSchema.safeParse(artifact).success,
+      false,
+      `${field} should reject`
+    );
+  }
 });
