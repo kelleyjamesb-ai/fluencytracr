@@ -137,7 +137,12 @@ tested):
   cohort of 7 is rejected even though 7 >= 5.
 - **k >= 10 series display floor** — `minimum_cohort_size: 10` per the
   confidence-engine series read-path decision contract applies to anything
-  sourced through that path.
+  sourced through that path. Series-sourced evidence admission is bound to
+  this read-path floor of 10 at the schema level
+  (`CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR` in the `ConfidenceModel`
+  contract: `EvidenceAdmittedSchema` rejects any declared
+  `minimum_cohort_floor` below 10), while the k >= 5 floor remains the
+  general aggregate convention.
 
 ## Claim language
 

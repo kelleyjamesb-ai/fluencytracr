@@ -8,6 +8,7 @@ import {
   INTERNAL_CONFIDENCE_CONSUMER_TOKEN,
   CONFIDENCE_OBSERVATION_MILESTONE_DAYS,
   CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR,
+  CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR,
   CONFIDENCE_MODEL_RUNTIME_HOLD_STATE,
   WEAKLY_REGULARIZING_PLACEHOLDER_STATE,
   EVIDENCE_ADMISSION_REASON_CODES,
@@ -65,7 +66,9 @@ const validAdmitted = {
   compact_refs_only: true,
   org_scoped: true,
   aggregate_only: true,
-  minimum_cohort_floor: CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR,
+  // Series-sourced admission is bound to the read-path floor of 10; the
+  // k>=5 CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR alone is not sufficient here.
+  minimum_cohort_floor: CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR,
   cohort_size: 12,
   admission_reason_codes: [
     "gate_cleared_observation_admitted",
@@ -138,6 +141,7 @@ test("aligned read-path contract tokens are pinned exactly", () => {
   assert.equal(INTERNAL_CONFIDENCE_CONSUMER_TOKEN, "internal_confidence_engine_only");
   assert.deepEqual([...CONFIDENCE_OBSERVATION_MILESTONE_DAYS], [0, 30, 60, 90, 180, 365]);
   assert.equal(CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR, 5);
+  assert.equal(CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR, 10);
   assert.ok(EVIDENCE_ADMISSION_REASON_CODES.length > 0);
   assert.ok(EVIDENCE_REJECTION_REASON_CODES.includes("boundary_leakage_rejected"));
   assert.ok(
@@ -264,6 +268,48 @@ test("cohort below the k>=5 floor rejects", () => {
   belowStatedFloor.minimum_cohort_floor = 10;
   belowStatedFloor.cohort_size = 7;
   assert.equal(EvidenceAdmissionSchema.safeParse(belowStatedFloor).success, false);
+});
+
+test("declared floor below the series read-path floor of 10 rejects", () => {
+  // Floor 5 with cohort 7 satisfies the k>=5 schema floor and the declared
+  // floor, but the governing read-path decision contract hard-codes
+  // minimum_cohort_size: 10 — series-sourced admission may not undercut it.
+  const undercutFloor = clone(validAdmitted);
+  undercutFloor.minimum_cohort_floor = 5;
+  undercutFloor.cohort_size = 7;
+  const result = EvidenceAdmissionSchema.safeParse(undercutFloor);
+  assert.equal(result.success, false);
+});
+
+test("declared floor 10 with cohort 9 rejects (stated-floor cross-validation still enforced)", () => {
+  const belowDeclared = clone(validAdmitted);
+  belowDeclared.minimum_cohort_floor = 10;
+  belowDeclared.cohort_size = 9;
+  assert.equal(EvidenceAdmissionSchema.safeParse(belowDeclared).success, false);
+});
+
+test("cohort 10 at declared floor 10 is admitted", () => {
+  const atFloor = clone(validAdmitted);
+  atFloor.minimum_cohort_floor = 10;
+  atFloor.cohort_size = 10;
+  const parsed = EvidenceAdmissionSchema.parse(atFloor);
+  assert.equal(parsed.admission_state, "admitted");
+});
+
+test("source_snapshot_hash carrying a payload-bearing string rejects", () => {
+  const emailLike = clone(validAdmitted);
+  emailLike.source_ref.source_snapshot_hash = "person@example.com";
+  assert.equal(EvidenceAdmissionSchema.safeParse(emailLike).success, false);
+});
+
+test("malformed source_snapshot_hash rejects (non-hex and wrong length)", () => {
+  const nonHex = clone(validAdmitted);
+  nonHex.source_ref.source_snapshot_hash = "Z".repeat(64);
+  assert.equal(EvidenceAdmissionSchema.safeParse(nonHex).success, false);
+
+  const wrongLength = clone(validAdmitted);
+  wrongLength.source_ref.source_snapshot_hash = "a3f1c9e2b8d4";
+  assert.equal(EvidenceAdmissionSchema.safeParse(wrongLength).success, false);
 });
 
 test("unknown milestone token rejects", () => {

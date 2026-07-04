@@ -43,8 +43,16 @@ export const CONFIDENCE_OBSERVATION_MILESTONE_DAYS = [
 ] as const;
 
 // Aggregate-only cohort floor (SCOPE_GUARDRAILS aggregation-first posture;
-// matches the repo-wide minimum_cohort_threshold >= 5 convention).
+// matches the repo-wide minimum_cohort_threshold >= 5 convention). This is
+// the general aggregate convention used elsewhere; series-sourced admission
+// (EvidenceAdmittedSchema, whose source_ref carries a series_ref) is
+// additionally bound to the read-path floor of 10 below.
 export const CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR = 5;
+
+// Matches `minimum_cohort_size` in the confidence-engine series read-path
+// decision contract (scripts/run_ai_value_confidence_engine_series_read_path_decision.mjs);
+// series-sourced admission may never declare a lower floor.
+export const CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR = 10;
 
 // Held runtime the contract binds against (proposal: no behavior change).
 export const CONFIDENCE_MODEL_RUNTIME_HOLD_STATE =
@@ -193,12 +201,17 @@ export const EvidenceRejectionReasonCodeSchema = z.enum(
   EVIDENCE_REJECTION_REASON_CODES
 );
 
+// SHA-256 hex digest shape shared by every hash-valued field in this module
+// (source snapshot binding below, posterior artifact binding in section 5).
+// Hash fields must never accept arbitrary payload-bearing strings.
+const Sha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/);
+
 // Compact, org-scoped source reference only — never person-level identifiers.
 export const CompactObservationSourceRefSchema = z
   .object({
     series_ref: z.string().min(1),
     org_scope: z.string().min(1),
-    source_snapshot_hash: z.string().min(1)
+    source_snapshot_hash: Sha256HexSchema
   })
   .strict();
 
@@ -235,6 +248,20 @@ export const EvidenceAdmittedSchema = z
   })
   .strict()
   .superRefine((value, ctx) => {
+    // Admitted observations are series-sourced (source_ref carries a
+    // series_ref), so the governing series read-path decision contract's
+    // minimum_cohort_size of 10 binds: a declared floor below 10 would
+    // admit cohorts the read-path gate disallows.
+    if (value.minimum_cohort_floor < CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["minimum_cohort_floor"],
+        message:
+          "series-sourced admission must declare minimum_cohort_floor >= " +
+          `${CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR} (the series read-path ` +
+          "decision contract's minimum_cohort_size)"
+      });
+    }
     if (value.cohort_size < value.minimum_cohort_floor) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -398,10 +425,6 @@ export const EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON = 0.01;
 // runtime-tunable; revising this value requires a contract change (the
 // slice-1 methodology contract's expert review may adjust it).
 export const MINIMUM_WORTHWHILE_EFFECT_THRESHOLD = 0.2;
-
-// SHA-256 hex digest shape used to hash-bind these representations to the
-// posterior artifact they derive from.
-const Sha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/);
 
 // Internal diagnostic representation of P(effect > minimum worthwhile
 // threshold). Derives from the credible-interval-only posterior
