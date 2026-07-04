@@ -3,9 +3,10 @@
 // Added under OpenSpec change add-confidence-engine-workspace (task 4.2).
 // This module gives the methodology workstream (workstream C) and the UI
 // narrative a stable, governed shape to build against. It deliberately
-// contains NO execution behavior: no inference, no fetching, no hashing,
-// no persistence, no numeric posterior computation. The only behavior is
-// Zod parse/validation of the schemas themselves.
+// contains NO execution behavior: no inference, no fetching, no persistence,
+// no numeric posterior computation. The only behavior is Zod parse/validation
+// of the schemas themselves, including validation-time hash recomputation for
+// tamper-evident proof-artifact boundaries.
 //
 // Evidence-admission vocabulary is aligned to the confidence-engine series
 // read-path decision contract at
@@ -19,6 +20,7 @@
 // finance/customer output.
 
 import { z } from "zod";
+import { inferenceProofArtifactSelfHash } from "./inferenceProofArtifactHash";
 
 // ---------------------------------------------------------------------------
 // Schema version + aligned contract constants
@@ -33,14 +35,11 @@ export const CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION_REF =
   "FT_AI_VALUE_CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_2026_07";
 export const CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION_REF =
   "FT_AI_VALUE_CONFIDENCE_OBSERVATION_REQUIREMENT_2026_07";
-export const INTERNAL_CONFIDENCE_CONSUMER_TOKEN =
-  "internal_confidence_engine_only";
+export const INTERNAL_CONFIDENCE_CONSUMER_TOKEN = "internal_confidence_engine_only";
 
 // Milestone days authorized by the read-path decision contract
 // (Day 0 / 30 / 60 / 90 / 180 / 365).
-export const CONFIDENCE_OBSERVATION_MILESTONE_DAYS = [
-  0, 30, 60, 90, 180, 365
-] as const;
+export const CONFIDENCE_OBSERVATION_MILESTONE_DAYS = [0, 30, 60, 90, 180, 365] as const;
 
 // Aggregate-only cohort floor (SCOPE_GUARDRAILS aggregation-first posture;
 // matches the repo-wide minimum_cohort_threshold >= 5 convention). This is
@@ -137,9 +136,7 @@ export const BlueprintDerivedPriorProvenanceSchema = z
     ]),
     // The current standard-normal prior is a placeholder and must say so.
     is_weakly_regularizing_placeholder: z.boolean(),
-    placeholder_state: z
-      .literal(WEAKLY_REGULARIZING_PLACEHOLDER_STATE)
-      .nullable(),
+    placeholder_state: z.literal(WEAKLY_REGULARIZING_PLACEHOLDER_STATE).nullable(),
     provenance_version: z.string().min(1),
     // Provenance only: numeric prior parameters are never carried here,
     // so nothing in this record can be read as model output.
@@ -152,8 +149,7 @@ export const BlueprintDerivedPriorProvenanceSchema = z
         code: z.ZodIssueCode.custom,
         path: ["placeholder_state"],
         message:
-          "placeholder priors must be explicitly labeled " +
-          WEAKLY_REGULARIZING_PLACEHOLDER_STATE
+          "placeholder priors must be explicitly labeled " + WEAKLY_REGULARIZING_PLACEHOLDER_STATE
       });
     }
     if (!value.is_weakly_regularizing_placeholder && value.placeholder_state !== null) {
@@ -170,16 +166,13 @@ export const BlueprintDerivedPriorProvenanceSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["elicitation_basis"],
-        message:
-          "non-placeholder priors must be elicited from a Blueprint hypothesis statement"
+        message: "non-placeholder priors must be elicited from a Blueprint hypothesis statement"
       });
     }
   });
 
 export type BlueprintHypothesisRef = z.infer<typeof BlueprintHypothesisRefSchema>;
-export type BlueprintDerivedPriorProvenance = z.infer<
-  typeof BlueprintDerivedPriorProvenanceSchema
->;
+export type BlueprintDerivedPriorProvenance = z.infer<typeof BlueprintDerivedPriorProvenanceSchema>;
 
 // ---------------------------------------------------------------------------
 // 2. EvidenceAdmission — reason-coded, aggregate-only, fail-closed
@@ -194,12 +187,8 @@ export const MilestoneDaySchema = z.union([
   z.literal(365)
 ]);
 
-export const EvidenceAdmissionReasonCodeSchema = z.enum(
-  EVIDENCE_ADMISSION_REASON_CODES
-);
-export const EvidenceRejectionReasonCodeSchema = z.enum(
-  EVIDENCE_REJECTION_REASON_CODES
-);
+export const EvidenceAdmissionReasonCodeSchema = z.enum(EVIDENCE_ADMISSION_REASON_CODES);
+export const EvidenceRejectionReasonCodeSchema = z.enum(EVIDENCE_REJECTION_REASON_CODES);
 
 // SHA-256 hex digest shape shared by every hash-valued field in this module
 // (source snapshot binding below, posterior artifact binding in section 5).
@@ -237,14 +226,9 @@ export const EvidenceAdmittedSchema = z
     compact_refs_only: z.literal(true),
     org_scoped: z.literal(true),
     aggregate_only: z.literal(true),
-    minimum_cohort_floor: z
-      .number()
-      .int()
-      .gte(CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR),
+    minimum_cohort_floor: z.number().int().gte(CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR),
     cohort_size: z.number().int().gte(CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR),
-    admission_reason_codes: z
-      .array(EvidenceAdmissionReasonCodeSchema)
-      .nonempty()
+    admission_reason_codes: z.array(EvidenceAdmissionReasonCodeSchema).nonempty()
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -280,27 +264,16 @@ export const EvidenceRejectedSchema = z
     // The day the rejected observation claimed; not constrained to the
     // contract milestones because being off-milestone is itself a rejection.
     observed_milestone_day: z.number().int().nonnegative().nullable(),
-    rejection_reason_codes: z
-      .array(EvidenceRejectionReasonCodeSchema)
-      .nonempty()
+    rejection_reason_codes: z.array(EvidenceRejectionReasonCodeSchema).nonempty()
   })
   .strict();
 
-export const EvidenceAdmissionSchema = z.union([
-  EvidenceAdmittedSchema,
-  EvidenceRejectedSchema
-]);
+export const EvidenceAdmissionSchema = z.union([EvidenceAdmittedSchema, EvidenceRejectedSchema]);
 
 export type MilestoneDay = z.infer<typeof MilestoneDaySchema>;
-export type EvidenceAdmissionReasonCode = z.infer<
-  typeof EvidenceAdmissionReasonCodeSchema
->;
-export type EvidenceRejectionReasonCode = z.infer<
-  typeof EvidenceRejectionReasonCodeSchema
->;
-export type CompactObservationSourceRef = z.infer<
-  typeof CompactObservationSourceRefSchema
->;
+export type EvidenceAdmissionReasonCode = z.infer<typeof EvidenceAdmissionReasonCodeSchema>;
+export type EvidenceRejectionReasonCode = z.infer<typeof EvidenceRejectionReasonCodeSchema>;
+export type CompactObservationSourceRef = z.infer<typeof CompactObservationSourceRefSchema>;
 export type EvidenceAdmitted = z.infer<typeof EvidenceAdmittedSchema>;
 export type EvidenceRejected = z.infer<typeof EvidenceRejectedSchema>;
 export type EvidenceAdmission = z.infer<typeof EvidenceAdmissionSchema>;
@@ -344,17 +317,13 @@ export const PosteriorWithCredibleIntervalsSchema = z
   .strict();
 
 export type CredibleIntervalLevel = z.infer<typeof CredibleIntervalLevelSchema>;
-export type PosteriorWithCredibleIntervals = z.infer<
-  typeof PosteriorWithCredibleIntervalsSchema
->;
+export type PosteriorWithCredibleIntervals = z.infer<typeof PosteriorWithCredibleIntervalsSchema>;
 
 // ---------------------------------------------------------------------------
 // 4. ConfidenceModelContract — aggregate contract with governance pins
 // ---------------------------------------------------------------------------
 
-export const ConfidenceModelBlockedUseSchema = z.enum(
-  CONFIDENCE_MODEL_BLOCKED_USES
-);
+export const ConfidenceModelBlockedUseSchema = z.enum(CONFIDENCE_MODEL_BLOCKED_USES);
 
 export const ConfidenceModelContractSchema = z
   .object({
@@ -368,30 +337,22 @@ export const ConfidenceModelContractSchema = z
     prior_provenance: BlueprintDerivedPriorProvenanceSchema,
     evidence_admissions: z.array(EvidenceAdmissionSchema),
     posterior_representation: PosteriorWithCredibleIntervalsSchema,
-    blocked_uses: z
-      .array(ConfidenceModelBlockedUseSchema)
-      .superRefine((uses, ctx) => {
-        const expected = CONFIDENCE_MODEL_BLOCKED_USES;
-        const matches =
-          uses.length === expected.length &&
-          uses.every((use, index) => use === expected[index]);
-        if (!matches) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              "blocked_uses must pin the full CONFIDENCE_MODEL_BLOCKED_USES list in order"
-          });
-        }
-      })
+    blocked_uses: z.array(ConfidenceModelBlockedUseSchema).superRefine((uses, ctx) => {
+      const expected = CONFIDENCE_MODEL_BLOCKED_USES;
+      const matches =
+        uses.length === expected.length && uses.every((use, index) => use === expected[index]);
+      if (!matches) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "blocked_uses must pin the full CONFIDENCE_MODEL_BLOCKED_USES list in order"
+        });
+      }
+    })
   })
   .strict();
 
-export type ConfidenceModelBlockedUse = z.infer<
-  typeof ConfidenceModelBlockedUseSchema
->;
-export type ConfidenceModelContract = z.infer<
-  typeof ConfidenceModelContractSchema
->;
+export type ConfidenceModelBlockedUse = z.infer<typeof ConfidenceModelBlockedUseSchema>;
+export type ConfidenceModelContract = z.infer<typeof ConfidenceModelContractSchema>;
 
 // ---------------------------------------------------------------------------
 // 5. Internal-only probability representations — ADDITIVE (types + Zod only)
@@ -441,17 +402,32 @@ export const INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX = 0.05;
 export const INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX = 0.1;
 export const INFERENCE_PROOF_FLOAT_TOLERANCE = 1e-12;
 
+const FULL_MILESTONE_CADENCE = [...CONFIDENCE_OBSERVATION_MILESTONE_DAYS];
+
+function sortedUniqueStrings(values: readonly string[]): string[] {
+  return [...new Set(values)].sort();
+}
+
+function sameStringSet(left: readonly string[], right: readonly string[]): boolean {
+  const leftSorted = sortedUniqueStrings(left);
+  const rightSorted = sortedUniqueStrings(right);
+  return (
+    leftSorted.length === rightSorted.length &&
+    leftSorted.every((value, index) => value === rightSorted[index])
+  );
+}
+
+function sameNumberSequence(left: readonly number[], right: readonly number[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
 // Internal diagnostic representation of P(effect > minimum worthwhile
 // threshold). Derives from the credible-interval-only posterior
 // representation above and never authorizes customer-facing output.
 export const ThresholdProbabilityRepresentationSchema = z
   .object({
-    schema_version: z.literal(
-      THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION
-    ),
-    representation_class: z.literal(
-      "internal_diagnostic_representation_only"
-    ),
+    schema_version: z.literal(THRESHOLD_PROBABILITY_REPRESENTATION_SCHEMA_VERSION),
+    representation_class: z.literal("internal_diagnostic_representation_only"),
     internal_only: z.literal(true),
     customer_output_authorized: z.literal(false),
     // Same output-authorization pins as PosteriorWithCredibleIntervalsSchema:
@@ -466,9 +442,7 @@ export const ThresholdProbabilityRepresentationSchema = z
     parameter_name: z.string().min(1),
     // Pinned compiled threshold with explicit units — the threshold value
     // travels with the artifact so P(effect > threshold) stays auditable.
-    minimum_worthwhile_threshold: z.literal(
-      MINIMUM_WORTHWHILE_EFFECT_THRESHOLD
-    ),
+    minimum_worthwhile_threshold: z.literal(MINIMUM_WORTHWHILE_EFFECT_THRESHOLD),
     threshold_units: z.literal("standardized_effect_sd"),
     // P(effect > minimum worthwhile threshold), bounded [0, 1].
     threshold_probability: z.number().gte(0).lte(1),
@@ -486,10 +460,7 @@ export const ThresholdProbabilityRepresentationSchema = z
   })
   .strict()
   .superRefine((representation, ctx) => {
-    if (
-      representation.source_posterior_parameter_name !==
-      representation.parameter_name
-    ) {
+    if (representation.source_posterior_parameter_name !== representation.parameter_name) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
@@ -504,9 +475,7 @@ export const ThresholdProbabilityRepresentationSchema = z
 export const ExpectedLossRepresentationSchema = z
   .object({
     schema_version: z.literal(EXPECTED_LOSS_REPRESENTATION_SCHEMA_VERSION),
-    representation_class: z.literal(
-      "internal_diagnostic_representation_only"
-    ),
+    representation_class: z.literal("internal_diagnostic_representation_only"),
     internal_only: z.literal(true),
     customer_output_authorized: z.literal(false),
     // Same output-authorization pins as PosteriorWithCredibleIntervalsSchema:
@@ -520,12 +489,8 @@ export const ExpectedLossRepresentationSchema = z
     loss_function_declared: z.literal(true),
     expected_loss: z.number().gte(0),
     // Pinned compiled act/hold boundary — never runtime-tunable.
-    decision_threshold_epsilon: z.literal(
-      EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON
-    ),
-    decision_rule: z.literal(
-      "act_when_expected_loss_below_epsilon_internal_only"
-    ),
+    decision_threshold_epsilon: z.literal(EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON),
+    decision_rule: z.literal("act_when_expected_loss_below_epsilon_internal_only"),
     // Hash binding to the same source posterior artifact (expected loss
     // derives from the same posterior and has the same forgery surface).
     source_posterior_parameter_name: z.string().min(1),
@@ -533,10 +498,7 @@ export const ExpectedLossRepresentationSchema = z
   })
   .strict()
   .superRefine((representation, ctx) => {
-    if (
-      representation.source_posterior_parameter_name !==
-      representation.parameter_name
-    ) {
+    if (representation.source_posterior_parameter_name !== representation.parameter_name) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
@@ -549,9 +511,7 @@ export const ExpectedLossRepresentationSchema = z
 export type ThresholdProbabilityRepresentation = z.infer<
   typeof ThresholdProbabilityRepresentationSchema
 >;
-export type ExpectedLossRepresentation = z.infer<
-  typeof ExpectedLossRepresentationSchema
->;
+export type ExpectedLossRepresentation = z.infer<typeof ExpectedLossRepresentationSchema>;
 
 // ---------------------------------------------------------------------------
 // 6. InferenceProofArtifact — internal synthetic proof boundary
@@ -568,21 +528,16 @@ const OrderedConfidenceModelBlockedUsesSchema = z
   .superRefine((uses, ctx) => {
     const expected = CONFIDENCE_MODEL_BLOCKED_USES;
     const matches =
-      uses.length === expected.length &&
-      uses.every((use, index) => use === expected[index]);
+      uses.length === expected.length && uses.every((use, index) => use === expected[index]);
     if (!matches) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "blocked_uses must pin the full CONFIDENCE_MODEL_BLOCKED_USES list in order"
+        message: "blocked_uses must pin the full CONFIDENCE_MODEL_BLOCKED_USES list in order"
       });
     }
   });
 
-export const InferenceProofGovernanceStateSchema = z.enum([
-  "eligible_internal_only",
-  "HOLD"
-]);
+export const InferenceProofGovernanceStateSchema = z.enum(["eligible_internal_only", "HOLD"]);
 
 export const InferenceProofFailingDiagnosticSchema = z.enum([
   "r_hat",
@@ -662,14 +617,9 @@ export const InferenceProofSyntheticGeneratorSchema = z
 
 export const InferenceProofModelSpecBindingSchema = z
   .object({
-    model_family: z.literal(
-      "bayesian_hierarchical_difference_in_differences_candidate"
-    ),
+    model_family: z.literal("bayesian_hierarchical_difference_in_differences_candidate"),
     estimand_name: z.literal("aggregate_selected_metric_movement"),
-    estimand_units: z.enum([
-      "standardized_effect_sd",
-      "raw_metric_units_internal_only"
-    ]),
+    estimand_units: z.enum(["standardized_effect_sd", "raw_metric_units_internal_only"]),
     likelihood_family: InferenceProofLikelihoodFamilySchema,
     link_function: z.enum(["identity", "logit", "log"]),
     aggregate_cell_variance_mode: z.enum([
@@ -678,12 +628,7 @@ export const InferenceProofModelSpecBindingSchema = z
     ]),
     cohort_size_enters_likelihood: z.literal(true),
     missing_or_suppressed_windows_hold: z.literal(true),
-    treatment_effect_pooling: z.enum([
-      "global",
-      "workflow",
-      "function",
-      "cohort"
-    ]),
+    treatment_effect_pooling: z.enum(["global", "workflow", "function", "cohort"]),
     pooling_structure: z
       .object({
         expectation_path: z.literal(true),
@@ -694,7 +639,145 @@ export const InferenceProofModelSpecBindingSchema = z
       })
       .strict()
   })
-  .strict();
+  .strict()
+  .superRefine((binding, ctx) => {
+    const expectedLink =
+      binding.likelihood_family === "normal_continuous_aggregate"
+        ? "identity"
+        : binding.likelihood_family === "binomial_rate_aggregate" ||
+            binding.likelihood_family === "beta_binomial_rate_aggregate"
+          ? "logit"
+          : "log";
+    if (binding.link_function !== expectedLink) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["link_function"],
+        message: `${binding.likelihood_family} requires ${expectedLink} link_function`
+      });
+    }
+  });
+
+const InferenceProofWindowRefSchema = z.string().min(1);
+
+export const InferenceProofMeasurementCellWindowEvidenceSchema = z
+  .object({
+    measurement_cell_window_evidence_hash: Sha256HexSchema,
+    required_milestone_days: z.array(MilestoneDaySchema).nonempty(),
+    observed_milestone_days: z.array(MilestoneDaySchema),
+    missing_milestone_days: z.array(MilestoneDaySchema),
+    suppressed_milestone_days: z.array(MilestoneDaySchema),
+    stale_milestone_days: z.array(MilestoneDaySchema),
+    imputed_milestone_days: z.array(MilestoneDaySchema),
+    required_window_refs: z.array(InferenceProofWindowRefSchema).nonempty(),
+    observed_window_refs: z.array(InferenceProofWindowRefSchema),
+    missing_window_refs: z.array(InferenceProofWindowRefSchema),
+    suppressed_window_refs: z.array(InferenceProofWindowRefSchema),
+    stale_window_refs: z.array(InferenceProofWindowRefSchema),
+    imputed_window_refs: z.array(InferenceProofWindowRefSchema),
+    all_required_windows_observed: z.boolean(),
+    all_windows_unsuppressed_and_fresh: z.boolean(),
+    imputation_used: z.boolean()
+  })
+  .strict()
+  .superRefine((evidence, ctx) => {
+    for (const field of [
+      "required_window_refs",
+      "observed_window_refs",
+      "missing_window_refs",
+      "suppressed_window_refs",
+      "stale_window_refs",
+      "imputed_window_refs"
+    ] as const) {
+      const values = evidence[field];
+      if (new Set(values).size !== values.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: `${field} must not contain duplicate window refs`
+        });
+      }
+    }
+    for (const field of [
+      "required_milestone_days",
+      "observed_milestone_days",
+      "missing_milestone_days",
+      "suppressed_milestone_days",
+      "stale_milestone_days",
+      "imputed_milestone_days"
+    ] as const) {
+      const values = evidence[field];
+      if (new Set(values).size !== values.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: `${field} must not contain duplicate milestone days`
+        });
+      }
+    }
+
+    const derivedMissingRefs = evidence.required_window_refs.filter(
+      (windowRef) => !evidence.observed_window_refs.includes(windowRef)
+    );
+    if (!sameStringSet(evidence.missing_window_refs, derivedMissingRefs)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["missing_window_refs"],
+        message:
+          "missing_window_refs must be derived from required_window_refs minus observed_window_refs"
+      });
+    }
+    const derivedMissingMilestoneDays = evidence.required_milestone_days.filter(
+      (milestoneDay) => !evidence.observed_milestone_days.includes(milestoneDay)
+    );
+    if (
+      !sameNumberSequence(
+        [...evidence.missing_milestone_days].sort((left, right) => left - right),
+        [...derivedMissingMilestoneDays].sort((left, right) => left - right)
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["missing_milestone_days"],
+        message:
+          "missing_milestone_days must be derived from required_milestone_days minus observed_milestone_days"
+      });
+    }
+
+    const allObserved = derivedMissingRefs.length === 0 && derivedMissingMilestoneDays.length === 0;
+    if (evidence.all_required_windows_observed !== allObserved) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["all_required_windows_observed"],
+        message:
+          "all_required_windows_observed must be derived from required and observed window refs"
+      });
+    }
+
+    const allFresh =
+      evidence.suppressed_window_refs.length === 0 &&
+      evidence.stale_window_refs.length === 0 &&
+      evidence.suppressed_milestone_days.length === 0 &&
+      evidence.stale_milestone_days.length === 0;
+    if (evidence.all_windows_unsuppressed_and_fresh !== allFresh) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["all_windows_unsuppressed_and_fresh"],
+        message:
+          "all_windows_unsuppressed_and_fresh must be derived from suppressed and stale window refs"
+      });
+    }
+
+    if (
+      evidence.imputation_used !==
+      (evidence.imputed_window_refs.length > 0 || evidence.imputed_milestone_days.length > 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["imputation_used"],
+        message: "imputation_used must be derived from imputed_window_refs"
+      });
+    }
+  });
 
 const InferenceProofCredibleInterval80Schema = z
   .object({
@@ -761,6 +844,9 @@ export const InferenceProofPpcStatisticSchema = z
 
 export const InferenceProofPriorSensitivitySchema = z
   .object({
+    empirical_prior_justification_documented: z.boolean(),
+    empirical_prior_justification_ref: z.string().min(1).nullable(),
+    empirical_prior_justification_hash: Sha256HexSchema.nullable(),
     posterior_mean_shift_in_posterior_sd: NonNegativeFiniteNumberSchema,
     pass: z.boolean()
   })
@@ -779,12 +865,17 @@ export const InferenceProofDiagnosticsSchema = z
     sampler: InferenceProofSamplerDiagnosticsSchema,
     posterior_predictive_checks: z
       .array(InferenceProofPpcStatisticSchema)
-      .nonempty(),
-    prior_sensitivity: InferenceProofPriorSensitivitySchema,
+      .nonempty()
+      .nullable()
+      .optional(),
+    prior_sensitivity: InferenceProofPriorSensitivitySchema.nullable().optional(),
     pre_trend: InferenceProofPreTrendCheckSchema
   })
   .strict()
   .superRefine((diagnostics, ctx) => {
+    if (!Array.isArray(diagnostics.posterior_predictive_checks)) {
+      return;
+    }
     const expected = [
       "pre_post_mean_movement",
       "between_cohort_variance",
@@ -816,22 +907,31 @@ export const InferenceProofDiagnosticsSchema = z
 export const InferenceProofCalibrationScenarioSchema = z
   .object({
     scenario_id: z.string().min(1),
-    injected_effect_size_sd: z.union([
-      z.literal(0),
-      z.literal(0.2),
-      z.literal(0.5)
-    ]),
+    injected_effect_size_sd: z.union([z.literal(0), z.literal(0.2), z.literal(0.5)]),
     cohort_size: z.union([z.literal(12), z.literal(16)]),
-    replication_count: z
-      .number()
-      .int()
-      .gte(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN),
+    replication_count: z.number().int().gte(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN),
     credible_interval_level: z.literal(0.8),
     coverage_rate: z.number().finite().gte(0).lte(1),
     coverage_standard_error: NonNegativeFiniteNumberSchema,
     pass: z.boolean()
   })
-  .strict();
+  .strict()
+  .superRefine((scenario, ctx) => {
+    const expectedStandardError = Math.sqrt(
+      (scenario.coverage_rate * (1 - scenario.coverage_rate)) / scenario.replication_count
+    );
+    if (
+      Math.abs(scenario.coverage_standard_error - expectedStandardError) >
+      INFERENCE_PROOF_FLOAT_TOLERANCE
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["coverage_standard_error"],
+        message:
+          "coverage_standard_error must equal sqrt(coverage_rate * (1 - coverage_rate) / replication_count)"
+      });
+    }
+  });
 
 export const InferenceProofCalibrationSchema = z
   .object({
@@ -840,14 +940,7 @@ export const InferenceProofCalibrationSchema = z
   })
   .strict()
   .superRefine((calibration, ctx) => {
-    const required = [
-      "0:12",
-      "0:16",
-      "0.2:12",
-      "0.2:16",
-      "0.5:12",
-      "0.5:16"
-    ];
+    const required = ["0:12", "0:16", "0.2:12", "0.2:16", "0.5:12", "0.5:16"];
     const observed = calibration.scenarios.map(
       (scenario) => `${scenario.injected_effect_size_sd}:${scenario.cohort_size}`
     );
@@ -856,8 +949,7 @@ export const InferenceProofCalibrationSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["scenarios"],
-          message:
-            "calibration scenarios must include every effect-size/cohort-size cell"
+          message: "calibration scenarios must include every effect-size/cohort-size cell"
         });
       }
     }
@@ -872,10 +964,7 @@ export const InferenceProofCalibrationSchema = z
 
 export const InferenceProofNullChecksSchema = z
   .object({
-    null_effect_scenario_count: z
-      .number()
-      .int()
-      .gte(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN),
+    null_effect_scenario_count: z.number().int().gte(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN),
     false_eligibility_rate: z.number().finite().gte(0).lte(1),
     pass: z.boolean()
   })
@@ -926,21 +1015,18 @@ export const InferenceProofFloorChecksSchema = z
 
 export const InferenceProofPeekingControlSchema = z
   .object({
-    procedure: z.enum([
-      "fixed_horizon_one_look_only",
-      "always_valid_sequential_procedure_proven"
-    ]),
+    procedure: z.enum(["fixed_horizon_one_look_only", "always_valid_sequential_procedure_proven"]),
     repeated_evaluation: z.boolean(),
     look_index: z.number().int().positive(),
     total_planned_looks: z.number().int().positive(),
     milestone_days_included: z.array(MilestoneDaySchema).nonempty(),
     metrics_included: z.array(z.string().min(1)).nonempty(),
     cohorts_included: z.array(z.string().min(1)).nonempty(),
+    metric_family_bound: z.boolean(),
+    cohort_family_bound: z.boolean(),
     sequential_method_name: z.string().min(1).nullable(),
     synthetic_null_proof_hash: Sha256HexSchema.nullable(),
-    false_eligibility_bound: z.literal(
-      INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
-    ),
+    false_eligibility_bound: z.literal(INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX),
     pass: z.boolean()
   })
   .strict()
@@ -981,10 +1067,7 @@ export const InferenceProofPeekingControlSchema = z
           message: "fixed-horizon proof artifacts must include exactly one cohort"
         });
       }
-      if (
-        control.sequential_method_name !== null ||
-        control.synthetic_null_proof_hash !== null
-      ) {
+      if (control.sequential_method_name !== null || control.synthetic_null_proof_hash !== null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["sequential_method_name"],
@@ -1000,15 +1083,11 @@ export const InferenceProofPeekingControlSchema = z
           message: "always-valid proof must declare repeated evaluation"
         });
       }
-      if (
-        control.sequential_method_name === null ||
-        control.synthetic_null_proof_hash === null
-      ) {
+      if (control.sequential_method_name === null || control.synthetic_null_proof_hash === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["synthetic_null_proof_hash"],
-          message:
-            "always-valid proof requires a named method and synthetic null proof hash"
+          message: "always-valid proof requires a named method and synthetic null proof hash"
         });
       }
     }
@@ -1056,8 +1135,7 @@ export const InferenceProofComparisonAdequacySchema = z
     }
 
     const computedAllChecksPass =
-      adequacy.comparison_cohort_present &&
-      adequacy.required_checks.every((check) => check.pass);
+      adequacy.comparison_cohort_present && adequacy.required_checks.every((check) => check.pass);
     if (adequacy.all_required_checks_pass !== computedAllChecksPass) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -1094,6 +1172,7 @@ export const InferenceProofArtifactSchema = z
     lockfile_hash: Sha256HexSchema,
     synthetic_generator: InferenceProofSyntheticGeneratorSchema,
     model_spec_binding: InferenceProofModelSpecBindingSchema,
+    measurement_cell_window_evidence: InferenceProofMeasurementCellWindowEvidenceSchema,
     diagnostics: InferenceProofDiagnosticsSchema,
     calibration: InferenceProofCalibrationSchema,
     null_checks: InferenceProofNullChecksSchema,
@@ -1132,11 +1211,17 @@ export const InferenceProofArtifactSchema = z
       });
     }
 
+    const expectedArtifactSelfHash = inferenceProofArtifactSelfHash(artifact);
+    if (artifact.hash_bindings.artifact_self_hash !== expectedArtifactSelfHash) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hash_bindings", "artifact_self_hash"],
+        message: "artifact_self_hash must match the artifact body"
+      });
+    }
+
     const failing = new Set(artifact.governance_state.failing_diagnostics);
-    if (
-      artifact.governance_state.state === "eligible_internal_only" &&
-      failing.size > 0
-    ) {
+    if (artifact.governance_state.state === "eligible_internal_only" && failing.size > 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["governance_state", "failing_diagnostics"],
@@ -1172,11 +1257,10 @@ export const InferenceProofArtifactSchema = z
     };
 
     const comparisonEstimateAuthorized =
-      artifact.governance_state
-        .comparison_supported_contribution_estimate_authorized;
+      artifact.governance_state.comparison_supported_contribution_estimate_authorized;
     const evidenceTierOnly = artifact.governance_state.evidence_tier_only;
 
-    if (comparisonEstimateAuthorized === evidenceTierOnly) {
+    if (comparisonEstimateAuthorized && evidenceTierOnly) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["governance_state", "evidence_tier_only"],
@@ -1184,17 +1268,37 @@ export const InferenceProofArtifactSchema = z
           "comparison-supported estimate authorization and evidence-tier-only status are mutually exclusive"
       });
     }
+    if (artifact.governance_state.state === "HOLD" && comparisonEstimateAuthorized) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "comparison_supported_contribution_estimate_authorized"],
+        message: "HOLD artifacts must not authorize comparison-supported estimates"
+      });
+    }
     if (
-      artifact.governance_state.state === "HOLD" &&
-      comparisonEstimateAuthorized
+      artifact.governance_state.state === "eligible_internal_only" &&
+      !comparisonEstimateAuthorized &&
+      !evidenceTierOnly
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: [
-          "governance_state",
-          "comparison_supported_contribution_estimate_authorized"
-        ],
-        message: "HOLD artifacts must not authorize comparison-supported estimates"
+        path: ["governance_state", "comparison_supported_contribution_estimate_authorized"],
+        message:
+          "eligible artifacts must either authorize a comparison-supported estimate or be evidence-tier-only"
+      });
+    }
+    if (evidenceTierOnly && artifact.comparison_adequacy.all_required_checks_pass) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "evidence_tier_only"],
+        message: "evidence-tier-only status is reserved for absent or inadequate comparison support"
+      });
+    }
+    if (!artifact.comparison_adequacy.all_required_checks_pass && !evidenceTierOnly) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["governance_state", "evidence_tier_only"],
+        message: "comparison-inadequate artifacts must carry evidence-tier-only status"
       });
     }
     if (!artifact.comparison_adequacy.all_required_checks_pass) {
@@ -1205,14 +1309,50 @@ export const InferenceProofArtifactSchema = z
       );
     }
 
-    if (
-      artifact.model_spec_binding.likelihood_family !==
-      "normal_continuous_aggregate"
-    ) {
+    if (artifact.model_spec_binding.likelihood_family !== "normal_continuous_aggregate") {
       failOrIssue(
         "unsupported_likelihood_family",
         ["model_spec_binding", "likelihood_family"],
         "non-normal likelihood families must HOLD until their sampler, diagnostics, and synthetic recovery suite are implemented"
+      );
+    }
+    if (
+      artifact.model_spec_binding.likelihood_family === "normal_continuous_aggregate" &&
+      artifact.model_spec_binding.link_function !== "identity"
+    ) {
+      failOrIssue(
+        "unsupported_likelihood_family",
+        ["model_spec_binding", "link_function"],
+        "normal_continuous_aggregate must use the identity link"
+      );
+    }
+
+    const windowEvidence = artifact.measurement_cell_window_evidence;
+    if (
+      !sameNumberSequence(
+        [...windowEvidence.required_milestone_days].sort((left, right) => left - right),
+        [...artifact.peeking_control.milestone_days_included].sort((left, right) => left - right)
+      )
+    ) {
+      failOrIssue(
+        "missing_or_suppressed_windows",
+        ["measurement_cell_window_evidence", "required_milestone_days"],
+        "window evidence must bind to the peeking-control milestone family"
+      );
+    }
+    if (
+      !windowEvidence.all_required_windows_observed ||
+      !windowEvidence.all_windows_unsuppressed_and_fresh ||
+      windowEvidence.imputation_used ||
+      windowEvidence.missing_window_refs.length > 0 ||
+      windowEvidence.suppressed_window_refs.length > 0 ||
+      windowEvidence.stale_window_refs.length > 0 ||
+      windowEvidence.imputed_window_refs.length > 0
+    ) {
+      failOrIssue(
+        "missing_or_suppressed_windows",
+        ["measurement_cell_window_evidence"],
+        "eligible artifacts require all Measurement Cell windows observed, unsuppressed, fresh, and unimputed"
       );
     }
 
@@ -1229,19 +1369,12 @@ export const InferenceProofArtifactSchema = z
           : maxObservedMcse / parameter.posterior_sd;
       if (
         !Number.isFinite(computedMcseRatio) ||
-        Math.abs(
-          parameter.max_mcse_to_posterior_sd_ratio - computedMcseRatio
-        ) > INFERENCE_PROOF_FLOAT_TOLERANCE
+        Math.abs(parameter.max_mcse_to_posterior_sd_ratio - computedMcseRatio) >
+          INFERENCE_PROOF_FLOAT_TOLERANCE
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: [
-            "diagnostics",
-            "sampler",
-            "parameters",
-            index,
-            "max_mcse_to_posterior_sd_ratio"
-          ],
+          path: ["diagnostics", "sampler", "parameters", index, "max_mcse_to_posterior_sd_ratio"],
           message:
             "max_mcse_to_posterior_sd_ratio must be derived from posterior_mean_mcse, interval_endpoint_mcse, and posterior_sd"
         });
@@ -1268,20 +1401,12 @@ export const InferenceProofArtifactSchema = z
         );
       }
       if (
-        parameter.max_mcse_to_posterior_sd_ratio >
-        INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX ||
-        computedMcseRatio >
-        INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX
+        parameter.max_mcse_to_posterior_sd_ratio > INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX ||
+        computedMcseRatio > INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX
       ) {
         failOrIssue(
           "mcse",
-          [
-            "diagnostics",
-            "sampler",
-            "parameters",
-            index,
-            "max_mcse_to_posterior_sd_ratio"
-          ],
+          ["diagnostics", "sampler", "parameters", index, "max_mcse_to_posterior_sd_ratio"],
           "MCSE must be small relative to posterior SD for eligible artifacts"
         );
       }
@@ -1310,45 +1435,67 @@ export const InferenceProofArtifactSchema = z
       );
     }
 
-    for (const [index, statistic] of artifact.diagnostics.posterior_predictive_checks.entries()) {
+    if (!Array.isArray(artifact.diagnostics.posterior_predictive_checks)) {
+      failOrIssue(
+        "posterior_predictive_check",
+        ["diagnostics", "posterior_predictive_checks"],
+        "posterior predictive checks must be present and computed"
+      );
+    } else {
+      for (const [index, statistic] of artifact.diagnostics.posterior_predictive_checks.entries()) {
+        if (
+          !statistic.pass ||
+          statistic.p_value < INFERENCE_PROOF_PPC_P_VALUE_MIN ||
+          statistic.p_value > INFERENCE_PROOF_PPC_P_VALUE_MAX
+        ) {
+          failOrIssue(
+            "posterior_predictive_check",
+            ["diagnostics", "posterior_predictive_checks", index, "p_value"],
+            "posterior predictive checks must pass within the configured p-value band"
+          );
+        }
+      }
+    }
+
+    const priorSensitivity = artifact.diagnostics.prior_sensitivity;
+    if (!priorSensitivity) {
+      failOrIssue(
+        "prior_sensitivity",
+        ["diagnostics", "prior_sensitivity"],
+        "prior sensitivity must be present and computed"
+      );
+    } else {
       if (
-        !statistic.pass ||
-        statistic.p_value < INFERENCE_PROOF_PPC_P_VALUE_MIN ||
-        statistic.p_value > INFERENCE_PROOF_PPC_P_VALUE_MAX
+        !priorSensitivity.empirical_prior_justification_documented ||
+        priorSensitivity.empirical_prior_justification_ref === null ||
+        priorSensitivity.empirical_prior_justification_hash === null
       ) {
         failOrIssue(
-          "posterior_predictive_check",
-          ["diagnostics", "posterior_predictive_checks", index, "p_value"],
-          "posterior predictive checks must pass within the configured p-value band"
+          "prior_sensitivity",
+          ["diagnostics", "prior_sensitivity"],
+          "priors require documented empirical justification before eligibility"
+        );
+      }
+      if (
+        !priorSensitivity.pass ||
+        priorSensitivity.posterior_mean_shift_in_posterior_sd >=
+          INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD
+      ) {
+        failOrIssue(
+          "prior_sensitivity",
+          ["diagnostics", "prior_sensitivity"],
+          "prior sensitivity must stay below the posterior-SD shift gate"
         );
       }
     }
 
-    if (
-      !artifact.diagnostics.prior_sensitivity.pass ||
-      artifact.diagnostics.prior_sensitivity
-        .posterior_mean_shift_in_posterior_sd >=
-        INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD
-    ) {
-      failOrIssue(
-        "prior_sensitivity",
-        ["diagnostics", "prior_sensitivity"],
-        "prior sensitivity must stay below the posterior-SD shift gate"
-      );
-    }
-
-    const preTrendInterval =
-      artifact.diagnostics.pre_trend.pseudo_effect_credible_interval_80;
-    const preTrendIncludesZero =
-      preTrendInterval.lower <= 0 && preTrendInterval.upper >= 0;
-    if (
-      artifact.diagnostics.pre_trend.includes_zero !== preTrendIncludesZero
-    ) {
+    const preTrendInterval = artifact.diagnostics.pre_trend.pseudo_effect_credible_interval_80;
+    const preTrendIncludesZero = preTrendInterval.lower <= 0 && preTrendInterval.upper >= 0;
+    if (artifact.diagnostics.pre_trend.includes_zero !== preTrendIncludesZero) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["diagnostics", "pre_trend", "includes_zero"],
-        message:
-          "pre_trend.includes_zero must be derived from the 80% credible interval bounds"
+        message: "pre_trend.includes_zero must be derived from the 80% credible interval bounds"
       });
     }
     if (!artifact.diagnostics.pre_trend.pass || !preTrendIncludesZero) {
@@ -1375,8 +1522,7 @@ export const InferenceProofArtifactSchema = z
 
     if (
       !artifact.null_checks.pass ||
-      artifact.null_checks.false_eligibility_rate >
-        INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+      artifact.null_checks.false_eligibility_rate > INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
     ) {
       failOrIssue(
         "null_false_eligibility",
@@ -1392,20 +1538,50 @@ export const InferenceProofArtifactSchema = z
         "peeking control must pass for eligible artifacts"
       );
     }
+    if (artifact.peeking_control.look_index > artifact.peeking_control.total_planned_looks) {
+      failOrIssue(
+        "peeking_control",
+        ["peeking_control", "look_index"],
+        "look_index must not exceed total_planned_looks"
+      );
+    }
+    if (artifact.peeking_control.procedure === "always_valid_sequential_procedure_proven") {
+      if (artifact.peeking_control.total_planned_looks !== FULL_MILESTONE_CADENCE.length) {
+        failOrIssue(
+          "peeking_control",
+          ["peeking_control", "total_planned_looks"],
+          "always-valid sequential proof must cover the full milestone cadence"
+        );
+      }
+      if (
+        !sameNumberSequence(
+          artifact.peeking_control.milestone_days_included,
+          FULL_MILESTONE_CADENCE
+        )
+      ) {
+        failOrIssue(
+          "peeking_control",
+          ["peeking_control", "milestone_days_included"],
+          "always-valid sequential proof must include Day 0, 30, 60, 90, 180, and 365"
+        );
+      }
+      if (
+        !artifact.peeking_control.metric_family_bound ||
+        !artifact.peeking_control.cohort_family_bound
+      ) {
+        failOrIssue(
+          "peeking_control",
+          ["peeking_control"],
+          "always-valid sequential proof must bind the metric and cohort family"
+        );
+      }
+    }
   });
 
-export type InferenceProofGovernanceState = z.infer<
-  typeof InferenceProofGovernanceStateSchema
->;
-export type InferenceProofFailingDiagnostic = z.infer<
-  typeof InferenceProofFailingDiagnosticSchema
->;
-export type InferenceProofLikelihoodFamily = z.infer<
-  typeof InferenceProofLikelihoodFamilySchema
->;
+export type InferenceProofGovernanceState = z.infer<typeof InferenceProofGovernanceStateSchema>;
+export type InferenceProofFailingDiagnostic = z.infer<typeof InferenceProofFailingDiagnosticSchema>;
+export type InferenceProofLikelihoodFamily = z.infer<typeof InferenceProofLikelihoodFamilySchema>;
 export type InferenceProofComparisonCohortCriterion = z.infer<
   typeof InferenceProofComparisonCohortCriterionSchema
 >;
-export type InferenceProofArtifact = z.infer<
-  typeof InferenceProofArtifactSchema
->;
+export type InferenceProofArtifact = z.infer<typeof InferenceProofArtifactSchema>;
