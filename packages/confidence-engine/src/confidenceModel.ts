@@ -546,6 +546,7 @@ export const InferenceProofFailingDiagnosticSchema = z.enum([
   "divergences",
   "max_treedepth_saturation",
   "energy_bfmi",
+  "sampler_diagnostic",
   "mcse",
   "unsupported_likelihood_family",
   "posterior_predictive_check",
@@ -558,6 +559,8 @@ export const InferenceProofFailingDiagnosticSchema = z.enum([
   "comparison_cohort_adequacy",
   "missing_or_suppressed_windows"
 ]);
+
+const INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME = "contribution_alignment_effect";
 
 export const InferenceProofLikelihoodFamilySchema = z.enum([
   "normal_continuous_aggregate",
@@ -715,6 +718,23 @@ export const InferenceProofMeasurementCellWindowEvidenceSchema = z
       }
     }
 
+    for (const [refField, milestoneField] of [
+      ["required_window_refs", "required_milestone_days"],
+      ["observed_window_refs", "observed_milestone_days"],
+      ["missing_window_refs", "missing_milestone_days"],
+      ["suppressed_window_refs", "suppressed_milestone_days"],
+      ["stale_window_refs", "stale_milestone_days"],
+      ["imputed_window_refs", "imputed_milestone_days"]
+    ] as const) {
+      if (evidence[refField].length !== evidence[milestoneField].length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [refField],
+          message: `${refField} must contain one compact window ref per ${milestoneField} entry`
+        });
+      }
+    }
+
     const derivedMissingRefs = evidence.required_window_refs.filter(
       (windowRef) => !evidence.observed_window_refs.includes(windowRef)
     );
@@ -819,7 +839,17 @@ export const InferenceProofSamplerDiagnosticsSchema = z
     rank_plots_recorded: z.literal(true),
     energy_plots_recorded: z.literal(true)
   })
-  .strict();
+  .strict()
+  .superRefine((diagnostics, ctx) => {
+    const parameterNames = diagnostics.parameters.map((parameter) => parameter.parameter_name);
+    if (new Set(parameterNames).size !== parameterNames.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["parameters"],
+        message: "sampler diagnostics must not duplicate parameter_name values"
+      });
+    }
+  });
 
 export const InferenceProofPpcStatisticSchema = z
   .object({
@@ -1356,6 +1386,18 @@ export const InferenceProofArtifactSchema = z
       );
     }
 
+    if (
+      !artifact.diagnostics.sampler.parameters.some(
+        (parameter) => parameter.parameter_name === INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME
+      )
+    ) {
+      failOrIssue(
+        "sampler_diagnostic",
+        ["diagnostics", "sampler", "parameters"],
+        "sampler diagnostics must include the aggregate selected-metric movement estimand parameter"
+      );
+    }
+
     for (const [index, parameter] of artifact.diagnostics.sampler.parameters.entries()) {
       const maxObservedMcse = Math.max(
         parameter.posterior_mean_mcse,
@@ -1412,11 +1454,14 @@ export const InferenceProofArtifactSchema = z
       }
     }
 
-    if (artifact.diagnostics.sampler.max_treedepth_warning) {
+    if (
+      artifact.diagnostics.sampler.max_treedepth_warning ||
+      artifact.diagnostics.sampler.max_treedepth_saturation_rate > 0
+    ) {
       failOrIssue(
         "max_treedepth_saturation",
-        ["diagnostics", "sampler", "max_treedepth_warning"],
-        "eligible artifacts must not silently carry max-treedepth warnings"
+        ["diagnostics", "sampler", "max_treedepth_saturation_rate"],
+        "eligible artifacts must have zero max-treedepth saturation and no max-treedepth warnings"
       );
     }
     if (artifact.diagnostics.sampler.energy_bfmi_warning) {
