@@ -60,11 +60,11 @@ The proof harness SHALL implement the hierarchical Bayesian difference-in-differ
 
 - **GIVEN** a proof artifact declares missing-or-suppressed window hold semantics
 - **WHEN** the artifact is validated
-- **THEN** it records required, observed, missing, suppressed, stale, and imputed Measurement Cell window evidence, and any unavailable or imputed window blocks eligibility unless the artifact HOLDS naming missing or suppressed windows
+- **THEN** it records required, observed, missing, suppressed, stale, and imputed Measurement Cell window evidence with one compact window ref per milestone day in each bucket, and any unavailable or imputed window blocks eligibility unless the artifact HOLDS naming missing or suppressed windows
 
 ### Requirement: Computed Diagnostics Gate
 
-The system SHALL emit a confidence-bearing artifact only when every required diagnostic is computed as a real value and passes its numeric gate: R-hat <= 1.01 for all parameters (if any parameter's R-hat > 1.01 the artifact HOLDS naming R-hat), post-warmup divergent transitions = 0, bulk-ESS >= 400, tail-ESS >= 400, MCSE for posterior mean and interval endpoints <= 0.1 posterior SD, posterior predictive p-values within [0.05, 0.95] for the fixed designated statistics, prior-sensitivity posterior-mean shift < 0.5 posterior SD, and the pre-period pseudo-effect 80% credible interval including 0. Rank and energy plots SHALL be recorded in the internal report artifact.
+The system SHALL emit a confidence-bearing artifact only when every required diagnostic is computed as a real value and passes its numeric gate: sampler diagnostics include the selected-metric movement estimand parameter, R-hat <= 1.01 for all parameters (if any parameter's R-hat > 1.01 the artifact HOLDS naming R-hat), post-warmup divergent transitions = 0, max-treedepth saturation rate = 0, bulk-ESS >= 400, tail-ESS >= 400, MCSE for posterior mean and interval endpoints <= 0.1 posterior SD, posterior predictive p-values within [0.05, 0.95] for the fixed designated statistics, prior-sensitivity posterior-mean shift < 0.5 posterior SD, and the pre-period pseudo-effect 80% credible interval including 0. Rank and energy plots SHALL be recorded in the internal report artifact.
 
 #### Scenario: All diagnostics computed and passing
 
@@ -80,13 +80,13 @@ The system SHALL emit a confidence-bearing artifact only when every required dia
 
 #### Scenario: Missing diagnostic yields HOLD
 
-- **GIVEN** a fitted model where at least one required diagnostic is absent or not computed as a real value
+- **GIVEN** a fitted model where at least one required diagnostic, including the selected-metric movement estimand sampler diagnostic, is absent or not computed as a real value
 - **WHEN** the artifact is emitted
 - **THEN** the artifact is in HOLD state and identifies the missing diagnostic
 
 #### Scenario: Divergence or weak tail support yields HOLD
 
-- **GIVEN** a fitted model with any post-warmup divergent transition, tail-ESS below 400, or MCSE above the declared relative threshold
+- **GIVEN** a fitted model with any post-warmup divergent transition, positive max-treedepth saturation rate, tail-ESS below 400, or MCSE above the declared relative threshold
 - **WHEN** the artifact is emitted
 - **THEN** the artifact is in HOLD state and names the failing sampler diagnostic
 
@@ -154,7 +154,7 @@ The system SHALL emit no comparison-supported contribution estimate when no cred
 
 ### Requirement: Milestone Peeking Control
 
-The system SHALL treat Slice 2 inference proof artifacts as fixed-horizon, one-look artifacts unless the implementation proves a named always-valid sequential procedure in synthetic null simulations across the full Day 0/30/60/90/180/365 milestone, metric, and cohort family.
+The system SHALL treat Slice 2 inference proof artifacts as fixed-horizon, one-look artifacts unless the implementation proves a named always-valid sequential procedure in synthetic null simulations across the full Day 0/30/60/90/180/365 milestone, metric, and cohort family. The peeking-control milestone family SHALL match the artifact's required Measurement Cell window-evidence milestone family, and those required windows SHALL be observed, unsuppressed, fresh, and unimputed before eligibility.
 
 #### Scenario: Fixed-horizon one-look artifact is allowed
 

@@ -81,8 +81,9 @@ so artifacts cannot invent shapes later:
 Lag windows must be declared before fitting and bound into the artifact.
 The artifact carries compact Measurement Cell window evidence: required,
 observed, missing, suppressed, stale, and imputed milestone/window refs, plus
-a hash binding to the window-evidence record. Suppressed, stale, missing, or
-imputed windows HOLD; the harness must not impute them into eligibility.
+a hash binding to the window-evidence record. Each milestone bucket carries one
+compact window ref per milestone day in that bucket. Suppressed, stale, missing,
+or imputed windows HOLD; the harness must not impute them into eligibility.
 Treatment effects may be pooled globally, by workflow, by function, or by
 cohort only when the artifact declares that pooling level and the synthetic
 calibration suite covers it.
@@ -119,13 +120,14 @@ every proof artifact pins `internal_only: true`,
 
 The internal artifact carries structural proof fields for the gates below:
 `comparison_adequacy` records the runnable comparison-cohort rubric and its
-proof hash; sampler diagnostics record explicit max-treedepth and BFMI warning
-flags; window evidence records missing/suppressed/stale/imputed windows; the
-fixed-horizon peeking control records exactly one milestone, one metric, and
-one cohort. The artifact self-hash is recomputed at the TypeScript boundary
-with `hash_bindings.artifact_self_hash` omitted, so stale or forged proof
-bodies are rejected before governance processing. These fields are validation
-inputs only, not output fields.
+proof hash; sampler diagnostics record the selected-metric movement estimand,
+explicit max-treedepth saturation rate, and BFMI warning flags; window evidence
+records missing/suppressed/stale/imputed windows; the fixed-horizon peeking
+control records exactly one milestone, one metric, and one cohort. The artifact
+self-hash is recomputed at the TypeScript boundary with
+`hash_bindings.artifact_self_hash` omitted, so stale or forged proof bodies are
+rejected before governance processing. These fields are validation inputs only,
+not output fields.
 
 ## Diagnostics: computed values with numeric gates
 
@@ -135,7 +137,7 @@ structurally un-emittable unless all gates pass.
 
 | Diagnostic                                  | Gate                                                                                                                                                                                                     |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R-hat and sampler convergence               | R-hat <= 1.01 for every sampled parameter; post-warmup divergent transitions = 0; rank and energy plots recorded in the internal report artifact.                                                        |
+| R-hat and sampler convergence               | Sampler diagnostics must include the selected-metric movement estimand parameter; R-hat <= 1.01 for every sampled parameter; post-warmup divergent transitions = 0; rank and energy plots recorded in the internal report artifact. |
 | Effective sample size and Monte Carlo error | Bulk ESS >= 400 chain-total per parameter; tail ESS >= 400 chain-total per parameter; MCSE for posterior mean and interval endpoints <= 0.1 posterior SD.                                                |
 | Posterior predictive checks                 | Every designated PPC statistic below carries statistic name, observed value, posterior predictive 80% interval summary, p-value, and pass/fail; p-values must be within [0.05, 0.95].                    |
 | Prior sensitivity                           | posterior-mean shift < 0.5 posterior SD across the declared prior family                                                                                                                                 |
@@ -145,7 +147,8 @@ structurally un-emittable unless all gates pass.
 
 Any gate failure — or any diagnostic absent or not computed as a real value —
 emits the artifact only in HOLD state, with every failing or missing diagnostic
-named in the artifact. Missing posterior predictive checks or missing prior
+named in the artifact. Missing estimand sampler diagnostics HOLD naming
+`sampler_diagnostic`; missing posterior predictive checks or missing prior
 sensitivity evidence remain valid only as named HOLD artifacts; they are not
 eligible artifacts.
 
@@ -160,10 +163,10 @@ Designated posterior predictive check statistics are fixed for Slice 2:
 | `difference_in_differences_contrast` | Checks fit at the estimand level.                                                   |
 
 Max-treedepth saturation and BFMI are recorded when exposed by the active
-PyMC/ArviZ backend. If either backend emits a warning, the artifact HOLDS
-unless the warning is explicitly represented as a failing diagnostic in the
-internal proof artifact. A clean eligible artifact may not silently carry
-sampler warnings.
+PyMC/ArviZ backend. Any positive max-treedepth saturation rate or backend
+warning HOLDS unless represented as a failing diagnostic in the internal proof
+artifact. A clean eligible artifact may not silently carry sampler warnings or
+nonzero max-treedepth saturation.
 
 Calibration is reported per scenario cell, not pooled across unlike
 conditions. The clean simulator must cover every combination of injected
@@ -236,8 +239,11 @@ looks, the full Day 0/30/60/90/180/365 milestone family for repeated-look
 proofs, metrics included, cohorts included, metric-family and cohort-family
 bindings, procedure name, whether repeated evaluation occurred, and the
 false-eligibility bound. A fixed-horizon artifact must have exactly one look
-and exactly one milestone. Naive repeated evaluation across milestones,
-metrics, or cohorts marks the artifact ineligible/HOLD. The internal
+and exactly one milestone. The peeking-control milestone family must match the
+Measurement Cell window evidence required-milestone family, and those windows
+must be observed, unsuppressed, fresh, and unimputed before eligibility. Naive
+repeated evaluation across milestones, metrics, or cohorts marks the artifact
+ineligible/HOLD. The internal
 "Playbook: A/B testing @ Glean" (Confluence, Engineering space) is cited as
 provenance and alignment for this rule, not as its normative source.
 

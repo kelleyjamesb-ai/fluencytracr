@@ -914,10 +914,12 @@ test("valid internal synthetic inference proof artifact parses", () => {
 test("inference proof artifact rejects unknown top-level and nested keys", () => {
   const topLevel = clone(validInferenceProofArtifact);
   topLevel.customer_safe_claim = "AI impacted your business";
+  signInferenceProofArtifact(topLevel);
   assert.equal(InferenceProofArtifactSchema.safeParse(topLevel).success, false);
 
   const nested = clone(validInferenceProofArtifact);
   nested.diagnostics.sampler.parameters[0].confidence_score = 0.91;
+  signInferenceProofArtifact(nested);
   assert.equal(InferenceProofArtifactSchema.safeParse(nested).success, false);
 });
 
@@ -930,6 +932,7 @@ test("inference proof artifact rejects real or live data flags", () => {
   ]) {
     const artifact = clone(validInferenceProofArtifact);
     artifact.synthetic_generator[flag] = true;
+    signInferenceProofArtifact(artifact);
     assert.equal(InferenceProofArtifactSchema.safeParse(artifact).success, false);
   }
 });
@@ -950,6 +953,7 @@ test("inference proof artifact rejects output, route, persistence, and promotion
   ]) {
     const artifact = clone(validInferenceProofArtifact);
     artifact[flag] = true;
+    signInferenceProofArtifact(artifact);
     assert.equal(
       InferenceProofArtifactSchema.safeParse(artifact).success,
       false,
@@ -959,6 +963,7 @@ test("inference proof artifact rejects output, route, persistence, and promotion
 
   const promoted = clone(validInferenceProofArtifact);
   promoted.promotion_decision_ref = "promotion-decision-001";
+  signInferenceProofArtifact(promoted);
   assert.equal(InferenceProofArtifactSchema.safeParse(promoted).success, false);
 });
 
@@ -976,6 +981,9 @@ test("inference proof artifact rejects malformed hashes and mismatched synthetic
       target = target[key];
     }
     target[path[path.length - 1]] = "not-a-sha";
+    if (path.join(".") !== "hash_bindings.artifact_self_hash") {
+      signInferenceProofArtifact(artifact);
+    }
     assert.equal(
       InferenceProofArtifactSchema.safeParse(artifact).success,
       false,
@@ -985,6 +993,7 @@ test("inference proof artifact rejects malformed hashes and mismatched synthetic
 
   const mismatched = clone(validInferenceProofArtifact);
   mismatched.hash_bindings.synthetic_input_hash = "f".repeat(64);
+  signInferenceProofArtifact(mismatched);
   assert.equal(InferenceProofArtifactSchema.safeParse(mismatched).success, false);
 
   assert.equal(
@@ -1004,20 +1013,24 @@ test("inference proof artifact rejects malformed hashes and mismatched synthetic
 test("inference proof artifact pins blocked uses in full order", () => {
   const weakened = clone(validInferenceProofArtifact);
   weakened.blocked_uses = weakened.blocked_uses.filter((use) => use !== "customer_facing_output");
+  signInferenceProofArtifact(weakened);
   assert.equal(InferenceProofArtifactSchema.safeParse(weakened).success, false);
 
   const reordered = clone(validInferenceProofArtifact);
   reordered.blocked_uses = [...reordered.blocked_uses].reverse();
+  signInferenceProofArtifact(reordered);
   assert.equal(InferenceProofArtifactSchema.safeParse(reordered).success, false);
 });
 
 test("inference proof artifact enforces HOLD and eligible diagnostic naming", () => {
   const holdWithoutDiagnostic = clone(validInferenceProofArtifact);
   holdWithoutDiagnostic.governance_state.state = "HOLD";
+  signInferenceProofArtifact(holdWithoutDiagnostic);
   assert.equal(InferenceProofArtifactSchema.safeParse(holdWithoutDiagnostic).success, false);
 
   const eligibleWithDiagnostic = clone(validInferenceProofArtifact);
   eligibleWithDiagnostic.governance_state.failing_diagnostics = ["r_hat"];
+  signInferenceProofArtifact(eligibleWithDiagnostic);
   assert.equal(InferenceProofArtifactSchema.safeParse(eligibleWithDiagnostic).success, false);
 
   const validHold = clone(validInferenceProofArtifact);
@@ -1030,6 +1043,7 @@ test("inference proof artifact enforces HOLD and eligible diagnostic naming", ()
 test("inference proof artifact requires comparison adequacy before contribution-estimate authorization", () => {
   const missingComparisonProof = clone(validInferenceProofArtifact);
   delete missingComparisonProof.comparison_adequacy;
+  signInferenceProofArtifact(missingComparisonProof);
   assert.equal(InferenceProofArtifactSchema.safeParse(missingComparisonProof).success, false);
 
   const evidenceTierAndComparisonEstimate = clone(validInferenceProofArtifact);
@@ -1065,11 +1079,13 @@ test("inference proof artifact requires comparison adequacy before contribution-
   const missingRubricCriterion = clone(validInferenceProofArtifact);
   missingRubricCriterion.comparison_adequacy.required_checks =
     missingRubricCriterion.comparison_adequacy.required_checks.slice(0, -1);
+  signInferenceProofArtifact(missingRubricCriterion);
   assert.equal(InferenceProofArtifactSchema.safeParse(missingRubricCriterion).success, false);
 
   const duplicateRubricCriterion = clone(validInferenceProofArtifact);
   duplicateRubricCriterion.comparison_adequacy.required_checks[8].criterion =
     "same_selected_metric_definition";
+  signInferenceProofArtifact(duplicateRubricCriterion);
   assert.equal(InferenceProofArtifactSchema.safeParse(duplicateRubricCriterion).success, false);
 });
 
@@ -1106,13 +1122,37 @@ test("inference proof artifact forces failing MCMC diagnostics into HOLD", () =>
       artifact.diagnostics.sampler.max_treedepth_warning = true;
     },
     (artifact) => {
+      artifact.diagnostics.sampler.max_treedepth_saturation_rate = 0.01;
+      artifact.diagnostics.sampler.max_treedepth_warning = false;
+    },
+    (artifact) => {
       artifact.diagnostics.sampler.energy_bfmi_warning = true;
     }
   ]) {
     const artifact = clone(validInferenceProofArtifact);
     mutate(artifact);
+    signInferenceProofArtifact(artifact);
     assert.equal(InferenceProofArtifactSchema.safeParse(artifact).success, false);
   }
+
+  const treeDepthHold = clone(validInferenceProofArtifact);
+  treeDepthHold.diagnostics.sampler.max_treedepth_saturation_rate = 0.01;
+  treeDepthHold.diagnostics.sampler.max_treedepth_warning = false;
+  markInferenceProofHold(treeDepthHold, ["max_treedepth_saturation"]);
+  signInferenceProofArtifact(treeDepthHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(treeDepthHold).success, true);
+});
+
+test("inference proof artifact requires sampler diagnostics for the estimand", () => {
+  const nuisanceOnly = clone(validInferenceProofArtifact);
+  nuisanceOnly.diagnostics.sampler.parameters[0].parameter_name = "nuisance_intercept";
+  signInferenceProofArtifact(nuisanceOnly);
+  assert.equal(InferenceProofArtifactSchema.safeParse(nuisanceOnly).success, false);
+
+  const nuisanceOnlyHold = clone(nuisanceOnly);
+  markInferenceProofHold(nuisanceOnlyHold, ["sampler_diagnostic"]);
+  signInferenceProofArtifact(nuisanceOnlyHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(nuisanceOnlyHold).success, true);
 });
 
 test("inference proof artifact forces unsupported likelihood families into HOLD", () => {
@@ -1151,6 +1191,7 @@ test("inference proof artifact binds likelihood families to their link functions
 test("inference proof artifact requires complete PPC statistics and gate values", () => {
   const missingField = clone(validInferenceProofArtifact);
   delete missingField.diagnostics.posterior_predictive_checks[0].observed_value;
+  signInferenceProofArtifact(missingField);
   assert.equal(InferenceProofArtifactSchema.safeParse(missingField).success, false);
 
   const missingDesignatedStat = clone(validInferenceProofArtifact);
@@ -1158,6 +1199,7 @@ test("inference proof artifact requires complete PPC statistics and gate values"
     missingDesignatedStat.diagnostics.posterior_predictive_checks.filter(
       (stat) => stat.statistic_name !== "difference_in_differences_contrast"
     );
+  signInferenceProofArtifact(missingDesignatedStat);
   assert.equal(InferenceProofArtifactSchema.safeParse(missingDesignatedStat).success, false);
 
   const failingPpc = clone(validInferenceProofArtifact);
@@ -1206,6 +1248,7 @@ test("inference proof artifact cross-checks pre-trend interval values", () => {
   };
   forgedPreTrend.diagnostics.pre_trend.includes_zero = true;
   forgedPreTrend.diagnostics.pre_trend.pass = true;
+  signInferenceProofArtifact(forgedPreTrend);
   assert.equal(InferenceProofArtifactSchema.safeParse(forgedPreTrend).success, false);
 
   const heldPreTrend = clone(forgedPreTrend);
@@ -1219,12 +1262,14 @@ test("inference proof artifact cross-checks pre-trend interval values", () => {
 test("inference proof artifact enforces calibration and null proof gates", () => {
   const tooFewReplications = clone(validInferenceProofArtifact);
   tooFewReplications.calibration.scenarios[0].replication_count = 199;
+  signInferenceProofArtifact(tooFewReplications);
   assert.equal(InferenceProofArtifactSchema.safeParse(tooFewReplications).success, false);
 
   const missingCell = clone(validInferenceProofArtifact);
   missingCell.calibration.scenarios = missingCell.calibration.scenarios.filter(
     (scenario) => !(scenario.injected_effect_size_sd === 0.5 && scenario.cohort_size === 16)
   );
+  signInferenceProofArtifact(missingCell);
   assert.equal(InferenceProofArtifactSchema.safeParse(missingCell).success, false);
 
   const highCoverageEligible = clone(validInferenceProofArtifact);
@@ -1246,16 +1291,19 @@ test("inference proof artifact enforces calibration and null proof gates", () =>
 
   const highNullFalseEligibility = clone(validInferenceProofArtifact);
   highNullFalseEligibility.null_checks.false_eligibility_rate = 0.06;
+  signInferenceProofArtifact(highNullFalseEligibility);
   assert.equal(InferenceProofArtifactSchema.safeParse(highNullFalseEligibility).success, false);
 });
 
 test("inference proof artifact enforces floor cases", () => {
   const k4NotRejected = clone(validInferenceProofArtifact);
   k4NotRejected.floor_checks.k4_rejected.outcome = "internal_only_display_ineligible";
+  signInferenceProofArtifact(k4NotRejected);
   assert.equal(InferenceProofArtifactSchema.safeParse(k4NotRejected).success, false);
 
   const k8DisplayEligible = clone(validInferenceProofArtifact);
   k8DisplayEligible.floor_checks.k8_internal_only.display_eligible = true;
+  signInferenceProofArtifact(k8DisplayEligible);
   assert.equal(InferenceProofArtifactSchema.safeParse(k8DisplayEligible).success, false);
 
   const missingK16 = clone(validInferenceProofArtifact);
@@ -1263,6 +1311,7 @@ test("inference proof artifact enforces floor cases", () => {
     missingK16.floor_checks.eligible_floor_cases[0],
     missingK16.floor_checks.eligible_floor_cases[0]
   ];
+  signInferenceProofArtifact(missingK16);
   assert.equal(InferenceProofArtifactSchema.safeParse(missingK16).success, false);
 });
 
@@ -1271,10 +1320,12 @@ test("inference proof artifact rejects naive repeated-look peeking", () => {
   repeatedWithoutProof.peeking_control.repeated_evaluation = true;
   repeatedWithoutProof.peeking_control.total_planned_looks = 6;
   repeatedWithoutProof.peeking_control.milestone_days_included = [0, 30, 60, 90, 180, 365];
+  signInferenceProofArtifact(repeatedWithoutProof);
   assert.equal(InferenceProofArtifactSchema.safeParse(repeatedWithoutProof).success, false);
 
   const fixedHorizonMultiMetric = clone(validInferenceProofArtifact);
   fixedHorizonMultiMetric.peeking_control.metrics_included = ["selected_metric", "second_metric"];
+  signInferenceProofArtifact(fixedHorizonMultiMetric);
   assert.equal(InferenceProofArtifactSchema.safeParse(fixedHorizonMultiMetric).success, false);
 
   const fixedHorizonMultiCohort = clone(validInferenceProofArtifact);
@@ -1282,6 +1333,7 @@ test("inference proof artifact rejects naive repeated-look peeking", () => {
     "synthetic-treated-vs-comparison",
     "second-comparison"
   ];
+  signInferenceProofArtifact(fixedHorizonMultiCohort);
   assert.equal(InferenceProofArtifactSchema.safeParse(fixedHorizonMultiCohort).success, false);
 
   const alwaysValid = clone(validInferenceProofArtifact);
@@ -1307,6 +1359,19 @@ test("inference proof artifact rejects naive repeated-look peeking", () => {
   alwaysValid.peeking_control.synthetic_null_proof_hash = "f".repeat(64);
   signInferenceProofArtifact(alwaysValid);
   assert.equal(InferenceProofArtifactSchema.safeParse(alwaysValid).success, true);
+
+  const missingRepeatedLookWindowRefs = clone(alwaysValid);
+  missingRepeatedLookWindowRefs.measurement_cell_window_evidence.required_window_refs = [
+    "selected_metric:synthetic-treated-vs-comparison:90"
+  ];
+  missingRepeatedLookWindowRefs.measurement_cell_window_evidence.observed_window_refs = [
+    "selected_metric:synthetic-treated-vs-comparison:90"
+  ];
+  signInferenceProofArtifact(missingRepeatedLookWindowRefs);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(missingRepeatedLookWindowRefs).success,
+    false
+  );
 });
 
 test("inference proof artifact requires full repeated-look proof scope", () => {
@@ -1334,6 +1399,11 @@ test("inference proof artifact requires full repeated-look proof scope", () => {
 });
 
 test("inference proof artifact derives missing and suppressed window HOLD evidence", () => {
+  const peekingWindowMismatch = clone(validInferenceProofArtifact);
+  peekingWindowMismatch.peeking_control.milestone_days_included = [30];
+  signInferenceProofArtifact(peekingWindowMismatch);
+  assert.equal(InferenceProofArtifactSchema.safeParse(peekingWindowMismatch).success, false);
+
   const missingWindowEligible = clone(validInferenceProofArtifact);
   missingWindowEligible.measurement_cell_window_evidence.observed_milestone_days = [];
   missingWindowEligible.measurement_cell_window_evidence.missing_milestone_days = [90];
@@ -1376,6 +1446,7 @@ test("inference proof artifact rejects causality, ROI, productivity, and confide
   ]) {
     const artifact = clone(validInferenceProofArtifact);
     artifact[field] = 1;
+    signInferenceProofArtifact(artifact);
     assert.equal(
       InferenceProofArtifactSchema.safeParse(artifact).success,
       false,
