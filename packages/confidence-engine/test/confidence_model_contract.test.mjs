@@ -26,25 +26,24 @@ import {
   INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
   ThresholdProbabilityRepresentationSchema,
   ExpectedLossRepresentationSchema,
-  computeInferenceProofArtifactSelfHash,
-  InferenceProofArtifactSchema
+  InferenceProofArtifactSchema,
+  inferenceProofArtifactSelfHash
 } from "../dist/index.js";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function bindInferenceProofSelfHash(artifact) {
-  artifact.hash_bindings.artifact_self_hash =
-    computeInferenceProofArtifactSelfHash(artifact);
+function signInferenceProofArtifact(artifact) {
+  artifact.hash_bindings.artifact_self_hash = inferenceProofArtifactSelfHash(artifact);
   return artifact;
 }
 
-function markInferenceProofHold(artifact, failingDiagnostics) {
+function markInferenceProofHold(artifact, failingDiagnostics, { evidenceTierOnly = false } = {}) {
   artifact.governance_state.state = "HOLD";
   artifact.governance_state.failing_diagnostics = failingDiagnostics;
-  artifact.governance_state.comparison_supported_contribution_estimate_authorized =
-    false;
+  artifact.governance_state.comparison_supported_contribution_estimate_authorized = false;
+  artifact.governance_state.evidence_tier_only = evidenceTierOnly;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,10 +65,8 @@ const validPriorProvenance = {
 
 const validAdmitted = {
   source_consumer: INTERNAL_CONFIDENCE_CONSUMER_TOKEN,
-  read_path_decision_schema_version:
-    CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION_REF,
-  observation_requirement_schema_version:
-    CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION_REF,
+  read_path_decision_schema_version: CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION_REF,
+  observation_requirement_schema_version: CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION_REF,
   person_level_identifiers_present: false,
   admission_state: "admitted",
   source_ref: {
@@ -96,10 +93,8 @@ const validAdmitted = {
 
 const validRejected = {
   source_consumer: INTERNAL_CONFIDENCE_CONSUMER_TOKEN,
-  read_path_decision_schema_version:
-    CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION_REF,
-  observation_requirement_schema_version:
-    CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION_REF,
+  read_path_decision_schema_version: CONFIDENCE_ENGINE_SERIES_READ_PATH_DECISION_SCHEMA_VERSION_REF,
+  observation_requirement_schema_version: CONFIDENCE_OBSERVATION_REQUIREMENT_SCHEMA_VERSION_REF,
   person_level_identifiers_present: false,
   admission_state: "rejected_fail_closed",
   fail_closed: true,
@@ -162,9 +157,7 @@ test("aligned read-path contract tokens are pinned exactly", () => {
   assert.ok(EVIDENCE_ADMISSION_REASON_CODES.length > 0);
   assert.ok(EVIDENCE_REJECTION_REASON_CODES.includes("boundary_leakage_rejected"));
   assert.ok(
-    EVIDENCE_REJECTION_REASON_CODES.includes(
-      "confidence_observation_requirement_not_valid"
-    )
+    EVIDENCE_REJECTION_REASON_CODES.includes("confidence_observation_requirement_not_valid")
   );
 });
 
@@ -377,9 +370,7 @@ test("contract with wrong schema_version rejects", () => {
 
 test("contract with weakened blocked_uses list rejects", () => {
   const contract = clone(validContract);
-  contract.blocked_uses = contract.blocked_uses.filter(
-    (use) => use !== "customer_facing_output"
-  );
+  contract.blocked_uses = contract.blocked_uses.filter((use) => use !== "customer_facing_output");
   assert.equal(ConfidenceModelContractSchema.safeParse(contract).success, false);
 });
 
@@ -450,9 +441,7 @@ test("internal probability representation schema_version constants are pinned", 
 // (a) valid examples parse
 
 test("valid threshold-probability representation parses", () => {
-  const parsed = ThresholdProbabilityRepresentationSchema.parse(
-    validThresholdProbability
-  );
+  const parsed = ThresholdProbabilityRepresentationSchema.parse(validThresholdProbability);
   assert.equal(parsed.internal_only, true);
   assert.equal(parsed.customer_output_authorized, false);
   assert.equal(parsed.promotion_decision_ref, null);
@@ -470,19 +459,13 @@ test("valid expected-loss representation parses", () => {
 test("threshold-probability representation claiming customer authorization rejects", () => {
   const representation = clone(validThresholdProbability);
   representation.customer_output_authorized = true;
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(representation).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(representation).success, false);
 });
 
 test("expected-loss representation claiming customer authorization rejects", () => {
   const representation = clone(validExpectedLoss);
   representation.customer_output_authorized = true;
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(representation).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(representation).success, false);
 });
 
 for (const flag of [
@@ -493,20 +476,13 @@ for (const flag of [
   test(`threshold-probability representation claiming ${flag} rejects`, () => {
     const representation = clone(validThresholdProbability);
     representation[flag] = true;
-    assert.equal(
-      ThresholdProbabilityRepresentationSchema.safeParse(representation)
-        .success,
-      false
-    );
+    assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(representation).success, false);
   });
 
   test(`expected-loss representation claiming ${flag} rejects`, () => {
     const representation = clone(validExpectedLoss);
     representation[flag] = true;
-    assert.equal(
-      ExpectedLossRepresentationSchema.safeParse(representation).success,
-      false
-    );
+    assert.equal(ExpectedLossRepresentationSchema.safeParse(representation).success, false);
   });
 }
 
@@ -514,76 +490,55 @@ test("internal_only: false rejects for both internal representations", () => {
   const thresholdRepresentation = clone(validThresholdProbability);
   thresholdRepresentation.internal_only = false;
   assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation)
-      .success,
+    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation).success,
     false
   );
 
   const lossRepresentation = clone(validExpectedLoss);
   lossRepresentation.internal_only = false;
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success, false);
 });
 
 test("non-null promotion_decision_ref rejects (promotion is a separate human decision)", () => {
   const thresholdRepresentation = clone(validThresholdProbability);
   thresholdRepresentation.promotion_decision_ref = "promotion-decision-001";
   assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation)
-      .success,
+    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation).success,
     false
   );
 
   const lossRepresentation = clone(validExpectedLoss);
   lossRepresentation.promotion_decision_ref = "promotion-decision-001";
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success, false);
 });
 
 test("unknown keys reject on internal representations (strict)", () => {
   const thresholdRepresentation = clone(validThresholdProbability);
   thresholdRepresentation.customer_dashboard_copy = "82% likely";
   assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation)
-      .success,
+    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation).success,
     false
   );
 
   const lossRepresentation = clone(validExpectedLoss);
   lossRepresentation.roi_estimate = 1.2;
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success, false);
 });
 
 test("threshold_probability outside [0, 1] rejects", () => {
   const above = clone(validThresholdProbability);
   above.threshold_probability = 1.5;
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(above).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(above).success, false);
 
   const below = clone(validThresholdProbability);
   below.threshold_probability = -0.1;
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(below).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(below).success, false);
 });
 
 test("negative expected_loss rejects", () => {
   const representation = clone(validExpectedLoss);
   representation.expected_loss = -0.01;
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(representation).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(representation).success, false);
 });
 
 test("decision_threshold_epsilon off the compiled constant rejects", () => {
@@ -605,28 +560,20 @@ test("minimum_worthwhile_threshold off the compiled constant rejects", () => {
 
   const tuned = clone(validThresholdProbability);
   tuned.minimum_worthwhile_threshold = 0.5;
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(tuned).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(tuned).success, false);
 });
 
 test("wrong threshold_units rejects", () => {
   const representation = clone(validThresholdProbability);
   representation.threshold_units = "raw_effect";
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(representation).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(representation).success, false);
 });
 
 test("parameter-name mismatch with source posterior rejects for both representations", () => {
   const thresholdRepresentation = clone(validThresholdProbability);
-  thresholdRepresentation.source_posterior_parameter_name =
-    "some_other_effect";
-  const thresholdResult = ThresholdProbabilityRepresentationSchema.safeParse(
-    thresholdRepresentation
-  );
+  thresholdRepresentation.source_posterior_parameter_name = "some_other_effect";
+  const thresholdResult =
+    ThresholdProbabilityRepresentationSchema.safeParse(thresholdRepresentation);
   assert.equal(thresholdResult.success, false);
   assert.ok(
     thresholdResult.error.issues.some((issue) =>
@@ -638,49 +585,31 @@ test("parameter-name mismatch with source posterior rejects for both representat
 
   const lossRepresentation = clone(validExpectedLoss);
   lossRepresentation.source_posterior_parameter_name = "some_other_effect";
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(lossRepresentation).success, false);
 });
 
 test("malformed source_posterior_artifact_hash rejects for both representations", () => {
   const nonHex = clone(validThresholdProbability);
   nonHex.source_posterior_artifact_hash = "Z".repeat(64);
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(nonHex).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(nonHex).success, false);
 
   const wrongLength = clone(validThresholdProbability);
   wrongLength.source_posterior_artifact_hash = "a3f1c9e2b8d4";
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(wrongLength).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(wrongLength).success, false);
 
   const lossNonHex = clone(validExpectedLoss);
   lossNonHex.source_posterior_artifact_hash = "Z".repeat(64);
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(lossNonHex).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(lossNonHex).success, false);
 
   const lossWrongLength = clone(validExpectedLoss);
   lossWrongLength.source_posterior_artifact_hash = "a3f1c9e2b8d4";
-  assert.equal(
-    ExpectedLossRepresentationSchema.safeParse(lossWrongLength).success,
-    false
-  );
+  assert.equal(ExpectedLossRepresentationSchema.safeParse(lossWrongLength).success, false);
 });
 
 test("credible_interval_level_context outside CREDIBLE_INTERVAL_LEVELS rejects", () => {
   const representation = clone(validThresholdProbability);
   representation.credible_interval_level_context = 0.9;
-  assert.equal(
-    ThresholdProbabilityRepresentationSchema.safeParse(representation).success,
-    false
-  );
+  assert.equal(ThresholdProbabilityRepresentationSchema.safeParse(representation).success, false);
 });
 
 // ---------------------------------------------------------------------------
@@ -695,11 +624,14 @@ const ppcSummary = {
   }
 };
 
-const validCalibrationCoverageStandardError = Math.sqrt(
-  (0.8 * (1 - 0.8)) / INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
-);
+function calibrationStandardError(
+  coverageRate,
+  replicationCount = INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+) {
+  return Math.sqrt((coverageRate * (1 - coverageRate)) / replicationCount);
+}
 
-const validInferenceProofArtifact = {
+const validInferenceProofArtifact = signInferenceProofArtifact({
   schema_version: INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
   artifact_class: "internal_synthetic_inference_proof",
   generated_at: "2026-07-04T00:00:00Z",
@@ -727,12 +659,6 @@ const validInferenceProofArtifact = {
     aggregate_cell_variance_mode: "cohort_size_weighted_known_variance",
     cohort_size_enters_likelihood: true,
     missing_or_suppressed_windows_hold: true,
-    missing_or_suppressed_window_evidence: {
-      observed_milestone_days: [90],
-      missing_milestone_days: [],
-      suppressed_or_stale_milestone_days: [],
-      source_evidence_hash: "f".repeat(64)
-    },
     treatment_effect_pooling: "workflow",
     pooling_structure: {
       expectation_path: true,
@@ -741,6 +667,24 @@ const validInferenceProofArtifact = {
       cohort: true,
       organization: true
     }
+  },
+  measurement_cell_window_evidence: {
+    measurement_cell_window_evidence_hash: "a".repeat(64),
+    required_milestone_days: [90],
+    observed_milestone_days: [90],
+    missing_milestone_days: [],
+    suppressed_milestone_days: [],
+    stale_milestone_days: [],
+    imputed_milestone_days: [],
+    required_window_refs: ["selected_metric:synthetic-treated-vs-comparison:90"],
+    observed_window_refs: ["selected_metric:synthetic-treated-vs-comparison:90"],
+    missing_window_refs: [],
+    suppressed_window_refs: [],
+    stale_window_refs: [],
+    imputed_window_refs: [],
+    all_required_windows_observed: true,
+    all_windows_unsuppressed_and_fresh: true,
+    imputation_used: false
   },
   diagnostics: {
     sampler: {
@@ -802,9 +746,10 @@ const validInferenceProofArtifact = {
       }
     ],
     prior_sensitivity: {
-      prior_family_documented: true,
       empirical_prior_justification_documented: true,
-      prior_justification_ref: "docs/research/synthetic-prior-justification-001",
+      empirical_prior_justification_ref:
+        "docs/contracts/confidence-inference-methodology/README.md#prior-policy",
+      empirical_prior_justification_hash: "a".repeat(64),
       posterior_mean_shift_in_posterior_sd: 0.2,
       pass: true
     },
@@ -827,7 +772,7 @@ const validInferenceProofArtifact = {
         replication_count: INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
         credible_interval_level: 0.8,
         coverage_rate: 0.8,
-        coverage_standard_error: validCalibrationCoverageStandardError,
+        coverage_standard_error: calibrationStandardError(0.8),
         pass: true
       }))
     )
@@ -873,6 +818,8 @@ const validInferenceProofArtifact = {
     milestone_days_included: [90],
     metrics_included: ["selected_metric"],
     cohorts_included: ["synthetic-treated-vs-comparison"],
+    metric_family_bound: true,
+    cohort_family_bound: true,
     sequential_method_name: null,
     synthetic_null_proof_hash: null,
     false_eligibility_bound: 0.05,
@@ -881,8 +828,7 @@ const validInferenceProofArtifact = {
   comparison_adequacy: {
     comparison_cohort_present: true,
     adequacy_proof_hash: "b".repeat(64),
-    reviewer_owned_comparison_design_adequacy_ref:
-      "comparison-design-adequacy-review-001",
+    reviewer_owned_comparison_design_adequacy_ref: "comparison-design-adequacy-review-001",
     required_checks: [
       {
         criterion: "same_selected_metric_definition",
@@ -932,7 +878,7 @@ const validInferenceProofArtifact = {
   hash_bindings: {
     source_posterior_hash: "d".repeat(64),
     synthetic_input_hash: "c".repeat(64),
-    artifact_self_hash: "0".repeat(64)
+    artifact_self_hash: "e".repeat(64)
   },
   blocked_uses: [...CONFIDENCE_MODEL_BLOCKED_USES],
   numeric_values_role: "internal_validation_inputs_not_output",
@@ -949,9 +895,7 @@ const validInferenceProofArtifact = {
   renders_readout: false,
   executes_connector: false,
   promotion_decision_ref: null
-};
-
-bindInferenceProofSelfHash(validInferenceProofArtifact);
+});
 
 test("inference proof artifact schema_version constant is pinned", () => {
   assert.equal(
@@ -986,10 +930,7 @@ test("inference proof artifact rejects real or live data flags", () => {
   ]) {
     const artifact = clone(validInferenceProofArtifact);
     artifact.synthetic_generator[flag] = true;
-    assert.equal(
-      InferenceProofArtifactSchema.safeParse(artifact).success,
-      false
-    );
+    assert.equal(InferenceProofArtifactSchema.safeParse(artifact).success, false);
   }
 });
 
@@ -1046,19 +987,23 @@ test("inference proof artifact rejects malformed hashes and mismatched synthetic
   mismatched.hash_bindings.synthetic_input_hash = "f".repeat(64);
   assert.equal(InferenceProofArtifactSchema.safeParse(mismatched).success, false);
 
-  const staleSelfHash = clone(validInferenceProofArtifact);
-  staleSelfHash.hash_bindings.artifact_self_hash = "e".repeat(64);
   assert.equal(
-    InferenceProofArtifactSchema.safeParse(staleSelfHash).success,
-    false
+    validInferenceProofArtifact.hash_bindings.artifact_self_hash,
+    inferenceProofArtifactSelfHash(validInferenceProofArtifact)
   );
+
+  const forgedSelfHash = clone(validInferenceProofArtifact);
+  forgedSelfHash.hash_bindings.artifact_self_hash = "f".repeat(64);
+  assert.equal(InferenceProofArtifactSchema.safeParse(forgedSelfHash).success, false);
+
+  const staleSelfHash = clone(validInferenceProofArtifact);
+  staleSelfHash.harness_version = "tampered-after-signing";
+  assert.equal(InferenceProofArtifactSchema.safeParse(staleSelfHash).success, false);
 });
 
 test("inference proof artifact pins blocked uses in full order", () => {
   const weakened = clone(validInferenceProofArtifact);
-  weakened.blocked_uses = weakened.blocked_uses.filter(
-    (use) => use !== "customer_facing_output"
-  );
+  weakened.blocked_uses = weakened.blocked_uses.filter((use) => use !== "customer_facing_output");
   assert.equal(InferenceProofArtifactSchema.safeParse(weakened).success, false);
 
   const reordered = clone(validInferenceProofArtifact);
@@ -1069,81 +1014,63 @@ test("inference proof artifact pins blocked uses in full order", () => {
 test("inference proof artifact enforces HOLD and eligible diagnostic naming", () => {
   const holdWithoutDiagnostic = clone(validInferenceProofArtifact);
   holdWithoutDiagnostic.governance_state.state = "HOLD";
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(holdWithoutDiagnostic).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(holdWithoutDiagnostic).success, false);
 
   const eligibleWithDiagnostic = clone(validInferenceProofArtifact);
   eligibleWithDiagnostic.governance_state.failing_diagnostics = ["r_hat"];
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(eligibleWithDiagnostic).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(eligibleWithDiagnostic).success, false);
 
   const validHold = clone(validInferenceProofArtifact);
   markInferenceProofHold(validHold, ["divergences"]);
   validHold.diagnostics.sampler.post_warmup_divergences = 1;
-  bindInferenceProofSelfHash(validHold);
+  signInferenceProofArtifact(validHold);
   assert.equal(InferenceProofArtifactSchema.safeParse(validHold).success, true);
 });
 
 test("inference proof artifact requires comparison adequacy before contribution-estimate authorization", () => {
   const missingComparisonProof = clone(validInferenceProofArtifact);
   delete missingComparisonProof.comparison_adequacy;
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(missingComparisonProof).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingComparisonProof).success, false);
 
   const evidenceTierAndComparisonEstimate = clone(validInferenceProofArtifact);
   evidenceTierAndComparisonEstimate.governance_state.evidence_tier_only = true;
+  signInferenceProofArtifact(evidenceTierAndComparisonEstimate);
   assert.equal(
-    InferenceProofArtifactSchema.safeParse(evidenceTierAndComparisonEstimate)
-      .success,
+    InferenceProofArtifactSchema.safeParse(evidenceTierAndComparisonEstimate).success,
     false
   );
 
   const failedRubricStillEligible = clone(validInferenceProofArtifact);
   failedRubricStillEligible.comparison_adequacy.required_checks[0].pass = false;
   failedRubricStillEligible.comparison_adequacy.all_required_checks_pass = false;
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(failedRubricStillEligible).success,
-    false
-  );
+  signInferenceProofArtifact(failedRubricStillEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(failedRubricStillEligible).success, false);
 
   const failedRubricHeld = clone(failedRubricStillEligible);
-  markInferenceProofHold(failedRubricHeld, ["comparison_cohort_adequacy"]);
-  failedRubricHeld.governance_state.evidence_tier_only = true;
-  bindInferenceProofSelfHash(failedRubricHeld);
+  markInferenceProofHold(failedRubricHeld, ["comparison_cohort_adequacy"], {
+    evidenceTierOnly: true
+  });
+  signInferenceProofArtifact(failedRubricHeld);
   assert.equal(InferenceProofArtifactSchema.safeParse(failedRubricHeld).success, true);
 
   const holdStillAuthorizesComparisonEstimate = clone(failedRubricHeld);
-  holdStillAuthorizesComparisonEstimate.governance_state.comparison_supported_contribution_estimate_authorized =
-    true;
-  holdStillAuthorizesComparisonEstimate.governance_state.evidence_tier_only =
-    false;
+  holdStillAuthorizesComparisonEstimate.governance_state.comparison_supported_contribution_estimate_authorized = true;
+  holdStillAuthorizesComparisonEstimate.governance_state.evidence_tier_only = false;
+  signInferenceProofArtifact(holdStillAuthorizesComparisonEstimate);
   assert.equal(
-    InferenceProofArtifactSchema.safeParse(holdStillAuthorizesComparisonEstimate)
-      .success,
+    InferenceProofArtifactSchema.safeParse(holdStillAuthorizesComparisonEstimate).success,
     false
   );
 
   const missingRubricCriterion = clone(validInferenceProofArtifact);
   missingRubricCriterion.comparison_adequacy.required_checks =
     missingRubricCriterion.comparison_adequacy.required_checks.slice(0, -1);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(missingRubricCriterion).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingRubricCriterion).success, false);
 
   const duplicateRubricCriterion = clone(validInferenceProofArtifact);
   duplicateRubricCriterion.comparison_adequacy.required_checks[8].criterion =
     "same_selected_metric_definition";
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(duplicateRubricCriterion).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(duplicateRubricCriterion).success, false);
 });
 
 test("inference proof artifact forces failing MCMC diagnostics into HOLD", () => {
@@ -1189,71 +1116,36 @@ test("inference proof artifact forces failing MCMC diagnostics into HOLD", () =>
 });
 
 test("inference proof artifact forces unsupported likelihood families into HOLD", () => {
-  const normalWithLogitLink = clone(validInferenceProofArtifact);
-  normalWithLogitLink.model_spec_binding.link_function = "logit";
-  bindInferenceProofSelfHash(normalWithLogitLink);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(normalWithLogitLink).success,
-    false
-  );
-
   const unsupportedEligible = clone(validInferenceProofArtifact);
-  unsupportedEligible.model_spec_binding.likelihood_family =
-    "poisson_count_aggregate";
+  unsupportedEligible.model_spec_binding.likelihood_family = "poisson_count_aggregate";
   unsupportedEligible.model_spec_binding.link_function = "log";
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(unsupportedEligible).success,
-    false
-  );
+  signInferenceProofArtifact(unsupportedEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(unsupportedEligible).success, false);
 
   const unsupportedHeld = clone(unsupportedEligible);
   markInferenceProofHold(unsupportedHeld, ["unsupported_likelihood_family"]);
-  bindInferenceProofSelfHash(unsupportedHeld);
+  signInferenceProofArtifact(unsupportedHeld);
   assert.equal(InferenceProofArtifactSchema.safeParse(unsupportedHeld).success, true);
 });
 
-test("inference proof artifact requires documented prior justification", () => {
-  const missingPriorRef = clone(validInferenceProofArtifact);
-  delete missingPriorRef.diagnostics.prior_sensitivity.prior_justification_ref;
-  bindInferenceProofSelfHash(missingPriorRef);
-  assert.equal(InferenceProofArtifactSchema.safeParse(missingPriorRef).success, false);
+test("inference proof artifact binds likelihood families to their link functions", () => {
+  const normalLogit = clone(validInferenceProofArtifact);
+  normalLogit.model_spec_binding.link_function = "logit";
+  signInferenceProofArtifact(normalLogit);
+  assert.equal(InferenceProofArtifactSchema.safeParse(normalLogit).success, false);
 
-  const undocumentedPrior = clone(validInferenceProofArtifact);
-  undocumentedPrior.diagnostics.prior_sensitivity.empirical_prior_justification_documented =
-    false;
-  bindInferenceProofSelfHash(undocumentedPrior);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(undocumentedPrior).success,
-    false
-  );
-});
+  const binomialIdentity = clone(validInferenceProofArtifact);
+  binomialIdentity.model_spec_binding.likelihood_family = "binomial_rate_aggregate";
+  binomialIdentity.model_spec_binding.link_function = "identity";
+  signInferenceProofArtifact(binomialIdentity);
+  assert.equal(InferenceProofArtifactSchema.safeParse(binomialIdentity).success, false);
 
-test("inference proof artifact validates missing and suppressed window evidence", () => {
-  const missingWindowEligible = clone(validInferenceProofArtifact);
-  missingWindowEligible.model_spec_binding.missing_or_suppressed_window_evidence.missing_milestone_days =
-    [30];
-  bindInferenceProofSelfHash(missingWindowEligible);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(missingWindowEligible).success,
-    false
-  );
-
-  const missingWindowHeld = clone(missingWindowEligible);
-  markInferenceProofHold(missingWindowHeld, ["missing_or_suppressed_windows"]);
-  bindInferenceProofSelfHash(missingWindowHeld);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(missingWindowHeld).success,
-    true
-  );
-
-  const contradictoryWindowEvidence = clone(validInferenceProofArtifact);
-  contradictoryWindowEvidence.model_spec_binding.missing_or_suppressed_window_evidence.missing_milestone_days =
-    [90];
-  bindInferenceProofSelfHash(contradictoryWindowEvidence);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(contradictoryWindowEvidence).success,
-    false
-  );
+  const binomialLogitHold = clone(validInferenceProofArtifact);
+  binomialLogitHold.model_spec_binding.likelihood_family = "binomial_rate_aggregate";
+  binomialLogitHold.model_spec_binding.link_function = "logit";
+  markInferenceProofHold(binomialLogitHold, ["unsupported_likelihood_family"]);
+  signInferenceProofArtifact(binomialLogitHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(binomialLogitHold).success, true);
 });
 
 test("inference proof artifact requires complete PPC statistics and gate values", () => {
@@ -1266,14 +1158,44 @@ test("inference proof artifact requires complete PPC statistics and gate values"
     missingDesignatedStat.diagnostics.posterior_predictive_checks.filter(
       (stat) => stat.statistic_name !== "difference_in_differences_contrast"
     );
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(missingDesignatedStat).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingDesignatedStat).success, false);
 
   const failingPpc = clone(validInferenceProofArtifact);
   failingPpc.diagnostics.posterior_predictive_checks[0].p_value = 0.99;
+  signInferenceProofArtifact(failingPpc);
   assert.equal(InferenceProofArtifactSchema.safeParse(failingPpc).success, false);
+});
+
+test("inference proof artifact allows missing computed diagnostics only as named HOLD", () => {
+  const missingPpcEligible = clone(validInferenceProofArtifact);
+  missingPpcEligible.diagnostics.posterior_predictive_checks = null;
+  signInferenceProofArtifact(missingPpcEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingPpcEligible).success, false);
+
+  const missingPpcHold = clone(missingPpcEligible);
+  markInferenceProofHold(missingPpcHold, ["posterior_predictive_check"]);
+  signInferenceProofArtifact(missingPpcHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingPpcHold).success, true);
+
+  const missingPriorHold = clone(validInferenceProofArtifact);
+  delete missingPriorHold.diagnostics.prior_sensitivity;
+  markInferenceProofHold(missingPriorHold, ["prior_sensitivity"]);
+  signInferenceProofArtifact(missingPriorHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingPriorHold).success, true);
+});
+
+test("inference proof artifact requires documented empirical prior justification for eligibility", () => {
+  const undocumentedEligible = clone(validInferenceProofArtifact);
+  undocumentedEligible.diagnostics.prior_sensitivity.empirical_prior_justification_documented = false;
+  undocumentedEligible.diagnostics.prior_sensitivity.empirical_prior_justification_ref = null;
+  undocumentedEligible.diagnostics.prior_sensitivity.empirical_prior_justification_hash = null;
+  signInferenceProofArtifact(undocumentedEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(undocumentedEligible).success, false);
+
+  const undocumentedHold = clone(undocumentedEligible);
+  markInferenceProofHold(undocumentedHold, ["prior_sensitivity"]);
+  signInferenceProofArtifact(undocumentedHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(undocumentedHold).success, true);
 });
 
 test("inference proof artifact cross-checks pre-trend interval values", () => {
@@ -1284,80 +1206,57 @@ test("inference proof artifact cross-checks pre-trend interval values", () => {
   };
   forgedPreTrend.diagnostics.pre_trend.includes_zero = true;
   forgedPreTrend.diagnostics.pre_trend.pass = true;
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(forgedPreTrend).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(forgedPreTrend).success, false);
 
   const heldPreTrend = clone(forgedPreTrend);
   heldPreTrend.diagnostics.pre_trend.includes_zero = false;
   heldPreTrend.diagnostics.pre_trend.pass = false;
   markInferenceProofHold(heldPreTrend, ["pre_trend"]);
-  bindInferenceProofSelfHash(heldPreTrend);
+  signInferenceProofArtifact(heldPreTrend);
   assert.equal(InferenceProofArtifactSchema.safeParse(heldPreTrend).success, true);
 });
 
 test("inference proof artifact enforces calibration and null proof gates", () => {
   const tooFewReplications = clone(validInferenceProofArtifact);
   tooFewReplications.calibration.scenarios[0].replication_count = 199;
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(tooFewReplications).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(tooFewReplications).success, false);
 
   const missingCell = clone(validInferenceProofArtifact);
   missingCell.calibration.scenarios = missingCell.calibration.scenarios.filter(
-    (scenario) =>
-      !(scenario.injected_effect_size_sd === 0.5 && scenario.cohort_size === 16)
+    (scenario) => !(scenario.injected_effect_size_sd === 0.5 && scenario.cohort_size === 16)
   );
   assert.equal(InferenceProofArtifactSchema.safeParse(missingCell).success, false);
 
   const highCoverageEligible = clone(validInferenceProofArtifact);
   highCoverageEligible.calibration.scenarios[0].coverage_rate = 0.9;
   highCoverageEligible.calibration.scenarios[0].coverage_standard_error =
-    Math.sqrt(
-      (0.9 * (1 - 0.9)) /
-        highCoverageEligible.calibration.scenarios[0].replication_count
-    );
-  bindInferenceProofSelfHash(highCoverageEligible);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(highCoverageEligible).success,
-    false
-  );
+    calibrationStandardError(0.9);
+  signInferenceProofArtifact(highCoverageEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(highCoverageEligible).success, false);
 
   const highCoverageHold = clone(highCoverageEligible);
   markInferenceProofHold(highCoverageHold, ["calibration_coverage"]);
-  bindInferenceProofSelfHash(highCoverageHold);
+  signInferenceProofArtifact(highCoverageHold);
   assert.equal(InferenceProofArtifactSchema.safeParse(highCoverageHold).success, true);
 
-  const forgedCoverageStandardError = clone(validInferenceProofArtifact);
-  forgedCoverageStandardError.calibration.scenarios[0].coverage_standard_error = 0;
-  bindInferenceProofSelfHash(forgedCoverageStandardError);
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(forgedCoverageStandardError).success,
-    false
-  );
+  const forgedCoverageSe = clone(validInferenceProofArtifact);
+  forgedCoverageSe.calibration.scenarios[0].coverage_standard_error = 0;
+  signInferenceProofArtifact(forgedCoverageSe);
+  assert.equal(InferenceProofArtifactSchema.safeParse(forgedCoverageSe).success, false);
 
   const highNullFalseEligibility = clone(validInferenceProofArtifact);
   highNullFalseEligibility.null_checks.false_eligibility_rate = 0.06;
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(highNullFalseEligibility).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(highNullFalseEligibility).success, false);
 });
 
 test("inference proof artifact enforces floor cases", () => {
   const k4NotRejected = clone(validInferenceProofArtifact);
-  k4NotRejected.floor_checks.k4_rejected.outcome =
-    "internal_only_display_ineligible";
+  k4NotRejected.floor_checks.k4_rejected.outcome = "internal_only_display_ineligible";
   assert.equal(InferenceProofArtifactSchema.safeParse(k4NotRejected).success, false);
 
   const k8DisplayEligible = clone(validInferenceProofArtifact);
   k8DisplayEligible.floor_checks.k8_internal_only.display_eligible = true;
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(k8DisplayEligible).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(k8DisplayEligible).success, false);
 
   const missingK16 = clone(validInferenceProofArtifact);
   missingK16.floor_checks.eligible_floor_cases = [
@@ -1371,66 +1270,97 @@ test("inference proof artifact rejects naive repeated-look peeking", () => {
   const repeatedWithoutProof = clone(validInferenceProofArtifact);
   repeatedWithoutProof.peeking_control.repeated_evaluation = true;
   repeatedWithoutProof.peeking_control.total_planned_looks = 6;
-  repeatedWithoutProof.peeking_control.milestone_days_included = [
-    0,
-    30,
-    60,
-    90,
-    180,
-    365
-  ];
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(repeatedWithoutProof).success,
-    false
-  );
+  repeatedWithoutProof.peeking_control.milestone_days_included = [0, 30, 60, 90, 180, 365];
+  assert.equal(InferenceProofArtifactSchema.safeParse(repeatedWithoutProof).success, false);
 
   const fixedHorizonMultiMetric = clone(validInferenceProofArtifact);
-  fixedHorizonMultiMetric.peeking_control.metrics_included = [
-    "selected_metric",
-    "second_metric"
-  ];
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(fixedHorizonMultiMetric).success,
-    false
-  );
+  fixedHorizonMultiMetric.peeking_control.metrics_included = ["selected_metric", "second_metric"];
+  assert.equal(InferenceProofArtifactSchema.safeParse(fixedHorizonMultiMetric).success, false);
 
   const fixedHorizonMultiCohort = clone(validInferenceProofArtifact);
   fixedHorizonMultiCohort.peeking_control.cohorts_included = [
     "synthetic-treated-vs-comparison",
     "second-comparison"
   ];
-  assert.equal(
-    InferenceProofArtifactSchema.safeParse(fixedHorizonMultiCohort).success,
-    false
-  );
+  assert.equal(InferenceProofArtifactSchema.safeParse(fixedHorizonMultiCohort).success, false);
 
   const alwaysValid = clone(validInferenceProofArtifact);
-  alwaysValid.peeking_control.procedure =
-    "always_valid_sequential_procedure_proven";
+  alwaysValid.peeking_control.procedure = "always_valid_sequential_procedure_proven";
   alwaysValid.peeking_control.repeated_evaluation = true;
   alwaysValid.peeking_control.look_index = 6;
   alwaysValid.peeking_control.total_planned_looks = 6;
-  alwaysValid.peeking_control.milestone_days_included = [
-    0,
-    30,
-    60,
-    90,
-    180,
-    365
+  alwaysValid.peeking_control.milestone_days_included = [0, 30, 60, 90, 180, 365];
+  alwaysValid.measurement_cell_window_evidence.required_milestone_days = [0, 30, 60, 90, 180, 365];
+  alwaysValid.measurement_cell_window_evidence.observed_milestone_days = [0, 30, 60, 90, 180, 365];
+  alwaysValid.measurement_cell_window_evidence.required_window_refs = [
+    "selected_metric:synthetic-treated-vs-comparison:0",
+    "selected_metric:synthetic-treated-vs-comparison:30",
+    "selected_metric:synthetic-treated-vs-comparison:60",
+    "selected_metric:synthetic-treated-vs-comparison:90",
+    "selected_metric:synthetic-treated-vs-comparison:180",
+    "selected_metric:synthetic-treated-vs-comparison:365"
   ];
-  alwaysValid.peeking_control.sequential_method_name =
-    "synthetic_null_validated_e_value";
+  alwaysValid.measurement_cell_window_evidence.observed_window_refs = [
+    ...alwaysValid.measurement_cell_window_evidence.required_window_refs
+  ];
+  alwaysValid.peeking_control.sequential_method_name = "synthetic_null_validated_e_value";
   alwaysValid.peeking_control.synthetic_null_proof_hash = "f".repeat(64);
-  bindInferenceProofSelfHash(alwaysValid);
+  signInferenceProofArtifact(alwaysValid);
   assert.equal(InferenceProofArtifactSchema.safeParse(alwaysValid).success, true);
+});
 
-  const partialAlwaysValid = clone(alwaysValid);
-  partialAlwaysValid.peeking_control.look_index = 3;
-  partialAlwaysValid.peeking_control.total_planned_looks = 6;
-  partialAlwaysValid.peeking_control.milestone_days_included = [0, 30, 60];
-  bindInferenceProofSelfHash(partialAlwaysValid);
+test("inference proof artifact requires full repeated-look proof scope", () => {
+  const oneMilestoneSequential = clone(validInferenceProofArtifact);
+  oneMilestoneSequential.peeking_control.procedure = "always_valid_sequential_procedure_proven";
+  oneMilestoneSequential.peeking_control.repeated_evaluation = true;
+  oneMilestoneSequential.peeking_control.total_planned_looks = 6;
+  oneMilestoneSequential.peeking_control.sequential_method_name =
+    "synthetic_null_validated_e_value";
+  oneMilestoneSequential.peeking_control.synthetic_null_proof_hash = "f".repeat(64);
+  signInferenceProofArtifact(oneMilestoneSequential);
+  assert.equal(InferenceProofArtifactSchema.safeParse(oneMilestoneSequential).success, false);
+
+  const unboundSequential = clone(oneMilestoneSequential);
+  unboundSequential.peeking_control.milestone_days_included = [0, 30, 60, 90, 180, 365];
+  unboundSequential.measurement_cell_window_evidence.required_milestone_days = [
+    0, 30, 60, 90, 180, 365
+  ];
+  unboundSequential.measurement_cell_window_evidence.observed_milestone_days = [
+    0, 30, 60, 90, 180, 365
+  ];
+  unboundSequential.peeking_control.metric_family_bound = false;
+  signInferenceProofArtifact(unboundSequential);
+  assert.equal(InferenceProofArtifactSchema.safeParse(unboundSequential).success, false);
+});
+
+test("inference proof artifact derives missing and suppressed window HOLD evidence", () => {
+  const missingWindowEligible = clone(validInferenceProofArtifact);
+  missingWindowEligible.measurement_cell_window_evidence.observed_milestone_days = [];
+  missingWindowEligible.measurement_cell_window_evidence.missing_milestone_days = [90];
+  missingWindowEligible.measurement_cell_window_evidence.observed_window_refs = [];
+  missingWindowEligible.measurement_cell_window_evidence.missing_window_refs = [
+    "selected_metric:synthetic-treated-vs-comparison:90"
+  ];
+  missingWindowEligible.measurement_cell_window_evidence.all_required_windows_observed = false;
+  signInferenceProofArtifact(missingWindowEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingWindowEligible).success, false);
+
+  const missingWindowHold = clone(missingWindowEligible);
+  markInferenceProofHold(missingWindowHold, ["missing_or_suppressed_windows"]);
+  signInferenceProofArtifact(missingWindowHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(missingWindowHold).success, true);
+
+  const suppressedWindowHeldWithoutDiagnostic = clone(validInferenceProofArtifact);
+  suppressedWindowHeldWithoutDiagnostic.measurement_cell_window_evidence.suppressed_milestone_days =
+    [90];
+  suppressedWindowHeldWithoutDiagnostic.measurement_cell_window_evidence.suppressed_window_refs = [
+    "selected_metric:synthetic-treated-vs-comparison:90"
+  ];
+  suppressedWindowHeldWithoutDiagnostic.measurement_cell_window_evidence.all_windows_unsuppressed_and_fresh = false;
+  markInferenceProofHold(suppressedWindowHeldWithoutDiagnostic, ["pre_trend"]);
+  signInferenceProofArtifact(suppressedWindowHeldWithoutDiagnostic);
   assert.equal(
-    InferenceProofArtifactSchema.safeParse(partialAlwaysValid).success,
+    InferenceProofArtifactSchema.safeParse(suppressedWindowHeldWithoutDiagnostic).success,
     false
   );
 });

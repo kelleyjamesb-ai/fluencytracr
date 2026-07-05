@@ -66,22 +66,26 @@ probability output. Random effects are mean-zero partially pooled effects with
 hierarchical scale priors; the harness reports pooling factors so reviewers
 can see when pooling is driving the result rather than the synthetic evidence.
 
-Slice 2 proves the normal continuous aggregate path first, with all other
-families held unless the same PR implements their samplers, diagnostics, and
-synthetic recovery tests. The model binding still names the supported family
-vocabulary so artifacts cannot invent shapes later:
+Slice 2 proves the normal continuous aggregate path first, using the identity
+link. All other families are structurally typed with their allowed links but
+held unless the same PR implements their samplers, diagnostics, and synthetic
+recovery tests. The model binding still names the supported family vocabulary
+so artifacts cannot invent shapes later:
 
-| Metric family | Likelihood / link | Cohort-size handling |
-| --- | --- | --- |
-| Continuous aggregate metric | Normal with identity link | Aggregate standard error is weighted by cohort size; overdispersion is estimated only if declared in the artifact. |
-| Rate / proportion | Binomial with logit link, or beta-binomial when overdispersion is declared | `n_i` is the aggregate denominator; no person rows enter the model. |
-| Count metric | Poisson with log link, or negative-binomial when overdispersion is declared | Exposure/offset is explicit and approved; missing exposure HOLDS. |
+| Metric family               | Likelihood / link                                                           | Cohort-size handling                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Continuous aggregate metric | Normal with identity link                                                   | Aggregate standard error is weighted by cohort size; overdispersion is estimated only if declared in the artifact. |
+| Rate / proportion           | Binomial with logit link, or beta-binomial when overdispersion is declared  | `n_i` is the aggregate denominator; no person rows enter the model.                                                |
+| Count metric                | Poisson with log link, or negative-binomial when overdispersion is declared | Exposure/offset is explicit and approved; missing exposure HOLDS.                                                  |
 
 Lag windows must be declared before fitting and bound into the artifact.
-Suppressed, stale, or missing windows HOLD; the harness must not impute them
-into eligibility. Treatment effects may be pooled globally, by workflow, by
-function, or by cohort only when the artifact declares that pooling level and
-the synthetic calibration suite covers it.
+The artifact carries compact Measurement Cell window evidence: required,
+observed, missing, suppressed, stale, and imputed milestone/window refs, plus
+a hash binding to the window-evidence record. Suppressed, stale, missing, or
+imputed windows HOLD; the harness must not impute them into eligibility.
+Treatment effects may be pooled globally, by workflow, by function, or by
+cohort only when the artifact declares that pooling level and the synthetic
+calibration suite covers it.
 
 ## Python/TypeScript boundary
 
@@ -116,11 +120,12 @@ every proof artifact pins `internal_only: true`,
 The internal artifact carries structural proof fields for the gates below:
 `comparison_adequacy` records the runnable comparison-cohort rubric and its
 proof hash; sampler diagnostics record explicit max-treedepth and BFMI warning
-flags; fixed-horizon peeking control records exactly one milestone, one metric,
-and one cohort; model binding records observed, missing, and suppressed/stale
-milestone evidence; prior sensitivity records a documented empirical prior
-justification; and `artifact_self_hash` is recomputed from the artifact body
-before acceptance. These fields are validation inputs only, not output fields.
+flags; window evidence records missing/suppressed/stale/imputed windows; the
+fixed-horizon peeking control records exactly one milestone, one metric, and
+one cohort. The artifact self-hash is recomputed at the TypeScript boundary
+with `hash_bindings.artifact_self_hash` omitted, so stale or forged proof
+bodies are rejected before governance processing. These fields are validation
+inputs only, not output fields.
 
 ## Diagnostics: computed values with numeric gates
 
@@ -128,29 +133,31 @@ Every required diagnostic is a computed number checked against an explicit
 numeric gate — never a boolean flag. A confidence-bearing artifact is
 structurally un-emittable unless all gates pass.
 
-| Diagnostic | Gate |
-| --- | --- |
-| R-hat and sampler convergence | R-hat <= 1.01 for every sampled parameter; post-warmup divergent transitions = 0; rank and energy plots recorded in the internal report artifact. |
-| Effective sample size and Monte Carlo error | Bulk ESS >= 400 chain-total per parameter; tail ESS >= 400 chain-total per parameter; MCSE for posterior mean and interval endpoints <= 0.1 posterior SD. |
-| Posterior predictive checks | Every designated PPC statistic below carries statistic name, observed value, posterior predictive 80% interval summary, p-value, and pass/fail; p-values must be within [0.05, 0.95]. |
-| Prior sensitivity | posterior-mean shift < 0.5 posterior SD across the declared prior family |
-| Pre-period trend check | pre-window pseudo-effect 80% credible interval must include 0 |
-| Calibration coverage | 80% credible interval covers the injected effect in 74–86% of >= 200 seeded synthetic replications per effect-size/cohort-size/scenario cell; binomial uncertainty around observed coverage is reported. |
-| Known-effect recovery (null case) | null-effect false-eligibility <= 5% of replications |
+| Diagnostic                                  | Gate                                                                                                                                                                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R-hat and sampler convergence               | R-hat <= 1.01 for every sampled parameter; post-warmup divergent transitions = 0; rank and energy plots recorded in the internal report artifact.                                                        |
+| Effective sample size and Monte Carlo error | Bulk ESS >= 400 chain-total per parameter; tail ESS >= 400 chain-total per parameter; MCSE for posterior mean and interval endpoints <= 0.1 posterior SD.                                                |
+| Posterior predictive checks                 | Every designated PPC statistic below carries statistic name, observed value, posterior predictive 80% interval summary, p-value, and pass/fail; p-values must be within [0.05, 0.95].                    |
+| Prior sensitivity                           | posterior-mean shift < 0.5 posterior SD across the declared prior family                                                                                                                                 |
+| Pre-period trend check                      | pre-window pseudo-effect 80% credible interval must include 0                                                                                                                                            |
+| Calibration coverage                        | 80% credible interval covers the injected effect in 74–86% of >= 200 seeded synthetic replications per effect-size/cohort-size/scenario cell; binomial uncertainty around observed coverage is reported. |
+| Known-effect recovery (null case)           | null-effect false-eligibility <= 5% of replications                                                                                                                                                      |
 
-Any gate failure — or any diagnostic absent or not computed as a real
-value — emits the artifact only in HOLD state, with every failing or missing
-diagnostic named in the artifact.
+Any gate failure — or any diagnostic absent or not computed as a real value —
+emits the artifact only in HOLD state, with every failing or missing diagnostic
+named in the artifact. Missing posterior predictive checks or missing prior
+sensitivity evidence remain valid only as named HOLD artifacts; they are not
+eligible artifacts.
 
 Designated posterior predictive check statistics are fixed for Slice 2:
 
-| Statistic | Purpose |
-| --- | --- |
-| `pre_post_mean_movement` | Checks central tendency recovery across pre/post windows. |
-| `between_cohort_variance` | Checks whether partial pooling is masking between-cohort heterogeneity. |
-| `within_cohort_variance` | Checks aggregate noise within cohort windows. |
-| `tail_or_extreme_cell_statistic` | Checks outliers, heavy tails, or boundary cells for the selected likelihood family. |
-| `difference_in_differences_contrast` | Checks fit at the estimand level. |
+| Statistic                            | Purpose                                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `pre_post_mean_movement`             | Checks central tendency recovery across pre/post windows.                           |
+| `between_cohort_variance`            | Checks whether partial pooling is masking between-cohort heterogeneity.             |
+| `within_cohort_variance`             | Checks aggregate noise within cohort windows.                                       |
+| `tail_or_extreme_cell_statistic`     | Checks outliers, heavy tails, or boundary cells for the selected likelihood family. |
+| `difference_in_differences_contrast` | Checks fit at the estimand level.                                                   |
 
 Max-treedepth saturation and BFMI are recorded when exposed by the active
 PyMC/ArviZ backend. If either backend emits a warning, the artifact HOLDS
@@ -162,12 +169,10 @@ Calibration is reported per scenario cell, not pooled across unlike
 conditions. The clean simulator must cover every combination of injected
 effect size `{0, 0.2, 0.5}` SD and floor-eligible cohort size `{12, 16}`,
 with at least 200 seeded replications per cell. The artifact reports the
-observed coverage rate and the derived binomial standard error for each cell.
-The standard error must equal
-`sqrt(coverage_rate * (1 - coverage_rate) / replication_count)`. Negative
-controls may use a smaller declared replication count only when they are
-separately labeled as negative controls and never pooled into the clean
-calibration coverage claim.
+observed coverage rate and the derived binomial standard error
+`sqrt(p * (1 - p) / n)` for each cell. Negative controls may use a smaller
+declared replication count only when they are separately labeled as negative
+controls and never pooled into the clean calibration coverage claim.
 
 ## Comparison-cohort rule
 
@@ -187,17 +192,17 @@ A credible comparison cohort is not a judgment phrase; it is the following
 runnable rubric. Missing any required check HOLDS the artifact or limits it
 to evidence-tier-only status.
 
-| Criterion | Required check |
-| --- | --- |
-| Same selected metric definition | Exact metric identity and aggregation definition match. |
-| Same milestone windows | Baseline and comparison milestone windows align exactly. |
-| Same metric direction | Direction is owner-approved and identical across treatment/comparison. |
-| Same lag handling | Lag window is declared and owner-approved before fitting. |
+| Criterion                         | Required check                                                                                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Same selected metric definition   | Exact metric identity and aggregation definition match.                                                                                                          |
+| Same milestone windows            | Baseline and comparison milestone windows align exactly.                                                                                                         |
+| Same metric direction             | Direction is owner-approved and identical across treatment/comparison.                                                                                           |
+| Same lag handling                 | Lag window is declared and owner-approved before fitting.                                                                                                        |
 | Same expectation path and context | Expectation path, workflow, function, and cohort context match unless a reviewer-owned comparison-design adequacy reference explicitly justifies the difference. |
-| Similar pre-period level/trend | Pre-period level and trend are checked and reported; violated pre-trend HOLDS. |
-| No contamination | Treatment and comparison conditions are not mixed, reused, or cross-exposed. |
-| Adequate aggregate floors | k-floor and stated-floor checks pass independently for treatment and comparison cells. |
-| No suppressed/stale windows | Suppressed, stale, or missing windows HOLD; no imputation rescue. |
+| Similar pre-period level/trend    | Pre-period level and trend are checked and reported; violated pre-trend HOLDS.                                                                                   |
+| No contamination                  | Treatment and comparison conditions are not mixed, reused, or cross-exposed.                                                                                     |
+| Adequate aggregate floors         | k-floor and stated-floor checks pass independently for treatment and comparison cells.                                                                           |
+| No suppressed/stale windows       | Suppressed, stale, or missing windows HOLD; no imputation rescue.                                                                                                |
 
 ## Negative controls
 
@@ -205,16 +210,16 @@ The proof harness must show fail-closed behavior when assumptions fail. In
 addition to clean known-effect recovery, Slice 2 must include synthetic
 negative controls for:
 
-| Failure mode | Expected result |
-| --- | --- |
-| No credible comparison cohort | No comparison-supported contribution estimate; evidence-tier-only or HOLD. |
-| Violated pre-trend | HOLD naming pre-trend. |
-| Badly mismatched comparison cohort | HOLD or comparison-ineligible. |
-| Prior-dominated weak data | HOLD naming prior sensitivity. |
-| Underpowered floor case `k=4` | Rejected below schema floor. |
-| Internal-only floor case `k=8` | Valid internally, display-ineligible. |
-| Missing or suppressed windows | HOLD, with no imputation rescue. |
-| Naive repeated milestone peeking | Ineligible/HOLD naming peeking control. |
+| Failure mode                       | Expected result                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| No credible comparison cohort      | No comparison-supported contribution estimate; evidence-tier-only or HOLD. |
+| Violated pre-trend                 | HOLD naming pre-trend.                                                     |
+| Badly mismatched comparison cohort | HOLD or comparison-ineligible.                                             |
+| Prior-dominated weak data          | HOLD naming prior sensitivity.                                             |
+| Underpowered floor case `k=4`      | Rejected below schema floor.                                               |
+| Internal-only floor case `k=8`     | Valid internally, display-ineligible.                                      |
+| Missing or suppressed windows      | HOLD, with no imputation rescue.                                           |
+| Naive repeated milestone peeking   | Ineligible/HOLD naming peeking control.                                    |
 
 ## Milestone peeking control
 
@@ -227,26 +232,24 @@ Slice 2 uses the conservative executable rule: artifacts are fixed-horizon,
 one-look only unless the implementation proves a named always-valid
 sequential procedure in synthetic null simulations across the full look,
 metric, and cohort family. The artifact must record look index, total planned
-looks, milestones included, metrics included, cohorts included, procedure
-name, whether repeated evaluation occurred, and the false-eligibility bound.
-A fixed-horizon artifact must have exactly one look and exactly one milestone.
-An always-valid sequential artifact must bind the completed Day 0 / 30 / 60 /
-90 / 180 / 365 schedule, with non-duplicated metric and cohort bindings.
-Naive repeated evaluation across milestones, metrics, or cohorts marks the
-artifact ineligible/HOLD. The internal "Playbook: A/B testing @ Glean"
-(Confluence, Engineering space) is cited as provenance and alignment for this
-rule, not as its normative source.
+looks, the full Day 0/30/60/90/180/365 milestone family for repeated-look
+proofs, metrics included, cohorts included, metric-family and cohort-family
+bindings, procedure name, whether repeated evaluation occurred, and the
+false-eligibility bound. A fixed-horizon artifact must have exactly one look
+and exactly one milestone. Naive repeated evaluation across milestones,
+metrics, or cohorts marks the artifact ineligible/HOLD. The internal
+"Playbook: A/B testing @ Glean" (Confluence, Engineering space) is cited as
+provenance and alignment for this rule, not as its normative source.
 
 ## Prior policy
 
 Priors are weakly informative and empirically justified from historical and
 dogfood aggregates. Prior-sensitivity analysis is always run and reported as
-one of the diagnostics above; an artifact whose conclusion is prior-driven
-(posterior-mean shift at or above 0.5 posterior SD across the declared prior
-family) holds, naming prior sensitivity as the cause. Priors lacking
-documented empirical justification also hold, and artifacts must carry the
-documented prior-family and empirical-justification flags plus a prior
-justification reference. The spine's `N(0,1)`
+one of the diagnostics above; the artifact must carry documented empirical
+prior justification as a ref/hash pair. An artifact whose conclusion is
+prior-driven (posterior-mean shift at or above 0.5 posterior SD across the
+declared prior family) holds, naming prior sensitivity as the cause. Priors
+lacking documented empirical justification also hold. The spine's `N(0,1)`
 placeholder (state `weakly_regularizing_internal_placeholder_not_calibrated`)
 is retired only inside the harness; the spine itself stays byte-stable as a
 governed decision record.
@@ -283,14 +286,14 @@ evidence-tier ladder (`shared/src/aiValueEngine/valueHypothesisReadiness.ts`):
 every tier remains internal-only or withheld unless a separate recorded human
 promotion decision authorizes a narrower customer-facing claim.**
 
-| Evidence tier | Theoretical ceiling after later promotion | Effective status in this contract | Permitted Slice 1 / Slice 2 language |
-| --- | --- | --- | --- |
-| `NONE` | withheld | withheld | No claim. |
-| `DIRECTIONAL_ALIGNMENT` | internal-only | internal-only | Directional internal language only; no numbers. |
-| `PRE_POST_SUPPORTED` | internal-only | internal-only | Internal pre/post movement described; no comparison-supported contribution estimate (comparison-cohort rule). |
-| `MATCHED_COMPARISON_READY` | future caveated ceiling only - not currently authorized | internal-only | Internal contribution-estimate eligibility with design caveats stated, all diagnostic gates passing. |
-| `CONTROLLED_TEST_READY` | future customer-safe ceiling only - not currently authorized | internal-only | Internal measured-effect language with the test design named; no customer-facing output. |
-| `CALIBRATED_ATTRIBUTION_READY` | future customer-safe ceiling only - not currently authorized | internal-only | Internal calibrated-attribution language only after later promotion; no customer-facing output. |
+| Evidence tier                  | Theoretical ceiling after later promotion                    | Effective status in this contract | Permitted Slice 1 / Slice 2 language                                                                          |
+| ------------------------------ | ------------------------------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `NONE`                         | withheld                                                     | withheld                          | No claim.                                                                                                     |
+| `DIRECTIONAL_ALIGNMENT`        | internal-only                                                | internal-only                     | Directional internal language only; no numbers.                                                               |
+| `PRE_POST_SUPPORTED`           | internal-only                                                | internal-only                     | Internal pre/post movement described; no comparison-supported contribution estimate (comparison-cohort rule). |
+| `MATCHED_COMPARISON_READY`     | future caveated ceiling only - not currently authorized      | internal-only                     | Internal contribution-estimate eligibility with design caveats stated, all diagnostic gates passing.          |
+| `CONTROLLED_TEST_READY`        | future customer-safe ceiling only - not currently authorized | internal-only                     | Internal measured-effect language with the test design named; no customer-facing output.                      |
+| `CALIBRATED_ATTRIBUTION_READY` | future customer-safe ceiling only - not currently authorized | internal-only                     | Internal calibrated-attribution language only after later promotion; no customer-facing output.               |
 
 Until a separate recorded human promotion decision exists, the effective
 status of every non-withheld tier is capped at internal-only:
@@ -306,11 +309,11 @@ individuals originally identified during planning research are no longer
 part of the project, so each role remains unassigned until the decision
 owner names a reviewer or explicitly waives the role.
 
-| Review role | Scope | Assigned reviewer | Outcome | Date |
-| --- | --- | --- | --- | --- |
-| Statistical methodology reviewer | Estimand, diagnostics gates, prior policy, calibration criteria | UNASSIGNED | PENDING | — |
-| Value governance reviewer | Claim language, evidence tiers, non-authorizations | UNASSIGNED | PENDING | — |
-| Downstream tooling interface reviewer | Consumption of evidence-tier outputs by downstream value tooling | UNASSIGNED | PENDING | — |
+| Review role                           | Scope                                                            | Assigned reviewer | Outcome | Date |
+| ------------------------------------- | ---------------------------------------------------------------- | ----------------- | ------- | ---- |
+| Statistical methodology reviewer      | Estimand, diagnostics gates, prior policy, calibration criteria  | UNASSIGNED        | PENDING | —    |
+| Value governance reviewer             | Claim language, evidence tiers, non-authorizations               | UNASSIGNED        | PENDING | —    |
+| Downstream tooling interface reviewer | Consumption of evidence-tier outputs by downstream value tooling | UNASSIGNED        | PENDING | —    |
 
 ## What this contract does not change or authorize
 

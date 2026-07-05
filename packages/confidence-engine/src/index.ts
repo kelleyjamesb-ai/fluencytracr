@@ -8,6 +8,11 @@ export {
 } from "./internal/hashing";
 
 export {
+  inferenceProofArtifactSelfHash,
+  inferenceProofArtifactSelfHashBody
+} from "./inferenceProofArtifactHash";
+
+export {
   CONTRIBUTION_ALIGNMENT_FEATURE_STABILITY_REVIEW_SCHEMA_VERSION,
   CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_SCHEMA_VERSION,
   buildContributionAlignmentFeatureStabilityReviewFromObject,
@@ -183,7 +188,6 @@ export {
   InferenceProofPeekingControlSchema,
   InferenceProofGovernanceSchema,
   InferenceProofHashBindingsSchema,
-  computeInferenceProofArtifactSelfHash,
   InferenceProofArtifactSchema
 } from "./confidenceModel";
 

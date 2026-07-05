@@ -56,11 +56,11 @@ The proof harness SHALL implement the hierarchical Bayesian difference-in-differ
 - **WHEN** the proof harness evaluates the model input
 - **THEN** the artifact HOLDS naming missing or suppressed windows rather than imputing the window
 
-#### Scenario: Missing-window evidence is explicit
+#### Scenario: Measurement Cell window evidence is explicit
 
-- **GIVEN** a proof artifact declares missing-or-suppressed windows hold semantics
+- **GIVEN** a proof artifact declares missing-or-suppressed window hold semantics
 - **WHEN** the artifact is validated
-- **THEN** it records observed, missing, and suppressed-or-stale milestone evidence, and any unavailable milestone blocks eligibility unless the artifact HOLDS naming missing or suppressed windows
+- **THEN** it records required, observed, missing, suppressed, stale, and imputed Measurement Cell window evidence, and any unavailable or imputed window blocks eligibility unless the artifact HOLDS naming missing or suppressed windows
 
 ### Requirement: Computed Diagnostics Gate
 
@@ -166,7 +166,7 @@ The system SHALL treat Slice 2 inference proof artifacts as fixed-horizon, one-l
 
 - **GIVEN** repeated evaluation of an effect across multiple milestones, metrics, or cohorts
 - **WHEN** a named always-valid sequential procedure is implemented and its synthetic null proof demonstrates the declared false-eligibility bound
-- **THEN** the evaluation may proceed only when the artifact records the method name, proof hash, completed Day 0/30/60/90/180/365 milestone schedule, and non-duplicated metric and cohort bindings
+- **THEN** the evaluation may proceed only when the artifact records the method name, proof hash, completed Day 0/30/60/90/180/365 milestone schedule, and metric-family and cohort-family bindings
 
 #### Scenario: Naive repeated evaluation marks the artifact ineligible
 
