@@ -309,17 +309,25 @@ remain in `CONFIDENCE_MODEL_BLOCKED_USES`.
 ## Expert review record
 
 Per task 1.2 of the change, each review outcome (approve /
-approve-with-changes / reject) is recorded here with reviewer and date.
-Review roles are assigned by the decision owner (James Kelley); the
-individuals originally identified during planning research are no longer
-part of the project, so each role remains unassigned until the decision
-owner names a reviewer or explicitly waives the role.
+approve-with-changes / reject / waived) is recorded here with reviewer and
+date. Review roles are assigned or waived by the decision owner (James
+Kelley); the individuals originally identified during planning research are
+no longer part of the project.
 
-| Review role                           | Scope                                                            | Assigned reviewer | Outcome | Date |
-| ------------------------------------- | ---------------------------------------------------------------- | ----------------- | ------- | ---- |
-| Statistical methodology reviewer      | Estimand, diagnostics gates, prior policy, calibration criteria  | UNASSIGNED        | PENDING | —    |
-| Value governance reviewer             | Claim language, evidence tiers, non-authorizations               | UNASSIGNED        | PENDING | —    |
-| Downstream tooling interface reviewer | Consumption of evidence-tier outputs by downstream value tooling | UNASSIGNED        | PENDING | —    |
+On 2026-07-06 the decision owner waived all three roles for slice 2
+(decision-owner statement in the working session, confirming his earlier
+intent when directing the post-slice-1 contract-hardening pass). Basis for
+proceeding without pre-implementation expert review: slice 2 is synthetic
+data only, internal-only, fail-closed at every numeric gate, and the
+contract remains open to post-hoc review — a later reviewer can be assigned
+against the merged contract and harness at any time, and any
+approve-with-changes outcome binds future work.
+
+| Review role                           | Scope                                                            | Assigned reviewer          | Outcome | Date       |
+| ------------------------------------- | ---------------------------------------------------------------- | -------------------------- | ------- | ---------- |
+| Statistical methodology reviewer      | Estimand, diagnostics gates, prior policy, calibration criteria  | WAIVED_BY_DECISION_OWNER   | WAIVED  | 2026-07-06 |
+| Value governance reviewer             | Claim language, evidence tiers, non-authorizations               | WAIVED_BY_DECISION_OWNER   | WAIVED  | 2026-07-06 |
+| Downstream tooling interface reviewer | Consumption of evidence-tier outputs by downstream value tooling | WAIVED_BY_DECISION_OWNER   | WAIVED  | 2026-07-06 |
 
 ## What this contract does not change or authorize
 
