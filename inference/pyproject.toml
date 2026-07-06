@@ -27,3 +27,6 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The harness suite imports the package straight from src/ (no editable
+# install required in the pinned environment).
+pythonpath = ["src"]
