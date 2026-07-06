@@ -90,6 +90,26 @@ const SOURCE_REF_FIELDS = [
   "data_model_hash"
 ];
 
+const SOURCE_DATA_MODEL_FIELDS = new Set([
+  "schema_version",
+  "data_model_id",
+  "data_model_state",
+  "generated_at",
+  "derivation_version",
+  "data_model_scope",
+  "source_promotion_decision_ref",
+  "model_grain",
+  "context_partitions",
+  "component_registry",
+  "research_design_boundary",
+  "blocked_uses",
+  "required_caveats",
+  "feeds",
+  "boundary_policy",
+  "validation_summary",
+  "data_model_hash"
+]);
+
 const FEATURE_FIELDS = [
   "feature_id",
   "evidence_role",
@@ -292,6 +312,62 @@ function inputBoundaryGaps(input: unknown): string[] {
   );
   if (Object.keys(sidecar).length === 0) return [];
   return ["input wrapper rejected unsafe or unsupported content"];
+}
+
+function sourceDataModelContentGaps(value: unknown, path = "source_data_model"): string[] {
+  if (Array.isArray(value)) {
+    if (
+      path === "source_data_model.blocked_uses" ||
+      path === "source_data_model.required_caveats" ||
+      path === "source_data_model.validation_summary.gaps"
+    ) {
+      return [];
+    }
+    return value.flatMap((item, index) => sourceDataModelContentGaps(item, `${path}[${index}]`));
+  }
+  if (value && typeof value === "object") {
+    const gaps: string[] = [];
+    for (const [key, nested] of Object.entries(value)) {
+      const safeFalseFlag =
+        nested === false &&
+        (
+          path === "source_data_model.data_model_scope" ||
+          path === "source_data_model.feeds" ||
+          path === "source_data_model.boundary_policy" ||
+          path.startsWith("source_data_model.context_partitions.")
+        );
+      if (
+        !safeFalseFlag &&
+        FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))
+      ) {
+        gaps.push("source_data_model contains forbidden field name");
+        continue;
+      }
+      gaps.push(...sourceDataModelContentGaps(nested, `${path}.${key}`));
+    }
+    return gaps;
+  }
+  if (typeof value !== "string") return [];
+  if (
+    path.startsWith("source_data_model.blocked_uses[") ||
+    path.startsWith("source_data_model.required_caveats[") ||
+    path.startsWith("source_data_model.validation_summary.gaps[") ||
+    path.startsWith("source_data_model.model_grain.")
+  ) {
+    return [];
+  }
+  return FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(value))
+    ? [`${path} contains unsafe source or output language`]
+    : [];
+}
+
+function sourceDataModelBoundaryGaps(sourceDataModel: unknown): string[] {
+  const source = asRecord(sourceDataModel);
+  const gaps = Object.keys(source)
+    .filter((key) => !SOURCE_DATA_MODEL_FIELDS.has(key))
+    .map(() => "source_data_model contains ungoverned field");
+  gaps.push(...sourceDataModelContentGaps(source));
+  return sanitizeGaps(gaps);
 }
 
 function safeId(value: unknown, prefix: string): string | null {
@@ -571,6 +647,10 @@ export function buildContributionAlignmentFeatureStabilityReviewFromObject(input
     return rejectedReview(wrapperGaps);
   }
   const sourceDataModel = sourceDataModelFromInput(input);
+  const boundaryGaps = sourceDataModelBoundaryGaps(sourceDataModel);
+  if (boundaryGaps.length > 0) {
+    return rejectedReview(boundaryGaps);
+  }
   const gaps = sourceDataModelGaps(sourceDataModel);
   return baseReview(
     sourceDataModel,
@@ -716,6 +796,13 @@ function collectSourceBindingGaps(review: unknown, options: AnyRecord = {}): str
   const expected = options.expectedReview ?? buildContributionAlignmentFeatureStabilityReviewFromObject(options.sourceDataModel);
   const actualWithoutHash = clone(review);
   const expectedWithoutHash = clone(expected);
+  if (
+    !actualWithoutHash ||
+    typeof actualWithoutHash !== "object" ||
+    Array.isArray(actualWithoutHash)
+  ) {
+    return ["sourceDataModel binding mismatch"];
+  }
   delete actualWithoutHash.review_hash;
   delete expectedWithoutHash.review_hash;
   if (stableStringify(actualWithoutHash) !== stableStringify(expectedWithoutHash)) {
