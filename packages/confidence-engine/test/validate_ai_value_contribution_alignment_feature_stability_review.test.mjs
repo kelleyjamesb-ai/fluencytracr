@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -87,6 +88,25 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function stableStringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sourceDataModelHash(source) {
+  const withoutHash = clone(source);
+  delete withoutHash.data_model_hash;
+  return createHash("sha256").update(stableStringify(withoutHash)).digest("hex");
+}
+
 function hasNestedKey(value, key) {
   if (!value || typeof value !== "object") return false;
   if (Array.isArray(value)) return value.some((item) => hasNestedKey(item, key));
@@ -152,6 +172,32 @@ test("feature stability review rejects unsafe wrapper side doors without echo", 
   }
 });
 
+test("feature stability review rejects rehashed non-compact source data models without echo", () => {
+  const source = sourceDataModel();
+  source.raw_rows = [{ user_id: "user-123", email: "person@example.com" }];
+  source.query_text = "SELECT user_id, email FROM raw_rows";
+  source.data_model_hash = sourceDataModelHash(source);
+
+  const review = buildContributionAlignmentFeatureStabilityReviewFromObject({
+    source_data_model: source
+  });
+  const validation = validateContributionAlignmentFeatureStabilityReview(review, {
+    sourceDataModel: source
+  });
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(review.feeds.internal_numeric_weight_decision, false);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    review.validation_summary.gaps.some((gap) => /forbidden|ungoverned|unsafe/.test(gap)),
+    review.validation_summary.gaps.join("; ")
+  );
+  for (const unsafe of ["person@example.com", "SELECT user_id"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
 test("feature stability review holds on unstable source data model", () => {
   const source = sourceDataModel();
   source.component_registry = source.component_registry.filter(
@@ -190,4 +236,18 @@ test("feature stability review validation rejects forged weight authorization af
     validation.gaps.join("; ")
   );
   assert.equal(hasNestedKey(validation, "raw_rows"), false);
+});
+
+test("feature stability review validation fails closed for null bound reviews", () => {
+  const source = sourceDataModel();
+  const validation = validateContributionAlignmentFeatureStabilityReview(null, {
+    sourceDataModel: source
+  });
+
+  assert.equal(validation.valid, false);
+  assert.ok(validation.gaps.length > 0);
+  assert.ok(
+    validation.gaps.some((gap) => /schema_version|review_state|sourceDataModel/.test(gap)),
+    validation.gaps.join("; ")
+  );
 });
