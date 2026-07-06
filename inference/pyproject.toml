@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fluencytracr-inference"
+version = "0.1.0"
+description = "Internal-only Bayesian inference proof harness for the FluencyTracr confidence engine (synthetic data only)."
+requires-python = ">=3.13,<3.14"
+# Direct dependencies, pinned exactly to the versions in requirements.lock.
+# The lockfile (requirements.lock) is the source of truth for the full
+# transitive environment; install from it, not from these pins alone.
+dependencies = [
+    "pymc==6.0.1",
+    "arviz==1.2.0",
+    "numpy==2.4.6",
+    "scipy==1.18.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.1.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
