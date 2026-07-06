@@ -839,6 +839,118 @@ test("governed diagnostics sufficiency evidence source rejects unsafe nested sou
   }
 });
 
+test("governed diagnostics sufficiency evidence source rejects allowed-envelope side-door metadata before runtime validation", () => {
+  const fakeRuntime = { runtime_hash: "not-a-valid-runtime" };
+  const unsafeInputs = [
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        source_gate: {
+          promotion_authorized: true,
+          economic_output_authorized: true,
+          admin_override_authorized: true
+        }
+      }
+    },
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        sourceGate: {
+          suppression_override_authorized: true,
+          external_output_authorized: true
+        }
+      }
+    },
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        aggregateMeasurementCellWindows: {
+          source_window_metadata: { cohort_size: 4 },
+          source_runtime_metadata: {
+            raw_row_count: 1,
+            identifier_count: 1,
+            query_text_present: true
+          }
+        }
+      }
+    },
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        aggregate_windows: {
+          source_window_metadata: {
+            n: 4,
+            sample_size: 4,
+            distinct_users: 4
+          },
+          source_runtime_metadata: {
+            tracking_token: "track-123",
+            personKey: "person-key-123"
+          }
+        }
+      }
+    }
+  ];
+
+  for (const input of unsafeInputs) {
+    const source =
+      buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(input);
+    const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
+    const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
+
+    assert.equal(source.source_state, REJECT_STATE);
+    assert.equal(validation.valid, false);
+    assert.equal(source.promotion_boundary.promotion_authorized, false);
+    for (const unsafe of [
+      "\"promotion_authorized\":true",
+      "\"economic_output_authorized\":true",
+      "\"admin_override_authorized\":true",
+      "\"suppression_override_authorized\":true",
+      "\"external_output_authorized\":true",
+      "\"cohort_size\":4",
+      "\"raw_row_count\":1",
+      "\"identifier_count\":1",
+      "\"query_text_present\":true",
+      "\"n\":4",
+      "\"sample_size\":4",
+      "\"distinct_users\":4",
+      "track-123",
+      "person-key-123"
+    ]) {
+      assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+    }
+  }
+});
+
+test("governed diagnostics sufficiency evidence source preserves clean source runtime alias envelope", () => {
+  const source = sourceRuntimeSource();
+  const runtime = source.source_runtime;
+  const governedEvidence = governedEvidenceInput(runtime);
+  const readySource =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: {
+        source_runtime: runtime,
+        sourceGate: source.source_gate,
+        aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows
+      },
+      reviewed_diagnostics_source_evidence: governedEvidence
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
+    readySource,
+    sourceRuntimeValidationOptions({
+      sourceRuntime: runtime,
+      sourceGate: source.source_gate,
+      aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+      reviewedDiagnosticsSourceEvidence: governedEvidence
+    })
+  );
+
+  assert.equal(readySource.source_state, READY_STATE);
+  assert.equal(validation.valid, true);
+  assert.equal(readySource.feeds.diagnostics_evidence_packet, true);
+  assert.equal(readySource.promotion_boundary.promotion_authorized, false);
+});
+
 test("governed diagnostics sufficiency evidence source keeps feature weights structural internal only", () => {
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);

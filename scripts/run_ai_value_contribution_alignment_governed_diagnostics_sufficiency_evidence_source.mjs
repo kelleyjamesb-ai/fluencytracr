@@ -271,13 +271,8 @@ const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
   "sourceGate",
   "aggregate_measurement_cell_windows",
   "aggregateMeasurementCellWindows",
+  "aggregate_windows",
   "generated_at"
-]);
-
-const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
-  "source_runtime",
-  "source_gate",
-  "aggregate_windows"
 ]);
 
 const REQUIRED_BLOCKED_USES = [
@@ -361,6 +356,117 @@ const FORBIDDEN_VALUE_PATTERNS = [
   /\bproductivity\b/i
 ];
 
+const RUNTIME_ENVELOPE_TRUE_AUTHORIZATION_PATTERNS = [
+  /promotion_authorized/i,
+  /promotion_?allowed/i,
+  /promotion_?enabled/i,
+  /output_?allowed/i,
+  /output_?enabled/i,
+  /publication_?authorized/i,
+  /publish_?authorized/i,
+  /external_?output_?authorized/i,
+  /client_?output_?authorized/i,
+  /buyer_?output_?authorized/i,
+  /cio_?output_?authorized/i,
+  /exec_?output_?authorized/i,
+  /commercial_?output_?authorized/i,
+  /business_?value_?authorized/i,
+  /value_?output_?authorized/i,
+  /dollar_?output_?authorized/i,
+  /cost_?savings_?authorized/i,
+  /revenue_?impact_?authorized/i,
+  /margin_?impact_?authorized/i,
+  /time_?saved_?authorized/i,
+  /lift_?authorized/i,
+  /impact_?claim_?authorized/i,
+  /attribution_?authorized/i,
+  /correlation_?authorized/i,
+  /prediction_?authorized/i,
+  /forecast_?authorized/i,
+  /override_.*authorized/i,
+  /.*_override_?authorized/i,
+  /admin_.*authorized/i,
+  /suppression_.*authorized/i,
+  /bayesian_.*authorized/i,
+  /model_.*authorized/i,
+  /posterior_.*authorized/i,
+  /confidence_.*authorized/i,
+  /probability_.*authorized/i,
+  /customer_.*authorized/i,
+  /economic_.*authorized/i,
+  /roi_.*authorized/i,
+  /productivity_.*authorized/i,
+  /causality_.*authorized/i,
+  /finance_.*authorized/i,
+  /customer[-_\s]?facing/i,
+  /economic[_-\s]?output/i
+];
+
+const RUNTIME_ENVELOPE_LOW_COUNT_KEY_PATTERNS = [
+  /^n$/i,
+  /^n_?size$/i,
+  /sample_?size/i,
+  /cohort_?n/i,
+  /small_?group_?size/i,
+  /member_?count/i,
+  /k_?anonymity/i,
+  /actor_?count/i,
+  /distinct_?users/i
+];
+
+const RUNTIME_ENVELOPE_FALSE_ONLY_OUTPUT_PATTERNS = [
+  /posterior_?output/i,
+  /confidence_?output/i,
+  /probability_?output/i,
+  /score(?:_like)?_?output/i,
+  /customer_?facing_?output/i,
+  /customer_?output/i,
+  /economic_?output/i,
+  /roi_?output/i,
+  /finance_?output/i,
+  /causality_?output/i,
+  /productivity_?output/i,
+  /aggregate_?score_?output/i,
+  /weighted_?internal_?model_?output/i,
+  /research_?model_?feed/i,
+  /computes_?roi/i,
+  /claims_?causality/i,
+  /measures_?productivity/i
+];
+
+const RUNTIME_ENVELOPE_FORBIDDEN_KEY_PATTERNS = [
+  /raw_?rows?/i,
+  /^rows$/i,
+  /^records$/i,
+  /query_?text/i,
+  /\bsql\b/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /^query$/i,
+  /raw_?query/i,
+  /sql_?query/i,
+  /bq_?job_?id/i,
+  /tracking_?token/i,
+  /session_?id/i,
+  /run_?id/i,
+  /actor_?id/i,
+  /person_?key/i,
+  /user_?key/i,
+  /hashed_?user/i,
+  /hashed_?person/i,
+  /pseudonymous_?id/i,
+  /user_?id/i,
+  /employee/i,
+  /person_?id/i,
+  /^email$/i,
+  /payload_?json/i,
+  /feature_?table/i,
+  /warehouse/i,
+  /dataset/i,
+  /dashboard/i
+];
+
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
   if (value && typeof value === "object") {
@@ -410,17 +516,26 @@ function sourceRuntimeFromInput(input) {
 function sourceRuntimeValidationOptions(input) {
   const record = asRecord(input);
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  const hasNestedSourceRuntime =
+    Object.prototype.hasOwnProperty.call(sourceRuntimeEnvelope, "source_runtime");
+  const source = hasNestedSourceRuntime ? sourceRuntimeEnvelope : record;
   return {
-    sourceGate: source.source_gate ?? source.sourceGate,
-    aggregateMeasurementCellWindows:
-      source.aggregate_measurement_cell_windows ??
-      source.aggregateMeasurementCellWindows
+    sourceGate: hasNestedSourceRuntime
+      ? source.sourceGate
+      : source.source_gate ?? source.sourceGate,
+    aggregateMeasurementCellWindows: hasNestedSourceRuntime
+      ? source.aggregateMeasurementCellWindows
+      : source.aggregate_measurement_cell_windows ?? source.aggregateMeasurementCellWindows
   };
 }
 
 function reviewedEvidenceFromInput(input) {
   return asRecord(input).reviewed_diagnostics_source_evidence ?? null;
+}
+
+function isAllowedRuntimeEnvelopeGuardrailValuePath(path) {
+  return /(?:source_gate|sourceGate)\.(?:blocked_uses|required_caveats)(?:\.|\[|$)/.test(path) ||
+    /(?:source_gate|sourceGate)\.execution_contract\.(?:prior_specification_state|likelihood_specification_state)$/.test(path);
 }
 
 function runtimeEnvelopeContentGaps(value, path = "source_runtime envelope") {
@@ -430,7 +545,56 @@ function runtimeEnvelopeContentGaps(value, path = "source_runtime envelope") {
   if (value && typeof value === "object") {
     const gaps = [];
     for (const [key, nested] of Object.entries(value)) {
-      if (FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+      if (
+        nested === true &&
+        RUNTIME_ENVELOPE_TRUE_AUTHORIZATION_PATTERNS.some((pattern) => pattern.test(key))
+      ) {
+        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+        continue;
+      }
+      if (
+        RUNTIME_ENVELOPE_FALSE_ONLY_OUTPUT_PATTERNS.some((pattern) => pattern.test(key)) &&
+        !/_(?:blocked|required)$/i.test(key) &&
+        nested !== false
+      ) {
+        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+        continue;
+      }
+      if (
+        key === "cohort_size" &&
+        typeof nested === "number" &&
+        nested > 0 &&
+        nested < 5
+      ) {
+        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+        continue;
+      }
+      if (
+        RUNTIME_ENVELOPE_LOW_COUNT_KEY_PATTERNS.some((pattern) => pattern.test(key)) &&
+        typeof nested === "number" &&
+        nested > 0 &&
+        nested < 5
+      ) {
+        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+        continue;
+      }
+      if (
+        (key === "raw_row_count" || key === "identifier_count") &&
+        typeof nested === "number" &&
+        nested > 0
+      ) {
+        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+        continue;
+      }
+      if (key === "query_text_present" && nested === true) {
+        gaps.push("source_runtime envelope rejected unsafe or unsupported content");
+        continue;
+      }
+      if (
+        RUNTIME_ENVELOPE_FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key)) &&
+        nested !== false &&
+        !/^no_/i.test(key)
+      ) {
         gaps.push("source_runtime envelope rejected unsafe or unsupported content");
         continue;
       }
@@ -439,6 +603,7 @@ function runtimeEnvelopeContentGaps(value, path = "source_runtime envelope") {
     return gaps;
   }
   if (typeof value !== "string") return [];
+  if (isAllowedRuntimeEnvelopeGuardrailValuePath(path)) return [];
   return FORBIDDEN_VALUE_PATTERNS.some((pattern) => pattern.test(value))
     ? ["source_runtime envelope rejected unsafe or unsupported content"]
     : [];
@@ -554,12 +719,18 @@ function sourceRuntimeGaps(sourceRuntime, validationOptions = {}) {
   const design = asRecord(runtime.aggregate_design_matrix);
   const artifact = asRecord(runtime.internal_fit_artifact);
   const gaps = [];
-  const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
-    ...validationOptions
-  });
-  if (validation.valid !== true) {
-    gaps.push("source_runtime failed internal Bayesian execution runtime validation");
-    gaps.push(...validation.gaps.map((gap) => `source_runtime.${gap}`));
+  const hasRuntimeBindingOptions =
+    validationOptions.sourceGate ||
+    validationOptions.aggregateMeasurementCellWindows ||
+    validationOptions.aggregate_measurement_cell_windows;
+  if (hasRuntimeBindingOptions) {
+    const validation = validateContributionAlignmentInternalBayesianExecutionRuntime(runtime, {
+      ...validationOptions
+    });
+    if (validation.valid !== true) {
+      gaps.push("source_runtime failed internal Bayesian execution runtime validation");
+      gaps.push(...validation.gaps.map((gap) => `source_runtime.${gap}`));
+    }
   }
   if (runtime.schema_version !== CONTRIBUTION_ALIGNMENT_INTERNAL_BAYESIAN_EXECUTION_RUNTIME_SCHEMA_VERSION) {
     gaps.push("source_runtime.schema_version is invalid");
