@@ -143,7 +143,44 @@ describe("AIValueDiscovery", () => {
     await waitFor(() => {
       expect(screen.getByRole("alert")).toHaveTextContent(/client.industry is missing/i);
     });
-    expect(screen.getByRole("status")).toHaveTextContent(/still need attention/i);
+    expect(screen.getByRole("alert")).toHaveAttribute("aria-live", "polite");
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent(/still need attention/i);
+    expect(status).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("marks required discovery fields and wires visible error text", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Start blank/i }));
+
+    const clientName = screen.getByLabelText("Client name");
+    expect(clientName).toHaveAttribute("aria-required", "true");
+    expect(clientName).toHaveAttribute("aria-invalid", "true");
+    expect(clientName).toHaveAccessibleDescription(/Required: enter the client name/i);
+
+    fireEvent.change(clientName, { target: { value: "Northstar" } });
+    expect(clientName).toHaveAttribute("aria-invalid", "false");
+    expect(clientName).not.toHaveAccessibleDescription(/Required: enter the client name/i);
+
+    const objectiveStatement = screen.getByLabelText("Objective 1 statement");
+    expect(objectiveStatement).toHaveAttribute("aria-required", "true");
+    expect(objectiveStatement).toHaveAttribute("aria-invalid", "true");
+    expect(objectiveStatement).toHaveAccessibleDescription(
+      /Required: capture the objective statement/i
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Use Case Discovery/i }));
+    const useCaseName = screen.getByLabelText("Use case 1 name");
+    expect(useCaseName).toHaveAttribute("aria-required", "true");
+    expect(useCaseName).toHaveAttribute("aria-invalid", "true");
+    expect(useCaseName).toHaveAccessibleDescription(/Required: name the use case/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /Blueprint Workshop/i }));
+    const clientQuestion = screen.getByLabelText("The client question on the wall");
+    expect(clientQuestion).toHaveAttribute("aria-required", "true");
+    expect(clientQuestion).toHaveAttribute("aria-invalid", "true");
+    expect(clientQuestion).toHaveAccessibleDescription(/Required: capture the client question/i);
   });
 
   it("preserves objective links when an earlier objective row is blank", async () => {

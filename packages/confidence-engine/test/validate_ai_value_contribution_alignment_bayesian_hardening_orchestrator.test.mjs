@@ -1,0 +1,944 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+import {
+  buildContributionAlignmentFeatureStabilityReviewFromObject,
+  buildContributionAlignmentInternalNumericWeightDecisionFromObject,
+  buildContributionAlignmentVersionedWeightObjectFromObject,
+  buildContributionAlignmentWeightedInternalModelFrameFromObject,
+  buildContributionAlignmentInternalBayesianReadinessReviewFromObject,
+  buildContributionAlignmentBayesianModelSpecificationFromObject,
+  buildContributionAlignmentInternalBayesianExecutionGateFromObject,
+  buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject,
+  buildContributionAlignmentBayesianPromotionDecisionGateFromObject,
+  buildContributionAlignmentDiagnosticsEvidencePacketFromObject,
+  buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject,
+  buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject,
+  buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject,
+  buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject,
+  buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject,
+  contributionAlignmentBayesianHardeningOrchestratorReportHash,
+  validateContributionAlignmentBayesianHardeningOrchestratorReport
+} from "../dist/index.js";
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+
+const REPORT_READY_STATE = "BAYESIAN_HARDENING_ORCHESTRATOR_REPORT_READY";
+const DEFAULT_NEXT_STEP = "complete_governed_diagnostics_sufficiency_evidence_source";
+const EXPLICIT_NEXT_STEP = "posterior_interpretation_specification_gate_only";
+
+const DIMENSIONS = [
+  "comparison_design_adequacy",
+  "convergence_diagnostics",
+  "posterior_predictive_checks",
+  "prior_sensitivity",
+  "residual_fit_checks",
+  "calibration_backtest",
+  "feature_weight_provenance"
+];
+
+const MISSING_DIMENSION_REQUIREMENTS = [
+  "reviewed_source_evidence_ref",
+  "reviewed_source_evidence_hash",
+  "source_evidence_hash",
+  "aggregate_only_scope",
+  "suppressed_missing_held_windows_clear",
+  "eligible_for_satisfied_representation",
+  "evidence_satisfied"
+];
+
+const BLOCKED_OUTPUT_FIELDS = [
+  "posterior_interpretation",
+  "posterior_output",
+  "confidence_output",
+  "probability_output",
+  "score_like_output",
+  "weighted_internal_model_output",
+  "aggregate_score_output",
+  "research_model_feed",
+  "customer_facing_output",
+  "economic_output",
+  "roi_output",
+  "finance_output",
+  "causality_output",
+  "productivity_output",
+  "route_creation",
+  "ui_creation",
+  "schema_creation",
+  "persistence_write",
+  "export_creation",
+  "live_connector_execution",
+  "raw_rows",
+  "query_text",
+  "identifiers",
+  "prompts",
+  "transcripts",
+  "person_level_data"
+];
+
+const FIXTURE_PATH = join(
+  REPO_ROOT,
+  "docs/contracts/ai-value-real-data-intake-packet-runner/examples/controlled-aggregate-fixture-review-ready.json"
+);
+const PACKET_PATH = join(
+  REPO_ROOT,
+  "docs/contracts/ai-value-research-promotion-readiness-packet/examples/current-controlled-pilot-research-promotion-readiness-packet.json"
+);
+const RESEARCH_DESIGN_PATH = join(
+  REPO_ROOT,
+  "docs/research/AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_DESIGN.md"
+);
+
+const AGGREGATE_WINDOWS = [
+  {
+    aggregate_window_id: "agg_window_ai_exposed_baseline",
+    comparison_role: "ai_exposed",
+    window_role: "baseline",
+    selected_metric_mean: 10,
+    selected_metric_standard_error: 0.4,
+    cohort_size: 12
+  },
+  {
+    aggregate_window_id: "agg_window_ai_exposed_comparison",
+    comparison_role: "ai_exposed",
+    window_role: "comparison",
+    selected_metric_mean: 13,
+    selected_metric_standard_error: 0.5,
+    cohort_size: 12
+  },
+  {
+    aggregate_window_id: "agg_window_comparison_baseline",
+    comparison_role: "comparison",
+    window_role: "baseline",
+    selected_metric_mean: 9,
+    selected_metric_standard_error: 0.4,
+    cohort_size: 12
+  },
+  {
+    aggregate_window_id: "agg_window_comparison_comparison",
+    comparison_role: "comparison",
+    window_role: "comparison",
+    selected_metric_mean: 10,
+    selected_metric_standard_error: 0.5,
+    cohort_size: 12
+  }
+];
+
+let cachedRuntime = null;
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256Json(value) {
+  return createHash("sha256").update(stableStringify(value)).digest("hex");
+}
+
+function sourceDataModel() {
+  const output = execFileSync(
+    "node",
+    [
+      join(REPO_ROOT, "scripts/run_ai_value_contribution_alignment_internal_research_math_data_model.mjs"),
+      PACKET_PATH,
+      `--source-fixture=${FIXTURE_PATH}`,
+      `--research-design=${RESEARCH_DESIGN_PATH}`
+    ],
+    { cwd: REPO_ROOT, encoding: "utf8" }
+  );
+  return JSON.parse(output);
+}
+
+function sourceRuntime() {
+  if (cachedRuntime) return clone(cachedRuntime.source_runtime);
+  const sourceFeatureStabilityReview =
+    buildContributionAlignmentFeatureStabilityReviewFromObject(sourceDataModel());
+  const sourceWeightDecision =
+    buildContributionAlignmentInternalNumericWeightDecisionFromObject(
+      sourceFeatureStabilityReview
+    );
+  const sourceWeightObject = buildContributionAlignmentVersionedWeightObjectFromObject(
+    sourceWeightDecision,
+    { sourceFeatureStabilityReview }
+  );
+  const sourceFrame = buildContributionAlignmentWeightedInternalModelFrameFromObject(
+    sourceWeightObject,
+    { sourceWeightDecision, sourceFeatureStabilityReview }
+  );
+  const sourceReadinessReview =
+    buildContributionAlignmentInternalBayesianReadinessReviewFromObject(
+      sourceFrame,
+      { sourceWeightObject }
+    );
+  const sourceSpecification =
+    buildContributionAlignmentBayesianModelSpecificationFromObject(
+      sourceReadinessReview,
+      { sourceFrame, sourceWeightObject }
+    );
+  const sourceGate = buildContributionAlignmentInternalBayesianExecutionGateFromObject(
+    sourceSpecification,
+    { sourceReadinessReview, sourceFrame }
+  );
+  const runtime = buildContributionAlignmentInternalBayesianExecutionRuntimeFromObject({
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  });
+  cachedRuntime = {
+    source_runtime: runtime,
+    source_gate: sourceGate,
+    aggregate_measurement_cell_windows: AGGREGATE_WINDOWS
+  };
+  return clone(cachedRuntime.source_runtime);
+}
+
+function sourceRuntimeEnvelope(runtime = null) {
+  if (!cachedRuntime) sourceRuntime();
+  const envelope = clone(cachedRuntime);
+  if (runtime) envelope.source_runtime = runtime;
+  return envelope;
+}
+
+function reviewedSourceEvidenceRef(dimension) {
+  return `internal_diagnostics_sufficiency_evidence.${dimension}.2026_06`;
+}
+
+function reviewedSourceEvidenceHash(dimension) {
+  return sha256Json({
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_HASH_2026_06",
+    evidence_dimension: dimension,
+    reviewed_source_evidence_ref: reviewedSourceEvidenceRef(dimension),
+    aggregate_only_scope: true,
+    reviewed_internal_source_attestation: "governed_diagnostics_sufficiency_evidence_source"
+  });
+}
+
+function sourceEvidenceHash(runtime, dimension, sourceEvidenceRef, reviewedHash) {
+  return sha256Json({
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_2026_06",
+    evidence_dimension: dimension,
+    source_evidence_ref: sourceEvidenceRef,
+    reviewed_source_evidence_hash: reviewedHash,
+    source_runtime_hash: runtime.runtime_hash,
+    source_fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash,
+    internal_only: true,
+    aggregate_only: true,
+    evidence_satisfied: true
+  });
+}
+
+function reviewedEvidenceManifestHash(manifest) {
+  const withoutHash = clone(manifest);
+  delete withoutHash.manifest_hash;
+  return sha256Json(withoutHash);
+}
+
+function reviewedEvidenceInput(runtime) {
+  const evidenceDimensions = Object.fromEntries(
+    DIMENSIONS.map((dimension) => {
+      const sourceRef = reviewedSourceEvidenceRef(dimension);
+      const reviewedHash = reviewedSourceEvidenceHash(dimension);
+      return [
+        dimension,
+        {
+          reviewed_source_evidence_ref: sourceRef,
+          reviewed_source_evidence_hash: reviewedHash,
+          source_evidence_hash: sourceEvidenceHash(runtime, dimension, sourceRef, reviewedHash),
+          aggregate_only_scope: true,
+          suppressed_missing_held_windows_clear: true,
+          eligible_for_satisfied_representation: true,
+          placeholder_evidence: false,
+          generated_fixture_evidence: false,
+          evidence_satisfied: true
+        }
+      ];
+    })
+  );
+  const manifest = {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_2026_06",
+    manifest_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_MANIFEST_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    evidence_dimensions: Object.fromEntries(
+      DIMENSIONS.map((dimension) => [
+        dimension,
+        {
+          reviewed_source_evidence_ref: reviewedSourceEvidenceRef(dimension),
+          reviewed_source_evidence_hash: reviewedSourceEvidenceHash(dimension),
+          aggregate_only_scope: true
+        }
+      ])
+    )
+  };
+  manifest.manifest_hash = reviewedEvidenceManifestHash(manifest);
+  return {
+    schema_version:
+      "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_REFS_2026_06",
+    evidence_review_state: "REVIEWED_DIAGNOSTICS_SOURCE_EVIDENCE_INTERNAL_ONLY",
+    internal_only: true,
+    aggregate_only: true,
+    source_runtime_ref: {
+      runtime_hash: runtime.runtime_hash,
+      fixture_artifact_hash: runtime.internal_fit_artifact.artifact_hash
+    },
+    reviewed_evidence_manifest_hash: manifest.manifest_hash,
+    reviewed_evidence_manifest: manifest,
+    evidence_dimensions: evidenceDimensions
+  };
+}
+
+function explicitPromotionPath(runtime = sourceRuntime()) {
+  const runtimeInput = sourceRuntimeEnvelope(runtime);
+  const reviewedEvidence = reviewedEvidenceInput(runtime);
+  const governedSource =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: runtimeInput,
+      reviewed_diagnostics_source_evidence: reviewedEvidence
+    });
+  const review = buildContributionAlignmentInternalDiagnosticsModelAdequacyReviewFromObject({
+    source_runtime: runtimeInput,
+    source_diagnostics_sufficiency_evidence: governedSource
+  });
+  const packet = buildContributionAlignmentDiagnosticsEvidencePacketFromObject({
+    source_runtime: runtimeInput,
+    source_diagnostics_sufficiency_evidence: governedSource
+  });
+  const gate = buildContributionAlignmentBayesianPromotionDecisionGateFromObject({
+    source_diagnostics_review: review,
+    source_runtime: runtimeInput,
+    source_diagnostics_evidence_packet: packet
+  });
+  const handoff = buildContributionAlignmentPromotionGatePassedArtifactHandoffFromObject({
+    source_runtime: runtimeInput,
+    source_governed_diagnostics_sufficiency_evidence_source: governedSource,
+    source_diagnostics_review: review,
+    source_diagnostics_evidence_packet: packet,
+    source_promotion_gate: gate
+  });
+  const artifact = buildContributionAlignmentInternalBayesianExecutionArtifactV1FromObject({
+    source_promotion_handoff: handoff,
+    source_promotion_gate: gate,
+    source_runtime: runtimeInput,
+    source_diagnostics_review: review,
+    source_diagnostics_evidence_packet: packet,
+    source_governed_diagnostics_sufficiency_evidence_source: governedSource
+  });
+  return { runtime, reviewedEvidence, governedSource, review, packet, gate, handoff, artifact };
+}
+
+function orchestratorInput(path = explicitPromotionPath()) {
+  return {
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
+    explicit_governed_path: {
+      source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
+      source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
+      source_diagnostics_review: path.review,
+      source_diagnostics_evidence_packet: path.packet,
+      source_promotion_gate: path.gate,
+      source_promotion_handoff: path.handoff,
+      source_internal_bayesian_execution_artifact_v1: path.artifact
+    }
+  };
+}
+
+test("Bayesian hardening orchestrator confirms default path remains held", () => {
+  const runtime = sourceRuntime();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(runtime)
+    });
+  const governedStep = report.default_execution.steps[0];
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
+      sourceRuntime: sourceRuntimeEnvelope(runtime)
+    });
+
+  assert.equal(report.report_state, REPORT_READY_STATE);
+  assert.equal(report.current_state, "HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE");
+  assert.equal(report.current_gate, "governed_diagnostics_sufficiency_evidence_source");
+  assert.equal(report.allowed_next_step, DEFAULT_NEXT_STEP);
+  assert.equal(report.default_execution.confirmed_held, true);
+  assert.equal(report.default_execution.first_blocked_gate, "governed_diagnostics_sufficiency_evidence_source");
+  assert.equal(report.default_execution.allowed_next_step, DEFAULT_NEXT_STEP);
+  assert.equal(governedStep.step, "governed_diagnostics_sufficiency_evidence_source");
+  assert.equal(governedStep.state, "HOLD_FOR_GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE");
+  assert.equal(governedStep.ready, false);
+  assert.equal(governedStep.allowed_next_step, DEFAULT_NEXT_STEP);
+  assert.equal(governedStep.promotion_authorized, false);
+  assert.deepEqual(governedStep.source_hold_report.validation_summary.gaps, [
+    "reviewed diagnostics source evidence is required"
+  ]);
+  assert.deepEqual(
+    governedStep.source_hold_report.evidence_readiness_reconciliation.holding_reasons,
+    ["reviewed diagnostics source evidence is required"]
+  );
+  assert.deepEqual(
+    governedStep.source_hold_report.evidence_readiness_reconciliation.unsatisfied_dimensions,
+    DIMENSIONS
+  );
+  for (const dimension of DIMENSIONS) {
+    assert.deepEqual(
+      governedStep.source_hold_report.evidence_readiness_reconciliation
+        .missing_evidence_by_dimension[dimension],
+      MISSING_DIMENSION_REQUIREMENTS,
+      dimension
+    );
+  }
+  for (const step of report.default_execution.steps.slice(1)) {
+    assert.equal(step.supplied, false, step.step);
+    assert.equal(step.state, null, step.step);
+    assert.equal(step.hash, null, step.step);
+    assert.equal(step.allowed_next_step, null, step.step);
+    assert.equal(step.promotion_authorized, false, step.step);
+    assert.equal(step.source_hold_report, null, step.step);
+  }
+  assert.equal(report.verification_status.stopped_at_first_blocked_gate, true);
+  assert.equal(report.report_policy.promotion_authorized, false);
+  assert.equal(report.promotion_authority.orchestrator_promotion_authorized, false);
+  assert.equal(report.promotion_authority.bayesian_promotion_gate_promotion_authorized, false);
+  assert.equal(report.promotion_authority.non_gate_promotion_authorized, false);
+  assert.equal(report.promotion_authority.only_existing_gate_artifacts_may_authorize_promotion, true);
+  assert.equal(report.explicit_governed_path.supplied, false);
+  for (const field of BLOCKED_OUTPUT_FIELDS) {
+    assert.equal(report.blocked_outputs[field], false, `blocked_outputs.${field}`);
+    assert.equal(report.feeds[field], false, `feeds.${field}`);
+  }
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+});
+
+test("Bayesian hardening orchestrator READY validation requires sourceRuntime", () => {
+  const runtime = sourceRuntime();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(runtime)
+    });
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(report);
+
+  assert.equal(report.report_state, REPORT_READY_STATE);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /sourceRuntime is required/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator reports explicit governed path and derived next gate", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(
+      orchestratorInput(path)
+    );
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
+      explicitGovernedPath: orchestratorInput(path).explicit_governed_path
+    });
+
+  assert.equal(report.report_state, REPORT_READY_STATE);
+  assert.equal(report.default_execution.confirmed_held, true);
+  assert.equal(report.explicit_governed_path.supplied, true);
+  assert.equal(report.explicit_governed_path.completed, true);
+  assert.equal(report.explicit_governed_path.first_blocked_gate, null);
+  assert.equal(report.allowed_next_step, EXPLICIT_NEXT_STEP);
+  assert.equal(report.current_gate, "internal_bayesian_execution_artifact_v1");
+  assert.equal(report.report_policy.promotion_authorized, false);
+  assert.equal(report.promotion_authority.orchestrator_promotion_authorized, false);
+  assert.equal(report.promotion_authority.only_existing_gate_artifacts_may_authorize_promotion, true);
+  assert.equal(report.artifact_hashes.runtime_hash, path.runtime.runtime_hash);
+  assert.equal(report.artifact_hashes.governed_diagnostics_sufficiency_evidence_source_hash, path.governedSource.evidence_hash);
+  assert.equal(report.artifact_hashes.diagnostics_review_hash, path.review.review_hash);
+  assert.equal(report.artifact_hashes.diagnostics_evidence_packet_hash, path.packet.packet_hash);
+  assert.equal(report.artifact_hashes.bayesian_promotion_gate_hash, path.gate.gate_hash);
+  assert.equal(report.artifact_hashes.promotion_handoff_hash, path.handoff.handoff_hash);
+  assert.equal(report.artifact_hashes.internal_bayesian_execution_artifact_v1_hash, path.artifact.artifact_hash);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+});
+
+test("Bayesian hardening orchestrator explicit governed path requires reviewed diagnostics source evidence", () => {
+  const path = explicitPromotionPath();
+  const input = {
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
+    explicit_governed_path: {
+      source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
+      source_diagnostics_evidence_packet: path.packet,
+      source_diagnostics_review: path.review,
+      source_promotion_gate: path.gate,
+      source_promotion_handoff: path.handoff,
+      source_internal_bayesian_execution_artifact_v1: path.artifact
+    }
+  };
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(input);
+  const governedStep = report.explicit_governed_path.steps.find(
+    (step) => step.step === "governed_diagnostics_sufficiency_evidence_source"
+  );
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
+      explicitGovernedPath: input.explicit_governed_path
+    });
+
+  assert.equal(report.explicit_governed_path.supplied, true);
+  assert.equal(report.explicit_governed_path.completed, false);
+  assert.equal(
+    report.explicit_governed_path.first_blocked_gate,
+    "governed_diagnostics_sufficiency_evidence_source"
+  );
+  assert.equal(report.allowed_next_step, DEFAULT_NEXT_STEP);
+  assert.equal(governedStep.validation_valid, false);
+  assert.ok(
+    governedStep.validation_gaps.some((gap) =>
+      /reviewedDiagnosticsSourceEvidence is required/.test(gap)
+    ),
+    governedStep.validation_gaps.join("; ")
+  );
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /explicit governed path contains supplied artifacts/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator stops at missing explicit gates", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
+    explicit_governed_path: {
+      source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
+      source_governed_diagnostics_sufficiency_evidence_source: path.governedSource
+    }
+  });
+
+  assert.equal(report.explicit_governed_path.supplied, true);
+  assert.equal(report.explicit_governed_path.completed, false);
+  assert.equal(report.explicit_governed_path.first_blocked_gate, "diagnostics_evidence_packet");
+  assert.equal(report.allowed_next_step, "diagnostics_evidence_packet_update_only");
+  assert.equal(report.report_policy.promotion_authorized, false);
+});
+
+test("Bayesian hardening orchestrator validation fails on invalid supplied explicit artifacts", () => {
+  const path = explicitPromotionPath();
+  const forgedSource = clone(path.governedSource);
+  forgedSource.evidence_hash = "0".repeat(64);
+  const input = {
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
+    explicit_governed_path: {
+      source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
+      source_governed_diagnostics_sufficiency_evidence_source: forgedSource,
+      source_diagnostics_evidence_packet: path.packet,
+      source_diagnostics_review: path.review,
+      source_promotion_gate: path.gate,
+      source_promotion_handoff: path.handoff,
+      source_internal_bayesian_execution_artifact_v1: path.artifact
+    }
+  };
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(input);
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
+      explicitGovernedPath: input.explicit_governed_path
+    });
+
+  assert.equal(report.explicit_governed_path.supplied, true);
+  assert.equal(report.explicit_governed_path.completed, false);
+  assert.equal(report.explicit_governed_path.first_blocked_gate, "governed_diagnostics_sufficiency_evidence_source");
+  assert.equal(report.verification_status.explicit_path_validated, false);
+  assert.equal(report.allowed_next_step, DEFAULT_NEXT_STEP);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /explicit.*validation|evidence.*hash/i.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator does not echo explicit governed source hold text", () => {
+  const path = explicitPromotionPath();
+  const forgedSource = clone(path.governedSource);
+  forgedSource.validation_summary.gaps = [
+    "confidence probability customer roi finance causality productivity person@example.com"
+  ];
+  forgedSource.evidence_readiness_reconciliation.holding_reasons = [
+    "raw rows query text prompt transcript"
+  ];
+  forgedSource.evidence_hash = "0".repeat(64);
+  const input = {
+    source_runtime: sourceRuntimeEnvelope(path.runtime),
+    explicit_governed_path: {
+      source_reviewed_diagnostics_source_evidence: path.reviewedEvidence,
+      source_governed_diagnostics_sufficiency_evidence_source: forgedSource
+    }
+  };
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(input);
+  const explicitGovernedStep = report.explicit_governed_path.steps.find(
+    (step) => step.step === "governed_diagnostics_sufficiency_evidence_source"
+  );
+  const serialized = JSON.stringify(report);
+
+  assert.equal(explicitGovernedStep.source_hold_report, null);
+  assert.equal(serialized.includes("person@example.com"), false);
+  assert.equal(serialized.includes("raw rows query text prompt transcript"), false);
+  assert.equal(report.default_execution.steps[0].source_hold_report !== null, true);
+});
+
+test("Bayesian hardening orchestrator explicit READY validation requires explicitGovernedPath", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(
+      orchestratorInput(path)
+    );
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime)
+    });
+
+  assert.equal(report.report_state, REPORT_READY_STATE);
+  assert.equal(report.explicit_governed_path.supplied, true);
+  assert.equal(report.explicit_governed_path.completed, true);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /explicitGovernedPath is required/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator keeps all blocked outputs blocked", () => {
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(
+      orchestratorInput()
+    );
+
+  for (const field of BLOCKED_OUTPUT_FIELDS) {
+    assert.equal(report.blocked_outputs[field], false, `blocked_outputs.${field}`);
+    assert.equal(report.feeds[field], false, `feeds.${field}`);
+  }
+  assert.equal(report.feeds.posterior_interpretation_specification_gate, false);
+  assert.equal(report.feeds.live_connector_execution, false);
+  assert.equal(report.feeds.route_creation, false);
+  assert.equal(report.feeds.schema_creation, false);
+  assert.equal(report.feeds.persistence_write, false);
+  assert.equal(report.feeds.export_creation, false);
+});
+
+test("Bayesian hardening orchestrator rejects promotion side doors after rehash", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(
+      orchestratorInput(path)
+    );
+  const forged = clone(report);
+  forged.report_policy.promotion_authorized = true;
+  forged.feeds.confidence_output = true;
+  forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
+      explicitGovernedPath: orchestratorInput(path).explicit_governed_path
+    });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /promotion_authorized|confidence_output/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator rejects unknown nested sidecars after rehash", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject(
+      orchestratorInput(path)
+    );
+  const forged = clone(report);
+  forged.feeds.customer_roi_probability = true;
+  forged.blocked_outputs.live_connector_payload = true;
+  forged.report_policy.customer_facing_output = true;
+  forged.verification_status.live_connector_execution = true;
+  forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
+      explicitGovernedPath: orchestratorInput(path).explicit_governed_path
+    });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /ungoverned field|customer_roi_probability|live_connector/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator rejects forged default execution details after rehash", () => {
+  const runtime = sourceRuntime();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(runtime)
+    });
+  const forged = clone(report);
+  forged.default_execution.steps[0].state =
+    "GOVERNED_DIAGNOSTICS_SUFFICIENCY_EVIDENCE_SOURCE_READY_FOR_PACKET_REVIEW";
+  forged.default_execution.steps[0].ready = true;
+  forged.default_execution.steps[0].validation_valid = true;
+  forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
+      sourceRuntime: sourceRuntimeEnvelope(runtime)
+    });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /default execution.*sourceRuntime|mismatch/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator rejects forged default hold reporting after rehash", () => {
+  const runtime = sourceRuntime();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(runtime)
+    });
+  const forged = clone(report);
+  forged.default_execution.steps[0].source_hold_report.validation_summary.gaps = [];
+  forged.default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation
+    .holding_reasons = [];
+  forged.default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation
+    .unsatisfied_dimensions = [];
+  forged.default_execution.steps[0].source_hold_report.evidence_readiness_reconciliation
+    .missing_evidence_by_dimension = {};
+  forged.report_hash = contributionAlignmentBayesianHardeningOrchestratorReportHash(forged);
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(forged, {
+      sourceRuntime: sourceRuntimeEnvelope(runtime)
+    });
+
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /default execution.*sourceRuntime|mismatch/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator rejects fabricated governed evidence input without echo", () => {
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(sourceRuntime()),
+      reviewed_diagnostics_source_evidence: {
+        reviewed_source_evidence_ref: "fabricated_customer_probability_evidence",
+        raw_rows: [{ user_id: "person@example.com" }]
+      }
+    });
+  const validation = validateContributionAlignmentBayesianHardeningOrchestratorReport(report);
+  const serialized = JSON.stringify(report);
+
+  assert.equal(report.report_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  assert.equal(serialized.includes("person@example.com"), false);
+  assert.equal(serialized.includes("fabricated_customer_probability_evidence"), false);
+});
+
+test("Bayesian hardening orchestrator rejects unsafe nested runtime envelope sidecars", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: {
+        ...sourceRuntimeEnvelope(path.runtime),
+        raw_rows: [{ email: "person@example.com" }],
+        query_text: "SELECT user_id FROM raw_rows",
+        user_id: "person-123"
+      },
+      explicit_governed_path: {
+        source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
+        source_diagnostics_evidence_packet: path.packet,
+        source_diagnostics_review: path.review,
+        source_promotion_gate: path.gate,
+        source_promotion_handoff: path.handoff,
+        source_internal_bayesian_execution_artifact_v1: path.artifact
+      }
+    });
+  const validation = validateContributionAlignmentBayesianHardeningOrchestratorReport(report);
+  const serialized = `${JSON.stringify(report)} ${JSON.stringify(validation)}`;
+
+  assert.equal(report.report_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  for (const unsafe of ["person@example.com", "SELECT user_id", "person-123"]) {
+    assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
+test("Bayesian hardening orchestrator rejects nested fabricated evidence sidecars", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(path.runtime),
+      explicit_governed_path: {
+        source_governed_diagnostics_sufficiency_evidence_source: path.governedSource,
+        reviewed_diagnostics_source_evidence: {
+          reviewed_source_evidence_ref: "fabricated_customer_probability_evidence",
+          raw_rows: [{ user_id: "person@example.com" }]
+        }
+      }
+    });
+  const validation = validateContributionAlignmentBayesianHardeningOrchestratorReport(report);
+  const serialized = JSON.stringify(report);
+
+  assert.equal(report.report_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  assert.equal(serialized.includes("person@example.com"), false);
+  assert.equal(serialized.includes("fabricated_customer_probability_evidence"), false);
+});
+
+test("Bayesian hardening orchestrator rejects reviewed evidence without governed source", () => {
+  const path = explicitPromotionPath();
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(path.runtime),
+      explicit_governed_path: {
+        source_reviewed_diagnostics_source_evidence: path.reviewedEvidence
+      }
+    });
+  const validation = validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
+    sourceRuntime: sourceRuntimeEnvelope(path.runtime),
+    explicitGovernedPath: {
+      source_reviewed_diagnostics_source_evidence: path.reviewedEvidence
+    }
+  });
+
+  assert.equal(report.report_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  assert.ok(
+    validation.gaps.some((gap) => /boundary leakage rejected/.test(gap)),
+    validation.gaps.join("; ")
+  );
+});
+
+test("Bayesian hardening orchestrator rejects unsafe nested reviewed evidence without echo", () => {
+  const path = explicitPromotionPath();
+  const unsafeReviewedEvidence = clone(path.reviewedEvidence);
+  unsafeReviewedEvidence.raw_rows = [
+    { user_id: "person@example.com", prompt: "leak" }
+  ];
+  const report =
+    buildContributionAlignmentBayesianHardeningOrchestratorReportFromObject({
+      source_runtime: sourceRuntimeEnvelope(path.runtime),
+      explicit_governed_path: {
+        source_reviewed_diagnostics_source_evidence: unsafeReviewedEvidence,
+        source_governed_diagnostics_sufficiency_evidence_source: path.governedSource
+      }
+    });
+  const validation = validateContributionAlignmentBayesianHardeningOrchestratorReport(report);
+  const serialized = `${JSON.stringify(report)} ${JSON.stringify(validation)}`;
+
+  assert.equal(report.report_state, "REJECTED_FOR_BOUNDARY_LEAKAGE");
+  assert.equal(validation.valid, false);
+  assert.equal(serialized.includes("person@example.com"), false);
+  assert.equal(serialized.includes("\"prompt\":\"leak\""), false);
+});
+
+test("Bayesian hardening orchestrator runner remains report-only without write/export/live behavior", () => {
+  const runner = execFileSync(
+    "sed",
+    ["-n", "1,760p", join(REPO_ROOT, "scripts/run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs")],
+    { cwd: REPO_ROOT, encoding: "utf8" }
+  );
+  const packageJson = execFileSync("sed", ["-n", "1,260p", join(REPO_ROOT, "package.json")], {
+    cwd: REPO_ROOT,
+    encoding: "utf8"
+  });
+  const forbidden = [
+    "writeFileSync",
+    "appendFileSync",
+    "createWriteStream",
+    "--output",
+    "export_url",
+    "fetch(",
+    "prisma",
+    "dogfood-output"
+  ];
+
+  for (const needle of forbidden) {
+    assert.equal(runner.includes(needle), false, `runner includes ${needle}`);
+  }
+  assert.equal(
+    /run:ai-value-contribution-alignment-bayesian-hardening-orchestrator[^"]*"[^"]*>\s*(?!\/tmp)/.test(packageJson),
+    false
+  );
+});
+
+test("Bayesian hardening orchestrator CLI accepts reviewed diagnostics evidence for explicit validation", () => {
+  const path = explicitPromotionPath();
+  const tempDir = mkdtempSync(join(tmpdir(), "fluencytracr-orchestrator-"));
+  const files = {
+    runtime: join(tempDir, "runtime.json"),
+    reviewedEvidence: join(tempDir, "reviewed-evidence.json"),
+    governedSource: join(tempDir, "governed-source.json"),
+    packet: join(tempDir, "packet.json"),
+    review: join(tempDir, "review.json"),
+    gate: join(tempDir, "gate.json"),
+    handoff: join(tempDir, "handoff.json"),
+    artifact: join(tempDir, "artifact.json")
+  };
+  for (const [key, filePath] of Object.entries(files)) {
+    const payload = {
+      runtime: sourceRuntimeEnvelope(path.runtime),
+      reviewedEvidence: path.reviewedEvidence,
+      governedSource: path.governedSource,
+      packet: path.packet,
+      review: path.review,
+      gate: path.gate,
+      handoff: path.handoff,
+      artifact: path.artifact
+    }[key];
+    writeFileSync(filePath, `${JSON.stringify(payload)}\n`);
+  }
+
+  const output = execFileSync(
+    "node",
+    [
+      join(REPO_ROOT, "scripts/run_ai_value_contribution_alignment_bayesian_hardening_orchestrator.mjs"),
+      files.runtime,
+      "--reviewed-diagnostics-source-evidence",
+      files.reviewedEvidence,
+      files.governedSource,
+      files.packet,
+      files.review,
+      files.gate,
+      files.handoff,
+      files.artifact
+    ],
+    { cwd: REPO_ROOT, encoding: "utf8" }
+  );
+  const report = JSON.parse(output);
+  const validation =
+    validateContributionAlignmentBayesianHardeningOrchestratorReport(report, {
+      sourceRuntime: sourceRuntimeEnvelope(path.runtime),
+      explicitGovernedPath: orchestratorInput(path).explicit_governed_path
+    });
+
+  assert.equal(report.report_state, REPORT_READY_STATE);
+  assert.equal(report.explicit_governed_path.completed, true);
+  assert.equal(report.allowed_next_step, EXPLICIT_NEXT_STEP);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+});

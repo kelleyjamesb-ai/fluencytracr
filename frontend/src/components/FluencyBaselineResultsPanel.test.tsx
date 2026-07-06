@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FluencyBaselineResultsPanel } from "./FluencyBaselineResultsPanel";
@@ -90,8 +90,14 @@ describe("FluencyBaselineResultsPanel", () => {
     render(<FluencyBaselineResultsPanel />);
 
     await waitFor(() =>
-      expect(screen.getByText("How ready people feel to use AI in real work.")).toBeInTheDocument()
+      expect(screen.getByText(/No aggregate AI Fluency baseline connected yet/i)).toBeInTheDocument()
     );
+    const emptyState = screen.getByRole("region", { name: /AI Fluency baseline empty state/i });
+    expect(emptyState).toHaveAttribute("aria-live", "polite");
+    expect(within(emptyState).getByText(/Missing: reviewed, privacy-preserving baseline results/i)).toBeInTheDocument();
+    expect(within(emptyState).getByText(/Why: this panel can support planning only/i)).toBeInTheDocument();
+    expect(within(emptyState).getByText(/Next action: create or connect the AI Fluency baseline/i)).toBeInTheDocument();
+    expect(within(emptyState).getByText("How ready people feel to use AI in real work.")).toBeInTheDocument();
     expect(screen.queryByText("average fluency")).not.toBeInTheDocument();
   });
 });

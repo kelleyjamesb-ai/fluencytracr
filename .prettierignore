@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+htmlcov/
+.pytest_cache/
+.venv/
+logs/
+artifacts/runtime/
+artifacts/harness/checkpoints/
+dogfood-output/
+backend/prisma/migrations/
+package-lock.json

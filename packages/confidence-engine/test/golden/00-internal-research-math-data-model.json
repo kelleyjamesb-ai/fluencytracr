@@ -1,0 +1,254 @@
+{
+  "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_2026_06",
+  "data_model_id": "contribution_alignment_internal_research_math_data_model_7bb53dbcc2b501c0",
+  "data_model_state": "READY_FOR_INTERNAL_RESEARCH_MATH_FINALIZATION_DESIGN",
+  "generated_at": "2026-06-25T00:00:00.000Z",
+  "derivation_version": "ai_value_contribution_alignment_internal_research_math_data_model_2026_06",
+  "source_promotion_decision_ref": {
+    "decision_id": "contribution_alignment_research_math_data_model_promotion_decision_aa263b741d67f102",
+    "decision_state": "PROMOTE_INTERNAL_RESEARCH_MATH_DATA_MODEL_LAYER",
+    "decision_hash": "869b42b39fd5575a45a7fb271c5264a44de4b812b94701d98a0e01305414c365",
+    "source_finalization_review_id": "contribution_alignment_research_math_finalization_review_8233c3bc55293bf2",
+    "source_finalization_review_hash": "0d6618b20766956e2c3b0d9d84dd0b8db8ae06ec8a1b4bd0674ef1cc32983350",
+    "allowed_next_step": "internal_research_math_data_model_layer_only"
+  },
+  "data_model_scope": {
+    "internal_only": true,
+    "non_persistent": true,
+    "compact_refs_only": true,
+    "data_model_boundary_only": true,
+    "research_model_feed": false,
+    "research_math_output": false,
+    "model_implementation": false,
+    "numeric_weights": false,
+    "confidence_output": false,
+    "model_result": false,
+    "probability_output": false,
+    "score_like_output": false,
+    "finance_output": false,
+    "customer_output": false,
+    "route_creation": false,
+    "ui_creation": false,
+    "schema_creation": false,
+    "persistence_write": false,
+    "export_creation": false,
+    "live_connector_execution": false
+  },
+  "model_grain": {
+    "approved_hypothesis_path": "one_selected_approved_expectation_path_ref",
+    "measurement_context": "one_source_bound_measurement_context_ref",
+    "milestone_evidence": "day_0_30_60_90_180_365_compact_refs",
+    "repeated_window_requirement": "required_before_later_separately_approved_customer_facing_promotion_review",
+    "persistence_posture": "not_authorized"
+  },
+  "component_registry": [
+    {
+      "component_id": "hypothesis_binding",
+      "evidence_role": "approved_path_identity_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "source_coverage",
+      "evidence_role": "reviewed_aggregate_source_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "milestone_continuity",
+      "evidence_role": "day_0_30_60_90_180_365_ref_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "ai_fluency_construct_context_integrity",
+      "evidence_role": "aggregate_construct_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "psychological_context_integrity",
+      "evidence_role": "aggregate_attitude_behavior_intent_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "observed_vbd_alignment",
+      "evidence_role": "observed_work_behavior_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "selected_metric_movement",
+      "evidence_role": "customer_metric_movement_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "comparison_design_strength",
+      "evidence_role": "future_design_strength_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "assumption_governance",
+      "evidence_role": "assumption_review_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    },
+    {
+      "component_id": "boundary_clearance",
+      "evidence_role": "fail_closed_boundary_context",
+      "model_role": "context_only",
+      "output_state": "not_emitted",
+      "numeric_role": "none"
+    }
+  ],
+  "context_partitions": {
+    "ai_fluency_construct_context": {
+      "context_role": "aggregate_construct_context_only",
+      "construct_dimensions": [
+        "Confidence",
+        "Usage Quality",
+        "Behavior Change",
+        "Leadership Reinforcement",
+        "Capability Growth"
+      ],
+      "substitutes_for_observed_vbd": false,
+      "substitutes_for_metric_movement": false
+    },
+    "ai_fluency_psychological_context": {
+      "context_role": "aggregate_psychological_context_only",
+      "instrument_items": [
+        "ai_attitude",
+        "ai_behavior_toward_ai",
+        "behavioral_intent"
+      ],
+      "substitutes_for_construct_context": false,
+      "substitutes_for_observed_vbd": false,
+      "substitutes_for_metric_movement": false
+    },
+    "observed_vbd_context": {
+      "context_role": "observed_work_behavior_context_only",
+      "source_posture": "aggregate_telemetry_derived_context",
+      "substitutes_for_psychological_context": false,
+      "substitutes_for_metric_movement": false
+    },
+    "selected_metric_movement_context": {
+      "context_role": "customer_owned_metric_movement_context_only",
+      "source_posture": "approved_customer_metric_context",
+      "substitutes_for_observed_vbd": false,
+      "substitutes_for_finance_output": false
+    }
+  },
+  "research_design_boundary": {
+    "allowed_method_family_metadata": "separate_future_design_only",
+    "research_math_execution_not_authorized": true,
+    "statistical_parameter_output_blocked": true,
+    "numeric_component_output_blocked": true,
+    "uncertainty_output_blocked": true,
+    "contribution_claim_not_authorized": true,
+    "customer_output_not_authorized": true
+  },
+  "blocked_uses": [
+    "research_model_feed",
+    "research_math_output",
+    "model_implementation",
+    "model_output",
+    "numeric_weights",
+    "confidence_output",
+    "contribution_model_output",
+    "probability_output",
+    "score_like_output",
+    "finance_output",
+    "finance_context_investigation",
+    "roi",
+    "ebitda",
+    "financial_attribution",
+    "causality_claim",
+    "productivity_measurement",
+    "customer_facing_output",
+    "customer_facing_export",
+    "live_connector_execution",
+    "route_creation",
+    "ui_creation",
+    "schema_creation",
+    "persistence_write",
+    "raw_data_storage"
+  ],
+  "required_caveats": [
+    "Internal research math data model is non-persistent internal design support only.",
+    "The data model defines compact context grain and component boundaries only.",
+    "The data model does not implement research math or emit numeric results.",
+    "The data model does not authorize research model feed, model implementation, numeric weights, confidence output, probability, score-like output, finance output, ROI, causality, productivity, persistence, schemas, live connectors, or customer-facing output.",
+    "AI Fluency construct context, AI Fluency psychological context, observed VBD context, and selected customer metric movement remain distinct."
+  ],
+  "feeds": {
+    "internal_research_math_finalization_design": true,
+    "research_model_feed": false,
+    "research_math_output": false,
+    "model_implementation": false,
+    "model_output": false,
+    "numeric_weight_output": false,
+    "confidence_output": false,
+    "probability_output": false,
+    "score_like_output": false,
+    "finance_output": false,
+    "finance_context_investigation": false,
+    "customer_facing_output": false,
+    "customer_facing_export": false,
+    "live_connector_execution": false,
+    "route_creation": false,
+    "ui_creation": false,
+    "schema_creation": false,
+    "persistence_write": false,
+    "export_creation": false
+  },
+  "boundary_policy": {
+    "receives_compact_promotion_decision_only": true,
+    "receives_full_promotion_decision_payload": false,
+    "receives_raw_rows": false,
+    "receives_query_text": false,
+    "receives_prompts": false,
+    "receives_transcripts": false,
+    "receives_identifiers": false,
+    "receives_source_package_payloads": false,
+    "receives_full_measurement_cell_payloads": false,
+    "receives_full_series_payloads": false,
+    "persists_data_model": false,
+    "creates_routes": false,
+    "creates_ui": false,
+    "creates_schemas": false,
+    "creates_exports": false,
+    "runs_live_connectors": false,
+    "feeds_research_model": false,
+    "implements_research_math": false,
+    "emits_research_math_output": false,
+    "emits_model_result": false,
+    "emits_numeric_weights": false,
+    "emits_confidence_output": false,
+    "emits_probability": false,
+    "emits_score_like_output": false,
+    "emits_finance_output": false,
+    "emits_customer_facing_output": false,
+    "computes_roi": false,
+    "claims_causality": false,
+    "measures_productivity": false
+  },
+  "validation_summary": {
+    "schema_version": "FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_2026_06_SUMMARY",
+    "valid": true,
+    "data_model_state": "READY_FOR_INTERNAL_RESEARCH_MATH_FINALIZATION_DESIGN",
+    "gaps": []
+  },
+  "data_model_hash": "15fc61ce3d15011d21fa8718339859598d5aed4234a58b30696246e5ae9cb094"
+}

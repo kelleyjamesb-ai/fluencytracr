@@ -183,17 +183,50 @@ export const FluencyBaselineResultsPanel = () => {
     [state, baselines]
   );
 
+  if (state === "loading") {
+    return (
+      <section
+        className="ai-value-fluency-empty"
+        aria-label="AI Fluency baseline status"
+        aria-live="polite"
+      >
+        <strong>Loading aggregate AI Fluency baseline...</strong>
+        <p>
+          The workspace is checking for reviewed, aggregate baseline results
+          before showing interpretation context.
+        </p>
+      </section>
+    );
+  }
+
   if (!results) {
     return (
-      <div className="ai-value-client-question-grid">
-        {DIMENSIONS.map((dimension) => (
-          <article className="ai-value-client-question-card" key={dimension.label}>
-            <span className="ai-value-map-label">What results tell us</span>
-            <strong>{dimension.label}</strong>
-            <p>{dimension.detail}</p>
-          </article>
-        ))}
-      </div>
+      <section
+        className="ai-value-fluency-empty"
+        aria-label="AI Fluency baseline empty state"
+        aria-live="polite"
+      >
+        <div>
+          <strong>No aggregate AI Fluency baseline connected yet</strong>
+          <p>
+            Missing: reviewed, privacy-preserving baseline results for the
+            selected organization or function. Why: this panel can support
+            planning only after aggregate responses clear suppression and
+            reviewer checks. Next action: create or connect the AI Fluency
+            baseline in the previous stage, then return here to review the
+            interpretation context.
+          </p>
+        </div>
+        <div className="ai-value-client-question-grid">
+          {DIMENSIONS.map((dimension) => (
+            <article className="ai-value-client-question-card" key={dimension.label}>
+              <span className="ai-value-map-label">What results tell us</span>
+              <strong>{dimension.label}</strong>
+              <p>{dimension.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
     );
   }
 

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const FORWARDED_DISTRIBUTION_SCHEMA_VERSION = "FT_V3_FORWARDED_DISTRIBUTION_2026_06";
 
-const ForbiddenForwardedDistributionTokenPatterns = [
+const ForbiddenForwardedTokenPatterns = [
   /(?:^|[:_-])actor[:_-]?(?:id|identifier)(?=[:_-]|$)/i,
   /(?:^|[:_-])user[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
   /(?:^|[:_-])employee[:_-]?(?:id|identifier|email|name|hash)(?:s)?(?=[:_-]|$)/i,
@@ -10,6 +10,23 @@ const ForbiddenForwardedDistributionTokenPatterns = [
   /(?:^|[:_-])email[:_-]?(?:id|identifier|address|hash)(?=[:_-]|$)/i,
   /(?:^|[:_-])skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i,
   /(?:^|[:_-])raw[:_-]?skill[:_-]?(?:id|name|identifier|reader)(?:s)?(?=[:_-]|$)/i,
+  /raw_?rows?/i,
+  /query_?text/i,
+  /\bsql\b/i,
+  /prompt/i,
+  /response/i,
+  /transcript/i,
+  /user_?id/i,
+  /employee/i,
+  /person_?id/i,
+  /^email$/i,
+  /confidence/i,
+  /probability/i,
+  /score(?:_like)?/i,
+  /\broi\b/i,
+  /ebitda/i,
+  /causal(?:ity)?/i,
+  /productivity/i,
   /(?:^|[:_-])roi(?=[:_-]|$)/i,
   /(?:^|[:_-])productivity[:_-]?(?:score|claim|output|ready)(?=[:_-]|$)/i
 ];
@@ -19,8 +36,8 @@ export const ForwardedDistributionMachineTokenSchema = z.string()
   .max(180)
   .regex(/^[A-Za-z0-9:_-]+$/)
   .refine(
-    (value) => !ForbiddenForwardedDistributionTokenPatterns.some((pattern) => pattern.test(value)),
-    { message: "machine token must not carry actor, person, email, or raw skill identifiers" }
+    (value) => !ForbiddenForwardedTokenPatterns.some((pattern) => pattern.test(value)),
+    { message: "machine token must not carry raw, person-level, skill, or value-claim language" }
   );
 
 const DistributionValueSchema = z.object({

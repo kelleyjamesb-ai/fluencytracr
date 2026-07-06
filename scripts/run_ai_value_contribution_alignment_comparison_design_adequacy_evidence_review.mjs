@@ -629,7 +629,14 @@ function inputBoundaryGaps(input) {
           )
         )
       : {};
-  return Object.keys(sidecar).length > 0 || Object.keys(nestedSidecar).length > 0
+  const nestedContentGaps = sourceRuntimeEnvelope.source_runtime
+    ? Object.entries(sourceRuntimeEnvelope)
+        .filter(([key]) => key !== "source_runtime")
+        .flatMap(([key, nested]) => runtimeEnvelopeContentGaps(nested, `source_runtime envelope.${key}`))
+    : [];
+  return Object.keys(sidecar).length > 0 ||
+    Object.keys(nestedSidecar).length > 0 ||
+    nestedContentGaps.length > 0
     ? ["input wrapper rejected unsafe or unsupported content"]
     : [];
 }

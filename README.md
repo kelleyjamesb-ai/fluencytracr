@@ -439,6 +439,38 @@ documented value-realization layers:
   causality, productivity, persistence, exports, live connectors, UI, routes,
   and schemas blocked. Its allowed next step is derived from the validated
   existing gate chain only.
+- **AI Value confidence-engine workspace:** promotes the 16-module
+  contribution-alignment Bayesian execution spine into the typed
+  `packages/confidence-engine` workspace with byte-identical outputs: every
+  schema version, state token, hash, and property insertion order is preserved
+  and enforced by golden-fixture parity gates plus the migrated validation
+  suites (`npm run test:confidence-engine-workspace`); the spine `scripts/`
+  runners remain as thin wrappers preserving CLI usage and named exports, and
+  the `ConfidenceModel` contract module is types + Zod schemas only. The port
+  changes no model math or gate semantics: all held states stay held,
+  promotion stays blocked, and posterior interpretation,
+  confidence/probability/score output, finance output, ROI, causality,
+  productivity, customer-facing output, routes, UI, schemas, persistence,
+  exports, and live connectors remain blocked.
+- **Confidence inference methodology contract:** the normative specification
+  for the future statistical engine
+  (`docs/contracts/confidence-inference-methodology/README.md`): a
+  hierarchical Bayesian difference-in-differences estimand over aggregate
+  Measurement Cell windows, a Python-owns-statistics /
+  TypeScript-owns-governance boundary, an internal-only
+  `InferenceProofArtifactSchema`, seven diagnostics as computed values with
+  hard numeric gates (any failure holds the artifact), fixed posterior
+  predictive checks, per-scenario calibration proof, fail-closed negative
+  controls, the comparison-cohort rule ("no credible comparison cohort, no
+  comparison-supported contribution estimate — evidence-tier label only")
+  backed by a runnable adequacy rubric, fixed-horizon one-look peeking by
+  default, empirically justified weakly-informative priors with mandatory
+  sensitivity reporting, k>=5/k>=10 aggregate floors, and
+  Value-Playbook-aligned claim language where customer-facing statuses are
+  future ceilings only. Threshold-probability and expected-loss
+  representations exist as internal-only types with customer output pinned
+  false; no probability language is exposed anywhere pending a separate
+  recorded human promotion decision.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns

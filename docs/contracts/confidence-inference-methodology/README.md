@@ -1,0 +1,349 @@
+# Confidence Inference Methodology
+
+Approved by the OpenSpec change `add-bayesian-inference-proof-harness`, this
+contract is the normative inference methodology for the internal confidence
+engine: the estimand, the Python/TypeScript boundary, the seven diagnostics
+as computed values with hard numeric gates, the comparison-cohort rule, the
+milestone peeking control, the prior policy, the aggregate floors, and the
+claim-language mapping. It is slice 1 of the change — documents only. The
+proof harness (slice 2, separate PR) implements exactly this methodology on
+synthetic data; nothing here authorizes real observations, persistence, or
+any customer-facing output. The confidence-engine spine, its schema versions,
+hashes, golden chain, and hold-by-default semantics are untouched: the
+placeholder Normal-Normal runtime stays byte-stable in its held state
+(`INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW`) as a
+governed decision record.
+
+- Spec: `openspec/changes/add-bayesian-inference-proof-harness/specs/confidence-inference-methodology/spec.md`
+- Contract module: `packages/confidence-engine/src/confidenceModel.ts`
+  (`FT_AI_VALUE_CONFIDENCE_MODEL_CONTRACT_2026_07`)
+- Anchoring contracts:
+  `docs/contracts/confidence-engine-workspace/README.md`,
+  `docs/contracts/ai-value-confidence-engine-series-read-path-decision/README.md`,
+  `docs/contracts/ai-value-contribution-alignment-bayesian-model-specification/README.md`
+
+## Estimand
+
+The estimand is the aggregate selected-metric movement under a hierarchical
+Bayesian difference-in-differences model with partial pooling by workflow,
+function, and cohort, operating on aggregate Measurement Cell windows — never
+persons. The governing specification is the existing
+`bayesian_model_specification` schema family
+(`FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_2026_06`,
+specification version `bayesian_hierarchical_did_spec_2026_06`), which
+already names the model family
+(`bayesian_hierarchical_difference_in_differences_candidate`) and the pooling
+structure; this contract binds the methodology to that specification rather
+than restating it. Partial pooling stabilizes small-cohort estimates without
+discarding them, matching the aggregate-only posture. Flat per-cohort models
+and synthetic-control methods were considered and rejected/deferred in the
+change's design record.
+
+### Implementation-grade model equation
+
+For aggregate Measurement Cell window `i`, the proof harness uses:
+
+```text
+y_i ~ likelihood_family(mu_i, phi_i)
+
+g_i(mu_i) =
+    alpha
+  + beta_post * post_i
+  + beta_treated * treated_i
+  + delta * post_i * treated_i
+  + u_expectation_path[expectation_path_i]
+  + u_workflow[workflow_i]
+  + u_function[function_i]
+  + u_cohort[cohort_i]
+  + u_organization[organization_i]
+  + optional approved offset_or_exposure_i
+```
+
+The estimand is `delta`: aggregate selected-metric movement for the approved
+expectation path under a governed comparison condition. It is not a causal
+claim, ROI claim, productivity claim, customer-facing confidence score, or
+probability output. Random effects are mean-zero partially pooled effects with
+hierarchical scale priors; the harness reports pooling factors so reviewers
+can see when pooling is driving the result rather than the synthetic evidence.
+
+Slice 2 proves the normal continuous aggregate path first, using the identity
+link. All other families are structurally typed with their allowed links but
+held unless the same PR implements their samplers, diagnostics, and synthetic
+recovery tests. The model binding still names the supported family vocabulary
+so artifacts cannot invent shapes later:
+
+| Metric family               | Likelihood / link                                                           | Cohort-size handling                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Continuous aggregate metric | Normal with identity link                                                   | Aggregate standard error is weighted by cohort size; overdispersion is estimated only if declared in the artifact. |
+| Rate / proportion           | Binomial with logit link, or beta-binomial when overdispersion is declared  | `n_i` is the aggregate denominator; no person rows enter the model.                                                |
+| Count metric                | Poisson with log link, or negative-binomial when overdispersion is declared | Exposure/offset is explicit and approved; missing exposure HOLDS.                                                  |
+
+Lag windows must be declared before fitting and bound into the artifact.
+The artifact carries compact Measurement Cell window evidence: required,
+observed, missing, suppressed, stale, and imputed milestone/window refs, plus
+a hash binding to the window-evidence record. Each milestone bucket carries one
+compact window ref per milestone day in that bucket. Suppressed, stale, missing,
+or imputed windows HOLD; the harness must not impute them into eligibility.
+Treatment effects may be pooled globally, by workflow, by function, or by
+cohort only when the artifact declares that pooling level and the synthetic
+calibration suite covers it.
+
+## Python/TypeScript boundary
+
+Python owns all statistical computation; TypeScript owns all governance and
+validation. Specifically:
+
+- **Python** — the pinned `inference/` package (PyMC for model specification
+  and NUTS sampling, ArviZ for diagnostics; NumPyro is noted as an acceptable
+  fallback backend for the same model family) computes every posterior,
+  diagnostic, and calibration quantity, with its own lockfile and no
+  dependency additions to the root `pyproject`.
+- **TypeScript** — the existing confidence-engine gates perform admission,
+  validation, hold semantics, and blocked-use enforcement, unchanged.
+- **The boundary** — artifacts cross only as JSON that must parse against
+  the `ConfidenceModel` Zod schemas, including the internal-only
+  `InferenceProofArtifactSchema`, `PosteriorWithCredibleIntervalsSchema`,
+  and `EvidenceAdmissionSchema`, and clear the confidence-engine gates.
+  Unknown fields are rejected; rejected artifacts receive no governance
+  processing.
+
+Computing any posterior, diagnostic, or other statistical quantity in Node
+is a contract violation, not a convenience: statistical values are read from
+the validated Python-emitted artifact or they do not exist.
+
+Numeric posterior and diagnostic values are allowed only inside the internal
+synthetic proof artifact as validation inputs. They are not readout outputs.
+`PosteriorWithCredibleIntervalsSchema` remains numeric-values-withheld, and
+every proof artifact pins `internal_only: true`,
+`customer_output_authorized: false`, `probability_output_authorized: false`,
+`confidence_output_authorized: false`, and `promotion_decision_ref: null`.
+
+The internal artifact carries structural proof fields for the gates below:
+`comparison_adequacy` records the runnable comparison-cohort rubric and its
+proof hash; sampler diagnostics record the selected-metric movement estimand,
+explicit max-treedepth saturation rate, and BFMI warning flags; window evidence
+records missing/suppressed/stale/imputed windows; the fixed-horizon peeking
+control records exactly one milestone, one metric, and one cohort. The artifact
+self-hash is recomputed at the TypeScript boundary with
+`hash_bindings.artifact_self_hash` omitted, so stale or forged proof bodies are
+rejected before governance processing. These fields are validation inputs only,
+not output fields.
+
+## Diagnostics: computed values with numeric gates
+
+Every required diagnostic is a computed number checked against an explicit
+numeric gate — never a boolean flag. A confidence-bearing artifact is
+structurally un-emittable unless all gates pass.
+
+| Diagnostic                                  | Gate                                                                                                                                                                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R-hat and sampler convergence               | Sampler diagnostics must include the selected-metric movement estimand parameter; R-hat <= 1.01 for every sampled parameter; post-warmup divergent transitions = 0; rank and energy plots recorded in the internal report artifact. |
+| Effective sample size and Monte Carlo error | Bulk ESS >= 400 chain-total per parameter; tail ESS >= 400 chain-total per parameter; MCSE for posterior mean and interval endpoints <= 0.1 posterior SD.                                                |
+| Posterior predictive checks                 | Every designated PPC statistic below carries statistic name, observed value, posterior predictive 80% interval summary, p-value, and pass/fail; p-values must be within [0.05, 0.95].                    |
+| Prior sensitivity                           | posterior-mean shift < 0.5 posterior SD across the declared prior family                                                                                                                                 |
+| Pre-period trend check                      | pre-window pseudo-effect 80% credible interval must include 0                                                                                                                                            |
+| Calibration coverage                        | 80% credible interval covers the injected effect in 74–86% of >= 200 seeded synthetic replications per effect-size/cohort-size/scenario cell; binomial uncertainty around observed coverage is reported. |
+| Known-effect recovery (null case)           | null-effect false-eligibility <= 5% of replications                                                                                                                                                      |
+
+Any gate failure — or any diagnostic absent or not computed as a real value —
+emits the artifact only in HOLD state, with every failing or missing diagnostic
+named in the artifact. Missing estimand sampler diagnostics HOLD naming
+`sampler_diagnostic`; missing posterior predictive checks or missing prior
+sensitivity evidence remain valid only as named HOLD artifacts; they are not
+eligible artifacts.
+
+Designated posterior predictive check statistics are fixed for Slice 2:
+
+| Statistic                            | Purpose                                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `pre_post_mean_movement`             | Checks central tendency recovery across pre/post windows.                           |
+| `between_cohort_variance`            | Checks whether partial pooling is masking between-cohort heterogeneity.             |
+| `within_cohort_variance`             | Checks aggregate noise within cohort windows.                                       |
+| `tail_or_extreme_cell_statistic`     | Checks outliers, heavy tails, or boundary cells for the selected likelihood family. |
+| `difference_in_differences_contrast` | Checks fit at the estimand level.                                                   |
+
+Max-treedepth saturation and BFMI are recorded when exposed by the active
+PyMC/ArviZ backend. Any positive max-treedepth saturation rate or backend
+warning HOLDS unless represented as a failing diagnostic in the internal proof
+artifact. A clean eligible artifact may not silently carry sampler warnings or
+nonzero max-treedepth saturation.
+
+Calibration is reported per scenario cell, not pooled across unlike
+conditions. The clean simulator must cover every combination of injected
+effect size `{0, 0.2, 0.5}` SD and floor-eligible cohort size `{12, 16}`,
+with at least 200 seeded replications per cell. The artifact reports the
+observed coverage rate and the derived binomial standard error
+`sqrt(p * (1 - p) / n)` for each cell. Negative controls may use a smaller
+declared replication count only when they are separately labeled as negative
+controls and never pooled into the clean calibration coverage claim.
+
+## Comparison-cohort rule
+
+No credible comparison cohort, no comparison-supported contribution
+estimate — evidence-tier label only.
+
+Difference-in-differences without a defensible comparison is a before/after
+story, and before/after stories are precisely the overclaims the Glean Value
+Playbook discounts. Attempts to force a comparison-supported contribution
+estimate without a credible comparison cohort are rejected; the artifact
+carries only its evidence-tier label. Causal language remains separately
+gated by the claim ladder (approved comparison evidence design at the
+validated rung); this contract's outputs are contribution estimates, never
+causal claims.
+
+A credible comparison cohort is not a judgment phrase; it is the following
+runnable rubric. Missing any required check HOLDS the artifact or limits it
+to evidence-tier-only status.
+
+| Criterion                         | Required check                                                                                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Same selected metric definition   | Exact metric identity and aggregation definition match.                                                                                                          |
+| Same milestone windows            | Baseline and comparison milestone windows align exactly.                                                                                                         |
+| Same metric direction             | Direction is owner-approved and identical across treatment/comparison.                                                                                           |
+| Same lag handling                 | Lag window is declared and owner-approved before fitting.                                                                                                        |
+| Same expectation path and context | Expectation path, workflow, function, and cohort context match unless a reviewer-owned comparison-design adequacy reference explicitly justifies the difference. |
+| Similar pre-period level/trend    | Pre-period level and trend are checked and reported; violated pre-trend HOLDS.                                                                                   |
+| No contamination                  | Treatment and comparison conditions are not mixed, reused, or cross-exposed.                                                                                     |
+| Adequate aggregate floors         | k-floor and stated-floor checks pass independently for treatment and comparison cells.                                                                           |
+| No suppressed/stale windows       | Suppressed, stale, or missing windows HOLD; no imputation rescue.                                                                                                |
+
+## Negative controls
+
+The proof harness must show fail-closed behavior when assumptions fail. In
+addition to clean known-effect recovery, Slice 2 must include synthetic
+negative controls for:
+
+| Failure mode                       | Expected result                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| No credible comparison cohort      | No comparison-supported contribution estimate; evidence-tier-only or HOLD. |
+| Violated pre-trend                 | HOLD naming pre-trend.                                                     |
+| Badly mismatched comparison cohort | HOLD or comparison-ineligible.                                             |
+| Prior-dominated weak data          | HOLD naming prior sensitivity.                                             |
+| Underpowered floor case `k=4`      | Rejected below schema floor.                                               |
+| Internal-only floor case `k=8`     | Valid internally, display-ineligible.                                      |
+| Missing or suppressed windows      | HOLD, with no imputation rescue.                                           |
+| Naive repeated milestone peeking   | Ineligible/HOLD naming peeking control.                                    |
+
+## Milestone peeking control
+
+Evaluation occurs at the milestone cadence Day 0 / 30 / 60 / 90 / 180 / 365
+(`CONFIDENCE_OBSERVATION_MILESTONE_DAYS`, matching the series read-path
+decision contract). Six scheduled looks at accumulating evidence is repeated
+testing.
+
+Slice 2 uses the conservative executable rule: artifacts are fixed-horizon,
+one-look only unless the implementation proves a named always-valid
+sequential procedure in synthetic null simulations across the full look,
+metric, and cohort family. The artifact must record look index, total planned
+looks, the full Day 0/30/60/90/180/365 milestone family for repeated-look
+proofs, metrics included, cohorts included, metric-family and cohort-family
+bindings, procedure name, whether repeated evaluation occurred, and the
+false-eligibility bound. A fixed-horizon artifact must have exactly one look
+and exactly one milestone. The peeking-control milestone family must match the
+Measurement Cell window evidence required-milestone family, and those windows
+must be observed, unsuppressed, fresh, and unimputed before eligibility. Naive
+repeated evaluation across milestones, metrics, or cohorts marks the artifact
+ineligible/HOLD. The internal
+"Playbook: A/B testing @ Glean" (Confluence, Engineering space) is cited as
+provenance and alignment for this rule, not as its normative source.
+
+## Prior policy
+
+Priors are weakly informative and empirically justified from historical and
+dogfood aggregates. Prior-sensitivity analysis is always run and reported as
+one of the diagnostics above; the artifact must carry documented empirical
+prior justification as a ref/hash pair. An artifact whose conclusion is
+prior-driven (posterior-mean shift at or above 0.5 posterior SD across the
+declared prior family) holds, naming prior sensitivity as the cause. Priors
+lacking documented empirical justification also hold. The spine's `N(0,1)`
+placeholder (state `weakly_regularizing_internal_placeholder_not_calibrated`)
+is retired only inside the harness; the spine itself stays byte-stable as a
+governed decision record.
+
+## Aggregate floors
+
+Two floors bind, and the harness must demonstrate both (synthetic cohorts
+are generated at and around the floors so floor enforcement is itself
+tested):
+
+- **k >= 5 schema floor** — `CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR = 5` in
+  the `ConfidenceModel` contract, with stated-floor cross-validation:
+  `cohort_size` must also meet the artifact's own declared
+  `minimum_cohort_floor`, so an artifact declaring a floor of 10 with a
+  cohort of 7 is rejected even though 7 >= 5.
+- **k >= 10 series display floor** — `minimum_cohort_size: 10` per the
+  confidence-engine series read-path decision contract applies to anything
+  sourced through that path. Series-sourced evidence admission is bound to
+  this read-path floor of 10 at the schema level
+  (`CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR` in the `ConfidenceModel`
+  contract: `EvidenceAdmittedSchema` rejects any declared
+  `minimum_cohort_floor` below 10), while the k >= 5 floor remains the
+  general aggregate convention.
+
+## Claim language
+
+Claim language follows the Glean Value Playbook's anti-overclaim standard:
+telemetry-first (telemetry over self-report), with recapture assumptions
+always separated from time-saved measurement — a measured time-saved number
+is never silently multiplied into an ROI claim. Claim statuses map to the
+evidence-tier ladder (`shared/src/aiValueEngine/valueHypothesisReadiness.ts`):
+
+**These statuses describe the maximum future claim ceiling only. For Slice 2,
+every tier remains internal-only or withheld unless a separate recorded human
+promotion decision authorizes a narrower customer-facing claim.**
+
+| Evidence tier                  | Theoretical ceiling after later promotion                    | Effective status in this contract | Permitted Slice 1 / Slice 2 language                                                                          |
+| ------------------------------ | ------------------------------------------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `NONE`                         | withheld                                                     | withheld                          | No claim.                                                                                                     |
+| `DIRECTIONAL_ALIGNMENT`        | internal-only                                                | internal-only                     | Directional internal language only; no numbers.                                                               |
+| `PRE_POST_SUPPORTED`           | internal-only                                                | internal-only                     | Internal pre/post movement described; no comparison-supported contribution estimate (comparison-cohort rule). |
+| `MATCHED_COMPARISON_READY`     | future caveated ceiling only - not currently authorized      | internal-only                     | Internal contribution-estimate eligibility with design caveats stated, all diagnostic gates passing.          |
+| `CONTROLLED_TEST_READY`        | future customer-safe ceiling only - not currently authorized | internal-only                     | Internal measured-effect language with the test design named; no customer-facing output.                      |
+| `CALIBRATED_ATTRIBUTION_READY` | future customer-safe ceiling only - not currently authorized | internal-only                     | Internal calibrated-attribution language only after later promotion; no customer-facing output.               |
+
+Until a separate recorded human promotion decision exists, the effective
+status of every non-withheld tier is capped at internal-only:
+`customer_facing_output`, `confidence_output`, and `probability_output`
+remain in `CONFIDENCE_MODEL_BLOCKED_USES`.
+
+## Expert review record
+
+Per task 1.2 of the change, each review outcome (approve /
+approve-with-changes / reject) is recorded here with reviewer and date.
+Review roles are assigned by the decision owner (James Kelley); the
+individuals originally identified during planning research are no longer
+part of the project, so each role remains unassigned until the decision
+owner names a reviewer or explicitly waives the role.
+
+| Review role                           | Scope                                                            | Assigned reviewer | Outcome | Date |
+| ------------------------------------- | ---------------------------------------------------------------- | ----------------- | ------- | ---- |
+| Statistical methodology reviewer      | Estimand, diagnostics gates, prior policy, calibration criteria  | UNASSIGNED        | PENDING | —    |
+| Value governance reviewer             | Claim language, evidence tiers, non-authorizations               | UNASSIGNED        | PENDING | —    |
+| Downstream tooling interface reviewer | Consumption of evidence-tier outputs by downstream value tooling | UNASSIGNED        | PENDING | —    |
+
+## What this contract does not change or authorize
+
+- No customer-facing output of any kind. No confidence percentages, no
+  probability language exposure, no ROI computation, no causality claims.
+- No routes, no UI, no customer/readout emitted-artifact schemas, no
+  persistence, no exports, no rendered readouts, no live
+  BigQuery/Sigma/Glean/customer connector execution. The internal
+  `InferenceProofArtifactSchema` is a validation-only proof boundary, not a
+  customer-facing emitted artifact.
+- No real customer or production data enters the proof harness; harness
+  inputs come from synthetic generators only, and real-data input is
+  rejected.
+- Threshold-probability and expected-loss representations are internal-only
+  with `customer_output_authorized` pinned false; promotion of any
+  probability output to customer-facing language requires a separate
+  recorded human decision.
+- The spine's schema versions, hashes, golden chain, state tokens, and
+  hold-by-default semantics are unchanged; all held states stay held.
+
+## Change history
+
+- OpenSpec change: `add-bayesian-inference-proof-harness`
+  (`openspec/changes/add-bayesian-inference-proof-harness/`). Decision
+  owner: James Kelley; approval recorded 2026-07-03. Slice 1 (this
+  contract) precedes slice 2 (the `inference/` proof harness, separate PR);
+  expert review outcomes are recorded in the table above as they land.
