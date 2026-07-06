@@ -347,6 +347,27 @@ test("governed diagnostics sufficiency evidence source accepts only explicit gov
   }
 });
 
+test("governed diagnostics sufficiency evidence source holds runtime-only reviewed evidence", () => {
+  const runtime = sourceRuntime();
+  const sourceEvidenceRefs = governedEvidenceInput(runtime);
+  const source =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: runtime,
+      reviewed_diagnostics_source_evidence: sourceEvidenceRefs
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
+
+  assert.equal(source.source_state, HOLD_STATE);
+  assert.equal(source.feeds.diagnostics_evidence_packet, false);
+  assert.equal(source.evidence_sufficiency.all_required_evidence_satisfied, false);
+  assert.equal(buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(source), null);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    source.validation_summary.gaps.some((gap) => /sourceGate|required|runtime validation/.test(gap)),
+    source.validation_summary.gaps.join("; ")
+  );
+});
+
 test("governed diagnostics sufficiency evidence source accepts a safe source runtime envelope", () => {
   const runtime = sourceRuntime();
   const sourceEvidenceRefs = governedEvidenceInput(runtime);
@@ -892,6 +913,174 @@ test("governed diagnostics sufficiency evidence source rejects unsafe nested sou
       assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
     }
   }
+});
+
+test("governed diagnostics sufficiency evidence source rejects allowed-envelope side-door metadata before runtime validation", () => {
+  const fakeRuntime = { runtime_hash: "not-a-valid-runtime" };
+  const unsafeInputs = [
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        source_gate: {
+          promotion_authorized: true,
+          economic_output_authorized: true,
+          admin_override_authorized: true
+        }
+      }
+    },
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        sourceGate: {
+          suppression_override_authorized: true,
+          external_output_authorized: true
+        }
+      }
+    },
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        aggregateMeasurementCellWindows: {
+          source_window_metadata: { cohort_size: 4 },
+          source_runtime_metadata: {
+            raw_row_count: 1,
+            identifier_count: 1,
+            query_text_present: true
+          }
+        }
+      }
+    },
+    {
+      source_runtime: {
+        source_runtime: fakeRuntime,
+        aggregate_windows: {
+          source_window_metadata: {
+            n: 4,
+            sample_size: 4,
+            distinct_users: 4
+          },
+          source_runtime_metadata: {
+            tracking_token: "track-123",
+            personKey: "person-key-123"
+          }
+        }
+      }
+    }
+  ];
+
+  for (const input of unsafeInputs) {
+    const source =
+      buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject(input);
+    const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(source);
+    const serialized = `${JSON.stringify(source)} ${JSON.stringify(validation)}`;
+
+    assert.equal(source.source_state, REJECT_STATE);
+    assert.equal(validation.valid, false);
+    assert.equal(source.promotion_boundary.promotion_authorized, false);
+    for (const unsafe of [
+      "\"promotion_authorized\":true",
+      "\"economic_output_authorized\":true",
+      "\"admin_override_authorized\":true",
+      "\"suppression_override_authorized\":true",
+      "\"external_output_authorized\":true",
+      "\"cohort_size\":4",
+      "\"raw_row_count\":1",
+      "\"identifier_count\":1",
+      "\"query_text_present\":true",
+      "\"n\":4",
+      "\"sample_size\":4",
+      "\"distinct_users\":4",
+      "track-123",
+      "person-key-123"
+    ]) {
+      assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+    }
+  }
+});
+
+test("governed diagnostics sufficiency evidence source preserves clean source runtime alias envelope", () => {
+  const source = sourceRuntimeSource();
+  const runtime = source.source_runtime;
+  const governedEvidence = governedEvidenceInput(runtime);
+  const readySource =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: {
+        source_runtime: runtime,
+        sourceGate: source.source_gate,
+        aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows
+      },
+      reviewed_diagnostics_source_evidence: governedEvidence
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
+    readySource,
+    sourceRuntimeValidationOptions({
+      sourceRuntime: runtime,
+      sourceGate: source.source_gate,
+      aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+      reviewedDiagnosticsSourceEvidence: governedEvidence
+    })
+  );
+
+  assert.equal(readySource.source_state, READY_STATE);
+  assert.equal(validation.valid, true);
+  assert.equal(readySource.feeds.diagnostics_evidence_packet, true);
+  assert.equal(readySource.promotion_boundary.promotion_authorized, false);
+});
+
+test("governed diagnostics sufficiency evidence source preserves clean aggregate_windows alias envelope", () => {
+  const source = sourceRuntimeSource();
+  const runtime = source.source_runtime;
+  const governedEvidence = governedEvidenceInput(runtime);
+  const readySource =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: {
+        source_runtime: runtime,
+        sourceGate: source.source_gate,
+        aggregate_windows: source.aggregate_measurement_cell_windows
+      },
+      reviewed_diagnostics_source_evidence: governedEvidence
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(
+    readySource,
+    sourceRuntimeValidationOptions({
+      sourceRuntime: runtime,
+      sourceGate: source.source_gate,
+      aggregateMeasurementCellWindows: source.aggregate_measurement_cell_windows,
+      reviewedDiagnosticsSourceEvidence: governedEvidence
+    })
+  );
+
+  assert.equal(readySource.source_state, READY_STATE);
+  assert.equal(validation.valid, true, validation.gaps.join("; "));
+  assert.equal(readySource.feeds.diagnostics_evidence_packet, true);
+  assert.equal(readySource.promotion_boundary.promotion_authorized, false);
+});
+
+test("governed diagnostics sufficiency evidence source holds stale aggregate_windows alias envelope", () => {
+  const source = sourceRuntimeSource();
+  const runtime = source.source_runtime;
+  const governedEvidence = governedEvidenceInput(runtime);
+  const heldSource =
+    buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject({
+      source_runtime: {
+        source_runtime: runtime,
+        sourceGate: source.source_gate,
+        aggregate_windows: []
+      },
+      reviewed_diagnostics_source_evidence: governedEvidence
+    });
+  const validation = validateContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSource(heldSource);
+
+  assert.equal(heldSource.source_state, HOLD_STATE);
+  assert.equal(heldSource.feeds.diagnostics_evidence_packet, false);
+  assert.equal(buildContributionAlignmentDiagnosticsSufficiencyEvidenceFromGovernedSource(heldSource), null);
+  assert.equal(validation.valid, false);
+  assert.ok(
+    heldSource.validation_summary.gaps.some((gap) =>
+      /aggregateMeasurementCellWindows|runtime validation|binding/.test(gap)
+    ),
+    heldSource.validation_summary.gaps.join("; ")
+  );
 });
 
 test("governed diagnostics sufficiency evidence source keeps feature weights structural internal only", () => {

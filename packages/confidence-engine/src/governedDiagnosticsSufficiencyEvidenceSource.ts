@@ -397,6 +397,54 @@ const FORBIDDEN_RUNTIME_ENVELOPE_SIDECAR_VALUE_PATTERNS = [
   /dataset/i
 ];
 
+const RUNTIME_ENVELOPE_TRUE_AUTHORIZATION_PATTERNS = [
+  /promotion_authorized/i,
+  /promotion_?allowed/i,
+  /promotion_?enabled/i,
+  /output_?allowed/i,
+  /output_?enabled/i,
+  /publication_?authorized/i,
+  /publish_?authorized/i,
+  /external_?output_?authorized/i,
+  /admin_.*authorized/i,
+  /suppression_.*authorized/i,
+  /override_.*authorized/i,
+  /.*_override_?authorized/i,
+  /posterior_.*authorized/i,
+  /confidence_.*authorized/i,
+  /probability_.*authorized/i,
+  /customer_.*authorized/i,
+  /economic_.*authorized/i,
+  /roi_.*authorized/i,
+  /productivity_.*authorized/i,
+  /causality_.*authorized/i,
+  /finance_.*authorized/i
+];
+
+const RUNTIME_ENVELOPE_LOW_COUNT_KEY_PATTERNS = [
+  /^n$/i,
+  /^n_?size$/i,
+  /sample_?size/i,
+  /cohort_?n/i,
+  /member_?count/i,
+  /k_?anonymity/i,
+  /actor_?count/i,
+  /distinct_?users/i
+];
+
+const RUNTIME_ENVELOPE_FORBIDDEN_KEY_PATTERNS = [
+  ...FORBIDDEN_RUNTIME_ENVELOPE_SIDECAR_KEY_PATTERNS,
+  /tracking_?token/i,
+  /session_?id/i,
+  /run_?id/i,
+  /actor_?id/i,
+  /person_?key/i,
+  /user_?key/i,
+  /hashed_?user/i,
+  /hashed_?person/i,
+  /pseudonymous_?id/i
+];
+
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
   if (value && typeof value === "object") {
@@ -449,11 +497,12 @@ function sourceRuntimeValidationOptions(input: unknown): AnyRecord {
   const sourceGate = source.source_gate ?? source.sourceGate;
   const aggregateMeasurementCellWindows =
     source.aggregate_measurement_cell_windows ??
-    source.aggregateMeasurementCellWindows;
-  if (sourceGate !== undefined && aggregateMeasurementCellWindows !== undefined) {
-    return { sourceGate, aggregateMeasurementCellWindows };
-  }
-  return { allowSelfContainedSourceValidation: true };
+    source.aggregateMeasurementCellWindows ??
+    source.aggregate_windows;
+  return {
+    ...(sourceGate !== undefined ? { sourceGate } : {}),
+    ...(aggregateMeasurementCellWindows !== undefined ? { aggregateMeasurementCellWindows } : {})
+  };
 }
 
 function reviewedEvidenceFromInput(input: unknown): any {
@@ -469,7 +518,44 @@ function runtimeEnvelopeSidecarContentGaps(value: unknown, path = "source_runtim
   if (value && typeof value === "object") {
     const gaps: string[] = [];
     for (const [key, nested] of Object.entries(value)) {
-      if (FORBIDDEN_RUNTIME_ENVELOPE_SIDECAR_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+      if (
+        nested === true &&
+        RUNTIME_ENVELOPE_TRUE_AUTHORIZATION_PATTERNS.some((pattern) => pattern.test(key))
+      ) {
+        gaps.push(`${path}.${key} contains unsafe source wrapper field`);
+        continue;
+      }
+      if (
+        key === "cohort_size" &&
+        typeof nested === "number" &&
+        nested > 0 &&
+        nested < 5
+      ) {
+        gaps.push(`${path}.${key} contains unsafe source wrapper field`);
+        continue;
+      }
+      if (
+        RUNTIME_ENVELOPE_LOW_COUNT_KEY_PATTERNS.some((pattern) => pattern.test(key)) &&
+        typeof nested === "number" &&
+        nested > 0 &&
+        nested < 5
+      ) {
+        gaps.push(`${path}.${key} contains unsafe source wrapper field`);
+        continue;
+      }
+      if (
+        (key === "raw_row_count" || key === "identifier_count") &&
+        typeof nested === "number" &&
+        nested > 0
+      ) {
+        gaps.push(`${path}.${key} contains unsafe source wrapper field`);
+        continue;
+      }
+      if (key === "query_text_present" && nested === true) {
+        gaps.push(`${path}.${key} contains unsafe source wrapper field`);
+        continue;
+      }
+      if (RUNTIME_ENVELOPE_FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
         gaps.push(`${path}.${key} contains unsafe source wrapper field`);
         continue;
       }
