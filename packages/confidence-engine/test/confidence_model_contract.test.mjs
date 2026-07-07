@@ -1323,6 +1323,13 @@ test("inference proof artifact rejects naive repeated-look peeking", () => {
   signInferenceProofArtifact(repeatedWithoutProof);
   assert.equal(InferenceProofArtifactSchema.safeParse(repeatedWithoutProof).success, false);
 
+  const repeatedFixedHorizonHold = clone(validInferenceProofArtifact);
+  repeatedFixedHorizonHold.peeking_control.repeated_evaluation = true;
+  repeatedFixedHorizonHold.peeking_control.pass = false;
+  markInferenceProofHold(repeatedFixedHorizonHold, ["peeking_control"]);
+  signInferenceProofArtifact(repeatedFixedHorizonHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(repeatedFixedHorizonHold).success, true);
+
   const fixedHorizonMultiMetric = clone(validInferenceProofArtifact);
   fixedHorizonMultiMetric.peeking_control.metrics_included = ["selected_metric", "second_metric"];
   signInferenceProofArtifact(fixedHorizonMultiMetric);
@@ -1419,6 +1426,23 @@ test("inference proof artifact derives missing and suppressed window HOLD eviden
   markInferenceProofHold(missingWindowHold, ["missing_or_suppressed_windows"]);
   signInferenceProofArtifact(missingWindowHold);
   assert.equal(InferenceProofArtifactSchema.safeParse(missingWindowHold).success, true);
+
+  const extraObservedWindowEligible = clone(validInferenceProofArtifact);
+  extraObservedWindowEligible.measurement_cell_window_evidence.observed_milestone_days = [
+    ...extraObservedWindowEligible.measurement_cell_window_evidence.observed_milestone_days,
+    60
+  ];
+  extraObservedWindowEligible.measurement_cell_window_evidence.observed_window_refs = [
+    ...extraObservedWindowEligible.measurement_cell_window_evidence.observed_window_refs,
+    "selected_metric:synthetic-treated-vs-comparison:60"
+  ];
+  signInferenceProofArtifact(extraObservedWindowEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(extraObservedWindowEligible).success, false);
+
+  const extraObservedWindowHold = clone(extraObservedWindowEligible);
+  markInferenceProofHold(extraObservedWindowHold, ["peeking_control"]);
+  signInferenceProofArtifact(extraObservedWindowHold);
+  assert.equal(InferenceProofArtifactSchema.safeParse(extraObservedWindowHold).success, true);
 
   const suppressedWindowHeldWithoutDiagnostic = clone(validInferenceProofArtifact);
   suppressedWindowHeldWithoutDiagnostic.measurement_cell_window_evidence.suppressed_milestone_days =

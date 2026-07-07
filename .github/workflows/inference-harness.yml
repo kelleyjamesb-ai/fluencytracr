@@ -1,0 +1,61 @@
+name: Inference Harness
+
+# Opt into Node 24 for JavaScript-based actions before runner default (see GitHub changelog 2025-09-19).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "inference/**"
+      - "packages/confidence-engine/src/**"
+      - "packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs"
+      - "packages/confidence-engine/test/fixtures/inference_proof_artifact_*.json"
+      - "docs/contracts/confidence-inference-methodology/**"
+      - "openspec/changes/add-bayesian-inference-proof-harness/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/inference-harness.yml"
+  pull_request:
+    paths:
+      - "inference/**"
+      - "packages/confidence-engine/src/**"
+      - "packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs"
+      - "packages/confidence-engine/test/fixtures/inference_proof_artifact_*.json"
+      - "docs/contracts/confidence-inference-methodology/**"
+      - "openspec/changes/add-bayesian-inference-proof-harness/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/inference-harness.yml"
+
+jobs:
+  inference-harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          package-manager-cache: false
+      - name: Install pinned inference environment
+        run: |
+          python -m venv inference/.venv
+          inference/.venv/bin/python -m pip install --upgrade pip
+          inference/.venv/bin/pip install -r inference/requirements.lock
+      - name: Install Node dependencies
+        run: npm ci
+      - name: Run inference harness suite
+        run: PYTHONPATH=inference/src inference/.venv/bin/python -m pytest inference/tests/ -q
+      - name: Run Python to TypeScript inference bridge
+        run: |
+          npm run build --workspace packages/confidence-engine
+          node --test packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs
