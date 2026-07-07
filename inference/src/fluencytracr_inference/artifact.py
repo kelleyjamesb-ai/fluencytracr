@@ -55,6 +55,9 @@ from .model import FitResult, HoldViolation, fit_did_model
 from .synthetic import SyntheticDataset, assert_synthetic_only_dataset
 
 LOCKFILE_PATH = Path(__file__).resolve().parents[2] / "requirements.lock"
+DEFAULT_STUDY_RESULTS_PATH = Path(__file__).resolve().parents[2] / (
+    "calibration_study_results.json"
+)
 
 
 def lockfile_hash() -> str:
@@ -137,6 +140,11 @@ def missing_study_input_null_checks() -> dict:
 
 def phase_b1_fixture_floor_checks() -> dict:
     """PHASE B1 FIXTURE: placeholder floor-enforcement summary."""
+    return canonical_floor_checks()
+
+
+def canonical_floor_checks() -> dict:
+    """Schema-literal floor-check declaration used by structural study cells."""
     return {
         "k4_rejected": {
             "cohort_size": 4,

@@ -35,7 +35,64 @@ python3 -m venv .venv
 To change dependencies: edit the direct pins in `pyproject.toml`, reinstall,
 then regenerate the lockfile with `.venv/bin/pip freeze > requirements.lock`.
 
-## Package layout (Slice 2 Phase B1)
+## Simulation design
+
+The calibration study is a synthetic stress test for the inference harness.
+It does **not** use customer data, Glean telemetry, BigQuery, connector rows,
+survey rows, or person-level records. Every row is generated inside
+`fluencytracr_inference.synthetic` from a fixed seed and carries an injected
+ground truth so the harness can be audited.
+
+The generated rows are aggregate Measurement Cell windows:
+
+- one row = one aggregate cohort/window observation;
+- `k` = the aggregate cohort count per treated or comparison arm;
+- `members` = the aggregate denominator used only to weight standard error;
+- `treated` and `post` define the difference-in-differences contrast;
+- `time_index` supplies pre/post milestone windows;
+- expectation path, workflow, function, cohort, and organization labels are
+  synthetic grouping labels for partial pooling;
+- `injected_effect_sd` is the known contribution-alignment effect in standard
+  deviation units.
+
+The main calibration grid is:
+
+- injected effects: `0`, `0.2`, and `0.5` SD;
+- floor-eligible cohort counts: `k=12` and `k=16`;
+- at least `200` seeded replications per effect/cohort cell;
+- an 80% credible interval must cover the injected effect in `74%` to `86%`
+  of replications for each cell.
+
+The runner also computes:
+
+- pooled null false-eligibility across the `0`-effect cells, capped at `5%`;
+- floor checks: `k=4` must reject, `k=8` must remain internal-only, and
+  `k=12`/`k=16` must be eligible for the display floor;
+- named negative controls for no comparison cohort, violated pre-trend,
+  mismatched comparison, prior-dominated weak data, missing/suppressed
+  windows, and repeated milestone peeking.
+
+Run the calibration runner from the locked inference environment:
+
+```bash
+cd inference
+.venv/bin/python -m fluencytracr_inference.calibration --smoke --calibration-only
+```
+
+The smoke path proves the runner, seed grid, checkpointing, and sampler loop
+with fewer replications. The full study is intentionally expensive:
+
+```bash
+cd inference
+.venv/bin/python -m fluencytracr_inference.calibration
+```
+
+Checkpoint files live under `inference/.calibration-cache/` and are ignored.
+Do not treat a generated `calibration_study_results.json` as proof unless all
+acceptance fields pass; failing results are diagnostic evidence, not
+authorization for customer-facing intervals or probability/confidence output.
+
+## Package layout (Slice 2 Phase B1/B2)
 
 Under `src/fluencytracr_inference/`:
 
@@ -67,6 +124,10 @@ Under `src/fluencytracr_inference/`:
   peeking check passes; otherwise HOLD naming every failing diagnostic.
   `run_proof(dataset, ...)` is the single entry point (fit + diagnostics +
   artifact); Phase B2's calibration study drives it per replication.
+- `calibration.py` — seeded synthetic calibration-study runner and summary
+  builder for task 3.3. It can resume from checkpointed JSONL records and
+  reports per-cell coverage, null false-eligibility, floor checks, and
+  negative controls.
 
 ## Running the tests
 

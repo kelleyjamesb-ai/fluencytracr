@@ -195,6 +195,7 @@ def fit_did_model(
     seed: int = 20260706,
     target_accept: float = 0.99,
     max_treedepth: int = 12,
+    sample_posterior_predictive: bool = True,
 ) -> FitResult:
     """Fit the contract equation with seeded NUTS (2+ chains, cores=1).
 
@@ -202,6 +203,10 @@ def fit_did_model(
     max_treedepth 12) are tuned so a clean k=16 synthetic fit passes every
     sampler gate with margin: R-hat <= 1.01, chain-total bulk/tail ESS >= 400,
     zero divergences, zero max-treedepth saturation, MCSE ratio <= 0.1.
+
+    ``sample_posterior_predictive=False`` is for calibration-study
+    replications that need only the estimand posterior. Any fit that feeds
+    posterior predictive diagnostics must keep the default ``True`` value.
 
     Raises :class:`HoldViolation` (``unsupported_likelihood_family``) for any
     non-normal likelihood family: those are structurally typed but held until
@@ -247,13 +252,14 @@ def fit_did_model(
             # must surface, and diagnostics.py re-checks every gate anyway.
             compute_convergence_checks=True,
         )
-        pm.sample_posterior_predictive(
-            idata,
-            var_names=[OBSERVED_VARIABLE_NAME],
-            random_seed=seed,
-            progressbar=False,
-            extend_inferencedata=True,
-        )
+        if sample_posterior_predictive:
+            pm.sample_posterior_predictive(
+                idata,
+                var_names=[OBSERVED_VARIABLE_NAME],
+                random_seed=seed,
+                progressbar=False,
+                extend_inferencedata=True,
+            )
     wall = time.perf_counter() - started
 
     return FitResult(
