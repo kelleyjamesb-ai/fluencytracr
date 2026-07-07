@@ -37,7 +37,18 @@ from fluencytracr_inference.synthetic import generate_did_dataset
 EXPECTED_CELL_IDS = [cell.cell_id for cell in cal.CALIBRATION_CELLS]
 
 
-def _fake_record(cell, index, *, covers=True, excludes_zero=False, sane=True):
+def _fake_record(
+    cell,
+    index,
+    *,
+    covers=True,
+    excludes_zero=False,
+    sane=True,
+    posterior_mean=0.0,
+    posterior_sd=0.1,
+    ci80_lower=-0.1,
+    ci80_upper=0.1,
+):
     return {
         "cell_id": cell.cell_id,
         "injected_effect_size_sd": cell.injected_effect_sd,
@@ -48,10 +59,10 @@ def _fake_record(cell, index, *, covers=True, excludes_zero=False, sane=True):
             cal.CALIBRATION_CELLS.index(cell),
             index,
         ),
-        "posterior_mean": 0.0,
-        "posterior_sd": 0.1,
-        "ci80_lower": -0.1,
-        "ci80_upper": 0.1,
+        "posterior_mean": posterior_mean,
+        "posterior_sd": posterior_sd,
+        "ci80_lower": ci80_lower,
+        "ci80_upper": ci80_upper,
         "covers_injected_effect": covers,
         "ci_excludes_zero": excludes_zero,
         "sanity": {"pass": sane},
@@ -137,6 +148,92 @@ def test_calibration_summaries_map_to_artifact_inputs():
     assert scenarios[0]["injected_effect_size_sd"] == 0
     assert all(scenario["scenario_id"].startswith("calibration-effect-") for scenario in scenarios)
     assert all(scenario["pass"] is True for scenario in scenarios)
+
+
+def test_calibration_summaries_fail_closed_on_incomplete_cells():
+    study = _fake_study()
+    cell = cal.CALIBRATION_CELLS[0]
+    study["records_by_cell"][cell.cell_id] = study["records_by_cell"][cell.cell_id][:-1]
+
+    summary = cal.summarize_calibration_cells(study)[0]
+
+    assert summary["cell_id"] == cell.cell_id
+    assert summary["replication_count"] == INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN - 1
+    assert summary["target_replication_count"] == INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+    assert summary["completion_gap"] == 1
+    assert summary["complete"] is False
+    assert summary["coverage_in_band"] is True
+    assert summary["pass"] is False
+
+
+def test_calibration_completion_requires_every_cell():
+    study = _fake_study()
+    missing_cell = cal.CALIBRATION_CELLS[-1]
+    del study["records_by_cell"][missing_cell.cell_id]
+    summaries = cal.summarize_calibration_cells(study)
+
+    completion = cal.summarize_calibration_completion(study, summaries)
+
+    assert completion["pass"] is False
+    assert completion["required_cell_count"] == len(cal.CALIBRATION_CELLS)
+    assert completion["observed_cell_count"] == len(cal.CALIBRATION_CELLS) - 1
+    assert completion["missing_cell_ids"] == [missing_cell.cell_id]
+    assert cal.all_calibration_cells_pass(study, summaries) is False
+
+
+def test_coverage_diagnostics_show_undercoverage_shape():
+    cell = cal.CALIBRATION_CELLS[-1]
+    records = []
+    for index in range(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN):
+        if index < 144:
+            records.append(
+                _fake_record(
+                    cell,
+                    index,
+                    covers=True,
+                    posterior_mean=0.5,
+                    ci80_lower=0.3,
+                    ci80_upper=0.7,
+                )
+            )
+        elif index < 174:
+            records.append(
+                _fake_record(
+                    cell,
+                    index,
+                    covers=False,
+                    posterior_mean=0.25,
+                    ci80_lower=0.1,
+                    ci80_upper=0.4,
+                )
+            )
+        else:
+            records.append(
+                _fake_record(
+                    cell,
+                    index,
+                    covers=False,
+                    posterior_mean=0.75,
+                    ci80_lower=0.6,
+                    ci80_upper=0.9,
+                )
+            )
+    study = _fake_study()
+    study["records_by_cell"][cell.cell_id] = records
+
+    summary = [
+        item for item in cal.summarize_calibration_cells(study) if item["cell_id"] == cell.cell_id
+    ][0]
+    diagnostics = summary["coverage_diagnostics"]
+
+    assert summary["coverage_rate"] == pytest.approx(0.72)
+    assert summary["pass"] is False
+    assert diagnostics["interval_below_injected_count"] == 30
+    assert diagnostics["interval_above_injected_count"] == 26
+    assert diagnostics["missed_count"] == 56
+    assert diagnostics["median_ci80_width_sd"] == pytest.approx(0.4)
+    assert diagnostics["mean_posterior_error_sd"] == pytest.approx((-30 * 0.25 + 26 * 0.25) / 200)
+    assert diagnostics["missed_replication_seeds_sample"][0]["direction"] == "interval_below_injected"
 
 
 def test_null_false_eligibility_pooling_math():

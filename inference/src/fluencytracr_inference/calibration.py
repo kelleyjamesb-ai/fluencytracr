@@ -32,11 +32,12 @@ checkpoints every replication as one JSONL line under
 ``inference/.calibration-cache/`` (gitignored), so an interrupted study
 resumes without recomputing finished seeds.
 
-The compact committed summary (``inference/calibration_study_results.json``)
-carries per-cell coverage with binomial intervals, the pooled null
-false-eligibility rate, floor and negative-control outcomes, seeds, and
-settings — plus the ready-to-consume ``artifact_inputs`` section the emitter
-loads (see :mod:`.artifact`).
+A deliberately committed passing summary
+(``inference/calibration_study_results.json``), if produced after all
+acceptance fields pass, carries per-cell coverage with binomial intervals, the
+pooled null false-eligibility rate, floor and negative-control outcomes, seeds,
+and settings — plus the ready-to-consume ``artifact_inputs`` section the
+emitter loads (see :mod:`.artifact`).
 
 CLI::
 
@@ -398,11 +399,12 @@ def summarize_checkpoint_progress(
             for index, record in _load_checkpointed(path).items()
             if index < replications_per_cell
         }
+        records = list(checkpointed.values())
         completed = len(checkpointed)
         raw_lines = _checkpoint_line_count(path)
-        covered = sum(1 for record in checkpointed.values() if record["covers_injected_effect"])
+        covered = sum(1 for record in records if record["covers_injected_effect"])
         coverage_rate = covered / completed if completed else None
-        sanity_pass = sum(1 for record in checkpointed.values() if record["sanity"]["pass"])
+        sanity_pass = sum(1 for record in records if record["sanity"]["pass"])
         pending_indices = [
             index for index in range(replications_per_cell) if index not in checkpointed
         ]
@@ -424,6 +426,9 @@ def summarize_checkpoint_progress(
                 "covered_count": covered,
                 "coverage_rate": coverage_rate,
                 "sanity_pass_count": sanity_pass,
+                "coverage_diagnostics": coverage_diagnostics(
+                    records, injected_effect_size_sd=cell.injected_effect_sd
+                ),
             }
         )
     return {
@@ -569,9 +574,83 @@ def binomial_interval_95(successes: int, n: int) -> dict:
     return {"lower": lower, "upper": upper, "level": 0.95, "method": "clopper_pearson"}
 
 
+def _target_replication_count(study: dict) -> int:
+    return max(
+        int(study.get("replications_per_cell", DEFAULT_REPLICATIONS_PER_CELL)),
+        INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+    )
+
+
+def coverage_diagnostics(
+    records: list[dict],
+    *,
+    injected_effect_size_sd: float,
+    sample_limit: int = 10,
+) -> dict:
+    """Diagnostic shape for coverage failures; not a gate by itself."""
+    if not records:
+        return {
+            "missed_count": 0,
+            "interval_below_injected_count": 0,
+            "interval_above_injected_count": 0,
+            "declared_miss_overlap_count": 0,
+            "mean_posterior_error_sd": None,
+            "median_ci80_width_sd": None,
+            "mean_ci80_width_sd": None,
+            "missed_replication_seeds_sample": [],
+        }
+
+    effect = float(injected_effect_size_sd)
+    errors = [float(record["posterior_mean"]) - effect for record in records]
+    widths = [
+        float(record["ci80_upper"]) - float(record["ci80_lower"]) for record in records
+    ]
+    below = 0
+    above = 0
+    overlap = 0
+    missed_sample = []
+    for record in records:
+        if record["covers_injected_effect"]:
+            continue
+        lower = float(record["ci80_lower"])
+        upper = float(record["ci80_upper"])
+        if upper < effect:
+            direction = "interval_below_injected"
+            below += 1
+        elif lower > effect:
+            direction = "interval_above_injected"
+            above += 1
+        else:
+            direction = "declared_miss_overlap"
+            overlap += 1
+        if len(missed_sample) < sample_limit:
+            missed_sample.append(
+                {
+                    "replication_index": int(record["replication_index"]),
+                    "seed": int(record["seed"]),
+                    "direction": direction,
+                    "posterior_mean": float(record["posterior_mean"]),
+                    "ci80_lower": lower,
+                    "ci80_upper": upper,
+                }
+            )
+
+    return {
+        "missed_count": below + above + overlap,
+        "interval_below_injected_count": below,
+        "interval_above_injected_count": above,
+        "declared_miss_overlap_count": overlap,
+        "mean_posterior_error_sd": float(np.mean(errors)),
+        "median_ci80_width_sd": float(np.median(widths)),
+        "mean_ci80_width_sd": float(np.mean(widths)),
+        "missed_replication_seeds_sample": missed_sample,
+    }
+
+
 def summarize_calibration_cells(study: dict) -> list[dict]:
     """Per-cell coverage summary with the binomial 95% interval reported."""
     summaries = []
+    target_replication_count = _target_replication_count(study)
     for cell in CALIBRATION_CELLS:
         records = study["records_by_cell"].get(cell.cell_id)
         if not records:
@@ -580,6 +659,12 @@ def summarize_calibration_cells(study: dict) -> list[dict]:
         n = len(records)
         covered = sum(1 for r in records if r["covers_injected_effect"])
         coverage_rate = covered / n
+        coverage_in_band = (
+            INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN
+            <= coverage_rate
+            <= INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX
+        )
+        complete = n >= target_replication_count
         first_seed = derive_replication_seed(study["base_seed"], cell_index, 0)
         last_seed = derive_replication_seed(study["base_seed"], cell_index, n - 1)
         summaries.append(
@@ -588,6 +673,9 @@ def summarize_calibration_cells(study: dict) -> list[dict]:
                 "injected_effect_size_sd": cell.injected_effect_sd,
                 "cohort_size": cell.k,
                 "replication_count": n,
+                "target_replication_count": target_replication_count,
+                "completion_gap": max(0, target_replication_count - n),
+                "complete": complete,
                 "covered_count": covered,
                 "coverage_rate": coverage_rate,
                 # Schema-exact standard error: sqrt(p * (1 - p) / n).
@@ -599,11 +687,8 @@ def summarize_calibration_cells(study: dict) -> list[dict]:
                     "min": INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN,
                     "max": INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX,
                 },
-                "pass": (
-                    INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN
-                    <= coverage_rate
-                    <= INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX
-                ),
+                "coverage_in_band": coverage_in_band,
+                "pass": complete and coverage_in_band,
                 "ci_excludes_zero_count": sum(1 for r in records if r["ci_excludes_zero"]),
                 "sanity_pass_count": sum(1 for r in records if r["sanity"]["pass"]),
                 "contribution_estimate_eligible_count": sum(
@@ -611,6 +696,9 @@ def summarize_calibration_cells(study: dict) -> list[dict]:
                 ),
                 "mean_fit_wall_time_seconds": float(
                     np.mean([r["wall_time_seconds"] for r in records])
+                ),
+                "coverage_diagnostics": coverage_diagnostics(
+                    records, injected_effect_size_sd=cell.injected_effect_sd
                 ),
                 # The exact fit settings this cell was MEASURED with (cells
                 # re-measured at full-quality settings record them here).
@@ -627,6 +715,38 @@ def summarize_calibration_cells(study: dict) -> list[dict]:
             }
         )
     return summaries
+
+
+def summarize_calibration_completion(study: dict, cell_summaries: list[dict]) -> dict:
+    """Study-level completeness gate across the fixed calibration cell grid."""
+    target = _target_replication_count(study)
+    by_cell = {summary["cell_id"]: summary for summary in cell_summaries}
+    missing_cell_ids = [
+        cell.cell_id for cell in CALIBRATION_CELLS if cell.cell_id not in by_cell
+    ]
+    incomplete_cells = [
+        {
+            "cell_id": summary["cell_id"],
+            "replication_count": int(summary["replication_count"]),
+            "target_replication_count": int(summary["target_replication_count"]),
+            "completion_gap": int(summary["completion_gap"]),
+        }
+        for summary in cell_summaries
+        if not summary["complete"]
+    ]
+    return {
+        "required_cell_count": len(CALIBRATION_CELLS),
+        "observed_cell_count": len(cell_summaries),
+        "target_replication_count_per_cell": target,
+        "missing_cell_ids": missing_cell_ids,
+        "incomplete_cells": incomplete_cells,
+        "pass": not missing_cell_ids and not incomplete_cells,
+    }
+
+
+def all_calibration_cells_pass(study: dict, cell_summaries: list[dict]) -> bool:
+    completion = summarize_calibration_completion(study, cell_summaries)
+    return bool(completion["pass"] and all(cell["pass"] for cell in cell_summaries))
 
 
 def summarize_null_false_eligibility(study: dict) -> dict:
@@ -667,7 +787,26 @@ def summarize_null_false_eligibility(study: dict) -> dict:
 def calibration_scenarios_from_summaries(cell_summaries: list[dict]) -> list[dict]:
     """Map study cell summaries to the artifact's strict calibration shape."""
     scenarios = []
-    for summary in cell_summaries:
+    by_cell = {summary["cell_id"]: summary for summary in cell_summaries}
+    for cell in CALIBRATION_CELLS:
+        summary = by_cell.get(cell.cell_id)
+        if summary is None or int(summary["replication_count"]) < (
+            INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+        ):
+            effect = cell.injected_effect_sd
+            scenarios.append(
+                {
+                    "scenario_id": f"calibration-{cell.cell_id}",
+                    "injected_effect_size_sd": int(effect) if effect == 0 else float(effect),
+                    "cohort_size": int(cell.k),
+                    "replication_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+                    "credible_interval_level": CREDIBLE_INTERVAL_LEVEL,
+                    "coverage_rate": 0.0,
+                    "coverage_standard_error": 0.0,
+                    "pass": False,
+                }
+            )
+            continue
         effect = summary["injected_effect_size_sd"]
         scenarios.append(
             {
@@ -1128,6 +1267,7 @@ def build_study_results(
     cells measured with non-default fit settings are noted automatically.
     """
     cell_summaries = summarize_calibration_cells(study)
+    calibration_completion = summarize_calibration_completion(study, cell_summaries)
     null_summary = summarize_null_false_eligibility(study)
     scenarios = calibration_scenarios_from_summaries(cell_summaries)
     # Floor and negative-control cells are per-gate isolation experiments
@@ -1175,7 +1315,8 @@ def build_study_results(
         "workers": study["workers"],
         "calibration": {
             "cells": cell_summaries,
-            "all_cells_pass": all(cell["pass"] for cell in cell_summaries),
+            "completion": calibration_completion,
+            "all_cells_pass": all_calibration_cells_pass(study, cell_summaries),
         },
         "null_false_eligibility": null_summary,
         "floor_study": floor_study,

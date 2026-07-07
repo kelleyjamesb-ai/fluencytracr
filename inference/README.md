@@ -105,10 +105,10 @@ PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
 `--checkpoint-summary-only` is read-only and never launches sampler workers.
 It is the safe way to check a long-running rerun before resuming it. For the
 current `effect-0.5-k16` investigation, the recovered full-quality checkpoint
-state has 50 unique completed replications out of 200, with 0.78 interim
-coverage and 150 replications still pending. That is promising, but it is
-not passing proof until the cell reaches the 200-replication minimum and the
-rebuilt study result passes every acceptance field.
+state reached 200 unique completed replications and still failed the coverage
+gate at `0.72` against the required `0.74` to `0.86` band. The failed result is
+diagnostic evidence only: no proof artifact should be committed until the
+methodology/model issue is fixed and every acceptance field passes.
 
 Checkpoint files live under `inference/.calibration-cache/` and are ignored.
 Do not treat a generated `calibration_study_results.json` as proof unless all
