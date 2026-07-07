@@ -683,9 +683,19 @@ def _emit_study_artifact(
     use the canonical schema shape; the study itself is the evidence for it.
     """
     control_scenarios, control_null_checks = control_study_inputs()
+    # The production emitter correctly requires the fit and dataset to bind
+    # to the same synthetic input hash. Structural isolation cells reuse the
+    # carrier posterior only as a gate-passing diagnostics carrier, so rebind
+    # the carrier metadata to the synthetic dataset under test instead of
+    # weakening the emitter boundary.
+    bound_carrier_fit = dataclasses.replace(
+        carrier_fit,
+        dataset=dataset,
+        synthetic_input_hash=dataset.synthetic_input_hash(),
+    )
     return emit_proof_artifact(
         dataset=dataset,
-        fit=carrier_fit,
+        fit=bound_carrier_fit,
         diagnostics=diagnostics_override
         if diagnostics_override is not None
         else carrier_diagnostics,

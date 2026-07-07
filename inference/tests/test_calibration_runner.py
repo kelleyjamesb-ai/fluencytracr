@@ -7,14 +7,31 @@ documented in ``inference/README.md``.
 
 import math
 from pathlib import Path
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from fluencytracr_inference import calibration as cal
 from fluencytracr_inference.constants import (
     INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+    INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
+    INFERENCE_PROOF_PPC_STATISTIC_NAMES,
     INFERENCE_PROOF_FLOAT_TOLERANCE,
+    LIKELIHOOD_FAMILY_LINKS,
+    SUPPORTED_LIKELIHOOD_FAMILY,
 )
+from fluencytracr_inference.diagnostics import (
+    DiagnosticsResult,
+    ParameterDiagnostic,
+    PpcStatistic,
+    PreTrendResult,
+    PriorSensitivityResult,
+    SamplerDiagnostics,
+)
+from fluencytracr_inference.hashing import sha256_json
+from fluencytracr_inference.model import FitResult, PRIOR_SENSITIVITY_SCALINGS, PriorSpec
+from fluencytracr_inference.synthetic import generate_did_dataset
 
 
 EXPECTED_CELL_IDS = [cell.cell_id for cell in cal.CALIBRATION_CELLS]
@@ -154,3 +171,99 @@ def test_control_inputs_and_checkpoint_rules(tmp_path):
 
     gitignore = Path(__file__).resolve().parent.parent / ".gitignore"
     assert ".calibration-cache/" in gitignore.read_text(encoding="utf-8")
+
+
+def _passing_diagnostics() -> DiagnosticsResult:
+    prior_spec = PriorSpec()
+    justification_hash = sha256_json(
+        {
+            "justification_ref": prior_spec.justification_ref,
+            "prior_family": prior_spec.family_name,
+            "prior_spec": prior_spec.describe(),
+            "scalings": [1.0, *[float(s) for s in PRIOR_SENSITIVITY_SCALINGS]],
+        }
+    )
+    return DiagnosticsResult(
+        sampler=SamplerDiagnostics(
+            parameters=(
+                ParameterDiagnostic(
+                    parameter_name=INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
+                    r_hat=1.002,
+                    bulk_ess=1200.0,
+                    tail_ess=1100.0,
+                    posterior_mean_mcse=0.001,
+                    interval_endpoint_mcse=0.002,
+                    posterior_sd=0.1,
+                ),
+            ),
+            post_warmup_divergences=0,
+            max_treedepth_saturation_rate=0.0,
+            max_treedepth_warning=False,
+            energy_bfmi_min=0.9,
+            energy_bfmi_warning=False,
+        ),
+        posterior_predictive_checks=tuple(
+            PpcStatistic(
+                statistic_name=name,
+                observed_value=0.0,
+                predictive_mean=0.0,
+                predictive_ci80_lower=-1.0,
+                predictive_ci80_upper=1.0,
+                p_value=0.5,
+                passed=True,
+            )
+            for name in INFERENCE_PROOF_PPC_STATISTIC_NAMES
+        ),
+        prior_sensitivity=PriorSensitivityResult(
+            documented=True,
+            justification_ref=prior_spec.justification_ref,
+            justification_hash=justification_hash,
+            posterior_mean_shift_in_posterior_sd=0.1,
+            passed=True,
+            prior_family=prior_spec.family_name,
+        ),
+        pre_trend=PreTrendResult(
+            ci80_lower=-0.1,
+            ci80_upper=0.1,
+            includes_zero=True,
+            passed=True,
+            wall_time_seconds=0.0,
+        ),
+        internal_report={},
+    )
+
+
+def _fake_fit(dataset) -> FitResult:
+    draws = np.full((2, 100), 0.5)
+    idata = SimpleNamespace(posterior={INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME: draws})
+    return FitResult(
+        idata=idata,
+        dataset=dataset,
+        prior_spec=PriorSpec(),
+        likelihood_family=SUPPORTED_LIKELIHOOD_FAMILY,
+        link_function=LIKELIHOOD_FAMILY_LINKS[SUPPORTED_LIKELIHOOD_FAMILY],
+        draws=100,
+        tune=100,
+        chains=2,
+        seed=dataset.seed,
+        target_accept=0.99,
+        max_treedepth=12,
+        wall_time_seconds=0.0,
+        synthetic_input_hash=dataset.synthetic_input_hash(),
+    )
+
+
+def test_structural_study_artifact_rebinds_carrier_to_dataset_under_test():
+    carrier_dataset = generate_did_dataset(seed=101, k=16)
+    structural_dataset = generate_did_dataset(seed=102, k=4)
+    artifact = cal._emit_study_artifact(
+        structural_dataset,
+        carrier_fit=_fake_fit(carrier_dataset),
+        carrier_diagnostics=_passing_diagnostics(),
+    )
+
+    assert artifact["hash_bindings"]["synthetic_input_hash"] == (
+        structural_dataset.synthetic_input_hash()
+    )
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == ["floor_check"]
