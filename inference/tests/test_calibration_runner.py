@@ -173,6 +173,34 @@ def test_control_inputs_and_checkpoint_rules(tmp_path):
     assert ".calibration-cache/" in gitignore.read_text(encoding="utf-8")
 
 
+def test_checkpoint_progress_summary_dedupes_duplicate_lines(tmp_path):
+    cell = cal.CALIBRATION_CELLS[-1]
+    study_key = cal._study_key(cal.DEFAULT_BASE_SEED, cal.FULL_QUALITY_FIT_SETTINGS)
+    path = cal._cell_cache_path(tmp_path, study_key, cell)
+    first = _fake_record(cell, 0, covers=False)
+    replacement = _fake_record(cell, 0, covers=True)
+    second = _fake_record(cell, 1, covers=True)
+    cal._append_checkpoint(path, first)
+    cal._append_checkpoint(path, replacement)
+    cal._append_checkpoint(path, second)
+
+    summary = cal.summarize_checkpoint_progress(
+        replications_per_cell=4,
+        cache_dir=tmp_path,
+        cell_fit_settings={cell.cell_id: dict(cal.FULL_QUALITY_FIT_SETTINGS)},
+        cells=(cell,),
+    )
+
+    assert summary["total_pending_replications"] == 2
+    cell_summary = summary["cells"][0]
+    assert cell_summary["cell_id"] == cell.cell_id
+    assert cell_summary["raw_checkpoint_lines"] == 3
+    assert cell_summary["completed_replications"] == 2
+    assert cell_summary["duplicate_checkpoint_lines"] == 1
+    assert cell_summary["coverage_rate"] == 1.0
+    assert cell_summary["fit_settings"] == cal.FULL_QUALITY_FIT_SETTINGS
+
+
 def _passing_diagnostics() -> DiagnosticsResult:
     prior_spec = PriorSpec()
     justification_hash = sha256_json(

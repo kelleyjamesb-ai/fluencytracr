@@ -346,6 +346,13 @@ def _load_checkpointed(path: Path) -> dict[int, dict]:
     return records
 
 
+def _checkpoint_line_count(path: Path) -> int:
+    if not path.exists():
+        return 0
+    with path.open(encoding="utf-8") as handle:
+        return sum(1 for line in handle if line.strip())
+
+
 def _append_checkpoint(path: Path, record: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
@@ -358,6 +365,78 @@ def _append_checkpoint(path: Path, record: dict) -> None:
 
 def default_worker_count() -> int:
     return max(2, (os.cpu_count() or 2) - 2)
+
+
+def summarize_checkpoint_progress(
+    *,
+    base_seed: int = DEFAULT_BASE_SEED,
+    replications_per_cell: int | None = None,
+    smoke: bool = False,
+    cache_dir: Path | str | None = None,
+    fit_settings: dict | None = None,
+    cell_fit_settings: dict[str, dict] | None = None,
+    cells: tuple[CalibrationCell, ...] | None = None,
+) -> dict:
+    """Read checkpoint progress without launching new sampler work."""
+    if replications_per_cell is None:
+        replications_per_cell = (
+            SMOKE_REPLICATIONS_PER_CELL if smoke else DEFAULT_REPLICATIONS_PER_CELL
+        )
+    cache_root = Path(cache_dir) if cache_dir is not None else DEFAULT_CACHE_DIR
+    base_settings = {**CHEAP_FIT_SETTINGS, **(fit_settings or {})}
+    active_cells = cells if cells is not None else CALIBRATION_CELLS
+    cell_settings = {
+        cell.cell_id: {**base_settings, **((cell_fit_settings or {}).get(cell.cell_id, {}))}
+        for cell in active_cells
+    }
+    cell_summaries = []
+    for cell in active_cells:
+        settings = cell_settings[cell.cell_id]
+        path = _cell_cache_path(cache_root, _study_key(base_seed, settings), cell)
+        checkpointed = {
+            index: record
+            for index, record in _load_checkpointed(path).items()
+            if index < replications_per_cell
+        }
+        completed = len(checkpointed)
+        raw_lines = _checkpoint_line_count(path)
+        covered = sum(1 for record in checkpointed.values() if record["covers_injected_effect"])
+        coverage_rate = covered / completed if completed else None
+        sanity_pass = sum(1 for record in checkpointed.values() if record["sanity"]["pass"])
+        pending_indices = [
+            index for index in range(replications_per_cell) if index not in checkpointed
+        ]
+        cell_summaries.append(
+            {
+                "cell_id": cell.cell_id,
+                "injected_effect_size_sd": cell.injected_effect_sd,
+                "cohort_size": cell.k,
+                "checkpoint_path": str(path),
+                "fit_settings": dict(settings),
+                "target_replications": int(replications_per_cell),
+                "raw_checkpoint_lines": raw_lines,
+                "completed_replications": completed,
+                "duplicate_checkpoint_lines": max(0, raw_lines - completed),
+                "pending_replications": len(pending_indices),
+                "next_pending_replication_index": pending_indices[0]
+                if pending_indices
+                else None,
+                "covered_count": covered,
+                "coverage_rate": coverage_rate,
+                "sanity_pass_count": sanity_pass,
+            }
+        )
+    return {
+        "base_seed": int(base_seed),
+        "target_replications_per_cell": int(replications_per_cell),
+        "cells": cell_summaries,
+        "total_completed_replications": sum(
+            cell["completed_replications"] for cell in cell_summaries
+        ),
+        "total_pending_replications": sum(
+            cell["pending_replications"] for cell in cell_summaries
+        ),
+    }
 
 
 def run_calibration_study(
@@ -1146,6 +1225,11 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
         help="run/resume the calibration cells only (no summary file written)",
     )
     parser.add_argument(
+        "--checkpoint-summary-only",
+        action="store_true",
+        help="summarize checkpoint progress and exit without launching sampler workers",
+    )
+    parser.add_argument(
         "--full-quality-cell",
         action="append",
         default=[],
@@ -1170,15 +1254,26 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
     if unknown:
         parser.error(f"unknown cell id(s): {sorted(unknown)}")
 
+    cell_fit_settings = {
+        cell_id: dict(FULL_QUALITY_FIT_SETTINGS) for cell_id in args.full_quality_cell
+    }
+    if args.checkpoint_summary_only:
+        progress = summarize_checkpoint_progress(
+            base_seed=args.base_seed,
+            replications_per_cell=args.replications,
+            smoke=args.smoke,
+            cell_fit_settings=cell_fit_settings,
+        )
+        print(json.dumps(progress, indent=2, sort_keys=True))
+        return 0
+
     started = time.perf_counter()
     study = run_calibration_study(
         base_seed=args.base_seed,
         replications_per_cell=args.replications,
         smoke=args.smoke,
         workers=args.workers,
-        cell_fit_settings={
-            cell_id: dict(FULL_QUALITY_FIT_SETTINGS) for cell_id in args.full_quality_cell
-        },
+        cell_fit_settings=cell_fit_settings,
         log=log,
     )
     log(

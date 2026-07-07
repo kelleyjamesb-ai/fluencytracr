@@ -87,6 +87,29 @@ cd inference
 .venv/bin/python -m fluencytracr_inference.calibration
 ```
 
+If a cell is shown to be biased under the cheap calibration instrument, rerun
+that cell with the full-quality sampler settings instead of relaxing the
+coverage gate:
+
+```bash
+cd inference
+PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
+  --full-quality-cell effect-0.5-k16 \
+  --checkpoint-summary-only
+
+PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
+  --full-quality-cell effect-0.5-k16 \
+  --calibration-only
+```
+
+`--checkpoint-summary-only` is read-only and never launches sampler workers.
+It is the safe way to check a long-running rerun before resuming it. For the
+current `effect-0.5-k16` investigation, the recovered full-quality checkpoint
+state has 50 unique completed replications out of 200, with 0.78 interim
+coverage and 150 replications still pending. That is promising, but it is
+not passing proof until the cell reaches the 200-replication minimum and the
+rebuilt study result passes every acceptance field.
+
 Checkpoint files live under `inference/.calibration-cache/` and are ignored.
 Do not treat a generated `calibration_study_results.json` as proof unless all
 acceptance fields pass; failing results are diagnostic evidence, not
