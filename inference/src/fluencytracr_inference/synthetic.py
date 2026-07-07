@@ -456,8 +456,8 @@ def generate_missing_windows(*, seed: int, k: int = 16, **kwargs) -> SyntheticDa
     """Required milestone window not observed: HOLD, no imputation rescue."""
     milestone_day = kwargs.pop("milestone_day", 30)
     evidence = WindowEvidenceDeclaration(
-        required_milestone_days=(0, milestone_day),
-        observed_milestone_days=(0,),
+        required_milestone_days=(milestone_day,),
+        observed_milestone_days=(),
     )
     return generate_did_dataset(
         seed=seed,

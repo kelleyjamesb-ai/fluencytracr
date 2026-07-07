@@ -1,5 +1,23 @@
 # Progress
 
+## Current Session
+
+- PR #399 inference-harness Actions follow-up (2026-07-07): refreshed the
+  failing GitHub Actions log for `inference-harness` and confirmed the only
+  remaining failure was `test_missing_windows_hold`, where the old
+  `generate_missing_windows` fixture declared day 0 as observed evidence while
+  the fixed-horizon proof planned only day 30. Code, bug, and adversarial
+  subagent review agreed not to broaden the assertion to include
+  `peeking_control`; the necessary fix is to keep the peeking guard intact and
+  make the missing-window fixture require only the planned milestone while
+  observing none. Verification passed locally for `python3.13 -m compileall
+  inference/src/fluencytracr_inference inference/tests`, `git diff --check`,
+  `npm run build --workspace packages/confidence-engine`, and `node --test
+  packages/confidence-engine/test/confidence_model_contract.test.mjs
+  packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`.
+  The full Python pytest harness remains owned by GitHub Actions because this
+  Mac does not have the pinned inference venv/dependencies installed.
+
 ## Last Completed
 
 - PR #380 review-comment fixes (2026-07-01): addressed the review comments on
