@@ -1062,13 +1062,6 @@ export const InferenceProofPeekingControlSchema = z
   .strict()
   .superRefine((control, ctx) => {
     if (control.procedure === "fixed_horizon_one_look_only") {
-      if (control.repeated_evaluation) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["repeated_evaluation"],
-          message: "fixed-horizon proof artifacts must not use repeated evaluation"
-        });
-      }
       if (control.look_index !== 1 || control.total_planned_looks !== 1) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -1370,6 +1363,22 @@ export const InferenceProofArtifactSchema = z
         "window evidence must bind to the peeking-control milestone family"
       );
     }
+    if (artifact.peeking_control.procedure === "fixed_horizon_one_look_only") {
+      const plannedMilestones = new Set(artifact.peeking_control.milestone_days_included);
+      const observedOrSidecarMilestones = [
+        ...windowEvidence.observed_milestone_days,
+        ...windowEvidence.suppressed_milestone_days,
+        ...windowEvidence.stale_milestone_days,
+        ...windowEvidence.imputed_milestone_days
+      ];
+      if (observedOrSidecarMilestones.some((milestoneDay) => !plannedMilestones.has(milestoneDay))) {
+        failOrIssue(
+          "peeking_control",
+          ["measurement_cell_window_evidence", "observed_milestone_days"],
+          "fixed-horizon proof artifacts must not carry observed or sidecar windows outside the planned look"
+        );
+      }
+    }
     if (
       !windowEvidence.all_required_windows_observed ||
       !windowEvidence.all_windows_unsuppressed_and_fresh ||
@@ -1581,6 +1590,16 @@ export const InferenceProofArtifactSchema = z
         "peeking_control",
         ["peeking_control", "pass"],
         "peeking control must pass for eligible artifacts"
+      );
+    }
+    if (
+      artifact.peeking_control.procedure === "fixed_horizon_one_look_only" &&
+      artifact.peeking_control.repeated_evaluation
+    ) {
+      failOrIssue(
+        "peeking_control",
+        ["peeking_control", "repeated_evaluation"],
+        "fixed-horizon artifacts with repeated evaluation must HOLD naming peeking_control"
       );
     }
     if (artifact.peeking_control.look_index > artifact.peeking_control.total_planned_looks) {

@@ -12,6 +12,7 @@ from fluencytracr_inference.synthetic import (
     generate_prior_dominated_weak,
     generate_suppressed_windows,
     generate_violated_pre_trend,
+    with_scenario,
 )
 
 
@@ -26,6 +27,30 @@ def test_different_seed_different_dataset_hash():
     a = generate_did_dataset(seed=7, k=12, injected_effect_sd=0.2)
     b = generate_did_dataset(seed=8, k=12, injected_effect_sd=0.2)
     assert a.synthetic_input_hash() != b.synthetic_input_hash()
+
+
+def test_synthetic_input_hash_binds_governance_provenance_fields():
+    base = generate_did_dataset(seed=7, k=12, injected_effect_sd=0.2)
+    base_hash = base.synthetic_input_hash()
+
+    changed_rubric = dict(base.comparison_rubric)
+    changed_rubric["same_metric_direction"] = False
+    variants = [
+        with_scenario(base, declared_minimum_cohort_floor=10),
+        with_scenario(
+            base,
+            window_evidence=WindowEvidenceDeclaration(
+                required_milestone_days=(0, 30),
+                observed_milestone_days=(30,),
+            ),
+        ),
+        with_scenario(base, comparison_cohort_present=False),
+        with_scenario(base, comparison_rubric=changed_rubric),
+        with_scenario(base, metric_id="synthetic_selected_metric_v2"),
+        with_scenario(base, cohort_family_id="synthetic_cohort_family_v2"),
+        with_scenario(base, real_data_present=True),
+    ]
+    assert all(variant.synthetic_input_hash() != base_hash for variant in variants)
 
 
 def test_clean_dataset_structure():

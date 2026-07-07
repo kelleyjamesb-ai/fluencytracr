@@ -191,16 +191,28 @@ class SyntheticDataset:
         return getattr(self, f"{grouping}_labels")
 
     def synthetic_input_hash(self) -> str:
-        """Deterministic hash over the full synthetic input (data + labels)."""
+        """Deterministic hash over the full synthetic input and gate metadata."""
         return sha256_json(
             {
                 "generator_id": self.generator_id,
                 "generator_version": self.generator_version,
                 "seed": self.seed,
                 "k": self.k,
+                "declared_minimum_cohort_floor": int(self.declared_minimum_cohort_floor),
                 "scenario": self.scenario,
                 "injected_effect_sd": float(self.injected_effect_sd),
+                "aggregate_unit_sd": float(self.aggregate_unit_sd),
                 "milestone_day": self.milestone_day,
+                "metric_id": self.metric_id,
+                "cohort_family_id": self.cohort_family_id,
+                "ground_truth": self.ground_truth,
+                "window_evidence": self.window_evidence.to_artifact_section(),
+                "comparison_cohort_present": bool(self.comparison_cohort_present),
+                "comparison_rubric": {
+                    criterion: bool(self.comparison_rubric[criterion])
+                    for criterion in sorted(self.comparison_rubric)
+                },
+                "real_data_present": bool(self.real_data_present),
                 "y": [float(v) for v in self.y],
                 "se": [float(v) for v in self.se],
                 "members": [int(v) for v in self.members],
@@ -212,7 +224,28 @@ class SyntheticDataset:
                 "function_idx": [int(v) for v in self.function_idx],
                 "cohort_idx": [int(v) for v in self.cohort_idx],
                 "organization_idx": [int(v) for v in self.organization_idx],
+                "expectation_path_labels": list(self.expectation_path_labels),
+                "workflow_labels": list(self.workflow_labels),
+                "function_labels": list(self.function_labels),
+                "cohort_labels": list(self.cohort_labels),
+                "organization_labels": list(self.organization_labels),
             }
+        )
+
+
+def assert_synthetic_only_dataset(dataset: SyntheticDataset) -> None:
+    """Reject any marked real/customer/live dataset before fitting or emitting."""
+    flags = {
+        "real_data_present": bool(getattr(dataset, "real_data_present", False)),
+        "customer_data_present": bool(getattr(dataset, "customer_data_present", False)),
+        "production_data_present": bool(getattr(dataset, "production_data_present", False)),
+        "live_data_source_present": bool(getattr(dataset, "live_data_source_present", False)),
+    }
+    marked = [name for name, present in flags.items() if present]
+    if marked:
+        raise ValueError(
+            "inference proof harness accepts synthetic generators only; "
+            f"rejected dataset flags: {', '.join(marked)}"
         )
 
 

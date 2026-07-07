@@ -25,14 +25,18 @@ Modes:
   derivation, the governance pins, and the self-hash spine — not the
   sampler; the pytest suite proves the sampler on real NUTS fits.
 - ``--full`` (real fit, minutes): calls :func:`run_proof` end to end (seeded
-  NUTS fit + real diagnostics). This is the regeneration-grade path for the
-  committed fixtures under
-  ``packages/confidence-engine/test/fixtures/``.
+  NUTS fit + real diagnostics) without injecting fixture calibration/null
+  study inputs. Until a caller supplies completed study inputs to
+  :func:`run_proof`, the full CLI path emits a schema-valid HOLD rather than
+  an eligible artifact.
 
 Scenarios:
 
-- ``eligible``: clean k=16 dataset with injected effect 0.5 SD; every gate
-  passes; the artifact parses ``eligible_internal_only`` at the boundary.
+- ``eligible``: in default bridge-fixture mode, clean k=16 dataset with
+  injected effect 0.5 SD; every fixture gate passes and the artifact parses
+  ``eligible_internal_only`` at the boundary. In ``--full`` mode, the same
+  clean fit fails closed until real calibration/null study inputs are supplied
+  by a caller outside this CLI bridge.
 - ``hold``: default mode uses the missing-windows negative control (HOLD
   naming ``missing_or_suppressed_windows``); ``--full`` mode uses the clean
   dataset with naive repeated evaluation detected (HOLD naming
@@ -52,7 +56,13 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from .artifact import emit_proof_artifact, run_proof
+from .artifact import (
+    emit_proof_artifact,
+    phase_b1_fixture_calibration_scenarios,
+    phase_b1_fixture_null_checks,
+    phase_b1_fixture_floor_checks,
+    run_proof,
+)
 from .constants import (
     INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
     INFERENCE_PROOF_PPC_STATISTIC_NAMES,
@@ -103,6 +113,7 @@ def _bridge_fixture_fit(dataset: SyntheticDataset, *, seed: int) -> FitResult:
         target_accept=0.99,
         max_treedepth=12,
         wall_time_seconds=0.0,
+        synthetic_input_hash=dataset.synthetic_input_hash(),
     )
 
 
@@ -178,6 +189,9 @@ def _emit_fixture_mode(scenario: str, *, seed: int, generated_at: str) -> dict:
         dataset=dataset,
         fit=_bridge_fixture_fit(dataset, seed=seed),
         diagnostics=_bridge_fixture_diagnostics(),
+        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
+        null_checks=phase_b1_fixture_null_checks(),
+        floor_checks=phase_b1_fixture_floor_checks(),
         generated_at=generated_at,
     )
 
@@ -211,7 +225,8 @@ def main(argv: list[str] | None = None) -> int:
         "--full",
         action="store_true",
         help="run the real seeded NUTS fit + diagnostics (minutes) instead of "
-        "the deterministic bridge-fixture carriers (seconds)",
+        "the deterministic bridge-fixture carriers (seconds); emits HOLD until "
+        "real calibration/null study inputs are supplied through run_proof",
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument(
@@ -228,7 +243,11 @@ def main(argv: list[str] | None = None) -> int:
             args.scenario, seed=args.seed, generated_at=args.generated_at
         )
 
-    expected_state = "eligible_internal_only" if args.scenario == "eligible" else "HOLD"
+    expected_state = (
+        "HOLD"
+        if args.full
+        else ("eligible_internal_only" if args.scenario == "eligible" else "HOLD")
+    )
     actual_state = artifact["governance_state"]["state"]
     if actual_state != expected_state:
         print(

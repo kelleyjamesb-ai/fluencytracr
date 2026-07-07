@@ -38,7 +38,7 @@ from .constants import (
     LIKELIHOOD_FAMILY_LINKS,
     SUPPORTED_LIKELIHOOD_FAMILY,
 )
-from .synthetic import GROUPINGS, SyntheticDataset
+from .synthetic import GROUPINGS, SyntheticDataset, assert_synthetic_only_dataset
 
 # Declared prior family for the sensitivity sweep (contract prior policy:
 # weakly informative, empirically justified, sensitivity always run).
@@ -107,6 +107,7 @@ class FitResult:
     target_accept: float
     max_treedepth: int
     wall_time_seconds: float
+    synthetic_input_hash: str
     pooling_factors: dict[str, float] = field(default_factory=dict)
 
     @property
@@ -207,6 +208,7 @@ def fit_did_model(
     their samplers, diagnostics, and synthetic recovery tests are implemented
     in the same PR.
     """
+    assert_synthetic_only_dataset(dataset)
     if likelihood_family != SUPPORTED_LIKELIHOOD_FAMILY:
         raise HoldViolation(
             "unsupported_likelihood_family",
@@ -267,6 +269,7 @@ def fit_did_model(
         target_accept=target_accept,
         max_treedepth=max_treedepth,
         wall_time_seconds=wall,
+        synthetic_input_hash=dataset.synthetic_input_hash(),
         pooling_factors=_pooling_factors(idata, group_sizes),
     )
 
@@ -287,6 +290,7 @@ def fit_pre_trend_pseudo_model(
     estimand's 80% credible interval must include 0 (contract pre-trend
     gate). Uses the same model structure and priors as the main fit.
     """
+    assert_synthetic_only_dataset(dataset)
     pre_mask = dataset.post == 0
     if not pre_mask.any():
         raise HoldViolation("pre_trend", "dataset has no pre-period windows to check")
@@ -343,4 +347,5 @@ def fit_pre_trend_pseudo_model(
         target_accept=target_accept,
         max_treedepth=max_treedepth,
         wall_time_seconds=wall,
+        synthetic_input_hash=dataset.synthetic_input_hash(),
     )

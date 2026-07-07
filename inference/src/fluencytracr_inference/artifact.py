@@ -40,14 +40,19 @@ from .constants import (
     INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA,
     INFERENCE_PROOF_FAILING_DIAGNOSTICS,
     INFERENCE_PROOF_LIKELIHOOD_FAMILIES,
+    INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX,
     INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
+    INFERENCE_PROOF_PPC_P_VALUE_MAX,
+    INFERENCE_PROOF_PPC_P_VALUE_MIN,
+    INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD,
+    INFERENCE_PROOF_RHAT_MAX,
     LIKELIHOOD_FAMILY_LINKS,
     SUPPORTED_LIKELIHOOD_FAMILY,
 )
 from .diagnostics import DiagnosticsResult, compute_diagnostics, evaluate_gates
 from .hashing import inference_proof_artifact_self_hash, sha256_json
 from .model import FitResult, HoldViolation, fit_did_model
-from .synthetic import SyntheticDataset
+from .synthetic import SyntheticDataset, assert_synthetic_only_dataset
 
 LOCKFILE_PATH = Path(__file__).resolve().parents[2] / "requirements.lock"
 
@@ -65,6 +70,7 @@ def lockfile_hash() -> str:
 # gates; Phase B2 replaces them with computed replication results.
 
 PHASE_B1_FIXTURE_SCENARIO_PREFIX = "phase-b1-fixture"
+MISSING_STUDY_INPUT_PREFIX = "missing-task-3.3-study-input"
 
 
 def phase_b1_fixture_calibration_scenarios() -> list[dict]:
@@ -91,12 +97,41 @@ def phase_b1_fixture_calibration_scenarios() -> list[dict]:
     return scenarios
 
 
+def missing_study_input_calibration_scenarios() -> list[dict]:
+    """Fail-closed calibration cells used when no study result is supplied."""
+    scenarios = []
+    for effect in (0, 0.2, 0.5):
+        for cohort_size in (12, 16):
+            scenarios.append(
+                {
+                    "scenario_id": f"{MISSING_STUDY_INPUT_PREFIX}-effect-{effect}-k{cohort_size}",
+                    "injected_effect_size_sd": effect,
+                    "cohort_size": cohort_size,
+                    "replication_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+                    "credible_interval_level": 0.8,
+                    "coverage_rate": 0.0,
+                    "coverage_standard_error": 0.0,
+                    "pass": False,
+                }
+            )
+    return scenarios
+
+
 def phase_b1_fixture_null_checks() -> dict:
     """PHASE B1 FIXTURE: placeholder null false-eligibility summary."""
     return {
         "null_effect_scenario_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
         "false_eligibility_rate": 0.02,
         "pass": True,
+    }
+
+
+def missing_study_input_null_checks() -> dict:
+    """Fail-closed null-check section used when no null study is supplied."""
+    return {
+        "null_effect_scenario_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+        "false_eligibility_rate": 1.0,
+        "pass": False,
     }
 
 
@@ -126,15 +161,16 @@ def phase_b1_fixture_floor_checks() -> dict:
 
 
 def _synthetic_generator_section(dataset: SyntheticDataset) -> dict:
+    assert_synthetic_only_dataset(dataset)
     return {
         "generator_id": dataset.generator_id,
         "generator_version": dataset.generator_version,
         "seed_range": {"start_seed": int(dataset.seed), "end_seed": int(dataset.seed)},
         "synthetic_input_hash": dataset.synthetic_input_hash(),
-        "real_data_present": False,
-        "customer_data_present": False,
-        "production_data_present": False,
-        "live_data_source_present": False,
+        "real_data_present": bool(getattr(dataset, "real_data_present", False)),
+        "customer_data_present": bool(getattr(dataset, "customer_data_present", False)),
+        "production_data_present": bool(getattr(dataset, "production_data_present", False)),
+        "live_data_source_present": bool(getattr(dataset, "live_data_source_present", False)),
     }
 
 
@@ -159,27 +195,88 @@ def _model_spec_binding_section(likelihood_family: str) -> dict:
     }
 
 
+def _finite_or(value: float, fallback: float) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    return parsed if math.isfinite(parsed) else fallback
+
+
+def _nonnegative_finite_or(value: float, fallback: float) -> float:
+    parsed = _finite_or(value, fallback)
+    return parsed if parsed >= 0.0 else fallback
+
+
+def _nonnegative_int_or(value: int, fallback: int) -> int:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    if not math.isfinite(parsed) or parsed < 0:
+        return fallback
+    return int(parsed)
+
+
+def _all_finite(*values: float) -> bool:
+    try:
+        return all(math.isfinite(float(value)) for value in values)
+    except (TypeError, ValueError):
+        return False
+
+
+def _serialized_parameter_diagnostic(parameter) -> dict:
+    mcse_fields_finite = _all_finite(
+        parameter.posterior_mean_mcse,
+        parameter.interval_endpoint_mcse,
+        parameter.posterior_sd,
+        parameter.max_mcse_to_posterior_sd_ratio,
+    )
+    posterior_mean_mcse = _nonnegative_finite_or(parameter.posterior_mean_mcse, 1.0)
+    interval_endpoint_mcse = _nonnegative_finite_or(parameter.interval_endpoint_mcse, 1.0)
+    posterior_sd = _nonnegative_finite_or(parameter.posterior_sd, 1.0)
+    if not mcse_fields_finite:
+        posterior_mean_mcse = max(posterior_mean_mcse, 1.0)
+        interval_endpoint_mcse = max(interval_endpoint_mcse, 1.0)
+        posterior_sd = max(posterior_sd, 1.0)
+
+    max_mcse = max(posterior_mean_mcse, interval_endpoint_mcse)
+    if posterior_sd == 0.0:
+        ratio = 0.0 if max_mcse == 0.0 else INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX + 1.0
+    else:
+        ratio = max_mcse / posterior_sd
+    ratio = _finite_or(ratio, INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX + 1.0)
+
+    return {
+        "parameter_name": parameter.parameter_name,
+        "r_hat": _nonnegative_finite_or(parameter.r_hat, INFERENCE_PROOF_RHAT_MAX + 1.0),
+        "bulk_ess": _nonnegative_finite_or(parameter.bulk_ess, 0.0),
+        "tail_ess": _nonnegative_finite_or(parameter.tail_ess, 0.0),
+        "posterior_mean_mcse": posterior_mean_mcse,
+        "interval_endpoint_mcse": interval_endpoint_mcse,
+        "posterior_sd": posterior_sd,
+        "max_mcse_to_posterior_sd_ratio": ratio,
+    }
+
+
 def _diagnostics_section(diagnostics: DiagnosticsResult) -> dict:
     sampler = diagnostics.sampler
     section: dict = {
         "sampler": {
             "parameters": [
-                {
-                    "parameter_name": p.parameter_name,
-                    "r_hat": float(p.r_hat),
-                    "bulk_ess": float(p.bulk_ess),
-                    "tail_ess": float(p.tail_ess),
-                    "posterior_mean_mcse": float(p.posterior_mean_mcse),
-                    "interval_endpoint_mcse": float(p.interval_endpoint_mcse),
-                    "posterior_sd": float(p.posterior_sd),
-                    "max_mcse_to_posterior_sd_ratio": float(p.max_mcse_to_posterior_sd_ratio),
-                }
+                _serialized_parameter_diagnostic(p)
                 for p in sampler.parameters
             ],
-            "post_warmup_divergences": int(sampler.post_warmup_divergences),
-            "max_treedepth_saturation_rate": float(sampler.max_treedepth_saturation_rate),
+            "post_warmup_divergences": _nonnegative_int_or(
+                sampler.post_warmup_divergences,
+                1,
+            ),
+            "max_treedepth_saturation_rate": min(
+                _nonnegative_finite_or(sampler.max_treedepth_saturation_rate, 1.0),
+                1.0,
+            ),
             "max_treedepth_warning": bool(sampler.max_treedepth_warning),
-            "energy_bfmi_min": float(sampler.energy_bfmi_min),
+            "energy_bfmi_min": _nonnegative_finite_or(sampler.energy_bfmi_min, 0.0),
             "energy_bfmi_warning": bool(sampler.energy_bfmi_warning),
             # Rank and energy plot data are recorded as compact numeric
             # summaries in the internal report (no image files).
@@ -188,29 +285,42 @@ def _diagnostics_section(diagnostics: DiagnosticsResult) -> dict:
         },
         "pre_trend": {
             "pseudo_effect_credible_interval_80": {
-                "lower": float(diagnostics.pre_trend.ci80_lower),
-                "upper": float(diagnostics.pre_trend.ci80_upper),
+                "lower": _finite_or(diagnostics.pre_trend.ci80_lower, 1.0),
+                "upper": _finite_or(diagnostics.pre_trend.ci80_upper, 1.0),
             },
-            "includes_zero": bool(diagnostics.pre_trend.includes_zero),
-            "pass": bool(diagnostics.pre_trend.passed),
+            "includes_zero": False,
+            "pass": False,
         },
     }
+    pre_trend_interval = section["pre_trend"]["pseudo_effect_credible_interval_80"]
+    section["pre_trend"]["includes_zero"] = bool(
+        pre_trend_interval["lower"] <= 0.0 <= pre_trend_interval["upper"]
+    )
+    section["pre_trend"]["pass"] = bool(
+        diagnostics.pre_trend.passed and section["pre_trend"]["includes_zero"]
+    )
     if diagnostics.posterior_predictive_checks is None:
         section["posterior_predictive_checks"] = None
     else:
         section["posterior_predictive_checks"] = [
             {
                 "statistic_name": s.statistic_name,
-                "observed_value": float(s.observed_value),
+                "observed_value": _finite_or(s.observed_value, 0.0),
                 "posterior_predictive_summary": {
-                    "mean": float(s.predictive_mean),
+                    "mean": _finite_or(s.predictive_mean, 0.0),
                     "credible_interval_80": {
-                        "lower": float(s.predictive_ci80_lower),
-                        "upper": float(s.predictive_ci80_upper),
+                        "lower": _finite_or(s.predictive_ci80_lower, 0.0),
+                        "upper": _finite_or(s.predictive_ci80_upper, 0.0),
                     },
                 },
-                "p_value": float(s.p_value),
-                "pass": bool(s.passed),
+                "p_value": min(_nonnegative_finite_or(s.p_value, 1.0), 1.0),
+                "pass": bool(
+                    s.passed
+                    and _all_finite(s.p_value)
+                    and INFERENCE_PROOF_PPC_P_VALUE_MIN
+                    <= float(s.p_value)
+                    <= INFERENCE_PROOF_PPC_P_VALUE_MAX
+                ),
             }
             for s in diagnostics.posterior_predictive_checks
         ]
@@ -222,19 +332,25 @@ def _diagnostics_section(diagnostics: DiagnosticsResult) -> dict:
             "empirical_prior_justification_documented": bool(sensitivity.documented),
             "empirical_prior_justification_ref": sensitivity.justification_ref,
             "empirical_prior_justification_hash": sensitivity.justification_hash,
-            "posterior_mean_shift_in_posterior_sd": float(
-                sensitivity.posterior_mean_shift_in_posterior_sd
+            "posterior_mean_shift_in_posterior_sd": _nonnegative_finite_or(
+                sensitivity.posterior_mean_shift_in_posterior_sd,
+                INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD,
             ),
-            "pass": bool(sensitivity.passed),
+            "pass": bool(
+                sensitivity.passed
+                and _all_finite(sensitivity.posterior_mean_shift_in_posterior_sd)
+            ),
         }
     return section
 
 
-def _peeking_control_section(dataset: SyntheticDataset, *, control_pass: bool) -> dict:
+def _peeking_control_section(
+    dataset: SyntheticDataset, *, repeated_evaluation_detected: bool
+) -> dict:
     """Fixed-horizon one-look control: exactly one milestone/metric/cohort."""
     return {
         "procedure": "fixed_horizon_one_look_only",
-        "repeated_evaluation": False,
+        "repeated_evaluation": bool(repeated_evaluation_detected),
         "look_index": 1,
         "total_planned_looks": 1,
         "milestone_days_included": [int(dataset.milestone_day)],
@@ -245,7 +361,7 @@ def _peeking_control_section(dataset: SyntheticDataset, *, control_pass: bool) -
         "sequential_method_name": None,
         "synthetic_null_proof_hash": None,
         "false_eligibility_bound": INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
-        "pass": bool(control_pass),
+        "pass": not repeated_evaluation_detected,
     }
 
 
@@ -265,6 +381,17 @@ def _comparison_adequacy_section(dataset: SyntheticDataset) -> dict:
     }
     body["adequacy_proof_hash"] = sha256_json(body)
     return body
+
+
+def _assert_fit_binds_dataset(*, fit: FitResult, dataset: SyntheticDataset) -> str:
+    dataset_hash = dataset.synthetic_input_hash()
+    fit_hash = getattr(fit, "synthetic_input_hash", None)
+    fit_dataset_hash = fit.dataset.synthetic_input_hash()
+    if fit_hash != dataset_hash or fit_dataset_hash != dataset_hash:
+        raise ValueError(
+            "fit result must be bound to the same synthetic input hash as the emitted dataset"
+        )
+    return dataset_hash
 
 
 # --- Emitter --------------------------------------------------------------------
@@ -292,12 +419,15 @@ def emit_proof_artifact(
     if requested_likelihood_family not in INFERENCE_PROOF_LIKELIHOOD_FAMILIES:
         raise ValueError(f"unknown likelihood family: {requested_likelihood_family!r}")
 
+    assert_synthetic_only_dataset(dataset)
+    dataset_hash = _assert_fit_binds_dataset(fit=fit, dataset=dataset)
+
     calibration_scenarios = (
         calibration_scenarios
         if calibration_scenarios is not None
-        else phase_b1_fixture_calibration_scenarios()
+        else missing_study_input_calibration_scenarios()
     )
-    null_checks = null_checks if null_checks is not None else phase_b1_fixture_null_checks()
+    null_checks = null_checks if null_checks is not None else missing_study_input_null_checks()
     floor_checks = floor_checks if floor_checks is not None else phase_b1_fixture_floor_checks()
 
     failing: set[str] = set(evaluate_gates(diagnostics))
@@ -319,12 +449,21 @@ def emit_proof_artifact(
     if dataset.window_evidence.holds:
         failing.add("missing_or_suppressed_windows")
     peeking_section = _peeking_control_section(
-        dataset, control_pass=not repeated_evaluation_detected
+        dataset, repeated_evaluation_detected=repeated_evaluation_detected
     )
     if sorted(window_section["required_milestone_days"]) != sorted(
         peeking_section["milestone_days_included"]
     ):
         failing.add("missing_or_suppressed_windows")
+    planned_milestones = set(peeking_section["milestone_days_included"])
+    observed_or_sidecar_milestones = set(
+        window_section["observed_milestone_days"]
+        + window_section["suppressed_milestone_days"]
+        + window_section["stale_milestone_days"]
+        + window_section["imputed_milestone_days"]
+    )
+    if not observed_or_sidecar_milestones.issubset(planned_milestones):
+        failing.add("peeking_control")
 
     # Comparison-cohort rule: no credible comparison cohort, no
     # comparison-supported contribution estimate — evidence-tier label only.
@@ -386,7 +525,7 @@ def emit_proof_artifact(
         },
         "hash_bindings": {
             "source_posterior_hash": sha256_json(fit.estimand_summary()),
-            "synthetic_input_hash": dataset.synthetic_input_hash(),
+            "synthetic_input_hash": dataset_hash,
         },
         "blocked_uses": list(CONFIDENCE_MODEL_BLOCKED_USES),
         "numeric_values_role": "internal_validation_inputs_not_output",

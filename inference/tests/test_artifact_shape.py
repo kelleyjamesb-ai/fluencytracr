@@ -8,7 +8,12 @@ extras (unknown fields are rejected at the boundary).
 
 import json
 
-from fluencytracr_inference.artifact import emit_proof_artifact
+from fluencytracr_inference.artifact import (
+    emit_proof_artifact,
+    phase_b1_fixture_calibration_scenarios,
+    phase_b1_fixture_floor_checks,
+    phase_b1_fixture_null_checks,
+)
 from fluencytracr_inference.constants import (
     CONFIDENCE_MODEL_BLOCKED_USES,
     INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
@@ -190,6 +195,9 @@ def test_emission_deterministic_same_body_same_hash(
         dataset=clean_dataset,
         fit=clean_fit,
         diagnostics=clean_diagnostics,
+        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
+        null_checks=phase_b1_fixture_null_checks(),
+        floor_checks=phase_b1_fixture_floor_checks(),
         generated_at=FIXED_GENERATED_AT,
     )
     assert again == eligible_artifact

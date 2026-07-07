@@ -27,6 +27,7 @@ Gates computed here (task 3.4):
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace as dc_replace
+import math
 
 import numpy as np
 import arviz as az
@@ -48,6 +49,7 @@ from .model import (
     OBSERVED_VARIABLE_NAME,
     PRIOR_SENSITIVITY_SCALINGS,
     FitResult,
+    HoldViolation,
     PriorSpec,
     fit_did_model,
     fit_pre_trend_pseudo_model,
@@ -143,6 +145,20 @@ def _flatten(name: str, values: np.ndarray) -> list[tuple[str, float]]:
     return [(f"{name}[{i}]", float(v)) for i, v in enumerate(flat)]
 
 
+def _is_finite(value: float) -> bool:
+    try:
+        return math.isfinite(float(value))
+    except (TypeError, ValueError):
+        return False
+
+
+def _bfmi_values(idata) -> np.ndarray:
+    bfmi_result = az.bfmi(idata)
+    if isinstance(bfmi_result, dict):  # Compatibility with older wrappers.
+        bfmi_result = bfmi_result.get("energy", [])
+    return np.atleast_1d(np.asarray(bfmi_result, dtype=float))
+
+
 def compute_sampler_diagnostics(fit: FitResult) -> SamplerDiagnostics:
     """R-hat / ESS / MCSE per sampled parameter plus backend warnings.
 
@@ -195,12 +211,13 @@ def compute_sampler_diagnostics(fit: FitResult) -> SamplerDiagnostics:
     divergences = int(np.asarray(sample_stats["diverging"]).sum())
     if "reached_max_treedepth" in sample_stats.data_vars:
         saturation_rate = float(np.asarray(sample_stats["reached_max_treedepth"]).mean())
+    elif "tree_depth" in sample_stats.data_vars:
+        saturation_rate = float((np.asarray(sample_stats["tree_depth"]) >= fit.max_treedepth).mean())
     else:  # pragma: no cover - backend variant
-        saturation_rate = 0.0
+        saturation_rate = float("nan")
 
-    bfmi_tree = az.bfmi(idata)
-    bfmi_values = np.atleast_1d(np.asarray(bfmi_tree["energy"]))
-    bfmi_min = float(bfmi_values.min())
+    bfmi_values = _bfmi_values(idata)
+    bfmi_min = float(bfmi_values.min()) if bfmi_values.size else float("nan")
 
     return SamplerDiagnostics(
         parameters=tuple(parameters),
@@ -349,9 +366,20 @@ def run_pre_trend_check(
     seed: int = 20260706,
 ) -> PreTrendResult:
     """Pre-window pseudo-effect 80% credible interval must include 0."""
-    fit = fit_pre_trend_pseudo_model(
-        dataset, draws=draws, tune=tune, chains=chains, seed=seed
-    )
+    try:
+        fit = fit_pre_trend_pseudo_model(
+            dataset, draws=draws, tune=tune, chains=chains, seed=seed
+        )
+    except HoldViolation as violation:
+        if violation.failing_diagnostic != "pre_trend":
+            raise
+        return PreTrendResult(
+            ci80_lower=1.0,
+            ci80_upper=1.0,
+            includes_zero=False,
+            passed=False,
+            wall_time_seconds=0.0,
+        )
     pseudo_draws = fit.estimand_draws.reshape(-1)
     lower, upper = np.quantile(pseudo_draws, [0.1, 0.9])
     includes_zero = bool(lower <= 0.0 <= upper)
@@ -378,7 +406,7 @@ def rank_and_energy_summaries(fit: FitResult, *, rank_bins: int = 8) -> dict:
         for chain in range(draws.shape[0])
     ]
     energy = np.asarray(fit.idata.sample_stats["energy"])
-    bfmi_values = np.atleast_1d(np.asarray(az.bfmi(fit.idata)["energy"]))
+    bfmi_values = _bfmi_values(fit.idata)
     return {
         "rank_plot": {
             "parameter_name": INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
@@ -445,19 +473,37 @@ def evaluate_gates(diagnostics: DiagnosticsResult) -> list[str]:
     ):
         failing.add("sampler_diagnostic")
     for parameter in sampler.parameters:
-        if parameter.r_hat > INFERENCE_PROOF_RHAT_MAX:
+        if not _is_finite(parameter.r_hat) or parameter.r_hat > INFERENCE_PROOF_RHAT_MAX:
             failing.add("r_hat")
-        if parameter.bulk_ess < INFERENCE_PROOF_ESS_MIN:
+        if not _is_finite(parameter.bulk_ess) or parameter.bulk_ess < INFERENCE_PROOF_ESS_MIN:
             failing.add("bulk_ess")
-        if parameter.tail_ess < INFERENCE_PROOF_ESS_MIN:
+        if not _is_finite(parameter.tail_ess) or parameter.tail_ess < INFERENCE_PROOF_ESS_MIN:
             failing.add("tail_ess")
-        if parameter.max_mcse_to_posterior_sd_ratio > INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX:
+        if (
+            not _is_finite(parameter.posterior_mean_mcse)
+            or not _is_finite(parameter.interval_endpoint_mcse)
+            or not _is_finite(parameter.posterior_sd)
+            or not _is_finite(parameter.max_mcse_to_posterior_sd_ratio)
+            or parameter.max_mcse_to_posterior_sd_ratio
+            > INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX
+        ):
             failing.add("mcse")
-    if sampler.post_warmup_divergences > 0:
+    if (
+        not _is_finite(sampler.post_warmup_divergences)
+        or sampler.post_warmup_divergences > 0
+    ):
         failing.add("divergences")
-    if sampler.max_treedepth_warning or sampler.max_treedepth_saturation_rate > 0:
+    if (
+        sampler.max_treedepth_warning
+        or not _is_finite(sampler.max_treedepth_saturation_rate)
+        or sampler.max_treedepth_saturation_rate > 0
+    ):
         failing.add("max_treedepth_saturation")
-    if sampler.energy_bfmi_warning:
+    if (
+        sampler.energy_bfmi_warning
+        or not _is_finite(sampler.energy_bfmi_min)
+        or sampler.energy_bfmi_min < ENERGY_BFMI_WARNING_THRESHOLD
+    ):
         failing.add("energy_bfmi")
 
     ppc = diagnostics.posterior_predictive_checks
@@ -469,7 +515,12 @@ def evaluate_gates(diagnostics: DiagnosticsResult) -> list[str]:
             failing.add("posterior_predictive_check")
         for statistic in ppc:
             if (
-                not statistic.passed
+                not _is_finite(statistic.observed_value)
+                or not _is_finite(statistic.predictive_mean)
+                or not _is_finite(statistic.predictive_ci80_lower)
+                or not _is_finite(statistic.predictive_ci80_upper)
+                or not _is_finite(statistic.p_value)
+                or not statistic.passed
                 or statistic.p_value < INFERENCE_PROOF_PPC_P_VALUE_MIN
                 or statistic.p_value > INFERENCE_PROOF_PPC_P_VALUE_MAX
             ):
@@ -484,13 +535,19 @@ def evaluate_gates(diagnostics: DiagnosticsResult) -> list[str]:
             or sensitivity.justification_ref is None
             or sensitivity.justification_hash is None
             or not sensitivity.passed
+            or not _is_finite(sensitivity.posterior_mean_shift_in_posterior_sd)
             or sensitivity.posterior_mean_shift_in_posterior_sd
             >= INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD
         ):
             failing.add("prior_sensitivity")
 
     pre_trend = diagnostics.pre_trend
-    if not pre_trend.passed or not pre_trend.includes_zero:
+    if (
+        not _is_finite(pre_trend.ci80_lower)
+        or not _is_finite(pre_trend.ci80_upper)
+        or not pre_trend.passed
+        or not pre_trend.includes_zero
+    ):
         failing.add("pre_trend")
 
     return [name for name in INFERENCE_PROOF_FAILING_DIAGNOSTICS if name in failing]
