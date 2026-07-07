@@ -339,6 +339,19 @@ def test_sampler_diagnostics_derive_tree_depth_and_accept_bfmi_array(monkeypatch
         def __getitem__(self, key):
             return self._values[key]
 
+    class FakeBfmiDataTree:
+        data_vars = {"energy"}
+
+        def __array__(self, *_args, **_kwargs):
+            raise TypeError("DataTree cannot be coerced directly")
+
+        def __getitem__(self, key):
+            assert key == "energy"
+            return SimpleNamespace(values=[[0.92, 0.88]])
+
+        def to_array(self):
+            raise AssertionError("energy variable must be selected before to_array")
+
     parameter = INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME
     posterior = FakeGroup({parameter: clean_fit.estimand_draws[:, :4]})
     sample_stats = FakeGroup(
@@ -366,7 +379,7 @@ def test_sampler_diagnostics_derive_tree_depth_and_accept_bfmi_array(monkeypatch
     monkeypatch.setattr(diagnostics_module.az, "rhat", scalar_tree)
     monkeypatch.setattr(diagnostics_module.az, "ess", ess_tree)
     monkeypatch.setattr(diagnostics_module.az, "mcse", mcse_tree)
-    monkeypatch.setattr(diagnostics_module.az, "bfmi", lambda _idata: [0.92, 0.88])
+    monkeypatch.setattr(diagnostics_module.az, "bfmi", lambda _idata: FakeBfmiDataTree())
 
     sampler = diagnostics_module.compute_sampler_diagnostics(fit)
     assert sampler.max_treedepth_saturation_rate == 0.5

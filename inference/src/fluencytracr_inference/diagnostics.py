@@ -156,7 +156,26 @@ def _bfmi_values(idata) -> np.ndarray:
     bfmi_result = az.bfmi(idata)
     if isinstance(bfmi_result, dict):  # Compatibility with older wrappers.
         bfmi_result = bfmi_result.get("energy", [])
-    return np.atleast_1d(np.asarray(bfmi_result, dtype=float))
+    data_vars = getattr(bfmi_result, "data_vars", None)
+    if data_vars is not None:
+        var_names = list(data_vars)
+        if "energy" in var_names:
+            bfmi_result = bfmi_result["energy"]
+        elif len(var_names) == 1:
+            bfmi_result = bfmi_result[var_names[0]]
+    to_array = getattr(bfmi_result, "to_array", None)
+    if callable(to_array):
+        bfmi_result = to_array()
+    to_numpy = getattr(bfmi_result, "to_numpy", None)
+    if callable(to_numpy):
+        bfmi_result = to_numpy()
+    else:
+        values = getattr(bfmi_result, "values", None)
+        if callable(values):
+            bfmi_result = values()
+        elif values is not None:
+            bfmi_result = values
+    return np.atleast_1d(np.asarray(bfmi_result, dtype=float)).reshape(-1)
 
 
 def compute_sampler_diagnostics(fit: FitResult) -> SamplerDiagnostics:
