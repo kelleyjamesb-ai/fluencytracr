@@ -133,6 +133,7 @@ FULL_QUALITY_FIT_SETTINGS = {
     "max_treedepth": 15,
 }
 CREDIBLE_INTERVAL_LEVEL = 0.8
+CALIBRATION_SANITY_RULESET_VERSION = "tree-depth-fail-closed-v2"
 
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[2] / ".calibration-cache"
 DEFAULT_CLI_RESULTS_PATH = Path(__file__).resolve().parents[2] / (
@@ -238,8 +239,12 @@ def cheap_fit_sanity(fit: FitResult) -> dict:
     divergences = int(np.asarray(sample_stats["diverging"]).sum())
     if "reached_max_treedepth" in sample_stats.data_vars:
         saturation_rate = float(np.asarray(sample_stats["reached_max_treedepth"]).mean())
+    elif "tree_depth" in sample_stats.data_vars:
+        saturation_rate = float(
+            (np.asarray(sample_stats["tree_depth"]) >= fit.max_treedepth).mean()
+        )
     else:  # pragma: no cover - backend variant
-        saturation_rate = 0.0
+        saturation_rate = float("nan")
     bfmi_values = _bfmi_values(fit.idata)
     bfmi_min = float(bfmi_values.min())
     rhat_tree = az.rhat(fit.idata, var_names=[INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME])
@@ -329,15 +334,17 @@ def run_replication(task: dict) -> dict:
 
 
 def _study_key(base_seed: int, fit_settings: dict) -> str:
-    """Cache namespace: model signature + base seed + fit settings.
+    """Cache namespace: model signature + sanity rules + fit settings.
 
     Replication count is intentionally excluded so a resumed run with more
-    replications reuses finished seeds. The model signature is included so a
-    model-spec change never silently reuses stale sampler records.
+    replications reuses finished seeds. The model signature and calibration
+    sanity ruleset are included so semantic changes never silently reuse stale
+    sampler records.
     """
     return sha256_json(
         {
             "base_seed": int(base_seed),
+            "calibration_sanity_ruleset_version": CALIBRATION_SANITY_RULESET_VERSION,
             "fit_settings": fit_settings,
             "model_cache_signature": MODEL_CACHE_SIGNATURE,
         }

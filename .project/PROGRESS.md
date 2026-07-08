@@ -2,6 +2,23 @@
 
 ## Current Session
 
+- PR #400 Codex review-comment fixes (2026-07-08): verified the three
+  unresolved Codex P2 threads on the calibration-study PR as real. `run_proof`
+  now inherits the hardened full-quality sampler defaults (`tune=3000`,
+  `target_accept=0.999`, `max_treedepth=15`) instead of forwarding stale
+  values. Calibration sampler sanity now mirrors production diagnostics by
+  deriving max-treedepth saturation from `tree_depth >= fit.max_treedepth`
+  when `reached_max_treedepth` is absent, fails closed when neither field is
+  available, and bumps the calibration sanity cache namespace so stale local
+  checkpoint rows cannot satisfy the updated gate. README calibration commands
+  now include `PYTHONPATH=src`. Code, bug, and adversarial subagent review
+  confirmed the scoped fixes. Local verification passed:
+  `python3 -m compileall inference/src/fluencytracr_inference inference/tests`,
+  `git diff --check`, and a no-dependency AST/default/doc check. Local pytest
+  remains blocked because this Mac's active Python lacks `pytest` and the
+  pinned inference dependency stack; the PR inference-harness Actions job owns
+  full pinned-environment execution after push.
+
 - PR #399 inference-harness Actions follow-up (2026-07-07): refreshed the
   failing GitHub Actions log for `inference-harness` and confirmed the only
   remaining failure was `test_missing_windows_hold`, where the old

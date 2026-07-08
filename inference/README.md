@@ -76,7 +76,7 @@ Run the calibration runner from the locked inference environment:
 
 ```bash
 cd inference
-.venv/bin/python -m fluencytracr_inference.calibration --smoke --calibration-only
+PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration --smoke --calibration-only
 ```
 
 The smoke path proves the runner, seed grid, checkpointing, and sampler loop
@@ -84,7 +84,7 @@ with fewer replications. The full study is intentionally expensive:
 
 ```bash
 cd inference
-.venv/bin/python -m fluencytracr_inference.calibration
+PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration
 ```
 
 If a cell is shown to need artifact-quality sampling rather than the standard

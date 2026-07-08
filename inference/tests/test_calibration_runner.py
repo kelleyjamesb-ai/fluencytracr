@@ -15,6 +15,7 @@ import pymc as pm
 import pytest
 
 from fluencytracr_inference import calibration as cal
+from fluencytracr_inference.artifact import run_proof
 from fluencytracr_inference.constants import (
     INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
     INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
@@ -146,6 +147,7 @@ def test_calibration_cache_key_binds_model_signature():
     expected_key = sha256_json(
         {
             "base_seed": cal.DEFAULT_BASE_SEED,
+            "calibration_sanity_ruleset_version": cal.CALIBRATION_SANITY_RULESET_VERSION,
             "fit_settings": settings,
             "model_cache_signature": MODEL_CACHE_SIGNATURE,
         }
@@ -182,6 +184,15 @@ def test_full_quality_settings_match_reliable_model_defaults():
         "target_accept": 0.999,
         "max_treedepth": 15,
     }
+
+
+def test_run_proof_defaults_match_reliable_model_defaults():
+    model_signature = inspect.signature(fit_did_model)
+    proof_signature = inspect.signature(run_proof)
+    for parameter_name in ("draws", "tune", "chains", "target_accept", "max_treedepth"):
+        assert proof_signature.parameters[parameter_name].default == (
+            model_signature.parameters[parameter_name].default
+        )
 
 
 def test_model_group_effects_are_zero_sum_random_variables():
@@ -588,6 +599,63 @@ def _fake_fit(dataset) -> FitResult:
         wall_time_seconds=0.0,
         synthetic_input_hash=dataset.synthetic_input_hash(),
     )
+
+
+def test_calibration_sanity_derives_tree_depth_saturation_without_warning_flag(monkeypatch):
+    class FakeSampleStats:
+        data_vars = {"diverging", "tree_depth"}
+
+        def __getitem__(self, key):
+            values = {
+                "diverging": [[0, 0, 0, 0], [0, 0, 0, 0]],
+                "tree_depth": [[15, 14, 15, 10], [9, 15, 11, 15]],
+            }
+            return np.asarray(values[key])
+
+    fit = SimpleNamespace(
+        idata=SimpleNamespace(sample_stats=FakeSampleStats()),
+        max_treedepth=15,
+    )
+    monkeypatch.setattr(cal, "_bfmi_values", lambda _idata: np.asarray([0.9]))
+    monkeypatch.setattr(
+        cal.az,
+        "rhat",
+        lambda *_args, **_kwargs: {
+            INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME: np.asarray([1.0])
+        },
+    )
+
+    sanity = cal.cheap_fit_sanity(fit)
+
+    assert sanity["max_treedepth_saturation_rate"] == 0.5
+    assert sanity["pass"] is False
+
+
+def test_calibration_sanity_fails_closed_without_tree_depth_stats(monkeypatch):
+    class FakeSampleStats:
+        data_vars = {"diverging"}
+
+        def __getitem__(self, key):
+            values = {"diverging": [[0, 0, 0, 0], [0, 0, 0, 0]]}
+            return np.asarray(values[key])
+
+    fit = SimpleNamespace(
+        idata=SimpleNamespace(sample_stats=FakeSampleStats()),
+        max_treedepth=15,
+    )
+    monkeypatch.setattr(cal, "_bfmi_values", lambda _idata: np.asarray([0.9]))
+    monkeypatch.setattr(
+        cal.az,
+        "rhat",
+        lambda *_args, **_kwargs: {
+            INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME: np.asarray([1.0])
+        },
+    )
+
+    sanity = cal.cheap_fit_sanity(fit)
+
+    assert math.isnan(sanity["max_treedepth_saturation_rate"])
+    assert sanity["pass"] is False
 
 
 def test_structural_study_artifact_rebinds_carrier_to_dataset_under_test():
