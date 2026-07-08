@@ -81,7 +81,7 @@ PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration --smoke --
 
 The smoke path proves the runner, seed grid, checkpointing, and sampler loop
 with fewer replications. The acceptance profile is intentionally expensive:
-`draws=2000`, `tune=3000`, `chains=2`, `target_accept=0.999`, and
+`draws=2000`, `tune=5000`, `chains=2`, `target_accept=0.999`, and
 `max_treedepth=15`.
 
 ```bash
@@ -150,13 +150,17 @@ partly an unlucky seed block. It also exposed a sampler-health reliability gap
 under the previous full-quality settings: `102/400` fits had divergences and
 `10/400` hit max-treedepth. A fixed warning-seed probe showed the same model
 cleans up under stricter full-quality defaults (`target_accept=0.999`,
-`tune=3000`, `max_treedepth=15`); a full acceptance-bearing grid must be rerun
-under those settings before any proof artifact is committed.
+`tune=3000`, `max_treedepth=15`); a later null k=12 hard seed required
+`tune=5000`. A full acceptance-bearing grid must be rerun under the final
+settings before any proof artifact is committed.
 
 A later full-grid attempt under the lighter `draws=1000`, `tune=2000` profile
 reproduced a divergence in the null `effect-0-k16` cell at seed `22260875`.
-The same seed passed under `draws=2000`, `tune=3000`, so the acceptance profile
-was promoted to the stricter settings rather than relaxing any gate.
+The same seed passed under `draws=2000`, `tune=3000`, showing the failure was a
+sampler-depth issue rather than a reason to relax any gate.
+A subsequent run under `draws=2000`, `tune=3000` reproduced a divergence in the
+null `effect-0-k12` cell at seed `21260723`; that seed passed with
+`draws=2000`, `tune=5000`, `target_accept=0.999`, and `max_treedepth=15`.
 
 ## Package layout (Slice 2 Phase B1/B2)
 

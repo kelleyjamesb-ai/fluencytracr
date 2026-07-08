@@ -160,7 +160,7 @@ def test_calibration_cache_key_binds_model_signature():
 def test_calibration_fit_settings_match_hard_seed_reliability_profile():
     assert cal.CHEAP_FIT_SETTINGS == {
         "draws": 2000,
-        "tune": 3000,
+        "tune": 5000,
         "chains": 2,
         "target_accept": 0.999,
         "max_treedepth": 15,
@@ -180,7 +180,7 @@ def test_full_quality_settings_match_reliable_model_defaults():
     assert cal.FULL_QUALITY_FIT_SETTINGS == model_defaults
     assert cal.FULL_QUALITY_FIT_SETTINGS == {
         "draws": 2000,
-        "tune": 3000,
+        "tune": 5000,
         "chains": 2,
         "target_accept": 0.999,
         "max_treedepth": 15,

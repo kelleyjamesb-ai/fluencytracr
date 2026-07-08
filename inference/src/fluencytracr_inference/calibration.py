@@ -8,7 +8,7 @@ Three study layers, all seeded and synthetic-only:
 1. **Calibration cells** — injected effects {0, 0.2, 0.5} SD x floor-eligible
    cohort counts k in {12, 16} (6 cells), >= 200 seeded replications per cell.
    Each replication generates a dataset, runs a calibration-profile seeded
-   NUTS fit (2 chains x 2000 draws after 3000 warmup, target_accept 0.999;
+   NUTS fit (2 chains x 2000 draws after 5000 warmup, target_accept 0.999;
    coverage still uses the calibration sanity analogue), and records
    whether the 80% credible interval covers the injected effect. Per-cell
    observed coverage must land in [74%, 86%], with the binomial 95%
@@ -110,11 +110,11 @@ SMOKE_REPLICATIONS_PER_CELL = 25
 
 # Calibration-profile settings. The historical constant name is retained for
 # compatibility with the study helpers, but this is the strict acceptance
-# profile: the lighter 1000/2000 profile reproduced a divergent null k=16
-# seed, so it cannot authorize proof results.
+# profile: lighter 1000/2000 and 2000/3000 profiles reproduced divergent null
+# seeds, so they cannot authorize proof results.
 CHEAP_FIT_SETTINGS = {
     "draws": 2000,
-    "tune": 3000,
+    "tune": 5000,
     "chains": 2,
     "target_accept": 0.999,
     "max_treedepth": 15,
@@ -123,7 +123,7 @@ CHEAP_FIT_SETTINGS = {
 # compatibility; it now matches the calibration acceptance profile.
 FULL_QUALITY_FIT_SETTINGS = {
     "draws": 2000,
-    "tune": 3000,
+    "tune": 5000,
     "chains": 2,
     "target_accept": 0.999,
     "max_treedepth": 15,

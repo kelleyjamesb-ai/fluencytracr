@@ -195,7 +195,7 @@ def fit_did_model(
     likelihood_family: str = SUPPORTED_LIKELIHOOD_FAMILY,
     prior_spec: PriorSpec | None = None,
     draws: int = 2000,
-    tune: int = 3000,
+    tune: int = 5000,
     chains: int = 2,
     seed: int = 20260706,
     target_accept: float = 0.999,
@@ -204,7 +204,7 @@ def fit_did_model(
 ) -> FitResult:
     """Fit the contract equation with seeded NUTS (2+ chains, cores=1).
 
-    Defaults (2 chains x 2000 draws after 3000 warmup, target_accept 0.999,
+    Defaults (2 chains x 2000 draws after 5000 warmup, target_accept 0.999,
     max_treedepth 15) are tuned so clean k=16 synthetic fits pass every
     sampler gate with margin: R-hat <= 1.01, chain-total bulk/tail ESS >= 400,
     zero divergences, zero max-treedepth saturation, MCSE ratio <= 0.1.

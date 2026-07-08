@@ -562,7 +562,7 @@ def run_proof(
     *,
     likelihood_family: str = SUPPORTED_LIKELIHOOD_FAMILY,
     draws: int = 2000,
-    tune: int = 3000,
+    tune: int = 5000,
     chains: int = 2,
     seed: int = 20260706,
     target_accept: float = 0.999,
