@@ -8,8 +8,8 @@ Three study layers, all seeded and synthetic-only:
 1. **Calibration cells** — injected effects {0, 0.2, 0.5} SD x floor-eligible
    cohort counts k in {12, 16} (6 cells), >= 200 seeded replications per cell.
    Each replication generates a dataset, runs a calibration-profile seeded
-   NUTS fit (2 chains x 1000 draws after 2000 warmup, target_accept 0.999;
-   coverage does not gate on the ESS >= 400 production gate), and records
+   NUTS fit (2 chains x 2000 draws after 3000 warmup, target_accept 0.999;
+   coverage still uses the calibration sanity analogue), and records
    whether the 80% credible interval covers the injected effect. Per-cell
    observed coverage must land in [74%, 86%], with the binomial 95%
    uncertainty interval around observed coverage reported alongside.
@@ -109,22 +109,18 @@ DEFAULT_REPLICATIONS_PER_CELL = INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
 SMOKE_REPLICATIONS_PER_CELL = 25
 
 # Calibration-profile settings. The historical constant name is retained for
-# compatibility with the study helpers, but this is no longer a loose sampler:
-# the zero-sum/non-centered model's all-cell smoke is clean at target_accept
-# 0.999 after 2000 warmup draws. Coverage does not gate on the production
-# ESS >= 400 requirement, so retained draws stay below artifact-quality fits
-# while still clearing hard-seed estimand R-hat.
+# compatibility with the study helpers, but this is the strict acceptance
+# profile: the lighter 1000/2000 profile reproduced a divergent null k=16
+# seed, so it cannot authorize proof results.
 CHEAP_FIT_SETTINGS = {
-    "draws": 1000,
-    "tune": 2000,
+    "draws": 2000,
+    "tune": 3000,
     "chains": 2,
     "target_accept": 0.999,
     "max_treedepth": 15,
 }
-# Full-quality (production) fit settings, used to re-measure any cell where
-# the cheap instrument is shown to be biased (see the k=16 undercoverage
-# investigation in the committed results' notes): matching fit_did_model's
-# defaults, these fits are routinely divergence-free.
+# Full-quality (production) fit settings. Kept as a named alias for CLI
+# compatibility; it now matches the calibration acceptance profile.
 FULL_QUALITY_FIT_SETTINGS = {
     "draws": 2000,
     "tune": 3000,
@@ -217,10 +213,10 @@ def cheap_fit_sanity(fit: FitResult) -> dict:
       would force the real artifact to HOLD, so the replication could never
       have produced an eligible artifact.
     - DROPPED: the bulk/tail ESS >= 400 chain-total and MCSE gates — a
-      2-chain x 1000-draw calibration fit is not required to clear chain-total 400
-      ESS by construction, so keeping them would make the null screen
-      vacuous (every replication ineligible) instead of measuring inference
-      behavior; the production fit (2 x 2000 draws) clears them routinely.
+      calibration fit is screened by the same sampler-health checks as the
+      proof path, while ESS/MCSE remain expensive full-diagnostic gates covered
+      by artifact emission and targeted diagnostics rather than every
+      calibration replication.
     - TRIVIALLY TRUE BY CONSTRUCTION (not re-checked per replication): the
       k >= 5 schema floor (cells use k in {12, 16}), clean window evidence,
       the complete passing comparison rubric, and the one-look peeking
@@ -355,7 +351,69 @@ def _cell_cache_path(cache_dir: Path, study_key: str, cell: CalibrationCell) -> 
     return cache_dir / f"study-{study_key}" / f"{cell.cell_id}.jsonl"
 
 
-def _load_checkpointed(path: Path) -> dict[int, dict]:
+def _validate_checkpoint_record(
+    record: dict,
+    *,
+    path: Path,
+    expected_cell: CalibrationCell | None,
+    base_seed: int,
+) -> int:
+    replication_index = int(record["replication_index"])
+    if expected_cell is None:
+        return replication_index
+
+    expected_cell_index = CALIBRATION_CELLS.index(expected_cell)
+    expected_seed = derive_replication_seed(
+        base_seed,
+        expected_cell_index,
+        replication_index,
+    )
+    if record.get("cell_id") != expected_cell.cell_id:
+        raise ValueError(
+            f"checkpoint cell_id mismatch in {path}: expected "
+            f"{expected_cell.cell_id}, got {record.get('cell_id')}"
+        )
+    if float(record.get("injected_effect_size_sd")) != float(
+        expected_cell.injected_effect_sd
+    ):
+        raise ValueError(
+            f"checkpoint injected_effect_size_sd mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+    if int(record.get("cohort_size")) != int(expected_cell.k):
+        raise ValueError(
+            f"checkpoint cohort_size mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+    if int(record.get("seed")) != expected_seed:
+        raise ValueError(
+            f"checkpoint seed mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+
+    ci80_lower = float(record["ci80_lower"])
+    ci80_upper = float(record["ci80_upper"])
+    covers = ci80_lower <= float(expected_cell.injected_effect_sd) <= ci80_upper
+    if bool(record.get("covers_injected_effect")) != covers:
+        raise ValueError(
+            f"checkpoint coverage flag mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+    excludes_zero = ci80_upper < 0 or ci80_lower > 0
+    if bool(record.get("ci_excludes_zero")) != excludes_zero:
+        raise ValueError(
+            f"checkpoint ci_excludes_zero flag mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+    return replication_index
+
+
+def _load_checkpointed(
+    path: Path,
+    *,
+    expected_cell: CalibrationCell | None = None,
+    base_seed: int = DEFAULT_BASE_SEED,
+) -> dict[int, dict]:
     """Load finished replications (replication_index -> record); resume support."""
     records: dict[int, dict] = {}
     if not path.exists():
@@ -366,7 +424,20 @@ def _load_checkpointed(path: Path) -> dict[int, dict]:
             if not line:
                 continue
             record = json.loads(line)
-            records[int(record["replication_index"])] = record
+            replication_index = _validate_checkpoint_record(
+                record,
+                path=path,
+                expected_cell=expected_cell,
+                base_seed=base_seed,
+            )
+            if replication_index in records:
+                if records[replication_index] != record:
+                    raise ValueError(
+                        f"conflicting duplicate checkpoint in {path} "
+                        f"for replication_index {replication_index}"
+                    )
+                continue
+            records[replication_index] = record
     return records
 
 
@@ -419,7 +490,11 @@ def summarize_checkpoint_progress(
         path = _cell_cache_path(cache_root, _study_key(base_seed, settings), cell)
         checkpointed = {
             index: record
-            for index, record in _load_checkpointed(path).items()
+            for index, record in _load_checkpointed(
+                path,
+                expected_cell=cell,
+                base_seed=base_seed,
+            ).items()
             if index < replications_per_cell
         }
         records = list(checkpointed.values())
@@ -519,7 +594,11 @@ def run_calibration_study(
     skipped = 0
     for cell in active_cells:
         cell_index = CALIBRATION_CELLS.index(cell)
-        finished = _load_checkpointed(cell_paths[cell.cell_id])
+        finished = _load_checkpointed(
+            cell_paths[cell.cell_id],
+            expected_cell=cell,
+            base_seed=base_seed,
+        )
         records_by_cell[cell.cell_id] = {
             index: record
             for index, record in finished.items()
@@ -1377,8 +1456,73 @@ def build_study_results(
     }
 
 
+def as_record(value) -> dict:
+    return value if isinstance(value, dict) else {}
+
+
+def study_results_acceptance_gaps(results: dict) -> list[str]:
+    gaps: list[str] = []
+    calibration = as_record(results.get("calibration"))
+    completion = as_record(calibration.get("completion"))
+    cells = calibration.get("cells")
+    if completion.get("pass") is not True:
+        gaps.append("calibration.completion.pass")
+    if calibration.get("all_cells_pass") is not True:
+        gaps.append("calibration.all_cells_pass")
+    if not isinstance(cells, list) or len(cells) != len(CALIBRATION_CELLS):
+        gaps.append("calibration.cells")
+    else:
+        for cell in cells:
+            cell_record = as_record(cell)
+            if cell_record.get("pass") is not True:
+                gaps.append(f"calibration.cells.{cell_record.get('cell_id', 'unknown')}.pass")
+            if cell_record.get("complete") is not True:
+                gaps.append(
+                    f"calibration.cells.{cell_record.get('cell_id', 'unknown')}.complete"
+                )
+            if cell_record.get("sampler_health_pass") is not True:
+                gaps.append(
+                    "calibration.cells."
+                    f"{cell_record.get('cell_id', 'unknown')}.sampler_health_pass"
+                )
+
+    if as_record(results.get("null_false_eligibility")).get("pass") is not True:
+        gaps.append("null_false_eligibility.pass")
+    if as_record(results.get("floor_study")).get("pass") is not True:
+        gaps.append("floor_study.pass")
+    if results.get("negative_controls_pass") is not True:
+        gaps.append("negative_controls_pass")
+
+    artifact_inputs = as_record(results.get("artifact_inputs"))
+    scenarios = artifact_inputs.get("calibration_scenarios")
+    if not isinstance(scenarios, list) or len(scenarios) != len(CALIBRATION_CELLS):
+        gaps.append("artifact_inputs.calibration_scenarios")
+    else:
+        for scenario in scenarios:
+            scenario_record = as_record(scenario)
+            if scenario_record.get("pass") is not True:
+                gaps.append(
+                    "artifact_inputs.calibration_scenarios."
+                    f"{scenario_record.get('scenario_id', 'unknown')}.pass"
+                )
+    if as_record(artifact_inputs.get("null_checks")).get("pass") is not True:
+        gaps.append("artifact_inputs.null_checks.pass")
+    return gaps
+
+
+def study_results_acceptance_pass(results: dict) -> bool:
+    return not study_results_acceptance_gaps(results)
+
+
 def write_study_results(results: dict, path: Path | str = DEFAULT_STUDY_RESULTS_PATH) -> Path:
     path = Path(path)
+    if path.name == DEFAULT_STUDY_RESULTS_PATH.name:
+        gaps = study_results_acceptance_gaps(results)
+        if gaps:
+            raise ValueError(
+                "canonical calibration study result requires all acceptance "
+                f"fields to pass before writing {path}: {', '.join(gaps)}"
+            )
     path.write_text(json.dumps(results, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return path
 

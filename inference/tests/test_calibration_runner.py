@@ -33,6 +33,7 @@ from fluencytracr_inference.diagnostics import (
     SamplerDiagnostics,
 )
 from fluencytracr_inference.hashing import sha256_json
+from fluencytracr_inference.artifact import run_proof
 from fluencytracr_inference.model import (
     FitResult,
     MODEL_CACHE_SIGNATURE,
@@ -158,8 +159,8 @@ def test_calibration_cache_key_binds_model_signature():
 
 def test_calibration_fit_settings_match_hard_seed_reliability_profile():
     assert cal.CHEAP_FIT_SETTINGS == {
-        "draws": 1000,
-        "tune": 2000,
+        "draws": 2000,
+        "tune": 3000,
         "chains": 2,
         "target_accept": 0.999,
         "max_treedepth": 15,
@@ -493,15 +494,79 @@ def test_control_inputs_and_checkpoint_rules(tmp_path):
     assert ".calibration-cache/" in gitignore.read_text(encoding="utf-8")
 
 
-def test_checkpoint_progress_summary_dedupes_duplicate_lines(tmp_path):
+def test_checkpoint_progress_summary_rejects_conflicting_duplicate_lines(tmp_path):
     cell = cal.CALIBRATION_CELLS[-1]
     study_key = cal._study_key(cal.DEFAULT_BASE_SEED, cal.FULL_QUALITY_FIT_SETTINGS)
     path = cal._cell_cache_path(tmp_path, study_key, cell)
-    first = _fake_record(cell, 0, covers=False)
-    replacement = _fake_record(cell, 0, covers=True)
-    second = _fake_record(cell, 1, covers=True)
+    first = _fake_record(
+        cell,
+        0,
+        covers=False,
+        excludes_zero=True,
+        ci80_lower=0.1,
+        ci80_upper=0.4,
+    )
+    replacement = _fake_record(
+        cell,
+        0,
+        covers=True,
+        excludes_zero=True,
+        ci80_lower=0.3,
+        ci80_upper=0.7,
+    )
     cal._append_checkpoint(path, first)
     cal._append_checkpoint(path, replacement)
+
+    with pytest.raises(ValueError, match="conflicting duplicate checkpoint"):
+        cal.summarize_checkpoint_progress(
+            replications_per_cell=4,
+            cache_dir=tmp_path,
+            cell_fit_settings={cell.cell_id: dict(cal.FULL_QUALITY_FIT_SETTINGS)},
+            cells=(cell,),
+        )
+
+
+def test_checkpoint_progress_summary_rejects_stale_cell_records(tmp_path):
+    cell = cal.CALIBRATION_CELLS[-1]
+    study_key = cal._study_key(cal.DEFAULT_BASE_SEED, cal.FULL_QUALITY_FIT_SETTINGS)
+    path = cal._cell_cache_path(tmp_path, study_key, cell)
+    stale = {
+        **_fake_record(cell, 0, covers=True),
+        "cell_id": "effect-0-k12",
+    }
+    cal._append_checkpoint(path, stale)
+
+    with pytest.raises(ValueError, match="checkpoint cell_id mismatch"):
+        cal.summarize_checkpoint_progress(
+            replications_per_cell=4,
+            cache_dir=tmp_path,
+            cell_fit_settings={cell.cell_id: dict(cal.FULL_QUALITY_FIT_SETTINGS)},
+            cells=(cell,),
+        )
+
+
+def test_checkpoint_progress_summary_dedupes_identical_lines(tmp_path):
+    cell = cal.CALIBRATION_CELLS[-1]
+    study_key = cal._study_key(cal.DEFAULT_BASE_SEED, cal.FULL_QUALITY_FIT_SETTINGS)
+    path = cal._cell_cache_path(tmp_path, study_key, cell)
+    first = _fake_record(
+        cell,
+        0,
+        covers=True,
+        excludes_zero=True,
+        ci80_lower=0.3,
+        ci80_upper=0.7,
+    )
+    second = _fake_record(
+        cell,
+        1,
+        covers=True,
+        excludes_zero=True,
+        ci80_lower=0.3,
+        ci80_upper=0.7,
+    )
+    cal._append_checkpoint(path, first)
+    cal._append_checkpoint(path, first)
     cal._append_checkpoint(path, second)
 
     summary = cal.summarize_checkpoint_progress(
@@ -519,6 +584,32 @@ def test_checkpoint_progress_summary_dedupes_duplicate_lines(tmp_path):
     assert cell_summary["duplicate_checkpoint_lines"] == 1
     assert cell_summary["coverage_rate"] == 1.0
     assert cell_summary["fit_settings"] == cal.FULL_QUALITY_FIT_SETTINGS
+
+
+def test_canonical_study_result_write_requires_all_acceptance_fields(tmp_path):
+    failing_results = {
+        "calibration": {
+            "completion": {"pass": True},
+            "all_cells_pass": False,
+            "cells": [],
+        },
+        "null_false_eligibility": {"pass": True},
+        "floor_study": {"pass": True},
+        "negative_controls_pass": True,
+        "artifact_inputs": {
+            "calibration_scenarios": [],
+            "null_checks": {"pass": True},
+        },
+    }
+
+    with pytest.raises(ValueError, match="canonical calibration study result"):
+        cal.write_study_results(failing_results, tmp_path / cal.DEFAULT_STUDY_RESULTS_PATH.name)
+
+    local_path = cal.write_study_results(
+        failing_results,
+        tmp_path / cal.DEFAULT_CLI_RESULTS_PATH.name,
+    )
+    assert local_path.exists()
 
 
 def _passing_diagnostics() -> DiagnosticsResult:

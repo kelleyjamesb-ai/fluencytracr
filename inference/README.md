@@ -80,16 +80,19 @@ PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration --smoke --
 ```
 
 The smoke path proves the runner, seed grid, checkpointing, and sampler loop
-with fewer replications. The full study is intentionally expensive:
+with fewer replications. The acceptance profile is intentionally expensive:
+`draws=2000`, `tune=3000`, `chains=2`, `target_accept=0.999`, and
+`max_treedepth=15`.
 
 ```bash
 cd inference
 PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration
 ```
 
-If a cell is shown to need artifact-quality sampling rather than the standard
-calibration reliability profile, rerun that cell with the full-quality sampler
-settings instead of relaxing the coverage gate:
+The historical `--full-quality-cell` switch is retained for compatibility with
+older diagnostic namespaces. The standard acceptance profile now matches the
+full-quality sampler settings, so a clean acceptance run should not need per-cell
+overrides:
 
 ```bash
 cd inference
@@ -105,12 +108,9 @@ PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
 ```
 
 `--checkpoint-summary-only` is read-only and never launches sampler workers.
-It is the safe way to check a long-running rerun before resuming it. For the
-current `effect-0.5-k16` investigation, the recovered full-quality checkpoint
-state reached 200 unique completed replications and still failed the coverage
-gate at `0.72` against the required `0.74` to `0.86` band. The failed result is
-diagnostic evidence only: no proof artifact should be committed until the
-methodology/model issue is fixed and every acceptance field passes.
+It is the safe way to check a long-running rerun before resuming it. A canonical
+`calibration_study_results.json` write now fails closed unless every acceptance
+field passes; use the ignored local result path for diagnostic failed runs.
 
 Predeclared suspect-cell diagnostic protocol (2026-07-07, completed under the
 then-current full-quality settings):
@@ -152,6 +152,11 @@ under the previous full-quality settings: `102/400` fits had divergences and
 cleans up under stricter full-quality defaults (`target_accept=0.999`,
 `tune=3000`, `max_treedepth=15`); a full acceptance-bearing grid must be rerun
 under those settings before any proof artifact is committed.
+
+A later full-grid attempt under the lighter `draws=1000`, `tune=2000` profile
+reproduced a divergence in the null `effect-0-k16` cell at seed `22260875`.
+The same seed passed under `draws=2000`, `tune=3000`, so the acceptance profile
+was promoted to the stricter settings rather than relaxing any gate.
 
 ## Package layout (Slice 2 Phase B1/B2)
 
