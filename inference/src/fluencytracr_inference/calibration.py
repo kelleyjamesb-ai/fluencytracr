@@ -110,7 +110,7 @@ SMOKE_REPLICATIONS_PER_CELL = 25
 
 # Calibration-profile settings. The historical constant name is retained for
 # compatibility with the study helpers, but this is no longer a loose sampler:
-# the zero-sum/non-centered model's hard-seed probe is clean at target_accept
+# the zero-sum/non-centered model's all-cell smoke is clean at target_accept
 # 0.999 after 2000 warmup draws. Coverage does not gate on the production
 # ESS >= 400 requirement, so retained draws stay below artifact-quality fits
 # while still clearing hard-seed estimand R-hat.
