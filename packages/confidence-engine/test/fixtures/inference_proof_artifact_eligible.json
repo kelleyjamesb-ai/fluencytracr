@@ -330,15 +330,17 @@
     "adequacy_proof_hash": "74227b783a658b2427e3a21b64844e7cdacf4fcdb10ba137eee50966ff32fb4c"
   },
   "governance_state": {
-    "state": "eligible_internal_only",
-    "failing_diagnostics": [],
-    "comparison_supported_contribution_estimate_authorized": true,
+    "state": "HOLD",
+    "failing_diagnostics": [
+      "calibration_coverage"
+    ],
+    "comparison_supported_contribution_estimate_authorized": false,
     "evidence_tier_only": false
   },
   "hash_bindings": {
     "source_posterior_hash": "5667053300d0770faa5041c6b5f14e306c3a948556bd1c599a91592774b981c8",
     "synthetic_input_hash": "97405573e96776bf58e6fe83de07dbdfe6e2abadc495adc2ed4dd8a03e788358",
-    "artifact_self_hash": "c7d2f862412855d938a6110efc547ddb8d59d5c5aa796ac0117735253559bc5d"
+    "artifact_self_hash": "3164fcb0fc6a2062ea0ef09e9394c2e894eac8b86330477ba897e7d983718776"
   },
   "blocked_uses": [
     "model_output",

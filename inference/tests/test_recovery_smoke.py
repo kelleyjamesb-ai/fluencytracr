@@ -1,8 +1,9 @@
-"""Recovery smoke: inject 0.5 SD, k=16 — every gate passes, artifact eligible.
+"""Recovery smoke: inject 0.5 SD, k=16 — model diagnostics pass.
 
 Uses the session-scoped clean run from ``conftest.py`` (one full pipeline:
 seeded NUTS main fit, posterior predictive checks, prior-sensitivity refits
-under the declared family, pre-trend pseudo fit, artifact emission).
+under the declared family, pre-trend pseudo fit, artifact emission). The
+artifact remains HOLD until the full task-3.3 calibration/null study exists.
 """
 
 import numpy as np
@@ -90,11 +91,13 @@ def test_no_gate_fails(clean_diagnostics):
     assert evaluate_gates(clean_diagnostics) == []
 
 
-def test_eligible_artifact_emitted(eligible_artifact):
-    governance = eligible_artifact["governance_state"]
-    assert governance["state"] == "eligible_internal_only"
-    assert governance["failing_diagnostics"] == []
-    assert governance["comparison_supported_contribution_estimate_authorized"] is True
+def test_proof_pending_artifact_holds_until_calibration_study_exists(
+    proof_pending_artifact,
+):
+    governance = proof_pending_artifact["governance_state"]
+    assert governance["state"] == "HOLD"
+    assert governance["failing_diagnostics"] == ["calibration_coverage"]
+    assert governance["comparison_supported_contribution_estimate_authorized"] is False
     assert governance["evidence_tier_only"] is False
 
 

@@ -183,7 +183,7 @@ def derive_replication_seed(base_seed: int, cell_index: int, replication_index: 
     never collide across cells and a cell's seed range is reportable as
     ``[first, last]``.
     """
-    if replication_index >= 1_000_000:
+    if replication_index < 0 or replication_index >= 1_000_000:
         raise ValueError("replication_index exceeds the per-cell seed block")
     return base_seed + (cell_index + 1) * 1_000_000 + replication_index
 
@@ -361,6 +361,11 @@ def _validate_checkpoint_record(
     base_seed: int,
 ) -> int:
     replication_index = int(record["replication_index"])
+    if replication_index < 0 or replication_index >= 1_000_000:
+        raise ValueError(
+            f"checkpoint replication_index out of range in {path}: "
+            f"{replication_index}"
+        )
     if expected_cell is None:
         return replication_index
 
@@ -590,14 +595,16 @@ def run_calibration_study(
     fit_settings: dict | None = None,
     cell_fit_settings: dict[str, dict] | None = None,
     cells: tuple[CalibrationCell, ...] | None = None,
+    max_pending_per_cell: int | None = None,
     log=None,
 ) -> dict:
     """Run (or resume) the seeded calibration study across all cells.
 
     Returns ``{"records_by_cell", "settings", "cell_settings", "executed",
     "skipped", "workers", "wall_time_seconds", "base_seed",
-    "replications_per_cell"}``. Checkpointed replications are skipped (resume
-    support); only pending seeds are dispatched to the multiprocessing pool.
+    "replications_per_cell", "max_pending_per_cell"}``. Checkpointed
+    replications are skipped (resume support); only pending seeds are
+    dispatched to the multiprocessing pool.
 
     ``cell_fit_settings`` applies per-cell fit-setting overrides (by
     ``cell_id``) on top of ``fit_settings``. Each distinct settings dict owns
@@ -610,6 +617,8 @@ def run_calibration_study(
         replications_per_cell = (
             SMOKE_REPLICATIONS_PER_CELL if smoke else DEFAULT_REPLICATIONS_PER_CELL
         )
+    if max_pending_per_cell is not None and max_pending_per_cell <= 0:
+        raise ValueError("max_pending_per_cell must be a positive integer")
     workers = workers if workers is not None else default_worker_count()
     cache_root = Path(cache_dir) if cache_dir is not None else DEFAULT_CACHE_DIR
     base_settings = {**CHEAP_FIT_SETTINGS, **(fit_settings or {})}
@@ -643,9 +652,15 @@ def run_calibration_study(
             if index < replications_per_cell
         }
         skipped += len(records_by_cell[cell.cell_id])
+        queued_for_cell = 0
         for replication_index in range(replications_per_cell):
             if replication_index in finished:
                 continue
+            if (
+                max_pending_per_cell is not None
+                and queued_for_cell >= max_pending_per_cell
+            ):
+                break
             pending.append(
                 {
                     "cell_id": cell.cell_id,
@@ -657,10 +672,16 @@ def run_calibration_study(
                     **cell_settings[cell.cell_id],
                 }
             )
+            queued_for_cell += 1
 
     emit(
         f"calibration study: {len(active_cells)} cells x {replications_per_cell} reps; "
         f"{skipped} checkpointed, {len(pending)} pending, {workers} workers"
+        + (
+            f"; batch limit {max_pending_per_cell} pending/cell"
+            if max_pending_per_cell is not None
+            else ""
+        )
     )
 
     executed = 0
@@ -686,6 +707,7 @@ def run_calibration_study(
         "cell_settings": cell_settings,
         "base_seed": int(base_seed),
         "replications_per_cell": int(replications_per_cell),
+        "max_pending_per_cell": max_pending_per_cell,
         "executed": executed,
         "skipped": skipped,
         "workers": workers,
@@ -1082,6 +1104,7 @@ def _emit_study_artifact(
         null_checks=control_null_checks,
         floor_checks=canonical_floor_checks(),
         repeated_evaluation_detected=repeated_evaluation_detected,
+        allow_structural_control_inputs=True,
     )
 
 
@@ -1498,6 +1521,26 @@ def as_record(value) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def _expected_calibration_cell_id(cell: CalibrationCell) -> str:
+    return cell.cell_id
+
+
+def _expected_calibration_scenario_id(cell: CalibrationCell) -> str:
+    return f"calibration-{cell.cell_id}"
+
+
+def _null_replication_floor() -> int:
+    return (
+        len([cell for cell in CALIBRATION_CELLS if cell.injected_effect_sd == 0.0])
+        * INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+    )
+
+
+def _gap_if_false(gaps: list[str], path: str, condition: bool) -> None:
+    if not condition:
+        gaps.append(path)
+
+
 def study_results_acceptance_gaps(results: dict) -> list[str]:
     gaps: list[str] = []
     calibration = as_record(results.get("calibration"))
@@ -1507,25 +1550,96 @@ def study_results_acceptance_gaps(results: dict) -> list[str]:
         gaps.append("calibration.completion.pass")
     if calibration.get("all_cells_pass") is not True:
         gaps.append("calibration.all_cells_pass")
+    expected_cells = [_expected_calibration_cell_id(cell) for cell in CALIBRATION_CELLS]
     if not isinstance(cells, list) or len(cells) != len(CALIBRATION_CELLS):
         gaps.append("calibration.cells")
     else:
+        observed_cell_ids = [as_record(cell).get("cell_id") for cell in cells]
+        if observed_cell_ids != expected_cells or len(set(observed_cell_ids)) != len(
+            observed_cell_ids
+        ):
+            gaps.append("calibration.cells.identity")
         for cell in cells:
             cell_record = as_record(cell)
+            cell_id = cell_record.get("cell_id", "unknown")
+            matching_cell = next(
+                (
+                    expected_cell
+                    for expected_cell in CALIBRATION_CELLS
+                    if expected_cell.cell_id == cell_id
+                ),
+                None,
+            )
+            _gap_if_false(
+                gaps,
+                f"calibration.cells.{cell_id}.replication_count",
+                int(cell_record.get("replication_count", 0))
+                >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+            )
+            _gap_if_false(
+                gaps,
+                f"calibration.cells.{cell_id}.coverage_in_band",
+                cell_record.get("coverage_in_band") is True,
+            )
+            try:
+                coverage_rate = float(cell_record.get("coverage_rate"))
+                replication_count = int(cell_record.get("replication_count"))
+                expected_se = math.sqrt(
+                    coverage_rate * (1.0 - coverage_rate) / replication_count
+                )
+                se_matches = math.isclose(
+                    float(cell_record.get("coverage_standard_error")),
+                    expected_se,
+                    rel_tol=0.0,
+                    abs_tol=1e-12,
+                )
+            except (TypeError, ValueError, ZeroDivisionError):
+                se_matches = False
+            _gap_if_false(
+                gaps,
+                f"calibration.cells.{cell_id}.coverage_standard_error",
+                se_matches,
+            )
+            if matching_cell is not None:
+                _gap_if_false(
+                    gaps,
+                    f"calibration.cells.{cell_id}.cohort_size",
+                    int(cell_record.get("cohort_size", -1)) == matching_cell.k,
+                )
+                _gap_if_false(
+                    gaps,
+                    f"calibration.cells.{cell_id}.injected_effect_size_sd",
+                    float(cell_record.get("injected_effect_size_sd", -1.0))
+                    == float(matching_cell.injected_effect_sd),
+                )
             if cell_record.get("pass") is not True:
-                gaps.append(f"calibration.cells.{cell_record.get('cell_id', 'unknown')}.pass")
+                gaps.append(f"calibration.cells.{cell_id}.pass")
             if cell_record.get("complete") is not True:
-                gaps.append(
-                    f"calibration.cells.{cell_record.get('cell_id', 'unknown')}.complete"
-                )
+                gaps.append(f"calibration.cells.{cell_id}.complete")
             if cell_record.get("sampler_health_pass") is not True:
-                gaps.append(
-                    "calibration.cells."
-                    f"{cell_record.get('cell_id', 'unknown')}.sampler_health_pass"
-                )
+                gaps.append(f"calibration.cells.{cell_id}.sampler_health_pass")
 
-    if as_record(results.get("null_false_eligibility")).get("pass") is not True:
+    null_summary = as_record(results.get("null_false_eligibility"))
+    if null_summary.get("pass") is not True:
         gaps.append("null_false_eligibility.pass")
+    _gap_if_false(
+        gaps,
+        "null_false_eligibility.null_effect_scenario_count",
+        int(null_summary.get("null_effect_scenario_count", 0)) >= _null_replication_floor(),
+    )
+    try:
+        null_rate = float(null_summary.get("false_eligibility_rate"))
+        null_rate_ok = (
+            math.isfinite(null_rate)
+            and null_rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+        )
+    except (TypeError, ValueError):
+        null_rate_ok = False
+    _gap_if_false(
+        gaps,
+        "null_false_eligibility.false_eligibility_rate",
+        null_rate_ok,
+    )
     if as_record(results.get("floor_study")).get("pass") is not True:
         gaps.append("floor_study.pass")
     if results.get("negative_controls_pass") is not True:
@@ -1533,18 +1647,94 @@ def study_results_acceptance_gaps(results: dict) -> list[str]:
 
     artifact_inputs = as_record(results.get("artifact_inputs"))
     scenarios = artifact_inputs.get("calibration_scenarios")
+    expected_scenarios = [
+        _expected_calibration_scenario_id(cell) for cell in CALIBRATION_CELLS
+    ]
     if not isinstance(scenarios, list) or len(scenarios) != len(CALIBRATION_CELLS):
         gaps.append("artifact_inputs.calibration_scenarios")
     else:
+        observed_scenario_ids = [as_record(scenario).get("scenario_id") for scenario in scenarios]
+        if observed_scenario_ids != expected_scenarios or len(set(observed_scenario_ids)) != len(
+            observed_scenario_ids
+        ):
+            gaps.append("artifact_inputs.calibration_scenarios.identity")
         for scenario in scenarios:
             scenario_record = as_record(scenario)
-            if scenario_record.get("pass") is not True:
-                gaps.append(
-                    "artifact_inputs.calibration_scenarios."
-                    f"{scenario_record.get('scenario_id', 'unknown')}.pass"
+            scenario_id = scenario_record.get("scenario_id", "unknown")
+            matching_cell = next(
+                (
+                    expected_cell
+                    for expected_cell in CALIBRATION_CELLS
+                    if _expected_calibration_scenario_id(expected_cell) == scenario_id
+                ),
+                None,
+            )
+            if matching_cell is not None:
+                _gap_if_false(
+                    gaps,
+                    f"artifact_inputs.calibration_scenarios.{scenario_id}.cohort_size",
+                    int(scenario_record.get("cohort_size", -1)) == matching_cell.k,
                 )
-    if as_record(artifact_inputs.get("null_checks")).get("pass") is not True:
+                _gap_if_false(
+                    gaps,
+                    "artifact_inputs.calibration_scenarios."
+                    f"{scenario_id}.injected_effect_size_sd",
+                    float(scenario_record.get("injected_effect_size_sd", -1.0))
+                    == float(matching_cell.injected_effect_sd),
+                )
+            _gap_if_false(
+                gaps,
+                f"artifact_inputs.calibration_scenarios.{scenario_id}.replication_count",
+                int(scenario_record.get("replication_count", 0))
+                >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+            )
+            try:
+                coverage = float(scenario_record.get("coverage_rate"))
+                replication_count = int(scenario_record.get("replication_count"))
+                expected_se = math.sqrt(coverage * (1.0 - coverage) / replication_count)
+                scenario_ok = (
+                    bool(scenario_record.get("pass"))
+                    and scenario_record.get("credible_interval_level") == 0.8
+                    and math.isfinite(coverage)
+                    and INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN
+                    <= coverage
+                    <= INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX
+                    and math.isclose(
+                        float(scenario_record.get("coverage_standard_error")),
+                        expected_se,
+                        rel_tol=0.0,
+                        abs_tol=1e-12,
+                    )
+                )
+            except (TypeError, ValueError, ZeroDivisionError):
+                scenario_ok = False
+            _gap_if_false(
+                gaps,
+                f"artifact_inputs.calibration_scenarios.{scenario_id}.pass",
+                scenario_ok,
+            )
+    null_checks = as_record(artifact_inputs.get("null_checks"))
+    if null_checks.get("pass") is not True:
         gaps.append("artifact_inputs.null_checks.pass")
+    _gap_if_false(
+        gaps,
+        "artifact_inputs.null_checks.null_effect_scenario_count",
+        int(null_checks.get("null_effect_scenario_count", 0))
+        >= _null_replication_floor(),
+    )
+    try:
+        artifact_null_rate = float(null_checks.get("false_eligibility_rate"))
+        artifact_null_rate_ok = (
+            math.isfinite(artifact_null_rate)
+            and artifact_null_rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+        )
+    except (TypeError, ValueError):
+        artifact_null_rate_ok = False
+    _gap_if_false(
+        gaps,
+        "artifact_inputs.null_checks.false_eligibility_rate",
+        artifact_null_rate_ok,
+    )
     return gaps
 
 
@@ -1586,6 +1776,13 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
     parser.add_argument("--workers", type=int, default=None)
     parser.add_argument("--base-seed", type=int, default=DEFAULT_BASE_SEED)
     parser.add_argument("--output", type=Path, default=DEFAULT_CLI_RESULTS_PATH)
+    parser.add_argument(
+        "--max-pending-per-cell",
+        type=int,
+        default=None,
+        help="run at most this many currently pending replications per selected "
+        "cell, then exit; use with --calibration-only for bounded local batches",
+    )
     parser.add_argument(
         "--calibration-only",
         action="store_true",
@@ -1630,6 +1827,11 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
         parser.error(f"unknown cell id(s): {sorted(unknown)}")
     if args.calibration_cell and not (args.calibration_only or args.checkpoint_summary_only):
         parser.error("--calibration-cell is diagnostic-only; use with --calibration-only or --checkpoint-summary-only")
+    if args.max_pending_per_cell is not None:
+        if args.max_pending_per_cell <= 0:
+            parser.error("--max-pending-per-cell must be a positive integer")
+        if not args.calibration_only:
+            parser.error("--max-pending-per-cell must be used with --calibration-only")
 
     active_cell_ids = set(args.calibration_cell)
     active_cells = (
@@ -1660,6 +1862,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
         workers=args.workers,
         cell_fit_settings=cell_fit_settings,
         cells=active_cells,
+        max_pending_per_cell=args.max_pending_per_cell,
         log=log,
     )
     log(

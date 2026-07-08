@@ -142,6 +142,7 @@ def _emit_with_study_inputs(*, dataset, fit, diagnostics, **overrides):
         dataset=dataset,
         fit=fit,
         diagnostics=diagnostics,
+        allow_structural_control_inputs=True,
         **values,
     )
 
@@ -576,6 +577,25 @@ def test_missing_study_level_inputs_hold(clean_dataset, clean_fit, clean_diagnos
     assert artifact["governance_state"]["failing_diagnostics"] == [
         "calibration_coverage",
         "null_false_eligibility",
+    ]
+
+
+def test_structural_control_study_inputs_do_not_authorize_public_eligibility(
+    clean_dataset, clean_fit, clean_diagnostics
+):
+    calibration_scenarios, null_checks = control_study_inputs()
+    artifact = emit_proof_artifact(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        calibration_scenarios=calibration_scenarios,
+        null_checks=null_checks,
+        floor_checks=canonical_floor_checks(),
+    )
+
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == [
+        "calibration_coverage"
     ]
 
 

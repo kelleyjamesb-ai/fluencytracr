@@ -332,6 +332,7 @@
   "governance_state": {
     "state": "HOLD",
     "failing_diagnostics": [
+      "calibration_coverage",
       "missing_or_suppressed_windows"
     ],
     "comparison_supported_contribution_estimate_authorized": false,
@@ -340,7 +341,7 @@
   "hash_bindings": {
     "source_posterior_hash": "5667053300d0770faa5041c6b5f14e306c3a948556bd1c599a91592774b981c8",
     "synthetic_input_hash": "c55f95d17f5642843c4e2a7a9bbeebe7d239d1226c2b8ed161ac251625d75b28",
-    "artifact_self_hash": "aaddceadc7d2f88bf1fa874febc297ec950cda9e9e2496b558add630ab551baf"
+    "artifact_self_hash": "4b40d8af4094dc17a8293712e66e293f8511c865c056d97b86ba617f73459c8f"
   },
   "blocked_uses": [
     "model_output",

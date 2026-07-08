@@ -290,6 +290,8 @@ def test_calibration_cell_selection_limits_active_cells(monkeypatch):
                 "effect-0.5-k16",
                 "--replications",
                 "400",
+                "--max-pending-per-cell",
+                "2",
                 "--calibration-only",
             ]
         )
@@ -299,6 +301,7 @@ def test_calibration_cell_selection_limits_active_cells(monkeypatch):
     cells = calls["run_calibration_study"]["cells"]
     assert [cell.cell_id for cell in cells] == ["effect-0.5-k16"]
     assert calls["run_calibration_study"]["replications_per_cell"] == 400
+    assert calls["run_calibration_study"]["max_pending_per_cell"] == 2
     assert calls["run_calibration_study"]["cell_fit_settings"] == {
         "effect-0.5-k16": cal.FULL_QUALITY_FIT_SETTINGS
     }
@@ -552,6 +555,26 @@ def test_checkpoint_progress_summary_rejects_stale_cell_records(tmp_path):
         )
 
 
+def test_checkpoint_progress_summary_rejects_negative_replication_indexes(tmp_path):
+    cell = cal.CALIBRATION_CELLS[0]
+    study_key = cal._study_key(cal.DEFAULT_BASE_SEED, cal.FULL_QUALITY_FIT_SETTINGS)
+    path = cal._cell_cache_path(tmp_path, study_key, cell)
+    record = {
+        **_fake_record(cell, 0),
+        "replication_index": -1,
+        "seed": cal.DEFAULT_BASE_SEED,
+    }
+    cal._append_checkpoint(path, record)
+
+    with pytest.raises(ValueError, match="checkpoint replication_index out of range"):
+        cal.summarize_checkpoint_progress(
+            replications_per_cell=4,
+            cache_dir=tmp_path,
+            cell_fit_settings={cell.cell_id: dict(cal.FULL_QUALITY_FIT_SETTINGS)},
+            cells=(cell,),
+        )
+
+
 def test_checkpoint_progress_summary_rejects_inconsistent_sampler_health(tmp_path):
     cell = cal.CALIBRATION_CELLS[0]
     study_key = cal._study_key(cal.DEFAULT_BASE_SEED, cal.FULL_QUALITY_FIT_SETTINGS)
@@ -622,6 +645,62 @@ def test_checkpoint_progress_summary_dedupes_identical_lines(tmp_path):
     assert cell_summary["fit_settings"] == cal.FULL_QUALITY_FIT_SETTINGS
 
 
+def test_run_calibration_study_can_limit_pending_replications_per_cell(monkeypatch, tmp_path):
+    cells = cal.CALIBRATION_CELLS[:2]
+    seen_tasks = []
+
+    class FakePool:
+        def __init__(self, *, processes, initializer):
+            self.processes = processes
+            self.initializer = initializer
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, _exc_type, _exc, _tb):
+            return False
+
+        def imap_unordered(self, fn, pending, chunksize=1):
+            assert chunksize == 1
+            for task in pending:
+                seen_tasks.append(task)
+                cell = next(
+                    candidate
+                    for candidate in cells
+                    if candidate.cell_id == task["cell_id"]
+                )
+                yield _fake_record(cell, task["replication_index"])
+
+    class FakeContext:
+        def Pool(self, *, processes, initializer):
+            return FakePool(processes=processes, initializer=initializer)
+
+    monkeypatch.setattr(cal, "get_context", lambda _method: FakeContext())
+
+    study = cal.run_calibration_study(
+        replications_per_cell=4,
+        workers=3,
+        cache_dir=tmp_path,
+        cells=cells,
+        max_pending_per_cell=2,
+    )
+
+    assert study["executed"] == 4
+    assert study["skipped"] == 0
+    assert study["max_pending_per_cell"] == 2
+    assert [task["replication_index"] for task in seen_tasks] == [0, 1, 0, 1]
+    assert {task["cell_id"] for task in seen_tasks} == {cell.cell_id for cell in cells}
+    assert all(len(study["records_by_cell"][cell.cell_id]) == 2 for cell in cells)
+
+    progress = cal.summarize_checkpoint_progress(
+        replications_per_cell=4,
+        cache_dir=tmp_path,
+        cells=cells,
+    )
+    assert progress["total_completed_replications"] == 4
+    assert progress["total_pending_replications"] == 4
+
+
 def test_canonical_study_result_write_requires_all_acceptance_fields(tmp_path):
     failing_results = {
         "calibration": {
@@ -646,6 +725,41 @@ def test_canonical_study_result_write_requires_all_acceptance_fields(tmp_path):
         tmp_path / cal.DEFAULT_CLI_RESULTS_PATH.name,
     )
     assert local_path.exists()
+
+
+def test_canonical_acceptance_rejects_forged_duplicate_all_true_summaries():
+    summaries = cal.summarize_calibration_cells(_fake_study())
+    scenarios = cal.calibration_scenarios_from_summaries(summaries)
+    forged = {
+        "calibration": {
+            "completion": {"pass": True},
+            "all_cells_pass": True,
+            "cells": [summaries[0] for _ in cal.CALIBRATION_CELLS],
+        },
+        "null_false_eligibility": {
+            "null_effect_scenario_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+            "false_eligibility_rate": 0.0,
+            "pass": True,
+        },
+        "floor_study": {"pass": True},
+        "negative_controls_pass": True,
+        "artifact_inputs": {
+            "calibration_scenarios": [scenarios[0] for _ in cal.CALIBRATION_CELLS],
+            "null_checks": {
+                "null_effect_scenario_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+                "false_eligibility_rate": 0.0,
+                "pass": True,
+            },
+        },
+    }
+
+    gaps = cal.study_results_acceptance_gaps(forged)
+
+    assert "calibration.cells.identity" in gaps
+    assert "artifact_inputs.calibration_scenarios.identity" in gaps
+    assert "null_false_eligibility.null_effect_scenario_count" in gaps
+    assert "artifact_inputs.null_checks.null_effect_scenario_count" in gaps
+    assert cal.study_results_acceptance_pass(forged) is False
 
 
 def _passing_diagnostics() -> DiagnosticsResult:

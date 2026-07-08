@@ -182,7 +182,11 @@ def _scenario_cell(scenario: dict) -> tuple[float | int, int]:
     return effect, int(scenario.get("cohort_size"))
 
 
-def _study_calibration_inputs_pass(calibration_scenarios: list[dict]) -> bool:
+def _study_calibration_inputs_pass(
+    calibration_scenarios: list[dict],
+    *,
+    allow_structural_control_inputs: bool = False,
+) -> bool:
     """Require the exact task-3.3 effect/cohort grid before eligibility.
 
     The TypeScript boundary also enforces the six cells. Python mirrors that
@@ -205,10 +209,10 @@ def _study_calibration_inputs_pass(calibration_scenarios: list[dict]) -> bool:
     for scenario in calibration_scenarios:
         try:
             scenario_id = str(scenario.get("scenario_id", ""))
-            if not (
-                scenario_id.startswith(CALIBRATION_SCENARIO_PREFIX)
-                or scenario_id.startswith(STRUCTURAL_CONTROL_SCENARIO_PREFIX)
-            ):
+            if scenario_id.startswith(STRUCTURAL_CONTROL_SCENARIO_PREFIX):
+                if not allow_structural_control_inputs:
+                    return False
+            elif not scenario_id.startswith(CALIBRATION_SCENARIO_PREFIX):
                 return False
             n = int(scenario.get("replication_count", 0))
             coverage = float(scenario.get("coverage_rate", -1.0))
@@ -498,6 +502,7 @@ def emit_proof_artifact(
     floor_checks: dict | None = None,
     repeated_evaluation_detected: bool = False,
     generated_at: str | None = None,
+    allow_structural_control_inputs: bool = False,
 ) -> dict:
     """Build the schema-shaped artifact and derive its governance state.
 
@@ -566,7 +571,10 @@ def emit_proof_artifact(
         failing.add("peeking_control")
 
     # Study-level inputs (Phase B2 computes; the gates still bind here).
-    if not _study_calibration_inputs_pass(calibration_scenarios):
+    if not _study_calibration_inputs_pass(
+        calibration_scenarios,
+        allow_structural_control_inputs=allow_structural_control_inputs,
+    ):
         failing.add("calibration_coverage")
     if not _study_null_inputs_pass(null_checks):
         failing.add("null_false_eligibility")

@@ -112,6 +112,27 @@ It is the safe way to check a long-running rerun before resuming it. A canonical
 `calibration_study_results.json` write now fails closed unless every acceptance
 field passes; use the ignored local result path for diagnostic failed runs.
 
+For local execution, prefer bounded checkpoint batches over a single
+high-concurrency drain. The batch switch runs only the next pending seeds for
+the selected cell(s), writes checkpoints, and exits without producing a proof
+summary:
+
+```bash
+cd inference
+PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
+  --calibration-cell effect-0-k12 \
+  --replications 200 \
+  --workers 2 \
+  --max-pending-per-cell 10 \
+  --calibration-only
+```
+
+After each batch, use `--checkpoint-summary-only` to confirm completed counts,
+sampler sanity, and duplicate-line status before launching the next batch. This
+does not change acceptance criteria: every cell still needs `200` valid
+replications, all six cells must pass, and the canonical proof result remains
+blocked unless every calibration, null, floor, and negative-control gate passes.
+
 Predeclared suspect-cell diagnostic protocol (2026-07-07, completed under the
 then-current full-quality settings):
 

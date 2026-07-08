@@ -1,6 +1,6 @@
 """Shared fixtures for the proof-harness suite.
 
-The clean recovery run (fit + diagnostics + eligible artifact) is expensive
+The clean recovery run (fit + diagnostics + proof-pending artifact) is expensive
 (~3 minutes: main NUTS fit, posterior predictive, two prior-sensitivity
 refits, pre-trend pseudo fit), so it is computed once per session and shared
 by the recovery smoke, artifact-shape, self-hash, and HOLD-path tests.
@@ -38,7 +38,7 @@ def clean_diagnostics(clean_fit):
 
 
 @pytest.fixture(scope="session")
-def eligible_artifact(clean_dataset, clean_fit, clean_diagnostics):
+def proof_pending_artifact(clean_dataset, clean_fit, clean_diagnostics):
     calibration_scenarios, null_checks = control_study_inputs()
     return emit_proof_artifact(
         dataset=clean_dataset,
