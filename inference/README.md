@@ -94,10 +94,12 @@ coverage gate:
 ```bash
 cd inference
 PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
+  --calibration-cell effect-0.5-k16 \
   --full-quality-cell effect-0.5-k16 \
   --checkpoint-summary-only
 
 PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
+  --calibration-cell effect-0.5-k16 \
   --full-quality-cell effect-0.5-k16 \
   --calibration-only
 ```
@@ -110,10 +112,40 @@ gate at `0.72` against the required `0.74` to `0.86` band. The failed result is
 diagnostic evidence only: no proof artifact should be committed until the
 methodology/model issue is fixed and every acceptance field passes.
 
+Predeclared suspect-cell diagnostic protocol (2026-07-07, completed under the
+then-current full-quality settings):
+
+- Cell: `effect-0.5-k16` only.
+- Seed range: the existing deterministic seed derivation from
+  `DEFAULT_BASE_SEED`, replication indexes `0..399`.
+- Fit settings at the time of the diagnostic: `draws=2000`, `tune=1000`,
+  `chains=2`, `target_accept=0.99`, `max_treedepth=12`.
+- Stopping rule: run/resume until all 400 unique replications complete; no
+  early stop after a favorable or unfavorable partial result.
+- Interpretation: diagnostic only. If 400-rep coverage returns inside the
+  `0.74` to `0.86` band, the next acceptance-bearing run is a full six-cell
+  predeclared grid at the chosen replication count. If 400-rep coverage remains
+  out of band, inspect bias, miss direction, interval width, empirical error
+  SD versus mean posterior SD, sampler warnings, and prior sensitivity before
+  proposing any model change.
+- Non-authorization: this protocol does not relax the coverage band, does not
+  backfill a passing proof from one selected cell, and does not authorize
+  customer-facing intervals, probability/confidence output, ROI, causality,
+  productivity claims, real data, persistence, routes, or UI.
+
 Checkpoint files live under `inference/.calibration-cache/` and are ignored.
 Do not treat a generated `calibration_study_results.json` as proof unless all
 acceptance fields pass; failing results are diagnostic evidence, not
 authorization for customer-facing intervals or probability/confidence output.
+
+The 400-replication suspect-cell diagnostic completed with coverage in band
+(`298/400 = 0.745`), confirming the original 200-replication `0.72` result was
+partly an unlucky seed block. It also exposed a sampler-health reliability gap
+under the previous full-quality settings: `102/400` fits had divergences and
+`10/400` hit max-treedepth. A fixed warning-seed probe showed the same model
+cleans up under stricter full-quality defaults (`target_accept=0.999`,
+`tune=3000`, `max_treedepth=15`); a full acceptance-bearing grid must be rerun
+under those settings before any proof artifact is committed.
 
 ## Package layout (Slice 2 Phase B1/B2)
 

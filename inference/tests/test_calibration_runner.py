@@ -5,6 +5,7 @@ fits. The real sampler path is exercised by the explicit smoke/full commands
 documented in ``inference/README.md``.
 """
 
+import inspect
 import math
 from pathlib import Path
 from types import SimpleNamespace
@@ -30,7 +31,12 @@ from fluencytracr_inference.diagnostics import (
     SamplerDiagnostics,
 )
 from fluencytracr_inference.hashing import sha256_json
-from fluencytracr_inference.model import FitResult, PRIOR_SENSITIVITY_SCALINGS, PriorSpec
+from fluencytracr_inference.model import (
+    FitResult,
+    PRIOR_SENSITIVITY_SCALINGS,
+    PriorSpec,
+    fit_did_model,
+)
 from fluencytracr_inference.synthetic import generate_did_dataset
 
 
@@ -121,6 +127,106 @@ def test_calibration_cell_grid_and_seed_derivation_are_stable():
             )
             assert seed not in seen
             seen.add(seed)
+
+
+def test_default_results_path_is_local_ignored_during_iteration():
+    assert cal.DEFAULT_CLI_RESULTS_PATH.name == "calibration_study_results.local.json"
+    assert cal.DEFAULT_STUDY_RESULTS_PATH.name == "calibration_study_results.json"
+
+
+def test_full_quality_settings_match_reliable_model_defaults():
+    signature = inspect.signature(fit_did_model)
+    model_defaults = {
+        "draws": signature.parameters["draws"].default,
+        "tune": signature.parameters["tune"].default,
+        "chains": signature.parameters["chains"].default,
+        "target_accept": signature.parameters["target_accept"].default,
+        "max_treedepth": signature.parameters["max_treedepth"].default,
+    }
+
+    assert cal.FULL_QUALITY_FIT_SETTINGS == model_defaults
+    assert cal.FULL_QUALITY_FIT_SETTINGS == {
+        "draws": 2000,
+        "tune": 3000,
+        "chains": 2,
+        "target_accept": 0.999,
+        "max_treedepth": 15,
+    }
+
+
+def test_main_defaults_to_local_results_path(monkeypatch):
+    calls = {}
+
+    def fake_run_calibration_study(**kwargs):
+        calls["run_calibration_study"] = kwargs
+        return {
+            **_fake_study(),
+            "executed": 0,
+            "skipped": len(cal.CALIBRATION_CELLS)
+            * INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+        }
+
+    def fake_run_carrier_pipeline(log):
+        return SimpleNamespace(), SimpleNamespace()
+
+    def fake_build_study_results(**kwargs):
+        return {
+            "calibration": {"cells": []},
+            "null_false_eligibility": {
+                "false_eligibility_rate": 0.0,
+                "null_effect_scenario_count": 0,
+                "unscreened_ci_excludes_zero_rate": 0.0,
+                "pass": True,
+            },
+            "floor_study": {"pass": True},
+            "negative_controls_pass": True,
+            "total_wall_time_seconds": 0.0,
+        }
+
+    def fake_write_study_results(results, path):
+        calls["write_study_results"] = {"results": results, "path": path}
+        return path
+
+    monkeypatch.setattr(cal, "run_calibration_study", fake_run_calibration_study)
+    monkeypatch.setattr(cal, "_run_carrier_pipeline", fake_run_carrier_pipeline)
+    monkeypatch.setattr(cal, "build_study_results", fake_build_study_results)
+    monkeypatch.setattr(cal, "write_study_results", fake_write_study_results)
+
+    assert cal.main([]) == 0
+
+    assert calls["write_study_results"]["path"] == cal.DEFAULT_CLI_RESULTS_PATH
+
+
+def test_calibration_cell_selection_limits_active_cells(monkeypatch):
+    calls = {}
+
+    def fake_run_calibration_study(**kwargs):
+        calls["run_calibration_study"] = kwargs
+        return {"executed": 0, "skipped": 0, "wall_time_seconds": 0.0}
+
+    monkeypatch.setattr(cal, "run_calibration_study", fake_run_calibration_study)
+
+    assert (
+        cal.main(
+            [
+                "--calibration-cell",
+                "effect-0.5-k16",
+                "--full-quality-cell",
+                "effect-0.5-k16",
+                "--replications",
+                "400",
+                "--calibration-only",
+            ]
+        )
+        == 0
+    )
+
+    cells = calls["run_calibration_study"]["cells"]
+    assert [cell.cell_id for cell in cells] == ["effect-0.5-k16"]
+    assert calls["run_calibration_study"]["replications_per_cell"] == 400
+    assert calls["run_calibration_study"]["cell_fit_settings"] == {
+        "effect-0.5-k16": cal.FULL_QUALITY_FIT_SETTINGS
+    }
 
 
 def test_binomial_interval_95_sanity():
@@ -233,7 +339,32 @@ def test_coverage_diagnostics_show_undercoverage_shape():
     assert diagnostics["missed_count"] == 56
     assert diagnostics["median_ci80_width_sd"] == pytest.approx(0.4)
     assert diagnostics["mean_posterior_error_sd"] == pytest.approx((-30 * 0.25 + 26 * 0.25) / 200)
+    assert diagnostics["empirical_posterior_mean_error_sd"] > diagnostics["mean_posterior_sd"]
+    assert diagnostics["empirical_error_to_posterior_sd_ratio"] > 1.0
+    assert diagnostics["coverage_gap_from_nominal_80"] == pytest.approx(0.08)
     assert diagnostics["missed_replication_seeds_sample"][0]["direction"] == "interval_below_injected"
+
+    scenarios = cal.calibration_scenarios_from_summaries([summary])
+    assert "coverage_diagnostics" not in scenarios[-1]
+
+
+def test_empty_coverage_diagnostics_keep_stable_shape():
+    diagnostics = cal.coverage_diagnostics([], injected_effect_size_sd=0.5)
+
+    assert diagnostics == {
+        "missed_count": 0,
+        "interval_below_injected_count": 0,
+        "interval_above_injected_count": 0,
+        "declared_miss_overlap_count": 0,
+        "mean_posterior_error_sd": None,
+        "empirical_posterior_mean_error_sd": None,
+        "mean_posterior_sd": None,
+        "empirical_error_to_posterior_sd_ratio": None,
+        "coverage_gap_from_nominal_80": None,
+        "median_ci80_width_sd": None,
+        "mean_ci80_width_sd": None,
+        "missed_replication_seeds_sample": [],
+    }
 
 
 def test_null_false_eligibility_pooling_math():

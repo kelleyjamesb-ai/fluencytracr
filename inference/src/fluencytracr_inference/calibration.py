@@ -124,14 +124,17 @@ CHEAP_FIT_SETTINGS = {
 # defaults, these fits are routinely divergence-free.
 FULL_QUALITY_FIT_SETTINGS = {
     "draws": 2000,
-    "tune": 1000,
+    "tune": 3000,
     "chains": 2,
-    "target_accept": 0.99,
-    "max_treedepth": 12,
+    "target_accept": 0.999,
+    "max_treedepth": 15,
 }
 CREDIBLE_INTERVAL_LEVEL = 0.8
 
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[2] / ".calibration-cache"
+DEFAULT_CLI_RESULTS_PATH = Path(__file__).resolve().parents[2] / (
+    "calibration_study_results.local.json"
+)
 
 FLOOR_REJECTION_K = 4
 INTERNAL_ONLY_PATH_K = 8
@@ -595,6 +598,10 @@ def coverage_diagnostics(
             "interval_above_injected_count": 0,
             "declared_miss_overlap_count": 0,
             "mean_posterior_error_sd": None,
+            "empirical_posterior_mean_error_sd": None,
+            "mean_posterior_sd": None,
+            "empirical_error_to_posterior_sd_ratio": None,
+            "coverage_gap_from_nominal_80": None,
             "median_ci80_width_sd": None,
             "mean_ci80_width_sd": None,
             "missed_replication_seeds_sample": [],
@@ -602,9 +609,14 @@ def coverage_diagnostics(
 
     effect = float(injected_effect_size_sd)
     errors = [float(record["posterior_mean"]) - effect for record in records]
+    posterior_sds = [float(record["posterior_sd"]) for record in records]
     widths = [
         float(record["ci80_upper"]) - float(record["ci80_lower"]) for record in records
     ]
+    covered = sum(1 for record in records if record["covers_injected_effect"])
+    coverage_rate = covered / len(records)
+    empirical_error_sd = float(np.std(errors, ddof=1)) if len(errors) > 1 else 0.0
+    mean_posterior_sd = float(np.mean(posterior_sds))
     below = 0
     above = 0
     overlap = 0
@@ -641,6 +653,14 @@ def coverage_diagnostics(
         "interval_above_injected_count": above,
         "declared_miss_overlap_count": overlap,
         "mean_posterior_error_sd": float(np.mean(errors)),
+        "empirical_posterior_mean_error_sd": empirical_error_sd,
+        "mean_posterior_sd": mean_posterior_sd,
+        "empirical_error_to_posterior_sd_ratio": float(
+            empirical_error_sd / mean_posterior_sd
+        )
+        if mean_posterior_sd > 0
+        else None,
+        "coverage_gap_from_nominal_80": float(CREDIBLE_INTERVAL_LEVEL - coverage_rate),
         "median_ci80_width_sd": float(np.median(widths)),
         "mean_ci80_width_sd": float(np.mean(widths)),
         "missed_replication_seeds_sample": missed_sample,
@@ -1359,7 +1379,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
     parser.add_argument("--replications", type=int, default=None)
     parser.add_argument("--workers", type=int, default=None)
     parser.add_argument("--base-seed", type=int, default=DEFAULT_BASE_SEED)
-    parser.add_argument("--output", type=Path, default=DEFAULT_STUDY_RESULTS_PATH)
+    parser.add_argument("--output", type=Path, default=DEFAULT_CLI_RESULTS_PATH)
     parser.add_argument(
         "--calibration-only",
         action="store_true",
@@ -1380,6 +1400,14 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
         "instrument is shown to be biased for a cell)",
     )
     parser.add_argument(
+        "--calibration-cell",
+        action="append",
+        default=[],
+        metavar="CELL_ID",
+        help="limit sampler/checkpoint work to this calibration cell "
+        "(repeatable; diagnostic-only unless the full six-cell grid is run)",
+    )
+    parser.add_argument(
         "--note",
         action="append",
         default=[],
@@ -1391,9 +1419,18 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
         print(f"[calibration] {message}", flush=True)
 
     known_cell_ids = {cell.cell_id for cell in CALIBRATION_CELLS}
-    unknown = set(args.full_quality_cell) - known_cell_ids
+    unknown = (set(args.full_quality_cell) | set(args.calibration_cell)) - known_cell_ids
     if unknown:
         parser.error(f"unknown cell id(s): {sorted(unknown)}")
+    if args.calibration_cell and not (args.calibration_only or args.checkpoint_summary_only):
+        parser.error("--calibration-cell is diagnostic-only; use with --calibration-only or --checkpoint-summary-only")
+
+    active_cell_ids = set(args.calibration_cell)
+    active_cells = (
+        tuple(cell for cell in CALIBRATION_CELLS if cell.cell_id in active_cell_ids)
+        if active_cell_ids
+        else CALIBRATION_CELLS
+    )
 
     cell_fit_settings = {
         cell_id: dict(FULL_QUALITY_FIT_SETTINGS) for cell_id in args.full_quality_cell
@@ -1404,6 +1441,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
             replications_per_cell=args.replications,
             smoke=args.smoke,
             cell_fit_settings=cell_fit_settings,
+            cells=active_cells,
         )
         print(json.dumps(progress, indent=2, sort_keys=True))
         return 0
@@ -1415,6 +1453,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
         smoke=args.smoke,
         workers=args.workers,
         cell_fit_settings=cell_fit_settings,
+        cells=active_cells,
         log=log,
     )
     log(

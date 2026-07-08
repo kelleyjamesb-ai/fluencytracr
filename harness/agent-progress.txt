@@ -495,3 +495,9 @@
 - Completed: Finished the full-quality `effect-0.5-k16` calibration rebuild from ignored local checkpoints and kept it fail-closed: 200/200 unique replications completed, coverage stayed below gate at 0.72, and no proof result was committed. Hardened the calibration runner so partial/missing cells cannot appear passing and added miss-direction / interval-width diagnostics for the next model-method investigation.
 - Verified: refreshed ignored local result from checkpoints; calibration runner tests 10/10; full inference tests 124/124; confidence-engine build plus Python-to-TypeScript bridge tests 9/9 after `npm ci`; `git diff --check`.
 - Next focus: diagnose interval construction / model-synthetic-design undercoverage before rerunning proof; do not relax gates or commit a study result until every acceptance field passes.
+
+## 2026-07-07 (UTC) - Codex (Confidence inference suspect-cell reliability diagnostic)
+
+- Completed: Added diagnostic-only calibration cell selection, local-ignored default CLI results output, stable empty/non-empty coverage diagnostic shape, and stricter full-quality/model defaults (`draws=2000`, `tune=3000`, `chains=2`, `target_accept=0.999`, `max_treedepth=15`). Completed the predeclared `effect-0.5-k16` 400-replication diagnostic under the prior full-quality settings: coverage recovered to `298/400 = 0.745`, but sampler health exposed the true reliability blocker (`102/400` divergent fits, `10/400` max-treedepth fits, `290/400` sanity pass). No proof result was committed and no gate was relaxed.
+- Verified: `inference/.venv/bin/python -m pytest inference/tests/test_calibration_runner.py -q` (15/15); `inference/.venv/bin/python -m pytest inference/tests -q` (129/129); `git diff --check`.
+- Next focus: rerun the full six-cell acceptance grid under the stricter settings before committing any `calibration_study_results.json`; keep failed/local results ignored and non-authoritative.
