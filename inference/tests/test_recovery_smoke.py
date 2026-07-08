@@ -17,6 +17,7 @@ from fluencytracr_inference.constants import (
     INFERENCE_PROOF_RHAT_MAX,
 )
 from fluencytracr_inference.diagnostics import evaluate_gates
+from fluencytracr_inference.synthetic import GROUPINGS
 
 from conftest import RECOVERY_INJECTED_EFFECT_SD
 
@@ -38,6 +39,8 @@ def test_every_sampler_gate_passes(clean_diagnostics):
     sampler = clean_diagnostics.sampler
     names = [p.parameter_name for p in sampler.parameters]
     assert INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME in names
+    for grouping in GROUPINGS:
+        assert any(name.startswith(f"u_{grouping}[") for name in names)
     assert len(names) == len(set(names))
     for parameter in sampler.parameters:
         assert parameter.r_hat <= INFERENCE_PROOF_RHAT_MAX, parameter.parameter_name

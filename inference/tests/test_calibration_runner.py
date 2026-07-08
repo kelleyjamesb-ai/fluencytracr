@@ -11,6 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pymc as pm
 import pytest
 
 from fluencytracr_inference import calibration as cal
@@ -33,11 +34,13 @@ from fluencytracr_inference.diagnostics import (
 from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.model import (
     FitResult,
+    MODEL_CACHE_SIGNATURE,
     PRIOR_SENSITIVITY_SCALINGS,
     PriorSpec,
+    _build_model,
     fit_did_model,
 )
-from fluencytracr_inference.synthetic import generate_did_dataset
+from fluencytracr_inference.synthetic import GROUPINGS, generate_did_dataset
 
 
 EXPECTED_CELL_IDS = [cell.cell_id for cell in cal.CALIBRATION_CELLS]
@@ -77,14 +80,18 @@ def _fake_record(
     }
 
 
-def _fake_study():
+def _fake_study(*, include_unhealthy_null_records=False):
     records_by_cell = {}
     for cell in cal.CALIBRATION_CELLS:
         records = []
         for index in range(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN):
             covers = index < 160
             excludes_zero = cell.injected_effect_sd == 0.0 and index < 3
-            sane = not (cell.injected_effect_sd == 0.0 and index == 1)
+            sane = not (
+                include_unhealthy_null_records
+                and cell.injected_effect_sd == 0.0
+                and index == 1
+            )
             records.append(
                 _fake_record(
                     cell,
@@ -134,6 +141,19 @@ def test_default_results_path_is_local_ignored_during_iteration():
     assert cal.DEFAULT_STUDY_RESULTS_PATH.name == "calibration_study_results.json"
 
 
+def test_calibration_cache_key_binds_model_signature():
+    settings = dict(cal.FULL_QUALITY_FIT_SETTINGS)
+    expected_key = sha256_json(
+        {
+            "base_seed": cal.DEFAULT_BASE_SEED,
+            "fit_settings": settings,
+            "model_cache_signature": MODEL_CACHE_SIGNATURE,
+        }
+    )[:12]
+
+    assert cal._study_key(cal.DEFAULT_BASE_SEED, settings) == expected_key
+
+
 def test_full_quality_settings_match_reliable_model_defaults():
     signature = inspect.signature(fit_did_model)
     model_defaults = {
@@ -152,6 +172,32 @@ def test_full_quality_settings_match_reliable_model_defaults():
         "target_accept": 0.999,
         "max_treedepth": 15,
     }
+
+
+def test_model_group_effects_are_zero_sum_random_variables():
+    dataset = generate_did_dataset(seed=12, k=4, injected_effect_sd=0.5)
+    group_indices = {grouping: dataset.group_idx(grouping) for grouping in GROUPINGS}
+    group_sizes = {grouping: len(dataset.group_labels(grouping)) for grouping in GROUPINGS}
+
+    model = _build_model(
+        y=dataset.y,
+        se=dataset.se,
+        post=dataset.post,
+        treated=dataset.treated,
+        group_indices=group_indices,
+        group_sizes=group_sizes,
+        prior_spec=PriorSpec(),
+    )
+
+    free_rv_names = {rv.name for rv in model.free_RVs}
+    for grouping in GROUPINGS:
+        assert f"z_{grouping}" in free_rv_names
+        assert f"u_{grouping}" not in free_rv_names
+        assert f"u_{grouping}" in model.named_vars
+        z_draws = pm.draw(model.named_vars[f"z_{grouping}"], draws=4, random_seed=12)
+        u_draws = pm.draw(model.named_vars[f"u_{grouping}"], draws=4, random_seed=12)
+        assert np.allclose(z_draws.sum(axis=-1), 0.0)
+        assert np.allclose(u_draws.sum(axis=-1), 0.0)
 
 
 def test_main_defaults_to_local_results_path(monkeypatch):
@@ -272,6 +318,29 @@ def test_calibration_summaries_fail_closed_on_incomplete_cells():
     assert summary["pass"] is False
 
 
+def test_calibration_summaries_fail_closed_on_unhealthy_sampler_records():
+    study = _fake_study()
+    cell = cal.CALIBRATION_CELLS[0]
+    unhealthy = {
+        **study["records_by_cell"][cell.cell_id][0],
+        "sanity": {
+            **study["records_by_cell"][cell.cell_id][0]["sanity"],
+            "post_warmup_divergences": 1,
+            "pass": False,
+        },
+    }
+    study["records_by_cell"][cell.cell_id][0] = unhealthy
+
+    summary = cal.summarize_calibration_cells(study)[0]
+
+    assert summary["coverage_in_band"] is True
+    assert summary["sampler_health_pass"] is False
+    assert summary["sampler_health_gap"] == 1
+    assert summary["pass"] is False
+    scenario = cal.calibration_scenarios_from_summaries([summary])[0]
+    assert scenario["pass"] is False
+
+
 def test_calibration_completion_requires_every_cell():
     study = _fake_study()
     missing_cell = cal.CALIBRATION_CELLS[-1]
@@ -368,7 +437,9 @@ def test_empty_coverage_diagnostics_keep_stable_shape():
 
 
 def test_null_false_eligibility_pooling_math():
-    summary = cal.summarize_null_false_eligibility(_fake_study())
+    summary = cal.summarize_null_false_eligibility(
+        _fake_study(include_unhealthy_null_records=True)
+    )
     assert summary["null_effect_scenario_count"] == 400
     assert summary["false_eligible_count"] == 4
     assert summary["unscreened_ci_excludes_zero_count"] == 6

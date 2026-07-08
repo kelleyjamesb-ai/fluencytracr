@@ -134,6 +134,12 @@ then-current full-quality settings):
   productivity claims, real data, persistence, routes, or UI.
 
 Checkpoint files live under `inference/.calibration-cache/` and are ignored.
+Checkpoint namespaces bind the model cache signature plus base seed and fit
+settings, so a model-specification change cannot silently reuse stale sampler
+records from an older hierarchy. Calibration cell pass/fail also requires
+every replication's sampler-health sanity check to pass; coverage from a
+divergent or otherwise unhealthy sampler record is diagnostic evidence only,
+not proof authorization.
 Do not treat a generated `calibration_study_results.json` as proof unless all
 acceptance fields pass; failing results are diagnostic evidence, not
 authorization for customer-facing intervals or probability/confidence output.
@@ -164,11 +170,11 @@ Under `src/fluencytracr_inference/`:
   (violated pre-trend, mismatched/no comparison cohort, missing/suppressed
   windows, prior-dominated weak data) consumed by Phase B2.
 - `model.py` — the contract's implementation-grade equation: hierarchical
-  Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
-  function / cohort / organization effects, estimand `delta` sampled as
-  `contribution_alignment_effect`, normal continuous aggregate path with
-  identity link only (any other family raises `HoldViolation`), cohort-size
-  weighted known aggregate SE, seeded NUTS (2 chains, `cores=1`).
+  Bayesian DiD with zero-sum, non-centered, partially pooled expectation-path
+  / workflow / function / cohort / organization effects, estimand `delta`
+  sampled as `contribution_alignment_effect`, normal continuous aggregate path
+  with identity link only (any other family raises `HoldViolation`),
+  cohort-size weighted known aggregate SE, seeded NUTS (2 chains, `cores=1`).
 - `diagnostics.py` — every gate computed as a real value: R-hat, bulk/tail
   ESS, MCSE ratios, divergences, max-treedepth/BFMI backend warnings, the
   five fixed posterior predictive checks, prior sensitivity across the

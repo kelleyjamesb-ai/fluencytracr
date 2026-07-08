@@ -87,7 +87,7 @@ from .diagnostics import (
     run_prior_sensitivity,
 )
 from .hashing import sha256_json
-from .model import FitResult, fit_did_model
+from .model import MODEL_CACHE_SIGNATURE, FitResult, fit_did_model
 from .synthetic import (
     generate_did_dataset,
     generate_mismatched_comparison,
@@ -326,9 +326,19 @@ def run_replication(task: dict) -> dict:
 
 
 def _study_key(base_seed: int, fit_settings: dict) -> str:
-    """Cache namespace: base seed + fit settings (NOT replication count, so a
-    resumed run with more replications reuses every finished seed)."""
-    return sha256_json({"base_seed": int(base_seed), "fit_settings": fit_settings})[:12]
+    """Cache namespace: model signature + base seed + fit settings.
+
+    Replication count is intentionally excluded so a resumed run with more
+    replications reuses finished seeds. The model signature is included so a
+    model-spec change never silently reuses stale sampler records.
+    """
+    return sha256_json(
+        {
+            "base_seed": int(base_seed),
+            "fit_settings": fit_settings,
+            "model_cache_signature": MODEL_CACHE_SIGNATURE,
+        }
+    )[:12]
 
 
 def _cell_cache_path(cache_dir: Path, study_key: str, cell: CalibrationCell) -> Path:
@@ -679,6 +689,8 @@ def summarize_calibration_cells(study: dict) -> list[dict]:
         n = len(records)
         covered = sum(1 for r in records if r["covers_injected_effect"])
         coverage_rate = covered / n
+        sanity_pass_count = sum(1 for r in records if r["sanity"]["pass"])
+        sampler_health_pass = sanity_pass_count == n
         coverage_in_band = (
             INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN
             <= coverage_rate
@@ -708,9 +720,11 @@ def summarize_calibration_cells(study: dict) -> list[dict]:
                     "max": INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX,
                 },
                 "coverage_in_band": coverage_in_band,
-                "pass": complete and coverage_in_band,
+                "sampler_health_pass": sampler_health_pass,
+                "sampler_health_gap": n - sanity_pass_count,
+                "pass": complete and coverage_in_band and sampler_health_pass,
                 "ci_excludes_zero_count": sum(1 for r in records if r["ci_excludes_zero"]),
-                "sanity_pass_count": sum(1 for r in records if r["sanity"]["pass"]),
+                "sanity_pass_count": sanity_pass_count,
                 "contribution_estimate_eligible_count": sum(
                     1 for r in records if r["contribution_estimate_eligible"]
                 ),
