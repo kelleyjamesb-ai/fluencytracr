@@ -9,11 +9,10 @@ extras (unknown fields are rejected at the boundary).
 import json
 
 from fluencytracr_inference.artifact import (
+    canonical_floor_checks,
     emit_proof_artifact,
-    phase_b1_fixture_calibration_scenarios,
-    phase_b1_fixture_floor_checks,
-    phase_b1_fixture_null_checks,
 )
+from fluencytracr_inference.calibration import control_study_inputs
 from fluencytracr_inference.constants import (
     CONFIDENCE_MODEL_BLOCKED_USES,
     INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
@@ -191,13 +190,14 @@ def test_hash_bindings(eligible_artifact):
 def test_emission_deterministic_same_body_same_hash(
     clean_dataset, clean_fit, clean_diagnostics, eligible_artifact
 ):
+    calibration_scenarios, null_checks = control_study_inputs()
     again = emit_proof_artifact(
         dataset=clean_dataset,
         fit=clean_fit,
         diagnostics=clean_diagnostics,
-        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
-        null_checks=phase_b1_fixture_null_checks(),
-        floor_checks=phase_b1_fixture_floor_checks(),
+        calibration_scenarios=calibration_scenarios,
+        null_checks=null_checks,
+        floor_checks=canonical_floor_checks(),
         generated_at=FIXED_GENERATED_AT,
     )
     assert again == eligible_artifact

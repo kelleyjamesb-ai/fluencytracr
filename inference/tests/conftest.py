@@ -8,12 +8,8 @@ by the recovery smoke, artifact-shape, self-hash, and HOLD-path tests.
 
 import pytest
 
-from fluencytracr_inference.artifact import (
-    emit_proof_artifact,
-    phase_b1_fixture_calibration_scenarios,
-    phase_b1_fixture_floor_checks,
-    phase_b1_fixture_null_checks,
-)
+from fluencytracr_inference.artifact import canonical_floor_checks, emit_proof_artifact
+from fluencytracr_inference.calibration import control_study_inputs
 from fluencytracr_inference.diagnostics import compute_diagnostics
 from fluencytracr_inference.model import fit_did_model
 from fluencytracr_inference.synthetic import generate_did_dataset
@@ -43,12 +39,13 @@ def clean_diagnostics(clean_fit):
 
 @pytest.fixture(scope="session")
 def eligible_artifact(clean_dataset, clean_fit, clean_diagnostics):
+    calibration_scenarios, null_checks = control_study_inputs()
     return emit_proof_artifact(
         dataset=clean_dataset,
         fit=clean_fit,
         diagnostics=clean_diagnostics,
-        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
-        null_checks=phase_b1_fixture_null_checks(),
-        floor_checks=phase_b1_fixture_floor_checks(),
+        calibration_scenarios=calibration_scenarios,
+        null_checks=null_checks,
+        floor_checks=canonical_floor_checks(),
         generated_at=FIXED_GENERATED_AT,
     )

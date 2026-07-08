@@ -15,7 +15,7 @@ import pymc as pm
 import pytest
 
 from fluencytracr_inference import calibration as cal
-from fluencytracr_inference.artifact import run_proof
+from fluencytracr_inference.artifact import lockfile_hash, run_proof
 from fluencytracr_inference.constants import (
     INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
     INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
@@ -76,7 +76,13 @@ def _fake_record(
         "ci80_upper": ci80_upper,
         "covers_injected_effect": covers,
         "ci_excludes_zero": excludes_zero,
-        "sanity": {"pass": sane},
+        "sanity": {
+            "post_warmup_divergences": 0,
+            "max_treedepth_saturation_rate": 0.0,
+            "energy_bfmi_min": 0.9,
+            "estimand_r_hat": 1.0,
+            "pass": sane,
+        },
         "contribution_estimate_eligible": bool(sane and excludes_zero),
         "wall_time_seconds": 1.0,
     }
@@ -150,6 +156,7 @@ def test_calibration_cache_key_binds_model_signature():
             "base_seed": cal.DEFAULT_BASE_SEED,
             "calibration_sanity_ruleset_version": cal.CALIBRATION_SANITY_RULESET_VERSION,
             "fit_settings": settings,
+            "lockfile_hash": lockfile_hash(),
             "model_cache_signature": MODEL_CACHE_SIGNATURE,
         }
     )[:12]
@@ -537,6 +544,35 @@ def test_checkpoint_progress_summary_rejects_stale_cell_records(tmp_path):
     cal._append_checkpoint(path, stale)
 
     with pytest.raises(ValueError, match="checkpoint cell_id mismatch"):
+        cal.summarize_checkpoint_progress(
+            replications_per_cell=4,
+            cache_dir=tmp_path,
+            cell_fit_settings={cell.cell_id: dict(cal.FULL_QUALITY_FIT_SETTINGS)},
+            cells=(cell,),
+        )
+
+
+def test_checkpoint_progress_summary_rejects_inconsistent_sampler_health(tmp_path):
+    cell = cal.CALIBRATION_CELLS[0]
+    study_key = cal._study_key(cal.DEFAULT_BASE_SEED, cal.FULL_QUALITY_FIT_SETTINGS)
+    path = cal._cell_cache_path(tmp_path, study_key, cell)
+    record = _fake_record(
+        cell,
+        0,
+        covers=False,
+        excludes_zero=True,
+        ci80_lower=0.1,
+        ci80_upper=0.4,
+    )
+    record["sanity"] = {
+        **record["sanity"],
+        "post_warmup_divergences": 1,
+        "pass": True,
+    }
+    record["contribution_estimate_eligible"] = True
+    cal._append_checkpoint(path, record)
+
+    with pytest.raises(ValueError, match="checkpoint sampler sanity mismatch"):
         cal.summarize_checkpoint_progress(
             replications_per_cell=4,
             cache_dir=tmp_path,

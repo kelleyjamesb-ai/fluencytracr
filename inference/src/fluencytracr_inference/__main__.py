@@ -57,12 +57,11 @@ from types import SimpleNamespace
 import numpy as np
 
 from .artifact import (
+    canonical_floor_checks,
     emit_proof_artifact,
-    phase_b1_fixture_calibration_scenarios,
-    phase_b1_fixture_null_checks,
-    phase_b1_fixture_floor_checks,
     run_proof,
 )
+from .calibration import control_study_inputs
 from .constants import (
     INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
     INFERENCE_PROOF_PPC_STATISTIC_NAMES,
@@ -185,13 +184,14 @@ def _emit_fixture_mode(scenario: str, *, seed: int, generated_at: str) -> dict:
         dataset = generate_did_dataset(seed=seed, k=16, injected_effect_sd=0.5)
     else:  # hold: missing-windows negative control
         dataset = generate_missing_windows(seed=seed)
+    calibration_scenarios, null_checks = control_study_inputs()
     return emit_proof_artifact(
         dataset=dataset,
         fit=_bridge_fixture_fit(dataset, seed=seed),
         diagnostics=_bridge_fixture_diagnostics(),
-        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
-        null_checks=phase_b1_fixture_null_checks(),
-        floor_checks=phase_b1_fixture_floor_checks(),
+        calibration_scenarios=calibration_scenarios,
+        null_checks=null_checks,
+        floor_checks=canonical_floor_checks(),
         generated_at=generated_at,
     )
 

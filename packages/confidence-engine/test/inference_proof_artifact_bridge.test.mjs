@@ -10,19 +10,18 @@
 //
 // Two layers:
 //
-// 1. Committed fixtures (always run, CI-stable). Generated ONCE by the real
-//    Python harness (full seeded NUTS fit + real diagnostics). Regenerate
-//    from the repo root with the pinned environment:
+// 1. Committed bridge fixtures (always run, CI-stable). Regenerate from the
+//    repo root with the pinned environment:
 //
 //      PYTHONPATH=inference/src inference/.venv/bin/python \
-//        -m fluencytracr_inference --scenario eligible --full \
+//        -m fluencytracr_inference --scenario eligible \
 //        > packages/confidence-engine/test/fixtures/inference_proof_artifact_eligible.json
 //      PYTHONPATH=inference/src inference/.venv/bin/python \
-//        -m fluencytracr_inference --scenario hold --full \
+//        -m fluencytracr_inference --scenario hold \
 //        > packages/confidence-engine/test/fixtures/inference_proof_artifact_hold.json
 //
-//    (Minutes per run: real MCMC. The HOLD fixture is a fully real fit held
-//    by the naive-repeated-peeking control, so it names `peeking_control`.)
+//    These are fast deterministic bridge fixtures; the Python inference suite
+//    owns the full seeded NUTS fit + real diagnostics checks.
 //
 // 2. Live subprocess round trip (skipped with a clear message when the
 //    pinned `inference/.venv` environment is absent — mirrors the CI split:
@@ -157,7 +156,7 @@ function assertHoldRoundTrip(artifact, expectedFailingDiagnostic) {
 }
 
 // ---------------------------------------------------------------------------
-// Layer 1: committed fixtures (real Python fit, generated once — see header)
+// Layer 1: committed bridge fixtures (deterministic Python emitter output)
 // ---------------------------------------------------------------------------
 
 const eligibleFixture = loadFixture("inference_proof_artifact_eligible.json");
@@ -168,7 +167,7 @@ test("fixture: Python eligible artifact parses eligible with matching TS self-ha
 });
 
 test("fixture: Python HOLD artifact parses as valid HOLD naming the failing diagnostic", () => {
-  assertHoldRoundTrip(holdFixture, "peeking_control");
+  assertHoldRoundTrip(holdFixture, "missing_or_suppressed_windows");
 });
 
 test("fixture: forged numeric field without hash update is rejected", () => {

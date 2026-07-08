@@ -134,9 +134,10 @@ then-current full-quality settings):
   productivity claims, real data, persistence, routes, or UI.
 
 Checkpoint files live under `inference/.calibration-cache/` and are ignored.
-Checkpoint namespaces bind the model cache signature plus base seed and fit
-settings, so a model-specification change cannot silently reuse stale sampler
-records from an older hierarchy. Calibration cell pass/fail also requires
+Checkpoint namespaces bind the model cache signature, lockfile hash, base seed,
+and fit settings, so a model-specification or sampler-environment change cannot
+silently reuse stale sampler records from an older hierarchy. Calibration cell
+pass/fail also requires
 every replication's sampler-health sanity check to pass; coverage from a
 divergent or otherwise unhealthy sampler record is diagnostic evidence only,
 not proof authorization.

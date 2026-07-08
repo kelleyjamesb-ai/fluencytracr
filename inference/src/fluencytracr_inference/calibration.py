@@ -67,6 +67,7 @@ from .artifact import (
     DEFAULT_STUDY_RESULTS_PATH,
     canonical_floor_checks,
     emit_proof_artifact,
+    lockfile_hash,
 )
 from .constants import (
     CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR,
@@ -342,6 +343,7 @@ def _study_key(base_seed: int, fit_settings: dict) -> str:
             "base_seed": int(base_seed),
             "calibration_sanity_ruleset_version": CALIBRATION_SANITY_RULESET_VERSION,
             "fit_settings": fit_settings,
+            "lockfile_hash": lockfile_hash(),
             "model_cache_signature": MODEL_CACHE_SIGNATURE,
         }
     )[:12]
@@ -403,6 +405,42 @@ def _validate_checkpoint_record(
     if bool(record.get("ci_excludes_zero")) != excludes_zero:
         raise ValueError(
             f"checkpoint ci_excludes_zero flag mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+    sanity = record.get("sanity")
+    if not isinstance(sanity, dict):
+        raise ValueError(
+            f"checkpoint sampler sanity mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+    try:
+        divergences = int(sanity["post_warmup_divergences"])
+        saturation_rate = float(sanity["max_treedepth_saturation_rate"])
+        bfmi_min = float(sanity["energy_bfmi_min"])
+        estimand_r_hat = float(sanity["estimand_r_hat"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"checkpoint sampler sanity mismatch in {path} "
+            f"for replication_index {replication_index}"
+        ) from exc
+    expected_sanity_pass = bool(
+        divergences == 0
+        and math.isfinite(saturation_rate)
+        and saturation_rate == 0.0
+        and math.isfinite(bfmi_min)
+        and bfmi_min >= ENERGY_BFMI_WARNING_THRESHOLD
+        and math.isfinite(estimand_r_hat)
+        and estimand_r_hat <= INFERENCE_PROOF_RHAT_MAX
+    )
+    if sanity.get("pass") is not expected_sanity_pass:
+        raise ValueError(
+            f"checkpoint sampler sanity mismatch in {path} "
+            f"for replication_index {replication_index}"
+        )
+    expected_eligible = bool(expected_sanity_pass and excludes_zero)
+    if bool(record.get("contribution_estimate_eligible")) != expected_eligible:
+        raise ValueError(
+            f"checkpoint eligibility flag mismatch in {path} "
             f"for replication_index {replication_index}"
         )
     return replication_index
