@@ -507,3 +507,9 @@
 - Completed: Hardened the PyMC hierarchy to use zero-sum, non-centered group deviations; sampler diagnostics now include both raw `z_*` offsets and scaled `u_*` group effects; calibration cache keys bind the model cache signature; and calibration cells fail closed on unhealthy sampler replications even if coverage is in band. Docs/contracts now match the zero-sum/non-centered model and fail-closed cache/calibration behavior.
 - Verified: calibration runner tests 18/18; recovery sampler gate pass; full inference tests 132/132; OpenSpec strict validation; docs contract sweep; confidence-engine build; inference proof bridge tests 9/9; V1 governance gates; semantic drift guard; `git diff --check`.
 - Next focus: run a fresh-cache full six-cell acceptance grid under the final model signature and strict settings before committing any `calibration_study_results.json`; local ignored results remain diagnostic only.
+
+## 2026-07-08 (UTC) - Codex (Confidence inference calibration-profile smoke)
+
+- Completed: Raised the calibration-study profile to `draws=1000`, `tune=2000`, `chains=2`, `target_accept=0.999`, `max_treedepth=15` after the 500-draw smoke found one estimand R-hat failure. The exact failing seed passed under 1000 retained draws, and a fresh six-cell smoke grid completed 150/150 replications with 150/150 sampler sanity passes. Smoke coverage remains diagnostic only at n=25.
+- Verified: calibration runner tests 19/19; full inference tests 133/133; docs contract sweep; V1 governance gates; semantic drift guard; `git diff --check`.
+- Next focus: resume the full 200-replication six-cell calibration grid under the 1000-draw calibration profile and commit no proof result unless every acceptance field passes.

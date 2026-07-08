@@ -87,9 +87,9 @@ cd inference
 .venv/bin/python -m fluencytracr_inference.calibration
 ```
 
-If a cell is shown to be biased under the cheap calibration instrument, rerun
-that cell with the full-quality sampler settings instead of relaxing the
-coverage gate:
+If a cell is shown to need artifact-quality sampling rather than the standard
+calibration reliability profile, rerun that cell with the full-quality sampler
+settings instead of relaxing the coverage gate:
 
 ```bash
 cd inference

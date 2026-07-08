@@ -7,16 +7,16 @@ Three study layers, all seeded and synthetic-only:
 
 1. **Calibration cells** — injected effects {0, 0.2, 0.5} SD x floor-eligible
    cohort counts k in {12, 16} (6 cells), >= 200 seeded replications per cell.
-   Each replication generates a dataset, runs a cheap seeded NUTS fit
-   (2 chains x 500 draws, target_accept 0.95 — sufficient for coverage;
+   Each replication generates a dataset, runs a calibration-profile seeded
+   NUTS fit (2 chains x 1000 draws after 2000 warmup, target_accept 0.999;
    coverage does not gate on the ESS >= 400 production gate), and records
    whether the 80% credible interval covers the injected effect. Per-cell
    observed coverage must land in [74%, 86%], with the binomial 95%
    uncertainty interval around observed coverage reported alongside.
 2. **Null false-eligibility** — pooled over the injected-effect-0 cells, the
    rate of replications that would have been contribution-estimate-ELIGIBLE
-   must be <= 5%. See :func:`cheap_fit_sanity` for the documented cheap-fit
-   analogue of the artifact's eligibility definition.
+   must be <= 5%. See :func:`cheap_fit_sanity` for the documented calibration
+   sanity analogue of the artifact's eligibility definition.
 3. **Floor study and negative controls** — k=4 replications proving
    artifact-level floor rejection, k=8 replications proving the internal-only
    path (valid but below the k >= 10 series display floor), plus a few
@@ -108,15 +108,18 @@ DEFAULT_BASE_SEED = 20260706
 DEFAULT_REPLICATIONS_PER_CELL = INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
 SMOKE_REPLICATIONS_PER_CELL = 25
 
-# Cheap-fit settings (Phase B1 finding: calibration-sized fits at 2 chains x
-# ~500 draws / target_accept 0.95 are sufficient for coverage; coverage does
-# not gate on the production ESS >= 400 requirement).
+# Calibration-profile settings. The historical constant name is retained for
+# compatibility with the study helpers, but this is no longer a loose sampler:
+# the zero-sum/non-centered model's hard-seed probe is clean at target_accept
+# 0.999 after 2000 warmup draws. Coverage does not gate on the production
+# ESS >= 400 requirement, so retained draws stay below artifact-quality fits
+# while still clearing hard-seed estimand R-hat.
 CHEAP_FIT_SETTINGS = {
-    "draws": 500,
-    "tune": 500,
+    "draws": 1000,
+    "tune": 2000,
     "chains": 2,
-    "target_accept": 0.95,
-    "max_treedepth": 12,
+    "target_accept": 0.999,
+    "max_treedepth": 15,
 }
 # Full-quality (production) fit settings, used to re-measure any cell where
 # the cheap instrument is shown to be biased (see the k=16 undercoverage
@@ -187,11 +190,11 @@ def derive_replication_seed(base_seed: int, cell_index: int, replication_index: 
     return base_seed + (cell_index + 1) * 1_000_000 + replication_index
 
 
-# --- Cheap-fit sanity: the documented eligibility analogue ---------------------
+# --- Calibration sanity: the documented eligibility analogue ---------------------
 
 
 def cheap_fit_sanity(fit: FitResult) -> dict:
-    """Cheap-fit sanity checks: the calibration-study analogue of eligibility.
+    """Calibration sanity checks: the study analogue of eligibility.
 
     ANALOGY (documented per task 3.3): the artifact defines
     contribution-estimate eligibility as ``governance_state.state ==
@@ -203,17 +206,17 @@ def cheap_fit_sanity(fit: FitResult) -> dict:
     the fixed-horizon peeking control passes — at which point
     ``comparison_supported_contribution_estimate_authorized`` is true.
 
-    The closest CHEAP-FIT analogue used for null false-eligibility keeps the
-    per-fit sampler-health gates that a cheap fit can meaningfully satisfy
-    and drops only what is structurally either impossible or trivially true
-    at calibration settings:
+    The calibration-profile analogue used for null false-eligibility keeps
+    the per-fit sampler-health gates that a calibration fit can meaningfully
+    satisfy and drops only what is structurally either impossible or trivially
+    true at calibration settings:
 
     - KEPT: post-warmup divergences == 0; no max-treedepth saturation; no
       E-BFMI backend warning; estimand R-hat <= 1.01. Any of these failing
       would force the real artifact to HOLD, so the replication could never
       have produced an eligible artifact.
     - DROPPED: the bulk/tail ESS >= 400 chain-total and MCSE gates — a
-      2-chain x 500-draw cheap fit cannot reliably clear chain-total 400
+      2-chain x 1000-draw calibration fit is not required to clear chain-total 400
       ESS by construction, so keeping them would make the null screen
       vacuous (every replication ineligible) instead of measuring inference
       behavior; the production fit (2 x 2000 draws) clears them routinely.
@@ -277,7 +280,7 @@ def _worker_init() -> None:  # pragma: no cover - runs in child processes
 
 
 def run_replication(task: dict) -> dict:
-    """One seeded calibration replication: generate, cheap-fit, record.
+    """One seeded calibration replication: generate, fit, record.
 
     Pure function of ``task`` (seed-deterministic), so replication results
     are identical regardless of worker scheduling or resume order.
@@ -315,7 +318,7 @@ def run_replication(task: dict) -> dict:
         "covers_injected_effect": bool(lower <= effect <= upper),
         "ci_excludes_zero": bool(ci_excludes_zero),
         "sanity": sanity,
-        # Contribution-estimate eligibility (cheap-fit analogue, see
+        # Contribution-estimate eligibility (calibration analogue, see
         # cheap_fit_sanity docstring); only pooled over effect-0 cells.
         "contribution_estimate_eligible": bool(sanity["pass"] and ci_excludes_zero),
         "wall_time_seconds": float(time.perf_counter() - started),
@@ -786,7 +789,7 @@ def all_calibration_cells_pass(study: dict, cell_summaries: list[dict]) -> bool:
 def summarize_null_false_eligibility(study: dict) -> dict:
     """Pooled null (injected effect 0) false-eligibility summary.
 
-    A null replication counts as falsely eligible iff its cheap-fit sanity
+    A null replication counts as falsely eligible iff its calibration sanity
     checks pass AND its 80% CI excludes 0 (see :func:`cheap_fit_sanity` for
     the documented analogue of artifact eligibility). The unscreened
     CI-excludes-zero rate is reported alongside for transparency.
@@ -1410,8 +1413,8 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
         default=[],
         metavar="CELL_ID",
         help="measure this cell with FULL_QUALITY_FIT_SETTINGS instead of the "
-        "cheap calibration settings (repeatable; use when the cheap "
-        "instrument is shown to be biased for a cell)",
+        "standard calibration reliability profile (repeatable; use when a "
+        "cell is shown to require artifact-quality sampling)",
     )
     parser.add_argument(
         "--calibration-cell",

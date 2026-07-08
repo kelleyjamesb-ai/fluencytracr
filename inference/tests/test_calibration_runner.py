@@ -154,6 +154,16 @@ def test_calibration_cache_key_binds_model_signature():
     assert cal._study_key(cal.DEFAULT_BASE_SEED, settings) == expected_key
 
 
+def test_calibration_fit_settings_match_hard_seed_reliability_profile():
+    assert cal.CHEAP_FIT_SETTINGS == {
+        "draws": 1000,
+        "tune": 2000,
+        "chains": 2,
+        "target_accept": 0.999,
+        "max_treedepth": 15,
+    }
+
+
 def test_full_quality_settings_match_reliable_model_defaults():
     signature = inspect.signature(fit_did_model)
     model_defaults = {
