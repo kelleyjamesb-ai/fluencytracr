@@ -134,7 +134,7 @@ identity and join coverage are validated.
 | `WORKFLOW_METADATA_HOLD` | GCE workflow metadata does not expose reuse reliably | Do not interpret reuse spread |
 | `SKILL_READ_EVIDENCE_AVAILABLE` | Agent span logs may expose skill reads | Run aggregate availability tests |
 | `SKILL_READ_UNGOVERNED` | Reads lack governed identity or clean attribution | Caveat only |
-| `GOVERNED_REUSE_READY` | Canonical identity, versioning, invocation mode, and joins are stable | Future reuse-depth candidate |
+| `REUSE_REVIEW_HELD` | Future validation candidate only; no reusable leverage interpretation is authorized | Hold for later exact-scope validation |
 
 Current dogfood state is `SKILL_READ_EVIDENCE_AVAILABLE`, with reusable leverage
 still held until the agent-span path proves governed identity and join coverage.

@@ -788,7 +788,7 @@ function buildEvidenceScenarioPlan(params: {
     ["ai_activity", "workflow", "trust", "suppression"].some(
       (lane) => coverageState(readiness, lane) === "PRESENT"
     ) && "FluencyTracr aggregate evidence",
-    opportunities.length > 0 && "Blueprint value route mapped to outcome and ROI opportunities",
+    opportunities.length > 0 && "Blueprint value route mapped to outcome value hypotheses",
     acceptedEvidence && "Accepted customer outcome export"
   ]);
 
@@ -1189,7 +1189,7 @@ function buildSponsorDecisionLoop(params: {
         "Keep stronger ROI and outcome language out of the readout until evidence and assumptions support it.",
       action:
         "Carry blocked language and caveats into the scenario review before sponsor sharing.",
-      feedsNext: ["ROI Scenario Readiness", "Executive Operating Packet"]
+      feedsNext: ["Value Scenario Readiness", "Executive Operating Packet"]
     },
     {
       label: "Return to Blueprint",
@@ -2264,12 +2264,12 @@ function deriveStages(params: {
     },
     {
       key: "opportunity",
-      label: "ROI / Value Opportunity Map",
+      label: "Value Hypothesis Map",
       state: opportunities.length > 0 ? "done" : libraries.length > 0 ? "attention" : "todo",
       detail:
         opportunities.length > 0
-          ? `${opportunities.length} potential ROI/value point${opportunities.length === 1 ? "" : "s"} mapped.`
-          : "Outcome signals are needed before ROI opportunities can be mapped.",
+          ? `${opportunities.length} potential value point${opportunities.length === 1 ? "" : "s"} mapped.`
+          : "Outcome signals are needed before value hypotheses can be mapped.",
       objectLabel: "Outcome signals + value routes",
       captured: compact([
         opportunities.length > 0 && "Potential cost, capacity, quality, risk, experience, or growth routes"
@@ -2295,12 +2295,12 @@ function deriveStages(params: {
           : scenarios.length > 0
             ? "Scenario bands and assumptions are available."
           : opportunities.length > 0
-            ? "ROI opportunities are mapped. Build a governed scenario."
-            : "Scenario depends on ROI opportunity mapping.",
+            ? "Value hypotheses are mapped. Build a governed scenario."
+            : "Scenario depends on value-hypothesis mapping.",
       objectLabel: "Modeled value, not ROI proof",
       captured: compact([
         scenarios.length > 0 && "Scenario bands and customer-owned assumptions",
-        roiScenarios.length > 0 && "Governed ROI scenario readiness"
+        roiScenarios.length > 0 && "Governed value scenario readiness"
       ]),
       missing: compact([
         scenarios.length === 0 && roiScenarios.length === 0 &&

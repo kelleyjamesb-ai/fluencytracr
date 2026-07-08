@@ -915,10 +915,10 @@ const buildApprovalGateExplanation = (snapshot: MethodologySnapshotEntry) => {
     return `This methodology is ${snapshot.approval_state}; financial and customer-facing value claims are suppressed.`;
   }
   if (snapshot.approval_state === "customer_safe") {
-    return "This methodology is customer-safe; customer-facing financial language can be emitted when evidence supports it.";
+    return "This methodology is customer-safe for internal review language only; customer-facing economic output remains blocked unless a later exact-scope governance decision authorizes it.";
   }
   if (snapshot.approval_state === "finance_approved") {
-    return "This methodology is finance-approved; financial language is limited to internal-only use until customer-safe approval exists.";
+    return "This methodology is finance-approved; financial language is limited to internal-only use unless a later exact-scope governance decision authorizes customer-facing economic output.";
   }
   return `This methodology is ${snapshot.approval_state}; it can support directional or caveated review but not customer-facing ROI/payback.`;
 };
@@ -928,10 +928,10 @@ const buildFinancialClaimEffect = (snapshot: MethodologySnapshotEntry) => {
     return "suppressed: financial claim language is suppressed for this methodology snapshot.";
   }
   if (snapshot.approval_state === "customer_safe" && snapshot.customer_safe_claim_effect === "enables_customer_safe") {
-    return "customer-safe: customer-facing ROI/payback can be enabled when evidence supports it.";
+    return "customer-safe: internal financial-review language can be prepared with caveats; customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it.";
   }
   if (snapshot.approval_state === "finance_approved") {
-    return "internal-only: customer-facing ROI/payback requires customer-safe methodology approval.";
+    return "internal-only: customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it.";
   }
   if (snapshot.customer_safe_claim_effect === "enables_caveated") {
     return "caveated: methodology can support assumption-aware value language, not financial claims.";
@@ -950,7 +950,7 @@ const buildBlockedClaimEffects = (snapshot: MethodologySnapshotEntry) => {
     return ["Do not generalize customer-safe value language beyond the frozen snapshot, window, and approved assumptions."];
   }
   if (snapshot.approval_state === "finance_approved") {
-    return ["Customer-facing ROI/payback requires customer-safe methodology approval."];
+    return ["Customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it."];
   }
   return ["ROI, payback, and finance-approved value language remain blocked until methodology approval is upgraded."];
 };
@@ -1081,13 +1081,13 @@ const buildMethodologyUpgradeActions = (snapshot: MethodologyReviewSnapshot) => 
   if (decisionState === "customer-safe") {
     return [
       "Keep the frozen report snapshot, approved window, assumptions, and caveats attached to any customer-facing use.",
-      "Monitor expiration and re-review before extending the claim to new surfaces, workflows, or reporting windows."
+      "Use only for internal review unless a later exact-scope governance decision authorizes customer-facing economic output."
     ];
   }
 
   if (decisionState === "internal-only") {
     return [
-      "Request customer-safe methodology approval before using ROI, payback, or financial value language with customers.",
+      "Do not use ROI, payback, or financial value language with customers without a later exact-scope governance decision.",
       "Attach the frozen report snapshot, dominant assumptions, sensitivity tests, and caveats for reviewer sign-off.",
       "Re-run Strongest Safe Claim after the methodology approval state is upgraded."
     ];
@@ -1251,7 +1251,7 @@ const applyMethodologyClaimGate = (
       claimReadiness: isFinancialClaim ? capClaimReadiness(readiness, "internal_only") : readiness,
       safeClaimLanguage,
       blockedMethodologyClaims: isFinancialClaim
-        ? ["Customer-facing ROI/payback requires a selected methodology snapshot with customer_safe approval."]
+        ? ["No methodology snapshot was selected; customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it."]
         : [],
       methodologyCaveats: isFinancialClaim
         ? ["No methodology snapshot was selected; customer-facing financial language is not enabled."]
@@ -1291,7 +1291,7 @@ const applyMethodologyClaimGate = (
 
     if (methodologySnapshot.approval_state === "finance_approved") {
       claimReadiness = capClaimReadiness(claimReadiness, "internal_only");
-      blockedMethodologyClaims.push("Customer-facing ROI/payback requires customer-safe methodology approval.");
+      blockedMethodologyClaims.push("Customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it.");
     } else {
       claimReadiness = capClaimReadiness(claimReadiness, "caveated");
       blockedMethodologyClaims.push(
@@ -1455,7 +1455,7 @@ export function generateStrongestSafeClaim(raw: unknown): StrongestSafeClaim {
       blocks: evidenceType === "financial_model" ? "finance_approved" : candidate.target_maturity_stage,
       action:
         evidenceType === "financial_model"
-          ? "Attach a finance-approved value model before ROI, payback, or finance-approved value language is enabled."
+          ? "Attach a finance-approved value model before internal financial-review language is prepared; customer-facing ROI/payback remains blocked."
           : `Collect ${evidenceType} evidence before upgrading this hypothesis to ${candidate.target_maturity_stage}.`
     }));
 

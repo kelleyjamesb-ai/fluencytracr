@@ -49,10 +49,7 @@ const FluencyEventBaseSchema = z.object({
   /** Platform agent/workflow run identifier (canonical when present). */
   run_id: z.string().min(1).optional(),
   /** Assistant/workflow run correlation (secondary to run_id). */
-  workflow_run_id: z.string().min(1).optional(),
-  /** Optional lineage; must not contain raw content (opaque IDs only). */
-  agent_run_id: z.string().min(1).optional(),
-  chat_id: z.string().min(1).optional()
+  workflow_run_id: z.string().min(1).optional()
 });
 
 export const AiOutputDispositionEventSchema = FluencyEventBaseSchema.extend({
@@ -329,8 +326,7 @@ export type WorkflowVisibilityPolicyConfig = z.infer<typeof WorkflowVisibilityPo
 
 export const WorkflowRegistryVersionCreateSchema = z.object({
   risk_class: RiskClassSchema,
-  change_reason: z.string().min(1).optional(),
-  policy_config: WorkflowVisibilityPolicyConfigSchema.optional()
+  change_reason: z.string().min(1).optional()
 }).strict();
 export type WorkflowRegistryVersionCreate = z.infer<typeof WorkflowRegistryVersionCreateSchema>;
 
@@ -338,8 +334,6 @@ export const WorkflowRegistryVersionRecordSchema = z.object({
   version: z.number().int().positive(),
   risk_class: RiskClassSchema,
   change_reason: z.string().nullable(),
-  actor_sub: z.string().nullable(),
-  actor_role: z.string().nullable(),
   policy_config: WorkflowVisibilityPolicyConfigSchema.nullable(),
   created_at: z.string().min(1)
 }).strict();
@@ -381,8 +375,6 @@ export const WorkflowRegistryAuditEventSchema = z.object({
   workflow_id: z.string().min(1),
   version: z.number().int().positive(),
   action: z.enum(["REGISTERED", "BASELINE_RESET"]),
-  actor_sub: z.string().nullable(),
-  actor_role: z.string().nullable(),
   metadata: z.record(z.unknown()),
   created_at: z.string().min(1)
 }).strict();

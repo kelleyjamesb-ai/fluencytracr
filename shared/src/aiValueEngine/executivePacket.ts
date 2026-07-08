@@ -780,7 +780,7 @@ function defaultAllowedEbitaPhrases(status: ExecutiveEbitaImpactSummary["status"
     ];
   }
   return [
-    "This economic output is approved for customer-facing use within the stated scope and caveats."
+    "This economic output remains internal-review only; customer-facing use requires a later exact-scope governance decision."
   ];
 }
 
@@ -1081,12 +1081,6 @@ function validateEbitaImpactSummary(summary: any, gaps: string[]): void {
     summary.status !== "CUSTOMER_FACING_APPROVED"
   ) {
     gaps.push("ebita_impact_summary.customer_facing_allowed requires CUSTOMER_FACING_APPROVED status");
-  }
-  if (
-    summary.status === "CUSTOMER_FACING_APPROVED" &&
-    summary.customer_facing_allowed !== true
-  ) {
-    gaps.push("ebita_impact_summary.customer_facing_allowed must be true for CUSTOMER_FACING_APPROVED");
   }
   if (
     summary.status !== "NO_FINANCIAL_TRANSLATION" &&

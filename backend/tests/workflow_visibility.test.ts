@@ -33,10 +33,10 @@ const policy = (
   changeReason: "seed",
   changedByUser: "test-user",
   changedByRole: "ADMIN",
-  windowDaysLow: 30,
-  windowDaysMedium: 30,
+    windowDaysLow: 60,
+    windowDaysMedium: 60,
   windowDaysHigh: 60,
-  minEventsLow: 3,
+    minEventsLow: 5,
   minEventsMedium: 5,
   minEventsHigh: 8,
   requireVerificationHigh: true,
@@ -119,7 +119,7 @@ describe("computeWorkflowVisibility", () => {
     expect(state).toBe("NOT_SHOWN_SAFETY");
   });
 
-  it("uses risk class from registry and ignores event risk for thresholding", () => {
+  it("keeps low-risk workflows hidden until at least five governed events are present", () => {
     const state = computeWorkflowVisibility("workflow-1", "60d", {
       now,
       registryEntry: registry({ riskClass: "low" }),
@@ -127,12 +127,49 @@ describe("computeWorkflowVisibility", () => {
       fluencyEvents: [
         event({ event_id: "evt-1", risk_class: "high", verification_present: false }),
         event({ event_id: "evt-2", risk_class: "high", verification_present: false }),
-        event({ event_id: "evt-3", risk_class: "high", verification_present: false })
+        event({ event_id: "evt-3", risk_class: "high", verification_present: false }),
+        event({ event_id: "evt-4", risk_class: "high", verification_present: false })
+      ],
+      v0Signals: []
+    });
+
+    expect(state).toBe("NOT_ENOUGH_DATA_YET");
+  });
+
+  it("uses risk class from registry and ignores event risk for thresholding after gates clear", () => {
+    const state = computeWorkflowVisibility("workflow-1", "60d", {
+      now,
+      registryEntry: registry({ riskClass: "low" }),
+      policyConfig: policy({ minEventsLow: 1, windowDaysLow: 1 }),
+      fluencyEvents: [
+        event({ event_id: "evt-1", risk_class: "high", verification_present: false }),
+        event({ event_id: "evt-2", risk_class: "high", verification_present: false }),
+        event({ event_id: "evt-3", risk_class: "high", verification_present: false }),
+        event({ event_id: "evt-4", risk_class: "high", verification_present: false }),
+        event({ event_id: "evt-5", risk_class: "high", verification_present: false })
       ],
       v0Signals: []
     });
 
     expect(state).toBe("VISIBLE");
+  });
+
+  it("ignores caller-supplied visibility policy values that weaken compiled gates", () => {
+    const state = computeWorkflowVisibility("workflow-1", "30d", {
+      now,
+      registryEntry: registry({ riskClass: "low" }),
+      policyConfig: policy({ minEventsLow: 1, windowDaysLow: 1 }),
+      fluencyEvents: [
+        event({ event_id: "evt-1", risk_class: "low", verification_present: false }),
+        event({ event_id: "evt-2", risk_class: "low", verification_present: false }),
+        event({ event_id: "evt-3", risk_class: "low", verification_present: false }),
+        event({ event_id: "evt-4", risk_class: "low", verification_present: false }),
+        event({ event_id: "evt-5", risk_class: "low", verification_present: false })
+      ],
+      v0Signals: []
+    });
+
+    expect(state).toBe("NOT_ENOUGH_DATA_YET");
   });
 
   it("keeps sparse high-risk workflows at NOT_ENOUGH_DATA_YET for 30d windows", () => {
@@ -219,10 +256,12 @@ describe("computeWorkflowVisibilitySummary", () => {
     ];
 
     const events = [
-      event({ event_id: "evt-a", workflow_id: "wf-visible", verification_present: true }),
-      event({ event_id: "evt-b", workflow_id: "wf-visible", verification_present: true }),
-      event({ event_id: "evt-c", workflow_id: "wf-visible", verification_present: true }),
-      event({ event_id: "evt-d", workflow_id: "wf-data", verification_present: true })
+	      event({ event_id: "evt-a", workflow_id: "wf-visible", verification_present: true }),
+	      event({ event_id: "evt-b", workflow_id: "wf-visible", verification_present: true }),
+	      event({ event_id: "evt-c", workflow_id: "wf-visible", verification_present: true }),
+	      event({ event_id: "evt-d", workflow_id: "wf-visible", verification_present: true }),
+	      event({ event_id: "evt-e", workflow_id: "wf-visible", verification_present: true }),
+	      event({ event_id: "evt-f", workflow_id: "wf-data", verification_present: true })
     ];
 
     const signals = [

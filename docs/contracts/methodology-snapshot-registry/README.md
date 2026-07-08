@@ -1,6 +1,6 @@
 # Methodology Snapshot Registry
 
-The Methodology Snapshot Registry records how an AI value estimate was produced before any claim language is generated. It keeps FluencyTracr positioned as the evidence governance layer: Glean or another source system may estimate value, while FluencyTracr decides whether the resulting claim is admissible, caveated, internal-only, customer-safe, or suppressed.
+The Methodology Snapshot Registry records how an AI value estimate was produced before any claim language is generated. It keeps FluencyTracr positioned as the evidence governance layer: Glean or another source system may estimate value, while FluencyTracr decides whether the resulting claim is admissible, caveated, internal-only, or suppressed. Customer-facing economic output remains blocked unless a later exact-scope governance decision authorizes it.
 
 ## Contract
 
@@ -12,7 +12,7 @@ The Methodology Snapshot Registry records how an AI value estimate was produced 
 
 | Approval state | Claim effect |
 | --- | --- |
-| `customer_safe` | Can enable customer-facing ROI, payback, or finance-approved value language when evidence supports it |
+| `customer_safe` | Can prepare internal financial-review language with caveats; does not authorize customer-facing ROI, payback, or economic output |
 | `finance_approved` | Can support internal-only financial language |
 | `data_science_approved` / `internal_review` | Supports directional or caveated methodology language, not ROI |
 | `draft` / `rejected` / `expired` | Suppresses or blocks financial value claims |
@@ -25,12 +25,12 @@ It also rejects duplicate methodology snapshot IDs, surfaces listed as both cove
 
 ## Nielsen-Style Fixture
 
-`examples/nielsen-style-methodology-snapshots.json` includes Glean Time-Saves MVP as a source-system snapshot, an internal Nielsen-style ROI/payback fixture, an agentic work placeholder method, and a suppressed unapproved value model.
+`examples/nielsen-style-methodology-snapshots.json` includes Glean Time-Saves MVP as a source-system snapshot, an internal Nielsen-style financial-review fixture, an agentic work placeholder method, and a suppressed unapproved value model.
 
-The intent is to show that ROI is the final claim layer, not the core product object.
+The intent is to show that financial review is a held downstream claim layer, not the core product object.
 
 ## Review Workspace
 
 The Methodology Review Workspace is the human preflight layer for this registry. It summarizes each snapshot by approval state, customer-safe claim effect, covered/excluded surfaces, high-sensitivity assumptions, caveats, blocked claim effects, sensitivity tests, and example claim language.
 
-In the frontend prototype, reviewers can open `/methodology-review` to inspect why a snapshot enables customer-safe language, stays internal-only, remains caveated, or is suppressed. The workspace is read-only in this slice; Strongest Safe Claim remains the enforcement layer.
+In the frontend prototype, reviewers can open `/methodology-review` to inspect why a snapshot stays internal-only, remains caveated, or is suppressed. The workspace is read-only in this slice; Strongest Safe Claim remains the enforcement layer, and customer-facing economic output remains blocked.

@@ -84,7 +84,7 @@ describe("Methodology Snapshot Registry contract", () => {
     expect(MethodologySnapshotRegistrySchema.safeParse(unsafe).success).toBe(false);
   });
 
-  it("requires customer-safe methodology approval before enabling customer-safe claims", () => {
+  it("requires exact-scope governance before enabling customer-safe claims", () => {
     const broken = {
       ...methodologySnapshotRegistry,
       snapshots: [
@@ -129,7 +129,7 @@ describe("Strongest Safe Claim methodology governance", () => {
     expect(result.strongest_claim.claim_readiness).toBe("internal_only");
     expect(result.strongest_claim.methodology_snapshot_id).toBeUndefined();
     expect(result.strongest_claim.methodology_caveats.join(" ")).toMatch(/No methodology snapshot was selected/i);
-    expect(result.blocked_methodology_claims.join(" ")).toMatch(/selected methodology snapshot/i);
+    expect(result.blocked_methodology_claims.join(" ")).toMatch(/No methodology snapshot was selected/i);
   });
 
   it("caps financial claims at internal-only when methodology is finance-approved but not customer-safe", () => {
@@ -147,7 +147,7 @@ describe("Strongest Safe Claim methodology governance", () => {
     expect(result.strongest_claim.claim_readiness).toBe("internal_only");
     expect(result.strongest_claim.methodology_snapshot_id).toBe("nielsen_roi_payback_internal_2025_10");
     expect(result.strongest_claim.methodology_approval_state).toBe("finance_approved");
-    expect(result.blocked_methodology_claims.join(" ")).toMatch(/customer-safe methodology approval/i);
+	    expect(result.blocked_methodology_claims.join(" ")).toMatch(/later exact-scope governance decision/i);
     expect(StrongestSafeClaimSchema.parse(result)).toEqual(result);
   });
 

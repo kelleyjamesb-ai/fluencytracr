@@ -3,7 +3,7 @@
  * Not mounted as production middleware; copy/adapt into `app.ts` or route modules.
  */
 
-import { freezeCanonicalEvent, validateCanonicalEvent } from "../domain/canonical-event.schema";
+import { freezeCanonicalEvent, validateInternalCanonicalEvent } from "../domain/canonical-event.schema";
 import { canonicalExecutionKey } from "../integration/v1-pipeline-types";
 import type { EventRepository } from "../repositories/event.repository";
 import type { ClassificationPipelineDeps } from "../services/classification-pipeline.service";
@@ -42,7 +42,7 @@ export async function exampleProcessIngestBody(
     };
   }
 
-  const validated = validateCanonicalEvent(mapped.canonical_event);
+	  const validated = validateInternalCanonicalEvent(mapped.canonical_event);
   if (!validated.ok) {
     return {
       status: 400,

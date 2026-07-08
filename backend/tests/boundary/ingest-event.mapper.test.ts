@@ -1,6 +1,6 @@
 import type { UpstreamIngestEvent } from "../../src/boundary/boundary-schemas";
 import { mapUpstreamEventToCanonical } from "../../src/boundary/ingest-event.mapper";
-import { validateCanonicalEvent } from "../../src/domain/canonical-event.schema";
+import { validateInternalCanonicalEvent } from "../../src/domain/canonical-event.schema";
 
 const base = (over: Partial<UpstreamIngestEvent>): UpstreamIngestEvent => ({
   event_name: "step",
@@ -21,7 +21,7 @@ describe("ingest-event.mapper", () => {
     if (r.ok) {
       expect(r.canonical_event.execution_id).toBe("ex-1");
       expect(r.canonical_event.actor_type).toBe("human");
-      const v = validateCanonicalEvent(r.canonical_event);
+	      const v = validateInternalCanonicalEvent(r.canonical_event);
       expect(v.ok).toBe(true);
     }
   });
@@ -62,24 +62,33 @@ describe("ingest-event.mapper", () => {
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.canonical_event.execution_id).toBe("wr-99");
-      const v = validateCanonicalEvent(r.canonical_event);
+	      const v = validateInternalCanonicalEvent(r.canonical_event);
       expect(v.ok).toBe(true);
     }
   });
 
-  it("resolves composite when policy allows", () => {
+  it("does not resolve chat_id as governed canonical execution lineage", () => {
     const r = mapUpstreamEventToCanonical(
       base({
         execution_id: undefined,
         workflow_run_id: undefined,
+        run_id: undefined,
         chat_id: "chat-1",
         boundary_policy: { allow_composite_execution_id: true }
       })
     );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("missing_execution_identity");
+  });
+
+  it("does not carry chat_id or agent_run_id into canonical metadata lineage", () => {
+    const r = mapUpstreamEventToCanonical(base({ chat_id: "chat-1", agent_run_id: "agent-1" }));
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.canonical_event.execution_id).toBe("w1::chat-1");
-      const v = validateCanonicalEvent(r.canonical_event);
+      const lineage = (r.canonical_event.metadata as any)?.upstream_lineage ?? {};
+      expect(lineage).not.toHaveProperty("chat_id");
+      expect(lineage).not.toHaveProperty("agent_run_id");
+	      const v = validateInternalCanonicalEvent(r.canonical_event);
       expect(v.ok).toBe(true);
     }
   });

@@ -87,7 +87,7 @@ describe("phase A workflow and control config endpoints", () => {
     expect(listPayload.workflows[0]).not.toHaveProperty("rank");
   });
 
-  it("creates control config version and baseline reset bound to control_config_version_id", async () => {
+  it("rejects admin-created control config threshold overrides", async () => {
     const server = await startServer();
 
     const createConfig = await fetch(`${server.url}/api/control-config/create-version`, {
@@ -107,22 +107,9 @@ describe("phase A workflow and control config endpoints", () => {
       })
     });
     const configPayload = await createConfig.json();
-
-    const reset = await fetch(`${server.url}/api/control-config/reset-baseline`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-role": "GOV_OPERATOR" },
-      body: JSON.stringify({
-        org_id: "org-1",
-        control_config_version_id: configPayload.control_config_version_id,
-        reason: "manual reset"
-      })
-    });
-    const resetPayload = await reset.json();
     await server.close();
 
-    expect(createConfig.status).toBe(201);
-    expect(reset.status).toBe(201);
-    expect(resetPayload.control_config_version_id).toBe(configPayload.control_config_version_id);
-    expect(resetPayload.baseline_reset_event_id).toBeTruthy();
+    expect(createConfig.status).toBe(400);
+    expect(JSON.stringify(configPayload)).toContain("control_config_thresholds_compiled");
   });
 });

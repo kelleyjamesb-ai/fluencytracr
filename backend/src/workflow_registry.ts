@@ -28,6 +28,11 @@ import {
   defaultWorkflowVisibilityPolicyConfig,
   resolveLatestPolicyConfig
 } from "./workflow_visibility_policy";
+import {
+  COMPILED_REQUIRE_HIGH_RISK_VERIFICATION,
+  COMPILED_VISIBILITY_MIN_EVENTS,
+  COMPILED_VISIBILITY_WINDOW_DAYS
+} from "./workflow_visibility";
 
 const sortRegistry = (records: WorkflowRegistryRecord[]) => {
   return records.slice().sort((a, b) => {
@@ -69,8 +74,6 @@ export const listRegistryEntriesByWorkflow = async (orgId: string, workflowId: s
 const toControlConfig = (
   orgId: string,
   createdAt: string,
-  actorSub: string | undefined,
-  actorRole: string | undefined,
   changeReason: string | undefined,
   policyConfig: {
     policyVersion: string;
@@ -82,21 +85,21 @@ const toControlConfig = (
     highSparseMinWindowDays: number;
   }
 ): WorkflowVisibilityPolicyConfigRecord => ({
-  id: crypto.randomUUID(),
-  orgId,
-  versionName: policyConfig.policyVersion,
-  changeReason: changeReason ?? "policy update",
-  changedByUser: actorSub ?? "system",
-  changedByRole: actorRole ?? "SYSTEM",
-  windowDaysLow: policyConfig.minWindowDays,
-  windowDaysMedium: policyConfig.minWindowDays,
-  windowDaysHigh: policyConfig.highSparseMinWindowDays,
-  minEventsLow: policyConfig.lowMinEvents,
-  minEventsMedium: policyConfig.mediumMinEvents,
-  minEventsHigh: policyConfig.highMinEvents,
-  requireVerificationHigh: true,
-  createdAt
-});
+	  id: crypto.randomUUID(),
+	  orgId,
+	  versionName: policyConfig.policyVersion,
+	  changeReason: changeReason ?? "policy update",
+	  changedByUser: "system",
+	  changedByRole: "SYSTEM",
+	  windowDaysLow: COMPILED_VISIBILITY_WINDOW_DAYS.low,
+	  windowDaysMedium: COMPILED_VISIBILITY_WINDOW_DAYS.medium,
+	  windowDaysHigh: COMPILED_VISIBILITY_WINDOW_DAYS.high,
+	  minEventsLow: COMPILED_VISIBILITY_MIN_EVENTS.low,
+	  minEventsMedium: COMPILED_VISIBILITY_MIN_EVENTS.medium,
+	  minEventsHigh: COMPILED_VISIBILITY_MIN_EVENTS.high,
+	  requireVerificationHigh: COMPILED_REQUIRE_HIGH_RISK_VERIFICATION,
+	  createdAt
+	});
 
 export const registerWorkflowVersion = async (params: {
   orgId: string;
@@ -119,8 +122,8 @@ export const registerWorkflowVersion = async (params: {
   const versions = await listRegistryEntriesByWorkflow(params.orgId, params.workflowId);
   const version = versions.length === 0 ? 1 : versions[versions.length - 1].version + 1;
   const createdAt = new Date().toISOString();
-  const changedByUser = params.actorSub ?? "system";
-  const changedByRole = params.actorRole ?? "SYSTEM";
+	  const changedByUser = "system";
+	  const changedByRole = "SYSTEM";
 
   const record: WorkflowRegistryRecord = {
     id: crypto.randomUUID(),
@@ -138,14 +141,12 @@ export const registerWorkflowVersion = async (params: {
   const existingPolicyConfigs = await listRegistryPolicyConfigsByOrg(params.orgId);
   const selectedPolicyConfig =
     (params.policyConfig
-      ? toControlConfig(
-          params.orgId,
-          createdAt,
-          params.actorSub,
-          params.actorRole,
-          params.changeReason,
-          params.policyConfig
-        )
+	      ? toControlConfig(
+	          params.orgId,
+	          createdAt,
+	          params.changeReason,
+	          params.policyConfig
+	        )
       : resolveLatestPolicyConfig(existingPolicyConfigs, params.orgId)) ??
     defaultWorkflowVisibilityPolicyConfig(params.orgId);
 
@@ -175,8 +176,8 @@ export const registerWorkflowVersion = async (params: {
     workflowId: params.workflowId,
     version,
     action: "REGISTERED",
-    actorSub: params.actorSub,
-    actorRole: params.actorRole,
+	    actorSub: undefined,
+	    actorRole: params.actorRole,
     metadata: {
       risk_class: params.riskClass,
       change_reason: params.changeReason ?? null
@@ -189,8 +190,8 @@ export const registerWorkflowVersion = async (params: {
     workflowId: params.workflowId,
     version,
     action: "BASELINE_RESET",
-    actorSub: params.actorSub,
-    actorRole: params.actorRole,
+	    actorSub: undefined,
+	    actorRole: params.actorRole,
     metadata: {
       reset_at: baselineResetRecord.resetAt,
       policy_version: selectedPolicyConfig.versionName
@@ -235,15 +236,15 @@ export const createControlConfigVersion = async (params: {
     orgId: params.orgId,
     versionName: params.versionName,
     changeReason: params.changeReason,
-    changedByUser: params.changedByUser ?? "system",
-    changedByRole: params.changedByRole ?? "SYSTEM",
-    windowDaysLow: params.windowDaysLow,
-    windowDaysMedium: params.windowDaysMedium,
-    windowDaysHigh: params.windowDaysHigh,
-    minEventsLow: params.minEventsLow,
-    minEventsMedium: params.minEventsMedium,
-    minEventsHigh: params.minEventsHigh,
-    requireVerificationHigh: params.requireVerificationHigh,
+	    changedByUser: "system",
+	    changedByRole: "SYSTEM",
+	    windowDaysLow: COMPILED_VISIBILITY_WINDOW_DAYS.low,
+	    windowDaysMedium: COMPILED_VISIBILITY_WINDOW_DAYS.medium,
+	    windowDaysHigh: COMPILED_VISIBILITY_WINDOW_DAYS.high,
+	    minEventsLow: COMPILED_VISIBILITY_MIN_EVENTS.low,
+	    minEventsMedium: COMPILED_VISIBILITY_MIN_EVENTS.medium,
+	    minEventsHigh: COMPILED_VISIBILITY_MIN_EVENTS.high,
+	    requireVerificationHigh: COMPILED_REQUIRE_HIGH_RISK_VERIFICATION,
     createdAt
   };
   insertWorkflowVisibilityPolicyConfig(record);
@@ -264,8 +265,8 @@ export const resetBaseline = async (params: {
     controlConfigVersionId: params.controlConfigVersionId,
     resetAt: new Date().toISOString(),
     reason: params.reason,
-    triggeredByUser: params.triggeredByUser ?? "system",
-    triggeredByRole: params.triggeredByRole ?? "SYSTEM"
+	    triggeredByUser: "system",
+	    triggeredByRole: params.triggeredByRole ?? "SYSTEM"
   };
   insertBaselineResetEvent(event);
   await persistBaselineResetEvent(event);

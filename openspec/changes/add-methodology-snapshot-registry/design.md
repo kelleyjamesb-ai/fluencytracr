@@ -2,7 +2,7 @@
 
 The AI Work Value Graph already models AI surfaces, work patterns, maturity, evidence, outcome instrumentation, value hypotheses, and claim readiness. The missing primitive is methodology lineage: a frozen record of the assumptions and approval state behind a value estimate.
 
-The Time-Saves MVP and Nielsen-style ROI fixtures show why this matters. Time saved can be estimated by a source system, but FluencyTracr must decide whether the resulting claim is directional, caveated, internal-only, customer-safe, or suppressed.
+The Time-Saves MVP and Nielsen-style internal financial-review fixtures show why this matters. Time saved can be estimated by a source system, but FluencyTracr must decide whether the resulting claim is directional, caveated, internal-only, or suppressed. Customer-facing economic output remains blocked unless a later exact-scope governance decision authorizes it.
 
 ## Goals
 
@@ -32,7 +32,7 @@ The registry contains frozen snapshots with:
 
 Strongest Safe Claim accepts an optional registry and selected snapshot. If a financial claim is requested:
 
-- `customer_safe` methodology approval can support customer-facing ROI/payback language.
+- `customer_safe` methodology approval can support internal financial-review language only in this slice.
 - `finance_approved` can support internal-only financial language.
 - `draft`, `internal_review`, `data_science_approved`, `expired`, `rejected`, or `suppresses_claim` cap or suppress the claim.
 

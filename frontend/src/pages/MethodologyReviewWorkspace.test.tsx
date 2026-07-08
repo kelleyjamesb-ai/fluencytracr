@@ -59,9 +59,9 @@ describe("MethodologyReviewWorkspace", () => {
   it("lets reviewers inspect internal-only and suppressed claim effects", async () => {
     render(<MethodologyReviewWorkspace />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Synthetic Nielsen-style internal ROI and payback fixture/i }));
-    expect(screen.getAllByText(/internal-only/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/customer-facing ROI\/payback requires customer-safe methodology approval/i).length).toBeGreaterThan(0);
+	    fireEvent.click(screen.getByRole("button", { name: /Synthetic Nielsen-style internal financial-review fixture/i }));
+	    expect(screen.getAllByText(/internal-only/i).length).toBeGreaterThan(0);
+	    expect(screen.getAllByText(/later exact-scope governance/i).length).toBeGreaterThan(0);
     expect((screen.getByLabelText(/Reviewer decision memo plain text/i) as HTMLTextAreaElement).value).toMatch(
       /Decision state: internal-only/i
     );
