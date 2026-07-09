@@ -226,9 +226,9 @@ describe("Methodology decision memo export", () => {
     );
     const memo = buildMethodologyDecisionMemo(workspace, "nielsen_roi_payback_customer_safe_2025_10");
 
-	    expect(memo).toMatch(/Decision state: customer-safe/i);
+	    expect(memo).toMatch(/Decision state: internal-only/i);
 	    expect(memo).toMatch(/customer-facing economic output remains blocked/i);
-	    expect(memo).toMatch(/Strongest safe language: Customer-safe/i);
+	    expect(memo).toMatch(/Strongest safe language: Internal-only/i);
   });
 
   it.each([

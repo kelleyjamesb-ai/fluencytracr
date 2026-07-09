@@ -928,7 +928,7 @@ const buildFinancialClaimEffect = (snapshot: MethodologySnapshotEntry) => {
     return "suppressed: financial claim language is suppressed for this methodology snapshot.";
   }
   if (snapshot.approval_state === "customer_safe" && snapshot.customer_safe_claim_effect === "enables_customer_safe") {
-    return "customer-safe: internal financial-review language can be prepared with caveats; customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it.";
+    return "internal-only: internal financial-review language can be prepared with caveats; customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it.";
   }
   if (snapshot.approval_state === "finance_approved") {
     return "internal-only: customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it.";
@@ -1251,7 +1251,7 @@ const applyMethodologyClaimGate = (
       claimReadiness: isFinancialClaim ? capClaimReadiness(readiness, "internal_only") : readiness,
       safeClaimLanguage,
       blockedMethodologyClaims: isFinancialClaim
-        ? ["No methodology snapshot was selected; customer-facing ROI/payback remains blocked unless a later exact-scope governance decision authorizes it."]
+        ? ["No methodology snapshot was selected; Customer-facing ROI/payback requires a selected methodology snapshot and later exact-scope governance authorization."]
         : [],
       methodologyCaveats: isFinancialClaim
         ? ["No methodology snapshot was selected; customer-facing financial language is not enabled."]

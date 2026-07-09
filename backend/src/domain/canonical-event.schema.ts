@@ -102,9 +102,7 @@ export const CANONICAL_EVENT_JSON_SCHEMA = {
     metadata: { type: "object" },
     execution_id: { type: "string", minLength: 1 },
     workflow_run_id: { type: "string", minLength: 1 },
-    run_id: { type: "string", minLength: 1 },
-    chat_id: { type: "string", minLength: 1 },
-    agent_run_id: { type: "string", minLength: 1 }
+    run_id: { type: "string", minLength: 1 }
   },
   oneOf: [
     { required: ["execution_id"] },

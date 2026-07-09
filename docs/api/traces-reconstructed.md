@@ -51,6 +51,6 @@ Phase 2 thresholds for pattern classification use **workflow-relative baselines*
 
 ## Related
 
-- `POST /api/events` — returns parallel `execution_ids` for each ingested event.
+- `POST /api/events` — returns counts only. If an exact singleton trace must be retrieved later, the caller must provide a governed, non-personal `execution_id`, `workflow_run_id`, or `run_id` at ingest and query it directly; events without caller-supplied execution lineage are available through `workflow_id` reconstruction only.
 - `backend/src/execution_signals.ts` — signal registry + classification.
 - `artifacts/PRD_V1_BEHAVIORAL_OBSERVABILITY.md` — PRD §14–§15.

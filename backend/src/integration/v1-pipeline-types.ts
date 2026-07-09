@@ -4,7 +4,7 @@
  */
 
 import type { CanonicalEvent, ValidationResult } from "../domain/canonical-event.schema";
-import { validateCanonicalEvent } from "../domain/canonical-event.schema";
+import { validateInternalCanonicalEvent } from "../domain/canonical-event.schema";
 import { mapActorType } from "../boundary/actor-type.adapter";
 
 export type IngestNormalizeFailureReason =
@@ -72,7 +72,7 @@ export function normalizeInboundActorType(raw: unknown): IngestNormalizeResult {
 }
 
 /**
- * When `applyActorMapping` is true, remaps `actor_type` then runs canonical validation.
+ * When `applyActorMapping` is true, remaps `actor_type` then runs internal pipeline validation.
  */
 export function validateInboundCanonicalEvent(
   raw: unknown,
@@ -90,5 +90,5 @@ export function validateInboundCanonicalEvent(
     }
     body = n.payload;
   }
-  return validateCanonicalEvent(body);
+  return validateInternalCanonicalEvent(body);
 }

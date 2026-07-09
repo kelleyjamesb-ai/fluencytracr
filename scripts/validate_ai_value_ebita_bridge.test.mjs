@@ -278,7 +278,7 @@ test("finance validated case with required evidence is valid", () => {
   const bridge = structuredClone(baseEbitaBridge);
   bridge.financial_translation_policy.mode = "FINANCE_VALIDATED_EBITA_CASE";
   bridge.financial_translation_policy.customer_owned_financials_required = true;
-  bridge.financial_translation_policy.realized_ebita_claim_allowed = true;
+  bridge.financial_translation_policy.realized_ebita_claim_allowed = false;
   bridge.evidence_quality.financial_evidence = "FINANCE_VALIDATED";
   bridge.evidence_quality.overall_ebita_confidence = "FINANCE_VALIDATED";
   bridge.ebita_levers[0].claim_level = "FINANCE_VALIDATED_EBITA_CASE";
@@ -311,7 +311,7 @@ test("customer-facing approved without ROI source approval is invalid", () => {
   );
 });
 
-test("customer-facing approved with ROI source approval is valid", () => {
+test("customer-facing approved remains invalid even with ROI source approval", () => {
   const bridge = structuredClone(baseEbitaBridge);
   bridge.financial_translation_policy.mode = "CUSTOMER_FACING_APPROVED";
   bridge.financial_translation_policy.customer_owned_financials_required = true;
@@ -329,8 +329,11 @@ test("customer-facing approved with ROI source approval is valid", () => {
 
   const result = validateEbitaBridge(bridge, { roiScenario: approvedRoiScenario });
 
-  assert.equal(result.valid, true);
-  assert.equal(result.feeds.customer_facing_economic_output, true);
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("CUSTOMER_FACING_APPROVED is not authorized for EBITA bridge output"),
+    true
+  );
 });
 
 test("causality allowed without source causal gate is invalid", () => {
