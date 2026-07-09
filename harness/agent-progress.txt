@@ -489,3 +489,45 @@
 - Completed: Added the read-only internal `glean_dogfood_bq` adapter for the three real sharded scrubbed BigQuery table families, with broad source allowlists pinned in code and narrow `FT_V3_2026_05` aggregate-only output. Added k-min, partition, cost, and forbidden-field guards; synthetic fixtures; CLI dry-run path; docs/mapping spec; OpenSpec `add-glean-dogfood-bq-adapter`; and LMSYS assurance metadata for surface, suppress, and refused-query cases.
 - Verified: focused pytest 25/25; live BigQuery dry-run for 2026-06-11 compiled and estimated 19026567131 bytes; OpenSpec strict validation; shared build; LMSYS self-test; V1 governance gates; docs contract sweep; harness verify 273 passed / 3 skipped; frontend tests 74/74; diff whitespace. Full backend CI still has an unrelated suite-order failure in `policy_compliance_api.test.ts`, while that file passes standalone 22/22.
 - Next focus: review/commit/PR this adapter slice, then add a bounded operator runner that posts generated aggregate payloads into the local backend and refreshes the Workspace without introducing raw rows, identifiers, ROI proof, causality, or person-level analysis.
+
+## 2026-07-07 (UTC) - Codex (Confidence inference calibration rebuild result)
+
+- Completed: Finished the full-quality `effect-0.5-k16` calibration rebuild from ignored local checkpoints and kept it fail-closed: 200/200 unique replications completed, coverage stayed below gate at 0.72, and no proof result was committed. Hardened the calibration runner so partial/missing cells cannot appear passing and added miss-direction / interval-width diagnostics for the next model-method investigation.
+- Verified: refreshed ignored local result from checkpoints; calibration runner tests 10/10; full inference tests 124/124; confidence-engine build plus Python-to-TypeScript bridge tests 9/9 after `npm ci`; `git diff --check`.
+- Next focus: diagnose interval construction / model-synthetic-design undercoverage before rerunning proof; do not relax gates or commit a study result until every acceptance field passes.
+
+## 2026-07-07 (UTC) - Codex (Confidence inference suspect-cell reliability diagnostic)
+
+- Completed: Added diagnostic-only calibration cell selection, local-ignored default CLI results output, stable empty/non-empty coverage diagnostic shape, and stricter full-quality/model defaults (`draws=2000`, `tune=3000`, `chains=2`, `target_accept=0.999`, `max_treedepth=15`). Completed the predeclared `effect-0.5-k16` 400-replication diagnostic under the prior full-quality settings: coverage recovered to `298/400 = 0.745`, but sampler health exposed the true reliability blocker (`102/400` divergent fits, `10/400` max-treedepth fits, `290/400` sanity pass). No proof result was committed and no gate was relaxed.
+- Verified: `inference/.venv/bin/python -m pytest inference/tests/test_calibration_runner.py -q` (15/15); `inference/.venv/bin/python -m pytest inference/tests -q` (129/129); `git diff --check`.
+- Next focus: rerun the full six-cell acceptance grid under the stricter settings before committing any `calibration_study_results.json`; keep failed/local results ignored and non-authoritative.
+
+## 2026-07-08 (UTC) - Codex (Confidence inference zero-sum reliability hardening)
+
+- Completed: Hardened the PyMC hierarchy to use zero-sum, non-centered group deviations; sampler diagnostics now include both raw `z_*` offsets and scaled `u_*` group effects; calibration cache keys bind the model cache signature; and calibration cells fail closed on unhealthy sampler replications even if coverage is in band. Docs/contracts now match the zero-sum/non-centered model and fail-closed cache/calibration behavior.
+- Verified: calibration runner tests 18/18; recovery sampler gate pass; full inference tests 132/132; OpenSpec strict validation; docs contract sweep; confidence-engine build; inference proof bridge tests 9/9; V1 governance gates; semantic drift guard; `git diff --check`.
+- Next focus: run a fresh-cache full six-cell acceptance grid under the final model signature and strict settings before committing any `calibration_study_results.json`; local ignored results remain diagnostic only.
+
+## 2026-07-08 (UTC) - Codex (Confidence inference calibration-profile smoke)
+
+- Completed: Raised the calibration-study profile to `draws=1000`, `tune=2000`, `chains=2`, `target_accept=0.999`, `max_treedepth=15` after the 500-draw smoke found one estimand R-hat failure. The exact failing seed passed under 1000 retained draws, and a fresh six-cell smoke grid completed 150/150 replications with 150/150 sampler sanity passes. Smoke coverage remains diagnostic only at n=25.
+- Verified: calibration runner tests 19/19; full inference tests 133/133; docs contract sweep; V1 governance gates; semantic drift guard; `git diff --check`.
+- Next focus: resume the full 200-replication six-cell calibration grid under the 1000-draw calibration profile and commit no proof result unless every acceptance field passes.
+
+## 2026-07-08 (UTC) - Codex (Confidence inference calibration acceptance hardening)
+
+- Completed: Stopped two full-grid attempts fail-closed after sampler-health failures: the 1000/2000 profile diverged on `effect-0-k16` seed `22260875`, and the 2000/3000 profile diverged on `effect-0-k12` seed `21260723`. Hardened checkpoint loading to validate record identity and reject conflicting duplicates, blocked canonical proof-result writes unless all acceptance fields pass, aligned `run_proof` with model sampler defaults, and promoted the acceptance profile to `draws=2000`, `tune=5000`, `chains=2`, `target_accept=0.999`, `max_treedepth=15`. A fresh six-cell smoke grid completed 150/150 replications with 150/150 sampler sanity passes and zero duplicate checkpoint lines. No proof result was committed and no gate was relaxed.
+- Verified: red/green calibration runner tests 23/23; full inference tests 137/137; `npx openspec validate add-bayesian-inference-proof-harness --strict`; docs contract sweep; V1 governance gates; semantic drift guard; `git diff --check`.
+- Next focus: run the fresh full 1,200-replication acceptance grid under the 5000-warmup profile; commit no `calibration_study_results.json` unless every calibration, null, floor, and negative-control acceptance field passes.
+
+## 2026-07-08 (UTC) - Codex (Confidence inference acceptance ledger hardening)
+
+- Completed: Stopped the active full-grid shard after sidecar review found acceptance-path gaps, then hardened the proof ledger before more sampler work. Artifact emission now requires the exact six-cell calibration grid and valid null study before `eligible_internal_only`, Phase-B1 placeholders and malformed/partial study inputs HOLD, calibration cache namespaces bind the lockfile hash, and checkpoint loading recomputes sampler-health plus eligibility flags instead of trusting checkpoint booleans. Regenerated bridge fixtures from the deterministic bridge path so committed fixtures no longer carry Phase-B1 acceptance placeholders. No proof result was committed and no gate was relaxed.
+- Verified: focused red/green guard tests; full inference tests 142/142; confidence-engine workspace suite 304/304; Python-to-TypeScript bridge 9/9; golden regeneration no-op; OpenSpec strict validation; docs contract sweep; V1 governance gates; semantic drift guard; `git diff --check`; no `package-lock.json` diff.
+- Next focus: launch a fresh full 1,200-replication acceptance grid under the new lockfile-bound cache namespace; commit no `calibration_study_results.json` unless every calibration, null, floor, and negative-control acceptance field passes.
+
+## 2026-07-08 (UTC) - Codex (Confidence inference acceptance-boundary repair)
+
+- Completed: Used BUG/CODE/ADVERSARIAL sidecars to identify remaining false-pass risks before spending more sampler time, then hardened the Python and TypeScript proof boundaries. Added bounded calibration batches via `--max-pending-per-cell`, rejected negative checkpoint indexes, made canonical result writes validate exact six-cell identity/derived coverage/null evidence/scenario provenance, required TS artifacts to carry 400 null replications and computed calibration scenario IDs before eligibility, and changed deterministic bridge fixtures/recovery smoke to HOLD until the real task-3.3 calibration/null proof exists. Structural-control inputs are now limited to the internal floor/negative-control isolation helper.
+- Verified: calibration runner 29/29; HOLD paths 49/49; full inference suite 146/146; confidence-engine workspace suite 304/304; Python-to-TypeScript bridge 9/9; golden regeneration no-op; OpenSpec strict validation; docs contract sweep; V1 governance gates; semantic drift guard; `git diff --check`; no `package-lock.json` diff.
+- Next focus: resume the strict 1,200-replication grid only in bounded batches or CI/cloud matrix; commit no `calibration_study_results.json` unless every calibration, null, floor, and negative-control acceptance field passes.

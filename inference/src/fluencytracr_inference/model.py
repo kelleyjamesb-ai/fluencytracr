@@ -12,9 +12,9 @@ Implements exactly the implementation-grade model equation from
 - The estimand is ``delta``; the PyMC variable is named
   ``contribution_alignment_effect`` so sampler diagnostics carry the
   schema-required estimand parameter name.
-- Random effects are mean-zero partially pooled effects with hierarchical
-  scale priors (non-centered parameterization); pooling factors are reported
-  so reviewers can see when pooling drives the result.
+- Random effects are zero-sum, non-centered, partially pooled effects with
+  hierarchical scale priors; pooling factors are reported so reviewers can
+  see when pooling drives the result.
 - Only the normal continuous aggregate path with the identity link is
   implemented. Requesting any other likelihood family raises
   :class:`HoldViolation`, which the artifact emitter turns into a HOLD
@@ -51,6 +51,7 @@ PRIOR_JUSTIFICATION_REF = (
 PRIOR_SENSITIVITY_SCALINGS = (0.5, 2.0)
 
 OBSERVED_VARIABLE_NAME = "y_obs"
+MODEL_CACHE_SIGNATURE = "bayesian_hierarchical_did_zero_sum_noncentered_v2026_07_07"
 
 
 class HoldViolation(Exception):
@@ -149,12 +150,16 @@ def _build_model(
 
         mu = alpha + beta_post * post + beta_treated * treated + delta * post * treated
         for grouping in group_indices:
-            # Mean-zero partially pooled effects, hierarchical scale prior,
-            # non-centered parameterization for sampler geometry.
+            # Zero-sum raw effects keep the hierarchy identifiable from the
+            # intercept; non-centering avoids the centered hierarchical funnel.
             sigma_g = pm.HalfNormal(
                 f"sigma_{grouping}", sigma=prior_spec.group_scale_halfnormal * m
             )
-            z_g = pm.Normal(f"z_{grouping}", mu=0.0, sigma=1.0, shape=group_sizes[grouping])
+            z_g = pm.ZeroSumNormal(
+                f"z_{grouping}",
+                sigma=1.0,
+                shape=group_sizes[grouping],
+            )
             u_g = pm.Deterministic(f"u_{grouping}", z_g * sigma_g)
             mu = mu + u_g[group_indices[grouping]]
 
@@ -190,18 +195,23 @@ def fit_did_model(
     likelihood_family: str = SUPPORTED_LIKELIHOOD_FAMILY,
     prior_spec: PriorSpec | None = None,
     draws: int = 2000,
-    tune: int = 1000,
+    tune: int = 5000,
     chains: int = 2,
     seed: int = 20260706,
-    target_accept: float = 0.99,
-    max_treedepth: int = 12,
+    target_accept: float = 0.999,
+    max_treedepth: int = 15,
+    sample_posterior_predictive: bool = True,
 ) -> FitResult:
     """Fit the contract equation with seeded NUTS (2+ chains, cores=1).
 
-    Defaults (2 chains x 2000 draws after 1000 warmup, target_accept 0.99,
-    max_treedepth 12) are tuned so a clean k=16 synthetic fit passes every
+    Defaults (2 chains x 2000 draws after 5000 warmup, target_accept 0.999,
+    max_treedepth 15) are tuned so clean k=16 synthetic fits pass every
     sampler gate with margin: R-hat <= 1.01, chain-total bulk/tail ESS >= 400,
     zero divergences, zero max-treedepth saturation, MCSE ratio <= 0.1.
+
+    ``sample_posterior_predictive=False`` is for calibration-study
+    replications that need only the estimand posterior. Any fit that feeds
+    posterior predictive diagnostics must keep the default ``True`` value.
 
     Raises :class:`HoldViolation` (``unsupported_likelihood_family``) for any
     non-normal likelihood family: those are structurally typed but held until
@@ -247,13 +257,14 @@ def fit_did_model(
             # must surface, and diagnostics.py re-checks every gate anyway.
             compute_convergence_checks=True,
         )
-        pm.sample_posterior_predictive(
-            idata,
-            var_names=[OBSERVED_VARIABLE_NAME],
-            random_seed=seed,
-            progressbar=False,
-            extend_inferencedata=True,
-        )
+        if sample_posterior_predictive:
+            pm.sample_posterior_predictive(
+                idata,
+                var_names=[OBSERVED_VARIABLE_NAME],
+                random_seed=seed,
+                progressbar=False,
+                extend_inferencedata=True,
+            )
     wall = time.perf_counter() - started
 
     return FitResult(

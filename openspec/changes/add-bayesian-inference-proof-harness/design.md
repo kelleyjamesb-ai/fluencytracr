@@ -91,13 +91,17 @@ first: `y_i ~ Normal(mu_i, phi_i)` with identity link and cohort-size-weighted
 aggregate variance. The linear predictor is
 `alpha + beta_post * post_i + beta_treated * treated_i + delta * post_i *
 treated_i + u_expectation_path + u_workflow + u_function + u_cohort +
-u_organization + optional approved offset/exposure`. `delta` is the
+u_organization + optional approved offset/exposure`. The `u_*` terms are
+zero-sum partially pooled deviations within each grouping, implemented with
+non-centered unit effects and hierarchical scales so the intercept carries the
+grand mean without a centered hierarchical funnel. `delta` is the
 contribution-alignment estimand, not a causal, ROI, productivity, confidence,
 or probability claim. Non-normal likelihood families are named for artifact
 binding but remain held unless the same implementation adds their samplers,
 diagnostics, and synthetic recovery tests. Rationale: partial pooling
 stabilizes small-cohort estimates without discarding them, matching the
-aggregate-only posture; DiD is the estimand the contract already names.
+aggregate-only posture; zero-sum deviations keep the additive hierarchy
+identifiable from the intercept; DiD is the estimand the contract already names.
 Alternatives considered: flat per-cohort models (unstable at contract-minimum
 cohort sizes), synthetic-control methods (deferred — viable later, but the
 contract binds DiD now and the comparison-cohort rule in Decision 6 covers

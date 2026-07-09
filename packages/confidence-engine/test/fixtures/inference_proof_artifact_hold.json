@@ -11,7 +11,7 @@
       "start_seed": 20260706,
       "end_seed": 20260706
     },
-    "synthetic_input_hash": "bac99624f9ad5852187975870f7f9e741b4c07ed4f5fd2c6d4a5ca35f300d043",
+    "synthetic_input_hash": "c55f95d17f5642843c4e2a7a9bbeebe7d239d1226c2b8ed161ac251625d75b28",
     "real_data_present": false,
     "customer_data_present": false,
     "production_data_present": false,
@@ -39,564 +39,54 @@
     "required_milestone_days": [
       30
     ],
-    "observed_milestone_days": [
+    "observed_milestone_days": [],
+    "missing_milestone_days": [
       30
     ],
-    "missing_milestone_days": [],
     "suppressed_milestone_days": [],
     "stale_milestone_days": [],
     "imputed_milestone_days": [],
     "required_window_refs": [
       "mcw-d030"
     ],
-    "observed_window_refs": [
+    "observed_window_refs": [],
+    "missing_window_refs": [
       "mcw-d030"
     ],
-    "missing_window_refs": [],
     "suppressed_window_refs": [],
     "stale_window_refs": [],
     "imputed_window_refs": [],
-    "all_required_windows_observed": true,
+    "all_required_windows_observed": false,
     "all_windows_unsuppressed_and_fresh": true,
     "imputation_used": false,
-    "measurement_cell_window_evidence_hash": "541050dd1d383e65b9f3a6599c4d1426dbe8dbc8bf438b62bafb3a8f1f1474d4"
+    "measurement_cell_window_evidence_hash": "4c42c51069fd81c3bfea28c4b81ff091df481b639556ec7e1c1d89e78f6e6bca"
   },
   "diagnostics": {
     "sampler": {
       "parameters": [
         {
-          "parameter_name": "alpha",
-          "r_hat": 1.000246505853807,
-          "bulk_ess": 2154.504469760083,
-          "tail_ess": 2252.0804987362962,
-          "posterior_mean_mcse": 0.010100564177560325,
-          "interval_endpoint_mcse": 0.02166480630999701,
-          "posterior_sd": 0.4554533381240833,
-          "max_mcse_to_posterior_sd_ratio": 0.04756756509729361
-        },
-        {
-          "parameter_name": "beta_post",
-          "r_hat": 0.9998676317819715,
-          "bulk_ess": 3122.571954356538,
-          "tail_ess": 2680.8146215791685,
-          "posterior_mean_mcse": 0.0008747651632711252,
-          "interval_endpoint_mcse": 0.001801423246318462,
-          "posterior_sd": 0.04883246397058537,
-          "max_mcse_to_posterior_sd_ratio": 0.036889869972638774
-        },
-        {
-          "parameter_name": "beta_treated",
-          "r_hat": 1.0004925987341655,
-          "bulk_ess": 1731.8532869920964,
-          "tail_ess": 1796.7110829314106,
-          "posterior_mean_mcse": 0.00222923889011949,
-          "interval_endpoint_mcse": 0.004327299921923572,
-          "posterior_sd": 0.0926998025999775,
-          "max_mcse_to_posterior_sd_ratio": 0.04668078896129842
-        },
-        {
           "parameter_name": "contribution_alignment_effect",
-          "r_hat": 0.9999815548019481,
-          "bulk_ess": 3224.5178305680993,
-          "tail_ess": 3206.559775905617,
-          "posterior_mean_mcse": 0.0011761006817174735,
-          "interval_endpoint_mcse": 0.002681056809550525,
-          "posterior_sd": 0.06678697934791332,
-          "max_mcse_to_posterior_sd_ratio": 0.040143405731588776
-        },
-        {
-          "parameter_name": "z_expectation_path[0]",
-          "r_hat": 0.9998970936724504,
-          "bulk_ess": 3519.265925272528,
-          "tail_ess": 3049.598864981318,
-          "posterior_mean_mcse": 0.015255395761462013,
-          "interval_endpoint_mcse": 0.02478646845045751,
-          "posterior_sd": 0.9041296455730671,
-          "max_mcse_to_posterior_sd_ratio": 0.027414728155216096
-        },
-        {
-          "parameter_name": "z_expectation_path[1]",
-          "r_hat": 1.0003453835217693,
-          "bulk_ess": 3611.07124451383,
-          "tail_ess": 3136.885847330837,
-          "posterior_mean_mcse": 0.014730605164363116,
-          "interval_endpoint_mcse": 0.03603288687666384,
-          "posterior_sd": 0.888207034619852,
-          "max_mcse_to_posterior_sd_ratio": 0.04056811697295972
-        },
-        {
-          "parameter_name": "z_workflow[0]",
-          "r_hat": 1.000081119875384,
-          "bulk_ess": 2951.4163352891537,
-          "tail_ess": 2272.6552364580784,
-          "posterior_mean_mcse": 0.014599571565010816,
-          "interval_endpoint_mcse": 0.034172011342678,
-          "posterior_sd": 0.797647301696066,
-          "max_mcse_to_posterior_sd_ratio": 0.0428410041255287
-        },
-        {
-          "parameter_name": "z_workflow[1]",
-          "r_hat": 1.0011629213527844,
-          "bulk_ess": 3274.3632633724965,
-          "tail_ess": 2751.929977875015,
-          "posterior_mean_mcse": 0.014553246308280591,
-          "interval_endpoint_mcse": 0.032320444234702816,
-          "posterior_sd": 0.8323211804612591,
-          "max_mcse_to_posterior_sd_ratio": 0.038831697418526996
-        },
-        {
-          "parameter_name": "z_workflow[2]",
-          "r_hat": 1.00005124321745,
-          "bulk_ess": 2602.6525493453014,
-          "tail_ess": 2591.218984418354,
-          "posterior_mean_mcse": 0.015353530341408104,
-          "interval_endpoint_mcse": 0.030752779369651484,
-          "posterior_sd": 0.7855851235735718,
-          "max_mcse_to_posterior_sd_ratio": 0.039146336210847836
-        },
-        {
-          "parameter_name": "z_workflow[3]",
-          "r_hat": 1.0010686037243648,
-          "bulk_ess": 2965.9665400368726,
-          "tail_ess": 2661.338079648328,
-          "posterior_mean_mcse": 0.014730605516881407,
-          "interval_endpoint_mcse": 0.027025507034296126,
-          "posterior_sd": 0.802699326537386,
-          "max_mcse_to_posterior_sd_ratio": 0.033668281685094205
-        },
-        {
-          "parameter_name": "z_function[0]",
-          "r_hat": 1.0024238792559674,
-          "bulk_ess": 2952.9613627750564,
-          "tail_ess": 2723.9224669846863,
-          "posterior_mean_mcse": 0.014680897245408709,
-          "interval_endpoint_mcse": 0.04095096748589755,
-          "posterior_sd": 0.7956018674288693,
-          "max_mcse_to_posterior_sd_ratio": 0.05147168346680479
-        },
-        {
-          "parameter_name": "z_function[1]",
-          "r_hat": 1.000762651084522,
-          "bulk_ess": 3054.3565226638575,
-          "tail_ess": 2541.390171552906,
-          "posterior_mean_mcse": 0.014085606598213595,
-          "interval_endpoint_mcse": 0.030619305232042482,
-          "posterior_sd": 0.7830831597879132,
-          "max_mcse_to_posterior_sd_ratio": 0.03910096245759554
-        },
-        {
-          "parameter_name": "z_function[2]",
-          "r_hat": 1.0003678117373056,
-          "bulk_ess": 2746.2575649171185,
-          "tail_ess": 2769.2475642750555,
-          "posterior_mean_mcse": 0.015182838153496076,
-          "interval_endpoint_mcse": 0.03346230798597605,
-          "posterior_sd": 0.7990782761595339,
-          "max_mcse_to_posterior_sd_ratio": 0.041876132769870705
-        },
-        {
-          "parameter_name": "z_cohort[0]",
-          "r_hat": 1.0001505580353451,
-          "bulk_ess": 2444.7689147025444,
-          "tail_ess": 2748.8393293798094,
-          "posterior_mean_mcse": 0.011042457312798704,
-          "interval_endpoint_mcse": 0.017690334967154442,
-          "posterior_sd": 0.5459023405266309,
-          "max_mcse_to_posterior_sd_ratio": 0.03240567708518819
-        },
-        {
-          "parameter_name": "z_cohort[1]",
-          "r_hat": 1.000640779206846,
-          "bulk_ess": 2302.119645061624,
-          "tail_ess": 2627.982184675004,
-          "posterior_mean_mcse": 0.01152241307276751,
-          "interval_endpoint_mcse": 0.018150206253466195,
-          "posterior_sd": 0.5524189472614741,
-          "max_mcse_to_posterior_sd_ratio": 0.03285587205768892
-        },
-        {
-          "parameter_name": "z_cohort[2]",
-          "r_hat": 0.9999573609637601,
-          "bulk_ess": 2348.5786885584257,
-          "tail_ess": 2478.63123327955,
-          "posterior_mean_mcse": 0.011181872466614994,
-          "interval_endpoint_mcse": 0.02406923644683137,
-          "posterior_sd": 0.5420456172413003,
-          "max_mcse_to_posterior_sd_ratio": 0.04440444804134735
-        },
-        {
-          "parameter_name": "z_cohort[3]",
-          "r_hat": 1.0005962206030015,
-          "bulk_ess": 2255.013518184699,
-          "tail_ess": 2600.3388838702426,
-          "posterior_mean_mcse": 0.01153061029095289,
-          "interval_endpoint_mcse": 0.01853075167243623,
-          "posterior_sd": 0.54672766706513,
-          "max_mcse_to_posterior_sd_ratio": 0.03389393438219529
-        },
-        {
-          "parameter_name": "z_cohort[4]",
-          "r_hat": 1.0007227346916263,
-          "bulk_ess": 2611.04493465545,
-          "tail_ess": 2469.8701242430334,
-          "posterior_mean_mcse": 0.010535984971550788,
-          "interval_endpoint_mcse": 0.018558206900235852,
-          "posterior_sd": 0.538234266764571,
-          "max_mcse_to_posterior_sd_ratio": 0.0344797944801857
-        },
-        {
-          "parameter_name": "z_cohort[5]",
-          "r_hat": 1.0004570905676744,
-          "bulk_ess": 2306.7755938340765,
-          "tail_ess": 2712.3263872668635,
-          "posterior_mean_mcse": 0.01153799723399302,
-          "interval_endpoint_mcse": 0.02138693914610751,
-          "posterior_sd": 0.553518311894284,
-          "max_mcse_to_posterior_sd_ratio": 0.038638178153340266
-        },
-        {
-          "parameter_name": "z_cohort[6]",
-          "r_hat": 1.000167538796089,
-          "bulk_ess": 2206.2936007742096,
-          "tail_ess": 2500.6454703144354,
-          "posterior_mean_mcse": 0.011522399652238073,
-          "interval_endpoint_mcse": 0.019480135758440126,
-          "posterior_sd": 0.5396578736006494,
-          "max_mcse_to_posterior_sd_ratio": 0.03609719548510759
-        },
-        {
-          "parameter_name": "z_cohort[7]",
-          "r_hat": 1.0002520020133432,
-          "bulk_ess": 2390.2188201566933,
-          "tail_ess": 2536.1645337137593,
-          "posterior_mean_mcse": 0.011315847413264708,
-          "interval_endpoint_mcse": 0.01633290416301525,
-          "posterior_sd": 0.5531279471271031,
-          "max_mcse_to_posterior_sd_ratio": 0.029528256975347
-        },
-        {
-          "parameter_name": "z_cohort[8]",
-          "r_hat": 1.000011195923551,
-          "bulk_ess": 2274.890504716367,
-          "tail_ess": 2221.446655001605,
-          "posterior_mean_mcse": 0.012229772385025428,
-          "interval_endpoint_mcse": 0.02114800710539655,
-          "posterior_sd": 0.580395922344438,
-          "max_mcse_to_posterior_sd_ratio": 0.03643720827667392
-        },
-        {
-          "parameter_name": "z_cohort[9]",
-          "r_hat": 1.0006529766704997,
-          "bulk_ess": 2032.8335581780354,
-          "tail_ess": 2486.575339471601,
-          "posterior_mean_mcse": 0.012373555044413596,
-          "interval_endpoint_mcse": 0.020204506341137685,
-          "posterior_sd": 0.5582529233052508,
-          "max_mcse_to_posterior_sd_ratio": 0.036192387890264445
-        },
-        {
-          "parameter_name": "z_cohort[10]",
-          "r_hat": 1.0001682007858186,
-          "bulk_ess": 2291.567838572668,
-          "tail_ess": 2551.1431327131913,
-          "posterior_mean_mcse": 0.011593901806858172,
-          "interval_endpoint_mcse": 0.018903524304143215,
-          "posterior_sd": 0.555522767034836,
-          "max_mcse_to_posterior_sd_ratio": 0.03402835207824669
-        },
-        {
-          "parameter_name": "z_cohort[11]",
-          "r_hat": 0.9996223206374671,
-          "bulk_ess": 1966.2711583469477,
-          "tail_ess": 2251.6552599258102,
-          "posterior_mean_mcse": 0.013011380480553973,
-          "interval_endpoint_mcse": 0.017020419843322282,
-          "posterior_sd": 0.5768259698836263,
-          "max_mcse_to_posterior_sd_ratio": 0.02950702765126217
-        },
-        {
-          "parameter_name": "z_cohort[12]",
-          "r_hat": 0.9999673041627996,
-          "bulk_ess": 2599.865455149522,
-          "tail_ess": 2726.7615342937747,
-          "posterior_mean_mcse": 0.01070885461647506,
-          "interval_endpoint_mcse": 0.01757518158661442,
-          "posterior_sd": 0.5453597458973369,
-          "max_mcse_to_posterior_sd_ratio": 0.03222676722810949
-        },
-        {
-          "parameter_name": "z_cohort[13]",
-          "r_hat": 0.999855483522103,
-          "bulk_ess": 2272.234370770959,
-          "tail_ess": 2381.935208452453,
-          "posterior_mean_mcse": 0.011448554612818086,
-          "interval_endpoint_mcse": 0.015403981501297515,
-          "posterior_sd": 0.5456326459693904,
-          "max_mcse_to_posterior_sd_ratio": 0.028231414698309063
-        },
-        {
-          "parameter_name": "z_cohort[14]",
-          "r_hat": 1.0009598841176508,
-          "bulk_ess": 2344.1481316791346,
-          "tail_ess": 2553.071489309863,
-          "posterior_mean_mcse": 0.011205008812569164,
-          "interval_endpoint_mcse": 0.021760495378765787,
-          "posterior_sd": 0.5411608452713982,
-          "max_mcse_to_posterior_sd_ratio": 0.04021077202629591
-        },
-        {
-          "parameter_name": "z_cohort[15]",
-          "r_hat": 1.0002686480338483,
-          "bulk_ess": 2216.824163689261,
-          "tail_ess": 2773.203357680764,
-          "posterior_mean_mcse": 0.01153103021192143,
-          "interval_endpoint_mcse": 0.021388914389420588,
-          "posterior_sd": 0.5439400859751843,
-          "max_mcse_to_posterior_sd_ratio": 0.03932218812495536
-        },
-        {
-          "parameter_name": "z_cohort[16]",
-          "r_hat": 1.0034563207789615,
-          "bulk_ess": 2136.1125604498684,
-          "tail_ess": 2820.8616243938995,
-          "posterior_mean_mcse": 0.011866441148560364,
-          "interval_endpoint_mcse": 0.019913538433957823,
-          "posterior_sd": 0.549562250839863,
-          "max_mcse_to_posterior_sd_ratio": 0.036235273444500886
-        },
-        {
-          "parameter_name": "z_cohort[17]",
-          "r_hat": 1.0004677642278499,
-          "bulk_ess": 2318.6466795192396,
-          "tail_ess": 2887.912149194901,
-          "posterior_mean_mcse": 0.011484922923315996,
-          "interval_endpoint_mcse": 0.021480367034609704,
-          "posterior_sd": 0.552946328533203,
-          "max_mcse_to_posterior_sd_ratio": 0.03884711033635132
-        },
-        {
-          "parameter_name": "z_cohort[18]",
-          "r_hat": 0.9999423119596431,
-          "bulk_ess": 2213.7388316386796,
-          "tail_ess": 2805.529093374199,
-          "posterior_mean_mcse": 0.011648150356468958,
-          "interval_endpoint_mcse": 0.02103329238597107,
-          "posterior_sd": 0.5472239070229198,
-          "max_mcse_to_posterior_sd_ratio": 0.03843635505692575
-        },
-        {
-          "parameter_name": "z_cohort[19]",
-          "r_hat": 1.0009112855212636,
-          "bulk_ess": 2510.37900848922,
-          "tail_ess": 2845.2058379834134,
-          "posterior_mean_mcse": 0.010860133063564767,
-          "interval_endpoint_mcse": 0.01873227024455875,
-          "posterior_sd": 0.5437848950209813,
-          "max_mcse_to_posterior_sd_ratio": 0.03444794148582592
-        },
-        {
-          "parameter_name": "z_cohort[20]",
-          "r_hat": 1.001166760617023,
-          "bulk_ess": 2172.8615581953954,
-          "tail_ess": 2281.918320274283,
-          "posterior_mean_mcse": 0.012564756869553812,
-          "interval_endpoint_mcse": 0.022620739426271297,
-          "posterior_sd": 0.5852866597199213,
-          "max_mcse_to_posterior_sd_ratio": 0.038648991994958595
-        },
-        {
-          "parameter_name": "z_cohort[21]",
-          "r_hat": 1.0005283324483292,
-          "bulk_ess": 2083.639848303012,
-          "tail_ess": 2566.175165718396,
-          "posterior_mean_mcse": 0.012918979707636813,
-          "interval_endpoint_mcse": 0.018605297519180275,
-          "posterior_sd": 0.5892842287701217,
-          "max_mcse_to_posterior_sd_ratio": 0.031572705683997115
-        },
-        {
-          "parameter_name": "z_cohort[22]",
-          "r_hat": 1.0010778281950534,
-          "bulk_ess": 2343.8400959755045,
-          "tail_ess": 2710.6398915016716,
-          "posterior_mean_mcse": 0.01084674288543651,
-          "interval_endpoint_mcse": 0.018467533937125247,
-          "posterior_sd": 0.5262609501319754,
-          "max_mcse_to_posterior_sd_ratio": 0.03509197087964435
-        },
-        {
-          "parameter_name": "z_cohort[23]",
-          "r_hat": 1.0010772135004962,
-          "bulk_ess": 1496.7635494601093,
-          "tail_ess": 2154.882857081778,
-          "posterior_mean_mcse": 0.016788590095044006,
-          "interval_endpoint_mcse": 0.02020710571304163,
-          "posterior_sd": 0.6512178233492202,
-          "max_mcse_to_posterior_sd_ratio": 0.031029718457514368
-        },
-        {
-          "parameter_name": "z_cohort[24]",
-          "r_hat": 1.0009132994050625,
-          "bulk_ess": 2190.7864403251765,
-          "tail_ess": 2728.8998863945235,
-          "posterior_mean_mcse": 0.011760049725044954,
-          "interval_endpoint_mcse": 0.0184773989146656,
-          "posterior_sd": 0.5505866596820732,
-          "max_mcse_to_posterior_sd_ratio": 0.033559474407416724
-        },
-        {
-          "parameter_name": "z_cohort[25]",
-          "r_hat": 1.0008528358543731,
-          "bulk_ess": 2028.2736113234719,
-          "tail_ess": 2365.5819791781414,
-          "posterior_mean_mcse": 0.012238186588378028,
-          "interval_endpoint_mcse": 0.01999059638383005,
-          "posterior_sd": 0.5519856621674086,
-          "max_mcse_to_posterior_sd_ratio": 0.03621578920245072
-        },
-        {
-          "parameter_name": "z_cohort[26]",
-          "r_hat": 1.0007676502868177,
-          "bulk_ess": 2096.7955407111003,
-          "tail_ess": 2322.6115256603644,
-          "posterior_mean_mcse": 0.011762125890426764,
-          "interval_endpoint_mcse": 0.025617011270355095,
-          "posterior_sd": 0.5386594717797816,
-          "max_mcse_to_posterior_sd_ratio": 0.04755696801490203
-        },
-        {
-          "parameter_name": "z_cohort[27]",
-          "r_hat": 0.9997563271215402,
-          "bulk_ess": 2173.605491548628,
-          "tail_ess": 2633.2889606282124,
-          "posterior_mean_mcse": 0.01188612290316562,
-          "interval_endpoint_mcse": 0.016248525833234745,
-          "posterior_sd": 0.5541379246263851,
-          "max_mcse_to_posterior_sd_ratio": 0.02932216892426185
-        },
-        {
-          "parameter_name": "z_cohort[28]",
-          "r_hat": 1.0009749732200823,
-          "bulk_ess": 2462.2760367065193,
-          "tail_ess": 2855.5546502920947,
-          "posterior_mean_mcse": 0.010586100015812382,
-          "interval_endpoint_mcse": 0.016678515559763796,
-          "posterior_sd": 0.5248482344458302,
-          "max_mcse_to_posterior_sd_ratio": 0.03177778730145503
-        },
-        {
-          "parameter_name": "z_cohort[29]",
-          "r_hat": 1.0000587024676995,
-          "bulk_ess": 2207.115125611494,
-          "tail_ess": 2536.7457965474155,
-          "posterior_mean_mcse": 0.01184792870046149,
-          "interval_endpoint_mcse": 0.018588736450042907,
-          "posterior_sd": 0.5569208194649474,
-          "max_mcse_to_posterior_sd_ratio": 0.03337770074371027
-        },
-        {
-          "parameter_name": "z_cohort[30]",
-          "r_hat": 1.000222230098142,
-          "bulk_ess": 2227.7176720520183,
-          "tail_ess": 2236.9477865987287,
-          "posterior_mean_mcse": 0.011614636965418963,
-          "interval_endpoint_mcse": 0.02278820022751027,
-          "posterior_sd": 0.5474594180813734,
-          "max_mcse_to_posterior_sd_ratio": 0.041625368885558324
-        },
-        {
-          "parameter_name": "z_cohort[31]",
-          "r_hat": 1.0015110837228092,
-          "bulk_ess": 2179.395093842337,
-          "tail_ess": 2466.4203815064393,
-          "posterior_mean_mcse": 0.011864649193559451,
-          "interval_endpoint_mcse": 0.021734917022084188,
-          "posterior_sd": 0.5540464291196878,
-          "max_mcse_to_posterior_sd_ratio": 0.03922941450343488
-        },
-        {
-          "parameter_name": "z_organization[0]",
-          "r_hat": 1.0005873837440993,
-          "bulk_ess": 2608.73205802611,
-          "tail_ess": 2549.736878592014,
-          "posterior_mean_mcse": 0.017905293948305888,
-          "interval_endpoint_mcse": 0.04442581430174697,
-          "posterior_sd": 0.9131597529298713,
-          "max_mcse_to_posterior_sd_ratio": 0.04865064865069538
-        },
-        {
-          "parameter_name": "z_organization[1]",
-          "r_hat": 1.0001685617613474,
-          "bulk_ess": 2936.4866254616063,
-          "tail_ess": 2603.560333650708,
-          "posterior_mean_mcse": 0.016381458713403668,
-          "interval_endpoint_mcse": 0.04264743701088691,
-          "posterior_sd": 0.8867285238174194,
-          "max_mcse_to_posterior_sd_ratio": 0.048095257866846486
-        },
-        {
-          "parameter_name": "sigma_expectation_path",
-          "r_hat": 1.0005680485692445,
-          "bulk_ess": 2640.7945011546317,
-          "tail_ess": 1893.2999878127841,
-          "posterior_mean_mcse": 0.004483570340316707,
-          "interval_endpoint_mcse": 0.008676189846314242,
-          "posterior_sd": 0.2610436260579554,
-          "max_mcse_to_posterior_sd_ratio": 0.03323655121304515
-        },
-        {
-          "parameter_name": "sigma_workflow",
-          "r_hat": 1.0007746290545472,
-          "bulk_ess": 1296.8818266240808,
-          "tail_ess": 1465.038311564024,
-          "posterior_mean_mcse": 0.004107969597843989,
-          "interval_endpoint_mcse": 0.010454486105492766,
-          "posterior_sd": 0.16829123581355157,
-          "max_mcse_to_posterior_sd_ratio": 0.06212139363617962
-        },
-        {
-          "parameter_name": "sigma_function",
-          "r_hat": 1.0021106640417257,
-          "bulk_ess": 979.4674074688427,
-          "tail_ess": 1284.579907795734,
-          "posterior_mean_mcse": 0.004292619426359436,
-          "interval_endpoint_mcse": 0.01281620517897647,
-          "posterior_sd": 0.16575600152833594,
-          "max_mcse_to_posterior_sd_ratio": 0.07731970523423577
-        },
-        {
-          "parameter_name": "sigma_cohort",
-          "r_hat": 1.001953254123015,
-          "bulk_ess": 1173.203469799754,
-          "tail_ess": 1707.8803738992258,
-          "posterior_mean_mcse": 0.0011677643912527175,
-          "interval_endpoint_mcse": 0.0019481704476238537,
-          "posterior_sd": 0.04026553408159213,
-          "max_mcse_to_posterior_sd_ratio": 0.048383077290771195
-        },
-        {
-          "parameter_name": "sigma_organization",
-          "r_hat": 0.9999973226868778,
-          "bulk_ess": 2261.990553317878,
-          "tail_ess": 1946.6920824600054,
-          "posterior_mean_mcse": 0.005123030024497124,
-          "interval_endpoint_mcse": 0.012950580502762932,
-          "posterior_sd": 0.2651333847067353,
-          "max_mcse_to_posterior_sd_ratio": 0.048845529268551374
+          "r_hat": 1.002,
+          "bulk_ess": 1200.0,
+          "tail_ess": 1100.0,
+          "posterior_mean_mcse": 0.001,
+          "interval_endpoint_mcse": 0.002,
+          "posterior_sd": 0.1,
+          "max_mcse_to_posterior_sd_ratio": 0.02
         }
       ],
       "post_warmup_divergences": 0,
       "max_treedepth_saturation_rate": 0.0,
       "max_treedepth_warning": false,
-      "energy_bfmi_min": 0.7141160437770178,
+      "energy_bfmi_min": 0.9,
       "energy_bfmi_warning": false,
       "rank_plots_recorded": true,
       "energy_plots_recorded": true
     },
     "pre_trend": {
       "pseudo_effect_credible_interval_80": {
-        "lower": -0.06641843905980059,
-        "upper": 0.14438522088082725
+        "lower": -0.1,
+        "upper": 0.1
       },
       "includes_zero": true,
       "pass": true
@@ -604,67 +94,67 @@
     "posterior_predictive_checks": [
       {
         "statistic_name": "pre_post_mean_movement",
-        "observed_value": 0.6024059476965706,
+        "observed_value": 0.0,
         "posterior_predictive_summary": {
-          "mean": 0.5991155978298817,
+          "mean": 0.0,
           "credible_interval_80": {
-            "lower": 0.536718492440809,
-            "upper": 0.6618356158296891
+            "lower": -1.0,
+            "upper": 1.0
           }
         },
-        "p_value": 0.47525,
+        "p_value": 0.5,
         "pass": true
       },
       {
         "statistic_name": "between_cohort_variance",
-        "observed_value": 0.13914320805432182,
+        "observed_value": 0.0,
         "posterior_predictive_summary": {
-          "mean": 0.14168688265631157,
+          "mean": 0.0,
           "credible_interval_80": {
-            "lower": 0.12053166675966857,
-            "upper": 0.16392132334093834
+            "lower": -1.0,
+            "upper": 1.0
           }
         },
-        "p_value": 0.5555,
+        "p_value": 0.5,
         "pass": true
       },
       {
         "statistic_name": "within_cohort_variance",
-        "observed_value": 0.16567758602573002,
+        "observed_value": 0.0,
         "posterior_predictive_summary": {
-          "mean": 0.17158810688015666,
+          "mean": 0.0,
           "credible_interval_80": {
-            "lower": 0.14411618237436896,
-            "upper": 0.20007086194803145
+            "lower": -1.0,
+            "upper": 1.0
           }
         },
-        "p_value": 0.5955,
+        "p_value": 0.5,
         "pass": true
       },
       {
         "statistic_name": "tail_or_extreme_cell_statistic",
-        "observed_value": 1.2338817142860061,
+        "observed_value": 0.0,
         "posterior_predictive_summary": {
-          "mean": 1.359951259258917,
+          "mean": 0.0,
           "credible_interval_80": {
-            "lower": 1.2094097416833305,
-            "upper": 1.522179709479803
+            "lower": -1.0,
+            "upper": 1.0
           }
         },
-        "p_value": 0.85225,
+        "p_value": 0.5,
         "pass": true
       },
       {
         "statistic_name": "difference_in_differences_contrast",
-        "observed_value": 0.5529554673428965,
+        "observed_value": 0.0,
         "posterior_predictive_summary": {
-          "mean": 0.5552661731960156,
+          "mean": 0.0,
           "credible_interval_80": {
-            "lower": 0.42733901208740566,
-            "upper": 0.6804344321585909
+            "lower": -1.0,
+            "upper": 1.0
           }
         },
-        "p_value": 0.50575,
+        "p_value": 0.5,
         "pass": true
       }
     ],
@@ -672,14 +162,14 @@
       "empirical_prior_justification_documented": true,
       "empirical_prior_justification_ref": "docs/contracts/confidence-inference-methodology/README.md#prior-policy",
       "empirical_prior_justification_hash": "a1f937bcd4009a3b221004ab77e4a4274cb172301c30be87fb18267173f0556f",
-      "posterior_mean_shift_in_posterior_sd": 0.10641923184159499,
+      "posterior_mean_shift_in_posterior_sd": 0.1,
       "pass": true
     }
   },
   "calibration": {
     "scenarios": [
       {
-        "scenario_id": "phase-b1-fixture-effect-0-k12",
+        "scenario_id": "structural-control-effect-0-k12",
         "injected_effect_size_sd": 0,
         "cohort_size": 12,
         "replication_count": 200,
@@ -689,7 +179,7 @@
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0-k16",
+        "scenario_id": "structural-control-effect-0-k16",
         "injected_effect_size_sd": 0,
         "cohort_size": 16,
         "replication_count": 200,
@@ -699,7 +189,7 @@
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.2-k12",
+        "scenario_id": "structural-control-effect-0.2-k12",
         "injected_effect_size_sd": 0.2,
         "cohort_size": 12,
         "replication_count": 200,
@@ -709,7 +199,7 @@
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.2-k16",
+        "scenario_id": "structural-control-effect-0.2-k16",
         "injected_effect_size_sd": 0.2,
         "cohort_size": 16,
         "replication_count": 200,
@@ -719,7 +209,7 @@
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.5-k12",
+        "scenario_id": "structural-control-effect-0.5-k12",
         "injected_effect_size_sd": 0.5,
         "cohort_size": 12,
         "replication_count": 200,
@@ -729,7 +219,7 @@
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.5-k16",
+        "scenario_id": "structural-control-effect-0.5-k16",
         "injected_effect_size_sd": 0.5,
         "cohort_size": 16,
         "replication_count": 200,
@@ -742,8 +232,8 @@
     "per_scenario_required": true
   },
   "null_checks": {
-    "null_effect_scenario_count": 200,
-    "false_eligibility_rate": 0.02,
+    "null_effect_scenario_count": 400,
+    "false_eligibility_rate": 0.0,
     "pass": true
   },
   "floor_checks": {
@@ -793,7 +283,7 @@
     "sequential_method_name": null,
     "synthetic_null_proof_hash": null,
     "false_eligibility_bound": 0.05,
-    "pass": false
+    "pass": true
   },
   "comparison_adequacy": {
     "comparison_cohort_present": true,
@@ -842,15 +332,16 @@
   "governance_state": {
     "state": "HOLD",
     "failing_diagnostics": [
-      "peeking_control"
+      "calibration_coverage",
+      "missing_or_suppressed_windows"
     ],
     "comparison_supported_contribution_estimate_authorized": false,
     "evidence_tier_only": false
   },
   "hash_bindings": {
-    "source_posterior_hash": "f8840811283e5a4df3d9afb5498c0b3d8161275f19d2081c5aa8d3f6b93c265f",
-    "synthetic_input_hash": "bac99624f9ad5852187975870f7f9e741b4c07ed4f5fd2c6d4a5ca35f300d043",
-    "artifact_self_hash": "2a0671255056be361d364446e6e190adb10f4dc71902a7ecaa6b4f64c9f32bd3"
+    "source_posterior_hash": "5667053300d0770faa5041c6b5f14e306c3a948556bd1c599a91592774b981c8",
+    "synthetic_input_hash": "c55f95d17f5642843c4e2a7a9bbeebe7d239d1226c2b8ed161ac251625d75b28",
+    "artifact_self_hash": "4b40d8af4094dc17a8293712e66e293f8511c865c056d97b86ba617f73459c8f"
   },
   "blocked_uses": [
     "model_output",

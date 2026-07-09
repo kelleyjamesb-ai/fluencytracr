@@ -15,11 +15,13 @@ from types import SimpleNamespace
 import pytest
 
 from fluencytracr_inference.artifact import (
+    canonical_floor_checks,
     emit_proof_artifact,
     phase_b1_fixture_calibration_scenarios,
     phase_b1_fixture_floor_checks,
     phase_b1_fixture_null_checks,
 )
+from fluencytracr_inference.calibration import control_study_inputs
 from fluencytracr_inference.constants import (
     INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
 )
@@ -117,10 +119,11 @@ def _passing_diagnostics(**overrides) -> DiagnosticsResult:
 
 
 def _study_inputs() -> dict:
+    calibration_scenarios, null_checks = control_study_inputs()
     return {
-        "calibration_scenarios": phase_b1_fixture_calibration_scenarios(),
-        "null_checks": phase_b1_fixture_null_checks(),
-        "floor_checks": phase_b1_fixture_floor_checks(),
+        "calibration_scenarios": calibration_scenarios,
+        "null_checks": null_checks,
+        "floor_checks": canonical_floor_checks(),
     }
 
 
@@ -139,6 +142,7 @@ def _emit_with_study_inputs(*, dataset, fit, diagnostics, **overrides):
         dataset=dataset,
         fit=fit,
         diagnostics=diagnostics,
+        allow_structural_control_inputs=True,
         **values,
     )
 
@@ -576,6 +580,25 @@ def test_missing_study_level_inputs_hold(clean_dataset, clean_fit, clean_diagnos
     ]
 
 
+def test_structural_control_study_inputs_do_not_authorize_public_eligibility(
+    clean_dataset, clean_fit, clean_diagnostics
+):
+    calibration_scenarios, null_checks = control_study_inputs()
+    artifact = emit_proof_artifact(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        calibration_scenarios=calibration_scenarios,
+        null_checks=null_checks,
+        floor_checks=canonical_floor_checks(),
+    )
+
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == [
+        "calibration_coverage"
+    ]
+
+
 def test_full_cli_path_does_not_inject_fixture_study_inputs(monkeypatch):
     from fluencytracr_inference import __main__ as cli
 
@@ -644,6 +667,42 @@ def test_failing_calibration_inputs_hold(clean_dataset, clean_fit, clean_diagnos
     )
     assert artifact["governance_state"]["state"] == "HOLD"
     assert artifact["governance_state"]["failing_diagnostics"] == ["calibration_coverage"]
+
+
+def test_incomplete_study_inputs_hold(clean_dataset, clean_fit, clean_diagnostics):
+    scenarios = phase_b1_fixture_calibration_scenarios()[:1]
+    artifact = _emit_with_study_inputs(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        calibration_scenarios=scenarios,
+    )
+
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == ["calibration_coverage"]
+    assert (
+        artifact["governance_state"]["comparison_supported_contribution_estimate_authorized"]
+        is False
+    )
+
+
+def test_phase_b1_fixture_study_inputs_do_not_authorize_eligibility(
+    clean_dataset, clean_fit, clean_diagnostics
+):
+    artifact = emit_proof_artifact(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
+        null_checks=phase_b1_fixture_null_checks(),
+        floor_checks=phase_b1_fixture_floor_checks(),
+    )
+
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == [
+        "calibration_coverage",
+        "null_false_eligibility",
+    ]
 
 
 def test_failing_null_checks_hold(clean_dataset, clean_fit, clean_diagnostics):

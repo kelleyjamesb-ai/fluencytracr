@@ -605,6 +605,18 @@ const InferenceProofSeedRangeSchema = z
     }
   });
 
+const INFERENCE_PROOF_REQUIRED_CALIBRATION_CELLS = [
+  { scenarioId: "calibration-effect-0-k12", effect: 0, cohortSize: 12 },
+  { scenarioId: "calibration-effect-0-k16", effect: 0, cohortSize: 16 },
+  { scenarioId: "calibration-effect-0.2-k12", effect: 0.2, cohortSize: 12 },
+  { scenarioId: "calibration-effect-0.2-k16", effect: 0.2, cohortSize: 16 },
+  { scenarioId: "calibration-effect-0.5-k12", effect: 0.5, cohortSize: 12 },
+  { scenarioId: "calibration-effect-0.5-k16", effect: 0.5, cohortSize: 16 }
+] as const;
+
+const INFERENCE_PROOF_REQUIRED_NULL_REPLICATIONS =
+  2 * INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN;
+
 export const InferenceProofSyntheticGeneratorSchema = z
   .object({
     generator_id: z.string().min(1),
@@ -970,7 +982,9 @@ export const InferenceProofCalibrationSchema = z
   })
   .strict()
   .superRefine((calibration, ctx) => {
-    const required = ["0:12", "0:16", "0.2:12", "0.2:16", "0.5:12", "0.5:16"];
+    const required = INFERENCE_PROOF_REQUIRED_CALIBRATION_CELLS.map(
+      (cell) => `${cell.effect}:${cell.cohortSize}`
+    );
     const observed = calibration.scenarios.map(
       (scenario) => `${scenario.injected_effect_size_sd}:${scenario.cohort_size}`
     );
@@ -994,7 +1008,7 @@ export const InferenceProofCalibrationSchema = z
 
 export const InferenceProofNullChecksSchema = z
   .object({
-    null_effect_scenario_count: z.number().int().gte(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN),
+    null_effect_scenario_count: z.number().int().gte(INFERENCE_PROOF_REQUIRED_NULL_REPLICATIONS),
     false_eligibility_rate: z.number().finite().gte(0).lte(1),
     pass: z.boolean()
   })
@@ -1561,6 +1575,18 @@ export const InferenceProofArtifactSchema = z
     }
 
     for (const [index, scenario] of artifact.calibration.scenarios.entries()) {
+      const expected = INFERENCE_PROOF_REQUIRED_CALIBRATION_CELLS.find(
+        (cell) =>
+          cell.effect === scenario.injected_effect_size_sd &&
+          cell.cohortSize === scenario.cohort_size
+      );
+      if (expected && scenario.scenario_id !== expected.scenarioId) {
+        failOrIssue(
+          "calibration_coverage",
+          ["calibration", "scenarios", index, "scenario_id"],
+          "eligible calibration scenarios must use computed calibration-effect/cohort scenario ids"
+        );
+      }
       if (
         !scenario.pass ||
         scenario.coverage_rate < INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN ||

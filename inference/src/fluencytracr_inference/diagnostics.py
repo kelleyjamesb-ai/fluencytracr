@@ -54,7 +54,7 @@ from .model import (
     fit_did_model,
     fit_pre_trend_pseudo_model,
 )
-from .synthetic import SyntheticDataset
+from .synthetic import GROUPINGS, SyntheticDataset
 
 
 @dataclass(frozen=True)
@@ -181,16 +181,29 @@ def _bfmi_values(idata) -> np.ndarray:
 def compute_sampler_diagnostics(fit: FitResult) -> SamplerDiagnostics:
     """R-hat / ESS / MCSE per sampled parameter plus backend warnings.
 
-    The parameter table covers the sampled (free) parameters — fixed effects
-    including the estimand, hierarchical scales, and non-centered group
-    offsets — flattened per element. Deterministic ``u_*`` transforms are
-    derived quantities and excluded.
+    The parameter table covers posterior variables that can affect the
+    fitted estimand — fixed effects including the estimand, hierarchical
+    scales, non-centered zero-sum group offsets, and the scaled ``u_*`` group
+    effects in the model equation — flattened per element.
     """
     idata = fit.idata
     posterior = idata.posterior
-    var_names = [
-        name for name in posterior.data_vars if not str(name).startswith("u_")
+    candidate_var_names = [
+        "alpha",
+        "beta_post",
+        "beta_treated",
+        INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
+        *[
+            name
+            for grouping in GROUPINGS
+            for name in (
+                f"sigma_{grouping}",
+                f"z_{grouping}",
+                f"u_{grouping}",
+            )
+        ],
     ]
+    var_names = [name for name in candidate_var_names if name in posterior.data_vars]
 
     rhat_tree = az.rhat(idata, var_names=var_names)
     ess_bulk_tree = az.ess(idata, var_names=var_names, method="bulk")
