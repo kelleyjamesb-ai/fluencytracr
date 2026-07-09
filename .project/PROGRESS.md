@@ -2,6 +2,37 @@
 
 ## Current Session
 
+- Bayesian DiD Phase B2 full sampler-artifact run attempt (2026-07-09): began
+  the literal full sampler-artifact evidence run through the hardened
+  resumable path on branch
+  `codex/bayesian-did-calibration-null-study`. Confirmed the deterministic
+  plan for base seed `202607230`: same six required cells
+  `{0, 0.2, 0.5} x {12, 16}`, `1200` expected artifacts, and slot hash
+  `a5e128d13e56bd8bd07bdbeb2bfb62e0f85e6895e26abc8a9fe0fcdf5447181a`.
+  CODE / BUG / ADVERSARIAL review reconfirmed that stdout chunk reports are
+  necessary review evidence only, not OpenSpec completion authorization; the
+  original chunk JSON files must be kept as the audit record; shell exit `0`
+  is insufficient without JSON validation; and negative/floor controls require
+  artifact maps, not report JSON. A coarse `replication_count=10` trial was
+  stopped after runtime showed it withholds JSON until all `60` artifacts
+  complete. Switched to `replication_count=1` for safer resumability. The
+  first real full-settings chunk (`replication_start=0`,
+  `replication_count=1`) completed in `7:38.44` and emitted six artifacts.
+  Validation passed runner proof, source-report shape, synthetic-input binding,
+  exact plan slot index `0`, and no runner errors, but found one unusable
+  required calibration artifact: `effect=0.5`, `k=16`, `replication_index=0`
+  emitted `HOLD` with failing diagnostic `pre_trend`. The chunk summary was
+  five `eligible_internal_only` artifacts and one `HOLD`; null false
+  eligibility for the two null artifacts was `0/2`. Because the current
+  acceptance harness is fail-closed and requires required calibration
+  artifacts to be valid, bound, and acceptance-usable, this single pre-trend
+  HOLD means the exact full 1200-artifact plan cannot pass. Stopped the full
+  sweep rather than spending many more hours generating evidence for a known
+  no-go. OpenSpec tasks `3.3` and `4.2` remain unchecked. Remaining blocker:
+  decide whether to treat this as a model/diagnostic robustness issue for the
+  sampler proof path or make an explicit governance decision that the existing
+  computed aggregate approximation, not the literal sampler-artifact proof, is
+  the acceptable bounded Phase B2 evidence.
 - Bayesian DiD Phase B2 resumable evidence hardening (2026-07-09): built the
   non-authorizing sanitized chunk-report observation path for the full
   sampler-artifact proof. Rehydrated full-grid chunk reports can now observe
