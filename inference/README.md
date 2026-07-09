@@ -92,12 +92,17 @@ Under `src/fluencytracr_inference/`:
   artifact inputs because no current method is approved as full sampler-level
   acceptance evidence. Reports omit per-replication posterior interval bounds,
   can be strictly rehydrated from sanitized sidecar JSON for cross-process
-  chunk combination, mark rehydrated evidence as non-authorizing, and reject
-  invalid, unbound, HOLD, diagnostic-shell, duplicate, malformed-hash,
-  off-plan, or semantically failed artifacts from acceptance coverage/null-gate
-  counts. Per-replication runner exceptions are captured as invalid/unusable
-  sidecar rows with only the exception type recorded; details, traces,
-  posterior values, and artifacts are not emitted. Rehydrated chunk-report
+  chunk combination, and mark rehydrated evidence as non-authorizing.
+  Coverage summaries separate valid/bound posterior-available rows from hard
+  failures and report diagnostic HOLD counts by cell; clean-data
+  `HOLD(pre_trend)` rows remain unusable artifacts but can be counted in the
+  calibration recovery denominator when their posterior interval is hash-bound
+  and available. Invalid, unbound, runner-error, malformed-hash, missing
+  posterior/hash-mismatch, off-plan, non-`pre_trend` diagnostic-HOLD, or
+  semantically failed artifacts remain hard failures for acceptance
+  observation. Per-replication runner exceptions are captured as
+  invalid/unusable sidecar rows with only the exception type recorded; details,
+  traces, posterior values, and artifacts are not emitted. Rehydrated chunk-report
   evidence is token-gated and review-only: SHA-shaped source hashes in JSON do
   not self-certify, mixed live/rehydrated combines fail closed on source
   provenance, and runner acceptance plus artifact-input authorization remain

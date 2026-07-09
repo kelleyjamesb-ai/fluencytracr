@@ -2,6 +2,38 @@
 
 ## Current Session
 
+- Bayesian DiD Phase B2 acceptance-sidecar repair (2026-07-09): implemented
+  the bounded accounting repair for the full sampler-artifact path after the
+  clean `HOLD(pre_trend)` no-go. `coverage_summary()` now separates
+  valid/bound posterior-available rows from hard failures, reports
+  diagnostic-HOLD counts by cell and overall, and allows clean
+  `HOLD(pre_trend)` rows to remain unusable artifacts while still contributing
+  to calibration recovery coverage when their posterior interval is
+  hash-bound and available. Invalid artifacts, unbound synthetic input hashes,
+  runner errors, missing posterior/hash mismatches, unsupported governance
+  states, and non-`pre_trend` diagnostic HOLDs remain hard failures. Null
+  false-eligibility summaries now expose the same hard-failure and
+  diagnostic-HOLD partitions. HOLD governance validation was hardened so
+  declared failing diagnostics must be supported by artifact sections; a
+  forged self-hashed `HOLD(r_hat)` with passing sampler diagnostics is now
+  invalid. The legitimate `floor_check` HOLD path remains supported by the
+  floor-control section. Documentation in `inference/README.md` was updated
+  to describe the split. Verification passed:
+  `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_acceptance_study.py -q` (`55 passed`);
+  `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_synthetic_study.py -q` (`23 passed`);
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/ -q` (`199 passed`);
+  `npm run build --workspace packages/confidence-engine`;
+  `node --test
+  packages/confidence-engine/test/confidence_model_contract.test.mjs
+  packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`
+  (`87 passed`); `npx openspec validate
+  add-bayesian-inference-proof-harness --strict`; and `git diff --check`.
+  OpenSpec tasks `3.3` and `4.2` remain unchecked. Remaining blocker: rerun,
+  combine, and review the full 1200 full-settings sampler-artifact evidence
+  plus negative/floor controls through the repaired resumable path before
+  making any task-completion claim.
 - Bayesian DiD Phase B2 sampler pre-trend diagnosis (2026-07-09): investigated
   the no-go from the first literal full sampler-artifact chunk. The failing
   row seed is deterministic:

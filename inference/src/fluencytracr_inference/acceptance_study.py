@@ -70,6 +70,7 @@ DEFAULT_ACCEPTANCE_PLAN_CHUNK_SIZE = 10
 _NULL_FALSE_ELIGIBILITY_Z = NormalDist().inv_cdf(
     1.0 - INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX / 2.0
 )
+_CALIBRATION_PARTITIONABLE_DIAGNOSTIC_HOLDS = frozenset({"pre_trend"})
 
 _REQUIRED_ARTIFACT_TOP_LEVEL_KEYS = frozenset(
     {
@@ -667,11 +668,19 @@ class AcceptanceStudyResult:
                 for replication in cell_replications
                 if not _replication_valid_and_bound(replication)
             )
+            cell_hard_failure_reason_counts = _hard_failure_reason_counts(
+                cell_replications
+            )
+            cell_hard_failure_count = sum(cell_hard_failure_reason_counts.values())
             cell_unusable = sum(
                 1
                 for replication in cell_replications
                 if not replication.acceptance_usable_artifact
             )
+            cell_diagnostic_hold_counts = _diagnostic_hold_reason_counts(
+                cell_replications
+            )
+            cell_diagnostic_hold_count = sum(cell_diagnostic_hold_counts.values())
             cell_authorized = sum(
                 1
                 for replication in cell_replications
@@ -697,8 +706,14 @@ class AcceptanceStudyResult:
                     "replication_count": cell_count,
                     "valid_artifact_count": cell_valid,
                     "invalid_artifact_count": cell_invalid,
+                    "hard_failure_count": cell_hard_failure_count,
+                    "hard_failure_reason_counts": cell_hard_failure_reason_counts,
                     "acceptance_usable_artifact_count": cell_count - cell_unusable,
                     "acceptance_unusable_artifact_count": cell_unusable,
+                    "diagnostic_hold_artifact_count": cell_diagnostic_hold_count,
+                    "diagnostic_hold_failing_diagnostic_counts": (
+                        cell_diagnostic_hold_counts
+                    ),
                     "posterior_null_guard_evaluable_count": (
                         cell_count - cell_unevaluable
                     ),
@@ -729,11 +744,15 @@ class AcceptanceStudyResult:
             for replication in null_replications
             if not _replication_valid_and_bound(replication)
         )
+        hard_failure_reason_counts = _hard_failure_reason_counts(null_replications)
+        hard_failure_count = sum(hard_failure_reason_counts.values())
         unusable = sum(
             1
             for replication in null_replications
             if not replication.acceptance_usable_artifact
         )
+        diagnostic_hold_counts = _diagnostic_hold_reason_counts(null_replications)
+        diagnostic_hold_count = sum(diagnostic_hold_counts.values())
         unevaluable = sum(
             1
             for replication in null_replications
@@ -754,12 +773,14 @@ class AcceptanceStudyResult:
             self.full_replication_requirement_met
             and null_count > 0
             and invalid == 0
+            and hard_failure_count == 0
             and unevaluable == 0
             and rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
         )
         smoke_null_gate_observed = bool(
             null_count > 0
             and invalid == 0
+            and hard_failure_count == 0
             and unevaluable == 0
             and rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
         )
@@ -767,8 +788,12 @@ class AcceptanceStudyResult:
             "replication_count": null_count,
             "valid_artifact_count": valid_null_count,
             "invalid_artifact_count": invalid,
+            "hard_failure_count": hard_failure_count,
+            "hard_failure_reason_counts": hard_failure_reason_counts,
             "acceptance_usable_artifact_count": null_count - unusable,
             "acceptance_unusable_artifact_count": unusable,
+            "diagnostic_hold_artifact_count": diagnostic_hold_count,
+            "diagnostic_hold_failing_diagnostic_counts": diagnostic_hold_counts,
             "posterior_null_guard_evaluable_count": null_count - unevaluable,
             "posterior_null_guard_unevaluable_count": unevaluable,
             "posterior_null_guard_excluding_zero_count": posterior_excluding_zero,
@@ -796,8 +821,7 @@ class AcceptanceStudyResult:
             available = [
                 replication
                 for replication in cell_replications
-                if replication.acceptance_usable_artifact
-                and replication.covered_injected_effect is not None
+                if _replication_posterior_interval_available(replication)
             ]
             covered = sum(
                 1 for replication in available if replication.covered_injected_effect is True
@@ -807,10 +831,24 @@ class AcceptanceStudyResult:
                 for replication in cell_replications
                 if not _replication_valid_and_bound(replication)
             )
+            hard_failure_reason_counts = _hard_failure_reason_counts(
+                cell_replications
+            )
+            hard_failure_count = sum(hard_failure_reason_counts.values())
             unusable = sum(
                 1
                 for replication in cell_replications
                 if not replication.acceptance_usable_artifact
+            )
+            diagnostic_hold_counts = _diagnostic_hold_reason_counts(
+                cell_replications
+            )
+            diagnostic_hold_count = sum(diagnostic_hold_counts.values())
+            diagnostic_hold_with_posterior_count = sum(
+                1
+                for replication in cell_replications
+                if _replication_diagnostic_hold(replication)
+                and _replication_posterior_interval_available(replication)
             )
             missing_ci = sum(
                 1
@@ -834,15 +872,27 @@ class AcceptanceStudyResult:
                     "replication_count": len(cell_replications),
                     "valid_artifact_count": len(cell_replications) - invalid,
                     "invalid_artifact_count": invalid,
+                    "hard_failure_count": hard_failure_count,
+                    "hard_failure_reason_counts": hard_failure_reason_counts,
                     "acceptance_usable_artifact_count": (
                         len(cell_replications) - unusable
                     ),
                     "acceptance_unusable_artifact_count": unusable,
+                    "diagnostic_hold_artifact_count": diagnostic_hold_count,
+                    "diagnostic_hold_with_posterior_interval_count": (
+                        diagnostic_hold_with_posterior_count
+                    ),
+                    "diagnostic_hold_failing_diagnostic_counts": (
+                        diagnostic_hold_counts
+                    ),
                     "contribution_estimate_authorized_count": cell_authorized,
                     "contribution_estimate_authorization_observed": bool(
                         cell.effect_size == 0.0 or cell_authorized > 0
                     ),
                     "credible_interval_level": CREDIBLE_INTERVAL_LEVEL,
+                    "coverage_denominator": (
+                        "valid_bound_posterior_interval_available"
+                    ),
                     "posterior_interval_available_count": len(available),
                     "covered_count": covered,
                     "coverage_rate": coverage_rate,
@@ -860,7 +910,7 @@ class AcceptanceStudyResult:
                         len(cell_replications)
                         >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
                         and invalid == 0
-                        and unusable == 0
+                        and hard_failure_count == 0
                         and (
                             cell.effect_size == 0.0
                             or cell_authorized > 0
@@ -876,8 +926,7 @@ class AcceptanceStudyResult:
         available_replications = [
             replication
             for replication in self.replications
-            if replication.acceptance_usable_artifact
-            and replication.covered_injected_effect is not None
+            if _replication_posterior_interval_available(replication)
         ]
         covered = sum(
             1
@@ -889,10 +938,20 @@ class AcceptanceStudyResult:
             for replication in self.replications
             if not _replication_valid_and_bound(replication)
         )
+        hard_failure_reason_counts = _hard_failure_reason_counts(self.replications)
+        hard_failure_count = sum(hard_failure_reason_counts.values())
         unusable = sum(
             1
             for replication in self.replications
             if not replication.acceptance_usable_artifact
+        )
+        diagnostic_hold_counts = _diagnostic_hold_reason_counts(self.replications)
+        diagnostic_hold_count = sum(diagnostic_hold_counts.values())
+        diagnostic_hold_with_posterior_count = sum(
+            1
+            for replication in self.replications
+            if _replication_diagnostic_hold(replication)
+            and _replication_posterior_interval_available(replication)
         )
         missing_ci = sum(
             1
@@ -931,18 +990,27 @@ class AcceptanceStudyResult:
             "coverage_rate": rate,
             "coverage_standard_error": standard_error,
             "invalid_artifact_count": invalid,
+            "hard_failure_count": hard_failure_count,
+            "hard_failure_reason_counts": hard_failure_reason_counts,
             "acceptance_usable_artifact_count": self.replication_count - unusable,
             "acceptance_unusable_artifact_count": unusable,
+            "diagnostic_hold_artifact_count": diagnostic_hold_count,
+            "diagnostic_hold_with_posterior_interval_count": (
+                diagnostic_hold_with_posterior_count
+            ),
+            "diagnostic_hold_failing_diagnostic_counts": diagnostic_hold_counts,
             "contribution_estimate_authorized_count": authorized,
             "non_null_contribution_estimate_authorization_observed": (
                 non_null_cells_authorization_observed
             ),
+            "coverage_denominator": "valid_bound_posterior_interval_available",
+            "posterior_interval_available_count": len(available_replications),
             "missing_credible_interval_count": missing_ci,
             "full_replication_requirement_met": self.full_replication_requirement_met,
             "calibration_band_observed": bool(
                 self.full_replication_requirement_met
                 and invalid == 0
-                and unusable == 0
+                and hard_failure_count == 0
                 and non_null_cells_authorization_observed
                 and missing_ci == 0
                 and scenarios
@@ -1931,6 +1999,30 @@ def _acceptance_replication_from_report_section(section: dict) -> AcceptanceRepl
         raise ValueError("acceptance replication artifact_self_hash must be sha256 hex")
     if replication.artifact_valid and replication.artifact_self_hash is None:
         raise ValueError("valid acceptance replications must carry artifact_self_hash")
+    if not replication.artifact_valid and replication.artifact_self_hash is not None:
+        raise ValueError("invalid acceptance replications must not carry artifact hashes")
+    if (
+        replication.runner_error_type is not None
+        and (
+            replication.artifact_valid
+            or replication.artifact_bound_to_expected_input
+            or replication.artifact_self_hash is not None
+            or replication.covered_injected_effect is not None
+            or replication.contribution_estimate_eligible
+            or replication.posterior_null_guard_evaluable
+            or replication.posterior_null_guard_excludes_zero
+        )
+    ):
+        raise ValueError("runner-error acceptance replications must be fail-closed")
+    if not _replication_valid_and_bound(replication) and (
+        replication.covered_injected_effect is not None
+        or replication.contribution_estimate_eligible
+        or replication.posterior_null_guard_evaluable
+        or replication.posterior_null_guard_excludes_zero
+    ):
+        raise ValueError(
+            "invalid or unbound acceptance replications must not carry posterior evidence"
+        )
     return replication
 
 
@@ -2351,6 +2443,78 @@ def _replication_valid_and_bound(replication: AcceptanceReplication) -> bool:
     return bool(
         replication.artifact_valid and replication.artifact_bound_to_expected_input
     )
+
+
+def _replication_posterior_interval_available(
+    replication: AcceptanceReplication,
+) -> bool:
+    return bool(
+        _replication_valid_and_bound(replication)
+        and replication.runner_error_type is None
+        and replication.covered_injected_effect is not None
+    )
+
+
+def _replication_diagnostic_hold(replication: AcceptanceReplication) -> bool:
+    return bool(
+        _replication_valid_and_bound(replication)
+        and replication.runner_error_type is None
+        and replication.governance_state == "HOLD"
+        and replication.failing_diagnostics != ()
+    )
+
+
+def _replication_partitionable_calibration_hold(
+    replication: AcceptanceReplication,
+) -> bool:
+    return bool(
+        _replication_diagnostic_hold(replication)
+        and set(replication.failing_diagnostics)
+        == _CALIBRATION_PARTITIONABLE_DIAGNOSTIC_HOLDS
+    )
+
+
+def _replication_hard_failure_reason(
+    replication: AcceptanceReplication,
+) -> str | None:
+    if replication.runner_error_type is not None:
+        return "runner_error"
+    if not replication.artifact_valid:
+        return "invalid_artifact"
+    if not replication.artifact_bound_to_expected_input:
+        return "unbound_artifact"
+    if replication.covered_injected_effect is None:
+        return "missing_posterior_interval_or_hash_mismatch"
+    if replication.governance_state == "HOLD":
+        if _replication_partitionable_calibration_hold(replication):
+            return None
+        return "unsupported_diagnostic_hold"
+    if replication.governance_state != "eligible_internal_only":
+        return "unsupported_governance_state"
+    return None
+
+
+def _hard_failure_reason_counts(
+    replications: Sequence[AcceptanceReplication],
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for replication in replications:
+        reason = _replication_hard_failure_reason(replication)
+        if reason is not None:
+            counts[reason] = counts.get(reason, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _diagnostic_hold_reason_counts(
+    replications: Sequence[AcceptanceReplication],
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for replication in replications:
+        if not _replication_diagnostic_hold(replication):
+            continue
+        for diagnostic in replication.failing_diagnostics:
+            counts[diagnostic] = counts.get(diagnostic, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _coverage_standard_error(coverage_rate: float, replication_count: int) -> float:
@@ -3111,6 +3275,18 @@ def _artifact_gate_failures(artifact: dict) -> set[str]:
             failures.add("peeking_control")
         if artifact["comparison_adequacy"]["all_required_checks_pass"] is not True:
             failures.add("comparison_cohort_adequacy")
+        governance = artifact["governance_state"]
+        if (
+            governance["state"] == "HOLD"
+            and "floor_check" in governance["failing_diagnostics"]
+            and artifact["floor_checks"]["k4_rejected"]
+            == {
+                "cohort_size": 4,
+                "outcome": "rejected_below_schema_floor",
+                "pass": True,
+            }
+        ):
+            failures.add("floor_check")
     except (AttributeError, KeyError, TypeError, ValueError):
         failures.add("sampler_diagnostic")
     return failures
@@ -3207,7 +3383,7 @@ def _governance_state_consistent(artifact: dict) -> bool:
             return bool(
                 comparison_authorized is False
                 and len(failing) > 0
-                and section_failures.issubset(set(failing))
+                and set(failing) == section_failures
             )
     except (KeyError, TypeError):
         return False

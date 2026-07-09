@@ -237,6 +237,46 @@ def _diagnostics_section():
     }
 
 
+def _apply_diagnostic_failures(diagnostics, failing):
+    failing_set = set(failing)
+    if "r_hat" in failing_set:
+        diagnostics["sampler"]["parameters"][0]["r_hat"] = 1.02
+    if "bulk_ess" in failing_set:
+        diagnostics["sampler"]["parameters"][0]["bulk_ess"] = 399.0
+    if "tail_ess" in failing_set:
+        diagnostics["sampler"]["parameters"][0]["tail_ess"] = 399.0
+    if "mcse" in failing_set:
+        diagnostics["sampler"]["parameters"][0][
+            "max_mcse_to_posterior_sd_ratio"
+        ] = 0.11
+    if "divergences" in failing_set:
+        diagnostics["sampler"]["post_warmup_divergences"] = 1
+    if "max_treedepth_saturation" in failing_set:
+        diagnostics["sampler"]["max_treedepth_saturation_rate"] = 0.01
+        diagnostics["sampler"]["max_treedepth_warning"] = True
+    if "energy_bfmi" in failing_set:
+        diagnostics["sampler"]["energy_bfmi_min"] = 0.1
+        diagnostics["sampler"]["energy_bfmi_warning"] = True
+    if "pre_trend" in failing_set:
+        diagnostics["pre_trend"] = {
+            "pseudo_effect_credible_interval_80": {
+                "lower": 0.01,
+                "upper": 0.2,
+            },
+            "includes_zero": False,
+            "pass": False,
+        }
+    if "posterior_predictive_check" in failing_set:
+        diagnostics["posterior_predictive_checks"][0]["p_value"] = 0.99
+        diagnostics["posterior_predictive_checks"][0]["pass"] = False
+    if "prior_sensitivity" in failing_set:
+        diagnostics["prior_sensitivity"][
+            "posterior_mean_shift_in_posterior_sd"
+        ] = 0.5
+        diagnostics["prior_sensitivity"]["pass"] = False
+    return diagnostics
+
+
 def _artifact(
     state="HOLD",
     failing=(),
@@ -249,6 +289,9 @@ def _artifact(
     active_report = internal_report if internal_report is not None else _internal_report()
     input_hash = synthetic_input_hash or ("1" * 64)
     authorized = state == "eligible_internal_only" if comparison_authorized is None else comparison_authorized
+    diagnostics = _diagnostics_section()
+    if state == "HOLD" and failing:
+        diagnostics = _apply_diagnostic_failures(diagnostics, failing)
     artifact = {
         "schema_version": INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
         "artifact_class": "internal_synthetic_inference_proof",
@@ -281,7 +324,7 @@ def _artifact(
             },
         },
         "measurement_cell_window_evidence": _measurement_cell_window_evidence_section(),
-        "diagnostics": _diagnostics_section(),
+        "diagnostics": diagnostics,
         "calibration": {
             **_calibration_section()
         },
@@ -439,8 +482,12 @@ def test_sampler_artifact_smoke_acceptance_uses_run_proof_with_reduced_settings(
         "replication_count": 2,
         "valid_artifact_count": 2,
         "invalid_artifact_count": 0,
+        "hard_failure_count": 1,
+        "hard_failure_reason_counts": {"unsupported_diagnostic_hold": 1},
         "acceptance_usable_artifact_count": 1,
         "acceptance_unusable_artifact_count": 1,
+        "diagnostic_hold_artifact_count": 1,
+        "diagnostic_hold_failing_diagnostic_counts": {"r_hat": 1},
         "posterior_null_guard_evaluable_count": 2,
         "posterior_null_guard_unevaluable_count": 0,
         "posterior_null_guard_excluding_zero_count": 0,
@@ -454,8 +501,12 @@ def test_sampler_artifact_smoke_acceptance_uses_run_proof_with_reduced_settings(
                 "replication_count": 2,
                 "valid_artifact_count": 2,
                 "invalid_artifact_count": 0,
+                "hard_failure_count": 1,
+                "hard_failure_reason_counts": {"unsupported_diagnostic_hold": 1},
                 "acceptance_usable_artifact_count": 1,
                 "acceptance_unusable_artifact_count": 1,
+                "diagnostic_hold_artifact_count": 1,
+                "diagnostic_hold_failing_diagnostic_counts": {"r_hat": 1},
                 "posterior_null_guard_evaluable_count": 2,
                 "posterior_null_guard_unevaluable_count": 0,
                 "posterior_null_guard_excluding_zero_count": 0,
@@ -464,8 +515,8 @@ def test_sampler_artifact_smoke_acceptance_uses_run_proof_with_reduced_settings(
                 "false_eligibility_rate": 0.0,
             }
         ],
-        "null_gate_observed": True,
-        "smoke_null_gate_observed": True,
+        "null_gate_observed": False,
+        "smoke_null_gate_observed": False,
         "full_null_gate_observed": False,
         "full_replication_requirement_met": False,
     }
@@ -653,8 +704,12 @@ def test_sampler_artifact_smoke_acceptance_supports_arbitrary_required_cells():
             "replication_count": 1,
             "valid_artifact_count": 1,
             "invalid_artifact_count": 0,
+            "hard_failure_count": 0,
+            "hard_failure_reason_counts": {},
             "acceptance_usable_artifact_count": 1,
             "acceptance_unusable_artifact_count": 0,
+            "diagnostic_hold_artifact_count": 0,
+            "diagnostic_hold_failing_diagnostic_counts": {},
             "posterior_null_guard_evaluable_count": 1,
             "posterior_null_guard_unevaluable_count": 0,
             "posterior_null_guard_excluding_zero_count": 0,
@@ -771,15 +826,203 @@ def test_sampler_artifact_full_acceptance_hold_artifacts_do_not_pass_null_or_cov
     assert report["task_3_3_acceptance_state"] == "sampler_full_failed_not_authorized"
     assert report["artifact_inputs_authorized"] is False
     assert report["open_spec_3_3_completion_authorized"] is False
-    assert report["coverage_summary"]["acceptance_unusable_artifact_count"] == 1200
-    assert report["coverage_summary"]["calibration_band_observed"] is False
+    coverage = report["coverage_summary"]
+    assert coverage["acceptance_unusable_artifact_count"] == 1200
+    assert coverage["posterior_interval_available_count"] == 1200
+    assert coverage["diagnostic_hold_artifact_count"] == 1200
+    assert coverage["diagnostic_hold_failing_diagnostic_counts"] == {"r_hat": 1200}
+    assert coverage["hard_failure_reason_counts"] == {
+        "unsupported_diagnostic_hold": 1200
+    }
+    assert coverage["calibration_band_observed"] is False
     null = report["artifact_level_null_eligibility"]
     assert null["acceptance_unusable_artifact_count"] == 400
+    assert null["diagnostic_hold_artifact_count"] == 400
+    assert null["hard_failure_reason_counts"] == {
+        "unsupported_diagnostic_hold": 400
+    }
     assert null["false_eligible_count"] == 0
     assert null["false_eligibility_rate"] == 0.0
-    assert null["full_null_gate_observed"] is True
+    assert null["full_null_gate_observed"] is False
     with pytest.raises(ValueError, match="not approved to produce artifact inputs"):
         result.to_artifact_inputs()
+
+
+def test_sampler_artifact_coverage_counts_pre_trend_hold_without_authorizing():
+    calls = []
+
+    def fake_run_proof(dataset, **kwargs):
+        calls.append(dataset)
+        if len(calls) == 1:
+            report = _internal_report(
+                dataset.injected_effect_sd - 0.1,
+                dataset.injected_effect_sd + 0.1,
+                posterior_mean=dataset.injected_effect_sd,
+                posterior_sd=0.05,
+            )
+            return (
+                _artifact(
+                    state="HOLD",
+                    failing=("pre_trend",),
+                    synthetic_input_hash=dataset.synthetic_input_hash(),
+                    internal_report=report,
+                ),
+                report,
+            )
+        report = _internal_report(
+            dataset.injected_effect_sd + 0.2,
+            dataset.injected_effect_sd + 0.3,
+            posterior_mean=dataset.injected_effect_sd + 0.25,
+            posterior_sd=0.05,
+        )
+        return (
+            _artifact(
+                state="eligible_internal_only",
+                synthetic_input_hash=dataset.synthetic_input_hash(),
+                internal_report=report,
+            ),
+            report,
+        )
+
+    result = run_sampler_artifact_acceptance_batch(
+        base_seed=100,
+        effect_size=0.5,
+        cohort_size=16,
+        replication_count=2,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+
+    hold = result.replications[0]
+    assert hold.artifact_valid is True
+    assert hold.governance_state == "HOLD"
+    assert hold.failing_diagnostics == ("pre_trend",)
+    assert hold.acceptance_usable_artifact is False
+    assert hold.contribution_estimate_eligible is False
+    assert hold.covered_injected_effect is True
+
+    coverage = result.to_report()["coverage_summary"]
+    scenario = coverage["scenarios"][0]
+    assert scenario["posterior_interval_available_count"] == 2
+    assert scenario["covered_count"] == 1
+    assert scenario["coverage_rate"] == 0.5
+    assert scenario["acceptance_unusable_artifact_count"] == 1
+    assert scenario["diagnostic_hold_artifact_count"] == 1
+    assert scenario["diagnostic_hold_with_posterior_interval_count"] == 1
+    assert scenario["diagnostic_hold_failing_diagnostic_counts"] == {"pre_trend": 1}
+    assert scenario["hard_failure_count"] == 0
+    assert coverage["posterior_interval_available_count"] == 2
+    assert coverage["diagnostic_hold_failing_diagnostic_counts"] == {"pre_trend": 1}
+    assert result.sampler_artifact_acceptance_passed is False
+
+
+def test_sampler_artifact_declared_hold_requires_supported_diagnostic_failure():
+    def fake_run_proof(dataset, **kwargs):
+        report = _internal_report()
+        artifact = _artifact(
+            state="eligible_internal_only",
+            synthetic_input_hash=dataset.synthetic_input_hash(),
+            internal_report=report,
+        )
+        artifact["governance_state"] = {
+            "state": "HOLD",
+            "failing_diagnostics": ["r_hat"],
+            "comparison_supported_contribution_estimate_authorized": False,
+            "evidence_tier_only": False,
+        }
+        return _rehash(artifact), report
+
+    result = run_sampler_artifact_acceptance_batch(
+        base_seed=100,
+        effect_size=0.5,
+        cohort_size=16,
+        replication_count=1,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+
+    replication = result.replications[0]
+    assert replication.artifact_valid is False
+    assert replication.acceptance_usable_artifact is False
+    coverage = result.to_report()["coverage_summary"]
+    assert coverage["posterior_interval_available_count"] == 0
+    assert coverage["hard_failure_reason_counts"] == {"invalid_artifact": 1}
+    assert coverage["diagnostic_hold_artifact_count"] == 0
+
+
+def test_manual_full_grid_pre_trend_hold_does_not_block_calibration_coverage():
+    base_seed = 700
+    replications = []
+    for cell in required_acceptance_cells():
+        for index in range(INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN):
+            seed = (
+                base_seed
+                + int(round(cell.effect_size * 1000)) * 100_000
+                + cell.cohort_size * 1_000
+                + index
+            )
+            is_partitioned_hold = (
+                cell.effect_size == 0.5 and cell.cohort_size == 16 and index == 0
+            )
+            replications.append(
+                AcceptanceReplication(
+                    replication_id=(
+                        f"manual-pre-trend-effect-{cell.effect_size:g}-"
+                        f"k{cell.cohort_size}-rep-{index}"
+                    ),
+                    seed=seed,
+                    effect_size=cell.effect_size,
+                    cohort_size=cell.cohort_size,
+                    artifact_valid=True,
+                    governance_state="HOLD"
+                    if is_partitioned_hold
+                    else "eligible_internal_only",
+                    failing_diagnostics=("pre_trend",)
+                    if is_partitioned_hold
+                    else (),
+                    contribution_estimate_eligible=(
+                        cell.effect_size != 0.0 and not is_partitioned_hold
+                    ),
+                    posterior_null_guard_evaluable=True,
+                    posterior_null_guard_excludes_zero=cell.effect_size != 0.0,
+                    artifact_self_hash="a" * 64,
+                    artifact_bound_to_expected_input=True,
+                    covered_injected_effect=index < 160,
+                )
+            )
+    result = AcceptanceStudyResult(
+        method=ACCEPTANCE_METHOD_SAMPLER_ARTIFACT,
+        mode=ACCEPTANCE_MODE_FULL,
+        study_id="manual-full-grid-pre-trend-hold",
+        base_seed=base_seed,
+        replication_count=len(replications),
+        replication_count_per_cell=INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+        required_cells=required_acceptance_cells(),
+        replications=tuple(replications),
+        sampler_settings=SamplerFullSettings(),
+    )
+
+    report = result.to_report()
+    coverage = report["coverage_summary"]
+    scenarios = {
+        (scenario["injected_effect_size_sd"], scenario["cohort_size"]): scenario
+        for scenario in coverage["scenarios"]
+    }
+
+    assert coverage["calibration_band_observed"] is True
+    assert coverage["coverage_rate"] == 0.8
+    assert coverage["posterior_interval_available_count"] == 1200
+    assert coverage["acceptance_unusable_artifact_count"] == 1
+    assert coverage["diagnostic_hold_artifact_count"] == 1
+    assert coverage["diagnostic_hold_failing_diagnostic_counts"] == {"pre_trend": 1}
+    assert coverage["hard_failure_count"] == 0
+    assert scenarios[(0.5, 16)]["calibration_band_observed"] is True
+    assert scenarios[(0.5, 16)]["acceptance_unusable_artifact_count"] == 1
+    assert scenarios[(0.5, 16)]["diagnostic_hold_failing_diagnostic_counts"] == {
+        "pre_trend": 1
+    }
+    assert report["artifact_inputs_authorized"] is False
+    assert report["open_spec_3_3_completion_authorized"] is False
 
 
 def test_sampler_artifact_full_acceptance_report_omits_raw_posterior_values():

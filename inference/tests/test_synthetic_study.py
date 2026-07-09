@@ -384,7 +384,7 @@ def test_negative_control_report_rejects_governance_label_without_section_eviden
 
     by_id = {control["control_id"]: control for control in report["controls"]}
     peeking = by_id["naive_repeated_milestone_peeking"]
-    assert peeking["artifact_valid"] is True
+    assert peeking["artifact_valid"] is False
     assert peeking["artifact_bound_to_expected_input"] is True
     assert peeking["section_evidence_matches"] is False
     assert peeking["pass"] is False
@@ -410,7 +410,7 @@ def test_negative_control_report_rejects_unexpected_extra_failure(
     report = build_negative_control_report({case.control_id: artifact})
 
     first = report["controls"][0]
-    assert first["artifact_valid"] is True
+    assert first["artifact_valid"] is False
     assert first["unexpected_failing_diagnostics"] == ["r_hat"]
     assert first["pass"] is False
 
