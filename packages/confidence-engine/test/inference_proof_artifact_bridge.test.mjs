@@ -1,31 +1,29 @@
 // Python -> TypeScript inference proof artifact bridge (tasks 3.5 / 3.6
-// bridge half of add-bayesian-inference-proof-harness, slice 2 Phase B3).
+// eligibility half of add-bayesian-inference-proof-harness, slice 2 Phase B3).
 //
 // Proves that artifacts emitted by the Python harness
 // (`inference/src/fluencytracr_inference`) cross the boundary as JSON and are
-// accepted (schema-valid HOLD) or rejected (forged self-hash) by the
+// accepted (eligible + HOLD) or rejected (forged self-hash) by the
 // `InferenceProofArtifactSchema` Zod gate, with the TS self-hash recompute
 // (`inferenceProofArtifactSelfHash`) byte-agreeing with the Python
-// `hashing.inference_proof_artifact_self_hash`. The clean "eligible"
-// scenario fixture intentionally HOLDs until the real task-3.3 calibration
-// and null proof exists; bridge fixtures must not stand in for acceptance
-// evidence.
+// `hashing.inference_proof_artifact_self_hash`.
 //
 // Two layers:
 //
-// 1. Committed bridge fixtures (always run, CI-stable). Regenerate from the
-//    repo root with the pinned environment:
+// 1. Committed fixtures (always run, CI-stable). Generated ONCE by the real
+//    Python harness (full seeded NUTS fit + real diagnostics, plus computed
+//    Phase B2 calibration/null/floor study inputs). Regenerate from the repo
+//    root with the pinned environment:
 //
 //      PYTHONPATH=inference/src inference/.venv/bin/python \
-//        -m fluencytracr_inference --scenario eligible \
+//        -m fluencytracr_inference --scenario eligible --full \
 //        > packages/confidence-engine/test/fixtures/inference_proof_artifact_eligible.json
 //      PYTHONPATH=inference/src inference/.venv/bin/python \
-//        -m fluencytracr_inference --scenario hold \
+//        -m fluencytracr_inference --scenario hold --full \
 //        > packages/confidence-engine/test/fixtures/inference_proof_artifact_hold.json
 //
-//    These are fast deterministic bridge fixtures; the Python inference suite
-//    owns the full seeded NUTS fit, real diagnostics checks, and calibration
-//    acceptance grid.
+//    (Minutes per run: real MCMC. The HOLD fixture is a fully real fit held
+//    by the naive-repeated-peeking control, so it names `peeking_control`.)
 //
 // 2. Live subprocess round trip (skipped with a clear message when the
 //    pinned `inference/.venv` environment is absent — mirrors the CI split:
@@ -115,6 +113,21 @@ function assertFixedHorizonPeekingPins(artifact) {
   assert.equal(control.synthetic_null_proof_hash, null);
 }
 
+function assertComputedB2StudyPins(artifact) {
+  assert.equal(artifact.calibration.scenarios.length, 6);
+  for (const scenario of artifact.calibration.scenarios) {
+    assert.match(scenario.scenario_id, /^computed-b2-/);
+    assert.equal(scenario.replication_count, 200);
+    assert.equal(scenario.pass, true);
+  }
+  assert.equal(artifact.null_checks.null_effect_scenario_count, 400);
+  assert.equal(artifact.null_checks.false_eligibility_rate, 0.045);
+  assert.equal(artifact.null_checks.pass, true);
+  assert.equal(artifact.floor_checks.k4_rejected.pass, true);
+  assert.equal(artifact.floor_checks.k8_internal_only.valid_internal, true);
+  assert.equal(artifact.floor_checks.k8_internal_only.display_eligible, false);
+}
+
 function assertSelfHashRoundTrip(artifact) {
   const recomputed = inferenceProofArtifactSelfHash(artifact);
   assert.equal(
@@ -136,6 +149,23 @@ function assertEligibleRoundTrip(artifact) {
   assert.equal(parsed.governance_state.evidence_tier_only, false);
   assertGovernancePins(parsed);
   assertFixedHorizonPeekingPins(parsed);
+  assertComputedB2StudyPins(parsed);
+}
+
+function assertEligibleNoContributionEstimateRoundTrip(artifact) {
+  assertSelfHashRoundTrip(artifact);
+  const parsed = InferenceProofArtifactSchema.parse(artifact);
+  assert.equal(parsed.governance_state.state, "eligible_internal_only");
+  assert.deepEqual(parsed.governance_state.failing_diagnostics, []);
+  assert.equal(
+    parsed.governance_state.comparison_supported_contribution_estimate_authorized,
+    false
+  );
+  assert.equal(parsed.governance_state.evidence_tier_only, false);
+  assert.equal(parsed.comparison_adequacy.all_required_checks_pass, true);
+  assertGovernancePins(parsed);
+  assertFixedHorizonPeekingPins(parsed);
+  assertComputedB2StudyPins(parsed);
 }
 
 function assertHoldRoundTrip(artifact, expectedFailingDiagnostic) {
@@ -157,21 +187,22 @@ function assertHoldRoundTrip(artifact, expectedFailingDiagnostic) {
   );
   assertGovernancePins(parsed);
   assertFixedHorizonPeekingPins(parsed);
+  assertComputedB2StudyPins(parsed);
 }
 
 // ---------------------------------------------------------------------------
-// Layer 1: committed bridge fixtures (deterministic Python emitter output)
+// Layer 1: committed fixtures (real Python fit, generated once — see header)
 // ---------------------------------------------------------------------------
 
 const eligibleFixture = loadFixture("inference_proof_artifact_eligible.json");
 const holdFixture = loadFixture("inference_proof_artifact_hold.json");
 
-test("fixture: Python clean scenario HOLDs until calibration proof exists", () => {
-  assertHoldRoundTrip(eligibleFixture, "calibration_coverage");
+test("fixture: Python eligible artifact parses eligible with matching TS self-hash", () => {
+  assertEligibleRoundTrip(eligibleFixture);
 });
 
 test("fixture: Python HOLD artifact parses as valid HOLD naming the failing diagnostic", () => {
-  assertHoldRoundTrip(holdFixture, "missing_or_suppressed_windows");
+  assertHoldRoundTrip(holdFixture, "peeking_control");
 });
 
 test("fixture: forged numeric field without hash update is rejected", () => {
@@ -210,12 +241,12 @@ test("fixture: forged HOLD artifact is equally rejected by the hash binding", ()
   assert.equal(InferenceProofArtifactSchema.safeParse(forged).success, false);
 });
 
-test("fixture: governance pins hold on both clean-scenario and HOLD artifacts", () => {
+test("fixture: governance pins hold on both eligible and HOLD artifacts", () => {
   assertGovernancePins(eligibleFixture);
   assertGovernancePins(holdFixture);
 });
 
-test("fixture: fixed-horizon peeking pins hold on both clean-scenario and HOLD artifacts", () => {
+test("fixture: fixed-horizon peeking pins hold on both artifacts", () => {
   assertFixedHorizonPeekingPins(eligibleFixture);
   assertFixedHorizonPeekingPins(holdFixture);
 });
@@ -224,9 +255,14 @@ test("fixture: fixed-horizon peeking pins hold on both clean-scenario and HOLD a
 // Layer 2: live subprocess round trip (skips cleanly without the venv)
 // ---------------------------------------------------------------------------
 
-test("subprocess: live Python clean scenario HOLDs until calibration proof exists", { skip: venvSkip }, () => {
+test("subprocess: live Python eligible artifact round-trips through the TS gate", { skip: venvSkip }, () => {
   const artifact = emitFromPython("eligible");
-  assertHoldRoundTrip(artifact, "calibration_coverage");
+  assertEligibleRoundTrip(artifact);
+});
+
+test("subprocess: live Python null artifact is valid but does not authorize estimate", { skip: venvSkip }, () => {
+  const artifact = emitFromPython("null");
+  assertEligibleNoContributionEstimateRoundTrip(artifact);
 });
 
 test("subprocess: live Python HOLD artifact round-trips as valid HOLD", { skip: venvSkip }, () => {
@@ -237,7 +273,7 @@ test("subprocess: live Python HOLD artifact round-trips as valid HOLD", { skip: 
   assert.ok(evidence.missing_window_refs.length >= 1);
 });
 
-test("subprocess: live clean scenario artifact survives forgery check end to end", { skip: venvSkip }, () => {
+test("subprocess: live eligible artifact survives forgery check end to end", { skip: venvSkip }, () => {
   const artifact = emitFromPython("eligible");
   const forged = clone(artifact);
   forged.hash_bindings.source_posterior_hash =

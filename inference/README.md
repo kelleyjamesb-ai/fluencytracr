@@ -35,156 +35,7 @@ python3 -m venv .venv
 To change dependencies: edit the direct pins in `pyproject.toml`, reinstall,
 then regenerate the lockfile with `.venv/bin/pip freeze > requirements.lock`.
 
-## Simulation design
-
-The calibration study is a synthetic stress test for the inference harness.
-It does **not** use customer data, Glean telemetry, BigQuery, connector rows,
-survey rows, or person-level records. Every row is generated inside
-`fluencytracr_inference.synthetic` from a fixed seed and carries an injected
-ground truth so the harness can be audited.
-
-The generated rows are aggregate Measurement Cell windows:
-
-- one row = one aggregate cohort/window observation;
-- `k` = the aggregate cohort count per treated or comparison arm;
-- `members` = the aggregate denominator used only to weight standard error;
-- `treated` and `post` define the difference-in-differences contrast;
-- `time_index` supplies pre/post milestone windows;
-- expectation path, workflow, function, cohort, and organization labels are
-  synthetic grouping labels for partial pooling;
-- `injected_effect_sd` is the known contribution-alignment effect in standard
-  deviation units.
-
-The main calibration grid is:
-
-- injected effects: `0`, `0.2`, and `0.5` SD;
-- floor-eligible cohort counts: `k=12` and `k=16`;
-- at least `200` seeded replications per effect/cohort cell;
-- an 80% credible interval must cover the injected effect in `74%` to `86%`
-  of replications for each cell.
-
-The runner also computes:
-
-- pooled null false-eligibility across the `0`-effect cells, capped at `5%`;
-- floor checks: `k=4` must reject, `k=8` must remain internal-only, and
-  `k=12`/`k=16` must be eligible for the display floor;
-- named negative controls for no comparison cohort, violated pre-trend,
-  mismatched comparison, prior-dominated weak data, missing/suppressed
-  windows, and repeated milestone peeking.
-
-Run the calibration runner from the locked inference environment:
-
-```bash
-cd inference
-PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration --smoke --calibration-only
-```
-
-The smoke path proves the runner, seed grid, checkpointing, and sampler loop
-with fewer replications. The acceptance profile is intentionally expensive:
-`draws=2000`, `tune=5000`, `chains=2`, `target_accept=0.999`, and
-`max_treedepth=15`.
-
-```bash
-cd inference
-PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration
-```
-
-The historical `--full-quality-cell` switch is retained for compatibility with
-older diagnostic namespaces. The standard acceptance profile now matches the
-full-quality sampler settings, so a clean acceptance run should not need per-cell
-overrides:
-
-```bash
-cd inference
-PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
-  --calibration-cell effect-0.5-k16 \
-  --full-quality-cell effect-0.5-k16 \
-  --checkpoint-summary-only
-
-PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
-  --calibration-cell effect-0.5-k16 \
-  --full-quality-cell effect-0.5-k16 \
-  --calibration-only
-```
-
-`--checkpoint-summary-only` is read-only and never launches sampler workers.
-It is the safe way to check a long-running rerun before resuming it. A canonical
-`calibration_study_results.json` write now fails closed unless every acceptance
-field passes; use the ignored local result path for diagnostic failed runs.
-
-For local execution, prefer bounded checkpoint batches over a single
-high-concurrency drain. The batch switch runs only the next pending seeds for
-the selected cell(s), writes checkpoints, and exits without producing a proof
-summary:
-
-```bash
-cd inference
-PYTHONPATH=src .venv/bin/python -m fluencytracr_inference.calibration \
-  --calibration-cell effect-0-k12 \
-  --replications 200 \
-  --workers 2 \
-  --max-pending-per-cell 10 \
-  --calibration-only
-```
-
-After each batch, use `--checkpoint-summary-only` to confirm completed counts,
-sampler sanity, and duplicate-line status before launching the next batch. This
-does not change acceptance criteria: every cell still needs `200` valid
-replications, all six cells must pass, and the canonical proof result remains
-blocked unless every calibration, null, floor, and negative-control gate passes.
-
-Predeclared suspect-cell diagnostic protocol (2026-07-07, completed under the
-then-current full-quality settings):
-
-- Cell: `effect-0.5-k16` only.
-- Seed range: the existing deterministic seed derivation from
-  `DEFAULT_BASE_SEED`, replication indexes `0..399`.
-- Fit settings at the time of the diagnostic: `draws=2000`, `tune=1000`,
-  `chains=2`, `target_accept=0.99`, `max_treedepth=12`.
-- Stopping rule: run/resume until all 400 unique replications complete; no
-  early stop after a favorable or unfavorable partial result.
-- Interpretation: diagnostic only. If 400-rep coverage returns inside the
-  `0.74` to `0.86` band, the next acceptance-bearing run is a full six-cell
-  predeclared grid at the chosen replication count. If 400-rep coverage remains
-  out of band, inspect bias, miss direction, interval width, empirical error
-  SD versus mean posterior SD, sampler warnings, and prior sensitivity before
-  proposing any model change.
-- Non-authorization: this protocol does not relax the coverage band, does not
-  backfill a passing proof from one selected cell, and does not authorize
-  customer-facing intervals, probability/confidence output, ROI, causality,
-  productivity claims, real data, persistence, routes, or UI.
-
-Checkpoint files live under `inference/.calibration-cache/` and are ignored.
-Checkpoint namespaces bind the model cache signature, lockfile hash, base seed,
-and fit settings, so a model-specification or sampler-environment change cannot
-silently reuse stale sampler records from an older hierarchy. Calibration cell
-pass/fail also requires
-every replication's sampler-health sanity check to pass; coverage from a
-divergent or otherwise unhealthy sampler record is diagnostic evidence only,
-not proof authorization.
-Do not treat a generated `calibration_study_results.json` as proof unless all
-acceptance fields pass; failing results are diagnostic evidence, not
-authorization for customer-facing intervals or probability/confidence output.
-
-The 400-replication suspect-cell diagnostic completed with coverage in band
-(`298/400 = 0.745`), confirming the original 200-replication `0.72` result was
-partly an unlucky seed block. It also exposed a sampler-health reliability gap
-under the previous full-quality settings: `102/400` fits had divergences and
-`10/400` hit max-treedepth. A fixed warning-seed probe showed the same model
-cleans up under stricter full-quality defaults (`target_accept=0.999`,
-`tune=3000`, `max_treedepth=15`); a later null k=12 hard seed required
-`tune=5000`. A full acceptance-bearing grid must be rerun under the final
-settings before any proof artifact is committed.
-
-A later full-grid attempt under the lighter `draws=1000`, `tune=2000` profile
-reproduced a divergence in the null `effect-0-k16` cell at seed `22260875`.
-The same seed passed under `draws=2000`, `tune=3000`, showing the failure was a
-sampler-depth issue rather than a reason to relax any gate.
-A subsequent run under `draws=2000`, `tune=3000` reproduced a divergence in the
-null `effect-0-k12` cell at seed `21260723`; that seed passed with
-`draws=2000`, `tune=5000`, `target_accept=0.999`, and `max_treedepth=15`.
-
-## Package layout (Slice 2 Phase B1/B2)
+## Package layout (Slice 2 Phase B2)
 
 Under `src/fluencytracr_inference/`:
 
@@ -200,12 +51,76 @@ Under `src/fluencytracr_inference/`:
   injected effect in SD units) plus the negative-control generators
   (violated pre-trend, mismatched/no comparison cohort, missing/suppressed
   windows, prior-dominated weak data) consumed by Phase B2.
+- `synthetic_study.py` — computed synthetic calibration/null/floor study
+  runner. The full path covers effect sizes `{0, 0.2, 0.5}` and cohort
+  sizes `{12, 16}` at `>=200` seeded replications per cell, reports binomial
+  uncertainty, measures two-sided null false-eligibility conservatively by
+  worst null cell against the `<=5%` gate with a compiled finite-sample
+  correction, and computes floor checks for `k=4`, `k=8`, `k=12`, and `k=16`.
+  Smoke studies are allowed for local mechanics checks but cannot be converted
+  into artifact inputs. This runner is a fast
+  aggregate Bayesian DiD approximation used to replace Phase B1 fixture study
+  sections; it is not sampler-level replicated PyMC calibration evidence by
+  itself.
+- `negative_control_study.py` — internal sidecar verifier for the task-3.3
+  negative-control and floor-control suite. It generates synthetic-only
+  control datasets, validates emitted artifacts through their internal-only
+  pins and self-hash, and reports whether required controls HOLD or remain
+  internal-only as expected. Floor controls now verify the emitted artifact's
+  floor-check section directly, so governance labels alone cannot satisfy the
+  control. The report is not an artifact schema field and
+  explicitly does not authorize OpenSpec task completion, customer output,
+  probability/confidence output, ROI, causality, productivity, routes, UI,
+  persistence, exports, or connectors.
+- `acceptance_study.py` — internal sidecar metadata for the remaining task-3.3
+  acceptance gap. It records whether evidence is
+  `aggregate_approximation` or `sampler_artifact`, supports reduced-draw
+  sampler-artifact smoke batches plus full-settings sampler-artifact batches
+  for the required effect/cohort grid through `run_proof`, emits a
+  deterministic stdout-only full-run plan for the required 1200
+  sampler-artifact slots, combines non-overlapping batches in memory for
+  resumable proof runs, and verifies the exact planned slot grid so counts
+  cannot mask skipped or substituted replication indexes. It computes
+  aggregate posterior CI coverage and governance-level artifact false
+  eligibility over valid/bound null artifacts, and separately reports a
+  non-authorizing posterior null-guard audit matching the artifact's
+  contribution-estimate authorization rule. The guard does not decide artifact
+  validity: valid null/uncertain artifacts stay internal-valid and
+  non-authorizing. Full generated evidence must carry the sidecar's
+  runner-generation proof hash; direct result construction, rehydrated
+  reports, and plan-only metadata cannot self-certify. It refuses to produce
+  artifact inputs because no current method is approved as full sampler-level
+  acceptance evidence. Reports omit per-replication posterior interval bounds,
+  can be strictly rehydrated from sanitized sidecar JSON for cross-process
+  chunk combination, and mark rehydrated evidence as non-authorizing.
+  Coverage summaries separate valid/bound posterior-available rows from hard
+  failures and report diagnostic HOLD counts by cell; clean-data
+  `HOLD(pre_trend)` rows remain unusable artifacts but can be counted in the
+  calibration recovery denominator when their posterior interval is hash-bound
+  and available. Invalid, unbound, runner-error, malformed-hash, missing
+  posterior/hash-mismatch, off-plan, non-`pre_trend` diagnostic-HOLD, or
+  semantically failed artifacts remain hard failures for acceptance
+  observation. Per-replication runner exceptions are captured as
+  invalid/unusable sidecar rows with only the exception type recorded; details,
+  traces, posterior values, and artifacts are not emitted. Rehydrated chunk-report
+  evidence is token-gated and review-only: SHA-shaped source hashes in JSON do
+  not self-certify, mixed live/rehydrated combines fail closed on source
+  provenance, and runner acceptance plus artifact-input authorization remain
+  false for rehydrated reports. The CLI exposes stdout/stdin-only acceptance
+  sidecar modes; it does not write checkpoints or reports.
+- `task_3_3_evidence.py` — internal recompute-first required-evidence ledger
+  for OpenSpec task 3.3. It accepts an in-memory sampler-artifact
+  `AcceptanceStudyResult` plus negative-control and floor-control artifact
+  maps, recomputes the control sidecar reports from those artifacts, summarizes
+  and hashes component reports, and remains non-authorizing. Sidecar JSON
+  reports, plan-only metadata, missing controls, failed controls, and
+  rehydrated sampler evidence HOLD rather than completing task 3.3.
 - `model.py` — the contract's implementation-grade equation: hierarchical
-  Bayesian DiD with zero-sum, non-centered, partially pooled expectation-path
-  / workflow / function / cohort / organization effects, estimand `delta`
-  sampled as `contribution_alignment_effect`, normal continuous aggregate path
-  with identity link only (any other family raises `HoldViolation`),
-  cohort-size weighted known aggregate SE, seeded NUTS (2 chains, `cores=1`).
+  Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
+  function / cohort / organization effects, estimand `delta` sampled as
+  `contribution_alignment_effect`, normal continuous aggregate path with
+  identity link only (any other family raises `HoldViolation`), cohort-size
+  weighted known aggregate SE, seeded NUTS (2 chains, `cores=1`).
 - `diagnostics.py` — every gate computed as a real value: R-hat, bulk/tail
   ESS, MCSE ratios, divergences, max-treedepth/BFMI backend warnings, the
   five fixed posterior predictive checks, prior sensitivity across the
@@ -214,12 +129,13 @@ Under `src/fluencytracr_inference/`:
 - `artifact.py` — the `InferenceProofArtifactSchema`-shaped emitter:
   eligible only when every gate, floor, window, comparison-rubric, and
   peeking check passes; otherwise HOLD naming every failing diagnostic.
-  `run_proof(dataset, ...)` is the single entry point (fit + diagnostics +
-  artifact); Phase B2's calibration study drives it per replication.
-- `calibration.py` — seeded synthetic calibration-study runner and summary
-  builder for task 3.3. It can resume from checkpointed JSONL records and
-  reports per-cell coverage, null false-eligibility, floor checks, and
-  negative controls.
+  Contribution-estimate authorization is narrower than artifact validity:
+  eligible internal artifacts authorize the estimate only when the compiled
+  null false-eligibility guard excludes zero. Valid null/uncertain artifacts
+  remain internal-valid and non-authorizing. `run_proof(dataset, ...)` is the
+  single entry point (fit + diagnostics + artifact) and accepts the computed
+  Phase B2 study sections from `synthetic_study.py`. Missing or incomplete
+  study sections fail closed to HOLD.
 
 ## Running the tests
 

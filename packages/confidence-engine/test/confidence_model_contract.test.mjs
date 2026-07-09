@@ -1060,6 +1060,26 @@ test("inference proof artifact requires comparison adequacy before contribution-
   signInferenceProofArtifact(failedRubricStillEligible);
   assert.equal(InferenceProofArtifactSchema.safeParse(failedRubricStillEligible).success, false);
 
+  const eligibleButNoContributionEstimate = clone(validInferenceProofArtifact);
+  eligibleButNoContributionEstimate.governance_state.comparison_supported_contribution_estimate_authorized = false;
+  eligibleButNoContributionEstimate.governance_state.evidence_tier_only = false;
+  signInferenceProofArtifact(eligibleButNoContributionEstimate);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(eligibleButNoContributionEstimate).success,
+    true
+  );
+
+  const comparisonInadequateEligibleWithoutEstimate = clone(validInferenceProofArtifact);
+  comparisonInadequateEligibleWithoutEstimate.comparison_adequacy.required_checks[0].pass = false;
+  comparisonInadequateEligibleWithoutEstimate.comparison_adequacy.all_required_checks_pass = false;
+  comparisonInadequateEligibleWithoutEstimate.governance_state.comparison_supported_contribution_estimate_authorized = false;
+  comparisonInadequateEligibleWithoutEstimate.governance_state.evidence_tier_only = false;
+  signInferenceProofArtifact(comparisonInadequateEligibleWithoutEstimate);
+  assert.equal(
+    InferenceProofArtifactSchema.safeParse(comparisonInadequateEligibleWithoutEstimate).success,
+    false
+  );
+
   const failedRubricHeld = clone(failedRubricStillEligible);
   markInferenceProofHold(failedRubricHeld, ["comparison_cohort_adequacy"], {
     evidenceTierOnly: true

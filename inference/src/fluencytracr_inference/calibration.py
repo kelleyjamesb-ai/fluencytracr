@@ -77,6 +77,7 @@ from .constants import (
     INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN,
     INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
     INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
+    INFERENCE_PROOF_FLOAT_TOLERANCE,
     INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
     INFERENCE_PROOF_RHAT_MAX,
 )
@@ -933,37 +934,77 @@ def all_calibration_cells_pass(study: dict, cell_summaries: list[dict]) -> bool:
 
 
 def summarize_null_false_eligibility(study: dict) -> dict:
-    """Pooled null (injected effect 0) false-eligibility summary.
+    """Worst-cell null (injected effect 0) false-eligibility summary.
 
     A null replication counts as falsely eligible iff its calibration sanity
     checks pass AND its 80% CI excludes 0 (see :func:`cheap_fit_sanity` for
-    the documented analogue of artifact eligibility). The unscreened
-    CI-excludes-zero rate is reported alongside for transparency.
+    the documented analogue of artifact eligibility). The artifact gate uses
+    the worst null cell while still reporting the pooled 400-replication count
+    and pooled rates for transparency.
     """
-    null_records = [
-        record
-        for cell in CALIBRATION_CELLS
-        if cell.injected_effect_sd == 0.0
-        for record in study["records_by_cell"].get(cell.cell_id, [])
-    ]
+    per_cell = []
+    null_records = []
+    for cell in CALIBRATION_CELLS:
+        if cell.injected_effect_sd != 0.0:
+            continue
+        records = list(study["records_by_cell"].get(cell.cell_id, []))
+        null_records.extend(records)
+        count = len(records)
+        false_eligible_count = sum(
+            1 for r in records if r["contribution_estimate_eligible"]
+        )
+        excludes_zero_count = sum(1 for r in records if r["ci_excludes_zero"])
+        sanity_pass_count = sum(1 for r in records if r["sanity"]["pass"])
+        false_eligibility_rate = (
+            false_eligible_count / count if count else 1.0
+        )
+        per_cell.append(
+            {
+                "cell_id": cell.cell_id,
+                "injected_effect_size_sd": int(cell.injected_effect_sd),
+                "cohort_size": int(cell.k),
+                "replication_count": count,
+                "false_eligible_count": false_eligible_count,
+                "false_eligibility_rate": false_eligibility_rate,
+                "unscreened_ci_excludes_zero_count": excludes_zero_count,
+                "unscreened_ci_excludes_zero_rate": (
+                    excludes_zero_count / count if count else 1.0
+                ),
+                "sanity_pass_count": sanity_pass_count,
+                "sanity_pass_rate": sanity_pass_count / count if count else 0.0,
+                "pass": bool(
+                    count >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+                    and false_eligibility_rate
+                    <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+                ),
+            }
+        )
     n = len(null_records)
     if n == 0:
         raise ValueError("no null-effect replications in study")
     false_eligible = sum(1 for r in null_records if r["contribution_estimate_eligible"])
     excludes_zero = sum(1 for r in null_records if r["ci_excludes_zero"])
     sanity_pass = sum(1 for r in null_records if r["sanity"]["pass"])
-    rate = false_eligible / n
+    pooled_rate = false_eligible / n
+    worst_cell_rate = max(cell["false_eligibility_rate"] for cell in per_cell)
     return {
         "null_effect_scenario_count": n,
         "false_eligible_count": false_eligible,
-        "false_eligibility_rate": rate,
+        "false_eligibility_rate": worst_cell_rate,
+        "worst_cell_false_eligibility_rate": worst_cell_rate,
+        "pooled_false_eligibility_rate": pooled_rate,
+        "per_cell": per_cell,
         "false_eligibility_binomial_interval_95": binomial_interval_95(false_eligible, n),
         "unscreened_ci_excludes_zero_count": excludes_zero,
         "unscreened_ci_excludes_zero_rate": excludes_zero / n,
         "sanity_pass_count": sanity_pass,
         "sanity_pass_rate": sanity_pass / n,
         "bound": INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
-        "pass": rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
+        "pass": bool(
+            n >= _null_replication_floor()
+            and all(cell["pass"] for cell in per_cell)
+            and worst_cell_rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+        ),
     }
 
 
@@ -1008,10 +1049,10 @@ def calibration_scenarios_from_summaries(cell_summaries: list[dict]) -> list[dic
 
 
 def null_checks_from_summary(null_summary: dict, *, negative_controls_pass: bool) -> dict:
-    """Map the pooled null summary to the artifact's strict null_checks shape.
+    """Map the worst-cell null summary to the artifact's strict null_checks shape.
 
     ``pass`` folds in the negative-control study outcome: the artifact's
-    null/negative-control input only passes when the pooled false-eligibility
+    null/negative-control input only passes when the worst-cell false-eligibility
     rate is within bound AND every named negative control proved fail-closed.
     """
     return {
@@ -1629,12 +1670,93 @@ def study_results_acceptance_gaps(results: dict) -> list[str]:
     )
     try:
         null_rate = float(null_summary.get("false_eligibility_rate"))
+        null_per_cell = null_summary.get("per_cell")
+        expected_null_cells = [
+            cell for cell in CALIBRATION_CELLS if cell.injected_effect_sd == 0.0
+        ]
+        per_cell_shape_ok = isinstance(null_per_cell, list) and len(null_per_cell) == len(
+            expected_null_cells
+        )
+        per_cell_rates: list[float] = []
+        per_cell_counts: list[int] = []
+        per_cell_ids: set[str] = set()
+        per_cell_passes: list[bool] = []
+        if per_cell_shape_ok:
+            expected_by_id = {cell.cell_id: cell for cell in expected_null_cells}
+            for raw_cell in null_per_cell:
+                cell_record = as_record(raw_cell)
+                cell_id = str(cell_record.get("cell_id", ""))
+                matching_cell = expected_by_id.get(cell_id)
+                count = int(cell_record.get("replication_count", 0))
+                false_eligible_count = int(cell_record.get("false_eligible_count", 0))
+                rate = float(cell_record.get("false_eligibility_rate", 1.0))
+                expected_rate = false_eligible_count / count if count else 1.0
+                per_cell_rates.append(rate)
+                per_cell_counts.append(count)
+                per_cell_ids.add(cell_id)
+                per_cell_passes.append(
+                    bool(
+                        matching_cell is not None
+                        and int(cell_record.get("cohort_size", -1)) == matching_cell.k
+                        and float(cell_record.get("injected_effect_size_sd", -1.0))
+                        == float(matching_cell.injected_effect_sd)
+                        and count >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+                        and false_eligible_count >= 0
+                        and false_eligible_count <= count
+                        and math.isfinite(rate)
+                        and math.isclose(
+                            rate,
+                            expected_rate,
+                            rel_tol=0.0,
+                            abs_tol=INFERENCE_PROOF_FLOAT_TOLERANCE,
+                        )
+                        and rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+                        and cell_record.get("pass") is True
+                    )
+                )
+        worst_cell_rate = max(per_cell_rates) if per_cell_rates else 1.0
         null_rate_ok = (
             math.isfinite(null_rate)
             and null_rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
+            and math.isclose(
+                null_rate,
+                worst_cell_rate,
+                rel_tol=0.0,
+                abs_tol=INFERENCE_PROOF_FLOAT_TOLERANCE,
+            )
         )
     except (TypeError, ValueError):
+        per_cell_shape_ok = False
+        per_cell_passes = []
+        per_cell_counts = []
+        per_cell_ids = set()
+        expected_null_cells = [
+            cell for cell in CALIBRATION_CELLS if cell.injected_effect_sd == 0.0
+        ]
         null_rate_ok = False
+    _gap_if_false(
+        gaps,
+        "null_false_eligibility.per_cell",
+        per_cell_shape_ok,
+    )
+    _gap_if_false(
+        gaps,
+        "null_false_eligibility.per_cell.identity",
+        per_cell_shape_ok
+        and per_cell_ids == {cell.cell_id for cell in expected_null_cells},
+    )
+    _gap_if_false(
+        gaps,
+        "null_false_eligibility.per_cell.pass",
+        per_cell_shape_ok and all(per_cell_passes),
+    )
+    _gap_if_false(
+        gaps,
+        "null_false_eligibility.per_cell.counts",
+        per_cell_shape_ok
+        and sum(per_cell_counts)
+        == int(null_summary.get("null_effect_scenario_count", 0)),
+    )
     _gap_if_false(
         gaps,
         "null_false_eligibility.false_eligibility_rate",
@@ -1890,9 +2012,17 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI
             f"n={cell['replication_count']} pass={cell['pass']}"
         )
     null_summary = results["null_false_eligibility"]
+    pooled_false_eligibility_rate = float(
+        null_summary.get(
+            "pooled_false_eligibility_rate",
+            null_summary["false_eligibility_rate"],
+        )
+    )
     log(
-        f"  null false-eligibility: {null_summary['false_eligibility_rate']:.4f} "
+        f"  null false-eligibility: worst-cell "
+        f"{null_summary['false_eligibility_rate']:.4f} "
         f"(n={null_summary['null_effect_scenario_count']}, "
+        f"pooled rate {pooled_false_eligibility_rate:.4f}, "
         f"unscreened excludes-zero rate "
         f"{null_summary['unscreened_ci_excludes_zero_rate']:.3f}) "
         f"pass={null_summary['pass']}"

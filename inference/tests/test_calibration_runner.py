@@ -468,7 +468,7 @@ def test_empty_coverage_diagnostics_keep_stable_shape():
     }
 
 
-def test_null_false_eligibility_pooling_math():
+def test_null_false_eligibility_uses_worst_null_cell_rate():
     summary = cal.summarize_null_false_eligibility(
         _fake_study(include_unhealthy_null_records=True)
     )
@@ -476,6 +476,12 @@ def test_null_false_eligibility_pooling_math():
     assert summary["false_eligible_count"] == 4
     assert summary["unscreened_ci_excludes_zero_count"] == 6
     assert summary["false_eligibility_rate"] == pytest.approx(0.01)
+    assert summary["worst_cell_false_eligibility_rate"] == pytest.approx(0.01)
+    assert summary["pooled_false_eligibility_rate"] == pytest.approx(0.01)
+    assert [cell["false_eligibility_rate"] for cell in summary["per_cell"]] == [
+        pytest.approx(0.01),
+        pytest.approx(0.01),
+    ]
     assert summary["pass"] is True
 
     passing = cal.null_checks_from_summary(summary, negative_controls_pass=True)
@@ -486,6 +492,36 @@ def test_null_false_eligibility_pooling_math():
     }
     blocked = cal.null_checks_from_summary(summary, negative_controls_pass=False)
     assert blocked["pass"] is False
+
+
+def test_null_false_eligibility_rejects_bad_cell_hidden_by_pooled_rate():
+    study = _fake_study()
+    null_cells = [cell for cell in cal.CALIBRATION_CELLS if cell.injected_effect_sd == 0.0]
+    for cell in null_cells:
+        for record in study["records_by_cell"][cell.cell_id]:
+            record["ci_excludes_zero"] = False
+            record["contribution_estimate_eligible"] = False
+    bad_cell = next(cell for cell in null_cells if cell.k == 12)
+    for record in study["records_by_cell"][bad_cell.cell_id][:11]:
+        record["ci_excludes_zero"] = True
+        record["contribution_estimate_eligible"] = True
+
+    summary = cal.summarize_null_false_eligibility(study)
+
+    assert summary["null_effect_scenario_count"] == 400
+    assert summary["false_eligible_count"] == 11
+    assert summary["pooled_false_eligibility_rate"] == pytest.approx(0.0275)
+    assert summary["false_eligibility_rate"] == pytest.approx(0.055)
+    assert summary["worst_cell_false_eligibility_rate"] == pytest.approx(0.055)
+    assert summary["pass"] is False
+    assert [cell["pass"] for cell in summary["per_cell"]] == [False, True]
+
+    blocked = cal.null_checks_from_summary(summary, negative_controls_pass=True)
+    assert blocked == {
+        "null_effect_scenario_count": 400,
+        "false_eligibility_rate": pytest.approx(0.055),
+        "pass": False,
+    }
 
 
 def test_control_inputs_and_checkpoint_rules(tmp_path):

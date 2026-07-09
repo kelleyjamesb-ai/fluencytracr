@@ -1312,18 +1312,6 @@ export const InferenceProofArtifactSchema = z
         message: "HOLD artifacts must not authorize comparison-supported estimates"
       });
     }
-    if (
-      artifact.governance_state.state === "eligible_internal_only" &&
-      !comparisonEstimateAuthorized &&
-      !evidenceTierOnly
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["governance_state", "comparison_supported_contribution_estimate_authorized"],
-        message:
-          "eligible artifacts must either authorize a comparison-supported estimate or be evidence-tier-only"
-      });
-    }
     if (evidenceTierOnly && artifact.comparison_adequacy.all_required_checks_pass) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -1580,7 +1568,14 @@ export const InferenceProofArtifactSchema = z
           cell.effect === scenario.injected_effect_size_sd &&
           cell.cohortSize === scenario.cohort_size
       );
-      if (expected && scenario.scenario_id !== expected.scenarioId) {
+      const computedB2ScenarioId = expected
+        ? `computed-b2-effect-${expected.effect}-k${expected.cohortSize}-n${INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN}`
+        : "";
+      if (
+        expected &&
+        scenario.scenario_id !== expected.scenarioId &&
+        scenario.scenario_id !== computedB2ScenarioId
+      ) {
         failOrIssue(
           "calibration_coverage",
           ["calibration", "scenarios", index, "scenario_id"],

@@ -6,13 +6,16 @@ The required top-level field list below is derived from the TypeScript
 extras (unknown fields are rejected at the boundary).
 """
 
+import dataclasses
 import json
+from types import SimpleNamespace
 
+import numpy as np
+
+from fluencytracr_inference.constants import INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME
 from fluencytracr_inference.artifact import (
-    canonical_floor_checks,
     emit_proof_artifact,
 )
-from fluencytracr_inference.calibration import control_study_inputs
 from fluencytracr_inference.constants import (
     CONFIDENCE_MODEL_BLOCKED_USES,
     INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
@@ -59,17 +62,17 @@ EXPECTED_TOP_LEVEL_FIELDS = [
 ]
 
 
-def test_exact_top_level_field_set(proof_pending_artifact):
-    assert sorted(proof_pending_artifact.keys()) == sorted(EXPECTED_TOP_LEVEL_FIELDS)
+def test_exact_top_level_field_set(eligible_artifact):
+    assert sorted(eligible_artifact.keys()) == sorted(EXPECTED_TOP_LEVEL_FIELDS)
 
 
-def test_json_serializable(proof_pending_artifact):
-    round_tripped = json.loads(json.dumps(proof_pending_artifact))
+def test_json_serializable(eligible_artifact):
+    round_tripped = json.loads(json.dumps(eligible_artifact))
     assert round_tripped["schema_version"] == INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION
 
 
-def test_governance_pins(proof_pending_artifact):
-    a = proof_pending_artifact
+def test_governance_pins(eligible_artifact):
+    a = eligible_artifact
     assert a["schema_version"] == INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION
     assert a["artifact_class"] == "internal_synthetic_inference_proof"
     assert a["internal_only"] is True
@@ -89,8 +92,8 @@ def test_governance_pins(proof_pending_artifact):
     assert a["blocked_uses"] == list(CONFIDENCE_MODEL_BLOCKED_USES)
 
 
-def test_synthetic_generator_pins(proof_pending_artifact):
-    generator = proof_pending_artifact["synthetic_generator"]
+def test_synthetic_generator_pins(eligible_artifact):
+    generator = eligible_artifact["synthetic_generator"]
     assert generator["real_data_present"] is False
     assert generator["customer_data_present"] is False
     assert generator["production_data_present"] is False
@@ -98,8 +101,8 @@ def test_synthetic_generator_pins(proof_pending_artifact):
     assert generator["seed_range"]["end_seed"] >= generator["seed_range"]["start_seed"]
 
 
-def test_model_spec_binding(proof_pending_artifact):
-    binding = proof_pending_artifact["model_spec_binding"]
+def test_model_spec_binding(eligible_artifact):
+    binding = eligible_artifact["model_spec_binding"]
     assert binding["model_family"] == (
         "bayesian_hierarchical_difference_in_differences_candidate"
     )
@@ -118,8 +121,8 @@ def test_model_spec_binding(proof_pending_artifact):
     }
 
 
-def test_fixed_horizon_peeking_fields(proof_pending_artifact):
-    control = proof_pending_artifact["peeking_control"]
+def test_fixed_horizon_peeking_fields(eligible_artifact):
+    control = eligible_artifact["peeking_control"]
     assert control["procedure"] == "fixed_horizon_one_look_only"
     assert control["repeated_evaluation"] is False
     assert control["look_index"] == 1
@@ -132,20 +135,20 @@ def test_fixed_horizon_peeking_fields(proof_pending_artifact):
     assert control["false_eligibility_bound"] == 0.05
     # Window evidence binds to the peeking milestone family.
     assert sorted(
-        proof_pending_artifact["measurement_cell_window_evidence"]["required_milestone_days"]
+        eligible_artifact["measurement_cell_window_evidence"]["required_milestone_days"]
     ) == sorted(control["milestone_days_included"])
 
 
-def test_comparison_adequacy_rubric_complete(proof_pending_artifact):
-    adequacy = proof_pending_artifact["comparison_adequacy"]
+def test_comparison_adequacy_rubric_complete(eligible_artifact):
+    adequacy = eligible_artifact["comparison_adequacy"]
     criteria = [check["criterion"] for check in adequacy["required_checks"]]
     assert criteria == list(INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA)
     assert adequacy["comparison_cohort_present"] is True
     assert adequacy["all_required_checks_pass"] is True
 
 
-def test_diagnostics_sections_present(proof_pending_artifact):
-    diagnostics = proof_pending_artifact["diagnostics"]
+def test_diagnostics_sections_present(eligible_artifact):
+    diagnostics = eligible_artifact["diagnostics"]
     assert set(diagnostics.keys()) == {
         "sampler",
         "posterior_predictive_checks",
@@ -167,8 +170,8 @@ def test_diagnostics_sections_present(proof_pending_artifact):
         assert abs(parameter["max_mcse_to_posterior_sd_ratio"] - expected_ratio) <= 1e-12
 
 
-def test_hash_bindings(proof_pending_artifact):
-    bindings = proof_pending_artifact["hash_bindings"]
+def test_hash_bindings(eligible_artifact):
+    bindings = eligible_artifact["hash_bindings"]
     assert set(bindings.keys()) == {
         "source_posterior_hash",
         "synthetic_input_hash",
@@ -178,38 +181,102 @@ def test_hash_bindings(proof_pending_artifact):
         assert isinstance(value, str) and len(value) == 64
     assert (
         bindings["synthetic_input_hash"]
-        == proof_pending_artifact["synthetic_generator"]["synthetic_input_hash"]
+        == eligible_artifact["synthetic_generator"]["synthetic_input_hash"]
     )
     # Self-hash recomputes over the body with the self-hash field omitted —
     # the identical algorithm the TypeScript boundary uses.
     assert bindings["artifact_self_hash"] == inference_proof_artifact_self_hash(
-        proof_pending_artifact
+        eligible_artifact
     )
 
 
 def test_emission_deterministic_same_body_same_hash(
-    clean_dataset, clean_fit, clean_diagnostics, proof_pending_artifact
+    clean_dataset, clean_fit, clean_diagnostics, computed_study_inputs, eligible_artifact
 ):
-    calibration_scenarios, null_checks = control_study_inputs()
     again = emit_proof_artifact(
         dataset=clean_dataset,
         fit=clean_fit,
         diagnostics=clean_diagnostics,
-        calibration_scenarios=calibration_scenarios,
-        null_checks=null_checks,
-        floor_checks=canonical_floor_checks(),
+        **computed_study_inputs.as_run_proof_kwargs(),
         generated_at=FIXED_GENERATED_AT,
     )
-    assert again == proof_pending_artifact
+    assert again == eligible_artifact
     assert (
         again["hash_bindings"]["artifact_self_hash"]
-        == proof_pending_artifact["hash_bindings"]["artifact_self_hash"]
+        == eligible_artifact["hash_bindings"]["artifact_self_hash"]
     )
 
 
-def test_mutated_field_changes_self_hash(proof_pending_artifact):
-    mutated = json.loads(json.dumps(proof_pending_artifact))
+def test_valid_null_uncertain_artifact_does_not_authorize_contribution_estimate(
+    clean_dataset, clean_fit, clean_diagnostics, computed_study_inputs
+):
+    neutral_draws = np.tile(np.linspace(-0.1, 0.1, 1000), (2, 1))
+    neutral_fit = dataclasses.replace(
+        clean_fit,
+        idata=SimpleNamespace(
+            posterior={INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME: neutral_draws}
+        ),
+    )
+
+    artifact = emit_proof_artifact(
+        dataset=clean_dataset,
+        fit=neutral_fit,
+        diagnostics=clean_diagnostics,
+        **computed_study_inputs.as_run_proof_kwargs(),
+        generated_at=FIXED_GENERATED_AT,
+    )
+
+    assert artifact["governance_state"] == {
+        "state": "eligible_internal_only",
+        "failing_diagnostics": [],
+        "comparison_supported_contribution_estimate_authorized": False,
+        "evidence_tier_only": False,
+    }
+    assert artifact["customer_output_authorized"] is False
+    assert artifact["probability_output_authorized"] is False
+    assert artifact["confidence_output_authorized"] is False
+    assert artifact["hash_bindings"]["artifact_self_hash"] == (
+        inference_proof_artifact_self_hash(artifact)
+    )
+
+
+def test_authorization_uses_null_guard_not_80_percent_interval(
+    clean_dataset, clean_fit, clean_diagnostics, computed_study_inputs
+):
+    draws = np.array([0.1] * 1800 + [2.0] * 200, dtype=float).reshape(2, 1000)
+    interval_excluding_zero_fit = dataclasses.replace(
+        clean_fit,
+        idata=SimpleNamespace(
+            posterior={INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME: draws}
+        ),
+    )
+
+    summary = interval_excluding_zero_fit.estimand_summary()
+    assert summary["credible_interval_80"]["lower"] > 0.0
+    assert summary["posterior_mean"] - 1.959963984540054 * summary["posterior_sd"] < 0.0
+
+    artifact = emit_proof_artifact(
+        dataset=clean_dataset,
+        fit=interval_excluding_zero_fit,
+        diagnostics=clean_diagnostics,
+        **computed_study_inputs.as_run_proof_kwargs(),
+        generated_at=FIXED_GENERATED_AT,
+    )
+
+    assert artifact["governance_state"]["state"] == "eligible_internal_only"
+    assert artifact["governance_state"]["failing_diagnostics"] == []
+    assert (
+        artifact["governance_state"][
+            "comparison_supported_contribution_estimate_authorized"
+        ]
+        is False
+    )
+    assert artifact["governance_state"]["evidence_tier_only"] is False
+
+
+def test_mutated_field_changes_self_hash(eligible_artifact):
+    mutated = json.loads(json.dumps(eligible_artifact))
     mutated["diagnostics"]["sampler"]["parameters"][0]["r_hat"] += 1e-9
     assert inference_proof_artifact_self_hash(mutated) != (
-        proof_pending_artifact["hash_bindings"]["artifact_self_hash"]
+        eligible_artifact["hash_bindings"]["artifact_self_hash"]
     )
