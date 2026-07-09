@@ -39,6 +39,7 @@ from .constants import (
     INFERENCE_PROOF_PPC_P_VALUE_MIN,
     INFERENCE_PROOF_PPC_STATISTIC_NAMES,
     INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD,
+    INFERENCE_PROOF_NULL_REPLICATIONS_MIN,
     INFERENCE_PROOF_RHAT_MAX,
     LIKELIHOOD_FAMILY_LINKS,
     SUPPORTED_LIKELIHOOD_FAMILY,
@@ -479,10 +480,10 @@ class SamplerFullSettings:
     """Default full sampler settings used by ``artifact.run_proof``."""
 
     draws: int = 2000
-    tune: int = 1000
+    tune: int = 5000
     chains: int = 2
-    target_accept: float = 0.99
-    max_treedepth: int = 12
+    target_accept: float = 0.999
+    max_treedepth: int = 15
     prior_sensitivity_draws: int = 300
     prior_sensitivity_tune: int = 400
     pre_trend_draws: int = 400
@@ -1584,34 +1585,6 @@ def acceptance_study_result_from_report(report: dict) -> AcceptanceStudyResult:
     rehydrated_source_report_hashes: tuple[str, ...] = ()
     rehydrated_source_report_runner_generation_proof_hashes: tuple[str, ...] = ()
     rehydration_token = None
-    manifest = report["acceptance_run_manifest"]
-    if (
-        source_report_rehydrated is False
-        and source_report_hashes == ()
-        and source_report_runner_generation_proof_hashes == ()
-        and report["runner_generated"] is True
-        and manifest["runner_generation_proof_valid"] is True
-        and _sha256_hex(report["runner_generation_proof_hash"])
-        and report["runner_generation_proof_hash"]
-        == _runner_generation_proof_hash(
-            method=result.method,
-            mode=result.mode,
-            base_seed=result.base_seed,
-            required_cells=result.required_cells,
-            replications=result.replications,
-            sampler_settings=result.sampler_settings,
-        )
-    ):
-        rehydrated_source_report_hashes = _dedupe_hash_tuple(
-            (*rehydrated_source_report_hashes, expected_hash)
-        )
-        rehydrated_source_report_runner_generation_proof_hashes = _dedupe_hash_tuple(
-            (
-                *rehydrated_source_report_runner_generation_proof_hashes,
-                report["runner_generation_proof_hash"],
-            )
-        )
-        rehydration_token = _RUNNER_GENERATION_TOKEN
     return AcceptanceStudyResult(
         method=result.method,
         mode=result.mode,
@@ -2587,14 +2560,8 @@ def _artifact_valid_internal_only(artifact: dict | None) -> bool:
             and artifact["hash_bindings"]["artifact_self_hash"]
             == inference_proof_artifact_self_hash(artifact)
             and _sha256_hex(artifact["hash_bindings"]["source_posterior_hash"])
-            and _sha256_hex(artifact["hash_bindings"]["synthetic_input_hash"])
-            and artifact["hash_bindings"]["synthetic_input_hash"]
-            == artifact["synthetic_generator"]["synthetic_input_hash"]
+            and _synthetic_generator_section_valid(artifact)
             and _sha256_hex(artifact["lockfile_hash"])
-            and artifact["synthetic_generator"]["real_data_present"] is False
-            and artifact["synthetic_generator"]["customer_data_present"] is False
-            and artifact["synthetic_generator"]["production_data_present"] is False
-            and artifact["synthetic_generator"]["live_data_source_present"] is False
             and _diagnostics_section_valid(artifact)
             and _model_spec_binding_section_valid(artifact)
             and _measurement_cell_window_evidence_section_valid(artifact)
@@ -2618,6 +2585,43 @@ def _artifact_valid_internal_only(artifact: dict | None) -> bool:
             and _governance_state_consistent(artifact)
         )
     except (KeyError, TypeError):
+        return False
+
+
+def _synthetic_generator_section_valid(artifact: dict) -> bool:
+    try:
+        generator = artifact["synthetic_generator"]
+        seed_range = generator["seed_range"]
+        return bool(
+            set(generator.keys())
+            == {
+                "generator_id",
+                "generator_version",
+                "seed_range",
+                "synthetic_input_hash",
+                "real_data_present",
+                "customer_data_present",
+                "production_data_present",
+                "live_data_source_present",
+            }
+            and _nonempty_string(generator["generator_id"])
+            and _nonempty_string(generator["generator_version"])
+            and set(seed_range.keys()) == {"start_seed", "end_seed"}
+            and isinstance(seed_range["start_seed"], int)
+            and not isinstance(seed_range["start_seed"], bool)
+            and isinstance(seed_range["end_seed"], int)
+            and not isinstance(seed_range["end_seed"], bool)
+            and seed_range["start_seed"] >= 0
+            and seed_range["end_seed"] >= seed_range["start_seed"]
+            and _sha256_hex(generator["synthetic_input_hash"])
+            and artifact["hash_bindings"]["synthetic_input_hash"]
+            == generator["synthetic_input_hash"]
+            and generator["real_data_present"] is False
+            and generator["customer_data_present"] is False
+            and generator["production_data_present"] is False
+            and generator["live_data_source_present"] is False
+        )
+    except (AttributeError, KeyError, TypeError):
         return False
 
 
@@ -2733,13 +2737,43 @@ def _measurement_cell_window_evidence_section_valid(artifact: dict) -> bool:
                 not _nonempty_string(ref) for ref in evidence[key]
             ):
                 return False
+            if len(set(evidence[key])) != len(evidence[key]):
+                return False
+
+        ref_day_pairs = (
+            ("required_window_refs", "required_milestone_days"),
+            ("observed_window_refs", "observed_milestone_days"),
+            ("missing_window_refs", "missing_milestone_days"),
+            ("suppressed_window_refs", "suppressed_milestone_days"),
+            ("stale_window_refs", "stale_milestone_days"),
+            ("imputed_window_refs", "imputed_milestone_days"),
+        )
+        for ref_key, day_key in ref_day_pairs:
+            if len(evidence[ref_key]) != len(evidence[day_key]):
+                return False
+
+        derived_missing_refs = [
+            ref for ref in evidence["required_window_refs"]
+            if ref not in evidence["observed_window_refs"]
+        ]
+        if sorted(evidence["missing_window_refs"]) != sorted(derived_missing_refs):
+            return False
 
         return bool(
             _sha256_hex(evidence["measurement_cell_window_evidence_hash"])
-            and evidence["all_required_windows_observed"] is (len(missing) == 0)
+            and evidence["all_required_windows_observed"] is (
+                len(missing) == 0 and len(derived_missing_refs) == 0
+            )
             and evidence["all_windows_unsuppressed_and_fresh"]
-            is (len(suppressed) == 0 and len(stale) == 0)
-            and evidence["imputation_used"] is (len(imputed) > 0)
+            is (
+                len(suppressed) == 0
+                and len(stale) == 0
+                and len(evidence["suppressed_window_refs"]) == 0
+                and len(evidence["stale_window_refs"]) == 0
+            )
+            and evidence["imputation_used"] is (
+                len(imputed) > 0 or len(evidence["imputed_window_refs"]) > 0
+            )
         )
     except (AttributeError, KeyError, TypeError, ValueError):
         return False
@@ -2752,6 +2786,7 @@ def _diagnostics_section_valid(artifact: dict) -> bool:
         parameters = sampler["parameters"]
         if not isinstance(parameters, list) or not parameters:
             return False
+        parameter_names: set[str] = set()
         has_estimand = False
         for parameter in parameters:
             if set(parameter.keys()) != {
@@ -2767,6 +2802,9 @@ def _diagnostics_section_valid(artifact: dict) -> bool:
                 return False
             if not _nonempty_string(parameter["parameter_name"]):
                 return False
+            if parameter["parameter_name"] in parameter_names:
+                return False
+            parameter_names.add(parameter["parameter_name"])
             if parameter["parameter_name"] == INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME:
                 has_estimand = True
             if not _all_finite(
@@ -2981,7 +3019,7 @@ def _null_checks_section_valid(artifact: dict) -> bool:
         return bool(
             set(checks.keys())
             == {"null_effect_scenario_count", "false_eligibility_rate", "pass"}
-            and count >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+            and count >= INFERENCE_PROOF_NULL_REPLICATIONS_MIN
             and math.isfinite(rate)
             and 0.0 <= rate <= 1.0
             and isinstance(checks["pass"], bool)

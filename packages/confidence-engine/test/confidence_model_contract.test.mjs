@@ -766,7 +766,7 @@ const validInferenceProofArtifact = signInferenceProofArtifact({
     per_scenario_required: true,
     scenarios: [0, 0.2, 0.5].flatMap((effect) =>
       [12, 16].map((cohortSize) => ({
-        scenario_id: `effect-${effect}-k-${cohortSize}`,
+        scenario_id: `calibration-effect-${effect}-k${cohortSize}`,
         injected_effect_size_sd: effect,
         cohort_size: cohortSize,
         replication_count: INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
@@ -778,7 +778,7 @@ const validInferenceProofArtifact = signInferenceProofArtifact({
     )
   },
   null_checks: {
-    null_effect_scenario_count: INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+    null_effect_scenario_count: 2 * INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
     false_eligibility_rate: 0.02,
     pass: true
   },
@@ -1285,6 +1285,16 @@ test("inference proof artifact enforces calibration and null proof gates", () =>
   signInferenceProofArtifact(tooFewReplications);
   assert.equal(InferenceProofArtifactSchema.safeParse(tooFewReplications).success, false);
 
+  const phaseB1ScenarioId = clone(validInferenceProofArtifact);
+  phaseB1ScenarioId.calibration.scenarios[0].scenario_id = "phase-b1-fixture-effect-0-k12";
+  signInferenceProofArtifact(phaseB1ScenarioId);
+  assert.equal(InferenceProofArtifactSchema.safeParse(phaseB1ScenarioId).success, false);
+
+  const structuralControlEligible = clone(validInferenceProofArtifact);
+  structuralControlEligible.calibration.scenarios[0].scenario_id = "structural-control-effect-0-k12";
+  signInferenceProofArtifact(structuralControlEligible);
+  assert.equal(InferenceProofArtifactSchema.safeParse(structuralControlEligible).success, false);
+
   const missingCell = clone(validInferenceProofArtifact);
   missingCell.calibration.scenarios = missingCell.calibration.scenarios.filter(
     (scenario) => !(scenario.injected_effect_size_sd === 0.5 && scenario.cohort_size === 16)
@@ -1313,6 +1323,12 @@ test("inference proof artifact enforces calibration and null proof gates", () =>
   highNullFalseEligibility.null_checks.false_eligibility_rate = 0.06;
   signInferenceProofArtifact(highNullFalseEligibility);
   assert.equal(InferenceProofArtifactSchema.safeParse(highNullFalseEligibility).success, false);
+
+  const incompleteNullEvidence = clone(validInferenceProofArtifact);
+  incompleteNullEvidence.null_checks.null_effect_scenario_count =
+    INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN;
+  signInferenceProofArtifact(incompleteNullEvidence);
+  assert.equal(InferenceProofArtifactSchema.safeParse(incompleteNullEvidence).success, false);
 });
 
 test("inference proof artifact enforces floor cases", () => {

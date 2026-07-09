@@ -120,7 +120,7 @@ function assertComputedB2StudyPins(artifact) {
     assert.equal(scenario.replication_count, 200);
     assert.equal(scenario.pass, true);
   }
-  assert.equal(artifact.null_checks.null_effect_scenario_count, 200);
+  assert.equal(artifact.null_checks.null_effect_scenario_count, 400);
   assert.equal(artifact.null_checks.false_eligibility_rate, 0.045);
   assert.equal(artifact.null_checks.pass, true);
   assert.equal(artifact.floor_checks.k4_rejected.pass, true);

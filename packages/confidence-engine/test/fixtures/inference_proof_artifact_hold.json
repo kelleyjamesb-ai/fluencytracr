@@ -742,7 +742,7 @@
     "per_scenario_required": true
   },
   "null_checks": {
-    "null_effect_scenario_count": 200,
+    "null_effect_scenario_count": 400,
     "false_eligibility_rate": 0.045,
     "pass": true
   },
@@ -850,7 +850,7 @@
   "hash_bindings": {
     "source_posterior_hash": "f8840811283e5a4df3d9afb5498c0b3d8161275f19d2081c5aa8d3f6b93c265f",
     "synthetic_input_hash": "97405573e96776bf58e6fe83de07dbdfe6e2abadc495adc2ed4dd8a03e788358",
-    "artifact_self_hash": "e77f006e1b666ca6cf6b497a6b53f719095d477e73286d4be3ad5d528a30ecc7"
+    "artifact_self_hash": "28bd968fbd178ca0d65e5c6ce66e7d7610cc67b1a5723b4146b25098de941510"
   },
   "blocked_uses": [
     "model_output",

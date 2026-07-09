@@ -30,6 +30,7 @@ from .constants import (
     INFERENCE_PROOF_CALIBRATION_COVERAGE_MIN,
     INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
     INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
+    INFERENCE_PROOF_NULL_REPLICATIONS_MIN,
 )
 from .synthetic import (
     SyntheticDataset,
@@ -278,13 +279,15 @@ def build_null_checks(replications: tuple[ReplicationResult, ...]) -> dict:
         cell_counts.append(count)
         cell_rates.append(false_eligible / count if count else 1.0)
 
-    count = min(cell_counts) if cell_counts else 0
+    count = sum(cell_counts)
     rate = max(cell_rates) if cell_rates else 1.0
     return {
         "null_effect_scenario_count": count,
         "false_eligibility_rate": rate,
         "pass": bool(
-            count >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+            cell_counts
+            and min(cell_counts) >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+            and count >= INFERENCE_PROOF_NULL_REPLICATIONS_MIN
             and rate <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
         ),
     }

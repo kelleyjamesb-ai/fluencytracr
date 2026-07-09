@@ -32,7 +32,10 @@ from fluencytracr_inference.acceptance_study import (
 )
 from fluencytracr_inference.constants import INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION
 from fluencytracr_inference.constants import CONFIDENCE_MODEL_BLOCKED_USES
-from fluencytracr_inference.constants import INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+from fluencytracr_inference.constants import (
+    INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+    INFERENCE_PROOF_NULL_REPLICATIONS_MIN,
+)
 from fluencytracr_inference.constants import INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA
 from fluencytracr_inference.constants import INFERENCE_PROOF_PPC_STATISTIC_NAMES
 from fluencytracr_inference.hashing import inference_proof_artifact_self_hash, sha256_json
@@ -299,6 +302,9 @@ def _artifact(
         "harness_version": "test",
         "lockfile_hash": "0" * 64,
         "synthetic_generator": {
+            "generator_id": "fluencytracr_inference.synthetic.did_aggregate",
+            "generator_version": "1.0.0",
+            "seed_range": {"start_seed": 1, "end_seed": 1},
             "synthetic_input_hash": input_hash,
             "real_data_present": False,
             "customer_data_present": False,
@@ -329,7 +335,7 @@ def _artifact(
             **_calibration_section()
         },
         "null_checks": {
-            "null_effect_scenario_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+            "null_effect_scenario_count": INFERENCE_PROOF_NULL_REPLICATIONS_MIN,
             "false_eligibility_rate": 0.0,
             "pass": True,
         },
@@ -755,9 +761,9 @@ def test_sampler_artifact_full_acceptance_uses_full_settings_without_authorizing
     ]
     for _dataset, kwargs in calls:
         assert kwargs["draws"] == 2000
-        assert kwargs["tune"] == 1000
-        assert kwargs["target_accept"] == 0.99
-        assert kwargs["max_treedepth"] == 12
+        assert kwargs["tune"] == 5000
+        assert kwargs["target_accept"] == 0.999
+        assert kwargs["max_treedepth"] == 15
         assert kwargs["prior_sensitivity_draws"] == 300
         assert kwargs["prior_sensitivity_tune"] == 400
         assert kwargs["pre_trend_draws"] == 400
@@ -1198,7 +1204,7 @@ def test_sampler_artifact_acceptance_reports_round_trip_and_combine():
     _assert_no_posterior_values(combined_from_reports.to_report())
 
 
-def test_rehydrated_chunk_reports_can_observe_resumable_full_evidence(monkeypatch):
+def test_rehydrated_chunk_reports_remain_non_provenance_evidence(monkeypatch):
     from fluencytracr_inference import artifact as artifact_module
 
     base_seed = 700
@@ -1256,17 +1262,17 @@ def test_rehydrated_chunk_reports_can_observe_resumable_full_evidence(monkeypatc
 
     assert combined.source_report_rehydrated is True
     assert combined.sampler_artifact_acceptance_passed is False
-    assert combined.sampler_artifact_resumable_evidence_observed is True
-    assert report["sampler_artifact_resumable_evidence_observed"] is True
+    assert combined.sampler_artifact_resumable_evidence_observed is False
+    assert report["sampler_artifact_resumable_evidence_observed"] is False
     assert report["task_3_3_acceptance_state"] == (
-        "sampler_full_rehydrated_evidence_observed_not_authorized"
+        "sampler_full_rehydrated_report_not_authorized"
     )
     assert report["artifact_inputs_authorized"] is False
     assert report["open_spec_3_3_completion_authorized"] is False
     manifest = report["acceptance_run_manifest"]
-    assert manifest["source_report_hash_count"] == 2
-    assert manifest["source_report_runner_generation_proof_hash_count"] == 2
-    assert manifest["source_report_runner_generation_proof_observed"] is True
+    assert manifest["source_report_hash_count"] == 0
+    assert manifest["source_report_runner_generation_proof_hash_count"] == 0
+    assert manifest["source_report_runner_generation_proof_observed"] is False
     assert manifest["full_replication_slot_grid_exact"] is True
     assert report["coverage_summary"]["calibration_band_observed"] is True
     assert report["artifact_level_null_eligibility"]["full_null_gate_observed"] is True
@@ -1947,6 +1953,102 @@ def test_acceptance_report_rehydration_rejects_malformed_artifact_self_hash():
 
     with pytest.raises(ValueError, match="invalid shape"):
         acceptance_study_result_from_report(forged)
+
+
+def test_acceptance_sidecar_rejects_malformed_synthetic_generator_shape():
+    def fake_run_proof(dataset, **kwargs):
+        report = _internal_report(
+            dataset.injected_effect_sd - 0.1,
+            dataset.injected_effect_sd + 0.1,
+        )
+        artifact = _artifact(
+            state="eligible_internal_only",
+            synthetic_input_hash=dataset.synthetic_input_hash(),
+            internal_report=report,
+        )
+        artifact["synthetic_generator"]["generator_id"] = ""
+        _rehash(artifact)
+        return artifact, report
+
+    result = run_sampler_artifact_smoke_acceptance_study(
+        replication_count=1,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+
+    replication = result.replications[0]
+    assert replication.artifact_valid is False
+    assert replication.acceptance_usable_artifact is False
+    assert result.to_report()["coverage_summary"]["hard_failure_count"] == 1
+
+
+def test_acceptance_sidecar_rejects_duplicate_sampler_parameter_names():
+    def fake_run_proof(dataset, **kwargs):
+        report = _internal_report(
+            dataset.injected_effect_sd - 0.1,
+            dataset.injected_effect_sd + 0.1,
+        )
+        artifact = _artifact(
+            state="eligible_internal_only",
+            synthetic_input_hash=dataset.synthetic_input_hash(),
+            internal_report=report,
+        )
+        artifact["diagnostics"]["sampler"]["parameters"].append(
+            dict(artifact["diagnostics"]["sampler"]["parameters"][0])
+        )
+        _rehash(artifact)
+        return artifact, report
+
+    result = run_sampler_artifact_smoke_acceptance_study(
+        replication_count=1,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+
+    replication = result.replications[0]
+    assert replication.artifact_valid is False
+    assert replication.acceptance_usable_artifact is False
+    assert result.to_report()["coverage_summary"]["hard_failure_count"] == 1
+
+
+def test_acceptance_sidecar_rejects_inconsistent_window_ref_derivations():
+    def fake_run_proof(dataset, **kwargs):
+        report = _internal_report(
+            dataset.injected_effect_sd - 0.1,
+            dataset.injected_effect_sd + 0.1,
+        )
+        artifact = _artifact(
+            state="eligible_internal_only",
+            synthetic_input_hash=dataset.synthetic_input_hash(),
+            internal_report=report,
+        )
+        window = artifact["measurement_cell_window_evidence"]
+        window["required_milestone_days"] = [30, 60]
+        window["observed_milestone_days"] = [30]
+        window["missing_milestone_days"] = [60]
+        window["all_required_windows_observed"] = False
+        artifact["measurement_cell_window_evidence"]["required_window_refs"] = [
+            "mcw-d030",
+            "mcw-d060",
+        ]
+        artifact["measurement_cell_window_evidence"]["observed_window_refs"] = [
+            "mcw-d030"
+        ]
+        artifact["measurement_cell_window_evidence"]["missing_window_refs"] = []
+        artifact["peeking_control"]["milestone_days_included"] = [30, 60]
+        _rehash(artifact)
+        return artifact, report
+
+    result = run_sampler_artifact_smoke_acceptance_study(
+        replication_count=1,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+
+    replication = result.replications[0]
+    assert replication.artifact_valid is False
+    assert replication.acceptance_usable_artifact is False
+    assert result.to_report()["coverage_summary"]["hard_failure_count"] == 1
 
 
 def test_acceptance_full_cli_prints_stdout_only_sanitized_report(monkeypatch, capsys):

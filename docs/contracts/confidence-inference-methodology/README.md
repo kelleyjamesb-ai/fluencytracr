@@ -62,8 +62,10 @@ g_i(mu_i) =
 The estimand is `delta`: aggregate selected-metric movement for the approved
 expectation path under a governed comparison condition. It is not a causal
 claim, ROI claim, productivity claim, customer-facing confidence score, or
-probability output. Random effects are mean-zero partially pooled effects with
-hierarchical scale priors; the harness reports pooling factors so reviewers
+probability output. Random effects are zero-sum partially pooled deviations
+with hierarchical scale priors: the level effects within each grouping sum to
+zero so the intercept carries the grand mean, while non-centered unit effects
+preserve sampler geometry. The harness reports pooling factors so reviewers
 can see when pooling is driving the result rather than the synthetic evidence.
 
 Slice 2 proves the normal continuous aggregate path first, using the identity

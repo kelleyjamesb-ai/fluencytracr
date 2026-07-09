@@ -48,6 +48,7 @@ from .constants import (
     INFERENCE_PROOF_LIKELIHOOD_FAMILIES,
     INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX,
     INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
+    INFERENCE_PROOF_NULL_REPLICATIONS_MIN,
     INFERENCE_PROOF_PPC_P_VALUE_MAX,
     INFERENCE_PROOF_PPC_P_VALUE_MIN,
     INFERENCE_PROOF_PRIOR_SENSITIVITY_MAX_POSTERIOR_SD,
@@ -61,6 +62,9 @@ from .model import FitResult, HoldViolation, fit_did_model
 from .synthetic import SyntheticDataset, assert_synthetic_only_dataset
 
 LOCKFILE_PATH = Path(__file__).resolve().parents[2] / "requirements.lock"
+DEFAULT_STUDY_RESULTS_PATH = Path(__file__).resolve().parents[2] / (
+    "calibration_study_results.json"
+)
 _NULL_FALSE_ELIGIBILITY_Z = NormalDist().inv_cdf(
     1.0 - INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX / 2.0
 )
@@ -73,6 +77,9 @@ def lockfile_hash() -> str:
 # --- Study-level section helpers ---------------------------------------------
 
 MISSING_STUDY_INPUT_PREFIX = "missing-task-3.3-study-input"
+CALIBRATION_SCENARIO_PREFIX = "calibration-"
+COMPUTED_B2_SCENARIO_PREFIX = "computed-b2-"
+STRUCTURAL_CONTROL_SCENARIO_PREFIX = "structural-control-"
 CALIBRATION_EFFECT_SIZES = (0.0, 0.2, 0.5)
 CALIBRATION_COHORT_SIZES = (12, 16)
 CALIBRATION_CELLS = tuple(
@@ -125,7 +132,7 @@ def phase_b1_fixture_null_checks() -> dict:
 def missing_study_input_null_checks() -> dict:
     """Fail-closed null-check section used when no null study is supplied."""
     return {
-        "null_effect_scenario_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+        "null_effect_scenario_count": INFERENCE_PROOF_NULL_REPLICATIONS_MIN,
         "false_eligibility_rate": 1.0,
         "pass": False,
     }
@@ -139,18 +146,63 @@ def phase_b1_fixture_floor_checks() -> dict:
     )
 
 
-def _computed_floor_checks() -> dict:
-    from .synthetic_study import compute_floor_checks
+def canonical_floor_checks() -> dict:
+    """Schema-literal floor-check declaration used by calibration controls."""
+    return {
+        "k4_rejected": {
+            "cohort_size": 4,
+            "outcome": "rejected_below_schema_floor",
+            "pass": True,
+        },
+        "k8_internal_only": {
+            "cohort_size": 8,
+            "outcome": "internal_only_display_ineligible",
+            "valid_internal": True,
+            "display_eligible": False,
+            "pass": True,
+        },
+        "eligible_floor_cases": [
+            {
+                "cohort_size": 12,
+                "valid_internal": True,
+                "display_eligible": True,
+                "pass": True,
+            },
+            {
+                "cohort_size": 16,
+                "valid_internal": True,
+                "display_eligible": True,
+                "pass": True,
+            },
+        ],
+    }
 
-    return compute_floor_checks()
+
+def _computed_floor_checks() -> dict:
+    return canonical_floor_checks()
 
 
 def _coverage_standard_error(coverage_rate: float, replication_count: int) -> float:
     return math.sqrt(coverage_rate * (1.0 - coverage_rate) / replication_count)
 
 
+def _calibration_scenario_id_allowed(
+    scenario_id: str, *, allow_structural_control_inputs: bool
+) -> bool:
+    if scenario_id.startswith(CALIBRATION_SCENARIO_PREFIX):
+        return True
+    if scenario_id.startswith(COMPUTED_B2_SCENARIO_PREFIX):
+        return True
+    return bool(
+        allow_structural_control_inputs
+        and scenario_id.startswith(STRUCTURAL_CONTROL_SCENARIO_PREFIX)
+    )
+
+
 def _canonicalize_calibration_scenarios(
     supplied: list[dict] | None,
+    *,
+    allow_structural_control_inputs: bool = False,
 ) -> tuple[list[dict], bool]:
     if supplied is None:
         return missing_study_input_calibration_scenarios(), False
@@ -185,7 +237,10 @@ def _canonicalize_calibration_scenarios(
         valid = (
             cell in CALIBRATION_CELLS
             and cell not in valid_by_cell
-            and scenario_id != ""
+            and _calibration_scenario_id_allowed(
+                scenario_id,
+                allow_structural_control_inputs=allow_structural_control_inputs,
+            )
             and isinstance(scenario_pass, bool)
             and replication_count >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
             and credible_interval_level == 0.8
@@ -241,7 +296,7 @@ def _canonicalize_null_checks(supplied: dict | None) -> tuple[dict, bool]:
 
     if (
         not isinstance(passed, bool)
-        or count < INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+        or count < INFERENCE_PROOF_NULL_REPLICATIONS_MIN
         or not math.isfinite(rate)
         or rate < 0.0
         or rate > 1.0
@@ -535,6 +590,7 @@ def emit_proof_artifact(
     null_checks: dict | None = None,
     floor_checks: dict | None = None,
     repeated_evaluation_detected: bool = False,
+    allow_structural_control_inputs: bool = False,
     generated_at: str | None = None,
 ) -> dict:
     """Build the schema-shaped artifact and derive its governance state.
@@ -554,7 +610,8 @@ def emit_proof_artifact(
     dataset_hash = _assert_fit_binds_dataset(fit=fit, dataset=dataset)
 
     calibration_scenarios, calibration_inputs_complete = _canonicalize_calibration_scenarios(
-        calibration_scenarios
+        calibration_scenarios,
+        allow_structural_control_inputs=allow_structural_control_inputs,
     )
     null_checks, null_inputs_complete = _canonicalize_null_checks(null_checks)
     floor_checks, floor_inputs_complete = _canonicalize_floor_checks(floor_checks)
@@ -699,11 +756,11 @@ def run_proof(
     *,
     likelihood_family: str = SUPPORTED_LIKELIHOOD_FAMILY,
     draws: int = 2000,
-    tune: int = 1000,
+    tune: int = 5000,
     chains: int = 2,
     seed: int = 20260706,
-    target_accept: float = 0.99,
-    max_treedepth: int = 12,
+    target_accept: float = 0.999,
+    max_treedepth: int = 15,
     prior_sensitivity_draws: int = 300,
     prior_sensitivity_tune: int = 400,
     pre_trend_draws: int = 400,

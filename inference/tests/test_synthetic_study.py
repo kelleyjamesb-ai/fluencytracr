@@ -85,7 +85,9 @@ def test_smoke_study_grid_shape_and_standard_error_formula():
 def test_null_checks_gate_at_five_percent_in_full_study():
     inputs = run_synthetic_study_inputs()
     null_checks = inputs.null_checks
-    assert null_checks["null_effect_scenario_count"] >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+    assert null_checks["null_effect_scenario_count"] >= (
+        2 * INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+    )
     assert null_checks["false_eligibility_rate"] <= INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
     assert null_checks["pass"] is True
 
@@ -115,7 +117,7 @@ def test_null_checks_use_worst_null_cell_not_pooled_rate():
     null_checks = build_null_checks(tuple(replications))
 
     assert null_checks == {
-        "null_effect_scenario_count": 200,
+        "null_effect_scenario_count": 400,
         "false_eligibility_rate": 0.055,
         "pass": False,
     }
@@ -649,19 +651,19 @@ def test_task_3_3_ledger_separates_rehydrated_report_evidence_from_acceptance(
     )
 
     assert report["sampler_artifact_acceptance_observed"] is False
-    assert report["sampler_artifact_resumable_evidence_observed"] is True
+    assert report["sampler_artifact_resumable_evidence_observed"] is False
     assert report["negative_controls_observed"] is True
     assert report["floor_controls_observed"] is True
     assert report["task_3_3_required_evidence_observed"] is False
-    assert report["task_3_3_resumable_evidence_observed"] is True
+    assert report["task_3_3_resumable_evidence_observed"] is False
     assert report["task_3_3_required_evidence_state"] == (
         TASK_3_3_REQUIRED_EVIDENCE_HOLD_STATE
     )
     sampler = report["components"]["sampler"]
     assert sampler["source_report_rehydrated"] is True
     assert sampler["sampler_artifact_acceptance_observed"] is False
-    assert sampler["sampler_artifact_resumable_evidence_observed"] is True
-    assert sampler["source_report_runner_generation_proof_observed"] is True
+    assert sampler["sampler_artifact_resumable_evidence_observed"] is False
+    assert sampler["source_report_runner_generation_proof_observed"] is False
     assert report["artifact_inputs_authorized"] is False
     assert report["open_spec_3_3_completion_authorized"] is False
 
