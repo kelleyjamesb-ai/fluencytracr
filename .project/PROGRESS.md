@@ -2,6 +2,38 @@
 
 ## Current Session
 
+- Bayesian DiD Phase B2 sampler rerun no-go after sidecar repair (2026-07-09):
+  retried the full-settings sampler-artifact path on branch
+  `codex/bayesian-did-calibration-null-study` using base seed `202607230`.
+  The first repaired canary chunk
+  `/tmp/fluencytracr-bayesian-did-full-20260709-rerun-123246/chunks/start-000-n1.json`
+  completed in `1108.48s` and reproduced the original
+  `effect=0.5`, `k=16`, seed `252623230` clean-data `HOLD(pre_trend)` row.
+  The repaired sidecar behaved correctly: `runner_generated=true`,
+  `runner_generation_proof_valid=true`, `source_report_rehydrated=false`,
+  `hard_failure_count=0`, `posterior_interval_available_count=6`,
+  `diagnostic_hold_failing_diagnostic_counts={"pre_trend": 1}`,
+  `artifact_inputs_authorized=false`, and
+  `open_spec_3_3_completion_authorized=false`. Continued with four
+  additional one-index chunks (`replication_start=1..4`) in parallel and
+  combined the first five chunks into
+  `/tmp/fluencytracr-bayesian-did-full-20260709-rerun-123246/combined-start-000-004.json`.
+  The combined 30-artifact report is a hard no-go:
+  `hard_failure_count=7`, `diagnostic_hold_artifact_count=14`,
+  `missing_credible_interval_count=0`, and hard-failure reasons are
+  `unsupported_diagnostic_hold` from non-`pre_trend` diagnostics. Offending
+  rows were valid/bound artifacts but held on sampler/model diagnostics:
+  `divergences` for seeds `202623231`, `202623232`, `202623234`,
+  `222619233`, and `252619231`; `posterior_predictive_check` for seed
+  `222619232`; and `max_treedepth_saturation` for seed `222623233`.
+  The null partial report remained non-authorizing with `false_eligible_count=0`
+  and `false_eligibility_rate=0.0`, but had `hard_failure_count=3` in the
+  null `k=16` cell from divergence HOLDs. Stopped the sweep immediately per
+  BUG / ADVERSARIAL criteria; no further chunks were launched. OpenSpec tasks
+  `3.3` and `4.2` remain unchecked. Remaining blocker before a full 1200
+  evidence proof: sampler/model diagnostic robustness must be fixed or a
+  governed methodology decision must change the literal sampler-artifact proof
+  requirement; the acceptance-sidecar accounting repair alone is not enough.
 - Bayesian DiD Phase B2 acceptance-sidecar repair (2026-07-09): implemented
   the bounded accounting repair for the full sampler-artifact path after the
   clean `HOLD(pre_trend)` no-go. `coverage_summary()` now separates
