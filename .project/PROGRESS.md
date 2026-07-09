@@ -2,6 +2,33 @@
 
 ## Current Session
 
+- Bayesian DiD Phase B2 sampler pre-trend diagnosis (2026-07-09): investigated
+  the no-go from the first literal full sampler-artifact chunk. The failing
+  row seed is deterministic:
+  `252623230 = 202607230 + round(0.5 * 1000) * 100000 + 16 * 1000 + 0`.
+  The dataset is a clean known-effect synthetic dataset with
+  `treated_pre_trend_slope=0.0`; no real/customer/live data path or seed
+  derivation bug was found. Raw pre-period pseudo-DiD for the failed row was
+  `+0.09005 SD`, and the full pre-trend pseudo-model reproduced the artifact
+  HOLD with 80% interval `[0.0006409, 0.2000407]`, excluding zero by a tiny
+  margin. A pre-trend-only sample over the first ten
+  `effect=0.5`, `k=16` replication indexes failed `3/10` clean datasets
+  (`idx=0`, `4`, `5`) despite no injected pre-trend. CODE and ADVERSARIAL
+  review agreed this is not primarily a sampler seed bug: the current study
+  acceptance rule is too brittle because it requires zero diagnostic HOLDs
+  across a 1200-artifact known-effect recovery proof while the per-artifact
+  `pre_trend` check is itself an 80% interval include-zero test and therefore
+  stochastic. Per-artifact fail-closed behavior should remain unchanged:
+  clean artifacts with failed pre-trend must still emit `HOLD(pre_trend)`.
+  The design issue is study-level aggregation: calibration recovery should
+  partition/report diagnostic HOLDs explicitly instead of silently dropping or
+  failing the entire study on the first stochastic pre-trend HOLD; negative
+  controls should continue to prove violated pre-trend fail-closed behavior
+  separately. No OpenSpec tasks were checked. Remaining decision: implement a
+  bounded acceptance-sidecar repair that reports attempted reps,
+  valid/bound/posterior-available reps, eligible reps, and diagnostic-HOLD
+  counts by cell, then define which denominator gates calibration coverage
+  without weakening artifact governance.
 - Bayesian DiD Phase B2 full sampler-artifact run attempt (2026-07-09): began
   the literal full sampler-artifact evidence run through the hardened
   resumable path on branch
