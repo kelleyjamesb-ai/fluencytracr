@@ -22,11 +22,48 @@ export type CanonicalEvent = Readonly<{
   execution_id?: string;
   workflow_run_id?: string;
   run_id?: string;
-  chat_id?: string;
-  agent_run_id?: string;
 }>;
 
 const ACTOR_TYPES: ReadonlySet<string> = new Set(["human", "ai", "system"]);
+
+export const GOVERNED_CANONICAL_EVENT_NAMES = [
+  "FT_V1_DISPOSITION_OBSERVED",
+  "FT_V1_ITERATION_DEPTH_OBSERVED",
+  "FT_V1_VERIFICATION_PRESENCE_OBSERVED",
+  "FT_V1_RECOVERY_OBSERVED",
+  "FT_V1_LATENCY_OBSERVED",
+  "FT_V1_ABANDONMENT_OBSERVED",
+  "USER_FREQUENCY_OBSERVED",
+  "USER_ENGAGEMENT_OBSERVED",
+  "USER_BREADTH_OBSERVED"
+] as const;
+
+const EXECUTION_INFRASTRUCTURE_EVENT_NAMES = [
+  "execution_start",
+  "workflow_start",
+  "step",
+  "tool_invocation",
+  "verification_signal",
+  "validation_tool_call",
+  "validation_check",
+  "retrieval_recheck",
+  "search",
+  "search_verification",
+  "execution_error",
+  "execution_terminal",
+  "workflow_terminal",
+  "ai_output_disposition",
+  "ai_abandonment"
+] as const;
+
+const EVENT_NAMES: ReadonlySet<string> = new Set([
+  ...GOVERNED_CANONICAL_EVENT_NAMES
+]);
+
+const INTERNAL_EVENT_NAMES: ReadonlySet<string> = new Set([
+  ...GOVERNED_CANONICAL_EVENT_NAMES,
+  ...EXECUTION_INFRASTRUCTURE_EVENT_NAMES
+]);
 
 const TOP_LEVEL_KEYS = new Set([
   "event_name",
@@ -53,7 +90,7 @@ export const CANONICAL_EVENT_JSON_SCHEMA = {
   additionalProperties: false,
   required: ["event_name", "event_version", "org_id", "workflow_id", "timestamp", "actor_type", "context"],
   properties: {
-    event_name: { type: "string", minLength: 1 },
+    event_name: { enum: [...GOVERNED_CANONICAL_EVENT_NAMES] },
     event_version: { type: "string", minLength: 1 },
     org_id: { type: "string", minLength: 1 },
     workflow_id: { type: "string", minLength: 1 },
@@ -65,18 +102,14 @@ export const CANONICAL_EVENT_JSON_SCHEMA = {
     metadata: { type: "object" },
     execution_id: { type: "string", minLength: 1 },
     workflow_run_id: { type: "string", minLength: 1 },
-    run_id: { type: "string", minLength: 1 },
-    chat_id: { type: "string", minLength: 1 },
-    agent_run_id: { type: "string", minLength: 1 }
+    run_id: { type: "string", minLength: 1 }
   },
   oneOf: [
     { required: ["execution_id"] },
     {
       anyOf: [
         { required: ["workflow_run_id"] },
-        { required: ["run_id"] },
-        { required: ["chat_id"] },
-        { required: ["agent_run_id"] }
+        { required: ["run_id"] }
       ]
     }
   ]
@@ -112,9 +145,7 @@ function hasExecutionIdentity(raw: Record<string, unknown>): boolean {
   }
   return (
     isNonEmptyString(raw.workflow_run_id) ||
-    isNonEmptyString(raw.run_id) ||
-    isNonEmptyString(raw.chat_id) ||
-    isNonEmptyString(raw.agent_run_id)
+    isNonEmptyString(raw.run_id)
   );
 }
 
@@ -132,7 +163,10 @@ export function freezeCanonicalEvent(event: CanonicalEvent): CanonicalEvent {
   });
 }
 
-export function validateCanonicalEvent(input: unknown): ValidationResult<CanonicalEvent> {
+const validateCanonicalEventWithNames = (
+  input: unknown,
+  allowedEventNames: ReadonlySet<string>
+): ValidationResult<CanonicalEvent> => {
   const errors: string[] = [];
 
   if (!isPlainObject(input)) {
@@ -150,6 +184,8 @@ export function validateCanonicalEvent(input: unknown): ValidationResult<Canonic
 
   if (!isNonEmptyString(input.event_name)) {
     errors.push("missing_or_empty:event_name");
+  } else if (!allowedEventNames.has(input.event_name)) {
+    errors.push("invalid_event_name");
   }
   if (!isNonEmptyString(input.event_version)) {
     errors.push("missing_or_empty:event_version");
@@ -196,6 +232,11 @@ export function validateCanonicalEvent(input: unknown): ValidationResult<Canonic
       errors.push(`empty_string:${f}`);
     }
   }
+  for (const f of ["chat_id", "agent_run_id"] as const) {
+    if (isNonEmptyString(input[f])) {
+      errors.push(`disallowed_execution_identity:${f}`);
+    }
+  }
 
   if (!hasExecutionIdentity(input)) {
     errors.push("missing_execution_identity");
@@ -228,10 +269,16 @@ export function validateCanonicalEvent(input: unknown): ValidationResult<Canonic
       : {}),
     ...(isNonEmptyString(input.execution_id) ? { execution_id: input.execution_id } : {}),
     ...(isNonEmptyString(input.workflow_run_id) ? { workflow_run_id: input.workflow_run_id } : {}),
-    ...(isNonEmptyString(input.run_id) ? { run_id: input.run_id } : {}),
-    ...(isNonEmptyString(input.chat_id) ? { chat_id: input.chat_id } : {}),
-    ...(isNonEmptyString(input.agent_run_id) ? { agent_run_id: input.agent_run_id } : {})
+    ...(isNonEmptyString(input.run_id) ? { run_id: input.run_id } : {})
   };
 
   return { ok: true, value: event };
+};
+
+export function validateCanonicalEvent(input: unknown): ValidationResult<CanonicalEvent> {
+  return validateCanonicalEventWithNames(input, EVENT_NAMES);
+}
+
+export function validateInternalCanonicalEvent(input: unknown): ValidationResult<CanonicalEvent> {
+  return validateCanonicalEventWithNames(input, INTERNAL_EVENT_NAMES);
 }

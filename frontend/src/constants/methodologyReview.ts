@@ -77,10 +77,10 @@ export const NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY = {
     },
     {
       methodology_snapshot_id: "nielsen_roi_payback_internal_2025_10",
-      label: "Synthetic Nielsen-style internal ROI and payback fixture",
+      label: "Synthetic Nielsen-style internal financial-review fixture",
       source_system: "synthetic_fixture",
       source_model: "Synthetic Nielsen-style business value fixture",
-      methodology_version: "2025-10-internal-roi-fixture",
+      methodology_version: "2025-10-internal-financial-review-fixture",
       effective_date: "2025-10-15",
       reporting_window: "quarterly",
       covered_surfaces: ["search", "chat", "ai_answers", "agents", "skills"],
@@ -120,7 +120,7 @@ export const NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY = {
           variable: "Recaptured productivity",
           change: "-20 percent",
           modeled_effect: "Materially lowers modeled net benefit and extends payback.",
-          claim_effect: "Keeps ROI/payback language internal-only until customer-safe approval."
+          claim_effect: "Keeps ROI/payback language blocked for customer-facing use unless later exact-scope governance authorizes it."
         }
       ],
       approval_state: "finance_approved",
@@ -129,7 +129,7 @@ export const NIELSEN_METHODOLOGY_SNAPSHOT_REGISTRY = {
       frozen_report_snapshot_ref: "nielsen.synthetic.roi_deck.fixture.2025_10",
       caveats: [
         "This fixture supports internal financial planning language only.",
-        "Customer-facing ROI and payback claims require customer-safe methodology approval.",
+        "Customer-facing ROI and payback claims remain blocked unless later exact-scope governance authorizes them.",
         "Agent and MCP value remains an opportunity map until output-backed evidence exists."
       ]
     },

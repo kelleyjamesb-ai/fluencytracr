@@ -283,32 +283,38 @@ describe("dashboard v1 governance enforcement", () => {
     expect(forbidden).toEqual([]);
   });
 
-  it("creates a new version and baseline reset event when control configuration changes", async () => {
+  it("rejects workflow registry policy override payloads", async () => {
+    const server = await startServer();
+
+    const response = await postWorkflowVersion(server.url, "wf-policy-override", "ADMIN", {
+      risk_class: "medium",
+      policy_config: {
+        policy_version: "policy-v1",
+        low_min_events: 1,
+        medium_min_events: 1,
+        high_min_events: 1,
+        min_window_days: 1,
+        high_sparse_min_events: 1,
+        high_sparse_min_window_days: 1
+      }
+    });
+    const payload = await response.json();
+    await server.close();
+
+    expect(response.status).toBe(400);
+    expect(JSON.stringify(payload)).toContain("policy_config");
+  });
+
+  it("creates a new version and baseline reset event with compiled policy configuration", async () => {
     const server = await startServer();
 
     const createV1 = await postWorkflowVersion(server.url, "wf-policy-version", "ADMIN", {
       risk_class: "medium",
-      policy_config: {
-        policy_version: "policy-v1",
-        low_min_events: 3,
-        medium_min_events: 5,
-        high_min_events: 8,
-        min_window_days: 30,
-        high_sparse_min_events: 12,
-        high_sparse_min_window_days: 60
-      }
+      change_reason: "initial"
     });
     const createV2 = await postWorkflowVersion(server.url, "wf-policy-version", "ADMIN", {
       risk_class: "medium",
-      policy_config: {
-        policy_version: "policy-v2",
-        low_min_events: 4,
-        medium_min_events: 6,
-        high_min_events: 9,
-        min_window_days: 30,
-        high_sparse_min_events: 12,
-        high_sparse_min_window_days: 60
-      }
+      change_reason: "governed update"
     });
 
     const versionsResponse = await fetch(
@@ -330,8 +336,10 @@ describe("dashboard v1 governance enforcement", () => {
     expect(versionsPayload.versions).toHaveLength(2);
     expect(versionsPayload.versions[0].version).toBe(1);
     expect(versionsPayload.versions[1].version).toBe(2);
-    expect(versionsPayload.versions[0].policy_config.policy_version).toBe("policy-v1");
-    expect(versionsPayload.versions[1].policy_config.policy_version).toBe("policy-v2");
+    expect(versionsPayload.versions[0].policy_config.policy_version).toBe("dashboard-v1-default-2026-02-18");
+    expect(versionsPayload.versions[1].policy_config.policy_version).toBe("dashboard-v1-default-2026-02-18");
+    expect(versionsPayload.versions[0].policy_config.low_min_events).toBe(5);
+    expect(versionsPayload.versions[1].policy_config.min_window_days).toBe(60);
 
     const resetEvents = auditPayload.events.filter((event: any) => event.action === "BASELINE_RESET");
     expect(resetEvents).toHaveLength(2);

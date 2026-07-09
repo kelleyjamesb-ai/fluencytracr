@@ -16,7 +16,7 @@ Caveat propagation source:
 
 That decision records `PASS_CAVEAT_PROPAGATION` for caveat/context behavior
 only. It does not authorize runtime implementation, schema hardening, economic
-dependency, severity adjustment, value-at-risk adjustment, confidence-band
+dependency, severity adjustment, value-investigation adjustment, confidence-band
 adjustment, surfacing eligibility changes, ROI, causality, prediction,
 productivity, maturity, or ranking claims.
 
@@ -54,15 +54,14 @@ High friction limits the conversion of AI activity into defensible value.
 
 Depth Repertoire may be cited only as aggregate caveat/context about
 cross-surface return use. It must not adjust leakage types, aggregate severity,
-scenario-based value-at-risk labels, surfacing eligibility, or economic
-interpretation unless a later calibration decision explicitly promotes that
-use.
+value-investigation labels, surfacing eligibility, or economic interpretation
+unless a later calibration decision explicitly promotes that use.
 
 Suppressed or insufficient Depth Repertoire evidence must remain null or absent
 and must not be reconstructed through leakage narratives.
 
 Depth Repertoire caveat context must state that it did not change the leakage
-map's values, severity, value-at-risk labels, eligibility, or economic
+map's values, severity, value-investigation labels, eligibility, or economic
 interpretation. Internal Glean dogfood values must not appear as customer
 benchmarks, defaults, product thresholds, calibration values, or implied
 leakage scores.
@@ -87,7 +86,7 @@ A leakage map should include:
 - suppression reason,
 - leakage types present,
 - aggregate severity band,
-- scenario-based value-at-risk label when allowed,
+- value-investigation caveat label when allowed,
 - `depth_repertoire_caveat_context` when surfaced and applicable,
 - required caveats,
 - blocked claims.
@@ -98,11 +97,11 @@ itself `SURFACE` and `INTERPRETABLE`; suppressed or insufficient Depth
 Repertoire values must remain null or absent and must not be reconstructed
 downstream.
 
-## Economic Interpretation
+## Investigation Interpretation
 
-Value leakage is not a performance judgment. It is aggregate evidence of where AI investment may not be converting into defensible value.
+Value leakage is not a performance judgment. It is aggregate evidence of where AI investment may need customer-owned investigation.
 
-Any leakage estimate based on potential value must be labeled as scenario-based unless validated by outcome evidence.
+This contract does not authorize value-at-risk estimates, economic interpretation, or customer-facing economic output.
 
 ## Suppression Rules
 
@@ -128,7 +127,7 @@ Every leakage map should state:
 - Outcome evidence may strengthen confidence but does not automatically establish causality.
 - Suppressed slices cannot contribute economic values.
 - Depth Repertoire, when included, is aggregate caveat/context only and did not
-  adjust leakage types, severity, value-at-risk labels, eligibility, or economic
+  adjust leakage types, severity, value-investigation labels, eligibility, or economic
   interpretation.
 
 ## Examples
@@ -146,17 +145,17 @@ Every leakage map should state:
     "blocked_uses": [
       "leakage_type_adjustment",
       "severity_adjustment",
-      "value_at_risk_adjustment",
+      "value_investigation_adjustment",
       "surfacing_eligibility",
       "economic_number_adjustment"
     ],
     "summary": "Depth Repertoire surfaced as cross-surface return-use context only."
   },
-  "economic_interpretation": "Scenario-based leakage risk; outcome validation not present.",
+  "investigation_interpretation": "Customer-owned value investigation context; outcome validation not present.",
   "required_caveats": [
     "Value leakage is not a performance judgment.",
-    "Any potential value estimate is scenario-based unless validated by outcome evidence.",
-    "Depth Repertoire is included only as aggregate caveat/context and did not adjust leakage severity or value-at-risk labels."
+    "No value-at-risk estimate or customer-facing economic output is authorized.",
+    "Depth Repertoire is included only as aggregate caveat/context and did not adjust leakage severity or value-investigation labels."
   ],
   "blocked_claims": [
     "realized ROI",

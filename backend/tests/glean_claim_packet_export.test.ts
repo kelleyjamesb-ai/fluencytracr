@@ -65,11 +65,11 @@ describe("Glean Claim Packet Export", () => {
       expect.arrayContaining(["glean.roi.customer_value_to_cost", "glean.mcp.governed_action_boundary"])
     );
     expect(packet.evidence_gaps.some((gap) => gap.source === "glean_value_evidence")).toBe(true);
-    expect(packet.upgrade_actions).toEqual(
-      expect.arrayContaining([
-        "Request customer-safe methodology approval before using financial value language with customers."
-      ])
-    );
+	    expect(packet.upgrade_actions).toEqual(
+	      expect.arrayContaining([
+	        "Do not use financial value language with customers unless a later exact-scope governance decision authorizes it."
+	      ])
+	    );
     expect(packet.governance_boundaries.join(" ")).toMatch(/does not calculate ROI independently/i);
     expect(GleanClaimPacketExportSchema.parse(packet)).toEqual(packet);
   });

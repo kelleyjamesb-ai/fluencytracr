@@ -1,7 +1,7 @@
 /**
  * AI Value Engine - EBITA Impact Bridge.
  *
- * Deterministic translation layer after ROI Scenario. It maps validated
+ * Deterministic translation layer after governed value-scenario review. It maps validated
  * workflow value evidence into EBITA-relevant levers without calculating EBITA,
  * proving causality, ranking people, or deriving financial output from usage
  * telemetry.
@@ -439,13 +439,8 @@ function collectPolicyGaps(bridge: any, context: any): string[] {
     }
   }
 
-  if (
-    policy.realized_ebita_claim_allowed === true &&
-    !["FINANCE_VALIDATED_EBITA_CASE", "CUSTOMER_FACING_APPROVED"].includes(mode)
-  ) {
-    gaps.push(
-      "financial_translation_policy.realized_ebita_claim_allowed may be true only for FINANCE_VALIDATED_EBITA_CASE or CUSTOMER_FACING_APPROVED"
-    );
+  if (policy.realized_ebita_claim_allowed === true) {
+    gaps.push("financial_translation_policy.realized_ebita_claim_allowed must be false");
   }
   if (policy.realized_ebita_claim_allowed === true && !sourceAllowsRealizedFinancialClaim(context)) {
     gaps.push(
@@ -454,9 +449,15 @@ function collectPolicyGaps(bridge: any, context: any): string[] {
   }
 
   if (mode === "CUSTOMER_FACING_APPROVED") {
-    requireTrue(
-      policy.customer_owned_financials_required,
-      "financial_translation_policy.customer_owned_financials_required for CUSTOMER_FACING_APPROVED",
+    gaps.push("CUSTOMER_FACING_APPROVED is not authorized for EBITA bridge output");
+    requireFalse(
+      policy.realized_ebita_claim_allowed,
+      "financial_translation_policy.realized_ebita_claim_allowed for CUSTOMER_FACING_APPROVED",
+      gaps
+    );
+    requireFalse(
+      policy.customer_facing_allowed,
+      "financial_translation_policy.customer_facing_allowed for CUSTOMER_FACING_APPROVED",
       gaps
     );
     if (quality.financial_evidence !== "FINANCE_VALIDATED") {
@@ -469,11 +470,6 @@ function collectPolicyGaps(bridge: any, context: any): string[] {
         "evidence_quality.overall_ebita_confidence must be FINANCE_VALIDATED for CUSTOMER_FACING_APPROVED"
       );
     }
-    requireTrue(
-      policy.customer_facing_allowed,
-      "financial_translation_policy.customer_facing_allowed for CUSTOMER_FACING_APPROVED",
-      gaps
-    );
     if (!sourceAllowsCustomerFacing(context)) {
       gaps.push(
         "source roiScenario financial_claim_gate.mode must be CUSTOMER_FACING_APPROVED for customer-facing EBITA output"
@@ -648,9 +644,9 @@ function policyForMode(mode: string): any {
       "FINANCE_VALIDATED_EBITA_CASE",
       "CUSTOMER_FACING_APPROVED"
     ].includes(mode),
-    realized_ebita_claim_allowed: mode === "FINANCE_VALIDATED_EBITA_CASE" || mode === "CUSTOMER_FACING_APPROVED",
+    realized_ebita_claim_allowed: false,
     causality_claim_allowed: false,
-    customer_facing_allowed: mode === "CUSTOMER_FACING_APPROVED"
+    customer_facing_allowed: false
   };
 }
 
@@ -684,9 +680,9 @@ function safeLanguageForMode(mode: string): any {
   if (mode === "CUSTOMER_FACING_APPROVED") {
     return {
       allowed_phrases: [
-        "This economic output is approved for customer-facing use within the stated scope and caveats."
+        "This economic output remains internal-review only; customer-facing use requires a later exact-scope governance decision."
       ],
-      required_caveats: ["Use only within the finance-approved scope and window."],
+      required_caveats: ["Do not use as customer-facing economic output."],
       blocked_claims: REQUIRED_BLOCKED_CLAIMS
     };
   }

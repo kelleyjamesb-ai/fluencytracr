@@ -410,12 +410,12 @@ export const AIValueJourney = () => {
 
         <section
           className="ai-value-panel ai-value-roi-readiness-panel"
-          aria-label="ROI scenario readiness"
+          aria-label="Value scenario readiness"
         >
           <div className="ai-value-section-head">
             <div>
               <p className="eyebrow">Governed Value Modeling</p>
-              <h2>ROI Scenario Readiness</h2>
+              <h2>Value Scenario Readiness</h2>
               <p>
                 Shows whether the selected workflow can move from opportunity
                 mapping into modeled value language, and which client-owned inputs

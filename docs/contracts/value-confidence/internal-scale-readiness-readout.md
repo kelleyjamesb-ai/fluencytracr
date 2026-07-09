@@ -225,7 +225,7 @@ Allowed reusable leverage states:
 - `WORKFLOW_METADATA_HOLD`
 - `SKILL_READ_EVIDENCE_AVAILABLE`
 - `SKILL_READ_UNGOVERNED`
-- `GOVERNED_REUSE_READY`
+- `REUSE_REVIEW_HELD`
 - `REUSE_NOT_AVAILABLE`
 
 Skill Read Evidence and reusable leverage remain held for governed value

@@ -183,7 +183,6 @@ import {
   persistPolicyMapping
 } from "./compliance_persistence";
 import {
-  createControlConfigVersion,
   getBaselineResetAtForRegistryVersion,
   getPolicyConfigForRegistryVersion,
   listBaselineResetsByOrg,
@@ -194,7 +193,12 @@ import {
   registerWorkflowVersion,
   resetBaseline
 } from "./workflow_registry";
-import { computeWorkflowVisibility, computeWorkflowVisibilitySummary } from "./workflow_visibility";
+import {
+  COMPILED_VISIBILITY_MIN_EVENTS,
+  COMPILED_VISIBILITY_WINDOW_DAYS,
+  computeWorkflowVisibility,
+  computeWorkflowVisibilitySummary
+} from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
 import { isAuthTokenIssuerAuthorized, resolveJwtSecret } from "./auth_secret";
 
@@ -388,19 +392,6 @@ const WorkflowRegisterSchema = z.object({
   display_name: z.string().min(1).optional(),
   risk_class: z.enum(["low", "medium", "high"]),
   change_reason: z.string().min(1).optional()
-}).strict();
-
-const ControlConfigVersionCreateSchema = z.object({
-  org_id: z.string().min(1),
-  version_name: z.string().min(1),
-  change_reason: z.string().min(1),
-  window_days_low: z.number().int().positive(),
-  window_days_medium: z.number().int().positive(),
-  window_days_high: z.number().int().positive(),
-  min_events_low: z.number().int().positive(),
-  min_events_medium: z.number().int().positive(),
-  min_events_high: z.number().int().positive(),
-  require_verification_high: z.boolean()
 }).strict();
 
 const BaselineResetSchema = z.object({
@@ -3671,15 +3662,13 @@ app.post(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const created = await registerWorkflowVersion({
-      orgId: org.id,
-      workflowId: parsed.data.workflow_id,
-      displayName: parsed.data.display_name,
-      riskClass: parsed.data.risk_class,
-      changeReason: parsed.data.change_reason,
-      actorSub: req.authSub ?? undefined,
-      actorRole: req.role ?? undefined
-    });
+	    const created = await registerWorkflowVersion({
+	      orgId: org.id,
+	      workflowId: parsed.data.workflow_id,
+	      displayName: parsed.data.display_name,
+	      riskClass: parsed.data.risk_class,
+	      changeReason: parsed.data.change_reason
+	    });
     return res.status(201).json({
       org_id: org.id,
       workflow_id: created.workflowId,
@@ -3703,15 +3692,13 @@ app.post(
     if (!org) {
       return res.status(404).json({ error: "Org not found" });
     }
-    const created = await registerWorkflowVersion({
-      orgId: org.id,
-      workflowId: parsed.data.workflow_id,
-      displayName: parsed.data.display_name,
-      riskClass: parsed.data.risk_class,
-      changeReason: parsed.data.change_reason ?? "risk class update",
-      actorSub: req.authSub ?? undefined,
-      actorRole: req.role ?? undefined
-    });
+	    const created = await registerWorkflowVersion({
+	      orgId: org.id,
+	      workflowId: parsed.data.workflow_id,
+	      displayName: parsed.data.display_name,
+	      riskClass: parsed.data.risk_class,
+	      changeReason: parsed.data.change_reason ?? "risk class update"
+	    });
     return res.status(201).json({
       org_id: org.id,
       workflow_id: created.workflowId,
@@ -3727,33 +3714,9 @@ app.post(
   "/api/control-config/create-version",
   rbacMiddleware(["ADMIN", "GOV_OPERATOR"]),
   async (req, res) => {
-    const parsed = ControlConfigVersionCreateSchema.safeParse(req.body ?? {});
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
-    }
-    const org = store.orgs.get(parsed.data.org_id);
-    if (!org) {
-      return res.status(404).json({ error: "Org not found" });
-    }
-    const created = await createControlConfigVersion({
-      orgId: org.id,
-      versionName: parsed.data.version_name,
-      changeReason: parsed.data.change_reason,
-      changedByUser: req.authSub ?? undefined,
-      changedByRole: req.role ?? undefined,
-      windowDaysLow: parsed.data.window_days_low,
-      windowDaysMedium: parsed.data.window_days_medium,
-      windowDaysHigh: parsed.data.window_days_high,
-      minEventsLow: parsed.data.min_events_low,
-      minEventsMedium: parsed.data.min_events_medium,
-      minEventsHigh: parsed.data.min_events_high,
-      requireVerificationHigh: parsed.data.require_verification_high
-    });
-    return res.status(201).json({
-      org_id: org.id,
-      control_config_version_id: created.id,
-      version_name: created.versionName,
-      created_at: created.createdAt
+    return res.status(400).json({
+      error: "control_config_thresholds_compiled",
+      message: "Workflow visibility thresholds are compiled constants and cannot be changed by API request."
     });
   }
 );
@@ -3776,13 +3739,11 @@ app.post(
     if (!config) {
       return res.status(404).json({ error: "Control config version not found" });
     }
-    const reset = await resetBaseline({
-      orgId: org.id,
-      controlConfigVersionId: parsed.data.control_config_version_id,
-      reason: parsed.data.reason,
-      triggeredByUser: req.authSub ?? undefined,
-      triggeredByRole: req.role ?? undefined
-    });
+	    const reset = await resetBaseline({
+	      orgId: org.id,
+	      controlConfigVersionId: parsed.data.control_config_version_id,
+	      reason: parsed.data.reason
+	    });
     return res.status(201).json({
       org_id: org.id,
       baseline_reset_event_id: reset.id,
@@ -3810,8 +3771,6 @@ app.get(
         version: version.version,
         risk_class: version.riskClass,
         change_reason: version.changeReason ?? null,
-        actor_sub: version.changedByUser ?? null,
-        actor_role: version.changedByRole ?? null,
         policy_config: (() => {
           const policy = getPolicyConfigForRegistryVersion(policyConfigs, version);
           if (!policy) {
@@ -3819,12 +3778,12 @@ app.get(
           }
           return {
             policy_version: policy.versionName,
-            low_min_events: policy.minEventsLow,
-            medium_min_events: policy.minEventsMedium,
-            high_min_events: policy.minEventsHigh,
-            min_window_days: Math.min(policy.windowDaysLow, policy.windowDaysMedium),
-            high_sparse_min_events: Math.max(policy.minEventsHigh + 4, 12),
-            high_sparse_min_window_days: policy.windowDaysHigh
+            low_min_events: COMPILED_VISIBILITY_MIN_EVENTS.low,
+            medium_min_events: COMPILED_VISIBILITY_MIN_EVENTS.medium,
+            high_min_events: COMPILED_VISIBILITY_MIN_EVENTS.high,
+            min_window_days: Math.min(COMPILED_VISIBILITY_WINDOW_DAYS.low, COMPILED_VISIBILITY_WINDOW_DAYS.medium),
+            high_sparse_min_events: Math.max(COMPILED_VISIBILITY_MIN_EVENTS.high + 4, 12),
+            high_sparse_min_window_days: COMPILED_VISIBILITY_WINDOW_DAYS.high
           };
         })(),
         created_at: version.createdAt
@@ -3889,25 +3848,12 @@ app.post(
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
     }
 
-    const created = await registerWorkflowVersion({
-      orgId: org.id,
-      workflowId: req.params.workflowId,
-      riskClass: parsed.data.risk_class,
-      changeReason: parsed.data.change_reason,
-      actorSub: req.authSub ?? undefined,
-      actorRole: req.role ?? undefined,
-      policyConfig: parsed.data.policy_config
-        ? {
-            policyVersion: parsed.data.policy_config.policy_version,
-            lowMinEvents: parsed.data.policy_config.low_min_events,
-            mediumMinEvents: parsed.data.policy_config.medium_min_events,
-            highMinEvents: parsed.data.policy_config.high_min_events,
-            minWindowDays: parsed.data.policy_config.min_window_days,
-            highSparseMinEvents: parsed.data.policy_config.high_sparse_min_events,
-            highSparseMinWindowDays: parsed.data.policy_config.high_sparse_min_window_days
-          }
-        : undefined
-    });
+	    const created = await registerWorkflowVersion({
+	      orgId: org.id,
+	      workflowId: req.params.workflowId,
+	      riskClass: parsed.data.risk_class,
+	      changeReason: parsed.data.change_reason
+	    });
 
     const payload: WorkflowRegistryCreateVersionResponse = {
       workflow_id: created.workflowId,
@@ -3936,8 +3882,6 @@ app.get(
         workflow_id: event.workflowId,
         version: event.version,
         action: event.action,
-        actor_sub: event.actorSub ?? null,
-        actor_role: event.actorRole ?? null,
         metadata: event.metadata,
         created_at: event.createdAt
       }))
@@ -4101,20 +4045,18 @@ app.post(
       return res.status(400).json({ error: "Invalid payload", details: parsed.error.message });
     }
 
-    const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
-    const eventIds: string[] = [];
-    const executionIds: string[] = [];
-    try {
-      for (const event of parsed.data.events) {
-        const eventId = crypto.randomUUID();
-        const record = buildFluencyEventRecord(event, eventId);
+	    const schemaVersion = req.header("X-FluencyTracr-Schema-Version") ?? "0.1";
+	    let ingested = 0;
+	    try {
+	      for (const event of parsed.data.events) {
+	        const eventId = crypto.randomUUID();
+	        const record = buildFluencyEventRecord(event, eventId);
         await persistFluencyEventRecord(record, {
           orgId: req.authOrgId,
-          schemaVersion
-        });
-        eventIds.push(eventId);
-        executionIds.push(record.execution_id);
-      }
+	          schemaVersion
+	        });
+	        ingested += 1;
+	      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (isFluencyCanonicalPersistenceEnabled() && message.includes("org_id required")) {
@@ -4127,13 +4069,11 @@ app.post(
       return res.status(500).json({ error: "Event persistence failed", message });
     }
 
-    return res.json({
-      ingested: eventIds.length,
-      event_ids: eventIds,
-      execution_ids: executionIds,
-      schema_version: schemaVersion
-    });
-  }
+	    return res.json({
+	      ingested,
+	      schema_version: schemaVersion
+	    });
+	  }
 );
 
 const TraceReconstructedQuerySchema = z
@@ -4142,9 +4082,33 @@ const TraceReconstructedQuerySchema = z
     execution_id: z.string().min(1).optional(),
     baseline_window: FluencyWindowSchema.optional()
   })
-  .refine((q) => Boolean(q.workflow_id ?? q.execution_id), {
-    message: "Provide at least one of workflow_id, execution_id"
-  });
+	  .refine((q) => Boolean(q.workflow_id ?? q.execution_id), {
+	    message: "Provide at least one of workflow_id, execution_id"
+	  });
+
+const sanitizeTraceForApi = (trace: Record<string, any>) => {
+  const {
+    execution_id: _executionId,
+    ordered_event_ids: _orderedEventIds,
+    retry_sequences: retrySequences,
+    step_groups: stepGroups,
+    tool_groups: toolGroups,
+    ...rest
+  } = trace;
+
+  return {
+    ...rest,
+    retry_sequences: Array.isArray(retrySequences)
+      ? retrySequences.map((_, index) => ({ sequence_index: index }))
+      : [],
+    step_groups: Array.isArray(stepGroups)
+      ? stepGroups.map((group, index) => ({ group_id: group?.group_id ?? `step_group_${index}` }))
+      : [],
+    tool_groups: Array.isArray(toolGroups)
+      ? toolGroups.map((group, index) => ({ group_id: group?.group_id ?? `tool_group_${index}` }))
+      : []
+  };
+};
 
 const CausalDeltaBodySchema = z.object({
   workflow_id: z.string().min(1),
@@ -4769,15 +4733,15 @@ app.get(
       req.query.include_signals === "true" ||
       req.query.include_signals === "1" ||
       req.query.include_signals === "yes";
-    if (includeSignals) {
-      const withSignals = attachPhase2ToTraces(traces, events, {
-        baselineWindow: parsed.data.baseline_window ?? "90d",
-        now: new Date()
-      });
-      return res.json({ traces: applyDisclosureToTraces(withSignals) });
-    }
-    return res.json({ traces });
-  }
+	    if (includeSignals) {
+	      const withSignals = attachPhase2ToTraces(traces, events, {
+	        baselineWindow: parsed.data.baseline_window ?? "90d",
+	        now: new Date()
+	      });
+	      return res.json({ traces: applyDisclosureToTraces(withSignals).map(sanitizeTraceForApi) });
+	    }
+	    return res.json({ traces: traces.map(sanitizeTraceForApi) });
+	  }
 );
 
 app.get(

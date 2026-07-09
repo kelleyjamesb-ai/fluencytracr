@@ -17,9 +17,10 @@ documented value-realization layers:
   dogfood and value-evidence mappings. It defines surfaces, workflows,
   approved cohorts, interventions, trust evidence, source coverage, outcome
   evidence, and value hypotheses without adding events, suppression reasons,
-  individual scoring, rankings, or realized ROI calculation. When aggregate
-  evidence is trusted, reliable, and customer-approved, it may feed ROI metric
-  routing and governed value-scenario modeling.
+	  individual scoring, rankings, or realized ROI calculation. When aggregate
+	  evidence is trusted, reliable, and customer-approved, it may feed
+	  customer-owned value-investigation metric routing and governed value-scenario
+	  review without customer-facing economic output.
 - **Quality Multiplier:** discounts, preserves, or amplifies time-saved estimates
   when aggregate workflow behavior shows enough evidence quality.
 - **Causal Delta:** compares pre/post workflow patterns around a known change
@@ -481,13 +482,14 @@ documented value-realization layers:
   intervention contexts such as tenure, function, role family, or behavior
   bands; never person, manager, or comparative team evaluation.
 - **Economic Impact Bridge:** future V4 concept that maps trusted readiness
-  patterns to customer-owned value investigations, ROI metric candidates, and
-  governed scenario modeling without proving ROI or causality.
+  patterns to customer-owned value investigations, value metric candidates, and
+  governed scenario review without proving ROI or causality.
 - **AI Manager Outcomes Recommendations:** docs-first V4 layer that recommends
   which customer-owned outcome signals and aggregate formulas to use next when
   testing cost, revenue, quality, capacity, risk, or experience value routes.
-  Accepted aggregate evidence may be routed into ROI metric selection and
-  scenario review, but not automatic economic proof.
+  Accepted aggregate evidence may be routed into value metric selection and
+  scenario review, but not automatic economic proof or customer-facing economic
+  output.
   "AI Manager" means AI program owner or value-realization leader, not people
   manager scoring.
 - **Data Boundary and ROI Evidence:** defines which organizational data may be
@@ -576,8 +578,8 @@ is not the lead positioning for this repository.
 - AI Value Scenario input schema: [schemas/ai-value-intelligence/value-scenario-input.schema.json](schemas/ai-value-intelligence/value-scenario-input.schema.json)
 - AI Value Scenario output schema: [schemas/ai-value-intelligence/value-scenario-output.schema.json](schemas/ai-value-intelligence/value-scenario-output.schema.json)
 - Customer Support AI Value scenario fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json](docs/contracts/ai-value-intelligence/examples/customer-support-value-scenario.json)
-- AI Value governed ROI scenario schema: [schemas/ai-value-intelligence/roi-scenario.schema.json](schemas/ai-value-intelligence/roi-scenario.schema.json)
-- Customer Support governed ROI scenario fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json](docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json)
+- AI Value governed value-scenario schema: [schemas/ai-value-intelligence/roi-scenario.schema.json](schemas/ai-value-intelligence/roi-scenario.schema.json)
+- Customer Support governed value-scenario fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json](docs/contracts/ai-value-intelligence/examples/customer-support-roi-scenario.json)
 - AI Value data boundary and ROI evidence schema: [schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json](schemas/ai-value-intelligence/data-boundary-roi-evidence.schema.json)
 - Customer Support data boundary and ROI evidence fixture: [docs/contracts/ai-value-intelligence/examples/customer-support-data-boundary-roi-evidence.json](docs/contracts/ai-value-intelligence/examples/customer-support-data-boundary-roi-evidence.json)
 - AI Value Evidence Case schema: [schemas/ai-value-intelligence/value-evidence-case.schema.json](schemas/ai-value-intelligence/value-evidence-case.schema.json)

@@ -28,6 +28,20 @@ const WINDOW_DAYS: Record<FluencyWindow, number> = {
   "12m": 365
 };
 
+export const COMPILED_VISIBILITY_WINDOW_DAYS: Record<WorkflowRegistryRecord["riskClass"], number> = {
+  low: 60,
+  medium: 60,
+  high: 60
+};
+
+export const COMPILED_VISIBILITY_MIN_EVENTS: Record<WorkflowRegistryRecord["riskClass"], number> = {
+  low: 5,
+  medium: 5,
+  high: 8
+};
+
+export const COMPILED_REQUIRE_HIGH_RISK_VERIFICATION = true;
+
 const V0_SIGNAL_SET = new Set<V0SignalName>([
   "invoke_ai",
   "delegate_to_agent",
@@ -199,37 +213,24 @@ export const computeWorkflowVisibility = (
   );
 
   const evidenceCount = sumSignalCount(filteredSignals) + filteredEvents.length;
-  const policy = input.policyConfig;
   const windowDays = WINDOW_DAYS[window];
-  const requiredWindowDays = (() => {
-    if (input.registryEntry.riskClass === "low") {
-      return policy.windowDaysLow;
-    }
-    if (input.registryEntry.riskClass === "high") {
-      return policy.windowDaysHigh;
-    }
-    return policy.windowDaysMedium;
-  })();
+  const requiredWindowDays = COMPILED_VISIBILITY_WINDOW_DAYS[input.registryEntry.riskClass];
 
   if (windowDays < requiredWindowDays) {
     return "NOT_ENOUGH_DATA_YET";
   }
 
-  const minEventsByRisk = (() => {
-    if (input.registryEntry.riskClass === "low") {
-      return policy.minEventsLow;
-    }
-    if (input.registryEntry.riskClass === "high") {
-      return policy.minEventsHigh;
-    }
-    return policy.minEventsMedium;
-  })();
+  const minEventsByRisk = COMPILED_VISIBILITY_MIN_EVENTS[input.registryEntry.riskClass];
 
   if (evidenceCount < minEventsByRisk) {
     return "NOT_ENOUGH_DATA_YET";
   }
 
-  if (input.registryEntry.riskClass === "high" && policy.requireVerificationHigh && !hasVerificationEvidence(filteredEvents)) {
+  if (
+    input.registryEntry.riskClass === "high" &&
+    COMPILED_REQUIRE_HIGH_RISK_VERIFICATION &&
+    !hasVerificationEvidence(filteredEvents)
+  ) {
     return "NOT_ENOUGH_DATA_YET";
   }
 

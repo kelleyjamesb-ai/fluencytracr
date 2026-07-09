@@ -2,9 +2,7 @@
 
 ## Purpose
 
-The Time-Saved Defensibility Range qualifies a claimed time-saved estimate. It translates governed aggregate evidence into a bounded range that executives can use for claim safety.
-
-It does not prove realized financial ROI. It should be used as a defensibility range, not as a single ROI number.
+The Time-Saved Defensibility Range is a held documentation-stage contract for reviewing whether a time-saved estimate could later be qualified. It does not authorize range values, runtime schemas, endpoints, frontend surfaces, customer-facing economic output, or realized financial ROI.
 
 ## Contract Status
 
@@ -25,7 +23,7 @@ customer-facing economic number.
 
 ## Executive Question
 
-How much of the claimed time-saved estimate is defensible given aggregate evidence quality, adoption energy, work integration, reliability, and caveats?
+What caveats would need to travel with any future review of a claimed time-saved estimate?
 
 ## Inputs
 
@@ -39,21 +37,19 @@ How much of the claimed time-saved estimate is defensible given aggregate eviden
 - Evidence grade.
 - Outcome Evidence when available.
 
-## Conservative / Expected / Upside Range
+## Range Boundary
 
-The range may include:
-
-- `conservative`: the portion of the claim best supported by surfaced evidence,
-- `expected`: the middle scenario when evidence is surfaced but caveated,
-- `upside`: a scenario-based upper bound when evidence permits.
-
-Suppressed evidence cannot contribute to any range value.
+This contract does not authorize conservative, expected, upside, or any other
+range values. Suppressed evidence cannot contribute to range values, and surfaced
+evidence may provide caveat/context only unless a later exact-scope governance
+decision promotes runtime range behavior.
 
 ## Adjustment Factors
 
 ### Velocity
 
-Velocity adjusts confidence based on adoption energy. Low Velocity may narrow the defensible range even when quality is strong.
+Velocity may add caveats based on adoption energy. It must not narrow or expand
+a defensible range in this docs-only contract.
 
 ### Depth
 
@@ -95,15 +91,15 @@ band, eligibility, or any economic number.
 
 ### Quality
 
-Quality evidence adjusts confidence in the time-saved estimate by reflecting completion, verification, recovery, friction, and abandonment patterns.
+Quality evidence may add caveats to internal review language by reflecting completion, verification, recovery, friction, and abandonment patterns.
 
 ### Reliability
 
-Reliability Factor adjusts whether the evidence is operationally dependable enough for executive reporting.
+Reliability Factor may describe whether the evidence is operationally dependable enough for internal review.
 
 ### Trust Calibration
 
-Trust Calibration adjusts whether verification behavior appears appropriate for workflow risk.
+Trust Calibration may describe whether verification behavior appears appropriate for workflow risk.
 
 ### Evidence Grade
 
@@ -124,9 +120,9 @@ Suppressed or insufficient Depth Repertoire does not suppress or surface this
 readout by itself. It may only remove `depth_repertoire_caveat_context` or add a
 required caveat that Depth Repertoire context is unavailable.
 
-## Output Shape
+## Documentation Checklist
 
-A Time-Saved Defensibility Range artifact may include:
+A docs-only Time-Saved Defensibility Range review may document:
 
 - `readout_type`,
 - `workflow_id` or portfolio key,
@@ -134,42 +130,31 @@ A Time-Saved Defensibility Range artifact may include:
 - `suppression_reason`,
 - `causality_status`,
 - `evidence_grade`,
-- `confidence_band`,
-- `raw_time_saved_claim_hours`,
-- `defensibility_range_hours`,
 - `depth_repertoire_caveat_context` when surfaced and applicable,
 - `required_caveats`,
 - `blocked_claims`.
 
 `depth_repertoire_caveat_context` is optional, documentation-stage, and
-non-economic. It must not affect `defensibility_range_hours`,
-`confidence_band`, `verdict`, `suppression_reason`, `causality_status`, or
-`evidence_grade`.
+non-economic. It must not affect range values, confidence bands, verdicts,
+suppression reasons, causality status, or evidence grade.
 
 ## Required Caveats
 
 Every range must state:
 
-- This range qualifies a claimed time-saved estimate.
+- This review does not authorize a time-saved range value.
 - It does not prove realized financial ROI.
 - Default causality status is `NOT_CAUSAL` unless explicitly governed otherwise.
-- Scenario-based upside is not validated value unless supported by outcome evidence.
+- Scenario-based upside is not authorized by this contract.
 - If Depth Repertoire appears, it is aggregate caveat/context only and did not
   adjust the range, confidence band, eligibility, or economic interpretation.
 
-## Example
+## Example Caveat Context
 
 ```json
 {
-  "readout_type": "TIME_SAVED_DEFENSIBILITY_RANGE",
-  "raw_time_saved_claim_hours": 300,
-  "defensibility_range_hours": {
-    "conservative": 120,
-    "expected": 180,
-    "upside": 240
-  },
+  "readout_type": "TIME_SAVED_DEFENSIBILITY_RANGE_DOCS_ONLY",
   "causality_status": "NOT_CAUSAL",
-  "confidence_band": "MEDIUM",
   "depth_repertoire_caveat_context": {
     "status": "CAVEAT_ONLY",
     "allowed_use": "aggregate_context",
@@ -182,10 +167,10 @@ Every range must state:
     "summary": "Depth Repertoire surfaced as cross-surface return-use context only."
   },
   "required_caveats": [
-    "This range qualifies a claimed time-saved estimate.",
+    "This review does not authorize a time-saved range value.",
     "It does not prove realized financial ROI.",
-    "Depth Repertoire is included only as aggregate caveat/context and did not adjust this range.",
-    "Use as a defensibility range, not a single ROI number."
+    "Depth Repertoire is included only as aggregate caveat/context and did not adjust any range.",
+    "No runtime schema, endpoint, frontend surface, or customer-facing economic output is authorized."
   ],
   "blocked_claims": [
     "realized ROI",
@@ -207,6 +192,9 @@ This readout does not establish causality.
 This readout does not rank teams or individuals.
 
 This readout does not expose suppressed economics.
+
+This readout does not authorize range values, runtime schemas, endpoints,
+frontend surfaces, or customer-facing economic output.
 
 This readout does not use Depth Repertoire as a hidden multiplier, threshold,
 benchmark, default, calibration value, or score.

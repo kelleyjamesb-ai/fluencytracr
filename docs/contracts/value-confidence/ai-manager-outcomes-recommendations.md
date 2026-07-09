@@ -8,8 +8,8 @@ aggregate AI Work Evidence.
 
 It tells an AI program leader which internal outcome data would make a value
 hypothesis testable. When aggregate evidence is trusted and reliable, it may
-route customer-owned outcome signals into ROI metric selection and governed
-scenario review. It does not calculate realized ROI, prove causality, predict
+route customer-owned outcome signals into value-investigation metric selection
+and governed scenario review. It does not calculate realized ROI, prove causality, predict
 outcomes, measure productivity, assess people, compare groups, or require
 person-level HRIS, survey, enablement, or person-level data. Aggregate
 HRIS-derived workforce context may be used only when customer-approved,
@@ -222,7 +222,7 @@ Allowed readiness states:
 These are recommendation states, not suppression reasons.
 
 `READY_FOR_ROI_METRIC_ROUTING` means trusted aggregate evidence can be used to
-choose ROI or value metrics for governed scenario review. It must not be used
+choose customer-owned value-investigation metrics for governed scenario review. It must not be used
 as a realized ROI calculation, causal claim, productivity claim, or permission
 for customer-facing economic output.
 
@@ -367,6 +367,6 @@ eligibility, Trust Calibration status, or outcome evidence status.
 
 It recommends what customer-owned outcome evidence to connect next. When that
 evidence is accepted and governed, the recommendation may pass it forward for
-ROI metric routing and scenario review. It does not consume that evidence to
+value-investigation metric routing and scenario review. It does not consume that evidence to
 produce realized ROI, causality, productivity, or customer-facing economic
 output.

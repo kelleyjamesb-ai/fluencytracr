@@ -97,8 +97,9 @@ it("accepts valid payloads with schema version", async () => {
 
   expect(response.status).toBe(200);
   expect(body.ingested).toBe(1);
-  expect(body.execution_ids).toHaveLength(1);
-  expect(typeof body.execution_ids[0]).toBe("string");
+  expect(body).not.toHaveProperty("event_ids");
+  expect(body).not.toHaveProperty("execution_ids");
+  expect(JSON.stringify(body)).not.toMatch(/event_ids|execution_ids|workflow-1/);
 });
 
 it("accepts taxonomy-free JBTD and persona join keys", async () => {
@@ -188,7 +189,9 @@ it("returns reconstructed traces for workflow_id", async () => {
 
   expect(response.status).toBe(200);
   expect(response.body.traces).toHaveLength(1);
-  expect(response.body.traces[0].execution_id).toContain("run-xyz");
+  expect(response.body.traces[0]).not.toHaveProperty("execution_id");
+  expect(response.body.traces[0]).not.toHaveProperty("ordered_event_ids");
+  expect(JSON.stringify(response.body.traces[0])).not.toMatch(/run-xyz|failure_event_id|subsequent_event_id/);
   expect(response.body.traces[0].retry_sequences.length).toBeGreaterThanOrEqual(1);
 });
 
@@ -234,7 +237,8 @@ it("scopes reconstructed traces to the authenticated org", async () => {
 
   expect(response.status).toBe(200);
   expect(response.body.traces).toHaveLength(1);
-  expect(response.body.traces[0].execution_id).toContain("run-org-1");
+  expect(response.body.traces[0]).not.toHaveProperty("execution_id");
+  expect(JSON.stringify(response.body)).not.toMatch(/run-org-1|run-org-2|trace-org/);
 });
 
 it("returns signals and pattern when include_signals=true and disclosure ALLOWED (>=2 events)", async () => {
@@ -309,7 +313,7 @@ it("suppresses interpretive fields when include_signals=true and disclosure rule
   expect(response.body.traces[0].pattern).toBeNull();
   expect(response.body.traces[0].signals).toBeNull();
   expect(response.body.traces[0].pattern_confidence_tier).toBeNull();
-  expect(response.body.traces[0].ordered_event_ids.length).toBe(1);
+  expect(response.body.traces[0]).not.toHaveProperty("ordered_event_ids");
   expect(response.body.traces[0].lifecycle.state).toBe("COMPLETED");
 });
 

@@ -5,9 +5,10 @@
 The Value Confidence contract defines the parent V4 contract for executive economic decision artifacts. It composes governed aggregate behavioral evidence into bounded, caveated confidence readouts.
 
 V4 qualifies the defensibility of AI value claims. When aggregate evidence is
-trusted, reliable, and customer-approved, V4 may route that evidence into ROI
-metric selection and governed scenario modeling. It does not calculate realized
-ROI.
+trusted, reliable, and customer-approved, V4 may route that evidence into
+customer-owned value-investigation metric selection and governed scenario
+review. It does not calculate realized ROI or authorize customer-facing economic
+output.
 
 ## Contract Status
 
@@ -46,7 +47,7 @@ contract hardening for internal readout shape only.
 is a docs-only recommendation contract for internal pilot language, examples,
 and checklists. It recommends customer-owned outcome signals and aggregate
 formula templates to test value hypotheses. Accepted aggregate outcome evidence
-may pass into ROI metric routing and governed scenario review. It does not
+may pass into value-investigation metric routing and governed scenario review. It does not
 authorize runtime schemas, APIs, automated recommendation engines, formula
 execution, production outcome joins, customer-facing economic output, realized
 ROI, productivity, causality, prediction, person-level HR analytics, HRIS
@@ -123,9 +124,9 @@ a runtime schema, score, ROI input, citation-click metric, or causal claim.
 ### Outcome Evidence
 
 Outcome Evidence stores customer-attested aggregate KPI evidence. Outcome
-evidence may strengthen confidence and can make a record eligible for ROI
-metric routing or governed scenario modeling, but it does not automatically
-establish causality or realized ROI.
+evidence may strengthen internal review caveats and can route a record toward
+customer-owned value-investigation review, but it does not automatically
+establish causality, realized ROI, or customer-facing economic output.
 
 ### Raw time-saved claim
 
@@ -141,10 +142,9 @@ A Value Confidence readout should include:
 - `workflow_id` or portfolio key,
 - `verdict`,
 - `suppression_reason`,
-- `economic_readout_type`,
+- `readout_type`,
 - `causality_status`,
 - `evidence_grade`,
-- `confidence_band`,
 - `depth_repertoire_caveat_context` when surfaced and applicable,
 - readout-specific aggregate fields,
 - `required_caveats`,
@@ -240,7 +240,7 @@ V4 is not a surveillance or enforcement system.
 
 V4 is not a replacement for Glean's time-saved pipeline.
 
-## Example Economic Readout
+## Example Held Readout Context
 
 ```json
 {
@@ -250,10 +250,9 @@ V4 is not a replacement for Glean's time-saved pipeline.
   "workflow_id": "workflow:CHAT",
   "verdict": "SURFACE",
   "suppression_reason": null,
-  "economic_readout_type": "TIME_SAVED_DEFENSIBILITY_RANGE",
+  "readout_type": "TIME_SAVED_DEFENSIBILITY_RANGE_DOCS_ONLY",
   "causality_status": "NOT_CAUSAL",
   "evidence_grade": "CALIBRATED",
-  "confidence_band": "MEDIUM",
   "depth_repertoire_caveat_context": {
     "status": "CAVEAT_ONLY",
     "allowed_use": "aggregate_context",
@@ -265,16 +264,10 @@ V4 is not a replacement for Glean's time-saved pipeline.
     ],
     "summary": "Depth Repertoire surfaced as cross-surface return-use context only."
   },
-  "time_saved_defensibility_range": {
-    "unit": "hours",
-    "conservative": 120,
-    "expected": 180,
-    "upside": 240
-  },
   "required_caveats": [
-    "This range qualifies a claimed time-saved estimate; it does not prove realized financial ROI.",
+    "This docs-only review does not authorize a time-saved range value or customer-facing economic output.",
     "Default causality status is NOT_CAUSAL.",
-    "Depth Repertoire is included only as aggregate caveat/context and did not adjust this range.",
+    "Depth Repertoire is included only as aggregate caveat/context and did not adjust any range.",
     "Every downstream claim must preserve these caveats."
   ],
   "blocked_claims": [
@@ -288,7 +281,9 @@ V4 is not a replacement for Glean's time-saved pipeline.
 
 ## Future Schema Work
 
-Future work may add minimal schemas for each readout after the Markdown contracts stabilize. Schema work must preserve fail-closed suppression, aggregate-only outputs, and caveat propagation.
+Future work may add minimal schemas for each readout only after an exact-scope
+governance decision authorizes that work. Schema work must preserve fail-closed
+suppression, aggregate-only outputs, and caveat propagation.
 
 ## Current Dogfood Decision Gate
 

@@ -37,8 +37,6 @@ function buildUpstreamLineage(input: UpstreamIngestEvent): Record<string, string
   add("execution_id", input.execution_id);
   add("workflow_run_id", input.workflow_run_id);
   add("run_id", input.run_id);
-  add("chat_id", input.chat_id);
-  add("agent_run_id", input.agent_run_id);
   add("workflow_id", input.workflow_id);
   return lineage;
 }
@@ -48,10 +46,8 @@ function toIdentitySource(input: UpstreamIngestEvent): ExecutionIdentitySource {
     execution_id: input.execution_id,
     workflow_run_id: input.workflow_run_id,
     run_id: input.run_id,
-    chat_id: input.chat_id,
-    agent_run_id: input.agent_run_id,
     workflow_id: input.workflow_id,
-    allow_composite_fallback: input.boundary_policy?.allow_composite_execution_id === true
+    allow_composite_fallback: false
   };
 }
 

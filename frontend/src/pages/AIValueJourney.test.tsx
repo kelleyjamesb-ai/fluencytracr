@@ -385,7 +385,7 @@ describe("AIValueJourney", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows the whole-system journey with ROI opportunity mapping", async () => {
+  it("shows the whole-system journey with value hypothesis mapping", async () => {
     const { container } = renderPage();
 
     await waitFor(() => {
@@ -396,7 +396,7 @@ describe("AIValueJourney", () => {
     expect(screen.getAllByText(/^Blueprint$/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Execution Instrumentation/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Evidence & Measurement/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/ROI \/ Value Opportunity Map/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Value Hypothesis Map/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Governed Value Scenario/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Executive Readout/i).length).toBeGreaterThan(0);
 
@@ -883,17 +883,17 @@ describe("AIValueJourney", () => {
     ]);
   });
 
-  it("surfaces ROI scenario readiness without exposing internal contract language", async () => {
+	  it("surfaces value scenario readiness without exposing internal contract language", async () => {
     const { container } = renderPage();
 
     await waitFor(() => {
       expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
     });
 
-    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
-    expect(
-      within(readiness).getByRole("heading", { name: /ROI Scenario Readiness/i })
-    ).toBeInTheDocument();
+	    const readiness = screen.getByRole("region", { name: /Value scenario readiness/i });
+	    expect(
+	      within(readiness).getByRole("heading", { name: /Value Scenario Readiness/i })
+	    ).toBeInTheDocument();
     expect(within(readiness).getByText(/Ready for governed value modeling/i)).toBeInTheDocument();
     expect(within(readiness).getByText(/Support case resolution/i)).toBeInTheDocument();
     expect(within(readiness).getByText(/Capacity creation/i)).toBeInTheDocument();
@@ -940,7 +940,7 @@ describe("AIValueJourney", () => {
       expect(screen.getByText(/Northstar Support/)).toBeInTheDocument();
     });
 
-    const readiness = screen.getByRole("region", { name: /ROI scenario readiness/i });
+    const readiness = screen.getByRole("region", { name: /Value scenario readiness/i });
     const safeLanguage = within(readiness)
       .getByText(/^Safe value language$/i)
       .closest(".ai-value-map-cell") as HTMLElement;
@@ -1355,7 +1355,7 @@ describe("AIValueJourney", () => {
       /Feeds Blueprint/i,
       /Feeds Customer Evidence Request/i,
       /Feeds Evidence Review/i,
-      /Feeds ROI Scenario Readiness/i,
+	      /Feeds Value Scenario Readiness/i,
       /Feeds Executive Operating Packet/i
     ]) {
       expect(within(decision).getAllByText(target).length).toBeGreaterThan(0);

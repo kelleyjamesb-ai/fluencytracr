@@ -98,7 +98,7 @@ The AI Value Leakage Map contract has passed caveat propagation in
 [V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md](./V4_VALUE_LEAKAGE_CAVEAT_PROPAGATION_DECISION.md).
 That decision permits documentation-stage leakage-map contract hardening only.
 It does not authorize runtime implementation, schema hardening, economic
-dependency, leakage severity adjustment, value-at-risk adjustment,
+dependency, leakage severity adjustment, value-investigation adjustment,
 confidence-band adjustment, eligibility use, ROI, causality, prediction,
 productivity, maturity, or ranking claims.
 
@@ -360,7 +360,7 @@ Reusable leverage classifications:
 | Workflow Metadata Hold | GCE workflow metadata does not expose reuse reliably | Do not interpret reuse spread |
 | Skill Read Evidence Available | Agent span logs may expose skill reads | Run aggregate availability tests |
 | Skill Read Ungoverned | Reads lack governed identity or clean attribution | Caveat only |
-| Governed Reuse Ready | Canonical identity, versioning, invocation mode, and joins are stable | Future reuse-depth candidate |
+| Reuse Review Held | Future validation candidate only; no reusable leverage interpretation is authorized | Hold for later exact-scope validation |
 
 Fallback rule: when Trust Calibration or Reusable Workflow Propagation remains
 held, V4 should fall back to existing V1/V2 behavior evidence: completion,

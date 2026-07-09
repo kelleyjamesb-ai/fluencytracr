@@ -121,16 +121,20 @@ describe("workflow registry and orientation API", () => {
     expect(versionsPayload.versions[0].version).toBe(1);
     expect(versionsPayload.versions[1].version).toBe(2);
     expect(versionsPayload.versions[1].risk_class).toBe("high");
+    expect(versionsPayload.versions[1]).not.toHaveProperty("actor_sub");
+    expect(versionsPayload.versions[1]).not.toHaveProperty("actor_role");
     expect(versionsPayload.versions[1].policy_config).toEqual({
       policy_version: "dashboard-v1-default-2026-02-18",
-      low_min_events: 3,
+      low_min_events: 5,
       medium_min_events: 5,
       high_min_events: 8,
-      min_window_days: 30,
+      min_window_days: 60,
       high_sparse_min_events: 12,
       high_sparse_min_window_days: 60
     });
     expect(auditPayload.events).toHaveLength(4);
+    expect(auditPayload.events[0]).not.toHaveProperty("actor_sub");
+    expect(auditPayload.events[0]).not.toHaveProperty("actor_role");
     expect(auditPayload.events.some((event: any) => event.action === "BASELINE_RESET")).toBe(true);
 
     const workflowsResponse = await fetch(`${server.url}/api/workflow-registry/org-1/workflows`, {
@@ -162,11 +166,13 @@ describe("workflow registry and orientation API", () => {
       body: JSON.stringify({ risk_class: "high" })
     });
 
-    store.fluencyEvents.set("evt-1", baseEvent("wf-visible", "evt-1", true));
-    store.fluencyEvents.set("evt-2", baseEvent("wf-visible", "evt-2", true));
-    store.fluencyEvents.set("evt-3", baseEvent("wf-visible", "evt-3", true));
+	    store.fluencyEvents.set("evt-1", baseEvent("wf-visible", "evt-1", true));
+	    store.fluencyEvents.set("evt-2", baseEvent("wf-visible", "evt-2", true));
+	    store.fluencyEvents.set("evt-3", baseEvent("wf-visible", "evt-3", true));
+	    store.fluencyEvents.set("evt-4", baseEvent("wf-visible", "evt-4", true));
+	    store.fluencyEvents.set("evt-5", baseEvent("wf-visible", "evt-5", true));
 
-    store.fluencyEvents.set("evt-4", baseEvent("wf-data", "evt-4", false));
+	    store.fluencyEvents.set("evt-6", baseEvent("wf-data", "evt-6", false));
 
     store.behavioralSignals.set("sig-1", {
       org_id: "org-1",
@@ -277,9 +283,11 @@ describe("workflow registry and orientation API", () => {
       body: JSON.stringify({ risk_class: "low" })
     });
 
-    store.fluencyEvents.set("evt-a1", { ...baseEvent("wf-a", "evt-a1", true), timestamp: new Date().toISOString() });
-    store.fluencyEvents.set("evt-a2", { ...baseEvent("wf-a", "evt-a2", true), timestamp: new Date().toISOString() });
-    store.fluencyEvents.set("evt-a3", { ...baseEvent("wf-a", "evt-a3", true), timestamp: new Date().toISOString() });
+	    store.fluencyEvents.set("evt-a1", { ...baseEvent("wf-a", "evt-a1", true), timestamp: new Date().toISOString() });
+	    store.fluencyEvents.set("evt-a2", { ...baseEvent("wf-a", "evt-a2", true), timestamp: new Date().toISOString() });
+	    store.fluencyEvents.set("evt-a3", { ...baseEvent("wf-a", "evt-a3", true), timestamp: new Date().toISOString() });
+	    store.fluencyEvents.set("evt-a4", { ...baseEvent("wf-a", "evt-a4", true), timestamp: new Date().toISOString() });
+	    store.fluencyEvents.set("evt-a5", { ...baseEvent("wf-a", "evt-a5", true), timestamp: new Date().toISOString() });
     store.patternInferenceRecords.push({
       scope_key: "wf-a:LOW",
       scope_type: "WORKFLOW_RISK",

@@ -4,7 +4,7 @@
  */
 
 import type { CanonicalEvent, ValidationResult } from "../domain/canonical-event.schema";
-import { validateCanonicalEvent } from "../domain/canonical-event.schema";
+import { validateInternalCanonicalEvent } from "../domain/canonical-event.schema";
 import { mapActorType } from "../boundary/actor-type.adapter";
 
 export type IngestNormalizeFailureReason =
@@ -17,7 +17,7 @@ export type IngestNormalizeResult =
 
 /**
  * Resolves the execution correlation key used for grouping and repositories.
- * Prefer `execution_id` when present; otherwise first non-empty alternate identity field.
+ * Prefer `execution_id` when present; otherwise use governed run lineage only.
  */
 export function canonicalExecutionKey(event: CanonicalEvent): string {
   if (typeof event.execution_id === "string" && event.execution_id.length > 0) {
@@ -28,12 +28,6 @@ export function canonicalExecutionKey(event: CanonicalEvent): string {
   }
   if (typeof event.run_id === "string" && event.run_id.length > 0) {
     return event.run_id;
-  }
-  if (typeof event.chat_id === "string" && event.chat_id.length > 0) {
-    return event.chat_id;
-  }
-  if (typeof event.agent_run_id === "string" && event.agent_run_id.length > 0) {
-    return event.agent_run_id;
   }
   return "";
 }
@@ -78,7 +72,7 @@ export function normalizeInboundActorType(raw: unknown): IngestNormalizeResult {
 }
 
 /**
- * When `applyActorMapping` is true, remaps `actor_type` then runs canonical validation.
+ * When `applyActorMapping` is true, remaps `actor_type` then runs internal pipeline validation.
  */
 export function validateInboundCanonicalEvent(
   raw: unknown,
@@ -96,5 +90,5 @@ export function validateInboundCanonicalEvent(
     }
     body = n.payload;
   }
-  return validateCanonicalEvent(body);
+  return validateInternalCanonicalEvent(body);
 }

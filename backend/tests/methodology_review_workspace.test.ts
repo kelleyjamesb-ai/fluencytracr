@@ -206,7 +206,7 @@ describe("Methodology decision memo export", () => {
     const memo = buildMethodologyDecisionMemo(workspace, "nielsen_roi_payback_internal_2025_10");
 
     expect(memo).toMatch(/Decision state: internal-only/i);
-    expect(memo).toMatch(/Selected methodology snapshot: Synthetic Nielsen-style internal ROI and payback fixture/i);
+    expect(memo).toMatch(/Selected methodology snapshot: Synthetic Nielsen-style internal financial-review fixture/i);
     expect(memo).toMatch(/Approval state: finance_approved/i);
     expect(memo).toMatch(/Financial claim effect: internal-only/i);
     expect(memo).toMatch(/Strongest safe language:/i);
@@ -219,16 +219,16 @@ describe("Methodology decision memo export", () => {
     expect(memo).toMatch(/Upgrade actions:/i);
   });
 
-  it("allows customer-safe financial language for customer-safe methodology", () => {
+	  it("keeps customer-safe methodology internal until exact-scope governance authorizes output", () => {
     const workspace = summarizeMethodologySnapshotsForReview(
       customerSafeMethodologyRegistry,
       "nielsen_roi_payback_customer_safe_2025_10"
     );
     const memo = buildMethodologyDecisionMemo(workspace, "nielsen_roi_payback_customer_safe_2025_10");
 
-    expect(memo).toMatch(/Decision state: customer-safe/i);
-    expect(memo).toMatch(/customer-facing ROI\/payback can be enabled/i);
-    expect(memo).toMatch(/Strongest safe language: Customer-safe/i);
+	    expect(memo).toMatch(/Decision state: internal-only/i);
+	    expect(memo).toMatch(/customer-facing economic output remains blocked/i);
+	    expect(memo).toMatch(/Strongest safe language: Internal-only/i);
   });
 
   it.each([

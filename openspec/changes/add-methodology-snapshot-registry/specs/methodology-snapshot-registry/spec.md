@@ -29,7 +29,7 @@ The system SHALL reject methodology registry payloads that include raw prompts, 
 
 ### Requirement: Customer-Safe Approval Gate
 
-The system SHALL require `customer_safe` methodology approval before a methodology snapshot can enable customer-safe ROI, payback, or finance-approved value language.
+The system SHALL require a later exact-scope governance decision before any methodology snapshot can enable customer-facing ROI, payback, or finance-approved value language.
 
 #### Scenario: Customer-safe effect without approval
 
@@ -48,15 +48,15 @@ The system SHALL include methodology snapshot lineage and caveats when generatin
 - **AND** the selected methodology snapshot has `approval_state` set to `finance_approved`
 - **WHEN** Strongest Safe Claim is generated
 - **THEN** the financial claim is capped at `internal_only`
-- **AND** the output explains that customer-facing ROI or payback requires customer-safe methodology approval
+- **AND** the output explains that customer-facing ROI or payback remains blocked unless a later exact-scope governance decision authorizes it
 
 #### Scenario: Missing methodology snapshot
 
 - **GIVEN** a value hypothesis has financial model evidence
 - **AND** no methodology snapshot is selected
 - **WHEN** Strongest Safe Claim is generated
-- **THEN** the financial claim is capped below `customer_safe`
-- **AND** the output explains that customer-facing ROI or payback requires a selected customer-safe methodology snapshot
+- **THEN** the financial claim is capped below customer-facing output
+- **AND** the output explains that customer-facing ROI or payback remains blocked unless a later exact-scope governance decision authorizes it
 
 #### Scenario: Suppressed methodology
 

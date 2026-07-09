@@ -4,7 +4,7 @@ import {
 } from "../../src/domain/canonical-event.schema";
 
 const validBase = {
-  event_name: "ai_output_disposition",
+  event_name: "FT_V1_DISPOSITION_OBSERVED",
   event_version: "1",
   org_id: "org_1",
   workflow_id: "wf_1",
@@ -21,6 +21,16 @@ describe("validateCanonicalEvent", () => {
     if (r.ok) {
       expect(r.value.org_id).toBe("org_1");
       expect(r.value.execution_id).toBe("ex_1");
+    }
+  });
+
+  it("rejects event names outside the governed inbound allowlist", () => {
+    for (const event_name of ["unreviewed_new_event", "ai_output_disposition", "execution_start"]) {
+      const r = validateCanonicalEvent({ ...validBase, event_name });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors).toContain("invalid_event_name");
+      }
     }
   });
 
@@ -62,6 +72,23 @@ describe("validateCanonicalEvent", () => {
     const { execution_id: _e, ...rest } = validBase;
     const r = validateCanonicalEvent({ ...rest, workflow_run_id: "wr_1" });
     expect(r.ok).toBe(true);
+  });
+
+  it("rejects chat and agent lineage fields as canonical execution identity", () => {
+    const { execution_id: _e, ...rest } = validBase;
+    const chatOnly = validateCanonicalEvent({ ...rest, chat_id: "chat_1" });
+    const agentOnly = validateCanonicalEvent({ ...rest, agent_run_id: "agent_1" });
+
+    expect(chatOnly.ok).toBe(false);
+    expect(agentOnly.ok).toBe(false);
+    if (!chatOnly.ok) {
+      expect(chatOnly.errors).toContain("disallowed_execution_identity:chat_id");
+      expect(chatOnly.errors).toContain("missing_execution_identity");
+    }
+    if (!agentOnly.ok) {
+      expect(agentOnly.errors).toContain("disallowed_execution_identity:agent_run_id");
+      expect(agentOnly.errors).toContain("missing_execution_identity");
+    }
   });
 
   it("accepts optional opaque JBTD and persona join keys", () => {

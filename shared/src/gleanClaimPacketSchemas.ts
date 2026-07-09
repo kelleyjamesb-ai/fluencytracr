@@ -306,9 +306,9 @@ const methodologyUpgradeActions = (workspace: MethodologyReviewWorkspace, select
       "Keep the frozen methodology snapshot, approved window, assumptions, and caveats attached to the QBR packet."
     ];
   }
-  if (snapshot.financial_claim_effect.startsWith("internal-only")) {
-    return ["Request customer-safe methodology approval before using financial value language with customers."];
-  }
+	  if (snapshot.financial_claim_effect.startsWith("internal-only")) {
+	    return ["Do not use financial value language with customers unless a later exact-scope governance decision authorizes it."];
+	  }
   if (snapshot.financial_claim_effect.startsWith("suppressed")) {
     return ["Replace, revise, or re-approve the methodology snapshot before emitting financial value language."];
   }
@@ -488,10 +488,10 @@ export function buildGleanClaimPacketQbrNarrative(raw: unknown): GleanClaimPacke
     executive_decision: {
       decision_state: decisionState,
       headline: executiveHeadlineFor(decisionState),
-      summary:
-        decisionState === "internal_only"
-          ? "Use financial value language for internal planning only until customer-safe methodology approval exists."
-          : "Use the packet sections below as the current QBR claim posture without calculating ROI or upgrading readiness."
+	    summary:
+	      decisionState === "internal_only"
+	        ? "Use financial value language for internal planning only; customer-facing economic output requires a later exact-scope governance decision."
+	        : "Use the packet sections below as the current QBR claim posture without calculating ROI or upgrading readiness."
     },
     strongest_safe_claim: strongestSafeClaim,
     caveated_claims: packet.caveated_claims,
