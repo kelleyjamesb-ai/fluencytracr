@@ -10,13 +10,11 @@ import pytest
 
 from fluencytracr_inference.artifact import (
     emit_proof_artifact,
-    phase_b1_fixture_calibration_scenarios,
-    phase_b1_fixture_floor_checks,
-    phase_b1_fixture_null_checks,
 )
 from fluencytracr_inference.diagnostics import compute_diagnostics
 from fluencytracr_inference.model import fit_did_model
 from fluencytracr_inference.synthetic import generate_did_dataset
+from fluencytracr_inference.synthetic_study import run_synthetic_study_inputs
 
 RECOVERY_SEED = 20260706
 RECOVERY_K = 16
@@ -42,13 +40,16 @@ def clean_diagnostics(clean_fit):
 
 
 @pytest.fixture(scope="session")
-def eligible_artifact(clean_dataset, clean_fit, clean_diagnostics):
+def computed_study_inputs():
+    return run_synthetic_study_inputs()
+
+
+@pytest.fixture(scope="session")
+def eligible_artifact(clean_dataset, clean_fit, clean_diagnostics, computed_study_inputs):
     return emit_proof_artifact(
         dataset=clean_dataset,
         fit=clean_fit,
         diagnostics=clean_diagnostics,
-        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
-        null_checks=phase_b1_fixture_null_checks(),
-        floor_checks=phase_b1_fixture_floor_checks(),
+        **computed_study_inputs.as_run_proof_kwargs(),
         generated_at=FIXED_GENERATED_AT,
     )

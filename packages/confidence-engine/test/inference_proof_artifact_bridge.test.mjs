@@ -11,8 +11,9 @@
 // Two layers:
 //
 // 1. Committed fixtures (always run, CI-stable). Generated ONCE by the real
-//    Python harness (full seeded NUTS fit + real diagnostics). Regenerate
-//    from the repo root with the pinned environment:
+//    Python harness (full seeded NUTS fit + real diagnostics, plus computed
+//    Phase B2 calibration/null/floor study inputs). Regenerate from the repo
+//    root with the pinned environment:
 //
 //      PYTHONPATH=inference/src inference/.venv/bin/python \
 //        -m fluencytracr_inference --scenario eligible --full \
@@ -112,6 +113,21 @@ function assertFixedHorizonPeekingPins(artifact) {
   assert.equal(control.synthetic_null_proof_hash, null);
 }
 
+function assertComputedB2StudyPins(artifact) {
+  assert.equal(artifact.calibration.scenarios.length, 6);
+  for (const scenario of artifact.calibration.scenarios) {
+    assert.match(scenario.scenario_id, /^computed-b2-/);
+    assert.equal(scenario.replication_count, 200);
+    assert.equal(scenario.pass, true);
+  }
+  assert.equal(artifact.null_checks.null_effect_scenario_count, 200);
+  assert.equal(artifact.null_checks.false_eligibility_rate, 0.045);
+  assert.equal(artifact.null_checks.pass, true);
+  assert.equal(artifact.floor_checks.k4_rejected.pass, true);
+  assert.equal(artifact.floor_checks.k8_internal_only.valid_internal, true);
+  assert.equal(artifact.floor_checks.k8_internal_only.display_eligible, false);
+}
+
 function assertSelfHashRoundTrip(artifact) {
   const recomputed = inferenceProofArtifactSelfHash(artifact);
   assert.equal(
@@ -133,6 +149,23 @@ function assertEligibleRoundTrip(artifact) {
   assert.equal(parsed.governance_state.evidence_tier_only, false);
   assertGovernancePins(parsed);
   assertFixedHorizonPeekingPins(parsed);
+  assertComputedB2StudyPins(parsed);
+}
+
+function assertEligibleNoContributionEstimateRoundTrip(artifact) {
+  assertSelfHashRoundTrip(artifact);
+  const parsed = InferenceProofArtifactSchema.parse(artifact);
+  assert.equal(parsed.governance_state.state, "eligible_internal_only");
+  assert.deepEqual(parsed.governance_state.failing_diagnostics, []);
+  assert.equal(
+    parsed.governance_state.comparison_supported_contribution_estimate_authorized,
+    false
+  );
+  assert.equal(parsed.governance_state.evidence_tier_only, false);
+  assert.equal(parsed.comparison_adequacy.all_required_checks_pass, true);
+  assertGovernancePins(parsed);
+  assertFixedHorizonPeekingPins(parsed);
+  assertComputedB2StudyPins(parsed);
 }
 
 function assertHoldRoundTrip(artifact, expectedFailingDiagnostic) {
@@ -154,6 +187,7 @@ function assertHoldRoundTrip(artifact, expectedFailingDiagnostic) {
   );
   assertGovernancePins(parsed);
   assertFixedHorizonPeekingPins(parsed);
+  assertComputedB2StudyPins(parsed);
 }
 
 // ---------------------------------------------------------------------------
@@ -224,6 +258,11 @@ test("fixture: fixed-horizon peeking pins hold on both artifacts", () => {
 test("subprocess: live Python eligible artifact round-trips through the TS gate", { skip: venvSkip }, () => {
   const artifact = emitFromPython("eligible");
   assertEligibleRoundTrip(artifact);
+});
+
+test("subprocess: live Python null artifact is valid but does not authorize estimate", { skip: venvSkip }, () => {
+  const artifact = emitFromPython("null");
+  assertEligibleNoContributionEstimateRoundTrip(artifact);
 });
 
 test("subprocess: live Python HOLD artifact round-trips as valid HOLD", { skip: venvSkip }, () => {

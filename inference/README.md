@@ -35,7 +35,7 @@ python3 -m venv .venv
 To change dependencies: edit the direct pins in `pyproject.toml`, reinstall,
 then regenerate the lockfile with `.venv/bin/pip freeze > requirements.lock`.
 
-## Package layout (Slice 2 Phase B1)
+## Package layout (Slice 2 Phase B2)
 
 Under `src/fluencytracr_inference/`:
 
@@ -51,6 +51,65 @@ Under `src/fluencytracr_inference/`:
   injected effect in SD units) plus the negative-control generators
   (violated pre-trend, mismatched/no comparison cohort, missing/suppressed
   windows, prior-dominated weak data) consumed by Phase B2.
+- `synthetic_study.py` — computed synthetic calibration/null/floor study
+  runner. The full path covers effect sizes `{0, 0.2, 0.5}` and cohort
+  sizes `{12, 16}` at `>=200` seeded replications per cell, reports binomial
+  uncertainty, measures two-sided null false-eligibility conservatively by
+  worst null cell against the `<=5%` gate with a compiled finite-sample
+  correction, and computes floor checks for `k=4`, `k=8`, `k=12`, and `k=16`.
+  Smoke studies are allowed for local mechanics checks but cannot be converted
+  into artifact inputs. This runner is a fast
+  aggregate Bayesian DiD approximation used to replace Phase B1 fixture study
+  sections; it is not sampler-level replicated PyMC calibration evidence by
+  itself.
+- `negative_control_study.py` — internal sidecar verifier for the task-3.3
+  negative-control and floor-control suite. It generates synthetic-only
+  control datasets, validates emitted artifacts through their internal-only
+  pins and self-hash, and reports whether required controls HOLD or remain
+  internal-only as expected. Floor controls now verify the emitted artifact's
+  floor-check section directly, so governance labels alone cannot satisfy the
+  control. The report is not an artifact schema field and
+  explicitly does not authorize OpenSpec task completion, customer output,
+  probability/confidence output, ROI, causality, productivity, routes, UI,
+  persistence, exports, or connectors.
+- `acceptance_study.py` — internal sidecar metadata for the remaining task-3.3
+  acceptance gap. It records whether evidence is
+  `aggregate_approximation` or `sampler_artifact`, supports reduced-draw
+  sampler-artifact smoke batches plus full-settings sampler-artifact batches
+  for the required effect/cohort grid through `run_proof`, emits a
+  deterministic stdout-only full-run plan for the required 1200
+  sampler-artifact slots, combines non-overlapping batches in memory for
+  resumable proof runs, and verifies the exact planned slot grid so counts
+  cannot mask skipped or substituted replication indexes. It computes
+  aggregate posterior CI coverage and governance-level artifact false
+  eligibility over valid/bound null artifacts, and separately reports a
+  non-authorizing posterior null-guard audit matching the artifact's
+  contribution-estimate authorization rule. The guard does not decide artifact
+  validity: valid null/uncertain artifacts stay internal-valid and
+  non-authorizing. Full generated evidence must carry the sidecar's
+  runner-generation proof hash; direct result construction, rehydrated
+  reports, and plan-only metadata cannot self-certify. It refuses to produce
+  artifact inputs because no current method is approved as full sampler-level
+  acceptance evidence. Reports omit per-replication posterior interval bounds,
+  can be strictly rehydrated from sanitized sidecar JSON for cross-process
+  chunk combination, mark rehydrated evidence as non-authorizing, and reject
+  invalid, unbound, HOLD, diagnostic-shell, duplicate, malformed-hash,
+  off-plan, or semantically failed artifacts from acceptance coverage/null-gate
+  counts. Per-replication runner exceptions are captured as invalid/unusable
+  sidecar rows with only the exception type recorded; details, traces,
+  posterior values, and artifacts are not emitted. Rehydrated chunk-report
+  evidence is token-gated and review-only: SHA-shaped source hashes in JSON do
+  not self-certify, mixed live/rehydrated combines fail closed on source
+  provenance, and runner acceptance plus artifact-input authorization remain
+  false for rehydrated reports. The CLI exposes stdout/stdin-only acceptance
+  sidecar modes; it does not write checkpoints or reports.
+- `task_3_3_evidence.py` — internal recompute-first required-evidence ledger
+  for OpenSpec task 3.3. It accepts an in-memory sampler-artifact
+  `AcceptanceStudyResult` plus negative-control and floor-control artifact
+  maps, recomputes the control sidecar reports from those artifacts, summarizes
+  and hashes component reports, and remains non-authorizing. Sidecar JSON
+  reports, plan-only metadata, missing controls, failed controls, and
+  rehydrated sampler evidence HOLD rather than completing task 3.3.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as
@@ -65,8 +124,13 @@ Under `src/fluencytracr_inference/`:
 - `artifact.py` — the `InferenceProofArtifactSchema`-shaped emitter:
   eligible only when every gate, floor, window, comparison-rubric, and
   peeking check passes; otherwise HOLD naming every failing diagnostic.
-  `run_proof(dataset, ...)` is the single entry point (fit + diagnostics +
-  artifact); Phase B2's calibration study drives it per replication.
+  Contribution-estimate authorization is narrower than artifact validity:
+  eligible internal artifacts authorize the estimate only when the compiled
+  null false-eligibility guard excludes zero. Valid null/uncertain artifacts
+  remain internal-valid and non-authorizing. `run_proof(dataset, ...)` is the
+  single entry point (fit + diagnostics + artifact) and accepts the computed
+  Phase B2 study sections from `synthetic_study.py`. Missing or incomplete
+  study sections fail closed to HOLD.
 
 ## Running the tests
 

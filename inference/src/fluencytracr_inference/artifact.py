@@ -8,8 +8,12 @@ boundary (``packages/confidence-engine/src/confidenceModel.ts``,
   aggregate floors pass, the Measurement Cell window evidence is complete
   (observed, unsuppressed, fresh, unimputed), the comparison-cohort adequacy
   rubric is complete and passing, and the fixed-horizon peeking control
-  passes. Anything else emits HOLD with every failing diagnostic named using
-  the schema's failing-diagnostic vocabulary.
+  passes. Contribution-estimate authorization is narrower: eligible internal
+  artifacts authorize the comparison-supported estimate only when the internal
+  null false-eligibility guard excludes zero. Valid-but-null/uncertain
+  artifacts stay internal-valid and non-authorizing. Anything with failed gates
+  emits HOLD with every failing diagnostic named using the schema's
+  failing-diagnostic vocabulary.
 - Governance pins exactly as the schema demands: ``internal_only: true``,
   customer/probability/confidence/finance output false,
   ``promotion_decision_ref: null``, the full ordered blocked-uses list, and
@@ -28,6 +32,7 @@ import hashlib
 import math
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import NormalDist
 
 from . import __version__ as HARNESS_VERSION
 from .constants import (
@@ -39,6 +44,7 @@ from .constants import (
     INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
     INFERENCE_PROOF_COMPARISON_COHORT_CRITERIA,
     INFERENCE_PROOF_FAILING_DIAGNOSTICS,
+    INFERENCE_PROOF_FLOAT_TOLERANCE,
     INFERENCE_PROOF_LIKELIHOOD_FAMILIES,
     INFERENCE_PROOF_MCSE_TO_POSTERIOR_SD_RATIO_MAX,
     INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX,
@@ -55,75 +61,65 @@ from .model import FitResult, HoldViolation, fit_did_model
 from .synthetic import SyntheticDataset, assert_synthetic_only_dataset
 
 LOCKFILE_PATH = Path(__file__).resolve().parents[2] / "requirements.lock"
+_NULL_FALSE_ELIGIBILITY_Z = NormalDist().inv_cdf(
+    1.0 - INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX / 2.0
+)
 
 
 def lockfile_hash() -> str:
     return hashlib.sha256(LOCKFILE_PATH.read_bytes()).hexdigest()
 
 
-# --- Phase B1 fixture inputs for the study-level sections --------------------
-#
-# The calibration study (>= 200 replications per effect/cohort cell), the
-# null false-eligibility study, and the floor-enforcement study are Phase B2
-# (task 3.3). The schema requires their sections in every artifact, so Phase
-# B1 provides clearly labeled fixture inputs that prove the emitter and the
-# gates; Phase B2 replaces them with computed replication results.
+# --- Study-level section helpers ---------------------------------------------
 
-PHASE_B1_FIXTURE_SCENARIO_PREFIX = "phase-b1-fixture"
 MISSING_STUDY_INPUT_PREFIX = "missing-task-3.3-study-input"
+CALIBRATION_EFFECT_SIZES = (0.0, 0.2, 0.5)
+CALIBRATION_COHORT_SIZES = (12, 16)
+CALIBRATION_CELLS = tuple(
+    (effect, cohort_size)
+    for effect in CALIBRATION_EFFECT_SIZES
+    for cohort_size in CALIBRATION_COHORT_SIZES
+)
 
 
 def phase_b1_fixture_calibration_scenarios() -> list[dict]:
-    """PHASE B1 FIXTURE: placeholder calibration cells (B2 computes for real)."""
-    scenarios = []
-    for effect in (0, 0.2, 0.5):
-        for cohort_size in (12, 16):
-            replications = INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
-            coverage = 0.8
-            scenarios.append(
-                {
-                    "scenario_id": f"{PHASE_B1_FIXTURE_SCENARIO_PREFIX}-effect-{effect}-k{cohort_size}",
-                    "injected_effect_size_sd": effect,
-                    "cohort_size": cohort_size,
-                    "replication_count": replications,
-                    "credible_interval_level": 0.8,
-                    "coverage_rate": coverage,
-                    "coverage_standard_error": math.sqrt(
-                        coverage * (1 - coverage) / replications
-                    ),
-                    "pass": True,
-                }
-            )
-    return scenarios
+    """Removed Phase B1 fixture path.
+
+    Phase B2 callers must use ``synthetic_study.run_synthetic_study_inputs``.
+    Keeping this name as a hard failure prevents stale fixture imports from
+    silently producing eligible artifacts.
+    """
+    raise RuntimeError(
+        "Phase B1 fixture calibration inputs are retired; use computed "
+        "synthetic_study.run_synthetic_study_inputs() outputs"
+    )
 
 
 def missing_study_input_calibration_scenarios() -> list[dict]:
     """Fail-closed calibration cells used when no study result is supplied."""
     scenarios = []
-    for effect in (0, 0.2, 0.5):
-        for cohort_size in (12, 16):
-            scenarios.append(
-                {
-                    "scenario_id": f"{MISSING_STUDY_INPUT_PREFIX}-effect-{effect}-k{cohort_size}",
-                    "injected_effect_size_sd": effect,
-                    "cohort_size": cohort_size,
-                    "replication_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
-                    "credible_interval_level": 0.8,
-                    "coverage_rate": 0.0,
-                    "coverage_standard_error": 0.0,
-                    "pass": False,
-                }
-            )
+    for effect, cohort_size in CALIBRATION_CELLS:
+        scenarios.append(
+            {
+                "scenario_id": f"{MISSING_STUDY_INPUT_PREFIX}-effect-{effect:g}-k{cohort_size}",
+                "injected_effect_size_sd": effect,
+                "cohort_size": cohort_size,
+                "replication_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
+                "credible_interval_level": 0.8,
+                "coverage_rate": 0.0,
+                "coverage_standard_error": 0.0,
+                "pass": False,
+            }
+        )
     return scenarios
 
 
 def phase_b1_fixture_null_checks() -> dict:
-    """PHASE B1 FIXTURE: placeholder null false-eligibility summary."""
-    return {
-        "null_effect_scenario_count": INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN,
-        "false_eligibility_rate": 0.02,
-        "pass": True,
-    }
+    """Removed Phase B1 fixture path."""
+    raise RuntimeError(
+        "Phase B1 fixture null inputs are retired; use computed "
+        "synthetic_study.run_synthetic_study_inputs() outputs"
+    )
 
 
 def missing_study_input_null_checks() -> dict:
@@ -136,25 +132,133 @@ def missing_study_input_null_checks() -> dict:
 
 
 def phase_b1_fixture_floor_checks() -> dict:
-    """PHASE B1 FIXTURE: placeholder floor-enforcement summary."""
-    return {
-        "k4_rejected": {
-            "cohort_size": 4,
-            "outcome": "rejected_below_schema_floor",
-            "pass": True,
-        },
-        "k8_internal_only": {
-            "cohort_size": 8,
-            "outcome": "internal_only_display_ineligible",
-            "valid_internal": True,
-            "display_eligible": False,
-            "pass": True,
-        },
-        "eligible_floor_cases": [
-            {"cohort_size": 12, "valid_internal": True, "display_eligible": True, "pass": True},
-            {"cohort_size": 16, "valid_internal": True, "display_eligible": True, "pass": True},
-        ],
+    """Removed Phase B1 fixture path."""
+    raise RuntimeError(
+        "Phase B1 fixture floor inputs are retired; use computed "
+        "synthetic_study.compute_floor_checks() outputs"
+    )
+
+
+def _computed_floor_checks() -> dict:
+    from .synthetic_study import compute_floor_checks
+
+    return compute_floor_checks()
+
+
+def _coverage_standard_error(coverage_rate: float, replication_count: int) -> float:
+    return math.sqrt(coverage_rate * (1.0 - coverage_rate) / replication_count)
+
+
+def _canonicalize_calibration_scenarios(
+    supplied: list[dict] | None,
+) -> tuple[list[dict], bool]:
+    if supplied is None:
+        return missing_study_input_calibration_scenarios(), False
+    if not isinstance(supplied, list):
+        return missing_study_input_calibration_scenarios(), False
+
+    valid_by_cell: dict[tuple[float, int], dict] = {}
+    all_valid = True
+    for scenario in supplied:
+        if not isinstance(scenario, dict):
+            all_valid = False
+            continue
+        try:
+            effect = float(scenario["injected_effect_size_sd"])
+            cohort_size = int(scenario["cohort_size"])
+            replication_count = int(scenario["replication_count"])
+            credible_interval_level = float(scenario["credible_interval_level"])
+            coverage_rate = float(scenario["coverage_rate"])
+            coverage_standard_error = float(scenario["coverage_standard_error"])
+            scenario_pass = scenario["pass"]
+            scenario_id = str(scenario["scenario_id"])
+        except (KeyError, TypeError, ValueError):
+            all_valid = False
+            continue
+
+        cell = (effect, cohort_size)
+        expected_se = (
+            _coverage_standard_error(coverage_rate, replication_count)
+            if replication_count > 0 and math.isfinite(coverage_rate)
+            else float("nan")
+        )
+        valid = (
+            cell in CALIBRATION_CELLS
+            and cell not in valid_by_cell
+            and scenario_id != ""
+            and isinstance(scenario_pass, bool)
+            and replication_count >= INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+            and credible_interval_level == 0.8
+            and math.isfinite(coverage_rate)
+            and 0.0 <= coverage_rate <= 1.0
+            and math.isfinite(coverage_standard_error)
+            and coverage_standard_error >= 0.0
+            and math.isfinite(expected_se)
+            and abs(coverage_standard_error - expected_se) <= INFERENCE_PROOF_FLOAT_TOLERANCE
+        )
+        if not valid:
+            all_valid = False
+            continue
+        valid_by_cell[cell] = {
+            "scenario_id": scenario_id,
+            "injected_effect_size_sd": effect,
+            "cohort_size": cohort_size,
+            "replication_count": replication_count,
+            "credible_interval_level": 0.8,
+            "coverage_rate": coverage_rate,
+            "coverage_standard_error": coverage_standard_error,
+            "pass": scenario_pass,
+        }
+
+    canonical: list[dict] = []
+    missing = missing_study_input_calibration_scenarios()
+    missing_by_cell = {
+        (float(s["injected_effect_size_sd"]), int(s["cohort_size"])): s
+        for s in missing
     }
+    for cell in CALIBRATION_CELLS:
+        scenario = valid_by_cell.get(cell)
+        if scenario is None:
+            canonical.append(missing_by_cell[cell])
+            all_valid = False
+        else:
+            canonical.append(scenario)
+
+    if len(supplied) != len(valid_by_cell):
+        all_valid = False
+    return canonical, all_valid
+
+
+def _canonicalize_null_checks(supplied: dict | None) -> tuple[dict, bool]:
+    if supplied is None or not isinstance(supplied, dict):
+        return missing_study_input_null_checks(), False
+    try:
+        count = int(supplied["null_effect_scenario_count"])
+        rate = float(supplied["false_eligibility_rate"])
+        passed = supplied["pass"]
+    except (KeyError, TypeError, ValueError):
+        return missing_study_input_null_checks(), False
+
+    if (
+        not isinstance(passed, bool)
+        or count < INFERENCE_PROOF_CALIBRATION_REPLICATIONS_MIN
+        or not math.isfinite(rate)
+        or rate < 0.0
+        or rate > 1.0
+    ):
+        return missing_study_input_null_checks(), False
+    return {
+        "null_effect_scenario_count": count,
+        "false_eligibility_rate": rate,
+        "pass": passed,
+    }, True
+
+
+def _canonicalize_floor_checks(supplied: dict | None) -> tuple[dict, bool]:
+    expected = _computed_floor_checks()
+    if supplied is None or not isinstance(supplied, dict):
+        return expected, False
+    return expected, supplied == expected
 
 
 # --- Section builders ---------------------------------------------------------
@@ -394,6 +498,30 @@ def _assert_fit_binds_dataset(*, fit: FitResult, dataset: SyntheticDataset) -> s
     return dataset_hash
 
 
+def _comparison_supported_contribution_estimate_authorized(
+    *, state: str, comparison_section: dict, fit: FitResult
+) -> bool:
+    if state != "eligible_internal_only":
+        return False
+    if comparison_section.get("all_required_checks_pass") is not True:
+        return False
+    try:
+        summary = fit.estimand_summary()
+        posterior_mean = float(summary["posterior_mean"])
+        posterior_sd = float(summary["posterior_sd"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if (
+        not math.isfinite(posterior_mean)
+        or not math.isfinite(posterior_sd)
+        or posterior_sd <= 0.0
+    ):
+        return False
+    lower = posterior_mean - _NULL_FALSE_ELIGIBILITY_Z * posterior_sd
+    upper = posterior_mean + _NULL_FALSE_ELIGIBILITY_Z * posterior_sd
+    return bool(lower > 0.0 or upper < 0.0)
+
+
 # --- Emitter --------------------------------------------------------------------
 
 
@@ -412,9 +540,12 @@ def emit_proof_artifact(
     """Build the schema-shaped artifact and derive its governance state.
 
     The state is ``eligible_internal_only`` only when the failing set is
-    empty; otherwise HOLD with every failing diagnostic named. This mirrors
-    the TypeScript gate logic so a Python-eligible artifact parses eligible
-    at the boundary and a Python-HOLD artifact parses as a valid HOLD.
+    empty; otherwise HOLD with every failing diagnostic named. Eligible
+    internal artifacts authorize a comparison-supported contribution estimate
+    only when the internal null false-eligibility guard excludes zero; valid
+    null/uncertain artifacts remain non-authorizing. This mirrors the
+    TypeScript gate logic so a Python-eligible artifact parses eligible at the
+    boundary and a Python-HOLD artifact parses as a valid HOLD.
     """
     if requested_likelihood_family not in INFERENCE_PROOF_LIKELIHOOD_FAMILIES:
         raise ValueError(f"unknown likelihood family: {requested_likelihood_family!r}")
@@ -422,13 +553,11 @@ def emit_proof_artifact(
     assert_synthetic_only_dataset(dataset)
     dataset_hash = _assert_fit_binds_dataset(fit=fit, dataset=dataset)
 
-    calibration_scenarios = (
+    calibration_scenarios, calibration_inputs_complete = _canonicalize_calibration_scenarios(
         calibration_scenarios
-        if calibration_scenarios is not None
-        else missing_study_input_calibration_scenarios()
     )
-    null_checks = null_checks if null_checks is not None else missing_study_input_null_checks()
-    floor_checks = floor_checks if floor_checks is not None else phase_b1_fixture_floor_checks()
+    null_checks, null_inputs_complete = _canonicalize_null_checks(null_checks)
+    floor_checks, floor_inputs_complete = _canonicalize_floor_checks(floor_checks)
 
     failing: set[str] = set(evaluate_gates(diagnostics))
 
@@ -476,6 +605,8 @@ def emit_proof_artifact(
         failing.add("peeking_control")
 
     # Study-level inputs (Phase B2 computes; the gates still bind here).
+    if not calibration_inputs_complete:
+        failing.add("calibration_coverage")
     for scenario in calibration_scenarios:
         if (
             not scenario["pass"]
@@ -483,16 +614,27 @@ def emit_proof_artifact(
             or scenario["coverage_rate"] > INFERENCE_PROOF_CALIBRATION_COVERAGE_MAX
         ):
             failing.add("calibration_coverage")
+    if not null_inputs_complete:
+        failing.add("null_false_eligibility")
     if (
         not null_checks["pass"]
         or null_checks["false_eligibility_rate"] > INFERENCE_PROOF_NULL_FALSE_ELIGIBILITY_MAX
     ):
         failing.add("null_false_eligibility")
+    if not floor_inputs_complete:
+        failing.add("floor_check")
 
     failing_ordered = [
         name for name in INFERENCE_PROOF_FAILING_DIAGNOSTICS if name in failing
     ]
     state = "eligible_internal_only" if not failing_ordered else "HOLD"
+    comparison_supported_contribution_estimate_authorized = (
+        _comparison_supported_contribution_estimate_authorized(
+            state=state,
+            comparison_section=comparison_section,
+            fit=fit,
+        )
+    )
 
     artifact = {
         "schema_version": INFERENCE_PROOF_ARTIFACT_SCHEMA_VERSION,
@@ -517,10 +659,13 @@ def emit_proof_artifact(
         "governance_state": {
             "state": state,
             "failing_diagnostics": failing_ordered,
-            # HOLD never authorizes; eligible authorizes only with a complete
-            # passing comparison rubric (which eligibility already requires).
-            "comparison_supported_contribution_estimate_authorized": state
-            == "eligible_internal_only",
+            # HOLD never authorizes. Eligible internal artifacts authorize a
+            # contribution estimate only when the internal null
+            # false-eligibility guard excludes zero; null/uncertain artifacts
+            # stay valid but non-authorizing.
+            "comparison_supported_contribution_estimate_authorized": (
+                comparison_supported_contribution_estimate_authorized
+            ),
             "evidence_tier_only": not comparison_section["all_required_checks_pass"],
         },
         "hash_bindings": {

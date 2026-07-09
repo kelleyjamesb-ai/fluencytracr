@@ -10,15 +10,14 @@ Two layers:
 """
 
 import dataclasses
+from copy import deepcopy
+from functools import lru_cache
 from types import SimpleNamespace
 
 import pytest
 
 from fluencytracr_inference.artifact import (
     emit_proof_artifact,
-    phase_b1_fixture_calibration_scenarios,
-    phase_b1_fixture_floor_checks,
-    phase_b1_fixture_null_checks,
 )
 from fluencytracr_inference.constants import (
     INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME,
@@ -48,6 +47,7 @@ from fluencytracr_inference.synthetic import (
     generate_violated_pre_trend,
     with_scenario,
 )
+from fluencytracr_inference.synthetic_study import run_synthetic_study_inputs
 
 # --- Layer 1: gate-evaluator unit tests --------------------------------------
 
@@ -116,12 +116,13 @@ def _passing_diagnostics(**overrides) -> DiagnosticsResult:
     return DiagnosticsResult(**values)
 
 
+@lru_cache(maxsize=1)
+def _computed_study_inputs() -> dict:
+    return run_synthetic_study_inputs().as_run_proof_kwargs()
+
+
 def _study_inputs() -> dict:
-    return {
-        "calibration_scenarios": phase_b1_fixture_calibration_scenarios(),
-        "null_checks": phase_b1_fixture_null_checks(),
-        "floor_checks": phase_b1_fixture_floor_checks(),
-    }
+    return deepcopy(_computed_study_inputs())
 
 
 def _fit_for_dataset(clean_fit, dataset):
@@ -573,10 +574,11 @@ def test_missing_study_level_inputs_hold(clean_dataset, clean_fit, clean_diagnos
     assert artifact["governance_state"]["failing_diagnostics"] == [
         "calibration_coverage",
         "null_false_eligibility",
+        "floor_check",
     ]
 
 
-def test_full_cli_path_does_not_inject_fixture_study_inputs(monkeypatch):
+def test_full_cli_path_injects_computed_study_inputs(monkeypatch):
     from fluencytracr_inference import __main__ as cli
 
     captured_kwargs = {}
@@ -601,9 +603,13 @@ def test_full_cli_path_does_not_inject_fixture_study_inputs(monkeypatch):
     artifact = cli._emit_full_mode("eligible", seed=20260706, generated_at="fixed")
 
     assert artifact["governance_state"]["state"] == "HOLD"
-    assert "calibration_scenarios" not in captured_kwargs
-    assert "null_checks" not in captured_kwargs
-    assert "floor_checks" not in captured_kwargs
+    assert "calibration_scenarios" in captured_kwargs
+    assert "null_checks" in captured_kwargs
+    assert "floor_checks" in captured_kwargs
+    assert all(
+        not scenario["scenario_id"].startswith("phase-b1-fixture")
+        for scenario in captured_kwargs["calibration_scenarios"]
+    )
     assert captured_kwargs["repeated_evaluation_detected"] is False
 
 
@@ -630,9 +636,7 @@ def test_emit_rejects_fit_dataset_hash_mismatch(clean_fit, clean_diagnostics):
 
 
 def test_failing_calibration_inputs_hold(clean_dataset, clean_fit, clean_diagnostics):
-    from fluencytracr_inference.artifact import phase_b1_fixture_calibration_scenarios
-
-    scenarios = phase_b1_fixture_calibration_scenarios()
+    scenarios = _study_inputs()["calibration_scenarios"]
     scenarios[0]["coverage_rate"] = 0.6  # outside [0.74, 0.86]
     scenarios[0]["coverage_standard_error"] = (0.6 * 0.4 / 200) ** 0.5
     scenarios[0]["pass"] = False
@@ -644,6 +648,60 @@ def test_failing_calibration_inputs_hold(clean_dataset, clean_fit, clean_diagnos
     )
     assert artifact["governance_state"]["state"] == "HOLD"
     assert artifact["governance_state"]["failing_diagnostics"] == ["calibration_coverage"]
+
+
+def test_partial_calibration_inputs_hold_schema_valid(
+    clean_dataset, clean_fit, clean_diagnostics
+):
+    scenarios = _study_inputs()["calibration_scenarios"][:-1]
+    artifact = _emit_with_study_inputs(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        calibration_scenarios=scenarios,
+    )
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == ["calibration_coverage"]
+    assert len(artifact["calibration"]["scenarios"]) == 6
+
+
+def test_malformed_calibration_inputs_hold_without_invalid_json(
+    clean_dataset, clean_fit, clean_diagnostics
+):
+    scenarios = _study_inputs()["calibration_scenarios"]
+    scenarios[0]["coverage_rate"] = float("nan")
+    artifact = _emit_with_study_inputs(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        calibration_scenarios=scenarios,
+    )
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == ["calibration_coverage"]
+    assert all(
+        scenario["coverage_rate"] == scenario["coverage_rate"]
+        for scenario in artifact["calibration"]["scenarios"]
+    )
+
+
+def test_duplicate_calibration_inputs_hold_after_canonicalization(
+    clean_dataset, clean_fit, clean_diagnostics
+):
+    scenarios = _study_inputs()["calibration_scenarios"]
+    scenarios[-1] = deepcopy(scenarios[0])
+    artifact = _emit_with_study_inputs(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        calibration_scenarios=scenarios,
+    )
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == ["calibration_coverage"]
+    cells = [
+        (scenario["injected_effect_size_sd"], scenario["cohort_size"])
+        for scenario in artifact["calibration"]["scenarios"]
+    ]
+    assert len(cells) == len(set(cells)) == 6
 
 
 def test_failing_null_checks_hold(clean_dataset, clean_fit, clean_diagnostics):
@@ -659,6 +717,30 @@ def test_failing_null_checks_hold(clean_dataset, clean_fit, clean_diagnostics):
     )
     assert artifact["governance_state"]["state"] == "HOLD"
     assert artifact["governance_state"]["failing_diagnostics"] == ["null_false_eligibility"]
+
+
+def test_malformed_null_checks_hold_without_crash(clean_dataset, clean_fit, clean_diagnostics):
+    artifact = _emit_with_study_inputs(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        null_checks={"false_eligibility_rate": float("nan")},
+    )
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == ["null_false_eligibility"]
+    assert artifact["null_checks"]["false_eligibility_rate"] == 1.0
+
+
+def test_missing_floor_checks_hold(clean_dataset, clean_fit, clean_diagnostics):
+    artifact = _emit_with_study_inputs(
+        dataset=clean_dataset,
+        fit=clean_fit,
+        diagnostics=clean_diagnostics,
+        floor_checks=None,
+    )
+    assert artifact["governance_state"]["state"] == "HOLD"
+    assert artifact["governance_state"]["failing_diagnostics"] == ["floor_check"]
+    assert artifact["floor_checks"]["k4_rejected"]["pass"] is True
 
 
 def test_hold_artifacts_still_carry_valid_self_hash(clean_fit, clean_diagnostics):

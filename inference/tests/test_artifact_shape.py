@@ -6,13 +6,15 @@ The required top-level field list below is derived from the TypeScript
 extras (unknown fields are rejected at the boundary).
 """
 
+import dataclasses
 import json
+from types import SimpleNamespace
 
+import numpy as np
+
+from fluencytracr_inference.constants import INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME
 from fluencytracr_inference.artifact import (
     emit_proof_artifact,
-    phase_b1_fixture_calibration_scenarios,
-    phase_b1_fixture_floor_checks,
-    phase_b1_fixture_null_checks,
 )
 from fluencytracr_inference.constants import (
     CONFIDENCE_MODEL_BLOCKED_USES,
@@ -189,15 +191,13 @@ def test_hash_bindings(eligible_artifact):
 
 
 def test_emission_deterministic_same_body_same_hash(
-    clean_dataset, clean_fit, clean_diagnostics, eligible_artifact
+    clean_dataset, clean_fit, clean_diagnostics, computed_study_inputs, eligible_artifact
 ):
     again = emit_proof_artifact(
         dataset=clean_dataset,
         fit=clean_fit,
         diagnostics=clean_diagnostics,
-        calibration_scenarios=phase_b1_fixture_calibration_scenarios(),
-        null_checks=phase_b1_fixture_null_checks(),
-        floor_checks=phase_b1_fixture_floor_checks(),
+        **computed_study_inputs.as_run_proof_kwargs(),
         generated_at=FIXED_GENERATED_AT,
     )
     assert again == eligible_artifact
@@ -205,6 +205,73 @@ def test_emission_deterministic_same_body_same_hash(
         again["hash_bindings"]["artifact_self_hash"]
         == eligible_artifact["hash_bindings"]["artifact_self_hash"]
     )
+
+
+def test_valid_null_uncertain_artifact_does_not_authorize_contribution_estimate(
+    clean_dataset, clean_fit, clean_diagnostics, computed_study_inputs
+):
+    neutral_draws = np.tile(np.linspace(-0.1, 0.1, 1000), (2, 1))
+    neutral_fit = dataclasses.replace(
+        clean_fit,
+        idata=SimpleNamespace(
+            posterior={INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME: neutral_draws}
+        ),
+    )
+
+    artifact = emit_proof_artifact(
+        dataset=clean_dataset,
+        fit=neutral_fit,
+        diagnostics=clean_diagnostics,
+        **computed_study_inputs.as_run_proof_kwargs(),
+        generated_at=FIXED_GENERATED_AT,
+    )
+
+    assert artifact["governance_state"] == {
+        "state": "eligible_internal_only",
+        "failing_diagnostics": [],
+        "comparison_supported_contribution_estimate_authorized": False,
+        "evidence_tier_only": False,
+    }
+    assert artifact["customer_output_authorized"] is False
+    assert artifact["probability_output_authorized"] is False
+    assert artifact["confidence_output_authorized"] is False
+    assert artifact["hash_bindings"]["artifact_self_hash"] == (
+        inference_proof_artifact_self_hash(artifact)
+    )
+
+
+def test_authorization_uses_null_guard_not_80_percent_interval(
+    clean_dataset, clean_fit, clean_diagnostics, computed_study_inputs
+):
+    draws = np.array([0.1] * 1800 + [2.0] * 200, dtype=float).reshape(2, 1000)
+    interval_excluding_zero_fit = dataclasses.replace(
+        clean_fit,
+        idata=SimpleNamespace(
+            posterior={INFERENCE_PROOF_ESTIMAND_PARAMETER_NAME: draws}
+        ),
+    )
+
+    summary = interval_excluding_zero_fit.estimand_summary()
+    assert summary["credible_interval_80"]["lower"] > 0.0
+    assert summary["posterior_mean"] - 1.959963984540054 * summary["posterior_sd"] < 0.0
+
+    artifact = emit_proof_artifact(
+        dataset=clean_dataset,
+        fit=interval_excluding_zero_fit,
+        diagnostics=clean_diagnostics,
+        **computed_study_inputs.as_run_proof_kwargs(),
+        generated_at=FIXED_GENERATED_AT,
+    )
+
+    assert artifact["governance_state"]["state"] == "eligible_internal_only"
+    assert artifact["governance_state"]["failing_diagnostics"] == []
+    assert (
+        artifact["governance_state"][
+            "comparison_supported_contribution_estimate_authorized"
+        ]
+        is False
+    )
+    assert artifact["governance_state"]["evidence_tier_only"] is False
 
 
 def test_mutated_field_changes_self_hash(eligible_artifact):

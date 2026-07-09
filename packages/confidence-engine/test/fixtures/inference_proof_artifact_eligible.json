@@ -11,7 +11,7 @@
       "start_seed": 20260706,
       "end_seed": 20260706
     },
-    "synthetic_input_hash": "bac99624f9ad5852187975870f7f9e741b4c07ed4f5fd2c6d4a5ca35f300d043",
+    "synthetic_input_hash": "97405573e96776bf58e6fe83de07dbdfe6e2abadc495adc2ed4dd8a03e788358",
     "real_data_present": false,
     "customer_data_present": false,
     "production_data_present": false,
@@ -679,37 +679,37 @@
   "calibration": {
     "scenarios": [
       {
-        "scenario_id": "phase-b1-fixture-effect-0-k12",
-        "injected_effect_size_sd": 0,
+        "scenario_id": "computed-b2-effect-0-k12-n200",
+        "injected_effect_size_sd": 0.0,
         "cohort_size": 12,
         "replication_count": 200,
         "credible_interval_level": 0.8,
-        "coverage_rate": 0.8,
-        "coverage_standard_error": 0.0282842712474619,
+        "coverage_rate": 0.82,
+        "coverage_standard_error": 0.027166155414412252,
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0-k16",
-        "injected_effect_size_sd": 0,
+        "scenario_id": "computed-b2-effect-0-k16-n200",
+        "injected_effect_size_sd": 0.0,
         "cohort_size": 16,
         "replication_count": 200,
         "credible_interval_level": 0.8,
-        "coverage_rate": 0.8,
-        "coverage_standard_error": 0.0282842712474619,
+        "coverage_rate": 0.79,
+        "coverage_standard_error": 0.028801041647829335,
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.2-k12",
+        "scenario_id": "computed-b2-effect-0.2-k12-n200",
         "injected_effect_size_sd": 0.2,
         "cohort_size": 12,
         "replication_count": 200,
         "credible_interval_level": 0.8,
-        "coverage_rate": 0.8,
-        "coverage_standard_error": 0.0282842712474619,
+        "coverage_rate": 0.78,
+        "coverage_standard_error": 0.029291637031753616,
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.2-k16",
+        "scenario_id": "computed-b2-effect-0.2-k16-n200",
         "injected_effect_size_sd": 0.2,
         "cohort_size": 16,
         "replication_count": 200,
@@ -719,23 +719,23 @@
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.5-k12",
+        "scenario_id": "computed-b2-effect-0.5-k12-n200",
         "injected_effect_size_sd": 0.5,
         "cohort_size": 12,
         "replication_count": 200,
         "credible_interval_level": 0.8,
-        "coverage_rate": 0.8,
-        "coverage_standard_error": 0.0282842712474619,
+        "coverage_rate": 0.76,
+        "coverage_standard_error": 0.030199337741083,
         "pass": true
       },
       {
-        "scenario_id": "phase-b1-fixture-effect-0.5-k16",
+        "scenario_id": "computed-b2-effect-0.5-k16-n200",
         "injected_effect_size_sd": 0.5,
         "cohort_size": 16,
         "replication_count": 200,
         "credible_interval_level": 0.8,
-        "coverage_rate": 0.8,
-        "coverage_standard_error": 0.0282842712474619,
+        "coverage_rate": 0.755,
+        "coverage_standard_error": 0.030411757594719844,
         "pass": true
       }
     ],
@@ -743,7 +743,7 @@
   },
   "null_checks": {
     "null_effect_scenario_count": 200,
-    "false_eligibility_rate": 0.02,
+    "false_eligibility_rate": 0.045,
     "pass": true
   },
   "floor_checks": {
@@ -847,8 +847,8 @@
   },
   "hash_bindings": {
     "source_posterior_hash": "f8840811283e5a4df3d9afb5498c0b3d8161275f19d2081c5aa8d3f6b93c265f",
-    "synthetic_input_hash": "bac99624f9ad5852187975870f7f9e741b4c07ed4f5fd2c6d4a5ca35f300d043",
-    "artifact_self_hash": "97f6568dff13425f11b62a629eb8f42769ca115c7d3b971f02a1e24e19a1b879"
+    "synthetic_input_hash": "97405573e96776bf58e6fe83de07dbdfe6e2abadc495adc2ed4dd8a03e788358",
+    "artifact_self_hash": "04e5a2e30239832fb8fc98ef71b49e6a2697da21f0c9eca74cfcb32b82a9d4c3"
   },
   "blocked_uses": [
     "model_output",

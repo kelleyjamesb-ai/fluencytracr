@@ -2,6 +2,359 @@
 
 ## Current Session
 
+- Bayesian DiD Phase B2 resumable evidence hardening (2026-07-09): built the
+  non-authorizing sanitized chunk-report observation path for the full
+  sampler-artifact proof. Rehydrated full-grid chunk reports can now observe
+  `sampler_artifact_resumable_evidence_observed=true` only when they were
+  first verified from raw generated reports and carry the private in-process
+  rehydration token; `sampler_artifact_acceptance_passed`,
+  `artifact_inputs_authorized`, and
+  `open_spec_3_3_completion_authorized` remain false for rehydrated evidence.
+  Raw reports that try to smuggle `source_report_hashes` are rejected,
+  rehydrated JSON cannot mint source provenance from SHA-looking fields, forged
+  full-grid rehydrated reports fail closed, and mixed live/rehydrated combines
+  drop partial source provenance instead of claiming resumable completion.
+  Verification passed:
+  `PYTHONPATH=src .venv/bin/python -m py_compile
+  src/fluencytracr_inference/acceptance_study.py
+  src/fluencytracr_inference/task_3_3_evidence.py`;
+  `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_acceptance_study.py -q` (`52 passed`);
+  `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_synthetic_study.py -q` (`23 passed`);
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/ -q` (`196 passed`);
+  `npm run build --workspace packages/confidence-engine`; `node --test
+  packages/confidence-engine/test/confidence_model_contract.test.mjs
+  packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`
+  (`87 passed`); `npx openspec validate
+  add-bayesian-inference-proof-harness --strict`; and `git diff --check`.
+  The literal full `>=200` sampler-artifact run was not completed in this
+  build, so OpenSpec tasks `3.3` and `4.2` remain unchecked. Remaining blocker:
+  generate, combine, and review the full 1200-artifact sampler evidence plus
+  negative/floor controls through this hardened path.
+- Bayesian DiD Phase B2 full-run no-go hardening (2026-07-09): attempted the
+  Option 1 full sampler-artifact path and stopped before the 1200-artifact run
+  after CODE / BUG / ADVERSARIAL review found acceptance-sidecar false-pass
+  risks. Generated the deterministic full plan for base seed `202607230`
+  (`20` chunks, `1200` planned artifacts, slot hash
+  `a5e128d13e56bd8bd07bdbeb2bfb62e0f85e6895e26abc8a9fe0fcdf5447181a`) and
+  started a full-settings `--acceptance-full --replication-count 1` runtime
+  rehearsal; it was interrupted after `260.40s` before producing a valid
+  six-artifact report, confirming the literal run is a long batch job.
+  Hardened `acceptance_study.py` so explicit injected proof runners cannot
+  self-certify as runner-generated full evidence, Python sidecar validation
+  now mirrors the TypeScript fail-closed boundaries for model likelihood/link
+  and Measurement Cell window evidence, and full calibration observation now
+  reports contribution-estimate authorization counts and refuses to pass if
+  non-null cells have no authorization evidence. Added regression tests for
+  all three issues. Verification passed:
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/test_acceptance_study.py -q`
+  (`48 passed`); `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_synthetic_study.py -q` (`22 passed`); `PYTHONPATH=src
+  .venv/bin/python -m pytest tests/ -q` (`191 passed`); `npm run build
+  --workspace packages/confidence-engine`; `node --test
+  packages/confidence-engine/test/confidence_model_contract.test.mjs
+  packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`
+  (`87 passed`); `npx openspec validate
+  add-bayesian-inference-proof-harness --strict`; and `git diff --check`.
+  OpenSpec tasks `3.3` and `4.2` remain unchecked. Remaining blocker: a
+  reviewed literal full sampler-artifact proof across all six required cells
+  (`200` replications per cell, `1200` artifacts total), plus negative/floor
+  controls, using a trustworthy resumable evidence path that does not require
+  one uninterrupted multi-hour or multi-day Python process.
+- Bayesian DiD Option 1 semantics repair (2026-07-09): implemented the
+  valid-internal-but-non-authorizing artifact path. `eligible_internal_only`
+  now means artifact gates passed; `comparison_supported_contribution_estimate_authorized`
+  is a narrower internal authorization that requires a passing comparison
+  rubric and the compiled null false-eligibility guard to exclude zero. Valid
+  null/uncertain artifacts stay internal-valid, customer/probability/confidence
+  outputs remain false, and failed or missing diagnostics still HOLD with
+  named diagnostics. The TypeScript `InferenceProofArtifactSchema` now accepts
+  `eligible_internal_only` with estimate authorization false while still
+  rejecting comparison-inadequate eligible artifacts and HOLD artifacts that
+  authorize estimates. Acceptance null measurement now uses the same guard,
+  records guard evaluability for valid/bound artifacts even when estimate
+  authorization is false, and fails closed when guard evidence is unevaluable.
+  The sampler-acceptance sidecar now carries an in-process runner token in
+  addition to the report hash so manually constructed `AcceptanceStudyResult`
+  objects cannot impersonate generated sampler evidence; rehydrated reports
+  remain non-authorizing. Added a live Python-to-TypeScript bridge scenario
+  `--scenario null` proving an internal-valid, non-authorizing null artifact
+  crosses the Zod boundary. Verification passed:
+  `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_artifact_shape.py tests/test_acceptance_study.py -q` (57 passed);
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/test_synthetic_study.py -q`
+  (22 passed); `PYTHONPATH=src .venv/bin/python -m pytest tests/ -q` (187
+  passed); `npm run build --workspace packages/confidence-engine`;
+  `node --test packages/confidence-engine/test/confidence_model_contract.test.mjs
+  packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs` (87
+  passed); full computed aggregate study still passed with coverage `0.82`,
+  `0.79`, `0.78`, `0.80`, `0.76`, `0.755` and null false-eligibility `0.045`;
+  `npx openspec validate add-bayesian-inference-proof-harness --strict`; and
+  `git diff --check`. OpenSpec tasks 3.3 and 4.2 remain unchecked until the
+  literal 1200 full-settings sampler-artifact evidence set is generated and
+  reviewed.
+- Bayesian DiD Phase B2 required-evidence gate follow-up (2026-07-09): added
+  an inference-only recompute-first task-3.3 required-evidence ledger in
+  `task_3_3_evidence.py`. The ledger accepts an in-memory sampler-artifact
+  `AcceptanceStudyResult` plus negative-control and floor-control artifact
+  maps, recomputes the control sidecar reports from emitted artifacts, hashes
+  and summarizes the component reports, rejects plan-only metadata and
+  sidecar-report JSON as proof, and keeps
+  `artifact_inputs_authorized=false` and
+  `open_spec_3_3_completion_authorized=false` even when all components are
+  observed. Hardened the floor-control sidecar so k=4/k=8 controls verify the
+  emitted artifact floor-check sections directly; a mutated k=8
+  `display_eligible=true` artifact now fails the floor-control report. Re-ran
+  the full computed aggregate Phase B2 study at 200 replications per required
+  cell: coverage remained `0.82`, `0.79`, `0.78`, `0.80`, `0.76`, `0.755`;
+  null false-eligibility remained `0.045`; and k=4, k=8, k=12, and k=16
+  floor checks passed. Also emitted the deterministic full sampler-artifact
+  plan summary for base seed `202607230`: 20 chunks of 10 replication indexes,
+  1200 expected artifacts, plan-only, no artifact-level evidence, no artifact
+  inputs, and no OpenSpec authorization. Verification passed after the code
+  changes: `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_synthetic_study.py -q` (22 passed);
+  `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_acceptance_study.py -q` (43 passed);
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/ -q` (184 passed);
+  `npm run build --workspace packages/confidence-engine`;
+  `node --test packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`
+  (9 passed); and `npx openspec validate
+  add-bayesian-inference-proof-harness --strict`. OpenSpec tasks 3.3 and 4.2
+  remain unchecked. The literal 1200 full-settings sampler-artifact proof was
+  not run; it remains no-go until the artifact contract has an explicit
+  valid-but-null contribution-ineligible state and the generated 1200-artifact
+  evidence is reviewed.
+- Bayesian DiD Phase B2 acceptance semantics follow-up (2026-07-09): ran a
+  real full-settings sampler-artifact rehearsal chunk through the stdout-only
+  CLI with `--acceptance-full --replication-count 1`, covering all six task-3.3
+  cells once (`6` sampled artifacts total). The sidecar emitted
+  `runner_generated=true`, `required_acceptance_cell_set_complete=true`,
+  `full_replication_requirement_met=false`,
+  `full_replication_slot_grid_exact=false`, `missing_expected_replication_slot_count=1194`,
+  `sampler_artifact_acceptance_passed=false`, and
+  `open_spec_3_3_completion_authorized=false`. All six artifacts were valid
+  and bound; five were `eligible_internal_only`, one held on `pre_trend`, and
+  the two null artifacts were both contribution-estimate eligible, so this
+  one-rep rehearsal observed null false eligibility `1.0` and reinforced that
+  the full proof is not ready to claim. CODE / BUG / ADVERSARIAL review then
+  identified two acceptance-sidecar semantics issues before any longer run:
+  direct dataclass construction could spoof `runner_generated=true`, and the
+  null gate wrongly required zero acceptance-unusable null artifacts instead
+  of measuring false eligibility over valid/bound null artifacts. Fixed both:
+  generated batches and in-memory combined batches now carry a sidecar
+  `runner_generation_proof_hash` validated in the acceptance predicate, while
+  rehydrated reports and manually constructed results cannot self-certify;
+  null false eligibility now uses valid/bound null artifacts as the
+  denominator and still fails on invalid/unbound/runner-error null rows.
+  Verification passed:
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/test_acceptance_study.py
+  -q` (43 passed); `PYTHONPATH=src .venv/bin/python -m pytest tests/ -q`
+  (180 passed); `npm run build --workspace packages/confidence-engine`;
+  `node --test packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`
+  (9 passed); `npx openspec validate add-bayesian-inference-proof-harness
+  --strict`; and `git diff --check`. OpenSpec tasks 3.3 and 4.2 remain
+  unchecked; remaining blockers are a passing reviewed 1200-artifact sampler
+  run and binding the required negative-control sidecar into a final task-3.3
+  evidence decision.
+- Bayesian DiD Phase B2 deterministic full-run planner (2026-07-09): added a
+  non-authorizing stdout-only plan for the eventual full sampler-artifact
+  task-3.3 run. The planner enumerates the exact six-cell `{0, 0.2, 0.5} x
+  {12, 16}` grid, the required `200` replication indexes per cell (`1200`
+  planned sampler artifacts), deterministic seed ranges, chunk hashes, CLI
+  args, and an expected replication-slot hash. Full acceptance reports now
+  include exact plan coverage in `acceptance_run_manifest` and require the
+  planned slot grid to match exactly, so `0..198 + 200` cannot masquerade as
+  `0..199`. Combined batches are sorted canonically by planned slot so report
+  hashes are stable regardless of combine order. Rehydrated reports remain
+  non-authorizing, malformed artifact self-hashes are rejected, and direct
+  in-memory result objects cannot impersonate runner-generated evidence
+  because full acceptance now requires `runner_generated=true` from the
+  sidecar runner. The CLI gained `--acceptance-plan` and
+  `--chunk-replication-count`; it prints plan JSON only, calls no sampler,
+  writes no checkpoint/export/report file, and does not authorize artifact
+  inputs or OpenSpec task completion. Verification passed:
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/test_acceptance_study.py
+  -q` (42 passed); `PYTHONPATH=src .venv/bin/python -m pytest tests/ -q`
+  (179 passed); `npm run build --workspace packages/confidence-engine`;
+  `node --test packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`
+  (9 passed); `npx openspec validate add-bayesian-inference-proof-harness
+  --strict`; and `git diff --check`. The full 1200 sampled-artifact run was
+  not executed in this slice, so OpenSpec tasks 3.3 and 4.2 remain unchecked.
+  Remaining blocker: generate and review the full sampler-artifact evidence,
+  or record an explicit contract decision that the aggregate approximation is
+  sufficient.
+- Bayesian DiD Phase B2 full-run follow-up (2026-07-09): reconciled the
+  acceptance sidecar semantics before any further full-run claim. The
+  artifact's own `eligible_internal_only` governance state now remains the
+  authoritative task-3.3 null false-eligibility measure; posterior exclusion
+  of zero is reported only as a separate non-authorizing
+  `posterior_null_guard_*` audit dimension and cannot reduce governance-level
+  false-eligible counts. Smoke/full null gates now also require null artifacts
+  to be valid, bound, and acceptance-usable, so HOLD or malformed artifacts
+  cannot make the null gate look clean. Follow-up BUG review caught a
+  fail-open aggregate-study bug: null false-eligibility is now measured
+  two-sided (`lower > 0 or upper < 0`) with a compiled finite-sample correction
+  for the cohort-level aggregate approximation. Re-ran the computed full
+  aggregate study at `200` seeded replications per required cell: coverage
+  passed for all six `{0, 0.2, 0.5} x {12, 16}` cells (`0.82`, `0.79`,
+  `0.78`, `0.80`, `0.76`, `0.755`), null false-eligibility was `0.045` at
+  `n=200`, and k=4, k=8, k=12, and k=16 floor checks passed. The acceptance
+  sidecar now includes a hashed `acceptance_run_manifest`, can rehydrate and
+  combine sanitized reports from stdout/stdin-only CLI flows, rejects raw
+  posterior leakage and duplicate rows inside a single report, and marks any
+  rehydrated report evidence as `source_report_rehydrated=true` so it cannot
+  self-certify task completion. The negative-control sidecar now reuses the
+  strict internal proof-artifact validator. A further runner-hardening pass
+  makes long sampler-artifact chunks fail closed per seed: if `run_proof`
+  raises for one replication, the sidecar records an invalid/unusable
+  `RUNNER_ERROR` row with only the exception type, omitting messages,
+  tracebacks, posterior values, artifacts, and internal reports; the batch
+  continues so failed seeds remain counted rather than disappearing.
+  Verification passed:
+  `PYTHONPATH=src .venv/bin/python -m pytest tests/test_acceptance_study.py
+  -q` (34 passed); `PYTHONPATH=src .venv/bin/python -m pytest
+  tests/test_synthetic_study.py -q` (18 passed); `PYTHONPATH=src
+  .venv/bin/python -m pytest tests/ -q` (171 passed); `npm run build
+  --workspace packages/confidence-engine`;
+  `node --test packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`;
+  `npx openspec validate add-bayesian-inference-proof-harness --strict`; and
+  `git diff --check`. The literal full sampler-artifact proof
+  (`run_sampler_artifact_full_acceptance_study(replication_count=200)`,
+  1200 full sampled artifacts across the required grid) was not completed in
+  this session. OpenSpec task 3.3 and 4.2 remain unchecked; the remaining
+  blocker is reviewed full sampler-artifact evidence generated from the
+  deterministic chunks, or an explicit contract decision that the computed
+  aggregate approximation is sufficient for this bounded phase.
+- Bayesian DiD Phase B2 full-run go/no-go (2026-07-09): executed the
+  strongest currently implemented full path. The computed synthetic study ran
+  `200` seeded replications per `{effect_size, cohort_size}` cell across
+  `{0, 0.2, 0.5} x {12, 16}` (`1200` aggregate-approximation replications
+  total) and passed every calibration cell: k12/k16 rates were `0.82/0.79`
+  for effect `0`, `0.78/0.80` for effect `0.2`, and `0.76/0.755` for effect
+  `0.5`; conservative worst-cell null false-eligibility is now `0.045` with
+  `200` replications in the limiting null cell; floor checks passed for k=4
+  rejection, k=8 internal-only/display-ineligible, and k=12/k=16 eligible
+  floor cases. The real sampled CLI full path was also
+  run for one eligible artifact and one HOLD artifact: eligible emitted
+  `eligible_internal_only` with self-hash
+  `2fd167bcf9ef0980740dfd44d876545060b3a3e2b8f0909747a2f00f0149a1a6`; HOLD
+  emitted `HOLD` naming `peeking_control` with self-hash
+  `f9a40692f73e2741f6ec940d887f3b9eb8af1e95393228f97bbf0c8394517b08`.
+  Hardened the negative-control sidecar validator so a self-hashed
+  governance-only forgery with internal pins but missing strict artifact
+  sections is rejected; a wrong-control artifact hash, governance-only
+  peeking label without section-level peeking evidence, and pooled null-cell
+  masking now fail the sidecar checks. Added `acceptance_study.py` as a
+  non-authorizing sidecar for the remaining task-3.3 gap: it labels
+  `aggregate_approximation` versus `sampler_artifact` evidence, supports
+  reduced-draw sampler-artifact smoke batches for required effect/cohort cells
+  through `run_proof`, computes aggregate posterior CI coverage plus
+  artifact-level false eligibility for smoke runs, hash-binds posterior
+  summaries and synthetic inputs to each artifact, omits per-replication
+  posterior interval values from reports, blocks full-mode labeling, refuses
+  to produce artifact inputs or authorize task completion, rejects self-hashed
+  but semantically failed study sections, counts wrong-synthetic-input
+  artifacts as invalid for the null gate, and prevents invalid or unbound
+  artifacts from contributing coverage. A real reduced-draw sampler-artifact
+  null smoke (`effect=0`, `k=12`, `n=1`) emitted a valid HOLD artifact bound
+  to the expected synthetic input, covered the injected null effect, and
+  measured artifact-level false eligibility at `0/1`; reduced-draw sampler
+  diagnostics correctly held rather than pretending acceptance proof. Follow-up
+  hardening made the sampler-artifact sidecar operationally runnable for the
+  eventual full proof: full mode now requires the exact default
+  `artifact.run_proof` sampler settings, the complete six-cell task-3.3 grid,
+  and in-memory combination of non-overlapping batches for resumable long
+  runs. Full acceptance gates now reject invalid, unbound, HOLD,
+  diagnostic-shell, or semantically failed artifacts from coverage/null proof
+  counts, and reports include explicit non-authorizing acceptance-state flags
+  while still omitting raw posterior values.
+  Verification passed: focused acceptance sidecar tests
+  (`PYTHONPATH=src .venv/bin/python -m pytest tests/test_acceptance_study.py
+  -q`, 25 passed); Python inference tests (`PYTHONPATH=src .venv/bin/python
+  -m pytest tests/ -q`, 161 passed, including the default 200-rep aggregate
+  synthetic study input path); `npm run build --workspace
+  packages/confidence-engine`; `node --test
+  packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`;
+  `npx openspec validate add-bayesian-inference-proof-harness --strict`; and
+  `git diff --check`. OpenSpec task 3.3 remains unchecked: the 200-rep study
+  is a fast aggregate Bayesian DiD approximation, and the required full
+  `>=200` per-cell null measurement has not been run artifact-level across
+  full sampled replications. The remaining blocker is now operational rather
+  than structural: run and review the full chunked sampler-artifact proof
+  (`1200` full sampled artifacts across the six required cells) and resolve
+  the current artifact semantics gap where no explicit valid-but-null
+  contribution-ineligible state exists. Task 4.2 remains
+  unchecked pending the full harness/workspace/golden-chain acceptance scope.
+- Bayesian DiD full-settings sampler-artifact rehearsal (2026-07-09): ran a
+  non-authorizing full-settings sampler-artifact batch with one replication
+  per required task-3.3 cell (`6` full sampled artifacts total) through
+  `run_sampler_artifact_full_acceptance_study(replication_count=1)`. The run
+  completed across all `{0, 0.2, 0.5} x {12, 16}` cells with
+  `required_acceptance_cell_set_complete=true`, `replication_count_per_cell=1`,
+  `full_replication_requirement_met=false`,
+  `sampler_artifact_acceptance_passed=false`,
+  `task_3_3_acceptance_state=sampler_full_incomplete_replications_not_authorized`,
+  `artifact_inputs_authorized=false`, and
+  `open_spec_3_3_completion_authorized=false`. All six artifacts were
+  schema-valid, bound to the expected synthetic input, and
+  `eligible_internal_only`; coverage was `5/6` in this one-rep rehearsal and
+  calibration-band observation remained false, as expected at n=1 per cell.
+  The two null-cell artifacts were both eligible, yielding a rehearsal-only
+  false-eligibility rate of `1.0`; this reinforces the remaining semantics
+  blocker before task-3.3 completion, because the artifact contract currently
+  has no explicit valid-but-null contribution-ineligible state. No report JSON
+  was written to repo outputs; this entry records only the compact
+  non-authorizing summary. OpenSpec tasks 3.3 and 4.2 remain unchecked.
+- Bayesian DiD Phase B2 negative-control sidecar (2026-07-09): added
+  `negative_control_study.py` as an inference-only internal report for the
+  task-3.3 negative-control and floor-control suite. It covers no credible
+  comparison cohort, violated pre-trend, badly mismatched comparison cohort,
+  prior-dominated weak data, missing windows, suppressed windows, naive
+  repeated milestone peeking, k=4 below-schema-floor rejection, and k=8
+  internal-only/display-ineligible behavior. The report validates emitted
+  artifacts with internal-only pins, synthetic-only pins, and Python self-hash
+  before accepting a control outcome; forged minimal governance blobs and
+  unexpected extra diagnostics fail the report. The report remains a sidecar
+  verifier, not an artifact field, schema, endpoint, UI, persistence path,
+  export, customer readout, probability/confidence output, ROI, causality,
+  productivity output, tunable threshold, suppression reason, or promotion
+  decision. It explicitly sets `open_spec_3_3_completion_authorized=false`.
+  Verification passed after this slice: `cd inference && .venv/bin/python -m
+  pytest tests/ -q` (132 passed); `npm run build --workspace
+  packages/confidence-engine`; `node --test
+  packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`;
+  `npx openspec validate add-bayesian-inference-proof-harness --strict`; and
+  `git diff --check`. OpenSpec tasks 3.3 and 4.2 remain unchecked because the
+  current calibration/null path is still a fast aggregate approximation and
+  the negative-control report is smoke/artifact-gate evidence rather than full
+  sampler-level replicated proof.
+- Bayesian DiD Phase B2 calibration/null-study runner (2026-07-09): added an
+  inference-only computed synthetic study runner that covers effect sizes
+  `{0, 0.2, 0.5}` and cohort sizes `{12, 16}` at 200 seeded replications per
+  cell, reports binomial coverage uncertainty, measures null false-eligibility
+  conservatively by worst null cell against the `<=5%` gate, and computes floor
+  checks for `k=4`, `k=8`,
+  `k=12`, and `k=16`. The runner feeds computed
+  `calibration_scenarios`, `null_checks`, and `floor_checks` into
+  `run_proof(...)`; smoke study outputs remain blocked from artifact inputs.
+  Retired Phase B1 study fixture helpers now fail loudly, and malformed,
+  partial, duplicate, missing, or non-finite study inputs fail closed to
+  schema-valid HOLD artifacts. The committed Python-to-TypeScript bridge
+  fixtures were regenerated from full seeded NUTS fits with computed B2 study
+  sections, and the bridge test now pins `computed-b2-*` study IDs. No real,
+  customer, production, or live data path; route, UI, persistence, export,
+  schema, confidence/probability/customer output, ROI, causality, productivity,
+  new suppression reason, tunable threshold, or promotion decision was added.
+  Verification passed: `cd inference && .venv/bin/python -m pytest tests/ -q`
+  (126 passed); `npm run build --workspace packages/confidence-engine`;
+  `node --test packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs`;
+  `npx openspec validate add-bayesian-inference-proof-harness --strict`;
+  and `git diff --check`. OpenSpec task 3.3 remains unchecked pending explicit
+  acceptance that this bounded computed study runner is sufficient for the
+  task's full known-effect recovery bar; task 4.2 remains open until the full
+  harness/workspace/golden-chain acceptance scope is run.
 - PR #399 inference-harness Actions follow-up (2026-07-07): refreshed the
   failing GitHub Actions log for `inference-harness` and confirmed the only
   remaining failure was `test_missing_windows_hold`, where the old
