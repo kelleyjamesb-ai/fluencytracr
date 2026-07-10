@@ -16,6 +16,72 @@ The system SHALL document `bayesian_ai_value_and_behavioral_evidence_model_famil
 - **WHEN** the record is interpreted
 - **THEN** those components are treated as architecture concepts only until a later approved proposal implements and validates them
 
+### Requirement: First Longitudinal Synthetic Model Slice
+
+The architecture SHALL specify `first_longitudinal_synthetic_model_slice` as the first selected non-DiD longitudinal model candidate for a later approved synthetic-only Phase 2B proposal, bounded to one approved hypothesis, one approved primary continuous normal outcome, aggregate Measurement Cell windows only, multiple time windows, baseline Fluency context, separate lagged Velocity, Breadth, and Depth exposures, function or workflow partial pooling, explicit time trend, known aggregate observation uncertainty, synthetic-only inputs, and internal validation/review inputs only with no emitted product or customer output.
+
+Approved hypothesis SHALL mean approved for internal specification and contract review only; it SHALL NOT authorize execution, data access, persistence, customer output, or model output.
+
+The specification SHALL include a docs-only conceptual model equation:
+
+```text
+Y[h,c,t] ~ Normal(mu[h,c,t], se[h,c,t])
+
+mu[h,c,t] =
+    alpha[h]
+  + u_function_or_workflow[c]
+  + baseline_trend[h,c,t]
+  + beta_velocity[h] * lagged_velocity_exposure[c,t]
+  + beta_breadth[h] * lagged_breadth_exposure[c,t]
+  + beta_depth[h] * lagged_depth_exposure[c,t]
+  + beta_fluency[h] * baseline_fluency[c]
+  + beta_fluency_x_vbd[h] * baseline_fluency[c] * lagged_vbd_exposure[c,t]
+  + gamma[h] * approved_business_controls[c,t]
+  + residual_time_structure[h,c,t]
+```
+
+The specification SHALL define every term and SHALL state that Velocity, Breadth, and Depth remain separate, baseline Fluency is context/moderator evidence rather than observed behavior, retest Fluency is co-evidence rather than a same-window causal driver, cohort refs remain aggregate and non-identifying, outcome movement is the primary business-outcome estimand, and the slice is associational/contribution-alignment unless a stronger evidence design is separately implemented and approved.
+
+The slice SHALL NOT authorize staggered-rollout, event-study, adoption-time, calendar-time, or not-yet-treated comparison logic. Any staggered-rollout interpretation HOLDS until a separate approved proposal implements, calibrates, and validates that exact route.
+
+#### Scenario: Phase 2A remains specification-only
+
+- **GIVEN** `first_longitudinal_synthetic_model_slice` is documented
+- **WHEN** the change is inspected
+- **THEN** no Python runtime model code, TypeScript schemas, artifact schemas, routes, UI, persistence, exports, migrations, connector reads, customer-facing outputs, real/customer/live data authorization, ROI proof, productivity measurement, causality claims, confidence percentages, probability output, or economic output are added
+- **AND** no new canonical event, suppression reason, tunable threshold, admin override, promotion decision, or output authorization is added
+
+#### Scenario: Required future synthetic inputs are aggregate-only
+
+- **GIVEN** a later approved Phase 2B proposal prepares synthetic inputs for the first longitudinal slice
+- **WHEN** the inputs are reviewed
+- **THEN** they include `hypothesis_id`, `cohort_id`, `function_area` or `workflow_family`, `time_window_id`, `primary_metric_value`, `primary_metric_se`, `primary_metric_family = normal_continuous_aggregate`, `lagged_velocity_exposure`, `lagged_breadth_exposure`, `lagged_depth_exposure`, `baseline_fluency_estimate`, `baseline_fluency_se`, `optional_retest_fluency_estimate`, `optional_retest_fluency_se`, `approved_business_controls`, `window_evidence`, `suppression_context`, `source_quality_context`, `known_confounders`, and `evidence_design`
+- **AND** person-level fields, raw prompts, transcripts, direct identifiers, raw event rows, emails, user IDs, query text, and connector payloads are forbidden
+- **AND** synthetic business controls are placeholders only in Phase 2A, with real/customer/live business controls unauthorized
+
+#### Scenario: Internal estimands do not become outputs
+
+- **GIVEN** a later approved Phase 2B proposal computes `direction_adjusted_outcome_movement`, a posterior interval for movement, an internal threshold-crossing validation diagnostic for movement above `minimum_worthwhile_change`, pathway coherence review status, or an evidence-design claim cap
+- **WHEN** those fields are interpreted
+- **THEN** they remain internal validation and review inputs only and must not emit customer-facing confidence, probability, ROI, causality, productivity, finance, HR, ranking, or economic output
+- **AND** `minimum_worthwhile_change` remains decision context and must not become a prior, likelihood anchor, calibration target, posterior eligibility threshold, or claim cap
+- **AND** numeric readout, export, customer authorization, confidence authorization, and probability authorization remain false
+
+#### Scenario: Invalid first-slice inputs hold
+
+- **GIVEN** a future first-slice input has a non-normal metric family, missing approved hypothesis, missing primary metric, missing or suppressed required windows, missing aggregate SE, missing Velocity/Breadth/Depth exposure context, Fluency substituted for VBD, VBD substituted for outcome, a supporting metric substituted for the primary metric, a Blueprint target value used as prior evidence, a baseline-only design attempting contribution confidence, staggered rollout routed to current DiD, real/customer/live/production data flags, person-level fields, or true output-authorization flags
+- **WHEN** future contract review or eligibility is evaluated
+- **THEN** the slice must HOLD or reject before interpretation
+- **AND** unsupported, incomplete, unsafe, missing, suppressed, stale, imputed, or repeatedly peeked evidence must HOLD or reject before interpretation
+
+#### Scenario: Future validation scenarios are not complete in Phase 2A
+
+- **GIVEN** the first longitudinal slice is specified
+- **WHEN** future Phase 2B or Phase 3 validation is planned
+- **THEN** required scenarios include clean longitudinal pathway, VBD-only movement, Fluency-only movement, outcome-only unrelated shock, common-shock confounder, wrong-lag scenario, placebo intervention date, missing or suppressed windows, weak historical baseline, comparison-supported two-group routing to the existing DiD module, claimed staggered rollout HOLD, and financial double-counting HOLD
+- **AND** smoke validation, replicated calibration, and negative controls remain separately labeled
+- **AND** replicated calibration is not marked complete by this specification-only phase
+
 ### Requirement: Current DiD Module Scope
 
 The current DiD module SHALL be used only when the evidence design and comparison adequacy gates support a two-group pre/post comparison, and it SHALL NOT claim support for staggered rollout under the current implementation.

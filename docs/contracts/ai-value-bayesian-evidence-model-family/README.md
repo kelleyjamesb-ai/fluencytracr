@@ -145,6 +145,7 @@ outputs.
 | Module or component | Contract role | Implemented today | Current contract eligibility |
 | --- | --- | --- | --- |
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
+| `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for a later approved synthetic-only Phase 2B proposal. | No. | Documentation-only Phase 2A candidate; no runtime routing, model output, posterior output, customer output, or current eligibility. |
 | `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | No. | Documentation-only future module. |
 | `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
@@ -296,6 +297,218 @@ enterprise may review a portfolio of hypotheses, but each hypothesis preserves
 its own primary metric, supporting mechanisms, guardrails, evidence design, and
 claim cap.
 
+## Phase 2A Contract: `first_longitudinal_synthetic_model_slice`
+
+The first longitudinal model candidate selected for a later approved Phase 2B
+proposal is:
+
+```text
+first_longitudinal_synthetic_model_slice
+```
+
+This is a docs-only specification. It does not implement Python runtime model
+code, TypeScript schemas, artifact schemas, routes, UI, persistence, exports,
+migrations, connector reads, customer-facing outputs, real/customer/live data
+authorization, ROI proof, productivity measurement, causality claims,
+confidence percentages, probability output, or economic output.
+
+The slice is bounded to:
+
+- one approved hypothesis;
+- one approved primary continuous normal outcome;
+- aggregate Measurement Cell windows only;
+- multiple time windows;
+- baseline AI Fluency context;
+- separate lagged Velocity, Breadth, and Depth exposures;
+- function or workflow partial pooling;
+- explicit time trend;
+- known aggregate observation uncertainty;
+- synthetic-only inputs;
+- internal validation/review inputs only; no emitted product or customer
+  output.
+
+Approved hypothesis means approved for internal specification and contract
+review only. It does not authorize execution, data access, persistence,
+customer output, or model output.
+
+The existing DiD module remains `comparison_supported_bayesian_did_module`.
+It remains synthetic-only/internal-only, valid only for two-group pre/post
+comparison-supported designs with every DiD gate passing. It does not support
+staggered rollout. Existing DiD proof tasks `3.3`, `3.4`, `4.2`, and `5.1`
+in `add-bayesian-inference-proof-harness` remain incomplete.
+
+This slice does not authorize staggered-rollout, event-study, adoption-time,
+calendar-time, or not-yet-treated comparison logic. Any staggered-rollout
+interpretation HOLDS until a separate approved proposal implements,
+calibrates, and validates that exact route.
+
+### Conceptual Model Equation
+
+If a later approved Phase 2B proposal implements this slice, its contract
+review should use a longitudinal aggregate model over approved Measurement
+Cell windows:
+
+```text
+Y[h,c,t] ~ Normal(mu[h,c,t], se[h,c,t])
+
+mu[h,c,t] =
+    alpha[h]
+  + u_function_or_workflow[c]
+  + baseline_trend[h,c,t]
+  + beta_velocity[h] * lagged_velocity_exposure[c,t]
+  + beta_breadth[h] * lagged_breadth_exposure[c,t]
+  + beta_depth[h] * lagged_depth_exposure[c,t]
+  + beta_fluency[h] * baseline_fluency[c]
+  + beta_fluency_x_vbd[h] * baseline_fluency[c] * lagged_vbd_exposure[c,t]
+  + gamma[h] * approved_business_controls[c,t]
+  + residual_time_structure[h,c,t]
+```
+
+Term definitions:
+
+| Term | Meaning |
+| --- | --- |
+| `Y[h,c,t]` | Approved primary business-outcome aggregate value for hypothesis `h`, Measurement Cell `c`, and time window `t`. |
+| `se[h,c,t]` | Known aggregate observation standard error for the approved primary metric in that cell/window. Missing SE HOLDS. |
+| `mu[h,c,t]` | Latent expected aggregate primary outcome value for the same cell/window. |
+| `alpha[h]` | Hypothesis-specific intercept for the approved hypothesis. |
+| `u_function_or_workflow[c]` | Partial-pooling deviation for the approved aggregate function area or workflow family. |
+| `baseline_trend[h,c,t]` | Explicit predeclared historical or calendar time trend for the approved metric and cell. Weak or missing baseline trend evidence caps or HOLDS interpretation. |
+| `beta_velocity[h]` | Hypothesis-specific association between lagged Velocity exposure and primary outcome movement. |
+| `beta_breadth[h]` | Hypothesis-specific association between lagged Breadth exposure and primary outcome movement. |
+| `beta_depth[h]` | Hypothesis-specific association between lagged Depth exposure and primary outcome movement. |
+| `beta_fluency[h]` | Hypothesis-specific baseline AI Fluency context coefficient. |
+| `baseline_fluency[c]` | Aggregate baseline AI Fluency estimate for the Measurement Cell, used as readiness/context evidence only. |
+| `beta_fluency_x_vbd[h]` | Hypothesis-specific interaction for baseline Fluency context and lagged VBD exposure. |
+| `lagged_vbd_exposure[c,t]` | Predeclared interaction or composite exposure used only after separate Velocity, Breadth, and Depth terms are retained and reviewed. |
+| `gamma[h]` | Hypothesis-specific coefficients for approved aggregate business controls. |
+| `approved_business_controls[c,t]` | Predeclared aggregate controls such as seasonality, staffing mix, volume mix, campaign timing, or policy changes. |
+| `residual_time_structure[h,c,t]` | Remaining aggregate time-series error structure; a later approved Phase 2B proposal must define diagnostics and HOLD behavior before implementation. |
+
+Cohort refs must remain aggregate, non-identifying, independently suppressed
+per slice, and unable to support cross-slice re-identification.
+
+VBD dimensions remain separate in the model. Any interaction or composite VBD
+term is secondary context and cannot replace the separate Velocity, Breadth,
+and Depth exposure terms.
+
+Baseline AI Fluency is context/moderator evidence, not observed AI work
+behavior. Retest AI Fluency is co-evidence for readiness movement and pathway
+review; it is not a same-window causal driver of the primary outcome.
+
+Outcome movement in the approved primary metric is the primary business-outcome
+estimand. This slice is associational/contribution-alignment only unless a
+stronger evidence design is separately implemented, calibrated, and approved.
+
+### Future Synthetic Inputs
+
+A later approved Phase 2B proposal for this slice must accept only synthetic
+aggregate inputs with these required conceptual fields:
+
+| Field | Required semantics |
+| --- | --- |
+| `hypothesis_id` | One approved hypothesis ref. Missing or unapproved hypotheses HOLD. |
+| `cohort_id` | Approved aggregate cohort ref; no direct identifiers. |
+| `function_area` or `workflow_family` | One approved aggregate partial-pooling context. |
+| `time_window_id` | Approved Measurement Cell window ref. |
+| `primary_metric_value` | Aggregate value for the approved primary outcome metric. |
+| `primary_metric_se` | Known aggregate SE for the primary metric value. |
+| `primary_metric_family` | Must equal `normal_continuous_aggregate` for this first slice. |
+| `lagged_velocity_exposure` | Predeclared aggregate Velocity exposure at the approved lag. |
+| `lagged_breadth_exposure` | Predeclared aggregate Breadth exposure at the approved lag. |
+| `lagged_depth_exposure` | Predeclared aggregate Depth exposure at the approved lag. |
+| `baseline_fluency_estimate` | Aggregate baseline Fluency estimate for context/moderation. |
+| `baseline_fluency_se` | Known aggregate uncertainty for baseline Fluency context. |
+| `optional_retest_fluency_estimate` | Optional aggregate retest co-evidence, not a same-window causal driver. |
+| `optional_retest_fluency_se` | Optional aggregate uncertainty for retest Fluency co-evidence. |
+| `approved_business_controls` | Predeclared aggregate controls and encodings. Synthetic business controls are placeholders only in Phase 2A; real/customer/live business controls are not authorized. |
+| `window_evidence` | Source-bound Measurement Cell window evidence; missing/suppressed windows HOLD. |
+| `suppression_context` | Aggregate suppression and floor context. |
+| `source_quality_context` | Source freshness, alignment, and review context. |
+| `known_confounders` | Reviewed confounder refs that may cap interpretation. |
+| `evidence_design` | Router vocabulary entry; unsupported designs HOLD. |
+
+Person-level fields, raw prompts, transcripts, direct identifiers, raw event
+rows, emails, user IDs, query text, and connector payloads are forbidden. Any
+attempt to include them HOLDS or rejects before interpretation.
+
+### Internal-Only Estimands
+
+The first slice may define these internal validation inputs only:
+
+- `direction_adjusted_outcome_movement`;
+- posterior interval for movement;
+- internal threshold-crossing validation diagnostic for movement above
+  `minimum_worthwhile_change` as an internal validation input only.
+  `minimum_worthwhile_change` remains decision context and must not become a
+  prior, likelihood anchor, calibration target, posterior eligibility
+  threshold, or claim cap;
+- pathway coherence review status, not causal probability;
+- evidence-design claim cap.
+
+All posterior intervals, threshold checks, coherence review fields, and
+claim-cap fields are internal validation/review inputs only; they are not
+emitted outputs. They must not emit ROI, causality, productivity, finance, HR,
+ranking, confidence percentage, probability output, customer-facing output, or
+economic output. Numeric readout, export, customer authorization, confidence
+authorization, and probability authorization remain false.
+
+### HOLD Behavior
+
+The first longitudinal slice must HOLD or reject before interpretation when any
+of these cases appear:
+
+- non-normal metric family;
+- missing approved hypothesis;
+- missing primary metric;
+- missing or suppressed required windows;
+- missing aggregate SE;
+- missing Velocity, Breadth, or Depth exposure context;
+- AI Fluency substituted for VBD;
+- VBD substituted for the primary outcome;
+- supporting metric substituted for the primary metric;
+- Blueprint target value used as prior evidence;
+- baseline-only design attempting contribution confidence;
+- staggered rollout routed to current DiD;
+- real/customer/live/production data flags;
+- person-level fields, raw prompts, transcripts, direct identifiers, or raw
+  event rows;
+- output authorization flags set true.
+
+Unsupported, incomplete, or unsafe evidence remains `HOLD`. This section does
+not create a new canonical event, suppression reason, tunable threshold, admin
+override, promotion decision, or output authorization.
+
+Unsupported, incomplete, unsafe, missing, suppressed, stale, imputed, or
+repeatedly peeked evidence HOLDS or rejects before interpretation.
+
+### Future Synthetic Validation Plan
+
+Future Phase 2B/3 implementation must distinguish smoke validation, replicated
+calibration, and negative controls. Smoke validation may prove that a tiny
+synthetic path executes locally. It must not be described as replicated
+calibration and must not complete replicated validation tasks.
+
+Required future synthetic scenarios:
+
+- clean longitudinal pathway;
+- VBD-only movement;
+- Fluency-only movement;
+- outcome-only unrelated shock;
+- common-shock confounder;
+- wrong-lag scenario;
+- placebo intervention date;
+- missing or suppressed windows;
+- weak historical baseline;
+- comparison-supported two-group scenario routed to existing DiD;
+- claimed staggered rollout HOLD;
+- financial double-counting attempt HOLD.
+
+Replicated calibration remains future work. No Phase 2A text marks replicated
+calibration complete, and no current evidence authorizes customer-facing
+confidence/probability, ROI, causality, productivity, finance, or economic
+output.
+
 ## Pathway Coherence And Claim Cap
 
 `posterior_pathway_coherence_review` is a future internal review concept. It
@@ -321,7 +534,7 @@ produce a stronger claim than the design allows. Finance assumptions, economic
 pathway context, Blueprint promises, or sponsor goals cannot upgrade design
 strength. Unsupported designs HOLD.
 
-Claim caps remain internal-only in this Phase 1 contract:
+Claim caps remain internal-only in this docs-only Phase 1/2A contract:
 
 | Evidence design state | Maximum current interpretation |
 | --- | --- |
@@ -329,7 +542,7 @@ Claim caps remain internal-only in this Phase 1 contract:
 | Baseline-only context | Planning context only; no contribution confidence. |
 | Directional or mechanism evidence without valid comparison | Internal directional context only. |
 | Valid two-group pre/post DiD contract eligibility with all gates passing | Internal-only comparison-supported contribution-estimate eligibility; no customer-facing confidence/probability, ROI, causality, productivity, or economic output. |
-| Future longitudinal, staggered, controlled, or economic contract route | HOLD until a later approved proposal implements and validates that exact route. |
+| Unimplemented longitudinal, staggered, controlled, or economic contract route | HOLD until a later approved proposal implements and validates that exact route. |
 
 ## Claim Boundary
 
@@ -370,6 +583,8 @@ Implemented now:
 - Docs-only Phase 1 router contract vocabulary.
 - Docs-only Hypothesis Measurement Plan contract semantics.
 - Docs-only pathway coherence and claim-cap semantics.
+- Docs-only Phase 2A selection and specification of
+  `first_longitudinal_synthetic_model_slice`.
 
 Not implemented now:
 
@@ -378,8 +593,11 @@ Not implemented now:
 - Hypothesis Measurement Plan schema.
 - TypeScript production schema changes.
 - Artifact schema changes.
-- Longitudinal, state-space, event-study, controlled-test, or economic value
-  models.
+- Longitudinal runtime model code, state-space models, event-study models,
+  controlled-test models, or economic value models.
+- Synthetic validation runner for the first longitudinal slice.
+- Replicated calibration, negative-control, null, or floor evidence for the
+  first longitudinal slice.
 - Customer-facing confidence, probability, ROI, causality, productivity, or
   finance output.
 

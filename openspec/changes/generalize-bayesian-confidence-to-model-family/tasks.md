@@ -13,14 +13,17 @@
 - [x] 1.3 Add governance language that preserves aggregate-only, no customer-facing confidence output, no ROI proof, no productivity measurement, no causality claim, and no HR decisioning.
 - [x] 1.4 Validate OpenSpec and docs checks for the contract-only phase.
 
-## 2. Phase 2: First longitudinal synthetic model prototype
+## 2. Phase 2A: Docs-only model-slice specification
 
-- [ ] 2.1 Select the first non-DiD longitudinal model candidate through an approved proposal.
-- [ ] 2.2 Implement the prototype in an isolated synthetic-only inference path.
+- [x] 2.1 Phase 2A: specify the first non-DiD longitudinal model candidate, `first_longitudinal_synthetic_model_slice`, as a docs-only synthetic/internal candidate with conceptual equation, required aggregate inputs, internal validation/review inputs, HOLD behavior, and future validation scenarios.
+
+## 3. Phase 2B: First longitudinal synthetic model prototype implementation
+
+- [ ] 2.2 Phase 2B: implement the prototype in an isolated synthetic-only inference path.
 - [ ] 2.3 Preserve the existing TypeScript governance boundary and fail-closed artifact semantics.
 - [ ] 2.4 Add negative controls for unsupported routing, missing inputs, weak designs, and unsafe output attempts.
 
-## 3. Phase 3: Replicated synthetic validation
+## 4. Phase 3: Replicated synthetic validation
 
 - [ ] 3.1 Define replicated synthetic validation thresholds for the selected future model.
 - [ ] 3.2 Run and review replicated calibration, null, floor, and negative-control evidence.

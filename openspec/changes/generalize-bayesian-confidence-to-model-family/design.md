@@ -45,6 +45,7 @@ bayesian_ai_value_and_behavioral_evidence_model_family
 
 Treat these as conceptual architecture components only:
 
+- `first_longitudinal_synthetic_model_slice`
 - `bayesian_fluency_measurement_model`
 - `bayesian_vbd_behavioral_trajectory_model`
 - `bayesian_hypothesis_outcome_model`
@@ -61,6 +62,37 @@ comparison_supported_bayesian_did_module
 
 It may be routed only from evidence designs that truly satisfy two-group
 pre/post comparison assumptions and all comparison adequacy gates.
+
+## Phase 2A Slice Selection
+
+Phase 2A selects `first_longitudinal_synthetic_model_slice` as a docs-only
+candidate for a later approved Phase 2B proposal. The candidate is bounded to
+one approved hypothesis, one approved primary continuous normal outcome,
+aggregate Measurement Cell windows, multiple time windows, baseline AI Fluency
+context, separate lagged Velocity, Breadth, and Depth exposures, function or
+workflow partial pooling, explicit time trend, known aggregate observation
+uncertainty, synthetic-only inputs, and internal validation/review inputs only.
+
+The selected slice is not implemented in this change. It creates no runtime
+model code, router, TypeScript schema, artifact schema, endpoint, UI,
+persistence, export, migration, connector read, real/customer/live data
+authorization, customer-facing confidence/probability output, ROI proof,
+productivity measurement, finance output, economic output, causality claim,
+promotion decision, new canonical event, new suppression reason, tunable
+threshold, or admin override.
+
+The rationale for selecting this slice first is that it tests the broader
+longitudinal model-family shape without forcing non-DiD evidence into the
+current two-group pre/post DiD module. It keeps VBD dimensions separate,
+treats baseline AI Fluency as context/moderator evidence rather than observed
+behavior, treats retest Fluency as co-evidence rather than a same-window causal
+driver, and keeps the approved primary outcome movement as the principal
+business-outcome estimand.
+
+Staggered rollout remains unsupported by both the current DiD module and the
+Phase 2A slice. Any staggered-rollout interpretation must HOLD until a later
+approved proposal implements, calibrates, and validates true event-time,
+calendar-time, adoption-time, and not-yet-treated comparison logic.
 
 ## Routing Principles
 
@@ -133,10 +165,13 @@ cannot upgrade a weak design.
 
 ## Migration Plan
 
-Phase 0 records the audit and decision. Later phases may introduce docs-first
-contract hardening, then a first longitudinal synthetic prototype, then
-replicated validation. Runtime implementation requires its own approved
-OpenSpec work.
+Phase 0 records the audit and decision. Phase 1 records docs-first contract
+hardening and router vocabulary. Phase 2A selects and specifies
+`first_longitudinal_synthetic_model_slice` as a docs-only candidate. Phase 2B
+may later implement a first longitudinal synthetic prototype in an isolated
+synthetic-only path after approval. Phase 3 may later run replicated
+calibration, null, floor, and negative-control validation after the prototype
+exists. Runtime implementation requires its own approved OpenSpec work.
 
 ## Rollback
 

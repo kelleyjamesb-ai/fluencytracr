@@ -2,6 +2,32 @@
 
 ## Current Session
 
+- Bayesian model-family Phase 2A longitudinal slice specification
+  (2026-07-10): selected and specified
+  `first_longitudinal_synthetic_model_slice` as the first non-DiD
+  longitudinal candidate for a later approved synthetic-only Phase 2B proposal.
+  The docs-only contract now defines the conceptual longitudinal normal
+  aggregate equation, required aggregate synthetic inputs, internal
+  validation/review estimands, HOLD behavior, and future synthetic validation
+  scenarios for clean pathway, VBD-only, Fluency-only, unrelated shock,
+  common-shock, wrong-lag, placebo date, missing/suppressed windows, weak
+  historical baseline, current-DiD routing, staggered-rollout HOLD, and
+  financial double-counting HOLD. No Python runtime model code, TypeScript
+  schema, artifact schema, route, UI, persistence, export, migration,
+  connector read, real/customer/live data authorization, customer-facing
+  confidence/probability output, ROI, causality, productivity, finance output,
+  economic output, new suppression reason, tunable threshold, admin override,
+  or promotion decision was added. Existing DiD remains
+  `comparison_supported_bayesian_did_module`, synthetic-only/internal-only,
+  valid only for two-group pre/post comparison-supported designs; staggered
+  rollout remains unsupported. Existing DiD proof tasks `3.3`, `3.4`, `4.2`,
+  and `5.1` remain incomplete. OpenSpec task `2.1` in
+  `generalize-bayesian-confidence-to-model-family` is now checked complete as
+  Phase 2A specification only; Phase 2B implementation and Phase 3 replicated
+  validation remain unchecked. Next recommended slice: Phase 2B should create
+  an isolated synthetic-only prototype scaffold and smoke runner for this
+  exact slice, with fail-closed input validation first and no full calibration
+  claim until replicated validation is separately run and reviewed.
 - Bayesian model-family Phase 1 contract/routing vocabulary (2026-07-10):
   expanded the docs-only
   `bayesian_ai_value_and_behavioral_evidence_model_family` contract with

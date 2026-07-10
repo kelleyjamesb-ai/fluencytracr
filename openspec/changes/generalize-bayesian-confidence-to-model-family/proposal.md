@@ -28,6 +28,10 @@ implementation remains valid, but only as
 - Add Phase 1 docs-only contract semantics for router status, required gates,
   claim caps, unsupported/HOLD behavior, pathway coherence review, and
   non-personal owner references.
+- Add Phase 2A docs-only specification for the first longitudinal synthetic
+  candidate, `first_longitudinal_synthetic_model_slice`, including the
+  conceptual equation, required aggregate synthetic inputs, internal
+  validation/review estimands, HOLD behavior, and future validation scenarios.
 - Explicitly defer runtime implementation of router logic, schemas, model
   code, and replicated validation to later phases.
 
@@ -61,7 +65,9 @@ implementation remains valid, but only as
 - Phase 0: audit and decision record. Completed in this task.
 - Phase 1: contract and router vocabulary. Completed as docs/contracts and
   OpenSpec contract semantics in this change.
-- Phase 2: first longitudinal synthetic model prototype. Future runtime
-  proposal after approval.
+- Phase 2A: first longitudinal synthetic model slice specification. Completed
+  as docs-only contract semantics in this change.
+- Phase 2B: first longitudinal synthetic model prototype implementation.
+  Future runtime proposal after approval.
 - Phase 3: replicated synthetic validation. Future validation proposal after
   the prototype exists.
