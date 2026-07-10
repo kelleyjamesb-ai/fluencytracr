@@ -74,21 +74,22 @@ This slice does not implement:
 - non-normal likelihoods;
 - staggered event-study logic.
 
-## Historical Counterfactual
+## Internal In-Sample VBD Contrast
 
 The internal estimand is:
 
 ```text
-historical_counterfactual_outcome_movement
+internal_in_sample_vbd_contrast
 ```
 
-It is the direction-adjusted posterior difference between the modeled observed
-pathway and a historical baseline counterfactual across approved post-period
-evaluation windows.
+It is the direction-adjusted posterior difference between the fitted synthetic
+post-period pathway and the same in-sample fitted pathway with post-period VBD
+exposures reset to their pre-period reference values.
 
-The counterfactual:
+The contrast:
 
-- retains the historical time trend;
+- is an in-sample smoke diagnostic, not a historical forecast;
+- retains the fitted time trend;
 - retains approved synthetic business controls;
 - uses pre-period reference values for AI-enabled pathway exposures;
 - does not set every predictor to zero;
@@ -98,9 +99,9 @@ The counterfactual:
 Permitted internal description:
 
 ```text
-Model-based historical contribution-alignment movement for the selected metric,
-conditional on the approved historical model, controls, lag structure,
-measurement plan, and assumptions.
+Internal in-sample contribution-alignment smoke contrast for the selected
+synthetic metric, conditional on the approved model inputs, controls, lag
+structure, measurement plan, and assumptions.
 ```
 
 Forbidden description:
@@ -123,7 +124,7 @@ The implementation holds or rejects for:
 - baseline-only contribution-confidence attempts;
 - unsafe HR/personnel controls;
 - wrong lag;
-- unrecorded common shock;
+- approved-control common-shock sensitivity;
 - temporary-only movement;
 - real/customer/production/live data flags;
 - respondent-level leakage.

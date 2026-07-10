@@ -335,7 +335,7 @@ def main(argv: list[str] | None = None) -> int:
             "fluency_only",
             "vbd_only",
             "outcome_only_common_shock",
-            "unrecorded_common_shock",
+            "approved_control_common_shock",
             "wrong_lag",
             "temporary_spike",
             "insufficient_history",

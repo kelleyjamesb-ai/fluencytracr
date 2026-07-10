@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+import numpy as np
+
 from . import __version__ as HARNESS_VERSION
 from .design_router import route_evidence_design
 from .hashing import sha256_json
@@ -65,6 +67,7 @@ def _window_evidence(dataset: LongitudinalSyntheticDataset) -> dict:
 
 
 def _vbd_evidence(dataset: LongitudinalSyntheticDataset) -> dict:
+    movement = _vbd_movement_summary(dataset)
     return {
         "velocity_exposure_role": dataset.hypothesis_plan.expected_vbd_signature["velocity"],
         "breadth_exposure_role": dataset.hypothesis_plan.expected_vbd_signature["breadth"],
@@ -72,6 +75,7 @@ def _vbd_evidence(dataset: LongitudinalSyntheticDataset) -> dict:
         "lag_windows": dataset.hypothesis_plan.expected_outcome_signal_lag_windows,
         "future_values_used": False,
         "separate_velocity_breadth_depth_terms": True,
+        "movement_checks": movement,
         "source_window_refs": list(dataset.window_refs),
     }
 
@@ -88,6 +92,33 @@ def _business_control_evidence(
         "unsafe_control_refs_redacted": bool(unsafe_controls),
         "hris_or_personnel_fields_present": False,
         "source_hashes": [] if unsafe_controls else list(dataset.control_source_hashes),
+    }
+
+
+def _vbd_movement_summary(dataset: LongitudinalSyntheticDataset) -> dict:
+    eval_mask = np.isin(dataset.window_refs, dataset.evaluation_window_refs)
+    pre_mask = dataset.post == 0
+
+    def summarize(values: np.ndarray, role: str) -> dict:
+        pre_mean = float(values[pre_mask].mean())
+        eval_mean = float(values[eval_mask].mean())
+        delta = eval_mean - pre_mean
+        requires_positive = "POSITIVE" in role
+        moved_as_expected = bool(delta >= 0.05) if requires_positive else True
+        return {
+            "role": role,
+            "pre_period_mean": pre_mean,
+            "evaluation_window_mean": eval_mean,
+            "evaluation_minus_pre_delta": float(delta),
+            "positive_movement_required": bool(requires_positive),
+            "moved_as_expected": moved_as_expected,
+        }
+
+    signature = dataset.hypothesis_plan.expected_vbd_signature
+    return {
+        "velocity": summarize(dataset.velocity_exposure, signature["velocity"]),
+        "breadth": summarize(dataset.breadth_exposure, signature["breadth"]),
+        "depth": summarize(dataset.depth_exposure, signature["depth"]),
     }
 
 
@@ -108,6 +139,7 @@ def _pathway_evidence(
         }
     summary = fit.movement_summary()
     coefficient_summary = fit.coefficient_summary()
+    movement = _vbd_movement_summary(dataset)
     draw_share_diagnostics = summary["internal_draw_share_diagnostics"]
     meaningful = (
         draw_share_diagnostics["movement_exceeds_synthetic_fixture_minimum_draw_share"]
@@ -127,9 +159,9 @@ def _pathway_evidence(
         state = "NO_MEANINGFUL_MOVEMENT"
     return {
         "pathway_state": state,
-        "velocity_moved_as_expected": True,
-        "breadth_moved_as_expected": True,
-        "depth_moved_as_expected": True,
+        "velocity_moved_as_expected": movement["velocity"]["moved_as_expected"],
+        "breadth_moved_as_expected": movement["breadth"]["moved_as_expected"],
+        "depth_moved_as_expected": movement["depth"]["moved_as_expected"],
         "posterior_direction_beta_velocity": (
             "positive"
             if coefficient_summary["beta_velocity"]["posterior_mean"] > 0.0
@@ -159,6 +191,7 @@ def emit_longitudinal_proof_artifact(
     failing_diagnostics: tuple[str, ...] = (),
     generated_at: str | None = None,
 ) -> dict:
+    assert_longitudinal_synthetic_only(dataset)
     generated_at = generated_at or _now()
     route = route_evidence_design(
         dataset.hypothesis_plan.evidence_design,
@@ -242,13 +275,15 @@ def emit_longitudinal_proof_artifact(
             }
         ),
         "counterfactual_derivation": {
-            "estimand_name": "historical_counterfactual_outcome_movement",
+            "estimand_name": "internal_in_sample_vbd_contrast",
             "counterfactual_reference": "pre_period_vbd_reference_values",
             "retains_historical_trend": True,
             "retains_approved_business_controls": True,
             "uses_future_values": False,
             "sets_predictors_to_zero": False,
             "direction_adjusted": True,
+            "historical_forecast_counterfactual": False,
+            "smoke_scope": "in_sample_vbd_contrast_not_historical_forecast",
         },
         "evidence_design_claim_cap": {
             "claim_cap": route.claim_cap,
@@ -268,14 +303,12 @@ def emit_longitudinal_proof_artifact(
         "synthetic_generator": {
             "generator_id": dataset.generator_id,
             "generator_version": dataset.generator_version,
-            "scenario": dataset.scenario,
             "seed": dataset.seed,
             "synthetic_input_hash": dataset.synthetic_input_hash(),
             "real_data_present": bool(dataset.real_data_present),
             "customer_data_present": bool(dataset.customer_data_present),
             "production_data_present": bool(dataset.production_data_present),
             "live_data_source_present": bool(dataset.live_data_source_present),
-            "ground_truth": dataset.ground_truth,
         },
         "source_hashes": source_hashes,
         "hash_bindings": {

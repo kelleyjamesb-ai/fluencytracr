@@ -11,6 +11,15 @@ export const LONGITUDINAL_MODEL_SLICE = "first_longitudinal_synthetic_model_slic
 
 const Sha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/);
 
+const AIFluencyDimensions = [
+  "overall_ai_fluency",
+  "confidence",
+  "usage_quality",
+  "behavior_change",
+  "leadership_reinforcement",
+  "capability_growth"
+] as const;
+
 const EvidenceDesignSchema = z.enum([
   "CONTROLLED_TEST",
   "TWO_GROUP_PRE_POST_COMPARISON",
@@ -81,6 +90,8 @@ const forbiddenKeyPatterns = [
   /session_id/i,
   /person_id/i,
   /person_identifier/i,
+  /(?:user|person|employee|respondent|session)_hash/i,
+  /hashed_email/i,
   /hashed_(?:user|person|employee|respondent)_id/i,
   /joinable_(?:user|person|employee|respondent)_identifier/i,
   /hris/i,
@@ -102,7 +113,17 @@ const unsafeValuePatterns = [
   /\b(?:respondent|employee|user|person|session)(?:[_:/-](?:id[_:/-]?)?)?[0-9a-f]{3,}\b/i,
   /\b(?:confidence\s*(?:percentage|percent)|probability|impact\s*probability)\b/i,
   /\b(?:roi|ebita|ebitda|financial attribution|customer-facing financial output)\b/i,
-  /\b(?:hris|manager ranking|team ranking|department ranking|employee productivity|performance review|compensation)\b/i
+  /\b(?:hris|manager ranking|team ranking|department ranking|employee productivity|performance review|compensation)\b/i,
+  /hris/i,
+  /manager/i,
+  /employee/i,
+  /respondent/i,
+  /personnel/i,
+  /level/i,
+  /tenure/i,
+  /compensation/i,
+  /performance/i,
+  /productivity/i
 ];
 
 const unsafeControlPatterns = [
@@ -287,9 +308,90 @@ const AIFluencySnapshotEvidenceSchema = z
   })
   .strict();
 
+const PrimaryMetricBindingSchema = z
+  .object({
+    metric_id: z.string().min(1),
+    metric_family: z.literal("continuous_normal_identity"),
+    expected_direction: z.enum(["increase", "decrease", "stable_or_guardrail"]),
+    minimum_worthwhile_change: z.number(),
+    supporting_metric_ids: z.array(z.string()),
+    guardrail_metric_ids: z.array(z.string()),
+    supporting_metrics_replace_primary_metric: z.literal(false)
+  })
+  .strict();
+
+const VBDMovementCheckSchema = z
+  .object({
+    role: z.string().min(1),
+    pre_period_mean: z.number(),
+    evaluation_window_mean: z.number(),
+    evaluation_minus_pre_delta: z.number(),
+    positive_movement_required: z.boolean(),
+    moved_as_expected: z.boolean()
+  })
+  .strict();
+
+const VBDExposureEvidenceSchema = z
+  .object({
+    velocity_exposure_role: z.string().min(1),
+    breadth_exposure_role: z.string().min(1),
+    depth_exposure_role: z.string().min(1),
+    lag_windows: z.number().int().gte(1),
+    future_values_used: z.literal(false),
+    separate_velocity_breadth_depth_terms: z.literal(true),
+    movement_checks: z
+      .object({
+        velocity: VBDMovementCheckSchema,
+        breadth: VBDMovementCheckSchema,
+        depth: VBDMovementCheckSchema
+      })
+      .strict(),
+    source_window_refs: z.array(z.string()).nonempty()
+  })
+  .strict();
+
+const PathwayStateSchema = z.enum([
+  "HOLD",
+  "BEHAVIOR_AND_OUTCOME_ALIGNED",
+  "BEHAVIOR_MOVED_OUTCOME_UNCERTAIN",
+  "NO_MEANINGFUL_MOVEMENT"
+]);
+
+const NoFitPathwayEvidenceSchema = z
+  .object({
+    pathway_state: z.literal("HOLD"),
+    velocity_moved_as_expected: z.literal(false),
+    breadth_moved_as_expected: z.literal(false),
+    depth_moved_as_expected: z.literal(false),
+    meaningful_primary_outcome_movement_supported: z.literal(false),
+    approved_lag_respected: z.literal(false),
+    quality_guardrail_acceptable: z.literal(false)
+  })
+  .strict();
+
+const FittedPathwayEvidenceSchema = z
+  .object({
+    pathway_state: PathwayStateSchema,
+    velocity_moved_as_expected: z.boolean(),
+    breadth_moved_as_expected: z.boolean(),
+    depth_moved_as_expected: z.boolean(),
+    posterior_direction_beta_velocity: z.enum(["positive", "not_positive"]),
+    posterior_direction_beta_breadth: z.enum(["positive", "not_positive"]),
+    posterior_direction_beta_depth: z.enum(["positive", "not_positive"]),
+    meaningful_primary_outcome_movement_supported: z.boolean(),
+    approved_lag_respected: z.boolean(),
+    quality_guardrail_acceptable: z.literal(true)
+  })
+  .strict();
+
+const BehaviorOutcomePathwayEvidenceSchema = z.union([
+  NoFitPathwayEvidenceSchema,
+  FittedPathwayEvidenceSchema
+]);
+
 const PosteriorEstimandSummarySchema = z
   .object({
-    estimand_name: z.literal("historical_counterfactual_outcome_movement"),
+    estimand_name: z.literal("internal_in_sample_vbd_contrast"),
     posterior_mean_movement: z.number(),
     posterior_sd: z.number().nonnegative(),
     credible_interval_80: z
@@ -310,6 +412,129 @@ const PosteriorEstimandSummarySchema = z
   })
   .strict();
 
+const CounterfactualDerivationSchema = z
+  .object({
+    estimand_name: z.literal("internal_in_sample_vbd_contrast"),
+    counterfactual_reference: z.literal("pre_period_vbd_reference_values"),
+    retains_historical_trend: z.literal(true),
+    retains_approved_business_controls: z.literal(true),
+    uses_future_values: z.literal(false),
+    sets_predictors_to_zero: z.literal(false),
+    direction_adjusted: z.literal(true),
+    historical_forecast_counterfactual: z.literal(false),
+    smoke_scope: z.literal("in_sample_vbd_contrast_not_historical_forecast")
+  })
+  .strict();
+
+const EvidenceDesignClaimCapSchema = z
+  .object({
+    claim_cap: z.string().min(1),
+    customer_facing_claim_authorized: z.literal(false),
+    causal_claim_authorized: z.literal(false),
+    financial_claim_authorized: z.literal(false)
+  })
+  .strict();
+
+const DesignMatrixIdentifiabilityCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    rank: z.number().int().gte(0),
+    parameter_count: z.number().int().gte(0),
+    condition_number: z.number().nonnegative(),
+    vbd_dimensions_kept_separate: z.literal(true)
+  })
+  .strict();
+
+const ResidualAutocorrelationCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    residual_structure: z.literal("ar1_residual_structure"),
+    rho_estimate: z.number(),
+    residual_sd_estimate: z.number().nonnegative()
+  })
+  .strict();
+
+const PrePeriodFitCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    pre_period_observed_sd: z.number().nonnegative()
+  })
+  .strict();
+
+const PrePeriodRollingBacktestSchema = z
+  .object({
+    pass: z.boolean(),
+    compiled_backtest_policy: z.literal("last_two_pre_windows_held_out_smoke"),
+    holdout_rmse: z.number().nonnegative().nullable(),
+    rmse_threshold: z.number().nonnegative().optional()
+  })
+  .strict();
+
+const PlaceboInterventionDateCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    placebo_date_policy: z.literal("false_pre_period_intervention_date_smoke"),
+    early_post_direction_adjusted_residual_max: z.number(),
+    early_post_threshold: z.number().nonnegative()
+  })
+  .strict();
+
+const CounterfactualStabilityCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    counterfactual_reference: z.literal("pre_period_vbd_reference_values"),
+    smoke_scope: z.literal("in_sample_vbd_contrast_not_historical_forecast")
+  })
+  .strict();
+
+const LagSensitivityCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    approved_lag_windows: z.number().int().gte(1),
+    future_values_used: z.literal(false),
+    early_post_direction_adjusted_residual_max: z.number(),
+    evaluation_direction_adjusted_residual_mean: z.number(),
+    early_post_threshold: z.number().nonnegative(),
+    evaluation_movement_threshold: z.number().nonnegative()
+  })
+  .strict();
+
+const CommonShockSensitivityCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    approved_controls_retained: z.array(z.string()),
+    max_abs_evaluation_control_shift: z.number().nonnegative(),
+    compiled_shift_gate: z.number().nonnegative(),
+    control_shift_summaries: z.array(
+      z
+        .object({
+          control_name: z.string().min(1),
+          evaluation_minus_pre_standardized_shift: z.number()
+        })
+        .strict()
+    )
+  })
+  .strict();
+
+const TemporaryEffectPersistenceCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    evaluation_window_refs: z.array(z.string()),
+    evaluation_residual_slope: z.number(),
+    evaluation_residual_max: z.number(),
+    spike_threshold: z.number().nonnegative().optional(),
+    slope_threshold: z.number().optional()
+  })
+  .strict();
+
+const PriorSensitivityCheckSchema = z
+  .object({
+    pass: z.boolean(),
+    posterior_mean_movement: z.number(),
+    smoke_only: z.literal(true)
+  })
+  .strict();
+
 const DiagnosticsSchema = z.union([
   z
     .object({
@@ -321,16 +546,16 @@ const DiagnosticsSchema = z.union([
     .object({
       passed: z.boolean(),
       failing_diagnostics: z.array(LongitudinalFailingDiagnosticSchema),
-      design_matrix_identifiability: z.record(z.unknown()),
-      residual_autocorrelation_check: z.record(z.unknown()),
-      pre_period_fit_check: z.record(z.unknown()),
-      pre_period_rolling_backtest: z.record(z.unknown()),
-      placebo_intervention_date_check: z.record(z.unknown()),
-      counterfactual_stability_check: z.record(z.unknown()),
-      lag_sensitivity_check: z.record(z.unknown()),
-      common_shock_sensitivity_check: z.record(z.unknown()),
-      temporary_effect_persistence_check: z.record(z.unknown()),
-      prior_sensitivity_check: z.record(z.unknown())
+      design_matrix_identifiability: DesignMatrixIdentifiabilityCheckSchema,
+      residual_autocorrelation_check: ResidualAutocorrelationCheckSchema,
+      pre_period_fit_check: PrePeriodFitCheckSchema,
+      pre_period_rolling_backtest: PrePeriodRollingBacktestSchema,
+      placebo_intervention_date_check: PlaceboInterventionDateCheckSchema,
+      counterfactual_stability_check: CounterfactualStabilityCheckSchema,
+      lag_sensitivity_check: LagSensitivityCheckSchema,
+      common_shock_sensitivity_check: CommonShockSensitivityCheckSchema,
+      temporary_effect_persistence_check: TemporaryEffectPersistenceCheckSchema,
+      prior_sensitivity_check: PriorSensitivityCheckSchema
     })
     .strict()
 ]);
@@ -364,10 +589,10 @@ export const LongitudinalSyntheticOutcomeProofArtifactSchema = z
     model_slice: z.literal(LONGITUDINAL_MODEL_SLICE),
     design_route: RouteSchema,
     hypothesis_binding: HypothesisBindingSchema,
-    primary_metric_binding: z.record(z.unknown()),
+    primary_metric_binding: PrimaryMetricBindingSchema,
     baseline_and_post_window_evidence: WindowEvidenceSchema,
     ai_fluency_snapshot_evidence: z.array(AIFluencySnapshotEvidenceSchema).nonempty(),
-    vbd_exposure_evidence: z.record(z.unknown()),
+    vbd_exposure_evidence: VBDExposureEvidenceSchema,
     business_control_evidence: z
       .object({
         control_names: z.array(z.string()).max(4),
@@ -390,10 +615,10 @@ export const LongitudinalSyntheticOutcomeProofArtifactSchema = z
       })
       .strict(),
     posterior_estimand_summary: PosteriorEstimandSummarySchema.nullable(),
-    behavior_outcome_pathway_evidence: z.record(z.unknown()),
+    behavior_outcome_pathway_evidence: BehaviorOutcomePathwayEvidenceSchema,
     diagnostics: DiagnosticsSchema,
-    counterfactual_derivation: z.record(z.unknown()),
-    evidence_design_claim_cap: z.record(z.unknown()),
+    counterfactual_derivation: CounterfactualDerivationSchema,
+    evidence_design_claim_cap: EvidenceDesignClaimCapSchema,
     governance_state: z
       .object({
         state: z.enum(["eligible_internal_smoke_only", "valid_internal_non_authorizing", "HOLD"]),
@@ -409,14 +634,12 @@ export const LongitudinalSyntheticOutcomeProofArtifactSchema = z
       .object({
         generator_id: z.string().min(1),
         generator_version: z.string().min(1),
-        scenario: z.string().min(1),
         seed: z.number().int(),
         synthetic_input_hash: Sha256HexSchema,
         real_data_present: z.literal(false),
         customer_data_present: z.literal(false),
         production_data_present: z.literal(false),
-        live_data_source_present: z.literal(false),
-        ground_truth: z.record(z.unknown())
+        live_data_source_present: z.literal(false)
       })
       .strict(),
     source_hashes: z
@@ -484,6 +707,24 @@ export const LongitudinalSyntheticOutcomeProofArtifactSchema = z
       });
     }
     const failing = new Set(artifact.governance_state.failing_diagnostics);
+    const diagnosticFailing =
+      "failing_diagnostics" in artifact.diagnostics
+        ? artifact.diagnostics.failing_diagnostics
+        : [];
+    if (JSON.stringify(diagnosticFailing) !== JSON.stringify(artifact.governance_state.failing_diagnostics)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["diagnostics", "failing_diagnostics"],
+        message: "diagnostic failures must match governance failures"
+      });
+    }
+    if (artifact.diagnostics.passed !== (diagnosticFailing.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["diagnostics", "passed"],
+        message: "diagnostics.passed must match failing diagnostic count"
+      });
+    }
     if (artifact.governance_state.state === "HOLD" && failing.size === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -504,6 +745,89 @@ export const LongitudinalSyntheticOutcomeProofArtifactSchema = z
         path: ["posterior_estimand_summary"],
         message: "non-HOLD artifacts require posterior estimand summary"
       });
+    }
+    if (
+      artifact.posterior_estimand_summary !== null &&
+      artifact.posterior_estimand_summary.estimand_name !==
+        artifact.counterfactual_derivation.estimand_name
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["counterfactual_derivation", "estimand_name"],
+        message: "counterfactual derivation estimand must match posterior estimand"
+      });
+    }
+    if (artifact.primary_metric_binding.metric_id !== artifact.hypothesis_binding.primary_metric_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["primary_metric_binding", "metric_id"],
+        message: "primary metric binding must match hypothesis primary metric"
+      });
+    }
+    if (
+      artifact.primary_metric_binding.expected_direction !==
+      artifact.hypothesis_binding.expected_metric_direction
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["primary_metric_binding", "expected_direction"],
+        message: "primary metric direction must match hypothesis direction"
+      });
+    }
+    if (
+      artifact.vbd_exposure_evidence.lag_windows !==
+      artifact.hypothesis_binding.expected_outcome_signal_lag_windows
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["vbd_exposure_evidence", "lag_windows"],
+        message: "VBD exposure lag must match the approved hypothesis lag"
+      });
+    }
+    const fittedPathway =
+      "posterior_direction_beta_velocity" in artifact.behavior_outcome_pathway_evidence;
+    if (fittedPathway) {
+      const movementChecks = artifact.vbd_exposure_evidence.movement_checks;
+      const pathway = artifact.behavior_outcome_pathway_evidence;
+      const movementPairs = [
+        ["velocity", pathway.velocity_moved_as_expected, movementChecks.velocity.moved_as_expected],
+        ["breadth", pathway.breadth_moved_as_expected, movementChecks.breadth.moved_as_expected],
+        ["depth", pathway.depth_moved_as_expected, movementChecks.depth.moved_as_expected]
+      ] as const;
+      for (const [dimension, pathwayValue, movementValue] of movementPairs) {
+        if (pathwayValue !== movementValue) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["behavior_outcome_pathway_evidence", `${dimension}_moved_as_expected`],
+            message: "pathway movement booleans must match VBD movement checks"
+          });
+        }
+      }
+    }
+    if (artifact.governance_state.state !== "HOLD") {
+      const diagnostics = artifact.diagnostics as Record<string, unknown>;
+      const diagnosticChecks = [
+        "design_matrix_identifiability",
+        "residual_autocorrelation_check",
+        "pre_period_fit_check",
+        "pre_period_rolling_backtest",
+        "placebo_intervention_date_check",
+        "counterfactual_stability_check",
+        "lag_sensitivity_check",
+        "common_shock_sensitivity_check",
+        "temporary_effect_persistence_check",
+        "prior_sensitivity_check"
+      ] as const;
+      for (const check of diagnosticChecks) {
+        const section = diagnostics[check];
+        if (!section || typeof section !== "object" || (section as Record<string, unknown>).pass !== true) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["diagnostics", check],
+            message: "non-HOLD artifacts require every diagnostic check to pass"
+          });
+        }
+      }
     }
     if (
       artifact.design_route.evidence_design === "STAGGERED_ROLLOUT" &&
@@ -557,6 +881,34 @@ export const LongitudinalSyntheticOutcomeProofArtifactSchema = z
         path: ["design_route"],
         message: "non-HOLD longitudinal artifacts must use the longitudinal smoke route"
       });
+    }
+    if (artifact.governance_state.state !== "HOLD") {
+      for (const [index, snapshot] of artifact.ai_fluency_snapshot_evidence.entries()) {
+        if (snapshot.measurement_uncertainty_state !== "aggregate_uncertainty_available") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["ai_fluency_snapshot_evidence", index, "measurement_uncertainty_state"],
+            message: "non-HOLD longitudinal artifacts require aggregate AI Fluency uncertainty"
+          });
+        }
+        if (typeof snapshot.overall_standard_error !== "number" || !Number.isFinite(snapshot.overall_standard_error) || snapshot.overall_standard_error < 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["ai_fluency_snapshot_evidence", index, "overall_standard_error"],
+            message: "non-HOLD longitudinal artifacts require nonnegative aggregate standard error"
+          });
+        }
+        for (const dimension of AIFluencyDimensions) {
+          const se = snapshot.dimension_standard_errors[dimension];
+          if (typeof se !== "number" || !Number.isFinite(se) || se < 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["ai_fluency_snapshot_evidence", index, "dimension_standard_errors", dimension],
+              message: "non-HOLD longitudinal artifacts require complete dimension standard errors"
+            });
+          }
+        }
+      }
     }
     const windowEvidence = artifact.baseline_and_post_window_evidence;
     if (

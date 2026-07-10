@@ -66,6 +66,11 @@ serial-correlation diagnostic.
 
 The prototype SHALL emit artifacts as internal validation inputs only with
 `synthetic_smoke_only=true` and `replicated_calibration_complete=false`.
+The posterior estimand and counterfactual-derivation estimand SHALL be exactly
+`internal_in_sample_vbd_contrast`; the previous
+`historical_counterfactual_outcome_movement` name SHALL NOT be emitted because
+this prototype is an in-sample smoke contrast, not a historical forecast
+counterfactual.
 
 #### Scenario: Clean synthetic pathway passes smoke proof
 
@@ -93,9 +98,9 @@ The prototype SHALL emit artifacts as internal validation inputs only with
   suppressed required windows, stale or imputed windows, missing aggregate
   measurement uncertainty, collinear VBD dimensions, unsupported likelihood
   family, target contamination, real/customer/production/live data flags,
-  respondent-level leakage, unsafe HR/personnel controls, wrong lag, omitted
-  common shock, temporary-only movement, baseline-only evidence, or staggered
-  rollout misrouting
+  respondent-level leakage, unsafe HR/personnel controls, wrong lag,
+  approved-control common-shock sensitivity, temporary-only movement,
+  baseline-only evidence, or staggered rollout misrouting
 - **WHEN** the proof runner evaluates the input
 - **THEN** it rejects before fitting or emits HOLD naming the specific failing
   diagnostic
@@ -165,4 +170,3 @@ write path, route, or UI integration exists.
 - **WHEN** this change is interpreted
 - **THEN** the future projection remains a proposal and does not authorize
   generic JSON smuggling, existing-table writes, or a dedicated table
-

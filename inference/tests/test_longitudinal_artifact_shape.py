@@ -90,6 +90,18 @@ def test_longitudinal_governance_and_blocked_output_pins():
     assert artifact["model_specification"]["synthetic_smoke_only"] is True
     assert artifact["model_specification"]["replicated_calibration_complete"] is False
     assert all(value is False for value in artifact["blocked_outputs"].values())
+    assert sorted(artifact["synthetic_generator"].keys()) == sorted(
+        [
+            "generator_id",
+            "generator_version",
+            "seed",
+            "synthetic_input_hash",
+            "real_data_present",
+            "customer_data_present",
+            "production_data_present",
+            "live_data_source_present",
+        ]
+    )
 
 
 def test_longitudinal_hash_bindings():
@@ -120,4 +132,3 @@ def test_longitudinal_null_and_hold_artifacts_keep_same_boundary():
     assert null_artifact["hash_bindings"]["artifact_self_hash"] == (
         longitudinal_proof_artifact_self_hash(null_artifact)
     )
-

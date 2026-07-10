@@ -56,4 +56,3 @@ proves three boundaries:
   - inference README
   - model-family contract implementation status
   - `.project/PROGRESS.md`
-

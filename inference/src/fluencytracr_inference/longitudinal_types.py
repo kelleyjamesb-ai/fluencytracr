@@ -143,6 +143,22 @@ class LongitudinalHypothesisPlan:
             "source_hashes": list(self.source_hashes),
         }
 
+    def to_hash_section(self) -> dict:
+        """Full immutable plan projection for model-input hash bindings."""
+
+        return {
+            **self.to_artifact_section(),
+            "expected_work_change": self.expected_work_change,
+            "baseline_window": self.baseline_window,
+            "observation_schedule": list(self.observation_schedule),
+            "source_system_ref": self.source_system_ref,
+            "metric_owner_ref": self.metric_owner_ref,
+            "business_owner_ref": self.business_owner_ref,
+            "known_confounders": list(self.known_confounders),
+            "finance_pathway_ref": self.finance_pathway_ref,
+            "target_value_used_as_prior": bool(self.target_value_used_as_prior),
+        }
+
 
 @dataclass(frozen=True)
 class AIFluencySnapshotRef:
@@ -232,7 +248,7 @@ class LongitudinalSyntheticDataset:
 
     def source_hashes(self) -> dict:
         return {
-            "hypothesis_plan_hash": sha256_json(self.hypothesis_plan.to_artifact_section()),
+            "hypothesis_plan_hash": sha256_json(self.hypothesis_plan.to_hash_section()),
             "ai_fluency_snapshot_hashes": [
                 snapshot.source_hash for snapshot in self.ai_fluency_snapshots
             ],
@@ -258,6 +274,7 @@ class LongitudinalSyntheticDataset:
         return sha256_json(
             {
                 "hypothesis_plan": self.hypothesis_plan.to_artifact_section(),
+                "hypothesis_plan_hash_projection": self.hypothesis_plan.to_hash_section(),
                 "ai_fluency_snapshots": [
                     snapshot.to_artifact_section() for snapshot in self.ai_fluency_snapshots
                 ],
@@ -287,11 +304,9 @@ class LongitudinalSyntheticDataset:
                 "suppressed_window_refs": list(self.suppressed_window_refs),
                 "stale_window_refs": list(self.stale_window_refs),
                 "imputed_window_refs": list(self.imputed_window_refs),
-                "scenario": self.scenario,
                 "seed": int(self.seed),
                 "generator_id": self.generator_id,
                 "generator_version": self.generator_version,
-                "ground_truth": self.ground_truth,
                 "real_data_present": bool(self.real_data_present),
                 "customer_data_present": bool(self.customer_data_present),
                 "production_data_present": bool(self.production_data_present),

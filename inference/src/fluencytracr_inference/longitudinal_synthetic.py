@@ -187,7 +187,7 @@ def generate_longitudinal_dataset(
     lagged_depth = _lagged(raw_depth, lag)
     seasonality = np.sin(2.0 * np.pi * base_time / 6.0)
     demand_index = 0.15 * np.cos(2.0 * np.pi * base_time / 9.0)
-    if scenario in {"outcome_only_common_shock", "unrecorded_common_shock"}:
+    if scenario in {"outcome_only_common_shock", "approved_control_common_shock"}:
         demand_index[pre_window_count + lag :] += 1.0
 
     beta_velocity = 0.05

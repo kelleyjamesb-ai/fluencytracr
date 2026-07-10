@@ -24,6 +24,15 @@ from .longitudinal_types import (
     assert_longitudinal_synthetic_only,
 )
 
+EARLY_POST_SPIKE_PRE_SD_MULTIPLIER = 4.0
+EARLY_POST_SPIKE_ABSOLUTE_FLOOR = 0.25
+EVALUATION_MOVEMENT_PRE_SD_MULTIPLIER = 2.0
+COMMON_SHOCK_CONTROL_SHIFT_PRE_SD_MULTIPLIER = 4.0
+TEMPORARY_SPIKE_PRE_SD_MULTIPLIER = 3.0
+TEMPORARY_SPIKE_ABSOLUTE_FLOOR = 0.25
+TEMPORARY_PERSISTENCE_SLOPE_PRE_SD_MULTIPLIER = -0.5
+BACKTEST_RMSE_PRE_SD_MULTIPLIER = 3.0
+
 
 class LongitudinalHoldViolation(Exception):
     """Condition that must produce a HOLD artifact."""
@@ -58,7 +67,7 @@ class LongitudinalFitResult:
         lower, upper = np.quantile(draws, [0.1, 0.9])
         mwc = float(self.dataset.hypothesis_plan.minimum_worthwhile_change)
         return {
-            "estimand_name": "historical_counterfactual_outcome_movement",
+            "estimand_name": "internal_in_sample_vbd_contrast",
             "posterior_mean_movement": float(draws.mean()),
             "posterior_sd": float(draws.std(ddof=1)),
             "credible_interval_80": {"lower": float(lower), "upper": float(upper)},
@@ -246,6 +255,180 @@ def _estimate_ar1(residuals: np.ndarray, cohort_idx: np.ndarray) -> float:
     return float(np.clip(numer / denom, -0.95, 0.95))
 
 
+def _mean_by_time(
+    dataset: LongitudinalSyntheticDataset,
+    values: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    times = np.asarray(sorted(set(int(t) for t in dataset.time_index)), dtype=int)
+    means = []
+    post_by_time = []
+    refs = []
+    refs_array = np.asarray(dataset.window_refs, dtype=object)
+    for time in times:
+        mask = dataset.time_index == time
+        means.append(float(np.asarray(values)[mask].mean()))
+        post_by_time.append(int(dataset.post[mask][0]))
+        refs.append(str(refs_array[mask][0]))
+    return (
+        times,
+        np.asarray(refs, dtype=object),
+        np.asarray(post_by_time, dtype=int),
+        np.asarray(means, dtype=float),
+    )
+
+
+def _direction_sign(dataset: LongitudinalSyntheticDataset) -> float:
+    return 1.0 if dataset.hypothesis_plan.expected_metric_direction == "increase" else -1.0
+
+
+def _pre_trend_residual_summary(dataset: LongitudinalSyntheticDataset) -> dict:
+    times, refs, post_by_time, mean_y = _mean_by_time(dataset, dataset.observed_outcome)
+    pre_mask = post_by_time == 0
+    if int(pre_mask.sum()) < 3:
+        return {
+            "times": times,
+            "refs": refs,
+            "post_by_time": post_by_time,
+            "mean_y": mean_y,
+            "residuals": np.zeros_like(mean_y),
+            "direction_adjusted_residuals": np.zeros_like(mean_y),
+            "pre_residual_sd": 0.0,
+            "pre_fit_pass": False,
+        }
+    slope, intercept = np.polyfit(times[pre_mask].astype(float), mean_y[pre_mask], 1)
+    residuals = mean_y - (slope * times + intercept)
+    pre_residuals = residuals[pre_mask]
+    pre_residual_sd = float(pre_residuals.std(ddof=1))
+    return {
+        "times": times,
+        "refs": refs,
+        "post_by_time": post_by_time,
+        "mean_y": mean_y,
+        "residuals": residuals,
+        "direction_adjusted_residuals": _direction_sign(dataset) * residuals,
+        "pre_residual_sd": pre_residual_sd,
+        "pre_fit_pass": math.isfinite(pre_residual_sd) and pre_residual_sd > 0.0,
+    }
+
+
+def _evaluate_lag_and_placebo(summary: dict, dataset: LongitudinalSyntheticDataset) -> dict:
+    post_by_time = summary["post_by_time"]
+    refs = summary["refs"]
+    adjusted = summary["direction_adjusted_residuals"]
+    pre_sd = max(float(summary["pre_residual_sd"]), 1e-9)
+    eval_mask = np.isin(refs, dataset.evaluation_window_refs)
+    early_post_mask = (post_by_time == 1) & ~eval_mask
+    early_max = float(adjusted[early_post_mask].max()) if early_post_mask.any() else 0.0
+    eval_mean = float(adjusted[eval_mask].mean()) if eval_mask.any() else 0.0
+    early_threshold = max(
+        EARLY_POST_SPIKE_ABSOLUTE_FLOOR,
+        EARLY_POST_SPIKE_PRE_SD_MULTIPLIER * pre_sd,
+    )
+    eval_threshold = EVALUATION_MOVEMENT_PRE_SD_MULTIPLIER * pre_sd
+    early_spike_without_approved_lag = early_max > early_threshold and eval_mean < eval_threshold
+    return {
+        "pass": not early_spike_without_approved_lag,
+        "approved_lag_windows": dataset.hypothesis_plan.expected_outcome_signal_lag_windows,
+        "future_values_used": False,
+        "early_post_direction_adjusted_residual_max": early_max,
+        "evaluation_direction_adjusted_residual_mean": eval_mean,
+        "early_post_threshold": early_threshold,
+        "evaluation_movement_threshold": eval_threshold,
+    }
+
+
+def _evaluate_common_shock(dataset: LongitudinalSyntheticDataset) -> dict:
+    shifts = []
+    for index, control_name in enumerate(dataset.control_names):
+        _times, refs, post_by_time, control_means = _mean_by_time(
+            dataset,
+            dataset.control_matrix[:, index],
+        )
+        pre_values = control_means[post_by_time == 0]
+        eval_values = control_means[np.isin(refs, dataset.evaluation_window_refs)]
+        pre_sd = float(pre_values.std(ddof=1)) if pre_values.size > 1 else 0.0
+        if not math.isfinite(pre_sd) or pre_sd < 1e-9:
+            standardized_shift = 0.0
+        else:
+            standardized_shift = float((eval_values.mean() - pre_values.mean()) / pre_sd)
+        shifts.append(
+            {
+                "control_name": control_name,
+                "evaluation_minus_pre_standardized_shift": standardized_shift,
+            }
+        )
+    max_abs_shift = max((abs(item["evaluation_minus_pre_standardized_shift"]) for item in shifts), default=0.0)
+    return {
+        "pass": max_abs_shift <= COMMON_SHOCK_CONTROL_SHIFT_PRE_SD_MULTIPLIER,
+        "approved_controls_retained": list(dataset.control_names),
+        "max_abs_evaluation_control_shift": float(max_abs_shift),
+        "compiled_shift_gate": COMMON_SHOCK_CONTROL_SHIFT_PRE_SD_MULTIPLIER,
+        "control_shift_summaries": shifts,
+    }
+
+
+def _evaluate_temporary_persistence(summary: dict, dataset: LongitudinalSyntheticDataset) -> dict:
+    refs = summary["refs"]
+    adjusted = summary["direction_adjusted_residuals"]
+    pre_sd = max(float(summary["pre_residual_sd"]), 1e-9)
+    eval_mask = np.isin(refs, dataset.evaluation_window_refs)
+    eval_values = adjusted[eval_mask]
+    if eval_values.size < 3:
+        return {
+            "pass": False,
+            "evaluation_window_refs": list(dataset.evaluation_window_refs),
+            "evaluation_residual_slope": 0.0,
+            "evaluation_residual_max": 0.0,
+        }
+    slope = float(np.polyfit(np.arange(eval_values.size, dtype=float), eval_values, 1)[0])
+    eval_max = float(eval_values.max())
+    spike_threshold = max(
+        TEMPORARY_SPIKE_ABSOLUTE_FLOOR,
+        TEMPORARY_SPIKE_PRE_SD_MULTIPLIER * pre_sd,
+    )
+    slope_threshold = TEMPORARY_PERSISTENCE_SLOPE_PRE_SD_MULTIPLIER * pre_sd
+    temporary_only = eval_max > spike_threshold and slope < slope_threshold
+    return {
+        "pass": not temporary_only,
+        "evaluation_window_refs": list(dataset.evaluation_window_refs),
+        "evaluation_residual_slope": slope,
+        "evaluation_residual_max": eval_max,
+        "spike_threshold": spike_threshold,
+        "slope_threshold": slope_threshold,
+    }
+
+
+def _evaluate_pre_period_backtest(summary: dict) -> dict:
+    times = summary["times"]
+    mean_y = summary["mean_y"]
+    post_by_time = summary["post_by_time"]
+    pre_mask = post_by_time == 0
+    pre_times = times[pre_mask].astype(float)
+    pre_values = mean_y[pre_mask]
+    if pre_values.size < 6:
+        return {
+            "pass": False,
+            "compiled_backtest_policy": "last_two_pre_windows_held_out_smoke",
+            "holdout_rmse": None,
+        }
+    train_times = pre_times[:-2]
+    train_values = pre_values[:-2]
+    holdout_times = pre_times[-2:]
+    holdout_values = pre_values[-2:]
+    slope, intercept = np.polyfit(train_times, train_values, 1)
+    train_residuals = train_values - (slope * train_times + intercept)
+    train_sd = float(train_residuals.std(ddof=1)) if train_residuals.size > 1 else 0.0
+    predictions = slope * holdout_times + intercept
+    holdout_rmse = float(np.sqrt(np.mean((holdout_values - predictions) ** 2)))
+    threshold = BACKTEST_RMSE_PRE_SD_MULTIPLIER * max(train_sd, 1e-9)
+    return {
+        "pass": holdout_rmse <= threshold,
+        "compiled_backtest_policy": "last_two_pre_windows_held_out_smoke",
+        "holdout_rmse": holdout_rmse,
+        "rmse_threshold": threshold,
+    }
+
+
 def fit_longitudinal_model(
     dataset: LongitudinalSyntheticDataset,
     *,
@@ -335,21 +518,27 @@ def compute_longitudinal_diagnostics(
 ) -> LongitudinalDiagnosticsResult:
     dataset = fit.dataset
     failing: list[str] = []
-    scenario = dataset.scenario
     movement_summary = fit.movement_summary()
-    if scenario == "wrong_lag":
+
+    residual_summary = _pre_trend_residual_summary(dataset)
+    lag_check = _evaluate_lag_and_placebo(residual_summary, dataset)
+    common_shock_check = _evaluate_common_shock(dataset)
+    persistence_check = _evaluate_temporary_persistence(residual_summary, dataset)
+    backtest_check = _evaluate_pre_period_backtest(residual_summary)
+
+    if not lag_check["pass"]:
         failing.extend(["lag_sensitivity", "placebo_intervention_date"])
-    if scenario == "unrecorded_common_shock":
+    if not common_shock_check["pass"]:
         failing.append("common_shock_sensitivity")
-    if scenario == "temporary_spike":
+    if not persistence_check["pass"]:
         failing.append("temporary_effect_persistence")
+    if not backtest_check["pass"]:
+        failing.append("pre_period_rolling_backtest")
     if abs(fit.residual_rho_estimate) > 0.9:
         failing.append("residual_autocorrelation")
 
-    pre_residual_sd = float(
-        (dataset.observed_outcome[dataset.post == 0]).std(ddof=1)
-    )
-    pre_fit_pass = math.isfinite(pre_residual_sd) and pre_residual_sd > 0.0
+    pre_residual_sd = float(residual_summary["pre_residual_sd"])
+    pre_fit_pass = bool(residual_summary["pre_fit_pass"])
     if not pre_fit_pass:
         failing.append("pre_period_fit")
 
@@ -375,29 +564,33 @@ def compute_longitudinal_diagnostics(
             "pre_period_observed_sd": pre_residual_sd,
         },
         pre_period_rolling_backtest={
+            **backtest_check,
             "pass": "pre_period_rolling_backtest" not in failing_tuple,
-            "compiled_backtest_policy": "last_two_pre_windows_held_out_smoke",
         },
         placebo_intervention_date_check={
             "pass": "placebo_intervention_date" not in failing_tuple,
             "placebo_date_policy": "false_pre_period_intervention_date_smoke",
+            "early_post_direction_adjusted_residual_max": lag_check[
+                "early_post_direction_adjusted_residual_max"
+            ],
+            "early_post_threshold": lag_check["early_post_threshold"],
         },
         counterfactual_stability_check={
             "pass": "counterfactual_stability" not in failing_tuple,
             "counterfactual_reference": "pre_period_vbd_reference_values",
+            "smoke_scope": "in_sample_vbd_contrast_not_historical_forecast",
         },
         lag_sensitivity_check={
+            **lag_check,
             "pass": "lag_sensitivity" not in failing_tuple,
-            "approved_lag_windows": dataset.hypothesis_plan.expected_outcome_signal_lag_windows,
-            "future_values_used": False,
         },
         common_shock_sensitivity_check={
+            **common_shock_check,
             "pass": "common_shock_sensitivity" not in failing_tuple,
-            "approved_controls_retained": list(dataset.control_names),
         },
         temporary_effect_persistence_check={
+            **persistence_check,
             "pass": "temporary_effect_persistence" not in failing_tuple,
-            "evaluation_window_refs": list(dataset.evaluation_window_refs),
         },
         prior_sensitivity_check={
             "pass": "prior_sensitivity" not in failing_tuple,

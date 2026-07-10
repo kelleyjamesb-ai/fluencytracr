@@ -143,6 +143,121 @@ test("unknown fields and unsafe output side doors reject", { skip: venvSkip }, (
   unsafe.customer_output_authorized = true;
   rehash(unsafe);
   assert.equal(LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(unsafe).success, false);
+
+  const hashSidecar = clone(emitLongitudinal("clean_historical_pathway"));
+  hashSidecar.primary_metric_binding.user_hash = "b".repeat(64);
+  rehash(hashSidecar);
+  assert.equal(
+    LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(hashSidecar).success,
+    false
+  );
+});
+
+test("oracle generator sidecars reject even when rehashed", { skip: venvSkip }, () => {
+  const groundTruth = clone(emitLongitudinal("clean_historical_pathway"));
+  groundTruth.synthetic_generator.ground_truth = { beta_depth: 0.5 };
+  rehash(groundTruth);
+  assert.equal(
+    LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(groundTruth).success,
+    false
+  );
+
+  const scenario = clone(emitLongitudinal("clean_historical_pathway"));
+  scenario.synthetic_generator.scenario = "clean_historical_pathway";
+  rehash(scenario);
+  assert.equal(LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(scenario).success, false);
+});
+
+test("non-HOLD artifacts require aggregate AI Fluency uncertainty", { skip: venvSkip }, () => {
+  const forged = clone(emitLongitudinal("clean_historical_pathway"));
+  for (const snapshot of forged.ai_fluency_snapshot_evidence) {
+    snapshot.overall_standard_error = null;
+    snapshot.dimension_standard_errors = {
+      overall_ai_fluency: null,
+      confidence: null,
+      usage_quality: null,
+      behavior_change: null,
+      leadership_reinforcement: null,
+      capability_growth: null
+    };
+    snapshot.measurement_uncertainty_state = "missing_uncertainty_visible";
+  }
+  rehash(forged);
+  const result = LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forged);
+  assert.equal(result.success, false);
+  assert.ok(
+    result.error.issues.some((issue) =>
+      issue.message.includes("aggregate AI Fluency uncertainty")
+    )
+  );
+});
+
+test("non-HOLD artifacts reject diagnostic and governance contradictions", { skip: venvSkip }, () => {
+  const forged = clone(emitLongitudinal("clean_historical_pathway"));
+  forged.diagnostics.passed = false;
+  forged.diagnostics.failing_diagnostics = ["lag_sensitivity"];
+  forged.diagnostics.lag_sensitivity_check.pass = false;
+  rehash(forged);
+  const result = LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forged);
+  assert.equal(result.success, false);
+  assert.ok(
+    result.error.issues.some((issue) =>
+      issue.message.includes("diagnostic failures must match governance failures") ||
+      issue.message.includes("non-HOLD artifacts require every diagnostic check")
+    )
+  );
+});
+
+test("pathway movement contradictions reject when rehashed", { skip: venvSkip }, () => {
+  const forged = clone(emitLongitudinal("clean_historical_pathway"));
+  forged.behavior_outcome_pathway_evidence.depth_moved_as_expected =
+    !forged.vbd_exposure_evidence.movement_checks.depth.moved_as_expected;
+  rehash(forged);
+  const result = LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forged);
+  assert.equal(result.success, false);
+  assert.ok(
+    result.error.issues.some((issue) =>
+      issue.message.includes("pathway movement booleans must match")
+    )
+  );
+});
+
+test("diagnostic sidecars reject even when artifact is rehashed", { skip: venvSkip }, () => {
+  for (const sidecar of [
+    { customer_output_authorized: true },
+    { export_authorization: true },
+    { writes_persistence: true },
+    { confidence_percent: 91 },
+    { probability_score: 0.91 },
+    { causal_effect: 0.2 },
+    { roi_amount: 1000 },
+    { level_band: 5 },
+    { segment_ref: "9".repeat(64) }
+  ]) {
+    const forged = clone(emitLongitudinal("clean_historical_pathway"));
+    Object.assign(forged.diagnostics.prior_sensitivity_check, sidecar);
+    rehash(forged);
+    assert.equal(
+      LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forged).success,
+      false
+    );
+  }
+});
+
+test("unsafe aggregate grain values reject when forged into artifacts", { skip: venvSkip }, () => {
+  const forgedPlan = clone(emitLongitudinal("clean_historical_pathway"));
+  forgedPlan.hypothesis_binding.cohort_scope = "manager_level_l5_tenure_0_1";
+  rehash(forgedPlan);
+  assert.equal(LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forgedPlan).success, false);
+
+  const forgedSnapshot = clone(emitLongitudinal("clean_historical_pathway"));
+  forgedSnapshot.ai_fluency_snapshot_evidence[0].source_ref =
+    "synthetic-ai-fluency://manager_level_tenure";
+  rehash(forgedSnapshot);
+  assert.equal(
+    LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forgedSnapshot).success,
+    false
+  );
 });
 
 test("unsupported route claims reject when forged", { skip: venvSkip }, () => {
@@ -176,17 +291,22 @@ test("forged DiD route rejects under longitudinal schema", { skip: venvSkip }, (
 });
 
 test("unsafe business controls reject when forged", { skip: venvSkip }, () => {
-  const forged = clone(emitLongitudinal("clean_historical_pathway"));
-  forged.business_control_evidence.control_names.push("manager_performance_rating");
-  forged.business_control_evidence.control_source_refs.push(
-    "synthetic-control://unsafe-manager-performance"
-  );
-  rehash(forged);
-  const result = LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forged);
-  assert.equal(result.success, false);
-  assert.ok(
-    result.error.issues.some((issue) =>
-      issue.message.includes("unsafe HR/personnel/productivity control evidence")
-    )
-  );
+  for (const controlName of [
+    "manager_performance_rating",
+    "level_band",
+    "tenure_band"
+  ]) {
+    const forged = clone(emitLongitudinal("clean_historical_pathway"));
+    forged.business_control_evidence.control_names.push(controlName);
+    forged.business_control_evidence.control_source_refs.push(`synthetic-control://${controlName}`);
+    rehash(forged);
+    const result = LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(forged);
+    assert.equal(result.success, false);
+    assert.ok(
+      result.error.issues.some((issue) =>
+        issue.message.includes("unsafe HR/personnel/productivity control evidence") ||
+        issue.message.includes("unsafe person-level")
+      )
+    );
+  }
 });

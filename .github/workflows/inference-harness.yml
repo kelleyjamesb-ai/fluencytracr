@@ -71,6 +71,8 @@ jobs:
         run: npm ci
       - name: Run inference harness suite
         run: PYTHONPATH=inference/src inference/.venv/bin/python -m pytest inference/tests/ -q
+      - name: Run AI Fluency snapshot boundary test
+        run: npm run test:ai-value-ai-fluency-instrument-snapshot
       - name: Run Python to TypeScript inference bridge
         run: |
           npm run build --workspace packages/confidence-engine

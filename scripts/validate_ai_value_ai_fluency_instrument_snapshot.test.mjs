@@ -129,6 +129,7 @@ test("missing uncertainty stays visible and blocks full measurement-model author
   assert.equal(result.valid, true);
   assert.equal(snapshot.measurement_uncertainty_state, "missing_uncertainty_visible");
   assert.equal(snapshot.full_fluency_measurement_model_authorized, false);
+  assert.equal(result.feeds.longitudinal_model_context, false);
   assert.equal(result.feeds.full_fluency_measurement_model, false);
 });
 
@@ -157,6 +158,41 @@ test("partial uncertainty and camelCase uncertainty are handled explicitly", () 
     })
   );
   assert.equal(futureApi.measurement_uncertainty_state, "aggregate_uncertainty_available");
+});
+
+test("negative aggregate uncertainty rejects and cannot feed model context", () => {
+  const overall = validateAIFluencyInstrumentSnapshot(
+    baseInput({
+      overall_standard_error: -0.1
+    })
+  );
+  assert.equal(overall.valid, false);
+  assert.equal(overall.feeds.longitudinal_model_context, false);
+  assert.ok(
+    overall.gaps.some((gap) =>
+      gap.includes("overall_standard_error must be nonnegative")
+    )
+  );
+
+  const dimension = validateAIFluencyInstrumentSnapshot(
+    baseInput({
+      dimension_standard_errors: {
+        overall_ai_fluency: 1.8,
+        confidence: 2.0,
+        usage_quality: -0.1,
+        behavior_change: 2.2,
+        leadership_reinforcement: 2.1,
+        capability_growth: 2.0
+      }
+    })
+  );
+  assert.equal(dimension.valid, false);
+  assert.equal(dimension.feeds.longitudinal_model_context, false);
+  assert.ok(
+    dimension.gaps.some((gap) =>
+      gap.includes("dimension_standard_errors.usage_quality must be nonnegative")
+    )
+  );
 });
 
 test("missing aggregate coverage fields reject", () => {
@@ -213,6 +249,7 @@ test("baseline and retest snapshots remain independently traceable", () => {
 test("respondent-level leakage rejects before model assembly", () => {
   const unsafe = baseInput({
     respondent_id: "respondent-abc123",
+    user_hash: "b".repeat(64),
     raw_answers: [{ q1: "free text" }],
     source_ref: "ai-fluency-snapshot://person@example.com/baseline"
   });
@@ -221,6 +258,38 @@ test("respondent-level leakage rejects before model assembly", () => {
   assert.equal(result.valid, false);
   assert.equal(result.feeds.longitudinal_model_context, false);
   assert.ok(result.gaps.some((gap) => gap.includes("forbidden")));
+});
+
+test("unsafe HR and personnel values in aggregate grain reject before model context", () => {
+  for (const overrides of [
+    { snapshot_id: "ai_fluency_snapshot_manager_level_tenure" },
+    { function_area: "manager enablement" },
+    { workflow_family: "employee_productivity_review" },
+    { cohort_key: "manager_level_l5_tenure_0_1" },
+    { source_ref: "ai-fluency-snapshot://atlas/manager_level_tenure" }
+  ]) {
+    const result = validateAIFluencyInstrumentSnapshot(baseInput(overrides));
+
+    assert.equal(result.valid, false);
+    assert.equal(result.feeds.longitudinal_model_context, false);
+    assert.ok(result.gaps.some((gap) => gap.includes("aggregate grain fields")));
+  }
+});
+
+test("nested unsafe adapter sidecars reject before model context", () => {
+  for (const overrides of [
+    { source: { customer_output_authorized: true } },
+    { metadata: { export_authorization: true } },
+    { reliability_estimates: { posterior_probability: 0.91 } },
+    { reliability_estimates: { confidence_percent: 91 } },
+    { caveats: ["level band and tenure band segmentation available"] },
+    { source_ref: `ai-fluency-snapshot://atlas/${"9".repeat(64)}` }
+  ]) {
+    const result = validateAIFluencyInstrumentSnapshot(baseInput(overrides));
+
+    assert.equal(result.valid, false);
+    assert.equal(result.feeds.longitudinal_model_context, false);
+  }
 });
 
 test("raw unsafe boundary flags cannot be normalized away", () => {

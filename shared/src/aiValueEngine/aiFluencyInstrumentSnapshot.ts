@@ -135,6 +135,8 @@ const FORBIDDEN_FIELD_PATTERNS = [
   /session_id/i,
   /person_id/i,
   /person_identifier/i,
+  /(?:user|person|employee|respondent|session)_hash/i,
+  /hashed_email/i,
   /hashed_(?:user|person|employee|respondent)_id/i,
   /joinable_(?:user|person|employee|respondent)_identifier/i,
   /hris/i,
@@ -144,6 +146,14 @@ const FORBIDDEN_FIELD_PATTERNS = [
   /compensation/i,
   /performance/i,
   /productivity/i,
+  /(?:customer|probability|confidence|roi|finance|financial|causal|causality|productivity|route|ui|persist|persistence|export|readout|connector).*_(?:authorized|authorization)$/i,
+  /(?:^|_)(?:export|route|ui|persist|persistence|readout|connector)_authorization$/i,
+  /^confidence_(?:percent|percentage)$/i,
+  /^probability(?:_|$)/i,
+  /^posterior_(?:probability|prob|odds|score)$/i,
+  /^roi_/i,
+  /^causal_/i,
+  /^finance_/i,
   /^confidence_percentage$/i,
   /^probability$/i,
   /^roi$/i,
@@ -173,7 +183,31 @@ const UNSAFE_VALUE_PATTERNS = [
   /\b(?:confidence\s*(?:percentage|percent)|probability|impact\s*probability)\b/i,
   /\b(?:roi|ebita|ebitda|financial attribution|customer-facing financial output)\b/i,
   /\b(?:hris|manager ranking|team ranking|department ranking|employee productivity|performance review|compensation)\b/i,
+  /\b(?:level\s*band|tenure\s*band|manager|hris|employee|personnel|productivity|performance|compensation)\b/i,
   /\/api\//i
+];
+
+const GOVERNANCE_GRAIN_VALUE_FIELDS = [
+  "snapshot_id",
+  "function_area",
+  "workflow_family",
+  "cohort_key",
+  "source_ref"
+] as const;
+
+const UNSAFE_GOVERNANCE_GRAIN_VALUE_PATTERNS = [
+  /hris/i,
+  /manager/i,
+  /employee/i,
+  /respondent/i,
+  /user/i,
+  /person/i,
+  /level/i,
+  /tenure/i,
+  /compensation/i,
+  /performance/i,
+  /productivity/i,
+  /\b[0-9a-f]{64}\b/i
 ];
 
 export interface AIFluencyInstrumentSnapshotValidationResult {
@@ -268,6 +302,18 @@ function collectUnsafeValues(value: any, values: string[] = []): string[] {
   }
   for (const nested of Object.values(value)) collectUnsafeValues(nested, values);
   return values;
+}
+
+function collectUnsafeGovernanceGrainValues(value: any): string[] {
+  const unsafe: string[] = [];
+  for (const field of GOVERNANCE_GRAIN_VALUE_FIELDS) {
+    const raw = value?.[field];
+    if (typeof raw !== "string") continue;
+    if (UNSAFE_GOVERNANCE_GRAIN_VALUE_PATTERNS.some((pattern) => pattern.test(raw))) {
+      unsafe.push(field);
+    }
+  }
+  return unsafe;
 }
 
 function collectRawBoundaryViolations(value: any, gaps: string[]): void {
@@ -397,7 +443,7 @@ export function buildAIFluencyInstrumentSnapshotFromObject(input: any): any {
     ...Object.values(dimensionStandardErrors).map((value) => numberOrNull(value))
   ];
   const uncertaintyComplete = uncertaintyValues.every(
-    (value) => typeof value === "number" && Number.isFinite(value)
+    (value) => typeof value === "number" && Number.isFinite(value) && value >= 0
   );
 
   return {
@@ -585,6 +631,16 @@ export function validateAIFluencyInstrumentSnapshot(
   if (responseRate === null || responseRate < 0 || responseRate > 1) {
     gaps.push("response_rate must be between 0 and 1");
   }
+  const overallStandardError = numberOrNull(snapshot.overall_standard_error);
+  if (overallStandardError !== null && overallStandardError < 0) {
+    gaps.push("overall_standard_error must be nonnegative when provided");
+  }
+  for (const dimension of REQUIRED_DIMENSIONS) {
+    const se = numberOrNull(snapshot.dimension_standard_errors?.[dimension]);
+    if (se !== null && se < 0) {
+      gaps.push(`dimension_standard_errors.${dimension} must be nonnegative when provided`);
+    }
+  }
   const forbiddenFields = [...collectForbiddenFields(value), ...collectForbiddenFields(snapshot)];
   if (forbiddenFields.length > 0) {
     gaps.push(`forbidden person-level or unsafe fields present: ${forbiddenFields.sort().join(", ")}`);
@@ -593,12 +649,20 @@ export function validateAIFluencyInstrumentSnapshot(
   if (unsafeValues.length > 0) {
     gaps.push("unsafe source values present");
   }
+  const unsafeGovernanceGrainValues = collectUnsafeGovernanceGrainValues(snapshot);
+  if (unsafeGovernanceGrainValues.length > 0) {
+    gaps.push(
+      `unsafe HR/personnel/productivity values present in aggregate grain fields: ${unsafeGovernanceGrainValues.sort().join(", ")}`
+    );
+  }
 
   const approved =
     snapshot.suppression_state === "none" &&
     snapshot.owner_approval_state === "approved" &&
     (snapshot.review_state === "approved_for_model_context" ||
       snapshot.review_state === "approved_for_import");
+  const aggregateUncertaintyAvailable =
+    snapshot.measurement_uncertainty_state === "aggregate_uncertainty_available";
   const valid = gaps.length === 0;
 
   return {
@@ -607,7 +671,7 @@ export function validateAIFluencyInstrumentSnapshot(
     valid,
     gaps,
     feeds: {
-      longitudinal_model_context: valid && approved,
+      longitudinal_model_context: valid && approved && aggregateUncertaintyAvailable,
       full_fluency_measurement_model: false,
       measurement_cell_direct_feed: false,
       confidence_model: false,

@@ -72,6 +72,10 @@ Optional aggregate uncertainty:
 - `missingness_posture`
 - `respondent_composition_posture`
 
+When aggregate standard errors are provided, they must be finite and
+nonnegative. Negative standard errors are invalid evidence; they are not
+treated as merely missing uncertainty.
+
 Governance and lineage:
 
 - `suppression_state`
@@ -91,6 +95,12 @@ from aggregate AI Fluency adapters. It is not a FluencyTracr verdict
 suppression reason and does not add to or modify the five locked canonical
 suppression reasons.
 
+Identity and lineage strings such as `snapshot_id`, `function_area`,
+`workflow_family`, `cohort_key`, and `source_ref` must not encode HRIS,
+manager, employee, respondent, level, tenure, compensation, performance,
+productivity, or bare hash-like identifiers. Those strings are aggregate
+lineage only, not join keys for person-level or HR analytics data.
+
 ## Missing Measurement Uncertainty
 
 The current aggregate export may not contain enough standard-error or
@@ -100,8 +110,9 @@ Required behavior:
 
 - Missing uncertainty remains visible as `missing_uncertainty_visible`.
 - Full Fluency measurement-model authorization remains false.
-- Existing approved aggregate scores may still serve as baseline context in
-  the first longitudinal synthetic outcome proof.
+- Existing approved aggregate scores with missing uncertainty may still be
+  retained for import/review posture, but they cannot feed longitudinal model
+  context until aggregate uncertainty is available.
 - Missing uncertainty must not be filled by invented precision.
 - Respondent-level rows must not be exported to solve the gap.
 

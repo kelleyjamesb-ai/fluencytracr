@@ -82,4 +82,3 @@ connectors.
   future-table proposal language only.
 - **DiD weakening:** mitigated by adding sibling modules instead of mutating
   the current DiD model or artifact schema.
-
