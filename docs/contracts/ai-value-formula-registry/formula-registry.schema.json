@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/contracts/ai-value-formula-registry/formula-registry.schema.json",
+  "title": "FluencyTracr AI Value Formula Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registry_id",
+    "registry_version",
+    "schema_version",
+    "status",
+    "generated_for_change",
+    "registry_boundary",
+    "model_layers",
+    "formulas"
+  ],
+  "properties": {
+    "registry_id": {
+      "const": "fluencytracr_ai_value_formula_registry"
+    },
+    "registry_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": "FT_AI_VALUE_FORMULA_REGISTRY_2026_07"
+    },
+    "status": {
+      "const": "canonical_metadata_registry"
+    },
+    "generated_for_change": {
+      "const": "add-ai-value-formula-registry"
+    },
+    "registry_boundary": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "model_layers": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "enum": [
+          "AI_FLUENCY_MEASUREMENT",
+          "VBD_BEHAVIORAL_MEASUREMENT",
+          "HYPOTHESIS_OUTCOME_MODELING",
+          "COMPARISON_SUPPORTED_DID",
+          "HISTORICAL_COUNTERFACTUAL_MODELING",
+          "PATHWAY_COHERENCE",
+          "EVIDENCE_DESIGN_CLAIM_CAPS",
+          "ECONOMIC_VALUE_TRANSLATION",
+          "PORTFOLIO_AGGREGATION",
+          "DATA_QUALITY_AND_GOVERNANCE_GATES"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "formulas": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/formula"
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "executableReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "export_name",
+        "execution_boundary",
+        "runtime_callable_from_registry"
+      ],
+      "properties": {
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "export_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "execution_boundary": {
+          "enum": [
+            "existing_runtime_contract",
+            "synthetic_internal_only"
+          ]
+        },
+        "runtime_callable_from_registry": {
+          "const": false
+        }
+      }
+    },
+    "formula": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formula_id",
+        "formula_name",
+        "formula_version",
+        "model_layer",
+        "implementation_state",
+        "mathematical_expression",
+        "plain-language_definition",
+        "required_inputs",
+        "input_units",
+        "output_unit",
+        "expected_direction",
+        "applicable_metric_families",
+        "applicable_evidence_designs",
+        "assumptions",
+        "limitations",
+        "prohibited_interpretations",
+        "source_contract_refs",
+        "executable_reference_function",
+        "validation_tests",
+        "customer_display_state",
+        "governance_state"
+      ],
+      "properties": {
+        "formula_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "formula_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "formula_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_layer": {
+          "enum": [
+            "AI_FLUENCY_MEASUREMENT",
+            "VBD_BEHAVIORAL_MEASUREMENT",
+            "HYPOTHESIS_OUTCOME_MODELING",
+            "COMPARISON_SUPPORTED_DID",
+            "HISTORICAL_COUNTERFACTUAL_MODELING",
+            "PATHWAY_COHERENCE",
+            "EVIDENCE_DESIGN_CLAIM_CAPS",
+            "ECONOMIC_VALUE_TRANSLATION",
+            "PORTFOLIO_AGGREGATION",
+            "DATA_QUALITY_AND_GOVERNANCE_GATES"
+          ]
+        },
+        "implementation_state": {
+          "enum": [
+            "IMPLEMENTED_AND_TESTED",
+            "IMPLEMENTED_SYNTHETIC_ONLY",
+            "SPECIFIED_NOT_IMPLEMENTED",
+            "FUTURE_RESEARCH",
+            "DEPRECATED",
+            "PROHIBITED"
+          ]
+        },
+        "mathematical_expression": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plain-language_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_inputs": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "input_units": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "output_unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_direction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicable_metric_families": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "applicable_evidence_designs": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "assumptions": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "limitations": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "prohibited_interpretations": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "source_contract_refs": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "executable_reference_function": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/executableReference"
+            }
+          ]
+        },
+        "validation_tests": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "customer_display_state": {
+          "enum": [
+            "BLOCKED",
+            "INTERNAL_ONLY",
+            "DOCS_ONLY_TEMPLATE",
+            "EXISTING_INTERNAL_CONTRACT",
+            "DEPRECATED_NOT_CANONICAL"
+          ]
+        },
+        "governance_state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "formula_family": {
+          "enum": [
+            "cycle_time_delta",
+            "friction_rate_delta",
+            "sales_cycle_delta",
+            "conversion_rate_delta",
+            "quality_rate_delta",
+            "throughput_delta",
+            "trust_coverage_share",
+            "exception_rate_delta",
+            "experience_metric_delta"
+          ]
+        }
+      }
+    }
+  }
+}

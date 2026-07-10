@@ -155,7 +155,7 @@ test("unknown fields and unsafe output side doors reject", { skip: venvSkip }, (
 
 test("oracle generator sidecars reject even when rehashed", { skip: venvSkip }, () => {
   const groundTruth = clone(emitLongitudinal("clean_historical_pathway"));
-  groundTruth.synthetic_generator.ground_truth = { beta_depth: 0.5 };
+  groundTruth.synthetic_generator.ground_truth = { beta_breadth: 0.72 };
   rehash(groundTruth);
   assert.equal(
     LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(groundTruth).success,

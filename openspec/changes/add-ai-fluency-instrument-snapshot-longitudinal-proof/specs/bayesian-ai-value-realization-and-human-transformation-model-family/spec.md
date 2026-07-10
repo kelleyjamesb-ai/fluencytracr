@@ -60,8 +60,9 @@ isolated synthetic-only prototype path under the Bayesian AI Value Realization
 And Human Transformation model family. The prototype SHALL operate only on
 aggregate synthetic inputs, one approved hypothesis, one continuous normal
 identity primary metric, ordered pre/post windows, baseline AI Fluency context,
-separate lagged Velocity/Breadth/Depth exposures, approved synthetic aggregate
-controls, known aggregate standard errors, and an explicit residual
+separate lagged Velocity/Breadth exposures, Depth as synthetic aggregate
+pathway context only, approved synthetic aggregate controls, known aggregate
+standard errors, and an explicit residual
 serial-correlation diagnostic.
 
 The prototype SHALL emit artifacts as internal validation inputs only with

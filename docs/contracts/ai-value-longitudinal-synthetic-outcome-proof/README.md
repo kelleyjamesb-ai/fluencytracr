@@ -28,7 +28,9 @@ The proof supports:
 - at least 8 pre-period windows and 3 post-period windows;
 - clean synthetic path using 12 pre-period and 6 post-period windows;
 - baseline aggregate AI Fluency context;
-- separate lagged Velocity, Breadth, and Depth exposures;
+- separate lagged Velocity and Breadth exposures;
+- Depth carried as synthetic aggregate pathway context only, not as a model
+  coefficient;
 - synthetic aggregate business controls;
 - known aggregate standard errors;
 - a Gaussian posterior smoke calculation;
@@ -91,7 +93,8 @@ The contrast:
 - is an in-sample smoke diagnostic, not a historical forecast;
 - retains the fitted time trend;
 - retains approved synthetic business controls;
-- uses pre-period reference values for AI-enabled pathway exposures;
+- uses pre-period reference values for Velocity/Breadth pathway exposures;
+- retains Depth as context rather than changing it in the fitted contrast;
 - does not set every predictor to zero;
 - never uses future VBD values;
 - remains internal validation input only.

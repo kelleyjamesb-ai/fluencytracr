@@ -335,10 +335,11 @@ const VBDExposureEvidenceSchema = z
   .object({
     velocity_exposure_role: z.string().min(1),
     breadth_exposure_role: z.string().min(1),
-    depth_exposure_role: z.string().min(1),
+    depth_context_role: z.string().min(1),
     lag_windows: z.number().int().gte(1),
     future_values_used: z.literal(false),
-    separate_velocity_breadth_depth_terms: z.literal(true),
+    separate_velocity_breadth_terms: z.literal(true),
+    depth_context_only: z.literal(true),
     movement_checks: z
       .object({
         velocity: VBDMovementCheckSchema,
@@ -377,7 +378,7 @@ const FittedPathwayEvidenceSchema = z
     depth_moved_as_expected: z.boolean(),
     posterior_direction_beta_velocity: z.enum(["positive", "not_positive"]),
     posterior_direction_beta_breadth: z.enum(["positive", "not_positive"]),
-    posterior_direction_beta_depth: z.enum(["positive", "not_positive"]),
+    depth_context_only: z.literal(true),
     meaningful_primary_outcome_movement_supported: z.boolean(),
     approved_lag_respected: z.boolean(),
     quality_guardrail_acceptable: z.literal(true)
@@ -405,19 +406,25 @@ const PosteriorEstimandSummarySchema = z
         not_probability_output: z.literal(true),
         not_customer_facing: z.literal(true),
         movement_greater_than_zero_draw_share: z.number().min(0).max(1),
-        movement_exceeds_synthetic_fixture_minimum_draw_share: z.number().min(0).max(1)
+        movement_exceeds_compiled_synthetic_smoke_minimum_draw_share: z
+          .number()
+          .min(0)
+          .max(1)
       })
       .strict(),
-    synthetic_fixture_minimum_worthwhile_change: z.number()
+    compiled_synthetic_smoke_minimum_movement: z.number()
   })
   .strict();
 
 const CounterfactualDerivationSchema = z
   .object({
     estimand_name: z.literal("internal_in_sample_vbd_contrast"),
-    counterfactual_reference: z.literal("pre_period_vbd_reference_values"),
+    counterfactual_reference: z.literal(
+      "pre_period_velocity_breadth_reference_values_depth_context_retained"
+    ),
     retains_historical_trend: z.literal(true),
     retains_approved_business_controls: z.literal(true),
+    retains_depth_as_context: z.literal(true),
     uses_future_values: z.literal(false),
     sets_predictors_to_zero: z.literal(false),
     direction_adjusted: z.literal(true),
@@ -441,7 +448,8 @@ const DesignMatrixIdentifiabilityCheckSchema = z
     rank: z.number().int().gte(0),
     parameter_count: z.number().int().gte(0),
     condition_number: z.number().nonnegative(),
-    vbd_dimensions_kept_separate: z.literal(true)
+    velocity_breadth_terms_kept_separate: z.literal(true),
+    depth_context_retained_outside_design_matrix: z.literal(true)
   })
   .strict();
 
@@ -482,7 +490,9 @@ const PlaceboInterventionDateCheckSchema = z
 const CounterfactualStabilityCheckSchema = z
   .object({
     pass: z.boolean(),
-    counterfactual_reference: z.literal("pre_period_vbd_reference_values"),
+    counterfactual_reference: z.literal(
+      "pre_period_velocity_breadth_reference_values_depth_context_retained"
+    ),
     smoke_scope: z.literal("in_sample_vbd_contrast_not_historical_forecast")
   })
   .strict();
