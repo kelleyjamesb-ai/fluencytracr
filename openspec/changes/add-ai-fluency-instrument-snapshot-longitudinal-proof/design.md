@@ -50,8 +50,8 @@ The Python implementation is a sibling path to the current DiD harness:
 - `longitudinal_synthetic.py` generates clean, null, and negative-control
   scenarios.
 - `longitudinal_model.py` fits a Bayesian Gaussian longitudinal smoke model
-  with separate Velocity, Breadth, and Depth exposures and an explicit AR(1)
-  residual diagnostic.
+  with separate Velocity and Breadth exposures, Depth as synthetic pathway
+  context only, and an explicit AR(1) residual diagnostic.
 - `longitudinal_artifact.py` emits a strict internal-only artifact.
 
 The model uses a closed-form Gaussian posterior approximation for this smoke

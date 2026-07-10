@@ -124,9 +124,10 @@ Under `src/fluencytracr_inference/`:
   synthetic-only Phase 2B prototype for
   `first_longitudinal_synthetic_model_slice`. The path uses aggregate
   Hypothesis Measurement Plan metadata, source-bound aggregate AI Fluency
-  snapshot refs, separate lagged Velocity/Breadth/Depth exposures, synthetic
-  aggregate controls, known aggregate SE, and an explicit AR(1) residual
-  diagnostic posture. The fitted calculation is a closed-form Gaussian
+  snapshot refs, separate lagged Velocity/Breadth exposures, Depth as
+  synthetic pathway context only, synthetic aggregate controls, known aggregate
+  SE, and an explicit AR(1) residual diagnostic posture. The fitted calculation
+  is a closed-form Gaussian
   posterior smoke proof labeled
   `closed_form_gaussian_posterior_smoke_not_nuts`; it is not replicated
   calibration and not production promotion. It emits a separate

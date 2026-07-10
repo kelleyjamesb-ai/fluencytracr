@@ -71,10 +71,11 @@ def _vbd_evidence(dataset: LongitudinalSyntheticDataset) -> dict:
     return {
         "velocity_exposure_role": dataset.hypothesis_plan.expected_vbd_signature["velocity"],
         "breadth_exposure_role": dataset.hypothesis_plan.expected_vbd_signature["breadth"],
-        "depth_exposure_role": dataset.hypothesis_plan.expected_vbd_signature["depth"],
+        "depth_context_role": dataset.hypothesis_plan.expected_vbd_signature["depth"],
         "lag_windows": dataset.hypothesis_plan.expected_outcome_signal_lag_windows,
         "future_values_used": False,
-        "separate_velocity_breadth_depth_terms": True,
+        "separate_velocity_breadth_terms": True,
+        "depth_context_only": True,
         "movement_checks": movement,
         "source_window_refs": list(dataset.window_refs),
     }
@@ -142,7 +143,9 @@ def _pathway_evidence(
     movement = _vbd_movement_summary(dataset)
     draw_share_diagnostics = summary["internal_draw_share_diagnostics"]
     meaningful = (
-        draw_share_diagnostics["movement_exceeds_synthetic_fixture_minimum_draw_share"]
+        draw_share_diagnostics[
+            "movement_exceeds_compiled_synthetic_smoke_minimum_draw_share"
+        ]
         >= COMPILED_MEANINGFUL_DRAW_SHARE_SMOKE_FLOOR
         and summary["credible_interval_80"]["lower"] > 0.0
     )
@@ -172,11 +175,7 @@ def _pathway_evidence(
             if coefficient_summary["beta_breadth"]["posterior_mean"] > 0.0
             else "not_positive"
         ),
-        "posterior_direction_beta_depth": (
-            "positive"
-            if coefficient_summary["beta_depth"]["posterior_mean"] > 0.0
-            else "not_positive"
-        ),
+        "depth_context_only": True,
         "meaningful_primary_outcome_movement_supported": bool(meaningful),
         "approved_lag_respected": diagnostics.lag_sensitivity_check["pass"],
         "quality_guardrail_acceptable": True,
@@ -276,9 +275,10 @@ def emit_longitudinal_proof_artifact(
         ),
         "counterfactual_derivation": {
             "estimand_name": "internal_in_sample_vbd_contrast",
-            "counterfactual_reference": "pre_period_vbd_reference_values",
+            "counterfactual_reference": "pre_period_velocity_breadth_reference_values_depth_context_retained",
             "retains_historical_trend": True,
             "retains_approved_business_controls": True,
+            "retains_depth_as_context": True,
             "uses_future_values": False,
             "sets_predictors_to_zero": False,
             "direction_adjusted": True,

@@ -191,14 +191,13 @@ def generate_longitudinal_dataset(
         demand_index[pre_window_count + lag :] += 1.0
 
     beta_velocity = 0.05
-    beta_breadth = 0.24
-    beta_depth = 0.50
+    beta_breadth = 0.72
     if scenario in {"null_pathway", "fluency_only", "vbd_only"}:
-        beta_velocity = beta_breadth = beta_depth = 0.0
+        beta_velocity = beta_breadth = 0.0
     if scenario == "outcome_only_common_shock":
-        beta_velocity = beta_breadth = beta_depth = 0.0
+        beta_velocity = beta_breadth = 0.0
     if scenario == "wrong_lag":
-        beta_velocity = beta_breadth = beta_depth = 0.0
+        beta_velocity = beta_breadth = 0.0
 
     missing_refs: tuple[str, ...] = ()
     suppressed_refs: tuple[str, ...] = ()
@@ -239,7 +238,6 @@ def generate_longitudinal_dataset(
                 + 0.30 * demand_index[t]
                 + beta_velocity * lagged_velocity[t]
                 + beta_breadth * lagged_breadth[t]
-                + beta_depth * lagged_depth[t]
                 + 0.03 * cohort_fluency_context
                 + serial[t]
             )
@@ -284,7 +282,7 @@ def generate_longitudinal_dataset(
         ground_truth={
             "beta_velocity": beta_velocity,
             "beta_breadth": beta_breadth,
-            "beta_depth": beta_depth,
+            "depth_context_only": True,
             "rho": 0.45,
             "lag_windows": lag,
             "known_meaningful_movement": scenario == "clean_historical_pathway",

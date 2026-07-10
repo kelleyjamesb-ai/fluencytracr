@@ -10,7 +10,7 @@
 - [x] 2.1 Add sibling Python modules for design routing, aggregate types, synthetic generator, longitudinal smoke model, diagnostics, and artifact emission.
 - [x] 2.2 Implement clean and null synthetic historical pathway scenarios.
 - [x] 2.3 Implement negative/HOLD controls for insufficient history, missing/suppressed windows, collinear VBD, unsupported likelihood, target contamination, staggered rollout, baseline-only, missing measurement uncertainty, unsafe business controls, wrong lag, approved-control common-shock sensitivity, temporary spike, real data flags, and respondent data leakage.
-- [x] 2.4 Keep baseline AI Fluency as aggregate context only and Velocity, Breadth, and Depth as separate lagged exposures.
+- [x] 2.4 Keep baseline AI Fluency as aggregate context only, Velocity and Breadth as separate lagged exposures, and Depth as synthetic pathway context only.
 - [x] 2.5 Label the model as synthetic smoke only and leave replicated calibration incomplete.
 
 ## 3. TypeScript Bridge

@@ -15,6 +15,7 @@ import numpy as np
 
 from .design_router import route_evidence_design
 from .longitudinal_types import (
+    COMPILED_SYNTHETIC_SMOKE_MINIMUM_MOVEMENT,
     LONGITUDINAL_FAILING_DIAGNOSTICS,
     MAX_APPROVED_BUSINESS_CONTROLS,
     MIN_POST_WINDOWS,
@@ -65,7 +66,7 @@ class LongitudinalFitResult:
     def movement_summary(self) -> dict:
         draws = self.movement_draws.reshape(-1)
         lower, upper = np.quantile(draws, [0.1, 0.9])
-        mwc = float(self.dataset.hypothesis_plan.minimum_worthwhile_change)
+        smoke_minimum = float(COMPILED_SYNTHETIC_SMOKE_MINIMUM_MOVEMENT)
         return {
             "estimand_name": "internal_in_sample_vbd_contrast",
             "posterior_mean_movement": float(draws.mean()),
@@ -75,11 +76,11 @@ class LongitudinalFitResult:
                 "not_probability_output": True,
                 "not_customer_facing": True,
                 "movement_greater_than_zero_draw_share": float((draws > 0.0).mean()),
-                "movement_exceeds_synthetic_fixture_minimum_draw_share": float(
-                    (draws > mwc).mean()
+                "movement_exceeds_compiled_synthetic_smoke_minimum_draw_share": float(
+                    (draws > smoke_minimum).mean()
                 ),
             },
-            "synthetic_fixture_minimum_worthwhile_change": mwc,
+            "compiled_synthetic_smoke_minimum_movement": smoke_minimum,
         }
 
     def coefficient_summary(self) -> dict:
@@ -144,7 +145,6 @@ def _design_matrix(dataset: LongitudinalSyntheticDataset) -> tuple[np.ndarray, t
         _standardize_from_pre(dataset.time_index.astype(float), post),
         _standardize_from_pre(dataset.velocity_exposure, post),
         _standardize_from_pre(dataset.breadth_exposure, post),
-        _standardize_from_pre(dataset.depth_exposure, post),
         _standardize_from_pre(dataset.baseline_fluency_context, post),
     ]
     names = [
@@ -152,7 +152,6 @@ def _design_matrix(dataset: LongitudinalSyntheticDataset) -> tuple[np.ndarray, t
         "historical_time_trend",
         "beta_velocity",
         "beta_breadth",
-        "beta_depth",
         "beta_fluency_context",
     ]
     for index, control_name in enumerate(dataset.control_names):
@@ -169,7 +168,7 @@ def _counterfactual_matrix(
     cf = x.copy()
     post_rows = dataset.post == 1
     pre_rows = dataset.post == 0
-    for name in ("beta_velocity", "beta_breadth", "beta_depth"):
+    for name in ("beta_velocity", "beta_breadth"):
         index = parameter_names.index(name)
         cf[post_rows, index] = float(x[pre_rows, index].mean())
     return cf
@@ -454,7 +453,6 @@ def fit_longitudinal_model(
         [
             _standardize_from_pre(dataset.velocity_exposure, dataset.post),
             _standardize_from_pre(dataset.breadth_exposure, dataset.post),
-            _standardize_from_pre(dataset.depth_exposure, dataset.post),
         ]
     )
     corr = np.corrcoef(vbd, rowvar=False)
@@ -462,7 +460,7 @@ def fit_longitudinal_model(
     if np.nanmax(np.abs(off_diag)) > 0.995:
         raise LongitudinalHoldViolation(
             "design_matrix_identifiability",
-            "Velocity, Breadth, and Depth are duplicated or nearly collinear",
+            "Velocity and Breadth are duplicated or nearly collinear",
         )
 
     # First pass estimates residual scale and AR(1) posture for diagnostics.
@@ -551,7 +549,8 @@ def compute_longitudinal_diagnostics(
             "rank": fit.design_matrix_rank,
             "parameter_count": len(fit.parameter_names),
             "condition_number": fit.design_matrix_condition_number,
-            "vbd_dimensions_kept_separate": True,
+            "velocity_breadth_terms_kept_separate": True,
+            "depth_context_retained_outside_design_matrix": True,
         },
         residual_autocorrelation_check={
             "pass": "residual_autocorrelation" not in failing_tuple,
@@ -577,7 +576,7 @@ def compute_longitudinal_diagnostics(
         },
         counterfactual_stability_check={
             "pass": "counterfactual_stability" not in failing_tuple,
-            "counterfactual_reference": "pre_period_vbd_reference_values",
+            "counterfactual_reference": "pre_period_velocity_breadth_reference_values_depth_context_retained",
             "smoke_scope": "in_sample_vbd_contrast_not_historical_forecast",
         },
         lag_sensitivity_check={
