@@ -62,6 +62,7 @@
     "test:ai-value-ai-fluency-dashboard-import-runner": "npm run build --workspace shared && node --test scripts/validate_ai_value_ai_fluency_dashboard_import_runner.test.mjs",
     "test:ai-value-ai-fluency-aggregate-export-parser": "npm run build --workspace shared && node --test scripts/validate_ai_value_ai_fluency_aggregate_export_parser.test.mjs",
     "test:ai-value-ai-fluency-instrument-snapshot": "npm run build --workspace shared && node --test scripts/validate_ai_value_ai_fluency_instrument_snapshot.test.mjs",
+    "test:ai-value-formula-registry": "npm run build --workspace shared && node --test scripts/validate_ai_value_formula_registry.test.mjs",
     "test:ai-value-google-sheets-aggregate-export-adapter": "node --test scripts/validate_ai_value_google_sheets_aggregate_export_adapter.test.mjs",
     "test:ai-value-vbd-token-aggregate-intake": "npm run build --workspace shared && node --test scripts/validate_ai_value_vbd_token_aggregate_intake.test.mjs",
     "test:ai-value-vbd-token-operator-source-handoff": "npm run build --workspace shared && node --test scripts/validate_ai_value_vbd_token_operator_source_handoff.test.mjs",

@@ -272,6 +272,26 @@ export type {
 } from "./aiFluencyInstrumentSnapshot";
 
 export {
+  AI_MANAGER_OUTCOME_FORMULA_FAMILIES,
+  AI_VALUE_FORMULA_REGISTRY_ID,
+  AI_VALUE_FORMULA_REGISTRY_SCHEMA_VERSION,
+  FORMULA_REGISTRY_CUSTOMER_DISPLAY_STATES,
+  FORMULA_REGISTRY_IMPLEMENTATION_STATES,
+  FORMULA_REGISTRY_MODEL_LAYERS,
+  validateAiValueFormulaRegistry
+} from "./aiValueFormulaRegistry";
+export type {
+  AiManagerOutcomeFormulaFamily,
+  AiValueFormulaRegistry,
+  AiValueFormulaRegistryEntry,
+  AiValueFormulaRegistryValidationResult,
+  FormulaCustomerDisplayState,
+  FormulaExecutableReference,
+  FormulaImplementationState,
+  FormulaModelLayer
+} from "./aiValueFormulaRegistry";
+
+export {
   AI_VALUE_VBD_TOKEN_AGGREGATE_INTAKE_SCHEMA_VERSION,
   buildVbdTokenAggregateIntake,
   validateVbdTokenAggregateIntake

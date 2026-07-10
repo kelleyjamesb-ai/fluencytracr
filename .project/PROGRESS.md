@@ -2,6 +2,35 @@
 
 ## Current Session
 
+- AI Value formula registry bounded metadata slice (2026-07-10): completed the
+  CODE / BUG / ADVERSARIAL-guided registry slice on
+  `codex/ai-value-formula-registry`. Added the docs-first
+  `fluencytracr_ai_value_formula_registry` contract with an audit table, a
+  machine-readable JSON registry, a JSON schema, and a shared TypeScript
+  metadata validator. The registry catalogs implemented, synthetic-only,
+  specified-only, future-research, deprecated, and prohibited formulas across
+  AI Fluency, VBD, hypothesis outcome modeling, comparison-supported DiD,
+  historical longitudinal modeling, pathway coherence, evidence-design claim
+  caps, economic value translation, portfolio aggregation, and governance
+  gates. It removed the unsafe untracked formula-reference math helper and
+  deliberately does not execute formulas, compute Bayesian/statistical values,
+  calculate ROI/economic value, expose customer-facing confidence/probability
+  output, or add routes, UI, persistence, exports, migrations, live connectors,
+  production schemas, new canonical events, new suppression reasons, tunable
+  thresholds, admin overrides, or a promotion decision. Verification passed:
+  `npm run test:ai-value-formula-registry`, `npm run build --workspace shared`,
+  `npm run build --workspace packages/confidence-engine`, `npx openspec
+  validate add-ai-value-formula-registry --strict`, `bash
+  scripts/ci_docs_contract_sweep.sh`, `node
+  scripts/ci_semantic_drift_guard.mjs`, `python3
+  scripts/ci_v1_governance_gates.py`, and `git diff --check`. OpenSpec tasks
+  `1.1` through `3.4` in `add-ai-value-formula-registry` are now checked
+  complete. Remaining blocker before treating the broader Bayesian/value model
+  family as complete: the registry is only status metadata; it does not solve
+  the still-held full replicated Bayesian sampler evidence, longitudinal
+  calibration, null false-eligibility, lag recovery, common-shock robustness,
+  full AI Fluency measurement-model calibration, VBD trajectory calibration,
+  or any future economic-output promotion decision.
 - AI Fluency snapshot + longitudinal synthetic proof Phase 2B blocker
   hardening (2026-07-10): completed the CODE / BUG / ADVERSARIAL acceptance
   blocker pass for the exact-scope
