@@ -323,9 +323,10 @@ documented value-realization layers:
 - **AI Value contribution alignment internal Bayesian readiness review:**
   consumes the weighted internal model frame and authorizes only a later
   Bayesian model specification contract. It names
-  `bayesian_hierarchical_difference_in_differences_candidate` as the candidate
-  model family but does not define priors, likelihood, estimands, posterior
-  output, confidence/probability output, Bayesian execution, finance output,
+  `bayesian_hierarchical_difference_in_differences_candidate` as the
+  specialized DiD candidate `model_family` field value, not the canonical
+  Bayesian architecture family, and does not define priors, likelihood,
+  estimands, posterior output, confidence/probability output, Bayesian execution, finance output,
   ROI, causality, productivity, persistence, exports, live connectors, UI,
   routes, schemas, or customer-facing output.
 - **AI Value contribution alignment Bayesian model specification:** consumes
@@ -454,7 +455,7 @@ documented value-realization layers:
   productivity, customer-facing output, routes, UI, schemas, persistence,
   exports, and live connectors remain blocked.
 - **Confidence inference methodology contract:** the normative specification
-  for the future statistical engine
+  for the current specialized comparison-supported Bayesian DiD proof module
   (`docs/contracts/confidence-inference-methodology/README.md`): a
   hierarchical Bayesian difference-in-differences estimand over aggregate
   Measurement Cell windows, a Python-owns-statistics /
@@ -472,6 +473,22 @@ documented value-realization layers:
   representations exist as internal-only types with customer output pinned
   false; no probability language is exposed anywhere pending a separate
   recorded human promotion decision.
+- **Bayesian AI Value Realization And Human Transformation model family:**
+  the single canonical Bayesian architecture family
+  (`docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`).
+  It keeps the current DiD path as `comparison_supported_bayesian_did_module`
+  and defines components for aggregate Fluency, VBD, hypothesis outcome,
+  economic-value context, pathway coherence, claim caps, and portfolio review.
+  The first implemented non-DiD component is an isolated synthetic smoke proof
+  for `first_longitudinal_synthetic_model_slice`, with a source-independent
+  aggregate AI Fluency snapshot validator and a separate internal-only
+  TypeScript artifact schema; it is not replicated calibration or production
+  promotion. "Human transformation" means aggregate work-pattern and
+  capability-change context only; it does not authorize HR analytics,
+  individual scoring, employee productivity measurement, manager/team ranking,
+  customer-facing confidence/probability output, ROI proof, finance output,
+  causality claims, persistence, routes, UI, exports, live connector reads, or
+  economic output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns

@@ -19,6 +19,9 @@ and ``PYTHONPATH=inference/src``)::
     python -m fluencytracr_inference --acceptance-plan
     python -m fluencytracr_inference --acceptance-full --replication-count 1
     python -m fluencytracr_inference --acceptance-combine-stdin
+    python -m fluencytracr_inference --longitudinal-scenario clean_historical_pathway
+    python -m fluencytracr_inference --longitudinal-scenario null_pathway
+    python -m fluencytracr_inference --longitudinal-scenario missing_or_suppressed_windows
 
 Modes:
 
@@ -58,6 +61,12 @@ authorization to false, with ``promotion_decision_ref: null``.
 The acceptance-study modes are stdout-only internal sidecar reports. They do
 not write checkpoints, read real data, emit artifact inputs, or authorize
 OpenSpec task completion.
+
+The longitudinal mode emits the separate internal synthetic smoke artifact for
+``first_longitudinal_synthetic_model_slice``. It is not a DiD artifact, not
+replicated calibration, not a production promotion, and authorizes no
+customer-facing confidence/probability, ROI, causality, productivity,
+persistence, route, UI, export, connector, or finance output.
 """
 
 from __future__ import annotations
@@ -95,6 +104,8 @@ from .diagnostics import (
     SamplerDiagnostics,
 )
 from .hashing import sha256_json
+from .longitudinal_artifact import run_longitudinal_proof
+from .longitudinal_synthetic import generate_longitudinal_dataset
 from .model import PRIOR_SENSITIVITY_SCALINGS, FitResult, PriorSpec
 from .synthetic import SyntheticDataset, generate_did_dataset, generate_missing_windows
 from .synthetic_study import run_synthetic_study_inputs
@@ -281,6 +292,21 @@ def _combine_acceptance_reports_from_stdin(*, study_id: str | None = None) -> di
     ).to_report()
 
 
+def _emit_longitudinal_mode(
+    *,
+    scenario: str,
+    seed: int,
+    generated_at: str,
+) -> dict:
+    dataset = generate_longitudinal_dataset(scenario=scenario, seed=seed)
+    artifact, _internal_report = run_longitudinal_proof(
+        dataset,
+        seed=seed,
+        generated_at=generated_at,
+    )
+    return artifact
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m fluencytracr_inference",
@@ -300,6 +326,29 @@ def main(argv: list[str] | None = None) -> int:
             "authorized; hold: a named failing diagnostic; null: valid "
             "internal artifact with no contribution estimate authorized"
         ),
+    )
+    parser.add_argument(
+        "--longitudinal-scenario",
+        choices=(
+            "clean_historical_pathway",
+            "null_pathway",
+            "fluency_only",
+            "vbd_only",
+            "outcome_only_common_shock",
+            "approved_control_common_shock",
+            "wrong_lag",
+            "temporary_spike",
+            "insufficient_history",
+            "missing_or_suppressed_windows",
+            "collinear_vbd",
+            "non_normal_metric_request",
+            "target_contamination",
+            "staggered_rollout_misroute",
+            "baseline_only",
+            "missing_measurement_uncertainty",
+        ),
+        required=False,
+        help="emit a separate internal-only longitudinal synthetic outcome proof artifact",
     )
     parser.add_argument(
         "--full",
@@ -373,7 +422,7 @@ def main(argv: list[str] | None = None) -> int:
     if acceptance_mode_count > 1:
         parser.error("choose at most one acceptance-study mode")
     if acceptance_mode_count:
-        if args.scenario is not None or args.full:
+        if args.scenario is not None or args.full or args.longitudinal_scenario is not None:
             parser.error("acceptance-study modes cannot be combined with artifact mode")
         if args.study_id is not None and not args.acceptance_combine_stdin:
             parser.error("--study-id is only valid with --acceptance-combine-stdin")
@@ -413,6 +462,24 @@ def main(argv: list[str] | None = None) -> int:
                 )
             report = _combine_acceptance_reports_from_stdin(study_id=args.study_id)
         json.dump(report, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+
+    if args.longitudinal_scenario is not None:
+        if args.scenario is not None or args.full:
+            parser.error("--longitudinal-scenario cannot be combined with DiD artifact mode")
+        if args.study_id is not None:
+            parser.error("--study-id is only valid with --acceptance-combine-stdin")
+        if args.replication_count is not None:
+            parser.error("--replication-count is only valid with --acceptance-full")
+        if args.chunk_replication_count is not None:
+            parser.error("--chunk-replication-count is only valid with --acceptance-plan")
+        artifact = _emit_longitudinal_mode(
+            scenario=args.longitudinal_scenario,
+            seed=args.seed,
+            generated_at=args.generated_at,
+        )
+        json.dump(artifact, sys.stdout, indent=2)
         sys.stdout.write("\n")
         return 0
 

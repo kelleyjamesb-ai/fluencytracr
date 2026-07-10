@@ -9,10 +9,20 @@ Schema version:
 ## Purpose
 
 Bayesian Model Specification is the internal-only statistical design contract
-after Internal Bayesian Readiness Review. It defines the candidate model family,
-hierarchy, estimand, metric alignment rules, likelihood/prior placeholders, data
-adequacy requirements, and posterior-output review prerequisites a later
-execution gate may inspect.
+after Internal Bayesian Readiness Review. It defines the specialized DiD
+candidate `model_family` field value, hierarchy, estimand, metric alignment
+rules, likelihood/prior placeholders, data adequacy requirements, and
+posterior-output review prerequisites a later execution gate may inspect.
+
+Architecture positioning note (2026-07-10): the broader Bayesian architecture
+is now
+`bayesian_ai_value_realization_and_human_transformation_model_family` (see
+[`docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`](../bayesian-ai-value-realization-and-human-transformation-model-family/README.md)).
+This older specification remains a non-executing DiD design record and should
+be read as the specialized `comparison_supported_bayesian_did_module`, not as
+universal model-family coverage. Its mention of staggered rollout is a design
+requirement for future adequacy review, not evidence that the current DiD
+implementation supports staggered-rollout event-study inference.
 
 It answers:
 
@@ -76,7 +86,7 @@ The specification version is:
 bayesian_hierarchical_did_spec_2026_06
 ```
 
-The candidate model family is:
+The specialized DiD candidate `model_family` field value is:
 
 ```text
 bayesian_hierarchical_difference_in_differences_candidate
@@ -99,7 +109,7 @@ model_equation_family=hierarchical_difference_in_differences_design_contract
 hierarchy_structure=partial_pooling_candidate_by_expectation_path_workflow_function_and_cohort_context
 unit_of_analysis=aggregate_measurement_cell_window
 treatment_definition=approved_expectation_path_aligned_ai_work_evidence_condition_candidate
-comparison_definition=governed_comparison_condition_or_staggered_rollout_required
+comparison_definition=governed_two_group_comparison_required_for_current_did_module; staggered_rollout_holds_until_event_time_calendar_time_not_yet_treated_logic_is_calibrated
 pre_post_window_definition=exact_baseline_and_comparison_milestone_window_alignment_required
 estimand_definition=aggregate selected metric movement aligned to an approved expectation path, compared across pre/post windows and a governed comparison condition, without causality claims
 metric_direction=metric_owner_approved_direction_required_before_execution
@@ -123,7 +133,8 @@ The specification requires a later execution gate to verify:
 non_suppressed_aggregate_measurement_cell_windows_only=true
 exact_baseline_comparison_window_alignment_required=true
 same_metric_direction_lag_expectation_path_cohort_workflow_function_identity_required=true
-governed_comparison_group_or_staggered_rollout_design_required_before_did_execution=true
+governed_two_group_comparison_required_before_current_did_execution=true
+staggered_rollout_holds_until_event_time_calendar_time_not_yet_treated_logic_is_calibrated=true
 pre_period_trend_plausibility_check_required_before_posterior_review=true
 rolling_30_day_context_allowed_as_milestone_evidence=false
 imputation_rescue_for_suppressed_held_missing_or_stale_windows_allowed=false
@@ -136,6 +147,11 @@ live_connector_reads_allowed=false
 Rolling 30-day context may remain operating context only; it cannot rescue
 missing milestone evidence. Suppressed, held, missing, or stale windows cannot
 be imputed into runtime readiness.
+
+The emitted TypeScript design contract requires a governed two-group
+comparison condition for the current DiD module. Staggered rollout must HOLD
+until an approved future model implements and calibrates true event-time,
+calendar-time, and not-yet-treated comparison logic.
 
 ## Posterior-Output Review Conditions
 

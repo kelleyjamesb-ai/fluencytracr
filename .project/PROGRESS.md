@@ -2,6 +2,153 @@
 
 ## Current Session
 
+- AI Fluency snapshot + longitudinal synthetic proof Phase 2B blocker
+  hardening (2026-07-10): completed the CODE / BUG / ADVERSARIAL acceptance
+  blocker pass for the exact-scope
+  `add-ai-fluency-instrument-snapshot-longitudinal-proof` smoke change. The
+  source-independent aggregate `AIFluencyInstrumentSnapshot` validator now
+  rejects negative aggregate standard errors, unsafe explicit `snapshot_id`
+  values, nested adapter authorization/export/probability/confidence sidecars,
+  unsafe caveat text, HR/personnel/productivity grain values, and hash-like
+  lineage side doors before model context. Missing uncertainty remains visible
+  and non-authorizing rather than forcing respondent export. The longitudinal
+  artifact bridge now uses strict schemas for primary metric, VBD movement,
+  pathway, counterfactual derivation, claim cap, and diagnostic sections; it
+  rejects rehashed diagnostic sidecars, pathway/VBD movement contradictions,
+  forged unsupported routes, oracle generator fields, unsafe controls, source
+  hash drift, and output/probability/confidence/ROI/finance/causality/
+  productivity side doors. The Python direct emitter now calls the synthetic
+  aggregate input guard, and tests cover `real_data_present`,
+  `customer_data_present`, `production_data_present`, and
+  `live_data_source_present` through both the public runner and direct emitter.
+  The old historical-counterfactual wording was replaced with the literal
+  `internal_in_sample_vbd_contrast`; the common-shock negative control is
+  documented as approved-control common-shock sensitivity. No real/customer/
+  live data path, backend/prisma route, UI, persistence, export, connector,
+  customer-facing confidence/probability, ROI, causality, productivity,
+  finance output, new canonical event, new suppression reason, tunable
+  threshold, or promotion decision was added. Verified after hardening:
+  focused longitudinal Python tests (`36 passed`), full inference suite
+  (`268 passed`), AI Fluency snapshot tests (`11 passed`),
+  confidence-engine full suite (`320 passed`), `npm run build --workspace
+  shared`, `npm run build --workspace packages/confidence-engine`,
+  `npx openspec validate add-ai-fluency-instrument-snapshot-longitudinal-proof
+  --strict`, `npx openspec validate
+  generalize-bayesian-confidence-to-model-family --strict`,
+  `npx openspec validate add-bayesian-inference-proof-harness --strict`,
+  `bash scripts/ci_docs_contract_sweep.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/ci_semantic_drift_guard.mjs`, `git diff --check`, and
+  `git diff --check origin/main`. OpenSpec verification tasks `4.4` through
+  `4.7` remain safe to treat as complete for this smoke change. Future tasks
+  `5.1` through `5.8` remain unchecked. The existing DiD OpenSpec tasks
+  `3.3`, `3.4`, `4.2`, and `5.1` remain incomplete. Remaining blocker before
+  calling the Bayesian proof complete: full NUTS longitudinal sampler
+  hardening plus replicated interval coverage, longitudinal null
+  false-eligibility, lag recovery, common-shock robustness, model-selection
+  validation, AI Fluency measurement-model calibration, VBD trajectory
+  calibration, and separate persistence/UI promotion decisions.
+- Bayesian model-family Phase 2A longitudinal slice specification
+  (2026-07-10): selected and specified
+  `first_longitudinal_synthetic_model_slice` as the first non-DiD
+  longitudinal candidate for a later approved synthetic-only Phase 2B proposal.
+  The docs-only contract now defines the conceptual longitudinal normal
+  aggregate equation, required aggregate synthetic inputs, internal
+  validation/review estimands, HOLD behavior, and future synthetic validation
+  scenarios for clean pathway, VBD-only, Fluency-only, unrelated shock,
+  common-shock, wrong-lag, placebo date, missing/suppressed windows, weak
+  historical baseline, current-DiD routing, staggered-rollout HOLD, and
+  financial double-counting HOLD. No Python runtime model code, TypeScript
+  schema, artifact schema, route, UI, persistence, export, migration,
+  connector read, real/customer/live data authorization, customer-facing
+  confidence/probability output, ROI, causality, productivity, finance output,
+  economic output, new suppression reason, tunable threshold, admin override,
+  or promotion decision was added. Existing DiD remains
+  `comparison_supported_bayesian_did_module`, synthetic-only/internal-only,
+  valid only for two-group pre/post comparison-supported designs; staggered
+  rollout remains unsupported. Existing DiD proof tasks `3.3`, `3.4`, `4.2`,
+  and `5.1` remain incomplete. OpenSpec task `2.1` in
+  `generalize-bayesian-confidence-to-model-family` is now checked complete as
+  Phase 2A specification only; Phase 2B implementation and Phase 3 replicated
+  validation remain unchecked. Next recommended slice: Phase 2B should create
+  an isolated synthetic-only prototype scaffold and smoke runner for this
+  exact slice, with fail-closed input validation first and no full calibration
+  claim until replicated validation is separately run and reviewed.
+- Bayesian model-family canonical naming alignment (2026-07-10): selected
+  `bayesian_ai_value_realization_and_human_transformation_model_family` as the
+  single canonical architecture name and removed the shorter
+  behavioral-evidence family name from tracked docs/OpenSpec references. The
+  contract and OpenSpec spec now state that "human transformation" means
+  aggregate work-pattern and capability-change context only and does not
+  authorize HR analytics, individual scoring, employee productivity
+  measurement, manager/team ranking, person-level fields, runtime execution,
+  production schemas, customer-facing confidence/probability output, ROI
+  proof, finance output, causality claims, or economic output. Root `README.md`
+  now points to the canonical family and labels current DiD naming as the
+  specialized proof-artifact `model_family` value, not a second canonical
+  family.
+- Bayesian model-family Phase 1 contract/routing vocabulary (2026-07-10):
+  expanded the docs-only
+  `bayesian_ai_value_realization_and_human_transformation_model_family` contract with
+  Phase 1 module-status semantics, evidence-design router vocabulary,
+  Hypothesis Measurement Plan field shape/semantics, pathway coherence review,
+  and evidence-design claim-cap rules. The current DiD module remains
+  `comparison_supported_bayesian_did_module`, valid only for two-group
+  pre/post comparison-supported designs with every DiD gate passing; staggered
+  rollout HOLDS until future event-time, calendar-time, adoption-time, and
+  not-yet-treated logic is implemented and calibrated. No runtime model code,
+  TypeScript production schema, artifact schema, route, UI, persistence,
+  export, migration, connector path, real/customer/live data authorization,
+  customer-facing confidence/probability output, ROI, causality, productivity,
+  or economic output was added. OpenSpec Phase 1 tasks `1.1` through `1.4` in
+  `generalize-bayesian-confidence-to-model-family` are now checked complete;
+  Phase 2 and Phase 3 remain unchecked, and existing DiD proof tasks `3.3`,
+  `3.4`, `4.2`, and `5.1` remain incomplete. Verified:
+  `npx openspec validate generalize-bayesian-confidence-to-model-family
+  --strict`, `npx openspec validate add-bayesian-inference-proof-harness
+  --strict`, `./scripts/ci_docs_contract_sweep.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/ci_semantic_drift_guard.mjs`, and `git diff --check`.
+  Recommended next slice: Phase 2B should start with an isolated
+  synthetic-only prototype scaffold for the specified longitudinal slice, not
+  with real/customer data, customer-facing output, or calibration claims.
+- Bayesian model-family decision review hardening (2026-07-10): completed
+  CODE / BUG / ADVERSARIAL review of the Phase 0 decision record and tightened
+  docs-only boundaries before commit. Owner refs in the Hypothesis Measurement
+  Plan are now explicitly non-personal governance refs only; legacy
+  staggered-rollout wording in the DiD specification and comparison-design
+  intake packet now HOLDS for the current DiD module until future event-time,
+  calendar-time, and not-yet-treated logic is implemented and calibrated.
+  Blueprint target values, minimum worthwhile change, OKRs, sponsor goals, and
+  desired outcomes are planning context only and cannot set priors,
+  likelihood anchors, calibration targets, posterior eligibility thresholds, or
+  other statistical quantities. Verified:
+  `npx openspec validate generalize-bayesian-confidence-to-model-family
+  --strict`, `npx openspec validate add-bayesian-inference-proof-harness
+  --strict`, `./scripts/ci_docs_contract_sweep.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/ci_semantic_drift_guard.mjs`, and `git diff --check`.
+- Bayesian AI Value Realization And Human Transformation model-family decision
+  (2026-07-10):
+  audited the current Bayesian DiD proof harness and confidence boundary across
+  `inference/`, `packages/confidence-engine/src/`, the inference methodology
+  contracts, AI Value measurement concepts, the existing
+  `add-bayesian-inference-proof-harness` OpenSpec change, and this progress
+  file. Recorded the docs-only decision that the broader architecture is
+  `bayesian_ai_value_realization_and_human_transformation_model_family`, while the current
+  PyMC implementation remains valid only as
+  `comparison_supported_bayesian_did_module` for two-group pre/post
+  comparison-supported hypotheses. Added the evidence-design vocabulary,
+  Hypothesis Measurement Plan outline, and explicit HOLD behavior for
+  staggered rollout, historical state-space, repeated pre/post, and baseline
+  only designs that the current DiD implementation does not support. No runtime
+  model code, artifact schemas, TypeScript production schemas, routes, UI,
+  persistence, exports, migrations, live connector reads, customer-facing
+  confidence/probability output, ROI proof, causality claim, productivity
+  measurement, or finance output was added. Existing Bayesian DiD proof tasks
+  remain incomplete: OpenSpec tasks `3.3`, `3.4`, `4.2`, and `5.1` were not
+  marked complete because this architecture decision does not generate or
+  validate the missing full sampler-artifact evidence.
 - Bayesian DiD Phase B2 sampler rerun no-go after sidecar repair (2026-07-09):
   retried the full-settings sampler-artifact path on branch
   `codex/bayesian-did-calibration-null-study` using base seed `202607230`.
@@ -2646,7 +2793,7 @@
 - AI Value Confidence-Engine wrapper cutover (2026-07-03): converted all 16 spine `scripts/run_ai_value_contribution_alignment_*.mjs` runners into thin wrappers over `packages/confidence-engine/dist` (task 4.1), each preserving its named module exports exactly (export-name parity verified programmatically per module, including the governed source's five-export set with the packet-side projection) and its CLI byte-verbatim (stdin `-` handling, multi-positional args, the runtime `--source-envelope` variant, and the orchestrator's `parseOptionalCliPaths` explicit-path flags). Root `package.json` rewired in the same cutover: the 16 spine test entries repointed at the migrated workspace suites, and all 52 script entries in the transitive spine-importer closure (16 spine pipelines plus 19 downstream consumers such as the confidence series read-path decision, durable series decision, persistence promotion gate, measurement journey state model, and connector promotion readiness sequence) now build `packages/confidence-engine` after `shared`. Verification: per-module golden CLI smoke byte-matches through the wrappers (goldens 01–17 including the envelope variant), full golden chain regeneration via generate.sh through the wrappers is a byte-identical no-op, and the full workspace suite is 238/238. Wrapper transcription was fanned out to two parallel subagents; integration, package.json rewiring, and verification ran in the orchestrating session.
 - AI Value Confidence-Engine Workspace verification and governance close-out (2026-07-03): completed tasks 4.3, 5.1, and 5.2 of the approved change `add-confidence-engine-workspace`. Full-suite verification through the cutover: workspace suite 238/238 (16 golden parity suites, 16 migrated validation suites, hashing vectors, 27 ConfidenceModel contract tests), wrapped-CLI golden regeneration byte-identical no-op, docs contract sweep, V1 governance gates, and semantic drift guard all pass, the Bayesian hardening orchestrator read-only run reproduces golden 17 with no `promotion_authorized`/posterior/confidence/customer authorization true anywhere in the report, and the confidence-engine series read-path decision suite runs 12/12 through the wrappers. Added `docs/contracts/confidence-engine-workspace/README.md` (byte-compatibility contract, blocked-output ledger, layout, reviewer verification commands, change history) and the README capability-ledger bullet; `generate.sh` now also builds the confidence-engine workspace so wrapper-backed regeneration works from a fresh checkout; `npx openspec validate add-confidence-engine-workspace --strict` passes; all tasks in the change are checked. Workstream B is complete pending PR review.
 - AI Value Bayesian Inference Proof Harness proposal slice (2026-07-03): scaffolded OpenSpec change `add-bayesian-inference-proof-harness` (proposal, design, tasks, `confidence-inference-methodology` spec delta with 8 requirements / 23 fail-closed scenarios) proposing the methodology-first path to a real statistical engine: an inference methodology contract (slice 1) defining the hierarchical Bayesian DiD estimand, the Python-owns-statistics/TypeScript-owns-governance boundary, seven computed diagnostics with numeric gates (R-hat, ESS, PPC, prior sensitivity, pre-trend, calibration coverage), the verbatim comparison-cohort rule (no cohort, no causal number — evidence-tier label only), milestone peeking control aligned to the internal A/B playbook, empirically justified weakly-informative priors, k>=5/k>=10 aggregate floors, and Value-Playbook-aligned claim language; then a pinned PyMC/ArviZ synthetic-first proof harness (slice 2, separate PR) that must recover injected effects within a 74–86% calibration band across >=200 seeded replications with <=5% null false-eligibility before any real-observation work may be proposed. Probability representations (threshold probability, expected loss) enter ConfidenceModel as internal-only types with customer output pinned false pending a separate human promotion decision. Grounded in plan-prep enterprise research (2026-07-03): Glean time-saved methodology gaps (64% silent sessions at 30% credit), the Value Playbook anti-overclaim standard, the internal A/B testing playbook, Applied Science's FY27Q2 reusable-causal-inference objective, zero internal PyMC/Stan precedent, and the named review path (Paul Li, Karthik Rajkumar, Onder Polat; Value Realization Pod; ROIbot/Agent ROI interfaces). Authoring fanned out to three parallel subagents; harmonization and validation in the orchestrating session. Stage 1 only, awaiting human approval (decision owner: James Kelley). Verification: `npx openspec validate add-bayesian-inference-proof-harness --strict` passed.
-- AI Value Confidence Inference Methodology slice 1 (2026-07-03): implemented slice 1 of the approved change `add-bayesian-inference-proof-harness` (approval recorded: James Kelley, 2026-07-03). Added `docs/contracts/confidence-inference-methodology/README.md` — the normative methodology contract for the future statistical engine: hierarchical Bayesian DiD estimand per the existing `bayesian_model_specification` family, Python-owns-statistics/TypeScript-owns-governance boundary, the diagnostics table with hard numeric gates (R-hat <=1.01 target / fail >1.05, bulk-ESS >=400, PPC p in [0.05,0.95], prior-sensitivity shift <0.5 SD, pre-trend 80% CI includes 0, calibration 74–86% coverage over >=200 seeded replications, <=5% null false-eligibility; any failure holds the artifact naming the failing diagnostic), the verbatim comparison-cohort rule, A/B-playbook-aligned milestone peeking control, prior policy, k>=5/k>=10 floors, the Value-Playbook-aligned claim-language table capping every tier internal-only pending a promotion decision, and the PENDING expert-review record (Paul Li, Karthik Rajkumar, Onder Polat, Value Realization Pod, Justin Swadling). Extended ConfidenceModel additively with internal-only `ThresholdProbabilityRepresentationSchema` and `ExpectedLossRepresentationSchema` (customer output pinned false, `promotion_decision_ref` null until a separate human decision); contract tests 27 → 39. Contract authoring and schema extension fanned out to parallel subagents; verification in the orchestrating session. Verification: workspace suite 250/250, `openspec validate --strict`, docs contract sweep, V1 governance gates, semantic drift guard all pass; spine and goldens untouched. Next: task 1.2 expert review circulation (human step), then slice 2 (Python proof harness, separate PR).
+- AI Value Confidence Inference Methodology slice 1 (2026-07-03): implemented slice 1 of the approved change `add-bayesian-inference-proof-harness` (approval recorded: James Kelley, 2026-07-03). Added `docs/contracts/confidence-inference-methodology/README.md` — the normative methodology contract for the specialized Bayesian DiD proof path: hierarchical Bayesian DiD estimand per the existing `bayesian_model_specification` family, Python-owns-statistics/TypeScript-owns-governance boundary, the diagnostics table with hard numeric gates (R-hat <=1.01 target / fail >1.05, bulk-ESS >=400, PPC p in [0.05,0.95], prior-sensitivity shift <0.5 SD, pre-trend 80% CI includes 0, calibration 74–86% coverage over >=200 seeded replications, <=5% null false-eligibility; any failure holds the artifact naming the failing diagnostic), the verbatim comparison-cohort rule, A/B-playbook-aligned milestone peeking control, prior policy, k>=5/k>=10 floors, the Value-Playbook-aligned claim-language table capping every tier internal-only pending a promotion decision, and the PENDING expert-review record (Paul Li, Karthik Rajkumar, Onder Polat, Value Realization Pod, Justin Swadling). Extended ConfidenceModel additively with internal-only `ThresholdProbabilityRepresentationSchema` and `ExpectedLossRepresentationSchema` (customer output pinned false, `promotion_decision_ref` null until a separate human decision); contract tests 27 → 39. Contract authoring and schema extension fanned out to parallel subagents; verification in the orchestrating session. Verification: workspace suite 250/250, `openspec validate --strict`, docs contract sweep, V1 governance gates, semantic drift guard all pass; spine and goldens untouched. Next: task 1.2 expert review circulation (human step), then slice 2 (Python proof harness, separate PR).
 - Confidence inference methodology reviewer correction (2026-07-03): the decision owner confirmed that the individuals surfaced by the plan-prep enterprise research (Paul Li, Karthik Rajkumar, Onder Polat, the Value Realization Pod, Justin Swadling) are no longer part of the project. The contract's expert review record, tasks.md task 1.2, the proposal's review-audience section, and the design stakeholder/risk sections were reworked to role-based review (statistical methodology, value governance, downstream tooling interface), each UNASSIGNED until the decision owner names a reviewer or explicitly waives the role. Historical document citations (source authorship of the time-saved methodology and FY27Q2 roadmap docs) are unchanged. Verification: `openspec validate --strict` and docs contract sweep pass; pushed to PR #392.
 - Confidence inference methodology review round (2026-07-03): addressed nine review findings on PR #392 (three Codex PR threads plus six findings raised in session review). Schema tightening in `confidenceModel.ts`: `decision_threshold_epsilon` and the minimum worthwhile threshold pinned to compiled constants (`EXPECTED_LOSS_DECISION_THRESHOLD_EPSILON = 0.01`, `MINIMUM_WORTHWHILE_EFFECT_THRESHOLD = 0.2` standardized SD, provisional pending expert review, never runtime-tunable), both representations hash-bound to their source posterior (`source_posterior_artifact_hash` + parameter-name consistency refinement), and `probability/confidence/finance_output_authorized` pinned false for consistency with the posterior schema. Document fixes across the contract, proposal, design, tasks, spec delta, and README ledger: "causal number" replaced with "comparison-supported contribution estimate" (causal language remains gated by the claim ladder), the slice-2 cohort grid split into floor-rejection (k=4), internal-only-path (k=8), and calibration-eligible (k=12/16) tests so the acceptance criteria are no longer self-contradictory, MCMC determinism restated as seeded-within-locked-environment plus tolerance-banded cross-environment summaries, the R-hat gate resolved to a single fail-closed rule (<=1.01 or HOLD naming R-hat; the ambiguous 1.05 tier removed), and the milestone peeking rule stated normatively in-repo (always-valid sequential procedure bounded by the <=5% null false-eligibility gate) with the Confluence playbook as provenance only. Fixes fanned out to three subagents (one connection-failure relaunch); verification in the orchestrating session: workspace suite 260/260, `openspec validate --strict`, docs sweep pass.
 - ConfidenceModel post-merge review fixes (2026-07-04, branch claude/confidence-model-postmerge-fixes-01): addressed three post-merge Codex findings on PR #391's ConfidenceModel. (1) Series-sourced evidence admission is now bound to the read-path floor: new exported `CONFIDENCE_SERIES_READ_PATH_COHORT_FLOOR = 10` (matching `minimum_cohort_size` in the series read-path decision contract) enforced in `EvidenceAdmittedSchema` alongside the existing declared-floor cross-validation, closing the cohorts-5-to-9 admission gap; `CONFIDENCE_MODEL_MINIMUM_COHORT_FLOOR = 5` remains the general aggregate convention. (2) `CompactObservationSourceRefSchema.source_snapshot_hash` tightened from any nonempty string to the 64-hex `Sha256HexSchema`, closing a payload-smuggling side door (email-like and non-hex strings now reject); no other hash-shaped fields needed tightening. (3) Standalone wrapper CLI restored: `packages/confidence-engine/package.json` gains `"prepare": "tsc -p tsconfig.json"` so root `npm ci`/`npm install` builds `dist/` (verified: ERR_MODULE_NOT_FOUND before, usage message after; prepare fires on root install; typescript resolves via hoisting, no new dependency), with the workspace contract README documenting the behavior. Contract tests 49 → 54, per-agent builds clean. Full-suite verification and PR handled in the follow-up session.
@@ -2655,3 +2802,4 @@
 - PR #396 conflict resolution (2026-07-05, branch claude/confidence-model-postmerge-fixes-01): merged latest `origin/main` after PR #395 landed the stronger inference-proof hardening implementation. Resolved code/test/docs conflicts toward mainline `InferenceProofArtifactSchema`, `inferenceProofArtifactHash`, and ConfidenceModel contract tests, preserving only the still-useful OpenSpec scenario coverage for artifact self-hash recomputation, explicit Measurement Cell window evidence, derived calibration standard error, and full always-valid repeated-look proof binding. No statistical engine, real/customer/live data, persistence, UI/routes, export, customer-facing confidence/probability, ROI, causality, productivity, or promotion decision was authorized. Verification: `npx openspec validate add-bayesian-inference-proof-harness --strict`, `npm run build --workspace packages/confidence-engine && node --test packages/confidence-engine/test/confidence_model_contract.test.mjs` 76/76, full `npm test --workspace packages/confidence-engine` 287/287, docs contract sweep, V1 governance gates, and `git diff --check`.
 - PR #396 inference-proof review hardening (2026-07-05, branch claude/confidence-model-postmerge-fixes-01): triaged the five supplied Codex review findings against current PR head rather than the older commit snapshot. Undocumented-prior HOLD behavior was already fixed; peeking/window binding already compared required milestones to peeking control and is now further hardened so each milestone evidence bucket carries one compact window ref per milestone day. Fixed the necessary sampler gaps by requiring diagnostics for the selected-metric movement estimand through the artifact HOLD path (`sampler_diagnostic`) and gating eligibility on `max_treedepth_saturation_rate === 0` as well as the warning flag. Re-signed semantic negative tests after mutation so stale `artifact_self_hash` no longer masks the intended guard, while preserving explicit forged/stale self-hash tests. No statistical engine, real/customer/live data, persistence, UI/routes, export, customer-facing confidence/probability, ROI, causality, productivity, new suppression reason, tunable threshold, or promotion decision was authorized. Verification: `npm run build --workspace packages/confidence-engine && node --test packages/confidence-engine/test/confidence_model_contract.test.mjs` 77/77, full `npm test --workspace packages/confidence-engine` 288/288, `npx openspec validate add-bayesian-inference-proof-harness --strict`, docs contract sweep, V1 governance gates, and `git diff --check`.
 - PR #399 inference proof harness review repair (2026-07-06, branch claude/inference-proof-harness-01): addressed the necessary Codex review blockers on the synthetic-only PyMC/ArviZ proof harness. The Python emitter now rejects marked real/customer/production/live datasets instead of masking flags, binds emitted artifacts to the fit's synthetic input hash, and fails closed when calibration/null study inputs are omitted; the full CLI path no longer injects fixture study inputs, so clean full runs HOLD until real study results are supplied. Synthetic input hashes now include gate-driving provenance (window evidence, comparison rubric/presence, declared floor, metric/cohort family, labels, and synthetic-only flags). Diagnostics now handle ArviZ BFMI arrays directly, derive max-treedepth saturation from `tree_depth` when the backend flag is absent, treat non-finite diagnostics as failing gates, sanitize non-finite serialized values into schema-valid HOLD artifacts, and convert insufficient pre-period checks into a `pre_trend` HOLD. The TypeScript proof boundary now accepts truthful fixed-horizon repeated-evaluation HOLD artifacts only when they name `peeking_control`, and rejects fixed-horizon evidence that carries observed/sidecar windows outside the planned look. CI now wakes the inference harness for confidence-engine bridge/source/fixture changes and runs the Python-to-TypeScript bridge after creating the pinned venv. No real data, persistence, UI/routes, exports, customer-facing confidence/probability, ROI, causality, productivity, new suppression reason, tunable threshold, or promotion decision was authorized. Verification: `python3.13 -m compileall inference/src/fluencytracr_inference`, `npm run build --workspace packages/confidence-engine && node --test packages/confidence-engine/test/confidence_model_contract.test.mjs packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs` (83 pass / 3 skipped local live-subprocess tests because `inference/.venv` is absent), and `git diff --check`. Local pinned Python test execution was blocked because installing `inference/requirements.lock` on this Mac requires `cmake` to build `llvmlite`; CI installs the pinned venv before running the harness.
+- PR #403 longitudinal model-family blocker repair (2026-07-10, branch codex/bayesian-model-family-decision-record): aligned the synthetic longitudinal smoke proof with the reviewed model-family boundary by removing Depth from the fitted design matrix and synthetic outcome equation, retaining Depth only as aggregate pathway context, renaming the internal contrast to `internal_in_sample_vbd_contrast`, binding the movement floor to a compiled synthetic-smoke constant instead of per-plan threshold context, and tightening Python/TypeScript artifact fields so stale Velocity/Breadth/Depth coefficient language no longer validates. No real/customer/live data, persistence, UI/routes, exports, customer-facing confidence/probability, ROI, causality, productivity, new suppression reason, tunable threshold, or promotion decision was authorized. Verification: `PYTHONPATH=src .venv/bin/python -m pytest tests/test_longitudinal_synthetic.py tests/test_longitudinal_hold_paths.py tests/test_longitudinal_artifact_shape.py -q` (36 passed), `npm run build --workspace packages/confidence-engine`, `npm run build --workspace shared`, `node --test packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs` (15 passed), `npm run test:ai-value-ai-fluency-instrument-snapshot` (11 passed), `npx openspec validate generalize-bayesian-confidence-to-model-family --strict`, `npx openspec validate add-ai-fluency-instrument-snapshot-longitudinal-proof --strict`, `npx openspec validate add-bayesian-inference-proof-harness --strict`, `git diff --check`, and `git diff --check origin/main`.

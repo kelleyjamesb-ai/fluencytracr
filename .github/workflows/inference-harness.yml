@@ -12,9 +12,17 @@ on:
       - "inference/**"
       - "packages/confidence-engine/src/**"
       - "packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs"
+      - "packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs"
       - "packages/confidence-engine/test/fixtures/inference_proof_artifact_*.json"
+      - "shared/src/aiValueEngine/aiFluencyInstrumentSnapshot.ts"
+      - "shared/src/aiValueEngine/index.ts"
+      - "scripts/validate_ai_value_ai_fluency_instrument_snapshot.test.mjs"
       - "docs/contracts/confidence-inference-methodology/**"
+      - "docs/contracts/ai-value-ai-fluency-instrument-snapshot/**"
+      - "docs/contracts/ai-value-longitudinal-synthetic-outcome-proof/**"
+      - "docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/**"
       - "openspec/changes/add-bayesian-inference-proof-harness/**"
+      - "openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/inference-harness.yml"
@@ -23,9 +31,17 @@ on:
       - "inference/**"
       - "packages/confidence-engine/src/**"
       - "packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs"
+      - "packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs"
       - "packages/confidence-engine/test/fixtures/inference_proof_artifact_*.json"
+      - "shared/src/aiValueEngine/aiFluencyInstrumentSnapshot.ts"
+      - "shared/src/aiValueEngine/index.ts"
+      - "scripts/validate_ai_value_ai_fluency_instrument_snapshot.test.mjs"
       - "docs/contracts/confidence-inference-methodology/**"
+      - "docs/contracts/ai-value-ai-fluency-instrument-snapshot/**"
+      - "docs/contracts/ai-value-longitudinal-synthetic-outcome-proof/**"
+      - "docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/**"
       - "openspec/changes/add-bayesian-inference-proof-harness/**"
+      - "openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/inference-harness.yml"
@@ -55,7 +71,11 @@ jobs:
         run: npm ci
       - name: Run inference harness suite
         run: PYTHONPATH=inference/src inference/.venv/bin/python -m pytest inference/tests/ -q
+      - name: Run AI Fluency snapshot boundary test
+        run: npm run test:ai-value-ai-fluency-instrument-snapshot
       - name: Run Python to TypeScript inference bridge
         run: |
           npm run build --workspace packages/confidence-engine
-          node --test packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs
+          node --test \
+            packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs \
+            packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs

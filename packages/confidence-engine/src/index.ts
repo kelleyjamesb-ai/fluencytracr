@@ -13,6 +13,20 @@ export {
 } from "./inferenceProofArtifactHash";
 
 export {
+  LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_SCHEMA_VERSION,
+  LONGITUDINAL_MODEL_FAMILY,
+  LONGITUDINAL_MODEL_SLICE,
+  LongitudinalFailingDiagnosticSchema,
+  LongitudinalSyntheticOutcomeProofArtifactSchema,
+  longitudinalSyntheticOutcomeProofSelfHash,
+  longitudinalSyntheticOutcomeProofSelfHashBody
+} from "./longitudinalSyntheticOutcomeProof";
+export type {
+  LongitudinalFailingDiagnostic,
+  LongitudinalSyntheticOutcomeProofArtifact
+} from "./longitudinalSyntheticOutcomeProof";
+
+export {
   CONTRIBUTION_ALIGNMENT_FEATURE_STABILITY_REVIEW_SCHEMA_VERSION,
   CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_SCHEMA_VERSION,
   buildContributionAlignmentFeatureStabilityReviewFromObject,

@@ -263,6 +263,15 @@ export type {
 } from "./aiFluencyOperatorSourceHandoff";
 
 export {
+  AI_VALUE_AI_FLUENCY_INSTRUMENT_SNAPSHOT_SCHEMA_VERSION,
+  buildAIFluencyInstrumentSnapshotFromObject,
+  validateAIFluencyInstrumentSnapshot
+} from "./aiFluencyInstrumentSnapshot";
+export type {
+  AIFluencyInstrumentSnapshotValidationResult
+} from "./aiFluencyInstrumentSnapshot";
+
+export {
   AI_VALUE_VBD_TOKEN_AGGREGATE_INTAKE_SCHEMA_VERSION,
   buildVbdTokenAggregateIntake,
   validateVbdTokenAggregateIntake

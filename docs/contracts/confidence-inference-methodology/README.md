@@ -14,6 +14,16 @@ placeholder Normal-Normal runtime stays byte-stable in its held state
 (`INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW`) as a
 governed decision record.
 
+Architecture positioning note (2026-07-10): the broader Bayesian architecture
+is now recorded as
+`bayesian_ai_value_realization_and_human_transformation_model_family` in
+[`docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`](../bayesian-ai-value-realization-and-human-transformation-model-family/README.md).
+This DiD methodology remains valid as
+`comparison_supported_bayesian_did_module` only when the evidence design and
+comparison adequacy gates support a two-group pre/post comparison. It does not
+authorize staggered rollout, historical state-space, repeated pre/post, or
+baseline-only contribution-confidence designs.
+
 - Spec: `openspec/changes/add-bayesian-inference-proof-harness/specs/confidence-inference-methodology/spec.md`
 - Contract module: `packages/confidence-engine/src/confidenceModel.ts`
   (`FT_AI_VALUE_CONFIDENCE_MODEL_CONTRACT_2026_07`)
@@ -31,10 +41,11 @@ persons. The governing specification is the existing
 `bayesian_model_specification` schema family
 (`FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_2026_06`,
 specification version `bayesian_hierarchical_did_spec_2026_06`), which
-already names the model family
+already names the current DiD proof-artifact `model_family` value
 (`bayesian_hierarchical_difference_in_differences_candidate`) and the pooling
-structure; this contract binds the methodology to that specification rather
-than restating it. Partial pooling stabilizes small-cohort estimates without
+structure. That field value is not the canonical Bayesian architecture family;
+this contract binds the methodology to that specification rather than
+restating it. Partial pooling stabilizes small-cohort estimates without
 discarding them, matching the aggregate-only posture. Flat per-cohort models
 and synthetic-control methods were considered and rejected/deferred in the
 change's design record.
@@ -261,6 +272,12 @@ lacking documented empirical justification also hold. The spine's `N(0,1)`
 placeholder (state `weakly_regularizing_internal_placeholder_not_calibrated`)
 is retired only inside the harness; the spine itself stays byte-stable as a
 governed decision record.
+
+Blueprint target values, minimum worthwhile change, OKRs, sponsor goals, and
+desired business outcomes are planning context only. They must not set prior
+means, prior scales, likelihood anchors, calibration targets, posterior
+eligibility thresholds, or any other statistical quantity that would turn an
+aspiration into evidence.
 
 ## Aggregate floors
 
