@@ -129,7 +129,7 @@ treated as model-family defaults:
   two-group DiD implementation without a separate event-study or longitudinal
   model.
 
-## Model-Family Decision
+## Phase 1 Contract: Model Family And Module Status
 
 The governed architecture is:
 
@@ -137,79 +137,94 @@ The governed architecture is:
 bayesian_ai_value_and_behavioral_evidence_model_family
 ```
 
-This is an architecture family, not a set of implemented runtime modules. It
-may later contain these conceptual components:
+This contract defines architecture and routing semantics only. It does not
+create runtime routing code, production schemas, artifact schemas, endpoints,
+UI, persistence, exports, migrations, connector reads, or customer-facing
+outputs.
 
-| Component | Role | Runtime status |
-| --- | --- | --- |
-| `bayesian_fluency_measurement_model` | Models aggregate AI Fluency movement and measurement uncertainty. | Not implemented. |
-| `bayesian_vbd_behavioral_trajectory_model` | Models Velocity, Breadth, and Depth movement over time at approved aggregate cells. | Not implemented. |
-| `bayesian_hypothesis_outcome_model` | Models customer-owned primary metric movement for approved hypotheses. | Not implemented. |
-| `bayesian_economic_value_model` | Reviews finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | Not implemented. |
-| `posterior_pathway_coherence_review` | Reviews whether fluency, behavior, outcome, and finance assumptions tell a coherent bounded story. | Not implemented. |
-| `evidence_design_claim_cap` | Caps model interpretation by evidence design strength and governance clearance. | Not implemented. |
-| `enterprise_hypothesis_portfolio` | Tracks multiple approved hypotheses without blending them into one arbitrary enterprise index. | Not implemented. |
+| Module or component | Contract role | Implemented today | Current contract eligibility |
+| --- | --- | --- | --- |
+| `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
+| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | No. | Documentation-only future module. |
+| `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
+| `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
+| `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
+| `posterior_pathway_coherence_review` | Future internal review of whether predeclared fluency, behavior, and outcome evidence is directionally coherent. | No. | Documentation-only review concept; not a customer-facing probability, confidence, ROI, causality, or productivity output. |
+| `evidence_design_claim_cap` | Future claim-cap review applied after estimation and before interpretation. | No. | Documentation-only governance concept; unsupported designs HOLD. |
+| `enterprise_hypothesis_portfolio` | Future internal portfolio view of multiple approved hypotheses without blending them into one arbitrary enterprise index. | No. | Documentation-only portfolio concept. |
 
-The current implemented module is:
+The current DiD module remains valid only for two-group pre/post
+comparison-supported designs. It does not support staggered rollout and does
+not authorize real/customer/live data or customer-facing confidence,
+probability, ROI, causality, productivity, or economic output.
 
-```text
-comparison_supported_bayesian_did_module
-```
+## Evidence-Design Router Vocabulary
 
-It may be used only when the evidence design and comparison adequacy gates
-support a two-group pre/post comparison. It must not be used to claim support
-for staggered rollout.
+The model family uses this additive router vocabulary. This is a contract for
+future routing behavior, not an implemented router.
 
-## Evidence-Design Vocabulary
+| Evidence design | Contract support status | Current contract-eligible module | Required gates before eligibility | Claim cap | Unsupported / HOLD behavior |
+| --- | --- | --- | --- | --- | --- |
+| `CONTROLLED_TEST` | Future contract route only unless the data reduce to a valid two-group pre/post contrast. | No standalone current controlled-test module. Contract-eligible for `comparison_supported_bayesian_did_module` only if the approved design is also a valid two-group pre/post comparison and every DiD gate passes. | Approved design record; aggregate-only Measurement Cell windows; no contamination; comparison adequacy if DiD-eligible; floors; diagnostics; calibration; peeking control; synthetic/internal proof boundary. | Internal-only design context or internal contribution-estimate eligibility if reduced to valid DiD; no customer-facing confidence, probability, ROI, causality, productivity, or finance output. | HOLD if the controlled-test design cannot be represented by the current DiD module or lacks validation. |
+| `TWO_GROUP_PRE_POST_COMPARISON` | Current specialized contract eligibility. | `comparison_supported_bayesian_did_module`. | Credible comparison cohort; exact baseline/post windows; same selected metric and direction; declared lag; aggregate floors; no suppressed/stale/missing/imputed windows; pre-trend check; sampler diagnostics; posterior predictive checks; prior sensitivity; calibration/null/floor proof; fixed-horizon peeking control; TypeScript artifact validation. | Internal-only comparison-supported contribution-estimate eligibility at most; no customer-facing confidence/probability and no causal, ROI, productivity, or economic claim. | HOLD or evidence-tier-only if any comparison, window, floor, diagnostic, calibration, peeking, source-binding, or artifact-validation gate fails. |
+| `MATCHED_COMPARISON` | Conditional current contract eligibility. | `comparison_supported_bayesian_did_module` only when matching still yields a true two-group pre/post design at the aggregate Measurement Cell grain. | Reviewer-owned matching/design adequacy memo; matched cohorts remain aggregate-only and non-identifying; same metric/window/direction/lag; balance and pre-period plausibility reviewed; every DiD gate above passes. | Internal-only matched-comparison-ready context or DiD contribution-estimate eligibility when all gates pass; no causal language from matching alone. | HOLD or remain future-model-only if matching does not reduce to a valid two-group pre/post DiD design. |
+| `STAGGERED_ROLLOUT` | Unsupported by the current DiD module. | None. | Future event-time, calendar-time, adoption-time, and not-yet-treated comparison logic must be implemented, calibrated, and validated in a separate approved proposal before any contract eligibility exists. | HOLD only under the current implementation. | Must HOLD as unsupported; must not be coerced into current two-group DiD or treated as current event-study support. |
+| `HISTORICAL_STATE_SPACE` | Future longitudinal contract route only. | None. | Future state-space model, longitudinal priors, time-varying uncertainty, missingness policy, diagnostics, calibration, and negative controls must be approved and verified. | HOLD only under the current implementation. | Must HOLD; historical context may support planning but not contribution confidence. |
+| `REPEATED_PRE_POST` | Future longitudinal repeated-window contract route only. | None. | Future repeated-window model and a governed repeated-look or always-valid sequential procedure must be implemented and calibrated. | HOLD only under the current implementation. | Must HOLD; repeated looks must not bypass peeking controls or current fixed-horizon one-look limits. |
+| `BASELINE_ONLY` | Planning context only. | None. | Aggregate source review, suppression checks, and metric definition review may support planning context only. | Context-only; no contribution confidence, no comparison-supported estimate, no probability/confidence output. | HOLD for contribution-confidence or causal/economic interpretation. |
 
-The model family uses this additive evidence-design vocabulary:
+Router contract rules:
 
-| Evidence design | Required interpretation |
-| --- | --- |
-| `CONTROLLED_TEST` | Future controlled-test models may route here after approved design, diagnostics, and validation. The current DiD module may be relevant only if the data reduce to a valid two-group pre/post contrast. |
-| `TWO_GROUP_PRE_POST_COMPARISON` | May route to `comparison_supported_bayesian_did_module` when comparison adequacy, windows, floors, diagnostics, and calibration gates pass. |
-| `STAGGERED_ROLLOUT` | Must HOLD as unsupported by the current DiD implementation until true event-time, calendar-time, and not-yet-treated logic exists and is calibrated. |
-| `MATCHED_COMPARISON` | May route to DiD only when the matched comparison truly satisfies two-group pre/post assumptions and all comparison adequacy gates pass. Otherwise HOLD or route to a future model. |
-| `HISTORICAL_STATE_SPACE` | Requires a future longitudinal state-space model. The current DiD module must not claim support. |
-| `REPEATED_PRE_POST` | Requires a future longitudinal repeated-window model. The current fixed-horizon one-look DiD proof does not authorize it. |
-| `BASELINE_ONLY` | Must not produce contribution confidence. Baseline-only evidence can support planning context only. |
+- Routing must fail closed. Unsupported designs HOLD rather than being forced
+  through the current DiD module.
+- `TWO_GROUP_PRE_POST_COMPARISON` is contract-eligible for current DiD only
+  when comparison adequacy and all DiD gates pass.
+- `MATCHED_COMPARISON` is contract-eligible for current DiD only when it
+  reduces to a valid two-group pre/post design.
+- `STAGGERED_ROLLOUT` must HOLD until event-time, calendar-time, adoption-time,
+  and not-yet-treated comparison logic are implemented and calibrated.
+- `HISTORICAL_STATE_SPACE` and `REPEATED_PRE_POST` require future
+  longitudinal models.
+- `BASELINE_ONLY` cannot produce contribution confidence.
+- Economic assumptions, finance pathway references, sponsor goals, and
+  Blueprint promises cannot upgrade evidence-design strength or claim caps.
 
-Routing must fail closed. Unsupported designs HOLD rather than being forced
-through the current DiD module.
-
-## Hypothesis Measurement Plan
+## Hypothesis Measurement Plan Contract Semantics
 
 The governing input concept for future model-family routing is a Hypothesis
-Measurement Plan. It is conceptual in this task and does not create a schema.
+Measurement Plan. It is contract language only in Phase 1 and does not create a
+schema, API, persistence model, runtime router, or artifact field.
 
 Required conceptual fields:
 
-- `hypothesis_id`
-- `hypothesis_statement`
-- `function_area`
-- `workflow_family`
-- `cohort_scope`
-- `value_route`
-- `expected_work_change`
-- `expected_metric_direction`
-- `expected_behavior_signal_lag`
-- `expected_outcome_signal_lag`
-- `primary_metric_id`
-- `primary_metric_family`
-- `supporting_metric_ids`
-- `guardrail_metric_ids`
-- `relevant_fluency_dimensions`
-- `expected_vbd_signature`
-- `baseline_window`
-- `observation_schedule`
-- `source_system_ref`
-- `metric_owner_ref`
-- `business_owner_ref`
-- `minimum_worthwhile_change`
-- `known_confounders`
-- `evidence_design`
-- `finance_pathway_ref`
-- `approval_state`
+| Field | Shape | Phase 1 contract semantics |
+| --- | --- | --- |
+| `hypothesis_id` | Required stable string ref. | Identifies one approved value hypothesis; does not authorize execution. |
+| `hypothesis_statement` | Required text, aggregate/workflow scoped. | States the predeclared theory of change without customer-facing claim language. |
+| `function_area` | Required controlled text/ref. | Defines the aggregate function context; no person-level or HR fields. |
+| `workflow_family` | Required controlled text/ref. | Defines the workflow family or approved workflow grouping. |
+| `cohort_scope` | Required aggregate cohort descriptor/ref. | Defines the aggregate slice; must satisfy suppression and no-identifiers boundaries. |
+| `value_route` | Required value-route enum/ref. | Planning context for the business-value pathway; not a finance result. |
+| `expected_work_change` | Required text/ref. | Predeclared behavior-change expectation; mechanism context only. |
+| `expected_metric_direction` | Required enum: `increase`, `decrease`, or `stable_or_guardrail`. | Sets interpretation direction before review; cannot be changed after observing outcomes to rescue a claim. |
+| `expected_behavior_signal_lag` | Required duration/window ref. | Expected lag before behavior evidence should move; not a prior. |
+| `expected_outcome_signal_lag` | Required duration/window ref. | Expected lag before outcome evidence should move; not a prior. |
+| `primary_metric_id` | Required stable metric ref. | Principal business-outcome estimand. |
+| `primary_metric_family` | Required controlled family/ref. | Future likelihood context; today only the current normal continuous aggregate DiD path is implemented. |
+| `supporting_metric_ids` | Optional list of stable metric refs. | Mechanism evidence only; cannot replace or average into the primary estimand. |
+| `guardrail_metric_ids` | Optional list of stable metric refs. | Tests quality, risk, or unintended consequences; may cap/block interpretation, not strengthen it. |
+| `relevant_fluency_dimensions` | Optional list of governed dimension refs. | Aggregate readiness/context evidence only. |
+| `expected_vbd_signature` | Optional governed VBD descriptor/ref. | Expected aggregate behavior pattern; mechanism context only. |
+| `baseline_window` | Required window ref. | Planned baseline window; missing/stale/suppressed/imputed windows fail closed. |
+| `observation_schedule` | Required schedule/list of window refs. | Planned observation cadence; repeated looks require governed peeking controls. |
+| `source_system_ref` | Required reviewed aggregate source ref. | Source context only; does not authorize connector reads. |
+| `metric_owner_ref` | Required non-personal role/group/process ref. | Governance owner ref only; no named people, emails, user IDs, or direct identifiers. |
+| `business_owner_ref` | Required non-personal role/group/process ref. | Governance owner ref only; no named people, emails, user IDs, or direct identifiers. |
+| `minimum_worthwhile_change` | Optional decision-context value/ref. | Planning threshold only; cannot set priors, likelihood anchors, calibration targets, posterior thresholds, or claim caps. |
+| `known_confounders` | Optional list of reviewed confounder refs. | Caps interpretation unless addressed by the evidence design. |
+| `evidence_design` | Required enum from the router vocabulary. | Selects the contract router entry; unsupported entries HOLD. |
+| `finance_pathway_ref` | Optional reviewed aggregate finance-pathway ref. | Context only; cannot authorize ROI, economic output, or stronger claim caps. |
+| `approval_state` | Required enum: `draft`, `approved_for_internal_review`, `hold`, or `rejected`. | Only `approved_for_internal_review` may proceed to future routing; all other states HOLD. |
 
 Owner references are governance references only. `metric_owner_ref` and
 `business_owner_ref` must resolve to roles, groups, review boards, or process
@@ -236,6 +251,86 @@ Fluency, VBD, customer metrics, and financial assumptions remain distinct:
 - Finance pathway references remain owner-reviewed context and do not become
   ROI proof.
 
+Contract semantics:
+
+- `hypothesis_id` and `hypothesis_statement` identify the approved hypothesis;
+  they do not authorize execution.
+- `function_area`, `workflow_family`, and `cohort_scope` define the aggregate
+  slice and must not contain user-identifiable fields.
+- `value_route` describes the business-value pathway under review; it is not a
+  financial result.
+- `expected_work_change`, `expected_metric_direction`,
+  `expected_behavior_signal_lag`, and `expected_outcome_signal_lag` are
+  predeclared theory-of-change context. They may guide review windows and
+  coherence review, but they must not become statistical priors.
+- `primary_metric_id` is the principal business-outcome estimand for future
+  model-family routing.
+- `primary_metric_family` selects the metric family context for future
+  likelihood review; only the current normal continuous aggregate DiD path is
+  implemented today.
+- `supporting_metric_ids` are mechanism evidence only and must not replace or
+  average into the primary estimand.
+- `guardrail_metric_ids` test quality, risk, or unintended consequences and
+  may cap or block interpretation; they do not strengthen claims.
+- `relevant_fluency_dimensions` and `expected_vbd_signature` are mechanism and
+  readiness context, not business-outcome estimands.
+- `baseline_window` and `observation_schedule` define planned windows. Missing,
+  stale, suppressed, imputed, or repeatedly peeked windows fail closed.
+- `source_system_ref` and `finance_pathway_ref` are reviewed aggregate
+  references only; they do not authorize connector reads.
+- `minimum_worthwhile_change` is decision context only. It must not set prior
+  means, prior scales, likelihood anchors, calibration targets, posterior
+  eligibility thresholds, or any other statistical quantity.
+- `known_confounders` cap interpretation unless addressed by the approved
+  evidence design.
+- `evidence_design` is the only field that can select a router vocabulary
+  entry, and unsupported entries HOLD.
+- `approval_state` must be approved before future routing; unapproved,
+  missing, or drifted plans HOLD.
+- Blueprint target values, sales promises, OKRs, sponsor goals, desired
+  outcomes, and finance assumptions are planning context only and must not
+  enter statistical priors or upgrade claim caps.
+
+Metrics must not be blended into arbitrary fixed weighted scores. The
+enterprise may review a portfolio of hypotheses, but each hypothesis preserves
+its own primary metric, supporting mechanisms, guardrails, evidence design, and
+claim cap.
+
+## Pathway Coherence And Claim Cap
+
+`posterior_pathway_coherence_review` is a future internal review concept. It
+may review whether the predeclared theory of change is directionally coherent
+across:
+
+- relevant aggregate AI Fluency evidence;
+- expected VBD behavior or trajectory;
+- primary business outcome movement.
+
+It may identify coherence, tension, or insufficient evidence for internal
+review. It must not be described as:
+
+- causal probability;
+- ROI proof;
+- productivity proof;
+- probability that Glean caused the outcome;
+- customer-facing confidence.
+
+`evidence_design_claim_cap` applies after statistical estimation and before any
+interpretation. A narrow posterior interval under a weak evidence design cannot
+produce a stronger claim than the design allows. Finance assumptions, economic
+pathway context, Blueprint promises, or sponsor goals cannot upgrade design
+strength. Unsupported designs HOLD.
+
+Claim caps remain internal-only in this Phase 1 contract:
+
+| Evidence design state | Maximum current interpretation |
+| --- | --- |
+| Unsupported design | HOLD. |
+| Baseline-only context | Planning context only; no contribution confidence. |
+| Directional or mechanism evidence without valid comparison | Internal directional context only. |
+| Valid two-group pre/post DiD contract eligibility with all gates passing | Internal-only comparison-supported contribution-estimate eligibility; no customer-facing confidence/probability, ROI, causality, productivity, or economic output. |
+| Future longitudinal, staggered, controlled, or economic contract route | HOLD until a later approved proposal implements and validates that exact route. |
+
 ## Claim Boundary
 
 The model family preserves all current governance invariants:
@@ -249,7 +344,8 @@ The model family preserves all current governance invariants:
   fields.
 - No customer-facing confidence percentages.
 - No ROI proof.
-- No causal claims without an approved design.
+- No causality claims or causal-probability output are authorized by this
+  Phase 1 contract.
 - No live connector reads.
 - No persistence, routes, UI, exports, or migrations.
 - Fail-closed behavior.
@@ -271,6 +367,9 @@ Implemented now:
 - Docs-only evidence-design vocabulary.
 - Docs-only Hypothesis Measurement Plan outline.
 - OpenSpec proposal for phased future work.
+- Docs-only Phase 1 router contract vocabulary.
+- Docs-only Hypothesis Measurement Plan contract semantics.
+- Docs-only pathway coherence and claim-cap semantics.
 
 Not implemented now:
 

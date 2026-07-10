@@ -8,10 +8,10 @@
 
 ## 1. Phase 1: Contract and router vocabulary
 
-- [ ] 1.1 Create an approved contract for Hypothesis Measurement Plan shape and evidence-design routing vocabulary.
-- [ ] 1.2 Define fail-closed router behavior for unsupported evidence designs.
-- [ ] 1.3 Add governance language that preserves aggregate-only, no customer-facing confidence output, no ROI proof, no productivity measurement, no causality claim, and no HR decisioning.
-- [ ] 1.4 Validate OpenSpec and docs checks for the contract-only phase.
+- [x] 1.1 Create an approved contract for Hypothesis Measurement Plan shape and evidence-design routing vocabulary.
+- [x] 1.2 Define fail-closed router behavior for unsupported evidence designs.
+- [x] 1.3 Add governance language that preserves aggregate-only, no customer-facing confidence output, no ROI proof, no productivity measurement, no causality claim, and no HR decisioning.
+- [x] 1.4 Validate OpenSpec and docs checks for the contract-only phase.
 
 ## 2. Phase 2: First longitudinal synthetic model prototype
 

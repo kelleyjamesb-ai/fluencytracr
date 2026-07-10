@@ -25,6 +25,9 @@ implementation remains valid, but only as
   `MATCHED_COMPARISON`, `HISTORICAL_STATE_SPACE`, `REPEATED_PRE_POST`, and
   `BASELINE_ONLY`.
 - Define the Hypothesis Measurement Plan as the future governing input concept.
+- Add Phase 1 docs-only contract semantics for router status, required gates,
+  claim caps, unsupported/HOLD behavior, pathway coherence review, and
+  non-personal owner references.
 - Explicitly defer runtime implementation of router logic, schemas, model
   code, and replicated validation to later phases.
 
@@ -56,7 +59,8 @@ implementation remains valid, but only as
 ## Phasing
 
 - Phase 0: audit and decision record. Completed in this task.
-- Phase 1: contract and router vocabulary. Future docs/contracts work.
+- Phase 1: contract and router vocabulary. Completed as docs/contracts and
+  OpenSpec contract semantics in this change.
 - Phase 2: first longitudinal synthetic model prototype. Future runtime
   proposal after approval.
 - Phase 3: replicated synthetic validation. Future validation proposal after

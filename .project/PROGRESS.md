@@ -2,6 +2,34 @@
 
 ## Current Session
 
+- Bayesian model-family Phase 1 contract/routing vocabulary (2026-07-10):
+  expanded the docs-only
+  `bayesian_ai_value_and_behavioral_evidence_model_family` contract with
+  Phase 1 module-status semantics, evidence-design router vocabulary,
+  Hypothesis Measurement Plan field shape/semantics, pathway coherence review,
+  and evidence-design claim-cap rules. The current DiD module remains
+  `comparison_supported_bayesian_did_module`, valid only for two-group
+  pre/post comparison-supported designs with every DiD gate passing; staggered
+  rollout HOLDS until future event-time, calendar-time, adoption-time, and
+  not-yet-treated logic is implemented and calibrated. No runtime model code,
+  TypeScript production schema, artifact schema, route, UI, persistence,
+  export, migration, connector path, real/customer/live data authorization,
+  customer-facing confidence/probability output, ROI, causality, productivity,
+  or economic output was added. OpenSpec Phase 1 tasks `1.1` through `1.4` in
+  `generalize-bayesian-confidence-to-model-family` are now checked complete;
+  Phase 2 and Phase 3 remain unchecked, and existing DiD proof tasks `3.3`,
+  `3.4`, `4.2`, and `5.1` remain incomplete. Verified:
+  `npx openspec validate generalize-bayesian-confidence-to-model-family
+  --strict`, `npx openspec validate add-bayesian-inference-proof-harness
+  --strict`, `./scripts/ci_docs_contract_sweep.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/ci_semantic_drift_guard.mjs`, and `git diff --check`.
+  Remaining docs alignment note: root `README.md` still frames the DiD
+  methodology as the future statistical engine and should get a later
+  model-family pointer if a broader docs alignment slice is authorized.
+  Recommended next slice: Phase 2 should not start with runtime modeling; first
+  select the first non-DiD longitudinal synthetic model candidate through an
+  approved proposal/design record.
 - Bayesian model-family decision review hardening (2026-07-10): completed
   CODE / BUG / ADVERSARIAL review of the Phase 0 decision record and tightened
   docs-only boundaries before commit. Owner refs in the Hypothesis Measurement

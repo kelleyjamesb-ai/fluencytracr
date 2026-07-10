@@ -64,18 +64,23 @@ pre/post comparison assumptions and all comparison adequacy gates.
 
 ## Routing Principles
 
-- `TWO_GROUP_PRE_POST_COMPARISON` may route to the current DiD module when all
-  gates pass.
-- `MATCHED_COMPARISON` may route to DiD only when matching still yields a true
-  two-group pre/post design.
+- `TWO_GROUP_PRE_POST_COMPARISON` is contract-eligible for the current DiD
+  module when all gates pass.
+- `MATCHED_COMPARISON` is contract-eligible for DiD only when matching still
+  yields a true two-group pre/post design.
 - `STAGGERED_ROLLOUT` must HOLD under the current implementation until true
-  event-time, calendar-time, and not-yet-treated logic exists and is
-  calibrated.
+  event-time, calendar-time, adoption-time, and not-yet-treated logic exists
+  and is calibrated.
 - `HISTORICAL_STATE_SPACE` and `REPEATED_PRE_POST` require future longitudinal
   models.
 - `BASELINE_ONLY` must not produce contribution confidence.
 - `CONTROLLED_TEST` requires explicit approved design and validation before any
   stronger interpretation.
+- Economic assumptions, finance pathway refs, Blueprint promises, sponsor
+  goals, and target values cannot upgrade design strength or claim caps.
+- Claim caps apply after statistical estimation and before interpretation, so a
+  narrow posterior interval under a weak evidence design cannot create a
+  stronger claim than the design allows.
 
 ## Hypothesis Measurement Plan
 
@@ -89,7 +94,23 @@ The approved primary metric is the principal business-outcome estimand.
 Supporting metrics are mechanism evidence. Guardrail metrics test risk,
 quality, or unintended consequences. Metrics must not be blended into an
 arbitrary fixed weighted score.
-Blueprint target values must not be used as priors.
+Blueprint target values, sales promises, minimum worthwhile change, OKRs,
+sponsor goals, desired outcomes, and finance assumptions must not be used as
+priors, likelihood anchors, calibration targets, posterior eligibility
+thresholds, or claim-cap upgrades.
+
+## Pathway Coherence And Claim Cap
+
+`posterior_pathway_coherence_review` is an internal future review concept. It
+may review whether the predeclared theory of change is directionally coherent
+across relevant Fluency evidence, expected VBD behavior, and primary business
+outcome movement. It is not causal probability, ROI proof, productivity proof,
+probability that Glean caused the outcome, customer-facing confidence, or an
+economic output.
+
+`evidence_design_claim_cap` caps interpretation by the approved evidence
+design after estimation. Unsupported designs HOLD, and finance assumptions
+cannot upgrade a weak design.
 
 ## Risks
 
