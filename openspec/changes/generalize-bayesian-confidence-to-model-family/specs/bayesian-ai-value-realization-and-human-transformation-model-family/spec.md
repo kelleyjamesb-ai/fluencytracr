@@ -18,7 +18,7 @@ The system SHALL document `bayesian_ai_value_realization_and_human_transformatio
 
 ### Requirement: First Longitudinal Synthetic Model Slice
 
-The architecture SHALL specify `first_longitudinal_synthetic_model_slice` as the first selected non-DiD longitudinal model candidate for a later approved synthetic-only Phase 2B proposal, bounded to one approved hypothesis, one approved primary continuous normal outcome, aggregate Measurement Cell windows only, multiple time windows, baseline Fluency context, separate lagged Velocity, Breadth, and Depth exposures, function or workflow partial pooling, explicit time trend, known aggregate observation uncertainty, synthetic-only inputs, and internal validation/review inputs only with no emitted product or customer output.
+The architecture SHALL specify `first_longitudinal_synthetic_model_slice` as the first selected non-DiD longitudinal model candidate for a later approved synthetic-only Phase 2B proposal, bounded to one approved hypothesis, one approved primary continuous normal outcome, aggregate Measurement Cell windows only, multiple time windows, baseline Fluency context, separate lagged Velocity and Breadth exposures, Depth as synthetic aggregate pathway context only unless a later promotion authorizes a model dependency, function or workflow partial pooling, explicit time trend, known aggregate observation uncertainty, synthetic-only inputs, and internal validation/review inputs only with no emitted product or customer output.
 
 Approved hypothesis SHALL mean approved for internal specification and contract review only; it SHALL NOT authorize execution, data access, persistence, customer output, or model output.
 
@@ -33,14 +33,12 @@ mu[h,c,t] =
   + baseline_trend[h,c,t]
   + beta_velocity[h] * lagged_velocity_exposure[c,t]
   + beta_breadth[h] * lagged_breadth_exposure[c,t]
-  + beta_depth[h] * lagged_depth_exposure[c,t]
   + beta_fluency[h] * baseline_fluency[c]
-  + beta_fluency_x_vbd[h] * baseline_fluency[c] * lagged_vbd_exposure[c,t]
   + gamma[h] * approved_business_controls[c,t]
   + residual_time_structure[h,c,t]
 ```
 
-The specification SHALL define every term and SHALL state that Velocity, Breadth, and Depth remain separate, baseline Fluency is context/moderator evidence rather than observed behavior, retest Fluency is co-evidence rather than a same-window causal driver, cohort refs remain aggregate and non-identifying, outcome movement is the primary business-outcome estimand, and the slice is associational/contribution-alignment unless a stronger evidence design is separately implemented and approved.
+The specification SHALL define every term and SHALL state that Velocity and Breadth remain separate, Depth remains synthetic aggregate pathway context only unless a later promotion authorizes a model dependency, baseline Fluency is context/moderator evidence rather than observed behavior, retest Fluency is co-evidence rather than a same-window causal driver, cohort refs remain aggregate and non-identifying, outcome movement is the primary business-outcome estimand, and the slice is associational/contribution-alignment unless a stronger evidence design is separately implemented and approved.
 
 The slice SHALL NOT authorize staggered-rollout, event-study, adoption-time, calendar-time, or not-yet-treated comparison logic. Any staggered-rollout interpretation HOLDS until a separate approved proposal implements, calibrates, and validates that exact route.
 
@@ -55,16 +53,16 @@ The slice SHALL NOT authorize staggered-rollout, event-study, adoption-time, cal
 
 - **GIVEN** a later approved Phase 2B proposal prepares synthetic inputs for the first longitudinal slice
 - **WHEN** the inputs are reviewed
-- **THEN** they include `hypothesis_id`, `cohort_id`, `function_area` or `workflow_family`, `time_window_id`, `primary_metric_value`, `primary_metric_se`, `primary_metric_family = normal_continuous_aggregate`, `lagged_velocity_exposure`, `lagged_breadth_exposure`, `lagged_depth_exposure`, `baseline_fluency_estimate`, `baseline_fluency_se`, `optional_retest_fluency_estimate`, `optional_retest_fluency_se`, `approved_business_controls`, `window_evidence`, `suppression_context`, `source_quality_context`, `known_confounders`, and `evidence_design`
+- **THEN** they include `hypothesis_id`, `cohort_id`, `function_area` or `workflow_family`, `time_window_id`, `primary_metric_value`, `primary_metric_se`, `primary_metric_family = normal_continuous_aggregate`, `lagged_velocity_exposure`, `lagged_breadth_exposure`, optional `lagged_depth_context` as synthetic pathway context only, `baseline_fluency_estimate`, `baseline_fluency_se`, `optional_retest_fluency_estimate`, `optional_retest_fluency_se`, `approved_business_controls`, `window_evidence`, `suppression_context`, `source_quality_context`, `known_confounders`, and `evidence_design`
 - **AND** person-level fields, raw prompts, transcripts, direct identifiers, raw event rows, emails, user IDs, query text, and connector payloads are forbidden
 - **AND** synthetic business controls are placeholders only in Phase 2A, with real/customer/live business controls unauthorized
 
 #### Scenario: Internal estimands do not become outputs
 
-- **GIVEN** a later approved Phase 2B proposal computes `direction_adjusted_outcome_movement`, a posterior interval for movement, an internal threshold-crossing validation diagnostic for movement above `minimum_worthwhile_change`, pathway coherence review status, or an evidence-design claim cap
+- **GIVEN** a later approved Phase 2B proposal computes `direction_adjusted_outcome_movement`, a posterior interval for movement, an internal draw-share validation diagnostic against a compiled synthetic smoke constant, pathway coherence review status, or an evidence-design claim cap
 - **WHEN** those fields are interpreted
 - **THEN** they remain internal validation and review inputs only and must not emit customer-facing confidence, probability, ROI, causality, productivity, finance, HR, ranking, or economic output
-- **AND** `minimum_worthwhile_change` remains decision context and must not become a prior, likelihood anchor, calibration target, posterior eligibility threshold, or claim cap
+- **AND** `minimum_worthwhile_change` remains decision context and must not become a prior, likelihood anchor, calibration target, posterior eligibility threshold, tunable diagnostic threshold, or claim cap
 - **AND** numeric readout, export, customer authorization, confidence authorization, and probability authorization remain false
 
 #### Scenario: Invalid first-slice inputs hold

@@ -183,7 +183,7 @@ synthetic smoke route for historical/repeated longitudinal fixtures only.
 | `TWO_GROUP_PRE_POST_COMPARISON` | Current specialized contract eligibility. | `comparison_supported_bayesian_did_module`. | Credible comparison cohort; exact baseline/post windows; same selected metric and direction; declared lag; aggregate floors; no suppressed/stale/missing/imputed windows; pre-trend check; sampler diagnostics; posterior predictive checks; prior sensitivity; calibration/null/floor proof; fixed-horizon peeking control; TypeScript artifact validation. | Internal-only comparison-supported contribution-estimate eligibility at most; no customer-facing confidence/probability and no causal, ROI, productivity, or economic claim. | HOLD or evidence-tier-only if any comparison, window, floor, diagnostic, calibration, peeking, source-binding, or artifact-validation gate fails. |
 | `MATCHED_COMPARISON` | Conditional current contract eligibility. | `comparison_supported_bayesian_did_module` only when matching still yields a true two-group pre/post design at the aggregate Measurement Cell grain. | Reviewer-owned matching/design adequacy memo; matched cohorts remain aggregate-only and non-identifying; same metric/window/direction/lag; balance and pre-period plausibility reviewed; every DiD gate above passes. | Internal-only matched-comparison-ready context or DiD contribution-estimate eligibility when all gates pass; no causal language from matching alone. | HOLD or remain future-model-only if matching does not reduce to a valid two-group pre/post DiD design. |
 | `STAGGERED_ROLLOUT` | Unsupported by the current DiD module. | None. | Future event-time, calendar-time, adoption-time, and not-yet-treated comparison logic must be implemented, calibrated, and validated in a separate approved proposal before any contract eligibility exists. | HOLD only under the current implementation. | Must HOLD as unsupported; must not be coerced into current two-group DiD or treated as current event-study support. |
-| `HISTORICAL_STATE_SPACE` | Synthetic smoke route only in the exact Phase 2B prototype; full longitudinal contract eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for synthetic/internal smoke artifacts only. | Aggregate synthetic inputs; approved hypothesis metadata; complete ordered windows; aggregate AI Fluency snapshot context; separated lagged Velocity/Breadth/Depth exposures; approved synthetic controls; source hashes; diagnostics; TypeScript smoke artifact validation. Full NUTS sampler hardening and replicated calibration remain future work. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD or reject for real/customer/live data, incomplete windows, unsupported likelihoods, missing uncertainty, unsafe controls, respondent leakage, failed diagnostics, or any output/promotion side door. |
+| `HISTORICAL_STATE_SPACE` | Synthetic smoke route only in the exact Phase 2B prototype; full longitudinal contract eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for synthetic/internal smoke artifacts only. | Aggregate synthetic inputs; approved hypothesis metadata; complete ordered windows; aggregate AI Fluency snapshot context; separated lagged Velocity/Breadth exposures plus synthetic Depth pathway context only; approved synthetic controls; source hashes; diagnostics; TypeScript smoke artifact validation. Full NUTS sampler hardening and replicated calibration remain future work. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD or reject for real/customer/live data, incomplete windows, unsupported likelihoods, missing uncertainty, unsafe controls, respondent leakage, failed diagnostics, or any output/promotion side door. |
 | `REPEATED_PRE_POST` | Synthetic smoke route only when the exact Phase 2B prototype's compiled historical-window requirements are met; full repeated-window contract eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for synthetic/internal smoke artifacts only. | Same synthetic-only longitudinal smoke gates as `HISTORICAL_STATE_SPACE`; no sequential or always-valid repeated-look procedure is implemented. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD if compiled historical-window requirements fail or if repeated looks are used to bypass peeking controls. |
 | `BASELINE_ONLY` | Planning context only. | None. | Aggregate source review, suppression checks, and metric definition review may support planning context only. | Context-only; no contribution confidence, no comparison-supported estimate, no probability/confidence output. | HOLD for contribution-confidence or causal/economic interpretation. |
 
@@ -236,7 +236,7 @@ Required conceptual fields:
 | `source_system_ref` | Required reviewed aggregate source ref. | Source context only; does not authorize connector reads. |
 | `metric_owner_ref` | Required non-personal role/group/process ref. | Governance owner ref only; no named people, emails, user IDs, or direct identifiers. |
 | `business_owner_ref` | Required non-personal role/group/process ref. | Governance owner ref only; no named people, emails, user IDs, or direct identifiers. |
-| `minimum_worthwhile_change` | Optional decision-context value/ref. | Planning threshold only; cannot set priors, likelihood anchors, calibration targets, posterior thresholds, or claim caps. |
+| `minimum_worthwhile_change` | Optional decision-context value/ref. | Planning context only; cannot set priors, likelihood anchors, calibration targets, diagnostic thresholds, posterior thresholds, or claim caps. |
 | `known_confounders` | Optional list of reviewed confounder refs. | Caps interpretation unless addressed by the evidence design. |
 | `evidence_design` | Required enum from the router vocabulary. | Selects the contract router entry; unsupported entries HOLD. |
 | `finance_pathway_ref` | Optional reviewed aggregate finance-pathway ref. | Context only; cannot authorize ROI, economic output, or stronger claim caps. |
@@ -334,7 +334,9 @@ The slice is bounded to:
 - aggregate Measurement Cell windows only;
 - multiple time windows;
 - baseline AI Fluency context;
-- separate lagged Velocity, Breadth, and Depth exposures;
+- separate lagged Velocity and Breadth exposures, with Depth carried only as
+  synthetic aggregate pathway context unless a later promotion authorizes
+  Depth as a model dependency;
 - function or workflow partial pooling;
 - explicit time trend;
 - known aggregate observation uncertainty;
@@ -372,9 +374,7 @@ mu[h,c,t] =
   + baseline_trend[h,c,t]
   + beta_velocity[h] * lagged_velocity_exposure[c,t]
   + beta_breadth[h] * lagged_breadth_exposure[c,t]
-  + beta_depth[h] * lagged_depth_exposure[c,t]
   + beta_fluency[h] * baseline_fluency[c]
-  + beta_fluency_x_vbd[h] * baseline_fluency[c] * lagged_vbd_exposure[c,t]
   + gamma[h] * approved_business_controls[c,t]
   + residual_time_structure[h,c,t]
 ```
@@ -391,11 +391,8 @@ Term definitions:
 | `baseline_trend[h,c,t]` | Explicit predeclared historical or calendar time trend for the approved metric and cell. Weak or missing baseline trend evidence caps or HOLDS interpretation. |
 | `beta_velocity[h]` | Hypothesis-specific association between lagged Velocity exposure and primary outcome movement. |
 | `beta_breadth[h]` | Hypothesis-specific association between lagged Breadth exposure and primary outcome movement. |
-| `beta_depth[h]` | Hypothesis-specific association between lagged Depth exposure and primary outcome movement. |
 | `beta_fluency[h]` | Hypothesis-specific baseline AI Fluency context coefficient. |
 | `baseline_fluency[c]` | Aggregate baseline AI Fluency estimate for the Measurement Cell, used as readiness/context evidence only. |
-| `beta_fluency_x_vbd[h]` | Hypothesis-specific interaction for baseline Fluency context and lagged VBD exposure. |
-| `lagged_vbd_exposure[c,t]` | Predeclared interaction or composite exposure used only after separate Velocity, Breadth, and Depth terms are retained and reviewed. |
 | `gamma[h]` | Hypothesis-specific coefficients for approved aggregate business controls. |
 | `approved_business_controls[c,t]` | Predeclared aggregate controls such as seasonality, staffing mix, volume mix, campaign timing, or policy changes. |
 | `residual_time_structure[h,c,t]` | Remaining aggregate time-series error structure; a later approved Phase 2B proposal must define diagnostics and HOLD behavior before implementation. |
@@ -403,9 +400,12 @@ Term definitions:
 Cohort refs must remain aggregate, non-identifying, independently suppressed
 per slice, and unable to support cross-slice re-identification.
 
-VBD dimensions remain separate in the model. Any interaction or composite VBD
-term is secondary context and cannot replace the separate Velocity, Breadth,
-and Depth exposure terms.
+Velocity and Breadth remain separate in the model. Depth is synthetic
+aggregate pathway context in this slice, not an authorized coefficient,
+eligibility input, confidence-band adjustment, or economic dependency. Any
+future Depth coefficient, interaction, or composite VBD term requires a later
+promotion decision that authorizes that exact dependency and defines the
+derivation.
 
 Baseline AI Fluency is context/moderator evidence, not observed AI work
 behavior. Retest AI Fluency is co-evidence for readiness movement and pathway
@@ -431,7 +431,7 @@ aggregate inputs with these required conceptual fields:
 | `primary_metric_family` | Must equal `normal_continuous_aggregate` for this first slice. |
 | `lagged_velocity_exposure` | Predeclared aggregate Velocity exposure at the approved lag. |
 | `lagged_breadth_exposure` | Predeclared aggregate Breadth exposure at the approved lag. |
-| `lagged_depth_exposure` | Predeclared aggregate Depth exposure at the approved lag. |
+| `lagged_depth_context` | Optional synthetic aggregate Depth pathway context at the approved lag; context only, not a model coefficient in this slice. |
 | `baseline_fluency_estimate` | Aggregate baseline Fluency estimate for context/moderation. |
 | `baseline_fluency_se` | Known aggregate uncertainty for baseline Fluency context. |
 | `optional_retest_fluency_estimate` | Optional aggregate retest co-evidence, not a same-window causal driver. |
@@ -453,11 +453,11 @@ The first slice may define these internal validation inputs only:
 
 - `direction_adjusted_outcome_movement`;
 - posterior interval for movement;
-- internal draw-share validation diagnostic for movement above the synthetic
-  fixture's predeclared `minimum_worthwhile_change` only.
-  `minimum_worthwhile_change` remains decision context and must not become a
-  prior, likelihood anchor, calibration target, customer threshold, posterior
-  eligibility threshold, or claim cap;
+- internal draw-share validation diagnostic only against a compiled synthetic
+  smoke constant. `minimum_worthwhile_change` remains decision context and must
+  not become a prior, likelihood anchor, calibration target, customer
+  threshold, posterior eligibility threshold, tunable diagnostic threshold, or
+  claim cap;
 - pathway coherence review status, not causal probability;
 - evidence-design claim cap.
 

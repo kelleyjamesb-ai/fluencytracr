@@ -76,9 +76,11 @@ Phase 2A selects `first_longitudinal_synthetic_model_slice` as a docs-only
 candidate for a later approved Phase 2B proposal. The candidate is bounded to
 one approved hypothesis, one approved primary continuous normal outcome,
 aggregate Measurement Cell windows, multiple time windows, baseline AI Fluency
-context, separate lagged Velocity, Breadth, and Depth exposures, function or
-workflow partial pooling, explicit time trend, known aggregate observation
-uncertainty, synthetic-only inputs, and internal validation/review inputs only.
+context, separate lagged Velocity and Breadth exposures, Depth as synthetic
+pathway context only unless a later promotion authorizes a model dependency,
+function or workflow partial pooling, explicit time trend, known aggregate
+observation uncertainty, synthetic-only inputs, and internal validation/review
+inputs only.
 
 The selected slice is not implemented in this change. It creates no runtime
 model code, router, TypeScript schema, artifact schema, endpoint, UI,

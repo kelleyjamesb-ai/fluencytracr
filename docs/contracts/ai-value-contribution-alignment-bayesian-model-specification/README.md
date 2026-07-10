@@ -148,10 +148,9 @@ Rolling 30-day context may remain operating context only; it cannot rescue
 missing milestone evidence. Suppressed, held, missing, or stale windows cannot
 be imputed into runtime readiness.
 
-The legacy TypeScript design-token string for staggered rollout remains a
-non-executing compatibility record only. It does not authorize the current DiD
-implementation to analyze staggered rollout. Staggered rollout must HOLD until
-an approved future model implements and calibrates true event-time,
+The emitted TypeScript design contract requires a governed two-group
+comparison condition for the current DiD module. Staggered rollout must HOLD
+until an approved future model implements and calibrates true event-time,
 calendar-time, and not-yet-treated comparison logic.
 
 ## Posterior-Output Review Conditions
