@@ -9,15 +9,15 @@ Schema version:
 ## Purpose
 
 Bayesian Model Specification is the internal-only statistical design contract
-after Internal Bayesian Readiness Review. It defines the candidate model family,
-hierarchy, estimand, metric alignment rules, likelihood/prior placeholders, data
-adequacy requirements, and posterior-output review prerequisites a later
-execution gate may inspect.
+after Internal Bayesian Readiness Review. It defines the specialized DiD
+candidate `model_family` field value, hierarchy, estimand, metric alignment
+rules, likelihood/prior placeholders, data adequacy requirements, and
+posterior-output review prerequisites a later execution gate may inspect.
 
 Architecture positioning note (2026-07-10): the broader Bayesian architecture
 is now
-`bayesian_ai_value_and_behavioral_evidence_model_family` (see
-[`docs/contracts/ai-value-bayesian-evidence-model-family/README.md`](../ai-value-bayesian-evidence-model-family/README.md)).
+`bayesian_ai_value_realization_and_human_transformation_model_family` (see
+[`docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`](../bayesian-ai-value-realization-and-human-transformation-model-family/README.md)).
 This older specification remains a non-executing DiD design record and should
 be read as the specialized `comparison_supported_bayesian_did_module`, not as
 universal model-family coverage. Its mention of staggered rollout is a design
@@ -86,7 +86,7 @@ The specification version is:
 bayesian_hierarchical_did_spec_2026_06
 ```
 
-The candidate model family is:
+The specialized DiD candidate `model_family` field value is:
 
 ```text
 bayesian_hierarchical_difference_in_differences_candidate

@@ -2,7 +2,7 @@
 
 ### Requirement: Model Family Decision Record
 
-The system SHALL document `bayesian_ai_value_and_behavioral_evidence_model_family` as the canonical Bayesian architecture family for AI value and behavioral evidence while preserving the current Bayesian DiD implementation as `comparison_supported_bayesian_did_module`.
+The system SHALL document `bayesian_ai_value_realization_and_human_transformation_model_family` as the single canonical Bayesian architecture family for AI value realization and human transformation while preserving the current Bayesian DiD implementation as `comparison_supported_bayesian_did_module`. "Human transformation" SHALL mean aggregate work-pattern and capability-change context only; it SHALL NOT authorize HR analytics, individual scoring, employee productivity measurement, manager/team ranking, person-level fields, runtime model execution, production schemas, customer-facing confidence/probability output, ROI proof, finance output, causality claims, or economic output. All named modules SHALL remain subordinate conceptual components inside this single family unless a later approved OpenSpec change implements and validates that exact scope.
 
 #### Scenario: DiD remains specialized
 

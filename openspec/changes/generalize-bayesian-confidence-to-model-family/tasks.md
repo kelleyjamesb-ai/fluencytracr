@@ -1,14 +1,14 @@
 ## 0. Phase 0: Audit and decision record
 
 - [x] 0.1 Audit the current Bayesian DiD proof harness, methodology contract, TypeScript validation boundary, related concepts, existing OpenSpec task state, and progress notes.
-- [x] 0.2 Create the docs-only model-family decision record for `bayesian_ai_value_and_behavioral_evidence_model_family`.
+- [x] 0.2 Create the docs-only model-family decision record for `bayesian_ai_value_realization_and_human_transformation_model_family`.
 - [x] 0.3 Reposition the current DiD implementation as `comparison_supported_bayesian_did_module`.
 - [x] 0.4 Define the additive evidence-design vocabulary and Hypothesis Measurement Plan outline.
 - [x] 0.5 Update `.project/PROGRESS.md` with the decision and explicit limitations.
 
 ## 1. Phase 1: Contract and router vocabulary
 
-- [x] 1.1 Create an approved contract for Hypothesis Measurement Plan shape and evidence-design routing vocabulary.
+- [x] 1.1 Create docs-only contract semantics for Hypothesis Measurement Plan shape and evidence-design routing vocabulary.
 - [x] 1.2 Define fail-closed router behavior for unsupported evidence designs.
 - [x] 1.3 Add governance language that preserves aggregate-only, no customer-facing confidence output, no ROI proof, no productivity measurement, no causality claim, and no HR decisioning.
 - [x] 1.4 Validate OpenSpec and docs checks for the contract-only phase.

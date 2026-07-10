@@ -1,4 +1,4 @@
-# Design: Bayesian AI Value Evidence Model Family
+# Design: Bayesian AI Value Realization And Human Transformation Model Family
 
 ## Context
 
@@ -13,13 +13,13 @@ The architectural issue is not that DiD is invalid. The issue is that DiD is
 too narrow to be the universal statistical architecture for FluencyTracr value
 evidence. Baseline-only, repeated pre/post, staggered rollout, historical
 state-space, and broader longitudinal behavioral trajectories need different
-model families or must HOLD.
+approved modules within the single canonical family or must HOLD.
 
 ## Goals
 
 - Preserve the current DiD proof harness as
   `comparison_supported_bayesian_did_module`.
-- Establish `bayesian_ai_value_and_behavioral_evidence_model_family` as the
+- Establish `bayesian_ai_value_realization_and_human_transformation_model_family` as the
   canonical architecture name.
 - Separate fluency, VBD, primary customer metric, mechanism evidence,
   guardrails, and finance pathway assumptions.
@@ -40,8 +40,15 @@ model families or must HOLD.
 Adopt the model-family name:
 
 ```text
-bayesian_ai_value_and_behavioral_evidence_model_family
+bayesian_ai_value_realization_and_human_transformation_model_family
 ```
+
+This is the single canonical Bayesian architecture family name. "Human
+transformation" means aggregate work-pattern and capability-change context
+only. It does not authorize HR analytics, individual scoring, employee
+productivity measurement, manager/team ranking, person-level fields, runtime
+model execution, production schemas, customer-facing confidence/probability
+output, ROI proof, finance output, causality claims, or economic output.
 
 Treat these as conceptual architecture components only:
 

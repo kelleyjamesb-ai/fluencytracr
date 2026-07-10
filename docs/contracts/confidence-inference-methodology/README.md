@@ -16,8 +16,8 @@ governed decision record.
 
 Architecture positioning note (2026-07-10): the broader Bayesian architecture
 is now recorded as
-`bayesian_ai_value_and_behavioral_evidence_model_family` in
-[`docs/contracts/ai-value-bayesian-evidence-model-family/README.md`](../ai-value-bayesian-evidence-model-family/README.md).
+`bayesian_ai_value_realization_and_human_transformation_model_family` in
+[`docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`](../bayesian-ai-value-realization-and-human-transformation-model-family/README.md).
 This DiD methodology remains valid as
 `comparison_supported_bayesian_did_module` only when the evidence design and
 comparison adequacy gates support a two-group pre/post comparison. It does not
@@ -41,10 +41,11 @@ persons. The governing specification is the existing
 `bayesian_model_specification` schema family
 (`FT_AI_VALUE_CONTRIBUTION_ALIGNMENT_BAYESIAN_MODEL_SPECIFICATION_2026_06`,
 specification version `bayesian_hierarchical_did_spec_2026_06`), which
-already names the model family
+already names the current DiD proof-artifact `model_family` value
 (`bayesian_hierarchical_difference_in_differences_candidate`) and the pooling
-structure; this contract binds the methodology to that specification rather
-than restating it. Partial pooling stabilizes small-cohort estimates without
+structure. That field value is not the canonical Bayesian architecture family;
+this contract binds the methodology to that specification rather than
+restating it. Partial pooling stabilizes small-cohort estimates without
 discarding them, matching the aggregate-only posture. Flat per-cohort models
 and synthetic-control methods were considered and rejected/deferred in the
 change's design record.

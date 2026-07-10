@@ -9,14 +9,14 @@ Bayesian DiD as the universal confidence model creates pressure to force
 evidence designs through a module they may not fit.
 
 FluencyTracr needs a broader architecture:
-`bayesian_ai_value_and_behavioral_evidence_model_family`. The current DiD
+`bayesian_ai_value_realization_and_human_transformation_model_family`. The current DiD
 implementation remains valid, but only as
 `comparison_supported_bayesian_did_module`.
 
 ## What Changes
 
 - Add a docs-only current-state audit and decision record under
-  `docs/contracts/ai-value-bayesian-evidence-model-family/`.
+  `docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/`.
 - Reposition the existing DiD proof harness as a specialized
   comparison-supported module, not the universal model for every value
   evidence pathway.
@@ -53,8 +53,9 @@ implementation remains valid, but only as
 
 ## Impact
 
-- Affected specs: `bayesian-ai-value-evidence-model-family` (new proposal
-  capability).
+- Affected specs:
+  `bayesian-ai-value-realization-and-human-transformation-model-family` (new
+  proposal capability).
 - Affected docs: model-family decision record, cross-reference notes in the
   existing Bayesian methodology/specification contracts, and
   `.project/PROGRESS.md`.

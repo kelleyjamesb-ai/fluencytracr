@@ -1,4 +1,4 @@
-# Bayesian AI Value And Behavioral Evidence Model Family
+# Bayesian AI Value Realization And Human Transformation Model Family
 
 ## Purpose
 
@@ -6,8 +6,18 @@ This decision record reframes the current Bayesian confidence architecture from
 one universal Bayesian DiD model into a governed model family:
 
 ```text
-bayesian_ai_value_and_behavioral_evidence_model_family
+bayesian_ai_value_realization_and_human_transformation_model_family
 ```
+
+This is the single canonical Bayesian architecture family name. "Human
+transformation" means aggregate work-pattern and capability-change context
+only; it does not authorize HR analytics, individual scoring, employee
+productivity measurement, manager/team ranking, person-level fields, runtime
+model execution, production schemas, customer-facing confidence/probability
+output, ROI proof, finance output, causality claims, or economic output. All
+named modules are subordinate conceptual components inside this single family
+unless a later approved OpenSpec change implements and validates that exact
+scope.
 
 The current PyMC implementation remains valid as:
 
@@ -77,8 +87,9 @@ The current documentation and validation boundary are DiD-centered:
   for the internal confidence engine.
 - `docs/contracts/ai-value-contribution-alignment-bayesian-model-specification/README.md`
   names `bayesian_hierarchical_did_spec_2026_06` and
-  `bayesian_hierarchical_difference_in_differences_candidate` as the candidate
-  model family.
+  `bayesian_hierarchical_difference_in_differences_candidate` as legacy/current
+  DiD proof-artifact field values. They are not the canonical architecture
+  family name.
 - `packages/confidence-engine/src/bayesianModelSpecification.ts` and
   `packages/confidence-engine/src/internalBayesianExecutionGate.ts` preserve
   that candidate DiD family in their non-executing governance records.
@@ -134,7 +145,7 @@ treated as model-family defaults:
 The governed architecture is:
 
 ```text
-bayesian_ai_value_and_behavioral_evidence_model_family
+bayesian_ai_value_realization_and_human_transformation_model_family
 ```
 
 This contract defines architecture and routing semantics only. It does not
