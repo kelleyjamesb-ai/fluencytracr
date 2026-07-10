@@ -2,6 +2,45 @@
 
 ## Current Session
 
+- Bayesian DiD sampler diagnostic hardening no-go canary (2026-07-10):
+  executed the two requested moves. First, the AI Value formula registry PR
+  #404 was merged into `origin/main` at merge commit `41a71784`. Then a fresh
+  Bayesian proof-blocker branch,
+  `codex/bayesian-did-sampler-diagnostic-hardening`, was created from that
+  updated `origin/main`. Applied the bounded sampler/DGP hardening only:
+  synthetic DiD random effects are now centered zero-sum by grouping,
+  generator version is `1.1.0`, the synthetic input hash binds the random
+  effect generation metadata, and the model/calibration cache signatures were
+  invalidated for the zero-sum DGP alignment. No acceptance-sidecar
+  partitioning, diagnostic gates, hard-failure rules, null gates, artifact
+  authorization, OpenSpec task state, routes, UI, persistence, exports,
+  customer-facing confidence/probability, ROI, causality, productivity, new
+  events/reasons, tunable thresholds, or real/customer/live data paths were
+  changed. Verification passed: focused inference tests (`39 passed` then
+  `156 passed`), full inference suite (`269 passed`),
+  `npm run build --workspace packages/confidence-engine`, TypeScript bridge
+  tests (`87 passed`), `npx openspec validate
+  add-bayesian-inference-proof-harness --strict`,
+  `python3 scripts/ci_v1_governance_gates.py`, and `git diff --check`.
+  Targeted full-settings sampler-artifact canaries were run for
+  `base_seed=202607230`, `replication_start=1..4`, one replication index per
+  chunk across all six required cells. Start `1` cleared with
+  `hard_failure_count=0`, `diagnostic_hold_artifact_count=0`,
+  `missing_credible_interval_count=0`, and null false eligibility `0.0`.
+  Starts `3` and `4` also had `hard_failure_count=0`, with only partitionable
+  `HOLD(pre_trend)` rows (`3` and `1` respectively), no missing credible
+  intervals, and null false eligibility `0.0`. Start `2` remains a hard
+  no-go: `hard_failure_count=1` from `unsupported_diagnostic_hold`, with
+  `diagnostic_hold_failing_diagnostic_counts={"posterior_predictive_check": 1,
+  "pre_trend": 2}`. The non-partitionable row is seed `222619232`
+  (`effect=0.2`, `k=12`), which still HOLDS on
+  `posterior_predictive_check` plus `pre_trend`; seed `202619232`
+  (`effect=0`, `k=12`) HOLDS on `pre_trend` only. OpenSpec tasks `3.3`,
+  `3.4`, `4.2`, and `5.1` remain unchecked. Full 200-rep-per-cell /
+  1200-artifact evidence was not run. Remaining blocker before the Bayesian
+  DiD proof can be called complete: resolve the non-partitionable PPC failure
+  through deeper model/prior/PPC geometry work or a governed methodology
+  decision; do not relax diagnostic gates or sidecar hard-failure rules.
 - AI Value formula registry bounded metadata slice (2026-07-10): completed the
   CODE / BUG / ADVERSARIAL-guided registry slice on
   `codex/ai-value-formula-registry`. Added the docs-first

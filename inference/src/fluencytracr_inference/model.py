@@ -51,7 +51,7 @@ PRIOR_JUSTIFICATION_REF = (
 PRIOR_SENSITIVITY_SCALINGS = (0.5, 2.0)
 
 OBSERVED_VARIABLE_NAME = "y_obs"
-MODEL_CACHE_SIGNATURE = "bayesian_hierarchical_did_zero_sum_noncentered_v2026_07_07"
+MODEL_CACHE_SIGNATURE = "bayesian_hierarchical_did_zero_sum_dgp_aligned_v2026_07_10"
 
 
 class HoldViolation(Exception):

@@ -131,7 +131,7 @@ FULL_QUALITY_FIT_SETTINGS = {
     "max_treedepth": 15,
 }
 CREDIBLE_INTERVAL_LEVEL = 0.8
-CALIBRATION_SANITY_RULESET_VERSION = "tree-depth-fail-closed-v2"
+CALIBRATION_SANITY_RULESET_VERSION = "tree-depth-fail-closed-zero-sum-dgp-v3"
 
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[2] / ".calibration-cache"
 DEFAULT_CLI_RESULTS_PATH = Path(__file__).resolve().parents[2] / (
