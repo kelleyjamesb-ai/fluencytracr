@@ -163,7 +163,7 @@ baseline_review_notes=<aggregate-only notes>
 
 comparison_condition:
 comparison_condition_ref=<reviewer-owned comparison condition ref or HOLD>
-comparison_condition_type=<governed comparison group | staggered rollout | HOLD>
+comparison_condition_type=<governed two-group comparison | staggered rollout requiring future model | HOLD>
 other_aggregate_design_state=HOLD_UNLESS_LATER_COMPARISON_DESIGN_REVIEW_CONTRACT_EXPLICITLY_ACCEPTS_IT
 comparison_condition_notes=<aggregate-only notes>
 
@@ -178,7 +178,7 @@ definition=<aggregate-only comparison group definition>
 reviewer_notes=<aggregate-only notes>
 
 rollout_or_comparison_design_type:
-design_type=<governed comparison group or staggered rollout comparison>
+design_type=<governed two-group comparison or staggered rollout requiring future event-time/calendar-time/not-yet-treated model>
 design_notes=<aggregate-only notes>
 
 baseline_window:
@@ -318,9 +318,12 @@ The selected metric context must fail closed if:
 - baseline posture relies on generated fixture defaults, template examples, or
   runtime fields instead of reviewed aggregate summary metadata;
 - comparison condition is missing or unreviewed;
-- comparison condition uses any aggregate design other than governed comparison
-  group or staggered rollout without a later comparison-design review contract
-  explicitly accepting it;
+- comparison condition uses any aggregate design other than a governed two-group
+  comparison or a staggered rollout design with a later comparison-design review
+  contract explicitly accepting it;
+- staggered rollout is routed to the current DiD module instead of HOLDing until
+  true event-time, calendar-time, and not-yet-treated logic exists and is
+  calibrated;
 - cohort identity, workflow/function identity, or Measurement Cell grain is
   inconsistent;
 - the suppression/missing/held precheck is not clear;

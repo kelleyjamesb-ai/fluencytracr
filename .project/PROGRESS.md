@@ -2,6 +2,42 @@
 
 ## Current Session
 
+- Bayesian model-family decision review hardening (2026-07-10): completed
+  CODE / BUG / ADVERSARIAL review of the Phase 0 decision record and tightened
+  docs-only boundaries before commit. Owner refs in the Hypothesis Measurement
+  Plan are now explicitly non-personal governance refs only; legacy
+  staggered-rollout wording in the DiD specification and comparison-design
+  intake packet now HOLDS for the current DiD module until future event-time,
+  calendar-time, and not-yet-treated logic is implemented and calibrated.
+  Blueprint target values, minimum worthwhile change, OKRs, sponsor goals, and
+  desired outcomes are planning context only and cannot set priors,
+  likelihood anchors, calibration targets, posterior eligibility thresholds, or
+  other statistical quantities. Verified:
+  `npx openspec validate generalize-bayesian-confidence-to-model-family
+  --strict`, `npx openspec validate add-bayesian-inference-proof-harness
+  --strict`, `./scripts/ci_docs_contract_sweep.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/ci_semantic_drift_guard.mjs`, and `git diff --check`.
+- Bayesian AI Value Evidence model-family decision (2026-07-10):
+  audited the current Bayesian DiD proof harness and confidence boundary across
+  `inference/`, `packages/confidence-engine/src/`, the inference methodology
+  contracts, AI Value measurement concepts, the existing
+  `add-bayesian-inference-proof-harness` OpenSpec change, and this progress
+  file. Recorded the docs-only decision that the broader architecture is
+  `bayesian_ai_value_and_behavioral_evidence_model_family`, while the current
+  PyMC implementation remains valid only as
+  `comparison_supported_bayesian_did_module` for two-group pre/post
+  comparison-supported hypotheses. Added the evidence-design vocabulary,
+  Hypothesis Measurement Plan outline, and explicit HOLD behavior for
+  staggered rollout, historical state-space, repeated pre/post, and baseline
+  only designs that the current DiD implementation does not support. No runtime
+  model code, artifact schemas, TypeScript production schemas, routes, UI,
+  persistence, exports, migrations, live connector reads, customer-facing
+  confidence/probability output, ROI proof, causality claim, productivity
+  measurement, or finance output was added. Existing Bayesian DiD proof tasks
+  remain incomplete: OpenSpec tasks `3.3`, `3.4`, `4.2`, and `5.1` were not
+  marked complete because this architecture decision does not generate or
+  validate the missing full sampler-artifact evidence.
 - Bayesian DiD Phase B2 sampler rerun no-go after sidecar repair (2026-07-09):
   retried the full-settings sampler-artifact path on branch
   `codex/bayesian-did-calibration-null-study` using base seed `202607230`.

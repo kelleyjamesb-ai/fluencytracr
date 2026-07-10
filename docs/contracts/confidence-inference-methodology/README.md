@@ -14,6 +14,16 @@ placeholder Normal-Normal runtime stays byte-stable in its held state
 (`INTERNAL_BAYESIAN_FIXTURE_EXECUTION_PROTOTYPE_HELD_FOR_REVIEW`) as a
 governed decision record.
 
+Architecture positioning note (2026-07-10): the broader Bayesian architecture
+is now recorded as
+`bayesian_ai_value_and_behavioral_evidence_model_family` in
+[`docs/contracts/ai-value-bayesian-evidence-model-family/README.md`](../ai-value-bayesian-evidence-model-family/README.md).
+This DiD methodology remains valid as
+`comparison_supported_bayesian_did_module` only when the evidence design and
+comparison adequacy gates support a two-group pre/post comparison. It does not
+authorize staggered rollout, historical state-space, repeated pre/post, or
+baseline-only contribution-confidence designs.
+
 - Spec: `openspec/changes/add-bayesian-inference-proof-harness/specs/confidence-inference-methodology/spec.md`
 - Contract module: `packages/confidence-engine/src/confidenceModel.ts`
   (`FT_AI_VALUE_CONFIDENCE_MODEL_CONTRACT_2026_07`)
@@ -261,6 +271,12 @@ lacking documented empirical justification also hold. The spine's `N(0,1)`
 placeholder (state `weakly_regularizing_internal_placeholder_not_calibrated`)
 is retired only inside the harness; the spine itself stays byte-stable as a
 governed decision record.
+
+Blueprint target values, minimum worthwhile change, OKRs, sponsor goals, and
+desired business outcomes are planning context only. They must not set prior
+means, prior scales, likelihood anchors, calibration targets, posterior
+eligibility thresholds, or any other statistical quantity that would turn an
+aspiration into evidence.
 
 ## Aggregate floors
 
