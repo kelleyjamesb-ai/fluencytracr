@@ -477,13 +477,18 @@ documented value-realization layers:
   the single canonical Bayesian architecture family
   (`docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`).
   It keeps the current DiD path as `comparison_supported_bayesian_did_module`
-  and defines future docs-only components for aggregate Fluency, VBD,
-  hypothesis outcome, economic-value context, pathway coherence, claim caps,
-  and portfolio review. "Human transformation" means aggregate work-pattern
-  and capability-change context only; it does not authorize HR analytics,
+  and defines components for aggregate Fluency, VBD, hypothesis outcome,
+  economic-value context, pathway coherence, claim caps, and portfolio review.
+  The first implemented non-DiD component is an isolated synthetic smoke proof
+  for `first_longitudinal_synthetic_model_slice`, with a source-independent
+  aggregate AI Fluency snapshot validator and a separate internal-only
+  TypeScript artifact schema; it is not replicated calibration or production
+  promotion. "Human transformation" means aggregate work-pattern and
+  capability-change context only; it does not authorize HR analytics,
   individual scoring, employee productivity measurement, manager/team ranking,
   customer-facing confidence/probability output, ROI proof, finance output,
-  causality claims, or economic output.
+  causality claims, persistence, routes, UI, exports, live connector reads, or
+  economic output.
 - **V4 Value Confidence Layer:** combines Velocity and Depth with governed V3
   verdicts to qualify the defensibility of AI value claims.
 - **AI Scale Readiness Portfolio:** V4 internal readout contract that turns

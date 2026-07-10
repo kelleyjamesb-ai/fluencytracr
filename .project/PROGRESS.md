@@ -2,6 +2,54 @@
 
 ## Current Session
 
+- AI Fluency snapshot + longitudinal synthetic proof Phase 2B smoke
+  implementation (2026-07-10): implemented and verified the exact-scope
+  `add-ai-fluency-instrument-snapshot-longitudinal-proof` change. Added the
+  source-independent aggregate `AIFluencyInstrumentSnapshot` validator with
+  Apps Script-shaped, controlled JSON, and future API fixture parity; raw
+  unsafe boundary flags, respondent leakage, missing aggregate coverage,
+  incomplete/camelCase uncertainty, HR/personnel/productivity fields,
+  confidence/probability/ROI/finance/productivity side doors, route/UI/
+  persistence side doors, and unsafe source values now fail before model
+  context. Added sibling Python longitudinal modules for
+  `first_longitudinal_synthetic_model_slice` without changing the existing
+  DiD model: evidence-design routing, typed synthetic aggregate inputs,
+  clean/null/negative synthetic scenarios, closed-form Gaussian posterior
+  smoke fit, AR(1) diagnostic posture, counterfactual movement summary,
+  fail-closed HOLD paths, unsafe-control redaction, source hashes, and
+  internal-only artifact self-hash binding. Added a separate confidence-engine
+  longitudinal Zod schema and bridge tests; forged DiD routes, unsupported
+  route claims, unsafe controls, bad self-hashes, source-hash drift, unknown
+  fields, and unsafe output flags reject. CODE / BUG / ADVERSARIAL review
+  blockers were addressed before commit: no probability-named posterior fields
+  remain in the longitudinal artifact, draw shares are boxed as internal
+  diagnostics only, `hold_reason` was renamed to `routing_diagnostic`, source
+  snapshot `suppression_state` is documented as adapter/source-review posture
+  rather than a new canonical suppression reason, and the inference CI
+  workflow now runs the longitudinal bridge test after installing the Python
+  venv. No real/customer/live data path, backend/prisma route, UI,
+  persistence, export, connector, customer-facing confidence/probability, ROI,
+  causality, productivity, finance output, new canonical event, new
+  suppression reason, tunable threshold, or promotion decision was added.
+  Verified: focused longitudinal Python tests (`25 passed`), full inference
+  suite (`257 passed`), AI Fluency snapshot tests (`8 passed`), confidence
+  bridge/regression tests (`96 passed`), `npm run build --workspace shared`,
+  `npm run build --workspace packages/confidence-engine`,
+  `npx openspec validate add-ai-fluency-instrument-snapshot-longitudinal-proof
+  --strict`, `npx openspec validate
+  generalize-bayesian-confidence-to-model-family --strict`,
+  `npx openspec validate add-bayesian-inference-proof-harness --strict`,
+  `./scripts/ci_docs_contract_sweep.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/ci_semantic_drift_guard.mjs`, and `git diff --check`.
+  OpenSpec verification tasks `4.4` through `4.7` are now checked complete for
+  this smoke change. Future tasks `5.1` through `5.8` remain unchecked. The
+  existing DiD OpenSpec tasks `3.3`, `3.4`, `4.2`, and `5.1` remain
+  incomplete. Remaining blocker before calling Bayesian proof complete:
+  full NUTS longitudinal sampler hardening plus replicated interval coverage,
+  longitudinal null false-eligibility, lag recovery, common-shock robustness,
+  model-selection validation, AI Fluency measurement-model calibration, VBD
+  trajectory calibration, and separate persistence/UI promotion decisions.
 - Bayesian model-family Phase 2A longitudinal slice specification
   (2026-07-10): selected and specified
   `first_longitudinal_synthetic_model_slice` as the first non-DiD

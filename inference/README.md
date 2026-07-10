@@ -115,6 +115,31 @@ Under `src/fluencytracr_inference/`:
   and hashes component reports, and remains non-authorizing. Sidecar JSON
   reports, plan-only metadata, missing controls, failed controls, and
   rehydrated sampler evidence HOLD rather than completing task 3.3.
+- `design_router.py` — additive model-family route vocabulary for the first
+  longitudinal slice. It preserves current DiD routing for valid two-group
+  pre/post comparison designs and keeps unsupported designs such as staggered
+  rollout fail-closed.
+- `longitudinal_types.py`, `longitudinal_synthetic.py`,
+  `longitudinal_model.py`, and `longitudinal_artifact.py` — isolated
+  synthetic-only Phase 2B prototype for
+  `first_longitudinal_synthetic_model_slice`. The path uses aggregate
+  Hypothesis Measurement Plan metadata, source-bound aggregate AI Fluency
+  snapshot refs, separate lagged Velocity/Breadth/Depth exposures, synthetic
+  aggregate controls, known aggregate SE, and an explicit AR(1) residual
+  diagnostic posture. The fitted calculation is a closed-form Gaussian
+  posterior smoke proof labeled
+  `closed_form_gaussian_posterior_smoke_not_nuts`; it is not replicated
+  calibration and not production promotion. It emits a separate
+  `FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07` artifact
+  validated by
+  `packages/confidence-engine/src/longitudinalSyntheticOutcomeProof.ts`. Full
+  NUTS longitudinal sampler hardening, replicated interval coverage,
+  longitudinal null false-eligibility, lag recovery, common-shock robustness,
+  model-selection validation, real-data promotion, persistence, routes, UI,
+  exports, customer-facing confidence/probability, ROI, causality,
+  productivity, and finance output remain blocked future work.
+  Posterior draw shares are emitted only as boxed internal diagnostics, not as
+  probability output, confidence output, or customer-facing language.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

@@ -48,6 +48,11 @@ Slice 2 Phase B2 layout (Phase A shipped the skeleton + pinned environment):
   (eligible only when every gate passes; otherwise HOLD naming every failure;
   contribution-estimate authorization additionally requires the compiled null
   false-eligibility guard to exclude zero)
+- ``design_router`` and ``longitudinal_*`` — sibling synthetic-only Phase 2B
+  prototype for ``first_longitudinal_synthetic_model_slice``. It emits a
+  separate internal smoke artifact for aggregate historical longitudinal
+  outcome proof mechanics, not a DiD artifact and not replicated calibration
+  or production promotion.
 
 The Phase B2 calibration study (>= 200 replications per cell) consumes the
 generators and feeds computed study sections into the ``artifact.run_proof``
