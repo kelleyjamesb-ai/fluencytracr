@@ -37,7 +37,7 @@ from .constants import (
 from .hashing import sha256_json
 
 GENERATOR_ID = "fluencytracr_inference.synthetic.did_aggregate"
-GENERATOR_VERSION = "1.0.0"
+GENERATOR_VERSION = "1.1.0"
 
 # Ground-truth fixed effects shared by all scenarios (in aggregate_unit_sd
 # units; alpha is an arbitrary metric level).
@@ -55,6 +55,23 @@ TRUE_GROUP_SD = {
 }
 
 GROUPINGS = ("expectation_path", "workflow", "function", "cohort", "organization")
+
+RANDOM_EFFECT_GENERATION = "zero_sum_centered_by_grouping"
+
+
+def _zero_sum_random_effect(
+    rng: np.random.Generator,
+    *,
+    grouping: str,
+    n_levels: int,
+    aggregate_unit_sd: float,
+) -> np.ndarray:
+    values = rng.normal(
+        0.0,
+        TRUE_GROUP_SD[grouping] * aggregate_unit_sd,
+        size=n_levels,
+    )
+    return values - values.mean()
 
 
 @dataclass(frozen=True)
@@ -320,7 +337,12 @@ def generate_did_dataset(
         )
 
     u = {
-        grouping: rng.normal(0.0, TRUE_GROUP_SD[grouping] * aggregate_unit_sd, size=n_levels)
+        grouping: _zero_sum_random_effect(
+            rng,
+            grouping=grouping,
+            n_levels=n_levels,
+            aggregate_unit_sd=aggregate_unit_sd,
+        )
         for grouping, n_levels in (
             ("expectation_path", n_expectation_paths),
             ("workflow", n_workflows),
@@ -408,6 +430,10 @@ def generate_did_dataset(
             "beta_treated": TRUE_BETA_TREATED,
             "delta": float(injected_effect_sd),
             "group_sd": dict(TRUE_GROUP_SD),
+            "random_effect_generation": RANDOM_EFFECT_GENERATION,
+            "random_effect_sums_by_grouping": {
+                grouping: float(values.sum()) for grouping, values in u.items()
+            },
         },
         window_evidence=evidence,
         comparison_cohort_present=comparison_cohort_present,

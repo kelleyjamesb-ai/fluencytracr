@@ -3,6 +3,8 @@
 import numpy as np
 
 from fluencytracr_inference.synthetic import (
+    GENERATOR_VERSION,
+    RANDOM_EFFECT_GENERATION,
     WindowEvidenceDeclaration,
     clean_window_evidence,
     generate_did_dataset,
@@ -62,6 +64,12 @@ def test_clean_dataset_structure():
     assert set(np.unique(ds.post)) == {0, 1}
     # Ground truth carries the injected estimand.
     assert ds.ground_truth["delta"] == 0.5
+    assert ds.generator_version == GENERATOR_VERSION
+    assert ds.ground_truth["random_effect_generation"] == RANDOM_EFFECT_GENERATION
+    assert all(
+        abs(total) < 1e-12
+        for total in ds.ground_truth["random_effect_sums_by_grouping"].values()
+    )
     # Aggregate SE is cohort-size weighted.
     assert np.allclose(ds.se, ds.aggregate_unit_sd / np.sqrt(ds.members))
     # Clean rubric passes everything; clean evidence holds nothing.
@@ -77,6 +85,17 @@ def test_injected_effect_visible_in_did_of_means():
         y[(treated == 1) & (post == 1)].mean() - y[(treated == 1) & (post == 0)].mean()
     ) - (y[(treated == 0) & (post == 1)].mean() - y[(treated == 0) & (post == 0)].mean())
     assert abs(did - 0.5) < 0.3
+
+
+def test_synthetic_input_hash_binds_zero_sum_generation_metadata():
+    base = generate_did_dataset(seed=11, k=12, injected_effect_sd=0.2)
+    changed_ground_truth = dict(base.ground_truth)
+    changed_ground_truth["random_effect_generation"] = "uncentered_legacy_draws"
+
+    assert (
+        with_scenario(base, ground_truth=changed_ground_truth).synthetic_input_hash()
+        != base.synthetic_input_hash()
+    )
 
 
 def test_window_evidence_section_derivations():
