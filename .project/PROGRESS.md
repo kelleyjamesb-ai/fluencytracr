@@ -2,6 +2,24 @@
 
 ## Current Session
 
+- Comparison-design review routing alignment (2026-07-10, branch
+  `codex/comparison-design-review-routing-alignment`): added a docs-only
+  OpenSpec change and model-family contract clarification for natural-language
+  comparison requests. The request receives a pointer to the existing
+  reviewer-owned source-package collection and adequacy-review prerequisites;
+  it cannot set `evidence_design`, select a model, invoke a selector or runner,
+  create reviewed evidence, or execute DiD. Existing contracts remain the sole
+  owners of their workflow states and transitions, `HOLD_FOR_*` values remain
+  workflow states rather than suppression reasons, and every independent DiD
+  gate remains required. A separately completed one-dimension adequacy review
+  may be supporting context in a later human prioritization decision only; the
+  Bayesian DiD proof remains incomplete. CODE / BUG / ADVERSARIAL review
+  reached GO after wording hardening. Verification passed: `npx openspec
+  validate align-comparison-design-review-routing --strict`, docs contract
+  sweep, semantic drift guard, V1 governance gates, and `git diff --check`.
+  Review also exposed a pre-existing undefined-function crash in the
+  comparison-design adequacy boundary test; that runtime bug is separate from
+  this docs-only change and must be repaired before relying on that runner.
 - Bayesian DiD sampler diagnostic hardening no-go canary (2026-07-10):
   executed the two requested moves. First, the AI Value formula registry PR
   #404 was merged into `origin/main` at merge commit `41a71784`. Then a fresh

@@ -205,6 +205,85 @@ Router contract rules:
 - Economic assumptions, finance pathway references, sponsor goals, and
   Blueprint promises cannot upgrade evidence-design strength or claim caps.
 
+## Natural-Language Comparison Request Review Mapping
+
+A natural-language request to compare cohorts, review pre/post structure,
+assess matching, or evaluate whether a design could fit DiD is documentation-
+level review intent only. It does not set `evidence_design`, select or execute
+a model, invoke a selector or runner, or create reviewed evidence. The response
+may point to the existing comparison-design review prerequisites:
+
+```text
+natural-language comparison request
+-> documentation pointer to existing preparation and collection contract
+-> separately supplied reviewer-owned aggregate source package
+-> separately run existing adequacy review
+-> one reviewed diagnostics dimension only
+```
+
+The request is not reviewer-owned source-package information or reviewed
+evidence. It cannot satisfy a required source ref, hash, review decision, or
+boundary check, and it does not invoke either existing runner. Collection
+still accepts only explicitly supplied reviewer-owned, aggregate-only
+comparison-design information under the existing collection contract.
+
+The first step remains subject to the existing preparation prerequisite:
+
+```text
+COMPARISON_DESIGN_SOURCE_PACKAGE_PREPARATION_READY_FOR_REVIEWER_COLLECTION
+allowed_next_step=collect_reviewer_owned_comparison_design_source_package_only
+```
+
+A missing or invalid source binding remains `HOLD_FOR_BINDING`. A valid
+binding with missing, unsafe, or held reviewer-owned package information
+remains `HOLD_FOR_MORE_INFORMATION`. Only this existing collection state may
+advance:
+
+```text
+REVIEWER_OWNED_COMPARISON_DESIGN_SOURCE_PACKAGE_COLLECTED_FOR_REVIEW_ONLY
+review_decision=COLLECTED_FOR_REVIEW_ONLY
+allowed_next_step=run_comparison_design_adequacy_evidence_review_only
+```
+
+The adequacy review preserves its existing states:
+
+```text
+COMPARISON_DESIGN_ADEQUACY_EVIDENCE_REVIEWED_FOR_GOVERNED_SOURCE_BINDING
+HOLD_FOR_COMPARISON_DESIGN_ADEQUACY_EVIDENCE
+REJECTED_FOR_BOUNDARY_LEAKAGE
+```
+
+These selectors and states remain owned by:
+
+- `docs/contracts/ai-value-reviewer-owned-comparison-design-source-package-collection/README.md`
+- `docs/contracts/ai-value-contribution-alignment-comparison-design-adequacy-evidence-review/README.md`
+
+This mapping does not duplicate or change those contracts. They remain the
+sole owners of their selectors, states, recovery transitions, and allowed next
+steps. The names `HOLD_FOR_BINDING`, `HOLD_FOR_MORE_INFORMATION`, and
+`HOLD_FOR_COMPARISON_DESIGN_ADEQUACY_EVIDENCE` are review/workflow states, not
+canonical FluencyTracr suppression reasons. This documentation creates no new
+token, selector, parser, normalization rule, schema, code path, runtime
+trigger, suppression reason, route, UI, persistence, export, customer output,
+or real/customer/live data authorization.
+
+A qualifying
+`COMPARISON_DESIGN_ADEQUACY_EVIDENCE_REVIEWED_FOR_GOVERNED_SOURCE_BINDING`
+result is one reviewed diagnostics dimension only. It may be supporting
+context in a later, separate human decision to reprioritize unfinished DiD
+proof work, but it
+cannot execute, modify, calibrate, promote, or complete DiD and cannot satisfy
+the full Governed Diagnostics Sufficiency Evidence Source. The existing
+Bayesian DiD proof remains incomplete, including tasks `3.3`, `3.4`, `4.2`,
+and `5.1` in `add-bayesian-inference-proof-harness`.
+
+Even after that one-dimension review, every independent DiD gate remains
+required: a true two-group design, comparison-cohort adequacy, complete
+windows, aggregate floors, sampler diagnostics, posterior predictive checks,
+prior sensitivity, replicated calibration and null evidence, peeking control,
+synthetic-only proof boundaries, source binding, and TypeScript artifact
+validation.
+
 ## Hypothesis Measurement Plan Contract Semantics
 
 The governing input concept for future model-family routing is a Hypothesis
