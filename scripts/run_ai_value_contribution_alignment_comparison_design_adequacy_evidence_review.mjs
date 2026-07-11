@@ -548,6 +548,12 @@ const NON_REVIEWED_PROVENANCE_PATTERN =
   /(?:^|[\s_.-])(?:draft|local|pending|generated|fixture|template|runtime(?:_only|-only)?|source(?:_hash_only|-hash-only)|hash(?:_only|-only)|example|default)(?:$|[\s_.-])/i;
 const NON_READY_WINDOW_REF_PATTERN =
   /(?:^|[\s_.-])(?:stale|suppressed|held|hold|misaligned|missing)(?:$|[\s_.-])/i;
+const SENSITIVE_RUNTIME_ENVELOPE_VALUE_PATTERNS = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /\bselect\b[\s\S]+\bfrom\b/i,
+  /secret:\/\//i,
+  /\bbquxjob_/i
+];
 
 function stableStringify(value) {
   if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
@@ -614,6 +620,27 @@ function comparisonSourceEvidenceFromInput(input) {
   return asRecord(input).comparison_design_source_evidence ?? null;
 }
 
+function runtimeEnvelopeContentGaps(value) {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => runtimeEnvelopeContentGaps(item));
+  }
+  if (value && typeof value === "object") {
+    const gaps = [];
+    for (const [key, nested] of Object.entries(value)) {
+      if (FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))) {
+        gaps.push("source runtime envelope contains forbidden field name");
+        continue;
+      }
+      gaps.push(...runtimeEnvelopeContentGaps(nested));
+    }
+    return gaps;
+  }
+  if (typeof value !== "string") return [];
+  return SENSITIVE_RUNTIME_ENVELOPE_VALUE_PATTERNS.some((pattern) => pattern.test(value))
+    ? ["source runtime envelope contains unsafe source content"]
+    : [];
+}
+
 function inputBoundaryGaps(input) {
   const record = asRecord(input);
   if (!Object.prototype.hasOwnProperty.call(record, "source_runtime")) return [];
@@ -632,7 +659,7 @@ function inputBoundaryGaps(input) {
   const nestedContentGaps = sourceRuntimeEnvelope.source_runtime
     ? Object.entries(sourceRuntimeEnvelope)
         .filter(([key]) => key !== "source_runtime")
-        .flatMap(([key, nested]) => runtimeEnvelopeContentGaps(nested, `source_runtime envelope.${key}`))
+        .flatMap(([, nested]) => runtimeEnvelopeContentGaps(nested))
     : [];
   return Object.keys(sidecar).length > 0 ||
     Object.keys(nestedSidecar).length > 0 ||

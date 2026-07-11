@@ -2,6 +2,19 @@
 
 ## Current Session
 
+- Comparison-design adequacy nested-boundary crash repair (2026-07-10,
+  branch `codex/comparison-design-adequacy-boundary-fix`): repaired a
+  pre-existing fail-closed defect discovered during comparison-routing review.
+  The adequacy runner referenced an undefined recursive nested-envelope
+  validator and crashed when unsafe nested sidecars were supplied. Added a
+  generic, non-echoing recursive scan for forbidden field names and sensitive
+  runtime-envelope values; unsafe nested content now reaches the existing
+  `REJECTED_FOR_BOUNDARY_LEAKAGE` behavior instead of raising. No states,
+  schemas, selectors, authorization flags, routes, UI, persistence, exports,
+  connectors, model behavior, suppression reasons, or customer outputs
+  changed. Verification passed: comparison-design adequacy review `23/23`,
+  reviewer-owned collection `25/25`, V1 governance gates, and `git diff
+  --check`.
 - Bayesian DiD sampler diagnostic hardening no-go canary (2026-07-10):
   executed the two requested moves. First, the AI Value formula registry PR
   #404 was merged into `origin/main` at merge commit `41a71784`. Then a fresh
