@@ -67,7 +67,7 @@ slot.
 - Per quantity: mean difference at most `0.15` reference posterior SD; each 80%
   endpoint difference at most `0.20` reference posterior SD; SD ratio in
   `[0.85, 1.15]`.
-- NUTS: R-hat at most `1.01`, bulk/tail ESS at least `400`, zero divergences,
+- NUTS: finite positive R-hat at most `1.01`, bulk/tail ESS at least `400`, zero divergences,
   zero treedepth saturation, BFMI at least `0.3`, MCSE ratio at most `0.1`.
 - Every compiled PPC p-value remains in `[0.05, 0.95]`.
 - Missing, duplicate, malformed, off-plan, hash-invalid, runner-error,
@@ -86,6 +86,11 @@ Only the complete 30-slot full-settings study can be
 manifest completeness, and semantic gates. Unkeyed hashes prove consistency
 and drift detection, not authenticity against coordinated replacement; a
 trusted signature remains separate future scope.
+
+The generated artifact records whether the numerical concordance gate passed,
+but it always keeps independent acceptance incomplete and replicated
+validation blocked. A separate durable review record may unblock the next
+synthetic validation PR only after CODE, BUG, and ADVERSARIAL return GO.
 
 ## Risks And Mitigations
 

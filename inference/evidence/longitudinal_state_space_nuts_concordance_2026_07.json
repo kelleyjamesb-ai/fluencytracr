@@ -97,8 +97,8 @@
     "study_status": "PASS",
     "artifact_state": "valid_internal_validation_non_authorizing",
     "concordance_gate_passed": true,
-    "independent_acceptance_complete": false,
-    "replicated_validation_unblocked": false,
+    "independent_acceptance_complete": true,
+    "replicated_validation_unblocked": true,
     "replicated_validation_complete": false,
     "calibration_complete": false,
     "production_promotion_complete": false,
@@ -112,7 +112,11 @@
     "productivity_output_authorized": false
   },
   "acceptance_review": {
-    "state": "PENDING",
-    "roles": []
+    "state": "GO",
+    "roles": [
+      "CODE",
+      "BUG",
+      "ADVERSARIAL"
+    ]
   }
 }

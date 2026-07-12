@@ -2,6 +2,51 @@
 
 ## Current Session
 
+- Longitudinal state-space/NUTS concordance (2026-07-12): completed the
+  bounded queue item on `codex/longitudinal-state-space-nuts-concordance` from
+  `origin/main`. Added a six-cell synthetic generator with truth outside model
+  inputs, one pre-period-standardized aggregate preparation path, a
+  deterministic Rao-Blackwellized Gaussian/AR(1) engine with 8,192-point
+  Sobol cubature, and a matched PyMC NUTS reference using four chains, 1,000
+  retained draws, 2,000 tuning draws, `target_accept=0.99`, and
+  `max_treedepth=15`. The separate summary-only V1 concordance artifact binds
+  case identity, prepared inputs, engine fits, scalar diagnostic manifests,
+  exact slot order, and study evidence. Python and TypeScript reject missing,
+  duplicate, off-plan, cloned, hash-rebound, reduced-mode, runner-error,
+  nonpositive-R-hat, PPC-failing, and discordant evidence while preserving
+  bridge-valid HOLD records. The generated artifact records the numerical
+  gate but cannot self-certify independent acceptance or unblock replicated
+  execution. No real/customer/live data, routes, UI, persistence, exports,
+  connectors, customer readouts, confidence/probability output, ROI,
+  causality, productivity, finance output, canonical events, suppression
+  reasons, tunable thresholds, or promotion decision were added.
+
+  The final full run passed all 30 compiled slots across effects
+  `{0, 0.2, 0.5}` SD and panel-group counts `{6, 12}`. Worst mean and endpoint
+  differences were `0.0732504518` and `0.1207116615` reference SD; SD ratios
+  were `0.9393208715` to `1.0562010648`; maximum R-hat was `1.0079141876`;
+  minimum bulk/tail ESS were `745.2228` / `671.0443`; maximum MCSE ratio was
+  `0.0843380571`; minimum BFMI was `0.4375941697`; and divergences,
+  treedepth saturation, PPC failures, concordance failures, runner errors,
+  duplicate bindings, and HOLD slots were all zero. The committed full
+  artifact SHA-256 is
+  `7c2edfd713a50d78e2452874bd2a3bc580067a28d8db43406cc5baa797d9fac5`.
+  Final independent CODE, BUG, and ADVERSARIAL review returned GO.
+
+  Verification passed: focused longitudinal Python tests (`84 passed`, one
+  full canary deselected), full inference tests (`444 passed`), AI Fluency
+  snapshot tests (`11 passed`), longitudinal TypeScript bridge (`16 passed`),
+  harness verification (`274 passed`, `3 skipped`), `shared` and
+  `confidence-engine` builds, five relevant strict OpenSpec validations, docs
+  sweep, semantic-drift guard, V1 governance gates, and `git diff --check`.
+  OpenSpec tasks `1.1`
+  through `5.5` in `add-longitudinal-state-space-nuts-concordance` are safe to
+  keep checked. Model-family Phase 3 tasks `3.1` through `3.4`, longitudinal
+  replicated-validation work, and unfinished DiD tasks remain unchecked.
+  Remaining blocker before calling the longitudinal Bayesian proof complete:
+  build and independently accept the separate replicated-validation runner,
+  then generate and review the 1,200 state-space calibration results plus
+  null, floor, lag, shock, model-selection, and negative-control evidence.
 - Longitudinal V2 smoke proof boundary hardening (2026-07-11): completed the
   bounded Phase 2B hardening slice on
   `codex/longitudinal-smoke-proof-boundary-hardening`. The Python path now

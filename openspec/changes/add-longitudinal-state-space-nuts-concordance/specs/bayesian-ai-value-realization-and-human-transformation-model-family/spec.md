@@ -60,7 +60,7 @@ reference posterior SD, and primary/reference SD ratios in `[0.85, 1.15]`.
 ### Requirement: Fixed NUTS And Posterior Predictive Gates
 
 The full reference SHALL use four chains, 1,000 draws, 2,000 tuning draws,
-`target_accept=0.99`, and `max_treedepth=15`. It SHALL require R-hat at most
+`target_accept=0.99`, and `max_treedepth=15`. It SHALL require finite positive R-hat at most
 `1.01`, bulk/tail ESS at least `400`, zero divergences and treedepth
 saturation, BFMI at least `0.3`, MCSE ratio at most `0.1`, and every compiled
 PPC p-value in `[0.05, 0.95]`.
@@ -84,7 +84,11 @@ counts `{6, 12}` and five compiled seeds per cell as complete concordance.
 
 - **WHEN** all 30 unique full-setting slots are present, on-plan, hash-valid,
   runner-generated, and passing
-- **THEN** concordance may unblock later replicated validation without
+- **THEN** the generated artifact records a passed numerical concordance gate
+- **AND** independent acceptance and replicated-validation execution remain
+  false in that artifact
+- **AND** a separate durable review record may unblock later replicated
+  validation only after CODE, BUG, and ADVERSARIAL acceptance, without
   authorizing customer or production use
 
 #### Scenario: Study evidence is incomplete or substituted
