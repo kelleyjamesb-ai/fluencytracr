@@ -1058,6 +1058,47 @@ test("legacy V1 no-fit HOLD artifacts remain readable", { skip: venvSkip }, () =
   assert.equal(LongitudinalSyntheticOutcomeProofV2ArtifactSchema.safeParse(legacy).success, false);
 });
 
+test("legacy V1 artifacts reject more than four aligned controls after self-rehash", { skip: venvSkip }, () => {
+  const legacy = asLegacyV1(emitLongitudinal("clean_historical_pathway"));
+  const extraControls = [
+    ["campaign_index", "synthetic-control://campaign-index", "a".repeat(64)],
+    ["policy_index", "synthetic-control://policy-index", "b".repeat(64)],
+    ["volume_index", "synthetic-control://volume-index", "c".repeat(64)]
+  ];
+  legacy.business_control_evidence.control_names.push(
+    ...extraControls.map(([name]) => name)
+  );
+  legacy.business_control_evidence.control_source_refs.push(
+    ...extraControls.map(([, sourceRef]) => sourceRef)
+  );
+  legacy.business_control_evidence.source_hashes.push(
+    ...extraControls.map(([, , sourceHash]) => sourceHash)
+  );
+  legacy.source_hashes.control_source_hashes.push(
+    ...extraControls.map(([, , sourceHash]) => sourceHash)
+  );
+  legacy.hash_bindings.source_hashes_hash = sha256Json(legacy.source_hashes);
+  rehash(legacy);
+
+  const v1Result = LongitudinalSyntheticOutcomeProofV1ArtifactSchema.safeParse(legacy);
+  assert.equal(v1Result.success, false);
+  assert.ok(
+    v1Result.error.issues.some(
+      (issue) => issue.path.join(".") === "business_control_evidence.control_names"
+    )
+  );
+  assert.equal(LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(legacy).success, false);
+});
+
+test("legacy fitted non-HOLD artifacts reject a failed placebo check after self-rehash", { skip: venvSkip }, () => {
+  const legacy = asLegacyV1(emitLongitudinal("clean_historical_pathway"));
+  legacy.diagnostics.placebo_intervention_date_check.pass = false;
+  rehash(legacy);
+
+  assert.equal(LongitudinalSyntheticOutcomeProofV1ArtifactSchema.safeParse(legacy).success, false);
+  assert.equal(LongitudinalSyntheticOutcomeProofArtifactSchema.safeParse(legacy).success, false);
+});
+
 test("V1 and V2 bodies cannot be relabeled across schema versions", { skip: venvSkip }, () => {
   const v2AsV1 = emitLongitudinal("clean_historical_pathway");
   v2AsV1.schema_version = LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_SCHEMA_VERSION_V1;

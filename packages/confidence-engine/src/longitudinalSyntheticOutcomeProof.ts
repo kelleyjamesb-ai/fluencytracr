@@ -1042,6 +1042,10 @@ const BusinessControlEvidenceSchema = z
   })
   .strict();
 
+const V1BusinessControlEvidenceSchema = BusinessControlEvidenceSchema.extend({
+  control_names: z.array(z.string()).max(COMPILED_MAX_APPROVED_BUSINESS_CONTROLS)
+});
+
 const SyntheticGeneratorSchema = z
   .object({
     generator_id: z.string().min(1),
@@ -1150,6 +1154,7 @@ const LongitudinalSyntheticOutcomeProofV1ArtifactObjectSchema = z
     ...CommonArtifactShape,
     schema_version: z.literal(LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_SCHEMA_VERSION_V1),
     ai_fluency_snapshot_evidence: z.array(V1AIFluencySnapshotEvidenceSchema).nonempty(),
+    business_control_evidence: V1BusinessControlEvidenceSchema,
     model_specification: V1ModelSpecificationSchema,
     behavior_outcome_pathway_evidence: V1BehaviorOutcomePathwayEvidenceSchema,
     diagnostics: V1DiagnosticsSchema,
@@ -2161,7 +2166,11 @@ function validateLongitudinalSyntheticOutcomeProofArtifact(
         }
       }
       if (!isV2) {
-        for (const check of ["counterfactual_stability_check", "prior_sensitivity_check"] as const) {
+        for (const check of [
+          "placebo_intervention_date_check",
+          "counterfactual_stability_check",
+          "prior_sensitivity_check"
+        ] as const) {
           const section = diagnostics[check];
           if (!section || typeof section !== "object" || (section as Record<string, unknown>).pass !== true) {
             ctx.addIssue({
