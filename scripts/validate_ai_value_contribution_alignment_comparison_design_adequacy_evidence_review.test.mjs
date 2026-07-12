@@ -12,6 +12,12 @@ import {
   buildContributionAlignmentGovernedDiagnosticsSufficiencyEvidenceSourceFromObject
 } from "./run_ai_value_contribution_alignment_governed_diagnostics_sufficiency_evidence_source.mjs";
 import {
+  contributionAlignmentInternalBayesianExecutionGateHash
+} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_gate.mjs";
+import {
+  contributionAlignmentInternalBayesianExecutionRuntimeHash
+} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
+import {
   buildReviewerOwnedComparisonDesignSourcePackageCollection
 } from "./run_ai_value_reviewer_owned_comparison_design_source_package_collection.mjs";
 import {
@@ -64,6 +70,17 @@ function sourceRuntimeEnvelope(overrides = {}) {
     ...sourceRuntimeSource(),
     ...overrides
   };
+}
+
+function rehashSourceGateEnvelope(runtimeSource, mutateGate) {
+  const envelope = clone(runtimeSource);
+  mutateGate(envelope.source_gate);
+  envelope.source_gate.gate_hash =
+    contributionAlignmentInternalBayesianExecutionGateHash(envelope.source_gate);
+  envelope.source_runtime.source_gate_ref.gate_hash = envelope.source_gate.gate_hash;
+  envelope.source_runtime.runtime_hash =
+    contributionAlignmentInternalBayesianExecutionRuntimeHash(envelope.source_runtime);
+  return envelope;
 }
 
 function sourceRuntimeValidationOptions(overrides = {}) {
@@ -842,6 +859,149 @@ test("comparison-design evidence review rejects forbidden source sidecar names e
   assert.equal(review.promotion_boundary.promotion_authorized, false);
 });
 
+test("comparison-design evidence review accepts canonical nested source-gate boundary attestations", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  const review =
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+      source_runtime: runtimeSource,
+      comparison_design_source_evidence: collection
+    });
+
+  assert.equal(runtimeSource.source_gate.runtime_prerequisites.no_raw_rows_or_records, true);
+  assert.equal(runtimeSource.source_gate.runtime_prerequisites.no_identifiers, true);
+  assert.equal(runtimeSource.source_gate.runtime_prerequisites.no_query_text, true);
+  assert.equal(runtimeSource.source_gate.runtime_prerequisites.no_live_connectors, true);
+  assert.equal(review.review_state, READY_STATE);
+  assert.equal(review.evidence_satisfaction.evidence_satisfied, true);
+});
+
+test("comparison-design evidence review rejects actual raw or person-level content nested under source_gate", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  for (const mutateGate of [
+    (gate) => { gate.raw_rows = [{ selected_metric: 13 }]; },
+    (gate) => { gate.employee_id = "person-123"; },
+    (gate) => { gate.extra = { no_identifiers: true }; },
+    (gate) => { gate.evidence = [{ metric_value: 13 }]; }
+  ]) {
+    const forgedEnvelope = rehashSourceGateEnvelope(runtimeSource, mutateGate);
+    const review =
+      buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+        source_runtime: forgedEnvelope,
+        comparison_design_source_evidence: collection
+      });
+    const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+    const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+    assert.equal(review.review_state, REJECT_STATE);
+    assert.equal(validation.valid, false);
+    assert.equal(serialized.includes("person-123"), false);
+    assert.equal(serialized.includes("selected_metric"), false);
+  }
+});
+
+test("comparison-design evidence review rejects malformed source gates in legacy plain-runtime wrappers", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  for (const mutateGate of [
+    (gate) => { gate.raw_rows = [{ selected_metric: 13 }]; },
+    (gate) => { gate.participants = [{ display_name: "Person Example" }]; }
+  ]) {
+    const forgedEnvelope = rehashSourceGateEnvelope(runtimeSource, mutateGate);
+    const review =
+      buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+        source_runtime: forgedEnvelope.source_runtime,
+        source_gate: forgedEnvelope.source_gate,
+        aggregate_measurement_cell_windows:
+          forgedEnvelope.aggregate_measurement_cell_windows,
+        comparison_design_source_evidence: collection
+      });
+    const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+    const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+    assert.equal(review.review_state, REJECT_STATE);
+    assert.equal(validation.valid, false);
+    assert.equal(serialized.includes("selected_metric"), false);
+    assert.equal(serialized.includes("Person Example"), false);
+  }
+});
+
+test("comparison-design evidence review rejects unsafe aggregate windows in legacy plain-runtime wrappers", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  for (const mutateWindows of [
+    (windows) => { windows[0].raw_rows = [{ email: "person@example.com" }]; },
+    (windows) => {
+      windows[0].participants = [{ display_name: "Person Example" }];
+    }
+  ]) {
+    const unsafeWindows = clone(runtimeSource.aggregate_measurement_cell_windows);
+    mutateWindows(unsafeWindows);
+    const review =
+      buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+        source_runtime: runtimeSource.source_runtime,
+        source_gate: runtimeSource.source_gate,
+        aggregate_measurement_cell_windows: unsafeWindows,
+        comparison_design_source_evidence: collection
+      });
+    const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+    const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+    assert.equal(review.review_state, REJECT_STATE);
+    assert.equal(validation.valid, false);
+    assert.equal(serialized.includes("person@example.com"), false);
+    assert.equal(serialized.includes("Person Example"), false);
+    assert.equal(serialized.includes("raw_rows"), false);
+  }
+});
+
+test("comparison-design evidence review rejects ambiguous nested-envelope shapes", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  for (const invalidNestedRuntime of [null, {}, []]) {
+    const review =
+      buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+        source_runtime: {
+          ...runtimeSource,
+          source_runtime: invalidNestedRuntime
+        },
+        comparison_design_source_evidence: collection
+      });
+
+    assert.equal(review.review_state, REJECT_STATE);
+    assert.equal(
+      validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review).valid,
+      false
+    );
+  }
+});
+
+test("comparison-design evidence review rejects ungoverned nested windows and metadata", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  const unsafeWindowsEnvelope = clone(runtimeSource);
+  unsafeWindowsEnvelope.aggregate_measurement_cell_windows[0].participants = [
+    { display_name: "Person Example" }
+  ];
+
+  for (const envelope of [
+    unsafeWindowsEnvelope,
+    { ...runtimeSource, generated_at: "not-a-governed-timestamp" }
+  ]) {
+    const review =
+      buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+        source_runtime: envelope,
+        comparison_design_source_evidence: collection
+      });
+    const serialized = JSON.stringify(review);
+
+    assert.equal(review.review_state, REJECT_STATE);
+    assert.equal(serialized.includes("Person Example"), false);
+    assert.equal(serialized.includes("not-a-governed-timestamp"), false);
+  }
+});
+
 test("comparison-design evidence review rejects unsafe nested runtime envelope sidecars", () => {
   const runtimeSource = sourceRuntimeSource();
   const runtime = runtimeSource.source_runtime;
@@ -862,6 +1022,35 @@ test("comparison-design evidence review rejects unsafe nested runtime envelope s
   assert.equal(validation.valid, false);
   for (const unsafe of ["person@example.com", "SELECT user_id", "raw_rows", "query_text"]) {
     assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
+  }
+});
+
+test("comparison-design evidence review rejects ignored outer fields beside a nested runtime envelope", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  for (const outerSidecar of [
+    { generated_at: { raw_rows: [{ email: "person@example.com" }] } },
+    { source_gate: { raw_rows: [{ email: "person@example.com" }] } },
+    {
+      aggregate_measurement_cell_windows: {
+        query_text: "SELECT user_id FROM raw_rows"
+      }
+    }
+  ]) {
+    const review =
+      buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+        source_runtime: runtimeSource,
+        comparison_design_source_evidence: collection,
+        ...outerSidecar
+      });
+    const validation =
+      validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+    const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+    assert.equal(review.review_state, REJECT_STATE);
+    assert.equal(validation.valid, false);
+    assert.equal(serialized.includes("person@example.com"), false);
+    assert.equal(serialized.includes("SELECT user_id"), false);
   }
 });
 

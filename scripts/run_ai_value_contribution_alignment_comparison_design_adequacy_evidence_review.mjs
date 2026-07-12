@@ -11,6 +11,9 @@ import {
   validateContributionAlignmentInternalBayesianExecutionRuntime
 } from "./run_ai_value_contribution_alignment_internal_bayesian_execution_runtime.mjs";
 import {
+  validateContributionAlignmentInternalBayesianExecutionGate
+} from "./run_ai_value_contribution_alignment_internal_bayesian_execution_gate.mjs";
+import {
   REQUIRED_APPROVED_MEASUREMENT_PLAN_MILESTONES
 } from "./run_ai_value_reviewer_approved_measurement_plan_contract.mjs";
 import {
@@ -68,6 +71,14 @@ const ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS = new Set([
   "aggregate_measurement_cell_windows",
   "aggregateMeasurementCellWindows",
   "generated_at"
+]);
+const AGGREGATE_MEASUREMENT_CELL_WINDOW_FIELDS = new Set([
+  "aggregate_window_id",
+  "comparison_role",
+  "window_role",
+  "selected_metric_mean",
+  "selected_metric_standard_error",
+  "cohort_size"
 ]);
 
 const SOURCE_PACKAGE_FIELDS = new Set([
@@ -514,6 +525,13 @@ const FORBIDDEN_KEY_PATTERNS = [
   /connector/i
 ];
 
+const SENSITIVE_RUNTIME_ENVELOPE_VALUE_PATTERNS = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+  /\bselect\b[\s\S]+\bfrom\b/i,
+  /secret:\/\//i,
+  /\bbquxjob_/i
+];
+
 const FORBIDDEN_VALUE_PATTERNS = [
   /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
   /\bselect\b[\s\S]+\bfrom\b/i,
@@ -570,6 +588,10 @@ function asRecord(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
+function hasOwn(record, key) {
+  return Object.prototype.hasOwnProperty.call(record, key);
+}
+
 function falseMap(keys) {
   return Object.fromEntries(keys.map((key) => [key, false]));
 }
@@ -594,14 +616,18 @@ function safeCollectionScalar(value) {
 function sourceRuntimeFromInput(input) {
   const record = asRecord(input);
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  if (sourceRuntimeEnvelope.source_runtime) return sourceRuntimeEnvelope.source_runtime;
+  if (hasOwn(sourceRuntimeEnvelope, "source_runtime")) {
+    return sourceRuntimeEnvelope.source_runtime;
+  }
   return record.source_runtime ?? input;
 }
 
 function sourceRuntimeValidationOptions(input) {
   const record = asRecord(input);
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
-  const source = sourceRuntimeEnvelope.source_runtime ? sourceRuntimeEnvelope : record;
+  const source = hasOwn(sourceRuntimeEnvelope, "source_runtime")
+    ? sourceRuntimeEnvelope
+    : record;
   return {
     sourceGate: source.source_gate ?? source.sourceGate,
     aggregateMeasurementCellWindows:
@@ -614,27 +640,120 @@ function comparisonSourceEvidenceFromInput(input) {
   return asRecord(input).comparison_design_source_evidence ?? null;
 }
 
+function runtimeEnvelopeContentGaps(value, path = []) {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) =>
+      runtimeEnvelopeContentGaps(item, [...path, String(index)])
+    );
+  }
+  if (value && typeof value === "object") {
+    const gaps = [];
+    for (const [key, nested] of Object.entries(value)) {
+      const currentPath = [...path, key];
+      if (
+        FORBIDDEN_KEY_PATTERNS.some((pattern) => pattern.test(key))
+      ) {
+        gaps.push("source runtime envelope contains forbidden field name");
+        continue;
+      }
+      gaps.push(...runtimeEnvelopeContentGaps(nested, currentPath));
+    }
+    return gaps;
+  }
+  if (typeof value !== "string") return [];
+  return SENSITIVE_RUNTIME_ENVELOPE_VALUE_PATTERNS.some((pattern) => pattern.test(value))
+    ? ["source runtime envelope contains unsafe source content"]
+    : [];
+}
+
+function aggregateWindowBoundaryGaps(value) {
+  if (!Array.isArray(value)) return [];
+  const gaps = [];
+  for (const window of value) {
+    const record = asRecord(window);
+    if (
+      Object.keys(record).some(
+        (key) => !AGGREGATE_MEASUREMENT_CELL_WINDOW_FIELDS.has(key)
+      )
+    ) {
+      gaps.push("aggregate measurement-cell window contains ungoverned field");
+    }
+    gaps.push(...runtimeEnvelopeContentGaps(window));
+  }
+  return gaps;
+}
+
 function inputBoundaryGaps(input) {
   const record = asRecord(input);
-  if (!Object.prototype.hasOwnProperty.call(record, "source_runtime")) return [];
+  if (!hasOwn(record, "source_runtime")) return [];
   const sidecar = Object.fromEntries(
     Object.entries(record).filter(([key]) => !ALLOWED_INPUT_FIELDS.has(key))
   );
   const sourceRuntimeEnvelope = asRecord(record.source_runtime);
+  const nestedRuntimeEnvelope = hasOwn(sourceRuntimeEnvelope, "source_runtime");
+  const nestedRuntime = sourceRuntimeEnvelope.source_runtime;
+  const nestedRuntimeInvalid =
+    nestedRuntimeEnvelope &&
+    (nestedRuntime === null ||
+      typeof nestedRuntime !== "object" ||
+      Array.isArray(nestedRuntime) ||
+      Object.keys(asRecord(nestedRuntime)).length === 0);
+  const duplicateOuterRuntimeFields = nestedRuntimeEnvelope
+    ? ["source_gate", "aggregate_measurement_cell_windows", "generated_at"].filter(
+        (key) => hasOwn(record, key)
+      )
+    : [];
+  const generatedAtInvalid =
+    !nestedRuntimeEnvelope &&
+    hasOwn(record, "generated_at") &&
+    (typeof record.generated_at !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(record.generated_at) ||
+      !Number.isFinite(Date.parse(record.generated_at)));
+  const plainSourceGateGaps =
+    !nestedRuntimeEnvelope && hasOwn(record, "source_gate") &&
+    !validateContributionAlignmentInternalBayesianExecutionGate(record.source_gate).valid
+      ? ["plain runtime wrapper contains invalid source gate"]
+      : [];
+  const plainAggregateWindowGaps =
+    !nestedRuntimeEnvelope && hasOwn(record, "aggregate_measurement_cell_windows")
+      ? aggregateWindowBoundaryGaps(record.aggregate_measurement_cell_windows)
+      : [];
   const nestedSidecar =
-    sourceRuntimeEnvelope.source_runtime
+    nestedRuntimeEnvelope
       ? Object.fromEntries(
           Object.entries(sourceRuntimeEnvelope).filter(
             ([key]) => !ALLOWED_SOURCE_RUNTIME_ENVELOPE_FIELDS.has(key)
           )
         )
       : {};
-  const nestedContentGaps = sourceRuntimeEnvelope.source_runtime
+  const nestedContentGaps = nestedRuntimeEnvelope
     ? Object.entries(sourceRuntimeEnvelope)
         .filter(([key]) => key !== "source_runtime")
-        .flatMap(([key, nested]) => runtimeEnvelopeContentGaps(nested, `source_runtime envelope.${key}`))
+        .flatMap(([key, nested]) => {
+          if (["source_gate", "sourceGate"].includes(key)) {
+            return validateContributionAlignmentInternalBayesianExecutionGate(nested).valid
+              ? []
+              : ["source runtime envelope contains invalid source gate"];
+          }
+          if (["aggregate_measurement_cell_windows", "aggregateMeasurementCellWindows"].includes(key)) {
+            return aggregateWindowBoundaryGaps(nested);
+          }
+          if (key === "generated_at") {
+            return typeof nested === "string" &&
+              /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(nested) &&
+              Number.isFinite(Date.parse(nested))
+              ? []
+              : ["source runtime envelope contains invalid generated_at"];
+          }
+          return runtimeEnvelopeContentGaps(nested, [key]);
+        })
     : [];
   return Object.keys(sidecar).length > 0 ||
+    nestedRuntimeInvalid ||
+    duplicateOuterRuntimeFields.length > 0 ||
+    generatedAtInvalid ||
+    plainSourceGateGaps.length > 0 ||
+    plainAggregateWindowGaps.length > 0 ||
     Object.keys(nestedSidecar).length > 0 ||
     nestedContentGaps.length > 0
     ? ["input wrapper rejected unsafe or unsupported content"]
