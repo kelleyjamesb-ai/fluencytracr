@@ -26,5 +26,5 @@
 - [x] 5.1 Run focused and full Python inference tests.
 - [x] 5.2 Run TypeScript bridge tests and `shared`/`confidence-engine` builds.
 - [x] 5.3 Run strict OpenSpec, docs, semantic-drift, governance, and diff checks.
-- [ ] 5.4 Complete independent CODE, BUG, and ADVERSARIAL acceptance.
-- [ ] 5.5 Update task/status records only after verification; do not mark replicated longitudinal validation or unfinished DiD tasks complete.
+- [x] 5.4 Complete independent CODE, BUG, and ADVERSARIAL acceptance.
+- [x] 5.5 Update task/status records only after verification; do not mark replicated longitudinal validation or unfinished DiD tasks complete.

@@ -168,8 +168,11 @@ Under `src/fluencytracr_inference/`:
   `max_treedepth=15`. The exact five-seed grid over effects `{0, 0.2, 0.5}` and
   panel-group counts `{6, 12}` passed all 30 slots. The full artifact binds the
   compiled Python range, exact `requirements.lock` hash, and generation runtime
-  package manifest. The committed artifact, compact numerical summary, and
-  source-bound independent acceptance record live under `inference/evidence/`.
+  package manifest. The committed artifact and compact numerical summary keep
+  independent acceptance and replicated unblocking false. The separate
+  source-bound `longitudinal_state_space_nuts_concordance_acceptance_2026_07.json`
+  record binds the reviewed implementation commit and exact evidence tuple and
+  unblocks only the next replicated synthetic-validation PR.
   The generated artifact records the numerical gate but cannot self-certify
   independent acceptance or unblock later execution; reduced, partial,
   copied, reordered, mode-mismatched, malformed, duplicated, runner-error,

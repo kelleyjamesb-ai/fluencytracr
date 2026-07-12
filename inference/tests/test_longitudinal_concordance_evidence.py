@@ -1,8 +1,10 @@
 import hashlib
 import json
+from copy import deepcopy
 from pathlib import Path
 
 from fluencytracr_inference.artifact import lockfile_hash
+from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.longitudinal_concordance_artifact import (
     LONGITUDINAL_CONCORDANCE_PYTHON_REQUIRES,
     longitudinal_concordance_payload_hash,
@@ -20,10 +22,18 @@ FULL_ARTIFACT_PATH = (
     EVIDENCE_PATH.parent
     / "longitudinal_state_space_nuts_concordance_full_2026_07.json"
 )
+ACCEPTANCE_PATH = (
+    EVIDENCE_PATH.parent
+    / "longitudinal_state_space_nuts_concordance_acceptance_2026_07.json"
+)
 
 
 def _evidence():
     return json.loads(EVIDENCE_PATH.read_text(encoding="utf-8"))
+
+
+def _acceptance():
+    return json.loads(ACCEPTANCE_PATH.read_text(encoding="utf-8"))
 
 
 def _committed_source_artifact(evidence):
@@ -231,3 +241,70 @@ def test_evidence_remains_summary_only_and_nonauthorizing():
     assert governance["roi_output_authorized"] is False
     assert governance["causality_output_authorized"] is False
     assert governance["productivity_output_authorized"] is False
+
+
+def test_separate_acceptance_record_binds_reviewed_commit_and_evidence():
+    record = _acceptance()
+    source = record["source_evidence"]
+    full_artifact = json.loads(FULL_ARTIFACT_PATH.read_text(encoding="utf-8"))
+
+    assert set(record) == {
+        "schema_version",
+        "record_class",
+        "reviewed_at",
+        "reviewed_change_id",
+        "reviewed_implementation_commit",
+        "source_evidence",
+        "review_decisions",
+        "overall_decision",
+        "next_step_state",
+        "governance_pins",
+        "hash_bindings",
+    }
+    assert record["reviewed_implementation_commit"] == (
+        "6c0b0faa7511dc0cdc7119c2856bdbe0ad06ad5c"
+    )
+    assert hashlib.sha256(FULL_ARTIFACT_PATH.read_bytes()).hexdigest() == (
+        source["full_artifact_sha256"]
+    )
+    assert hashlib.sha256(EVIDENCE_PATH.read_bytes()).hexdigest() == (
+        source["compact_summary_sha256"]
+    )
+    assert full_artifact["hash_bindings"]["artifact_self_hash"] == (
+        source["artifact_self_hash"]
+    )
+    assert full_artifact["study_plan"]["plan_hash"] == source["study_plan_hash"]
+    assert full_artifact["study_summary"]["study_result_hash"] == (
+        source["study_result_hash"]
+    )
+    assert full_artifact["lockfile_hash"] == source["requirements_lock_hash"]
+    assert full_artifact["python_requires"] == source["python_requires"]
+
+    reviews = record["review_decisions"]
+    assert [review["role"] for review in reviews] == ["CODE", "BUG", "ADVERSARIAL"]
+    assert all(review["decision"] == "GO" for review in reviews)
+    assert all(review["reviewer_kind"] == "independent_codex_subagent" for review in reviews)
+    assert len({review["review_ref"] for review in reviews}) == 3
+    assert record["overall_decision"] == "GO"
+
+    next_step = record["next_step_state"]
+    assert next_step["replicated_validation_unblocked"] is True
+    assert next_step["replicated_validation_complete"] is False
+    assert next_step["full_longitudinal_proof_complete"] is False
+    pins = record["governance_pins"]
+    assert pins["synthetic_only"] is True
+    assert pins["aggregate_only"] is True
+    assert pins["internal_only"] is True
+    assert pins["did_status"] == "isolated_incomplete"
+    assert all(
+        value is False
+        for key, value in pins.items()
+        if key not in {"synthetic_only", "aggregate_only", "internal_only", "did_status"}
+    )
+
+    hash_body = deepcopy(record)
+    hash_body["hash_bindings"]["record_self_hash"] = ""
+    assert record["hash_bindings"]["record_self_hash"] == sha256_json(hash_body)
+    assert record["hash_bindings"]["hash_posture"] == (
+        "consistency_and_drift_detection_not_coordinated_replacement_authenticity"
+    )

@@ -731,9 +731,13 @@ Implemented by the later exact-scope concordance change
 - Deterministic Gaussian integration and a matched full-setting PyMC NUTS
   reference with fixed sampler, PPC, and cross-engine gates.
 - Exact 30-slot synthetic concordance evidence, strict Python/TypeScript hash
-  and manifest validation, and independent CODE/BUG/ADVERSARIAL acceptance.
+  and manifest validation, and commit-and-evidence-bound independent
+  CODE/BUG/ADVERSARIAL acceptance.
 - Separate summary-only evidence that does not contain posterior draws or
   authorize replicated execution, customer output, or production use.
+- A separate acceptance record unblocks only the next replicated synthetic
+  validation PR; it does not mark replication, calibration, or the full
+  longitudinal proof complete.
 
 Still not implemented by that smoke change:
 
