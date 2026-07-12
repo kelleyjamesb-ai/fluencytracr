@@ -1,0 +1,116 @@
+{
+  "schema_version": "FT_INTERNAL_LONGITUDINAL_STATE_SPACE_NUTS_CONCORDANCE_EVIDENCE_2026_07",
+  "generated_at": "2026-07-12T00:00:00+00:00",
+  "source_evidence": {
+    "artifact_schema_version": "FT_AI_VALUE_LONGITUDINAL_STATE_SPACE_NUTS_CONCORDANCE_2026_07_V1",
+    "execution_mode": "full",
+    "source_artifact_path": "inference/evidence/longitudinal_state_space_nuts_concordance_full_2026_07.json",
+    "source_artifact_sha256": "0497ec12e432da0f0e270093df616c3b2a822b1fbc3c9c40070f963c53fd7b08",
+    "artifact_self_hash": "6a3bc16ec57dad6d0b884c8753a0c00316b41d9b104105cf6822a4ef6bd5be5b",
+    "study_plan_hash": "14728eaa44e00bcbc212d17b2d35fb582512c371d5706161d2bab641c04b19ad",
+    "study_result_hash": "aef2a9b81a3ac09b69891035c346c27a083a54dfef718f421e4d595f4367c3a7",
+    "python_requires": ">=3.13,<3.14",
+    "lockfile_hash": "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801",
+    "source_artifact_committed": true,
+    "summary_only": true,
+    "posterior_draws_committed": false,
+    "latent_states_committed": false
+  },
+  "plan": {
+    "effect_sizes_sd": [
+      0.0,
+      0.2,
+      0.5
+    ],
+    "panel_group_counts": [
+      6,
+      12
+    ],
+    "seeds": [
+      202607120,
+      202607121,
+      202607122,
+      202607123,
+      202607124
+    ],
+    "required_slot_count": 30,
+    "executed_slot_count": 30,
+    "missing_slot_count": 0,
+    "duplicate_slot_count": 0,
+    "off_plan_slot_count": 0,
+    "duplicate_evidence_binding_count": 0,
+    "runner_error_count": 0
+  },
+  "cells": {
+    "effect_0p0__groups_6": {
+      "slot_count": 5,
+      "pass_count": 5
+    },
+    "effect_0p0__groups_12": {
+      "slot_count": 5,
+      "pass_count": 5
+    },
+    "effect_0p2__groups_6": {
+      "slot_count": 5,
+      "pass_count": 5
+    },
+    "effect_0p2__groups_12": {
+      "slot_count": 5,
+      "pass_count": 5
+    },
+    "effect_0p5__groups_6": {
+      "slot_count": 5,
+      "pass_count": 5
+    },
+    "effect_0p5__groups_12": {
+      "slot_count": 5,
+      "pass_count": 5
+    }
+  },
+  "sampler_diagnostics": {
+    "max_r_hat": 1.0079141876378583,
+    "min_bulk_ess": 745.222818343512,
+    "min_tail_ess": 671.0443217698675,
+    "max_mcse_to_posterior_sd_ratio": 0.08433805711296928,
+    "min_bfmi": 0.43759416967362996,
+    "post_warmup_divergence_count": 0,
+    "max_treedepth_saturation_count": 0
+  },
+  "posterior_predictive_checks": {
+    "min_p_value": 0.181,
+    "max_p_value": 0.915,
+    "failure_count": 0
+  },
+  "cross_engine_concordance": {
+    "max_mean_difference_reference_sd": 0.07325045180005137,
+    "max_endpoint_difference_reference_sd": 0.12071166147021566,
+    "min_primary_to_reference_sd_ratio": 0.9393208715396028,
+    "max_primary_to_reference_sd_ratio": 1.0562010648055635,
+    "failure_count": 0
+  },
+  "runtime_versions": {
+    "python": "3.13.12",
+    "pymc": "6.0.1",
+    "arviz": "1.2.0",
+    "numpy": "2.4.6",
+    "scipy": "1.18.0"
+  },
+  "governance": {
+    "study_status": "PASS",
+    "artifact_state": "valid_internal_validation_non_authorizing",
+    "concordance_gate_passed": true,
+    "independent_acceptance_complete": false,
+    "replicated_validation_unblocked": false,
+    "replicated_validation_complete": false,
+    "calibration_complete": false,
+    "production_promotion_complete": false,
+    "internal_only": true,
+    "synthetic_only": true,
+    "customer_output_authorized": false,
+    "probability_output_authorized": false,
+    "confidence_output_authorized": false,
+    "roi_output_authorized": false,
+    "causality_output_authorized": false,
+    "productivity_output_authorized": false
+  }
+}

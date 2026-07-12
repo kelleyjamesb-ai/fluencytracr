@@ -514,6 +514,47 @@ compose the final fit-summary root. This
 detects operand changes beneath unchanged roots without claiming signature-grade
 authenticity when an actor replaces every unkeyed root.
 
+### Current State-Space And NUTS Concordance Boundary
+
+The exact-scope change `add-longitudinal-state-space-nuts-concordance`
+implements a separate synthetic-only internal validation artifact for:
+
+```text
+y[c,t] = X[c,t] beta + u[c] + r[c,t] + epsilon[c,t]
+r[c,t] = rho * r[c,t-1] + eta[c,t]
+```
+
+Both engines consume one canonical pre-period-standardized aggregate input.
+The deterministic primary analytically integrates the Gaussian state,
+zero-sum panel-group effects, and fixed coefficients before deterministic
+Sobol cubature over covariance hyperparameters. The PyMC reference uses four
+chains, 1,000 retained draws, 2,000 tuning draws, `target_accept=0.99`, and
+`max_treedepth=15`. Compiled sampler, posterior-predictive, and cross-engine
+gates fail closed.
+
+All 30 full-setting slots passed: five fixed seeds in each cell formed by
+effects `{0, 0.2, 0.5}` SD and panel-group counts `{6, 12}`. Durable evidence
+is committed under `inference/evidence/` without raw posterior draws or latent
+states. The generated artifact records that the numerical concordance gate
+passed, while independent acceptance and replicated-validation execution
+remain false inside that artifact. The separate reviewed evidence record may
+unblock the next synthetic validation PR only after CODE, BUG, and ADVERSARIAL
+acceptance.
+
+The artifact binds the compiled Python range, exact `requirements.lock` hash,
+and generation runtime package manifest. Python accepts only the exact
+in-process registered runner study and recomputes slot hashes, compiled order,
+execution modes, and study fields before emission; copied or substituted study
+objects cannot emit a PASS artifact.
+
+This concordance does not complete replicated interval coverage, null
+false-validation-signal measurement, floor, lag, shock, model-selection, or
+negative-control studies. It adds no real-data admission, production runtime,
+route, UI, persistence, export, connector, customer readout,
+confidence/probability output, ROI, causality, productivity, finance output,
+new canonical event, suppression reason, tunable threshold, or promotion
+decision.
+
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware
 RFC3339 generation timestamps, and compiled synthetic control identity/source
@@ -759,9 +800,26 @@ Implemented by the later exact-scope Phase 2B smoke change
   common shock, and temporary-only movement, plus pre-emission rejection for
   unsafe controls, real-data flags, and respondent leakage.
 
+Implemented by the later exact-scope concordance change
+`add-longitudinal-state-space-nuts-concordance`:
+
+- Shared pre-period-standardized Gaussian state-space preparation with known
+  aggregate SE, zero-sum panel-group effects, stationary AR(1), separate
+  Velocity/Breadth terms, baseline Fluency context, approved controls, and
+  Depth context excluded from the likelihood.
+- Deterministic Gaussian integration and a matched full-setting PyMC NUTS
+  reference with fixed sampler, PPC, and cross-engine gates.
+- Exact 30-slot synthetic concordance evidence, strict Python/TypeScript hash
+  and manifest validation, and commit-and-evidence-bound independent
+  CODE/BUG/ADVERSARIAL acceptance.
+- Separate summary-only evidence that does not contain posterior draws or
+  authorize replicated execution, customer output, or production use.
+- A separate acceptance record unblocks only the next replicated synthetic
+  validation PR; it does not mark replication, calibration, or the full
+  longitudinal proof complete.
+
 Still not implemented by that smoke change:
 
-- Full NUTS longitudinal sampler hardening.
 - Replicated interval coverage.
 - Longitudinal null false-eligibility calibration.
 - Lag recovery and common-shock robustness studies.

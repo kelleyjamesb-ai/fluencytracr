@@ -148,14 +148,37 @@ Under `src/fluencytracr_inference/`:
   fixture scenario or ground-truth oracle sidecars, requires JavaScript-safe
   nonnegative seeds and RFC3339 generation timestamps, and admits only
   compiled synthetic control identity/source pairs. Unknown and DiD-routed
-  designs cannot emit through the longitudinal schema. Full
-  NUTS longitudinal sampler hardening, replicated interval coverage,
+  designs cannot emit through the longitudinal schema. Replicated interval coverage,
   longitudinal null false-eligibility, lag recovery, common-shock robustness,
   model-selection validation, real-data promotion, persistence, routes, UI,
   exports, customer-facing confidence/probability, ROI, causality,
   productivity, and finance output remain blocked future work.
   Posterior draw shares are emitted only as boxed internal diagnostics, not as
   probability output, confidence output, or customer-facing language.
+- `longitudinal_validation_synthetic.py`, `longitudinal_state_space.py`,
+  `longitudinal_nuts.py`, `longitudinal_concordance.py`, and
+  `longitudinal_concordance_artifact.py` implement the separate synthetic-only
+  state-space/NUTS concordance gate. Both engines consume one
+  pre-period-standardized aggregate input for
+  `y[c,t] = X[c,t] beta + u[c] + r[c,t] + epsilon[c,t]`, with stationary AR(1)
+  state, zero-sum panel-group effects, known aggregate SE, and compiled priors.
+  The deterministic primary integrates Gaussian states and coefficients before
+  8,192-point Sobol cubature; the reference uses four PyMC NUTS chains, 1,000
+  retained draws, 2,000 tuning draws, `target_accept=0.99`, and
+  `max_treedepth=15`. The exact five-seed grid over effects `{0, 0.2, 0.5}` and
+  panel-group counts `{6, 12}` passed all 30 slots. The full artifact binds the
+  compiled Python range, exact `requirements.lock` hash, and generation runtime
+  package manifest. The committed artifact and compact numerical summary keep
+  independent acceptance and replicated unblocking false. The separate
+  source-bound `longitudinal_state_space_nuts_concordance_acceptance_2026_07.json`
+  record binds the reviewed implementation commit and exact evidence tuple and
+  unblocks only the next replicated synthetic-validation PR.
+  The generated artifact records the numerical gate but cannot self-certify
+  independent acceptance or unblock later execution; reduced, partial,
+  copied, reordered, mode-mismatched, malformed, duplicated, runner-error,
+  diagnostic-failing, PPC-failing, or
+  discordant evidence remains HOLD. Replicated calibration, null, floor, lag,
+  shock, and negative-control validation remain separate future work.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

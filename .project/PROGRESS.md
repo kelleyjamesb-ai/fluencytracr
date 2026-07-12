@@ -2,6 +2,83 @@
 
 ## Current Session
 
+- PR #412 post-merge proof-boundary hardening (2026-07-12): merged current
+  `origin/main`, retained both progress records, and fixed the blockers found by
+  fresh BUG/ADVERSARIAL review. Python emission now accepts only the exact
+  registered in-process runner study and recomputes slot hashes, compiled
+  order, execution modes, and the complete study summary; copied, replaced,
+  directly assembled, mode-mismatched, or nested-mutated studies cannot emit a
+  PASS artifact. The artifact now binds the compiled Python range, exact
+  `requirements.lock` hash, and generation runtime package manifest, with
+  matching strict TypeScript validation. Numerical slot evidence did not
+  change; environment fields regenerated only the outer payload/self/file
+  hashes. The separate acceptance record
+  `inference/evidence/longitudinal_state_space_nuts_concordance_acceptance_2026_07.json`
+  binds reviewed implementation commit
+  `6c0b0faa7511dc0cdc7119c2856bdbe0ad06ad5c`, full artifact SHA-256
+  `0497ec12e432da0f0e270093df616c3b2a822b1fbc3c9c40070f963c53fd7b08`,
+  artifact self/plan/study/lockfile hashes, compact-summary SHA-256, and three
+  distinct CODE/BUG/ADVERSARIAL GO decisions. It unblocks only the next
+  replicated synthetic-validation PR; the generated artifact and compact
+  numerical summary retain false acceptance/unblocking flags, and replicated
+  validation, calibration, full proof, production promotion, customer output,
+  confidence/probability, ROI, finance, causality, and productivity remain
+  false or blocked. DiD remains isolated and incomplete.
+
+  Verification passed on the integrated hardening commit: full inference
+  (`447 passed`), three Python-to-TypeScript bridges (`71 passed`), AI Fluency
+  snapshot (`11 passed`), Assurance Harness (`274 passed`, `3 skipped`),
+  comparison adequacy (`30 passed`), reviewer-owned comparison collection
+  (`25 passed`), `shared` and `confidence-engine` builds, five strict OpenSpec
+  validations, docs sweep, semantic-drift guard, V1 governance gates, and
+  `git diff --check`. Fresh CODE, BUG, and ADVERSARIAL review returned GO.
+- Longitudinal state-space/NUTS concordance (2026-07-12): completed the
+  bounded queue item on `codex/longitudinal-state-space-nuts-concordance` from
+  `origin/main`. Added a six-cell synthetic generator with truth outside model
+  inputs, one pre-period-standardized aggregate preparation path, a
+  deterministic Rao-Blackwellized Gaussian/AR(1) engine with 8,192-point
+  Sobol cubature, and a matched PyMC NUTS reference using four chains, 1,000
+  retained draws, 2,000 tuning draws, `target_accept=0.99`, and
+  `max_treedepth=15`. The separate summary-only V1 concordance artifact binds
+  case identity, prepared inputs, engine fits, scalar diagnostic manifests,
+  exact slot order, and study evidence. Python and TypeScript reject missing,
+  duplicate, off-plan, cloned, hash-rebound, reduced-mode, runner-error,
+  nonpositive-R-hat, PPC-failing, and discordant evidence while preserving
+  bridge-valid HOLD records. The generated artifact records the numerical
+  gate but cannot self-certify independent acceptance or unblock replicated
+  execution. No real/customer/live data, routes, UI, persistence, exports,
+  connectors, customer readouts, confidence/probability output, ROI,
+  causality, productivity, finance output, canonical events, suppression
+  reasons, tunable thresholds, or promotion decision were added.
+
+  The final full run passed all 30 compiled slots across effects
+  `{0, 0.2, 0.5}` SD and panel-group counts `{6, 12}`. Worst mean and endpoint
+  differences were `0.0732504518` and `0.1207116615` reference SD; SD ratios
+  were `0.9393208715` to `1.0562010648`; maximum R-hat was `1.0079141876`;
+  minimum bulk/tail ESS were `745.2228` / `671.0443`; maximum MCSE ratio was
+  `0.0843380571`; minimum BFMI was `0.4375941697`; and divergences,
+  treedepth saturation, PPC failures, concordance failures, runner errors,
+  duplicate bindings, and HOLD slots were all zero. The committed full
+  artifact SHA-256 is
+  `0497ec12e432da0f0e270093df616c3b2a822b1fbc3c9c40070f963c53fd7b08`.
+  Final independent CODE, BUG, and ADVERSARIAL review returned GO.
+
+  Verification passed: full inference tests (`447 passed`), AI Fluency
+  snapshot tests (`11 passed`), three TypeScript bridges (`71 passed`),
+  harness verification (`274 passed`, `3 skipped`), `shared` and
+  `confidence-engine` builds, five relevant strict OpenSpec validations, docs
+  sweep, semantic-drift guard, V1 governance gates, and `git diff --check`.
+  The first GitHub inference job reached `97%` with no test failure before the
+  exact 20-minute job timeout canceled it; CI now allows 40 minutes for cold
+  PyTensor/PyMC compilation without skipping or weakening the full suite.
+  OpenSpec tasks `1.1`
+  through `5.5` in `add-longitudinal-state-space-nuts-concordance` are safe to
+  keep checked. Model-family Phase 3 tasks `3.1` through `3.4`, longitudinal
+  replicated-validation work, and unfinished DiD tasks remain unchecked.
+  Remaining blocker before calling the longitudinal Bayesian proof complete:
+  build and independently accept the separate replicated-validation runner,
+  then generate and review the 1,200 state-space calibration results plus
+  null, floor, lag, shock, model-selection, and negative-control evidence.
 - PR #409 comparison-routing conflict resolution (2026-07-12): merged current
   `origin/main` into `codex/comparison-design-review-routing-alignment` and
   resolved the sole conflict in this progress history while preserving both

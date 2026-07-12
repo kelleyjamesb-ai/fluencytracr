@@ -1,0 +1,68 @@
+{
+  "schema_version": "FT_INTERNAL_LONGITUDINAL_STATE_SPACE_NUTS_CONCORDANCE_ACCEPTANCE_2026_07_V1",
+  "record_class": "internal_synthetic_concordance_independent_acceptance",
+  "reviewed_at": "2026-07-12T20:19:27Z",
+  "reviewed_change_id": "add-longitudinal-state-space-nuts-concordance",
+  "reviewed_implementation_commit": "6c0b0faa7511dc0cdc7119c2856bdbe0ad06ad5c",
+  "source_evidence": {
+    "full_artifact_path": "inference/evidence/longitudinal_state_space_nuts_concordance_full_2026_07.json",
+    "full_artifact_sha256": "0497ec12e432da0f0e270093df616c3b2a822b1fbc3c9c40070f963c53fd7b08",
+    "artifact_self_hash": "6a3bc16ec57dad6d0b884c8753a0c00316b41d9b104105cf6822a4ef6bd5be5b",
+    "study_plan_hash": "14728eaa44e00bcbc212d17b2d35fb582512c371d5706161d2bab641c04b19ad",
+    "study_result_hash": "aef2a9b81a3ac09b69891035c346c27a083a54dfef718f421e4d595f4367c3a7",
+    "compact_summary_path": "inference/evidence/longitudinal_state_space_nuts_concordance_2026_07.json",
+    "compact_summary_sha256": "ce7d28408546bb0f91a19f4c79a7074190ec25e8b969afe403d9b95728dbb2b8",
+    "python_requires": ">=3.13,<3.14",
+    "requirements_lock_hash": "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801"
+  },
+  "review_decisions": [
+    {
+      "role": "CODE",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f57f0-70f4-78d3-b56c-755c64225a12"
+    },
+    {
+      "role": "BUG",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f57f0-6fa4-7963-b059-2214e232b292"
+    },
+    {
+      "role": "ADVERSARIAL",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f57f0-7032-7882-9f6a-7d30d13dfe1d"
+    }
+  ],
+  "overall_decision": "GO",
+  "next_step_state": {
+    "action": "open_replicated_longitudinal_synthetic_validation_pr",
+    "replicated_validation_unblocked": true,
+    "replicated_validation_complete": false,
+    "full_longitudinal_proof_complete": false
+  },
+  "governance_pins": {
+    "synthetic_only": true,
+    "aggregate_only": true,
+    "internal_only": true,
+    "did_status": "isolated_incomplete",
+    "calibration_complete": false,
+    "production_promotion_complete": false,
+    "customer_output_authorized": false,
+    "probability_output_authorized": false,
+    "confidence_output_authorized": false,
+    "roi_output_authorized": false,
+    "finance_output_authorized": false,
+    "causality_output_authorized": false,
+    "productivity_output_authorized": false,
+    "creates_route": false,
+    "creates_ui": false,
+    "writes_persistence": false,
+    "creates_export": false
+  },
+  "hash_bindings": {
+    "record_self_hash": "69d822b3583d8758caae237180ca930afee42831f8fe897e5598d85f26924cd7",
+    "hash_posture": "consistency_and_drift_detection_not_coordinated_replacement_authenticity"
+  }
+}

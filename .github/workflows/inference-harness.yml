@@ -12,6 +12,7 @@ on:
       - "inference/**"
       - "packages/confidence-engine/src/**"
       - "packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs"
+      - "packages/confidence-engine/test/longitudinal_state_space_concordance.test.mjs"
       - "packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs"
       - "packages/confidence-engine/test/fixtures/inference_proof_artifact_*.json"
       - "shared/src/aiValueEngine/aiFluencyInstrumentSnapshot.ts"
@@ -23,6 +24,7 @@ on:
       - "docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/**"
       - "openspec/changes/add-bayesian-inference-proof-harness/**"
       - "openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/**"
+      - "openspec/changes/add-longitudinal-state-space-nuts-concordance/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/inference-harness.yml"
@@ -31,6 +33,7 @@ on:
       - "inference/**"
       - "packages/confidence-engine/src/**"
       - "packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs"
+      - "packages/confidence-engine/test/longitudinal_state_space_concordance.test.mjs"
       - "packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs"
       - "packages/confidence-engine/test/fixtures/inference_proof_artifact_*.json"
       - "shared/src/aiValueEngine/aiFluencyInstrumentSnapshot.ts"
@@ -42,6 +45,7 @@ on:
       - "docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/**"
       - "openspec/changes/add-bayesian-inference-proof-harness/**"
       - "openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/**"
+      - "openspec/changes/add-longitudinal-state-space-nuts-concordance/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/inference-harness.yml"
@@ -49,7 +53,7 @@ on:
 jobs:
   inference-harness:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -69,6 +73,8 @@ jobs:
           inference/.venv/bin/pip install -r inference/requirements.lock
       - name: Install Node dependencies
         run: npm ci
+      - name: Validate longitudinal concordance OpenSpec
+        run: npx openspec validate add-longitudinal-state-space-nuts-concordance --strict
       - name: Run inference harness suite
         run: PYTHONPATH=inference/src inference/.venv/bin/python -m pytest inference/tests/ -q
       - name: Run AI Fluency snapshot boundary test
@@ -78,4 +84,5 @@ jobs:
           npm run build --workspace packages/confidence-engine
           node --test \
             packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs \
+            packages/confidence-engine/test/longitudinal_state_space_concordance.test.mjs \
             packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs
