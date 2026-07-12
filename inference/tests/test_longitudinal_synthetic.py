@@ -26,7 +26,7 @@ def test_clean_longitudinal_dataset_meets_window_requirements():
     assert dataset.live_data_source_present is False
 
 
-def test_clean_longitudinal_proof_is_internal_smoke_eligible():
+def test_clean_longitudinal_proof_is_internal_smoke_non_authorizing():
     artifact, report = run_longitudinal_proof(
         generate_longitudinal_dataset(seed=20260710),
         seed=20260710,
@@ -35,12 +35,36 @@ def test_clean_longitudinal_proof_is_internal_smoke_eligible():
 
     assert report["synthetic_smoke_only"] is True
     assert report["replicated_calibration_complete"] is False
-    assert artifact["governance_state"]["state"] == "eligible_internal_smoke_only"
+    assert artifact["governance_state"]["state"] == (
+        "valid_internal_smoke_non_authorizing"
+    )
     assert artifact["governance_state"]["failing_diagnostics"] == []
     assert artifact["posterior_estimand_summary"]["credible_interval_80"]["lower"] > 0
     assert artifact["behavior_outcome_pathway_evidence"]["pathway_state"] == (
-        "BEHAVIOR_AND_OUTCOME_ALIGNED"
+        "INTERNAL_SMOKE_CONTRAST_OBSERVED"
     )
+    assert artifact["model_specification"] == {
+        "model_kind": "closed_form_gaussian_longitudinal_smoke_regression",
+        "likelihood_family": "continuous_normal_identity",
+        "link_function": "identity",
+        "residual_structure": "independent_gaussian_with_posthoc_ar1_diagnostic_only",
+        "posterior_engine": "closed_form_gaussian_analytic_draws",
+        "nuts_sampler_used": False,
+        "ar1_likelihood_modeled": False,
+        "partial_pooling_implemented": False,
+        "historical_forecast": False,
+        "mcmc_chains": 0,
+        "analytic_posterior_draw_count": 2000,
+        "synthetic_smoke_only": True,
+        "replicated_calibration_complete": False,
+    }
+    for diagnostic in (
+        "counterfactual_stability_check",
+        "prior_sensitivity_check",
+        "posterior_predictive_check",
+        "sampler_diagnostics",
+    ):
+        assert artifact["diagnostics"][diagnostic]["status"] == "NOT_RUN"
     assert artifact["full_pathway_coherence_authorized"] is False
 
 
@@ -51,12 +75,14 @@ def test_null_longitudinal_proof_is_valid_non_authorizing():
         generated_at=FIXED_GENERATED_AT,
     )
 
-    assert artifact["governance_state"]["state"] == "valid_internal_non_authorizing"
+    assert artifact["governance_state"]["state"] == (
+        "valid_internal_smoke_non_authorizing"
+    )
     assert artifact["governance_state"]["failing_diagnostics"] == []
     interval = artifact["posterior_estimand_summary"]["credible_interval_80"]
     assert interval["lower"] < 0 < interval["upper"]
     assert artifact["behavior_outcome_pathway_evidence"]["pathway_state"] == (
-        "NO_MEANINGFUL_MOVEMENT"
+        "NO_INTERNAL_SMOKE_MOVEMENT"
     )
     assert artifact["behavior_outcome_pathway_evidence"]["breadth_moved_as_expected"] is False
     assert artifact["behavior_outcome_pathway_evidence"]["depth_moved_as_expected"] is False
@@ -70,7 +96,7 @@ def test_fluency_only_pathway_does_not_claim_all_vbd_movement():
     )
     pathway = artifact["behavior_outcome_pathway_evidence"]
 
-    assert pathway["pathway_state"] == "NO_MEANINGFUL_MOVEMENT"
+    assert pathway["pathway_state"] == "NO_INTERNAL_SMOKE_MOVEMENT"
     assert not all(
         [
             pathway["velocity_moved_as_expected"],
@@ -80,15 +106,15 @@ def test_fluency_only_pathway_does_not_claim_all_vbd_movement():
     )
 
 
-def test_synthetic_input_hash_binds_governance_fields_but_not_generator_labels():
+def test_synthetic_input_hash_binds_governance_fields_without_oracle_sidecars():
     dataset = generate_longitudinal_dataset(seed=20260710)
-    relabeled = replace(dataset, scenario="approved_control_common_shock")
     target_contaminated = replace(
         dataset,
         hypothesis_plan=replace(dataset.hypothesis_plan, target_value_used_as_prior=True),
     )
 
-    assert dataset.synthetic_input_hash() == relabeled.synthetic_input_hash()
+    assert not hasattr(dataset, "scenario")
+    assert not hasattr(dataset, "ground_truth")
     assert dataset.synthetic_input_hash() != target_contaminated.synthetic_input_hash()
     assert dataset.source_hashes()["hypothesis_plan_hash"] != (
         target_contaminated.source_hashes()["hypothesis_plan_hash"]
@@ -96,8 +122,11 @@ def test_synthetic_input_hash_binds_governance_fields_but_not_generator_labels()
 
 
 def test_longitudinal_artifact_omits_oracle_generator_metadata():
+    dataset = generate_longitudinal_dataset(seed=20260710)
+    assert not hasattr(dataset, "scenario")
+    assert not hasattr(dataset, "ground_truth")
     artifact, _ = run_longitudinal_proof(
-        generate_longitudinal_dataset(seed=20260710),
+        dataset,
         seed=20260710,
         generated_at=FIXED_GENERATED_AT,
     )

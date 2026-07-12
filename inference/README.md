@@ -126,14 +126,29 @@ Under `src/fluencytracr_inference/`:
   Hypothesis Measurement Plan metadata, source-bound aggregate AI Fluency
   snapshot refs, separate lagged Velocity/Breadth exposures, Depth as
   synthetic pathway context only, synthetic aggregate controls, known aggregate
-  SE, and an explicit AR(1) residual diagnostic posture. The fitted calculation
-  is a closed-form Gaussian
-  posterior smoke proof labeled
-  `closed_form_gaussian_posterior_smoke_not_nuts`; it is not replicated
-  calibration and not production promotion. It emits a separate
-  `FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07` artifact
-  validated by
+  SE, and a post-hoc AR(1) residual diagnostic. The V2 calculation is a
+  closed-form Gaussian analytic smoke regression with an independent Gaussian
+  likelihood. It does not use NUTS, model AR(1) in the likelihood, implement
+  partial pooling, or produce a historical forecast. A real pre-period
+  placebo, posterior predictive checks, sampler diagnostics,
+  prior-sensitivity refits, and full
+  counterfactual-stability analysis are `NOT_RUN`, never passing. Every
+  non-HOLD V2 result is `valid_internal_smoke_non_authorizing`; replicated
+  calibration and production promotion remain false. It emits the separate
+  `FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07_V2` artifact,
+  while the confidence boundary retains read-only compatibility with legacy
+  V1 smoke artifacts. Both versions are validated by
   `packages/confidence-engine/src/longitudinalSyntheticOutcomeProof.ts`. Full
+  V2 validation independently derives no-fit HOLD reasons and compiled smoke
+  thresholds. Hierarchical commitments bind emitted inputs beneath the
+  synthetic-input root, diagnostics beneath the diagnostics-fit root, and the
+  posterior summary, analytic draw count, and pathway evidence beneath the
+  final fit-summary root; unsafe
+  personnel/control metadata rejects before emission. The dataset carries no
+  fixture scenario or ground-truth oracle sidecars, requires JavaScript-safe
+  nonnegative seeds and RFC3339 generation timestamps, and admits only
+  compiled synthetic control identity/source pairs. Unknown and DiD-routed
+  designs cannot emit through the longitudinal schema. Full
   NUTS longitudinal sampler hardening, replicated interval coverage,
   longitudinal null false-eligibility, lag recovery, common-shock robustness,
   model-selection validation, real-data promotion, persistence, routes, UI,

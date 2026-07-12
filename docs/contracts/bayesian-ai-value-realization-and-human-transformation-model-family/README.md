@@ -400,11 +400,12 @@ proposal is:
 first_longitudinal_synthetic_model_slice
 ```
 
-This is a docs-only specification. It does not implement Python runtime model
-code, TypeScript schemas, artifact schemas, routes, UI, persistence, exports,
-migrations, connector reads, customer-facing outputs, real/customer/live data
-authorization, ROI proof, productivity measurement, causality claims,
-confidence percentages, probability output, or economic output.
+This subsection records the original docs-only Phase 2A specification. The
+later Phase 2B smoke implementation is described under **Current V2 Smoke
+Boundary** below. Neither phase authorizes routes, UI, persistence, exports,
+migrations, connector reads, customer-facing outputs, real/customer/live data,
+ROI proof, productivity measurement, causality claims, confidence percentages,
+probability output, or economic output.
 
 The slice is bounded to:
 
@@ -478,6 +479,47 @@ Term definitions:
 
 Cohort refs must remain aggregate, non-identifying, independently suppressed
 per slice, and unable to support cross-slice re-identification.
+
+### Current V2 Smoke Boundary
+
+The implemented V2 smoke artifact is deliberately narrower than the conceptual
+state-space model above. It validates the input, hash, diagnostic, and bridge
+mechanics using closed-form Gaussian analytic regression with an independent
+Gaussian likelihood. It does not claim or implement:
+
+- NUTS or any MCMC chain;
+- AR(1) likelihood structure (AR(1) is a post-hoc residual diagnostic only);
+- function/workflow partial pooling;
+- historical counterfactual forecasting;
+- replicated calibration or promotion.
+
+The V2 artifact binds the exact synthetic input, diagnostics, and emitted fit
+outputs through hierarchical fit-summary commitments. It marks the pre-period
+placebo, posterior predictive checks, sampler diagnostics, prior-sensitivity
+refits, and full counterfactual-stability analysis `NOT_RUN`. These unkeyed
+hashes provide internal consistency and drift detection, not trusted artifact
+authenticity;
+a coordinated payload rewrite requires a separately approved trusted
+signature/envelope. Every non-HOLD V2 artifact is
+`valid_internal_smoke_non_authorizing`. The TypeScript boundary retains V1
+legacy read compatibility, but V1 cannot satisfy V2, state-space, NUTS,
+concordance, or replicated-validation requirements.
+
+The V2 consistency binding is hierarchical: emitted input evidence plus the
+private dataset remainder compose the synthetic-input root; emitted diagnostic
+evidence plus the private fit remainder compose the diagnostics-fit root; and
+the synthetic-input root, diagnostics-fit root, and fit-output evidence
+covering the posterior summary, analytic draw count, and pathway evidence
+compose the final fit-summary root. This
+detects operand changes beneath unchanged roots without claiming signature-grade
+authenticity when an actor replaces every unkeyed root.
+
+V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
+contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware
+RFC3339 generation timestamps, and compiled synthetic control identity/source
+pairs. Unknown designs and designs routed to the isolated DiD module reject
+before longitudinal artifact emission; supported negative-control designs emit
+only bridge-valid HOLD artifacts.
 
 Velocity and Breadth remain separate in the model. Depth is synthetic
 aggregate pathway context in this slice, not an authorized coefficient,
@@ -689,10 +731,12 @@ Not implemented now:
 - Production model-family router.
 - Hypothesis Measurement Plan schema.
 - TypeScript production schema changes.
-- Production artifact schema changes. The separate
-  `FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07` smoke artifact is
-  internal-only and belongs to OpenSpec change
-  `add-ai-fluency-instrument-snapshot-longitudinal-proof`.
+- Production artifact schema changes. The separate V1
+  `FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07` and V2
+  `FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07_V2` smoke artifacts
+  are internal-only and belong to OpenSpec changes
+  `add-ai-fluency-instrument-snapshot-longitudinal-proof` and
+  `harden-longitudinal-smoke-proof-boundary`.
 - Production longitudinal runtime model code, state-space models, event-study
   models, controlled-test models, or economic value models.
 - Replicated calibration, negative-control, null, or floor evidence for the
@@ -707,10 +751,13 @@ Implemented by the later exact-scope Phase 2B smoke change
 - Adapter parity tests for Apps Script-shaped, controlled JSON, and future API
   fixtures.
 - Isolated synthetic-only longitudinal proof path under `inference/`.
-- Separate confidence-engine Zod schema for the internal smoke artifact.
-- Negative/HOLD controls for unsupported routes, missing inputs, unsafe
-  controls, real-data flags, respondent leakage, wrong lag, common shock, and
-  temporary-only movement.
+- Structurally validated, source-bound V2 smoke artifacts with immutable
+  synthetic-input, diagnostics-fit, and fit-output bindings.
+- Separate confidence-engine V1/V2 Zod schemas for internal smoke artifacts,
+  including rehashed-overclaim rejection and V1 legacy readability.
+- Negative/HOLD controls for unsupported routes, missing inputs, wrong lag,
+  common shock, and temporary-only movement, plus pre-emission rejection for
+  unsafe controls, real-data flags, and respondent leakage.
 
 Still not implemented by that smoke change:
 
