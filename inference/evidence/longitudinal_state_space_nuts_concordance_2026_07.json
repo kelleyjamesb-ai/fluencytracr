@@ -5,10 +5,12 @@
     "artifact_schema_version": "FT_AI_VALUE_LONGITUDINAL_STATE_SPACE_NUTS_CONCORDANCE_2026_07_V1",
     "execution_mode": "full",
     "source_artifact_path": "inference/evidence/longitudinal_state_space_nuts_concordance_full_2026_07.json",
-    "source_artifact_sha256": "7c2edfd713a50d78e2452874bd2a3bc580067a28d8db43406cc5baa797d9fac5",
-    "artifact_self_hash": "0e097827075a8c8642f94a5418e344f689b738352fc3934891b33b8727aa5cd7",
+    "source_artifact_sha256": "0497ec12e432da0f0e270093df616c3b2a822b1fbc3c9c40070f963c53fd7b08",
+    "artifact_self_hash": "6a3bc16ec57dad6d0b884c8753a0c00316b41d9b104105cf6822a4ef6bd5be5b",
     "study_plan_hash": "14728eaa44e00bcbc212d17b2d35fb582512c371d5706161d2bab641c04b19ad",
     "study_result_hash": "aef2a9b81a3ac09b69891035c346c27a083a54dfef718f421e4d595f4367c3a7",
+    "python_requires": ">=3.13,<3.14",
+    "lockfile_hash": "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801",
     "source_artifact_committed": true,
     "summary_only": true,
     "posterior_draws_committed": false,
@@ -97,8 +99,8 @@
     "study_status": "PASS",
     "artifact_state": "valid_internal_validation_non_authorizing",
     "concordance_gate_passed": true,
-    "independent_acceptance_complete": true,
-    "replicated_validation_unblocked": true,
+    "independent_acceptance_complete": false,
+    "replicated_validation_unblocked": false,
     "replicated_validation_complete": false,
     "calibration_complete": false,
     "production_promotion_complete": false,
@@ -110,13 +112,5 @@
     "roi_output_authorized": false,
     "causality_output_authorized": false,
     "productivity_output_authorized": false
-  },
-  "acceptance_review": {
-    "state": "GO",
-    "roles": [
-      "CODE",
-      "BUG",
-      "ADVERSARIAL"
-    ]
   }
 }

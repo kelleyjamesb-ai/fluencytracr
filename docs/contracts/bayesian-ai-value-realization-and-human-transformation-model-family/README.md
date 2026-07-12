@@ -462,6 +462,12 @@ remain false inside that artifact. The separate reviewed evidence record may
 unblock the next synthetic validation PR only after CODE, BUG, and ADVERSARIAL
 acceptance.
 
+The artifact binds the compiled Python range, exact `requirements.lock` hash,
+and generation runtime package manifest. Python accepts only the exact
+in-process registered runner study and recomputes slot hashes, compiled order,
+execution modes, and study fields before emission; copied or substituted study
+objects cannot emit a PASS artifact.
+
 This concordance does not complete replicated interval coverage, null
 false-validation-signal measurement, floor, lag, shock, model-selection, or
 negative-control studies. It adds no real-data admission, production runtime,

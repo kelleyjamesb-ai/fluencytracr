@@ -384,6 +384,32 @@ test("engine, prior, Depth, and threshold claims are immutable", { skip: venvSki
   }
 });
 
+test("runtime and lockfile claims are immutable", { skip: venvSkip }, () => {
+  const runtimeArtifact = emitSmokeArtifact();
+  runtimeArtifact.python_requires = ">=3.12,<3.13";
+  coordinatedRehash(runtimeArtifact);
+  assert.equal(
+    LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(runtimeArtifact).success,
+    false
+  );
+
+  const lockfileArtifact = emitSmokeArtifact();
+  lockfileArtifact.lockfile_hash = "0".repeat(64);
+  coordinatedRehash(lockfileArtifact);
+  assert.equal(
+    LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(lockfileArtifact).success,
+    false
+  );
+
+  const runtimeVersionArtifact = emitSmokeArtifact();
+  runtimeVersionArtifact.generation_runtime.pymc = "6.0.0";
+  coordinatedRehash(runtimeVersionArtifact);
+  assert.equal(
+    LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(runtimeVersionArtifact).success,
+    false
+  );
+});
+
 test("prepared-input and fit-summary splicing rejects", { skip: venvSkip }, () => {
   const artifact = emitSmokeArtifact();
   artifact.slot_results[0].prepared_input_hash = "f".repeat(64);

@@ -166,11 +166,14 @@ Under `src/fluencytracr_inference/`:
   8,192-point Sobol cubature; the reference uses four PyMC NUTS chains, 1,000
   retained draws, 2,000 tuning draws, `target_accept=0.99`, and
   `max_treedepth=15`. The exact five-seed grid over effects `{0, 0.2, 0.5}` and
-  panel-group counts `{6, 12}` passed all 30 slots. The committed full artifact
-  and its independently reviewed compact record live under `inference/evidence/`.
+  panel-group counts `{6, 12}` passed all 30 slots. The full artifact binds the
+  compiled Python range, exact `requirements.lock` hash, and generation runtime
+  package manifest. The committed artifact, compact numerical summary, and
+  source-bound independent acceptance record live under `inference/evidence/`.
   The generated artifact records the numerical gate but cannot self-certify
   independent acceptance or unblock later execution; reduced, partial,
-  malformed, duplicated, runner-error, diagnostic-failing, PPC-failing, or
+  copied, reordered, mode-mismatched, malformed, duplicated, runner-error,
+  diagnostic-failing, PPC-failing, or
   discordant evidence remains HOLD. Replicated calibration, null, floor, lag,
   shock, and negative-control validation remain separate future work.
 - `model.py` — the contract's implementation-grade equation: hierarchical

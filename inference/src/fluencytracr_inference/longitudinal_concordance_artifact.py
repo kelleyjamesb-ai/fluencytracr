@@ -4,15 +4,18 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+from importlib.metadata import version as package_version
+import platform
 from typing import Literal
 
 from . import __version__ as HARNESS_VERSION
+from .artifact import lockfile_hash
 from .hashing import sha256_json
 from .longitudinal_concordance import (
     LongitudinalConcordanceStudyResult,
-    is_runner_generated_concordance_study,
     longitudinal_concordance_plan,
     run_longitudinal_concordance_study,
+    validate_runner_generated_concordance_study,
 )
 from .longitudinal_nuts import (
     LONGITUDINAL_NUTS_BFMI_MIN,
@@ -60,6 +63,7 @@ LONGITUDINAL_CONCORDANCE_MODEL_SLICE = (
 LONGITUDINAL_CONCORDANCE_UNKEYED_HASH_POSTURE = (
     "consistency_and_drift_detection_not_coordinated_replacement_authenticity"
 )
+LONGITUDINAL_CONCORDANCE_PYTHON_REQUIRES = ">=3.13,<3.14"
 
 _EMISSION_TOKEN = object()
 
@@ -80,6 +84,16 @@ def _validated_generated_at(value: str | None) -> str:
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("generated_at must be a timezone-aware RFC3339 timestamp")
     return value
+
+
+def _generation_runtime() -> dict:
+    return {
+        "python": platform.python_version(),
+        "pymc": package_version("pymc"),
+        "arviz": package_version("arviz"),
+        "numpy": package_version("numpy"),
+        "scipy": package_version("scipy"),
+    }
 
 
 def longitudinal_concordance_payload_hash_body(artifact: dict) -> dict:
@@ -200,8 +214,7 @@ def emit_longitudinal_concordance_artifact(
 ) -> dict:
     if _token is not _EMISSION_TOKEN:
         raise ValueError("concordance artifact emission is runner-owned")
-    if not is_runner_generated_concordance_study(study):
-        raise ValueError("concordance artifact requires runner-generated study evidence")
+    study = validate_runner_generated_concordance_study(study)
     generated_at = _validated_generated_at(generated_at)
     plan = longitudinal_concordance_plan()
     if study.plan_hash != plan["plan_hash"]:
@@ -215,6 +228,9 @@ def emit_longitudinal_concordance_artifact(
         "artifact_class": LONGITUDINAL_CONCORDANCE_ARTIFACT_CLASS,
         "generated_at": generated_at,
         "harness_version": HARNESS_VERSION,
+        "python_requires": LONGITUDINAL_CONCORDANCE_PYTHON_REQUIRES,
+        "lockfile_hash": lockfile_hash(),
+        "generation_runtime": _generation_runtime(),
         "model_family": LONGITUDINAL_MODEL_FAMILY,
         "model_slice": LONGITUDINAL_CONCORDANCE_MODEL_SLICE,
         "model_specification": _model_specification(),

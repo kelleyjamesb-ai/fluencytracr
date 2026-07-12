@@ -2,7 +2,9 @@ import hashlib
 import json
 from pathlib import Path
 
+from fluencytracr_inference.artifact import lockfile_hash
 from fluencytracr_inference.longitudinal_concordance_artifact import (
+    LONGITUDINAL_CONCORDANCE_PYTHON_REQUIRES,
     longitudinal_concordance_payload_hash,
     longitudinal_concordance_self_hash,
 )
@@ -41,6 +43,9 @@ def _committed_source_artifact(evidence):
     assert artifact["hash_bindings"]["artifact_self_hash"] == source["artifact_self_hash"]
     assert artifact["study_plan"]["plan_hash"] == source["study_plan_hash"]
     assert artifact["study_summary"]["study_result_hash"] == source["study_result_hash"]
+    assert artifact["python_requires"] == source["python_requires"]
+    assert artifact["lockfile_hash"] == source["lockfile_hash"] == lockfile_hash()
+    assert artifact["generation_runtime"] == evidence["runtime_versions"]
     assert artifact["hash_bindings"]["artifact_payload_hash"] == (
         longitudinal_concordance_payload_hash(artifact)
     )
@@ -202,21 +207,19 @@ def test_evidence_remains_summary_only_and_nonauthorizing():
     evidence = _evidence()
     source = evidence["source_evidence"]
     governance = evidence["governance"]
-    acceptance = evidence["acceptance_review"]
-    independently_accepted = acceptance["state"] == "GO" and set(
-        acceptance["roles"]
-    ) == {"CODE", "BUG", "ADVERSARIAL"}
 
     assert len(source["source_artifact_sha256"]) == 64
     assert len(source["artifact_self_hash"]) == 64
     assert source["summary_only"] is True
     assert source["posterior_draws_committed"] is False
     assert source["latent_states_committed"] is False
+    assert source["python_requires"] == LONGITUDINAL_CONCORDANCE_PYTHON_REQUIRES
+    assert source["lockfile_hash"] == lockfile_hash()
     assert governance["study_status"] == "PASS"
     assert governance["artifact_state"] == "valid_internal_validation_non_authorizing"
     assert governance["concordance_gate_passed"] is True
-    assert governance["independent_acceptance_complete"] is independently_accepted
-    assert governance["replicated_validation_unblocked"] is independently_accepted
+    assert governance["independent_acceptance_complete"] is False
+    assert governance["replicated_validation_unblocked"] is False
     assert governance["replicated_validation_complete"] is False
     assert governance["calibration_complete"] is False
     assert governance["production_promotion_complete"] is False

@@ -15,6 +15,9 @@ const REFERENCE_ENGINE = "pymc_nuts_state_space_reference";
 const MODEL_KIND = "gaussian_longitudinal_zero_sum_ar1_state_space";
 const HASH_POSTURE =
   "consistency_and_drift_detection_not_coordinated_replacement_authenticity";
+const PYTHON_REQUIRES = ">=3.13,<3.14";
+const REQUIREMENTS_LOCK_HASH =
+  "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801";
 const EFFECT_SIZES = [0, 0.2, 0.5] as const;
 const PANEL_GROUP_COUNTS = [6, 12] as const;
 const SEEDS = [202607120, 202607121, 202607122, 202607123, 202607124] as const;
@@ -966,6 +969,17 @@ const ArtifactObjectSchema = z
       .regex(timestampPattern)
       .refine((value) => Number.isFinite(Date.parse(value))),
     harness_version: z.literal("0.1.0"),
+    python_requires: z.literal(PYTHON_REQUIRES),
+    lockfile_hash: z.literal(REQUIREMENTS_LOCK_HASH),
+    generation_runtime: z
+      .object({
+        python: z.string().regex(/^3\.13\.\d+$/),
+        pymc: z.literal("6.0.1"),
+        arviz: z.literal("1.2.0"),
+        numpy: z.literal("2.4.6"),
+        scipy: z.literal("1.18.0")
+      })
+      .strict(),
     model_family: z.literal(MODEL_FAMILY),
     model_slice: z.literal(LONGITUDINAL_STATE_SPACE_CONCORDANCE_MODEL_SLICE),
     model_specification: ModelSpecificationSchema,

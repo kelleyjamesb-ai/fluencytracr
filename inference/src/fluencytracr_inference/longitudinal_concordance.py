@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 import math
 from typing import Literal
+import weakref
 
 from .hashing import sha256_json
 from .longitudinal_nuts import LongitudinalNutsFit, fit_longitudinal_nuts_reference
@@ -36,6 +37,7 @@ LONGITUDINAL_CONCORDANCE_SD_RATIO_MAX = 1.15
 LONGITUDINAL_CONCORDANCE_PLAN_VERSION = "1.0.0"
 
 _RUNNER_TOKEN = object()
+_RUNNER_STUDIES: dict[int, weakref.ReferenceType[LongitudinalConcordanceStudyResult]] = {}
 
 
 @dataclass(frozen=True, order=True)
@@ -456,6 +458,17 @@ def assemble_longitudinal_concordance_study(
     planned = required_longitudinal_concordance_slots()
     planned_ids = tuple(slot.slot_id for slot in planned)
     result_ids = tuple(result.slot.slot_id for result in slot_results)
+    expected_present_order = tuple(
+        slot_id for slot_id in planned_ids if slot_id in result_ids
+    )
+    compiled_order = result_ids == expected_present_order
+    execution_modes_match = all(
+        result.execution_mode == execution_mode for result in slot_results
+    )
+    slot_hashes_valid = all(
+        result.slot_result_hash == sha256_json(result.body_without_hash())
+        for result in slot_results
+    )
     duplicates = tuple(sorted({slot_id for slot_id in result_ids if result_ids.count(slot_id) > 1}))
     off_plan = tuple(sorted(set(result_ids).difference(planned_ids)))
     missing = tuple(slot_id for slot_id in planned_ids if slot_id not in result_ids)
@@ -485,9 +498,18 @@ def assemble_longitudinal_concordance_study(
         and not duplicates
         and not off_plan
         and not duplicate_evidence_bindings
+        and compiled_order
+        and execution_modes_match
+        and slot_hashes_valid
         and len(slot_results) == LONGITUDINAL_CONCORDANCE_REQUIRED_SLOT_COUNT
     )
-    all_passed = bool(slot_results) and all(result.passed for result in slot_results)
+    all_passed = (
+        bool(slot_results)
+        and compiled_order
+        and execution_modes_match
+        and slot_hashes_valid
+        and all(result.passed for result in slot_results)
+    )
     failures = []
     if execution_mode != "full":
         failures.append("full_study_settings")
@@ -499,8 +521,11 @@ def assemble_longitudinal_concordance_study(
         failures.append("off_plan_slots")
     if duplicate_evidence_bindings:
         failures.append("duplicate_evidence_bindings")
+    if not compiled_order or not execution_modes_match or not slot_hashes_valid:
+        failures.append("slot_failures")
     if not all_passed:
         failures.append("slot_failures")
+    failures = list(dict.fromkeys(failures))
     plan = longitudinal_concordance_plan()
     result_body = {
         "execution_mode": execution_mode,
@@ -547,15 +572,52 @@ def run_longitudinal_concordance_study(
     results = tuple(
         run_longitudinal_concordance_slot(slot, mode=mode) for slot in selected
     )
-    return assemble_longitudinal_concordance_study(
+    study = assemble_longitudinal_concordance_study(
         results, execution_mode=mode, _token=_RUNNER_TOKEN
     )
+    study_id = id(study)
+
+    def forget(_reference, *, key=study_id):
+        _RUNNER_STUDIES.pop(key, None)
+
+    _RUNNER_STUDIES[study_id] = weakref.ref(study, forget)
+    return study
 
 
 def is_runner_generated_concordance_study(
     study: LongitudinalConcordanceStudyResult,
 ) -> bool:
+    if not isinstance(study, LongitudinalConcordanceStudyResult):
+        return False
+    reference = _RUNNER_STUDIES.get(id(study))
     return (
-        isinstance(study, LongitudinalConcordanceStudyResult)
-        and study._runner_token is _RUNNER_TOKEN
+        study._runner_token is _RUNNER_TOKEN
+        and reference is not None
+        and reference() is study
     )
+
+
+def validate_runner_generated_concordance_study(
+    study: LongitudinalConcordanceStudyResult,
+) -> LongitudinalConcordanceStudyResult:
+    """Recompute runner evidence before artifact emission."""
+
+    if not is_runner_generated_concordance_study(study):
+        raise ValueError("concordance artifact requires the exact runner study object")
+    if any(
+        result.slot_result_hash != sha256_json(result.body_without_hash())
+        for result in study.slot_results
+    ):
+        raise ValueError("concordance runner study evidence failed recomputation")
+    recomputed = assemble_longitudinal_concordance_study(
+        study.slot_results,
+        execution_mode=study.execution_mode,
+        _token=_RUNNER_TOKEN,
+    )
+    if (
+        study.planned_slots != recomputed.planned_slots
+        or study.slot_results != recomputed.slot_results
+        or study.to_summary_dict() != recomputed.to_summary_dict()
+    ):
+        raise ValueError("concordance runner study evidence failed recomputation")
+    return recomputed

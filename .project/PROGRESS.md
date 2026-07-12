@@ -2,6 +2,11 @@
 
 ## Current Session
 
+- PR #412 post-merge proof-boundary hardening (2026-07-12, in progress): fresh
+  BUG and ADVERSARIAL review superseded the earlier acceptance. Python runner
+  identity/recomputation and lockfile/runtime bindings are being hardened;
+  compact acceptance and replicated-validation unblocking are reset to false
+  until full verification and a new CODE/BUG/ADVERSARIAL review return GO.
 - Longitudinal state-space/NUTS concordance (2026-07-12): completed the
   bounded queue item on `codex/longitudinal-state-space-nuts-concordance` from
   `origin/main`. Added a six-cell synthetic generator with truth outside model

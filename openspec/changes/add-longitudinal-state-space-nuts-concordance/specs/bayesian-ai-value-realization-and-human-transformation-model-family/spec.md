@@ -10,6 +10,8 @@ and longitudinal smoke artifact contracts SHALL remain unchanged.
 
 - **WHEN** all 30 required longitudinal concordance slots pass every compiled gate
 - **THEN** the artifact state is `valid_internal_validation_non_authorizing`
+- **AND** the artifact binds the compiled Python range, exact requirements
+  lockfile hash, and generation runtime package versions
 - **AND** every customer, confidence, probability, ROI, causality,
   productivity, finance, route, UI, persistence, export, connector, and
   promotion authorization remains false or absent
@@ -93,6 +95,6 @@ counts `{6, 12}` and five compiled seeds per cell as complete concordance.
 
 #### Scenario: Study evidence is incomplete or substituted
 
-- **WHEN** a slot is missing, duplicate, off-plan, malformed, hash-invalid,
+- **WHEN** a slot is missing, duplicate, reordered, mode-mismatched, off-plan, malformed, hash-invalid,
   runner-failed, reduced-setting, diagnostic-HOLD, PPC-HOLD, or discordant
 - **THEN** the study HOLDS and replicated validation remains blocked

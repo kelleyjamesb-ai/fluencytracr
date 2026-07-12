@@ -32,6 +32,11 @@
 
 ## 5. Future Work Not Completed Here
 
+These parent-roadmap gates remain unchecked until the complete replicated
+longitudinal evidence set receives independent acceptance. A child change may
+implement an engine or concordance component without completing these combined
+proof gates.
+
 - [ ] 5.1 Full NUTS longitudinal sampler implementation and diagnostics.
 - [ ] 5.2 Replicated longitudinal interval-coverage study.
 - [ ] 5.3 Null false-eligibility study for the longitudinal artifact.

@@ -129,9 +129,9 @@
       "id": "longitudinal-state-space-nuts-concordance",
       "title": "Longitudinal state-space engine and NUTS concordance",
       "bound": "Synthetic-only inference/, required OpenSpec/docs, and confidence-engine bridge coverage; implement deterministic Gaussian state-space primary engine, PyMC NUTS reference engine, six-cell five-seed concordance, compiled diagnostics, and fail-closed HOLD behavior; no public surfaces or real data",
-      "status": "done",
+      "status": "in_progress",
       "risk": "high",
-      "last_note": "Done 2026-07-12: deterministic state-space and full PyMC NUTS concordance implemented; all 30 compiled slots passed, durable summary-only evidence is committed, strict Python/TypeScript fail-closed checks pass, and CODE/BUG/ADVERSARIAL returned GO. Replicated longitudinal validation remains separate future work."
+      "last_note": "Human-authorized via 'build the queue item'. Review hardening in progress: numerical 30-slot evidence passed, but acceptance was reset pending runner-identity recomputation, lockfile/runtime binding, full verification, and fresh CODE/BUG/ADVERSARIAL GO. Replicated validation remains separate future work."
     }
   ]
 }

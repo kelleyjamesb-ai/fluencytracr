@@ -13,7 +13,7 @@ reference before replicated validation may run.
   `r[c,t] = rho r[c,t-1] + eta[c,t]`.
 - Use one canonical preparation path so both engines consume identical
   pre-period-standardized arrays and estimands.
-- Produce summary-only, hash-bound, fail-closed concordance evidence.
+- Produce summary-only, hash-bound, environment-bound, fail-closed concordance evidence.
 - Preserve all existing artifact and governance behavior.
 
 ## Non-Goals
@@ -80,10 +80,15 @@ V1/V2. It contains only source commitments, prepared-input hashes, engine
 specifications, posterior summaries, diagnostic aggregates, concordance
 operands, compiled thresholds, plan metadata, governance pins, and
 hierarchical hashes. It never contains raw posterior draws or latent states.
+It binds the compiled Python range, the exact `requirements.lock` hash, and the
+generation runtime package manifest; compatible Python patch releases may
+differ inside the compiled 3.13 range, while dependency versions remain exact.
 
 Only the complete 30-slot full-settings study can be
 `valid_internal_validation_non_authorizing`. TypeScript recomputes hashes,
-manifest completeness, and semantic gates. Unkeyed hashes prove consistency
+manifest completeness, runtime bindings, and semantic gates. Python emission
+also requires the exact registered runner study and recomputes slot hashes,
+compiled order, execution modes, and study fields. Unkeyed hashes prove consistency
 and drift detection, not authenticity against coordinated replacement; a
 trusted signature remains separate future scope.
 

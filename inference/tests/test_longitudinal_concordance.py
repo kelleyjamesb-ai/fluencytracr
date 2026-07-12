@@ -13,15 +13,19 @@ from fluencytracr_inference.longitudinal_concordance import (
     LONGITUDINAL_CONCORDANCE_SD_RATIO_MIN,
     LONGITUDINAL_CONCORDANCE_SEEDS,
     LongitudinalConcordanceSlotResult,
+    assemble_longitudinal_concordance_study,
     evaluate_quantity_concordance,
+    is_runner_generated_concordance_study,
     longitudinal_concordance_plan,
     required_longitudinal_concordance_slots,
     run_longitudinal_concordance_study,
+    validate_runner_generated_concordance_study,
 )
 from fluencytracr_inference.longitudinal_concordance_artifact import (
     LONGITUDINAL_CONCORDANCE_ARTIFACT_CLASS,
     LONGITUDINAL_CONCORDANCE_ARTIFACT_SCHEMA_VERSION,
     LONGITUDINAL_CONCORDANCE_MODEL_SLICE,
+    emit_runner_generated_concordance_artifact,
     longitudinal_concordance_payload_hash,
     longitudinal_concordance_self_hash,
     run_longitudinal_concordance_artifact,
@@ -109,6 +113,46 @@ def test_smoke_study_is_partial_and_hold():
     assert "missing_slots" in study.failing_checks
 
 
+def test_copied_runner_study_cannot_reuse_runner_identity():
+    study = run_longitudinal_concordance_study(mode="smoke")
+    copied = replace(study)
+
+    assert is_runner_generated_concordance_study(study) is True
+    assert is_runner_generated_concordance_study(copied) is False
+    with pytest.raises(ValueError, match="exact runner study object"):
+        validate_runner_generated_concordance_study(copied)
+    with pytest.raises(ValueError, match="exact runner study object"):
+        emit_runner_generated_concordance_artifact(copied)
+
+
+def test_runner_study_recomputation_rejects_nested_mutation():
+    study = run_longitudinal_concordance_study(mode="smoke")
+    study.slot_results[0].reference_settings["chains"] = 999
+
+    with pytest.raises(ValueError, match="failed recomputation"):
+        validate_runner_generated_concordance_study(study)
+
+
+def test_direct_assembly_is_not_runner_registered_and_mismatched_mode_holds():
+    study = run_longitudinal_concordance_study(mode="smoke")
+    result = study.slot_results[0]
+    mismatched = replace(result, execution_mode="full", slot_result_hash="")
+    mismatched = replace(
+        mismatched,
+        slot_result_hash=sha256_json(mismatched.body_without_hash()),
+    )
+    assembled = assemble_longitudinal_concordance_study(
+        (mismatched,),
+        execution_mode="smoke",
+        _token=concordance_module._RUNNER_TOKEN,
+    )
+
+    assert assembled.study_status == "HOLD"
+    assert assembled.exact_manifest_complete is False
+    assert "slot_failures" in assembled.failing_checks
+    assert is_runner_generated_concordance_study(assembled) is False
+
+
 def test_distinct_slot_ids_cannot_reuse_cloned_evidence_bindings(monkeypatch):
     slots = required_longitudinal_concordance_slots()
     cloned_hashes = {
@@ -136,12 +180,14 @@ def test_distinct_slot_ids_cannot_reuse_cloned_evidence_bindings(monkeypatch):
 
     def cloned_result(slot, *, mode):
         assert mode == "full"
-        return replace(
+        cloned = replace(
             template,
             slot=slot,
-            slot_result_hash=sha256_json(
-                {"slot": slot.to_dict(), "cloned_evidence": True}
-            ),
+            slot_result_hash="",
+        )
+        return replace(
+            cloned,
+            slot_result_hash=sha256_json(cloned.body_without_hash()),
         )
 
     monkeypatch.setattr(
