@@ -53,7 +53,7 @@ on:
 jobs:
   inference-harness:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v5

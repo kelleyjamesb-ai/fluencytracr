@@ -39,6 +39,9 @@
   harness verification (`274 passed`, `3 skipped`), `shared` and
   `confidence-engine` builds, five relevant strict OpenSpec validations, docs
   sweep, semantic-drift guard, V1 governance gates, and `git diff --check`.
+  The first GitHub inference job reached `97%` with no test failure before the
+  exact 20-minute job timeout canceled it; CI now allows 40 minutes for cold
+  PyTensor/PyMC compilation without skipping or weakening the full suite.
   OpenSpec tasks `1.1`
   through `5.5` in `add-longitudinal-state-space-nuts-concordance` are safe to
   keep checked. Model-family Phase 3 tasks `3.1` through `3.4`, longitudinal
