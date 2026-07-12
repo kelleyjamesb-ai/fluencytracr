@@ -19,9 +19,9 @@
 
 ## 3. Phase 2B: First longitudinal synthetic model prototype implementation
 
-- [ ] 2.2 Phase 2B: implement the prototype in an isolated synthetic-only inference path.
-- [ ] 2.3 Preserve the existing TypeScript governance boundary and fail-closed artifact semantics.
-- [ ] 2.4 Add negative controls for unsupported routing, missing inputs, weak designs, and unsafe output attempts.
+- [x] 2.2 Phase 2B: implement the prototype in an isolated synthetic-only inference path.
+- [x] 2.3 Preserve the existing TypeScript governance boundary and fail-closed artifact semantics.
+- [x] 2.4 Add negative controls for unsupported routing, missing inputs, weak designs, and unsafe output attempts.
 
 ## 4. Phase 3: Replicated synthetic validation
 

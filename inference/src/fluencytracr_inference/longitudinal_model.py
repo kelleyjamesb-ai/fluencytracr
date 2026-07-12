@@ -1,28 +1,30 @@
-"""Bayesian Gaussian longitudinal smoke model for synthetic aggregate inputs.
+"""Closed-form Gaussian longitudinal smoke model for synthetic aggregate inputs.
 
-This first Phase 2B implementation uses a conjugate Gaussian posterior over a
-predeclared aggregate design matrix plus an explicit AR(1) residual estimate
-for review. It is a synthetic-only engineering proof of the model-input and
-artifact path, not replicated calibration and not a production promotion.
+This first Phase 2B implementation uses analytic Gaussian regression over a
+predeclared aggregate design matrix with independent observation likelihoods.
+The AR(1) estimate is a post-hoc diagnostic only. This is a synthetic-only
+engineering proof, not NUTS, partial pooling, historical forecasting,
+replicated calibration, or a production promotion.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 
 import numpy as np
 
 from .design_router import route_evidence_design
+from .hashing import sha256_json
 from .longitudinal_types import (
     COMPILED_SYNTHETIC_SMOKE_MINIMUM_MOVEMENT,
     LONGITUDINAL_FAILING_DIAGNOSTICS,
     MAX_APPROVED_BUSINESS_CONTROLS,
     MIN_POST_WINDOWS,
     MIN_PRE_WINDOWS,
-    UNSAFE_CONTROL_NAME_FRAGMENTS,
     LongitudinalSyntheticDataset,
-    assert_longitudinal_synthetic_only,
+    validate_longitudinal_dataset_structure,
+    validate_longitudinal_seed,
 )
 
 EARLY_POST_SPIKE_PRE_SD_MULTIPLIER = 4.0
@@ -33,16 +35,25 @@ TEMPORARY_SPIKE_PRE_SD_MULTIPLIER = 3.0
 TEMPORARY_SPIKE_ABSOLUTE_FLOOR = 0.25
 TEMPORARY_PERSISTENCE_SLOPE_PRE_SD_MULTIPLIER = -0.5
 BACKTEST_RMSE_PRE_SD_MULTIPLIER = 3.0
+MAX_DESIGN_MATRIX_CONDITION_NUMBER = 1_000_000.0
+MAX_VELOCITY_BREADTH_ABS_CORRELATION = 0.995
 
 
 class LongitudinalHoldViolation(Exception):
     """Condition that must produce a HOLD artifact."""
 
-    def __init__(self, failing_diagnostic: str, message: str):
+    def __init__(
+        self,
+        failing_diagnostic: str,
+        message: str,
+        *,
+        hold_evidence: dict | None = None,
+    ):
         super().__init__(message)
         if failing_diagnostic not in LONGITUDINAL_FAILING_DIAGNOSTICS:
             raise ValueError(f"unsupported longitudinal diagnostic {failing_diagnostic}")
         self.failing_diagnostic = failing_diagnostic
+        self.hold_evidence = hold_evidence
 
 
 @dataclass(frozen=True)
@@ -60,8 +71,9 @@ class LongitudinalFitResult:
     design_matrix_rank: int
     synthetic_input_hash: str
     seed: int
-    sampler_kind: str = "closed_form_gaussian_posterior_smoke_not_nuts"
-    chains: int = 2
+    analytic_posterior_draw_count: int
+    sampler_kind: str = "closed_form_gaussian_analytic_smoke"
+    mcmc_chains: int = 0
 
     def movement_summary(self) -> dict:
         draws = self.movement_draws.reshape(-1)
@@ -93,9 +105,39 @@ class LongitudinalFitResult:
             for index, name in enumerate(self.parameter_names)
         }
 
+    def fit_summary_hash(self) -> str:
+        """Bind the analytic fit inputs and summaries without exposing draws."""
+
+        return sha256_json(
+            {
+                "synthetic_input_hash": self.synthetic_input_hash,
+                "parameter_names": list(self.parameter_names),
+                "posterior_mean": [float(value) for value in self.posterior_mean],
+                "posterior_covariance": [
+                    [float(value) for value in row]
+                    for row in self.posterior_covariance.tolist()
+                ],
+                "movement_summary": self.movement_summary(),
+                "coefficient_summary": self.coefficient_summary(),
+                "residual_rho_estimate": float(self.residual_rho_estimate),
+                "residual_sd_estimate": float(self.residual_sd_estimate),
+                "design_matrix_condition_number": float(
+                    self.design_matrix_condition_number
+                ),
+                "design_matrix_rank": int(self.design_matrix_rank),
+                "seed": int(self.seed),
+                "sampler_kind": self.sampler_kind,
+                "mcmc_chains": int(self.mcmc_chains),
+                "analytic_posterior_draw_count": int(
+                    self.analytic_posterior_draw_count
+                ),
+            }
+        )
+
 
 @dataclass(frozen=True)
 class LongitudinalDiagnosticsResult:
+    fit_summary_hash: str
     failing_diagnostics: tuple[str, ...]
     design_matrix_identifiability: dict
     residual_autocorrelation_check: dict
@@ -107,6 +149,8 @@ class LongitudinalDiagnosticsResult:
     common_shock_sensitivity_check: dict
     temporary_effect_persistence_check: dict
     prior_sensitivity_check: dict
+    posterior_predictive_check: dict
+    sampler_diagnostics: dict
 
     @property
     def passed(self) -> bool:
@@ -114,7 +158,8 @@ class LongitudinalDiagnosticsResult:
 
     def to_artifact_section(self) -> dict:
         return {
-            "passed": self.passed,
+            "executed_checks_passed": self.passed,
+            "fit_summary_hash": self.fit_summary_hash,
             "failing_diagnostics": list(self.failing_diagnostics),
             "design_matrix_identifiability": self.design_matrix_identifiability,
             "residual_autocorrelation_check": self.residual_autocorrelation_check,
@@ -126,7 +171,14 @@ class LongitudinalDiagnosticsResult:
             "common_shock_sensitivity_check": self.common_shock_sensitivity_check,
             "temporary_effect_persistence_check": self.temporary_effect_persistence_check,
             "prior_sensitivity_check": self.prior_sensitivity_check,
+            "posterior_predictive_check": self.posterior_predictive_check,
+            "sampler_diagnostics": self.sampler_diagnostics,
         }
+
+    def evidence_hash(self) -> str:
+        section = self.to_artifact_section()
+        section.pop("fit_summary_hash", None)
+        return sha256_json(section)
 
 
 def _standardize_from_pre(values: np.ndarray, post: np.ndarray) -> np.ndarray:
@@ -175,7 +227,7 @@ def _counterfactual_matrix(
 
 
 def _validate_dataset_before_fit(dataset: LongitudinalSyntheticDataset) -> None:
-    assert_longitudinal_synthetic_only(dataset)
+    validate_longitudinal_dataset_structure(dataset)
     if dataset.hypothesis_plan.primary_metric_family != "continuous_normal_identity":
         raise LongitudinalHoldViolation(
             "unsupported_likelihood_family",
@@ -213,16 +265,6 @@ def _validate_dataset_before_fit(dataset: LongitudinalSyntheticDataset) -> None:
         raise LongitudinalHoldViolation(
             "design_matrix_identifiability",
             "too many approved aggregate controls for the first slice",
-        )
-    unsafe_controls = [
-        name
-        for name in dataset.control_names
-        if any(fragment in name.lower() for fragment in UNSAFE_CONTROL_NAME_FRAGMENTS)
-    ]
-    if unsafe_controls:
-        raise LongitudinalHoldViolation(
-            "person_level_data_present",
-            f"unsafe business controls are not allowed: {', '.join(unsafe_controls)}",
         )
     route = route_evidence_design(
         dataset.hypothesis_plan.evidence_design,
@@ -409,6 +451,8 @@ def _evaluate_pre_period_backtest(summary: dict) -> dict:
             "pass": False,
             "compiled_backtest_policy": "last_two_pre_windows_held_out_smoke",
             "holdout_rmse": None,
+            "train_residual_sd": None,
+            "compiled_rmse_pre_sd_multiplier": BACKTEST_RMSE_PRE_SD_MULTIPLIER,
         }
     train_times = pre_times[:-2]
     train_values = pre_values[:-2]
@@ -424,6 +468,8 @@ def _evaluate_pre_period_backtest(summary: dict) -> dict:
         "pass": holdout_rmse <= threshold,
         "compiled_backtest_policy": "last_two_pre_windows_held_out_smoke",
         "holdout_rmse": holdout_rmse,
+        "train_residual_sd": train_sd,
+        "compiled_rmse_pre_sd_multiplier": BACKTEST_RMSE_PRE_SD_MULTIPLIER,
         "rmse_threshold": threshold,
     }
 
@@ -435,19 +481,35 @@ def fit_longitudinal_model(
     draws: int = 1000,
     chains: int = 2,
 ) -> LongitudinalFitResult:
-    """Fit the first-slice Bayesian Gaussian posterior approximation."""
+    """Fit the first-slice closed-form Gaussian analytic smoke regression."""
 
-    if chains < 2:
-        raise ValueError("longitudinal proof requires at least two chains")
+    validate_longitudinal_seed(seed, name="longitudinal fit seed")
+    if isinstance(draws, bool) or not isinstance(draws, int) or draws < 2:
+        raise ValueError("closed-form smoke requires at least two analytic draws")
+    if isinstance(chains, bool) or not isinstance(chains, int) or chains < 1:
+        raise ValueError("closed-form smoke requires at least one analytic draw batch")
     _validate_dataset_before_fit(dataset)
     x, names = _design_matrix(dataset)
     y = dataset.observed_outcome
     condition_number = float(np.linalg.cond(x))
     rank = int(np.linalg.matrix_rank(x))
-    if rank < x.shape[1] or condition_number > 1e6:
+    if rank < x.shape[1] or condition_number > MAX_DESIGN_MATRIX_CONDITION_NUMBER:
         raise LongitudinalHoldViolation(
             "design_matrix_identifiability",
             "longitudinal design matrix is rank-deficient or near-collinear",
+            hold_evidence={
+                "pass": False,
+                "rank": rank,
+                "parameter_count": int(x.shape[1]),
+                "condition_number": (
+                    condition_number if math.isfinite(condition_number) else None
+                ),
+                "max_abs_velocity_breadth_correlation": None,
+                "compiled_condition_number_gate": MAX_DESIGN_MATRIX_CONDITION_NUMBER,
+                "compiled_velocity_breadth_correlation_gate": (
+                    MAX_VELOCITY_BREADTH_ABS_CORRELATION
+                ),
+            },
         )
     vbd = np.column_stack(
         [
@@ -457,10 +519,22 @@ def fit_longitudinal_model(
     )
     corr = np.corrcoef(vbd, rowvar=False)
     off_diag = corr[np.triu_indices_from(corr, k=1)]
-    if np.nanmax(np.abs(off_diag)) > 0.995:
+    max_abs_vbd_correlation = float(np.nanmax(np.abs(off_diag)))
+    if max_abs_vbd_correlation > MAX_VELOCITY_BREADTH_ABS_CORRELATION:
         raise LongitudinalHoldViolation(
             "design_matrix_identifiability",
             "Velocity and Breadth are duplicated or nearly collinear",
+            hold_evidence={
+                "pass": False,
+                "rank": rank,
+                "parameter_count": int(x.shape[1]),
+                "condition_number": condition_number,
+                "max_abs_velocity_breadth_correlation": max_abs_vbd_correlation,
+                "compiled_condition_number_gate": MAX_DESIGN_MATRIX_CONDITION_NUMBER,
+                "compiled_velocity_breadth_correlation_gate": (
+                    MAX_VELOCITY_BREADTH_ABS_CORRELATION
+                ),
+            },
         )
 
     # First pass estimates residual scale and AR(1) posture for diagnostics.
@@ -507,16 +581,22 @@ def fit_longitudinal_model(
         design_matrix_rank=rank,
         synthetic_input_hash=dataset.synthetic_input_hash(),
         seed=seed,
-        chains=chains,
+        analytic_posterior_draw_count=draws * chains,
+        mcmc_chains=0,
     )
 
 
 def compute_longitudinal_diagnostics(
     fit: LongitudinalFitResult,
 ) -> LongitudinalDiagnosticsResult:
+    if not isinstance(fit, LongitudinalFitResult):
+        raise ValueError("longitudinal diagnostics require a LongitudinalFitResult")
+    validate_longitudinal_seed(fit.seed, name="longitudinal fit seed")
     dataset = fit.dataset
+    validate_longitudinal_dataset_structure(dataset)
+    if fit.synthetic_input_hash != dataset.synthetic_input_hash():
+        raise ValueError("longitudinal fit is not bound to its dataset")
     failing: list[str] = []
-    movement_summary = fit.movement_summary()
 
     residual_summary = _pre_trend_residual_summary(dataset)
     lag_check = _evaluate_lag_and_placebo(residual_summary, dataset)
@@ -525,7 +605,7 @@ def compute_longitudinal_diagnostics(
     backtest_check = _evaluate_pre_period_backtest(residual_summary)
 
     if not lag_check["pass"]:
-        failing.extend(["lag_sensitivity", "placebo_intervention_date"])
+        failing.append("lag_sensitivity")
     if not common_shock_check["pass"]:
         failing.append("common_shock_sensitivity")
     if not persistence_check["pass"]:
@@ -542,7 +622,8 @@ def compute_longitudinal_diagnostics(
 
     # Deduplicate while preserving order.
     failing_tuple = tuple(dict.fromkeys(failing))
-    return LongitudinalDiagnosticsResult(
+    diagnostics = LongitudinalDiagnosticsResult(
+        fit_summary_hash="",
         failing_diagnostics=failing_tuple,
         design_matrix_identifiability={
             "pass": "design_matrix_identifiability" not in failing_tuple,
@@ -554,7 +635,8 @@ def compute_longitudinal_diagnostics(
         },
         residual_autocorrelation_check={
             "pass": "residual_autocorrelation" not in failing_tuple,
-            "residual_structure": "ar1_residual_structure",
+            "diagnostic_kind": "post_hoc_ar1_residual_autocorrelation_only",
+            "modeled_in_likelihood": False,
             "rho_estimate": fit.residual_rho_estimate,
             "residual_sd_estimate": fit.residual_sd_estimate,
         },
@@ -567,17 +649,12 @@ def compute_longitudinal_diagnostics(
             "pass": "pre_period_rolling_backtest" not in failing_tuple,
         },
         placebo_intervention_date_check={
-            "pass": "placebo_intervention_date" not in failing_tuple,
-            "placebo_date_policy": "false_pre_period_intervention_date_smoke",
-            "early_post_direction_adjusted_residual_max": lag_check[
-                "early_post_direction_adjusted_residual_max"
-            ],
-            "early_post_threshold": lag_check["early_post_threshold"],
+            "status": "NOT_RUN",
+            "reason": "pre_period_placebo_not_run_in_closed_form_smoke",
         },
         counterfactual_stability_check={
-            "pass": "counterfactual_stability" not in failing_tuple,
-            "counterfactual_reference": "pre_period_velocity_breadth_reference_values_depth_context_retained",
-            "smoke_scope": "in_sample_vbd_contrast_not_historical_forecast",
+            "status": "NOT_RUN",
+            "reason": "full_counterfactual_stability_not_run_in_closed_form_smoke",
         },
         lag_sensitivity_check={
             **lag_check,
@@ -592,8 +669,23 @@ def compute_longitudinal_diagnostics(
             "pass": "temporary_effect_persistence" not in failing_tuple,
         },
         prior_sensitivity_check={
-            "pass": "prior_sensitivity" not in failing_tuple,
-            "posterior_mean_movement": movement_summary["posterior_mean_movement"],
-            "smoke_only": True,
+            "status": "NOT_RUN",
+            "reason": "prior_sensitivity_refits_not_run_in_closed_form_smoke",
+        },
+        posterior_predictive_check={
+            "status": "NOT_RUN",
+            "reason": "posterior_predictive_check_not_run_in_closed_form_smoke",
+        },
+        sampler_diagnostics={
+            "status": "NOT_RUN",
+            "reason": "closed_form_smoke_has_no_mcmc_sampler",
         },
     )
+    diagnostics_evidence_hash = diagnostics.evidence_hash()
+    bound_fit_summary_hash = sha256_json(
+        {
+            "diagnostics_evidence_hash": diagnostics_evidence_hash,
+            "fit_private_remainder_hash": fit.fit_summary_hash(),
+        }
+    )
+    return replace(diagnostics, fit_summary_hash=bound_fit_summary_hash)
