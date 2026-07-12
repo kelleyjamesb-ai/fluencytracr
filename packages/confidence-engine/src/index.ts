@@ -41,6 +41,18 @@ export type {
 } from "./longitudinalSyntheticOutcomeProof";
 
 export {
+  LONGITUDINAL_STATE_SPACE_CONCORDANCE_SCHEMA_VERSION,
+  LONGITUDINAL_STATE_SPACE_CONCORDANCE_ARTIFACT_CLASS,
+  LONGITUDINAL_STATE_SPACE_CONCORDANCE_MODEL_SLICE,
+  LongitudinalStateSpaceConcordanceArtifactSchema,
+  longitudinalStateSpaceConcordancePayloadHash,
+  longitudinalStateSpaceConcordancePayloadHashBody,
+  longitudinalStateSpaceConcordanceSelfHash,
+  longitudinalStateSpaceConcordanceSelfHashBody
+} from "./longitudinalStateSpaceConcordance";
+export type { LongitudinalStateSpaceConcordanceArtifact } from "./longitudinalStateSpaceConcordance";
+
+export {
   CONTRIBUTION_ALIGNMENT_FEATURE_STABILITY_REVIEW_SCHEMA_VERSION,
   CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_SCHEMA_VERSION,
   buildContributionAlignmentFeatureStabilityReviewFromObject,

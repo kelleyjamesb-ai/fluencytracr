@@ -124,6 +124,14 @@
       "status": "done",
       "risk": "medium",
       "last_note": "Done 2026-06-13: audited AI Value Platform concepts and classified static framework, customer-specific durable state, derived evidence snapshots, and external sources of truth. Proposed the minimal future Supabase state path without creating migrations or product surface area."
+    },
+    {
+      "id": "longitudinal-state-space-nuts-concordance",
+      "title": "Longitudinal state-space engine and NUTS concordance",
+      "bound": "Synthetic-only inference/, required OpenSpec/docs, and confidence-engine bridge coverage; implement deterministic Gaussian state-space primary engine, PyMC NUTS reference engine, six-cell five-seed concordance, compiled diagnostics, and fail-closed HOLD behavior; no public surfaces or real data",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "Human-authorized 2026-07-12 for the next bounded Longitudinal Bayesian Proof Roadmap PR from origin/main."
     }
   ]
 }
