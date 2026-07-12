@@ -121,7 +121,7 @@ implementation and validation test already exist.
 | `reliability_factor` | `backend/src/value_realization/reliability_factor.ts` | `IMPLEMENTED_AND_TESTED` | Existing compiled reliability composite | Keep |
 | `causal_delta_pattern_rank_movement` | `backend/src/value_realization/causal_delta.ts` | `IMPLEMENTED_AND_TESTED` | Pattern-rank pre/post movement, not causal proof | Keep and preserve non-causal language |
 | `v3_aggregate_ingest_rollups` | `backend/src/value_realization/v3_aggregate_ingest.ts` | `IMPLEMENTED_AND_TESTED` | V3 aggregate verdict and forwarded distribution derivations | Keep |
-| `suppression_gate_default_hold` | Suppression contracts and backend gates | `IMPLEMENTED_AND_TESTED` | Default hold/suppress posture before gates clear | Keep |
+| `suppression_gate_default_hold` | `backend/src/v1/evaluationDecision.ts` and V1 signal evaluation contract | `IMPLEMENTED_AND_TESTED` | Default hold/suppress posture before gates clear | Keep |
 | `seeded_ai_fluency_html_scoring` | `frontend/public/ai-fluency/assessment-24-item.html` | `DEPRECATED` | Seeded/illustrative HTML scoring | Deprecate as canonical authority |
 
 ## AI Manager Formula Families
