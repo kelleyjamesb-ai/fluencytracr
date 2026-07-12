@@ -50,6 +50,19 @@
   build and independently accept the separate replicated-validation runner,
   then generate and review the 1,200 state-space calibration results plus
   null, floor, lag, shock, model-selection, and negative-control evidence.
+- PR #410 comparison-design boundary conflict resolution (2026-07-12): merged
+  current `origin/main` into `codex/comparison-design-adequacy-boundary-fix`
+  and retained the fail-closed nested-envelope crash repair. The resolved
+  boundary validates canonical nested `source_gate` attestations through the
+  strict gate validator, rejects malformed nested gates without echoing
+  raw/person-level content, and rejects ignored duplicate outer runtime fields
+  beside a nested envelope. No states, schemas, selectors, authorization
+  flags, routes, UI, persistence, exports, connectors, model behavior,
+  suppression reasons, or customer outputs changed. CODE, BUG, and
+  ADVERSARIAL reviewers were run and closed. Verification passed:
+  comparison-design adequacy review (`30 passed`), reviewer-owned comparison
+  package collection (`25 passed`), shared and confidence-engine builds, V1
+  governance gates, JavaScript syntax checks, and `git diff --check`.
 - Longitudinal V2 smoke proof boundary hardening (2026-07-11): completed the
   bounded Phase 2B hardening slice on
   `codex/longitudinal-smoke-proof-boundary-hardening`. The Python path now
