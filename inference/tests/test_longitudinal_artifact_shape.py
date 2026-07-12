@@ -1,9 +1,13 @@
 import json
 
 from fluencytracr_inference.longitudinal_artifact import (
+    longitudinal_proof_artifact_payload_hash,
     longitudinal_proof_artifact_self_hash,
+    longitudinal_proof_fit_output_evidence_hash,
+    longitudinal_proof_input_evidence_hash,
     run_longitudinal_proof,
 )
+from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.longitudinal_synthetic import generate_longitudinal_dataset
 from fluencytracr_inference.longitudinal_types import (
     LONGITUDINAL_ARTIFACT_SCHEMA_VERSION,
@@ -29,6 +33,7 @@ EXPECTED_TOP_LEVEL_FIELDS = [
     "vbd_exposure_evidence",
     "business_control_evidence",
     "model_specification",
+    "model_input_governance",
     "posterior_estimand_summary",
     "behavior_outcome_pathway_evidence",
     "diagnostics",
@@ -89,6 +94,15 @@ def test_longitudinal_governance_and_blocked_output_pins():
     assert artifact["promotion_decision_ref"] is None
     assert artifact["model_specification"]["synthetic_smoke_only"] is True
     assert artifact["model_specification"]["replicated_calibration_complete"] is False
+    assert artifact["model_specification"]["nuts_sampler_used"] is False
+    assert artifact["model_specification"]["ar1_likelihood_modeled"] is False
+    assert artifact["model_specification"]["partial_pooling_implemented"] is False
+    assert artifact["model_specification"]["historical_forecast"] is False
+    assert artifact["model_specification"]["mcmc_chains"] == 0
+    assert artifact["model_input_governance"] == {
+        "target_value_used_as_prior": False,
+        "minimum_worthwhile_change_used_in_inference": False,
+    }
     assert all(value is False for value in artifact["blocked_outputs"].values())
     assert sorted(artifact["synthetic_generator"].keys()) == sorted(
         [
@@ -112,6 +126,34 @@ def test_longitudinal_hash_bindings():
     assert artifact["hash_bindings"]["artifact_self_hash"] == (
         longitudinal_proof_artifact_self_hash(artifact)
     )
+    assert artifact["hash_bindings"]["fit_output_evidence_hash"] == (
+        longitudinal_proof_fit_output_evidence_hash(artifact)
+    )
+    assert artifact["hash_bindings"]["fit_summary_hash"] == sha256_json(
+        {
+            "synthetic_input_hash": artifact["hash_bindings"][
+                "synthetic_input_hash"
+            ],
+            "diagnostics_fit_summary_hash": artifact["hash_bindings"][
+                "diagnostics_fit_summary_hash"
+            ],
+            "fit_output_evidence_hash": artifact["hash_bindings"][
+                "fit_output_evidence_hash"
+            ],
+        }
+    )
+    assert artifact["hash_bindings"]["artifact_payload_hash"] == (
+        longitudinal_proof_artifact_payload_hash(artifact)
+    )
+    assert artifact["hash_bindings"]["input_evidence_hash"] == (
+        longitudinal_proof_input_evidence_hash(artifact)
+    )
+    assert len(
+        artifact["hash_bindings"]["synthetic_input_private_remainder_hash"]
+    ) == 64
+    assert len(artifact["hash_bindings"]["fit_private_remainder_hash"]) == 64
+    assert len(artifact["hash_bindings"]["diagnostics_evidence_hash"]) == 64
+    assert len(artifact["hash_bindings"]["fit_summary_hash"]) == 64
     for value in artifact["source_hashes"].values():
         if isinstance(value, list):
             assert all(isinstance(item, str) and len(item) == 64 for item in value)
@@ -123,9 +165,17 @@ def test_longitudinal_null_and_hold_artifacts_keep_same_boundary():
     null_artifact = _artifact("null_pathway")
     hold_artifact = _artifact("missing_or_suppressed_windows")
 
-    assert null_artifact["governance_state"]["state"] == "valid_internal_non_authorizing"
+    assert null_artifact["governance_state"]["state"] == (
+        "valid_internal_smoke_non_authorizing"
+    )
     assert hold_artifact["governance_state"]["state"] == "HOLD"
     assert hold_artifact["posterior_estimand_summary"] is None
+    assert hold_artifact["hash_bindings"]["fit_private_remainder_hash"] is None
+    assert hold_artifact["hash_bindings"]["diagnostics_evidence_hash"] is None
+    assert hold_artifact["hash_bindings"]["fit_output_evidence_hash"] is None
+    assert hold_artifact["hash_bindings"]["input_evidence_hash"] == (
+        longitudinal_proof_input_evidence_hash(hold_artifact)
+    )
     assert hold_artifact["hash_bindings"]["artifact_self_hash"] == (
         longitudinal_proof_artifact_self_hash(hold_artifact)
     )

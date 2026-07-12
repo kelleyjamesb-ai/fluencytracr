@@ -4,10 +4,14 @@ import pytest
 
 from fluencytracr_inference.longitudinal_artifact import (
     emit_longitudinal_proof_artifact,
-    longitudinal_proof_artifact_self_hash,
 )
 from fluencytracr_inference.longitudinal_artifact import run_longitudinal_proof
+from fluencytracr_inference.longitudinal_model import (
+    compute_longitudinal_diagnostics,
+    fit_longitudinal_model,
+)
 from fluencytracr_inference.longitudinal_synthetic import generate_longitudinal_dataset
+from fluencytracr_inference.longitudinal_types import LongitudinalStructureError
 
 
 FIXED_GENERATED_AT = "2026-07-10T00:00:00+00:00"
@@ -24,7 +28,6 @@ FIXED_GENERATED_AT = "2026-07-10T00:00:00+00:00"
         ("staggered_rollout_misroute", "unsupported_staggered_event_study"),
         ("baseline_only", "baseline_only_no_contribution_confidence"),
         ("missing_measurement_uncertainty", "missing_measurement_uncertainty"),
-        ("unsafe_business_control", "person_level_data_present"),
     ],
 )
 def test_longitudinal_hold_paths_name_diagnostic(scenario, diagnostic):
@@ -41,10 +44,27 @@ def test_longitudinal_hold_paths_name_diagnostic(scenario, diagnostic):
     assert artifact["customer_output_authorized"] is False
     assert artifact["confidence_output_authorized"] is False
     assert artifact["probability_output_authorized"] is False
-    if scenario == "unsafe_business_control":
-        assert artifact["business_control_evidence"]["control_names"] == []
-        assert artifact["business_control_evidence"]["control_source_refs"] == []
-        assert artifact["business_control_evidence"]["unsafe_control_refs_redacted"] is True
+    if scenario == "collinear_vbd":
+        check = artifact["diagnostics"]["pre_fit_design_matrix_check"]
+        assert check["pass"] is False
+        assert check["rank"] < check["parameter_count"] or (
+            check["max_abs_velocity_breadth_correlation"]
+            > check["compiled_velocity_breadth_correlation_gate"]
+        )
+    if scenario == "target_contamination":
+        assert artifact["model_input_governance"]["target_value_used_as_prior"] is True
+
+
+def test_unsafe_business_control_rejects_before_artifact_emission():
+    with pytest.raises(LongitudinalStructureError, match="unsafe person-level"):
+        run_longitudinal_proof(
+            generate_longitudinal_dataset(
+                scenario="unsafe_business_control",
+                seed=20260710,
+            ),
+            seed=20260710,
+            generated_at=FIXED_GENERATED_AT,
+        )
 
 
 @pytest.mark.parametrize(
@@ -68,36 +88,25 @@ def test_longitudinal_diagnostic_hold_after_fit(scenario, diagnostic):
     assert artifact["posterior_estimand_summary"] is not None
 
 
-def test_longitudinal_diagnostics_are_not_driven_by_scenario_labels():
+def test_longitudinal_diagnostics_are_driven_by_arrays_without_oracle_sidecars():
     clean = generate_longitudinal_dataset(scenario="clean_historical_pathway", seed=20260710)
+    assert not hasattr(clean, "scenario")
+    assert not hasattr(clean, "ground_truth")
     clean_artifact, _ = run_longitudinal_proof(
         clean,
         seed=20260710,
         generated_at=FIXED_GENERATED_AT,
     )
-    for label in ("wrong_lag", "approved_control_common_shock", "temporary_spike"):
-        relabeled_clean = replace(clean, scenario=label)
-        relabeled_clean_artifact, _ = run_longitudinal_proof(
-            relabeled_clean,
-            seed=20260710,
-            generated_at=FIXED_GENERATED_AT,
-        )
-
-        assert relabeled_clean_artifact["governance_state"] == clean_artifact["governance_state"]
-        assert relabeled_clean_artifact["hash_bindings"]["synthetic_input_hash"] == (
-            clean_artifact["hash_bindings"]["synthetic_input_hash"]
-        )
-        assert relabeled_clean_artifact["hash_bindings"]["artifact_self_hash"] == (
-            longitudinal_proof_artifact_self_hash(relabeled_clean_artifact)
-        )
+    assert clean_artifact["governance_state"]["state"] == (
+        "valid_internal_smoke_non_authorizing"
+    )
 
     common_shock = generate_longitudinal_dataset(
         scenario="approved_control_common_shock",
         seed=20260710,
     )
-    relabeled_common_shock = replace(common_shock, scenario="clean_historical_pathway")
     artifact, _ = run_longitudinal_proof(
-        relabeled_common_shock,
+        common_shock,
         seed=20260710,
         generated_at=FIXED_GENERATED_AT,
     )
@@ -105,9 +114,8 @@ def test_longitudinal_diagnostics_are_not_driven_by_scenario_labels():
     assert "common_shock_sensitivity" in artifact["governance_state"]["failing_diagnostics"]
 
     wrong_lag = generate_longitudinal_dataset(scenario="wrong_lag", seed=20260710)
-    relabeled_wrong_lag = replace(wrong_lag, scenario="clean_historical_pathway")
     artifact, _ = run_longitudinal_proof(
-        relabeled_wrong_lag,
+        wrong_lag,
         seed=20260710,
         generated_at=FIXED_GENERATED_AT,
     )
@@ -115,9 +123,8 @@ def test_longitudinal_diagnostics_are_not_driven_by_scenario_labels():
     assert "lag_sensitivity" in artifact["governance_state"]["failing_diagnostics"]
 
     temporary = generate_longitudinal_dataset(scenario="temporary_spike", seed=20260710)
-    relabeled_temporary = replace(temporary, scenario="clean_historical_pathway")
     artifact, _ = run_longitudinal_proof(
-        relabeled_temporary,
+        temporary,
         seed=20260710,
         generated_at=FIXED_GENERATED_AT,
     )
@@ -168,6 +175,61 @@ def test_respondent_data_leak_rejects_before_artifact_emission():
     with pytest.raises(ValueError, match="aggregate-only"):
         run_longitudinal_proof(
             generate_longitudinal_dataset(scenario="respondent_data_leak", seed=20260710),
+            seed=20260710,
+            generated_at=FIXED_GENERATED_AT,
+        )
+
+
+def test_fit_from_another_dataset_rejects_before_emission():
+    first = generate_longitudinal_dataset(seed=20260710)
+    second = generate_longitudinal_dataset(seed=20260711)
+    fit = fit_longitudinal_model(first, seed=20260712)
+    diagnostics = compute_longitudinal_diagnostics(fit)
+
+    with pytest.raises(ValueError, match="fit is not bound"):
+        emit_longitudinal_proof_artifact(
+            second,
+            fit=fit,
+            diagnostics=diagnostics,
+            generated_at=FIXED_GENERATED_AT,
+        )
+
+
+def test_diagnostics_from_another_fit_reject_before_emission():
+    dataset = generate_longitudinal_dataset(seed=20260710)
+    first_fit = fit_longitudinal_model(dataset, seed=20260711)
+    second_fit = fit_longitudinal_model(dataset, seed=20260712)
+    second_diagnostics = compute_longitudinal_diagnostics(second_fit)
+
+    with pytest.raises(ValueError, match="diagnostics are not bound"):
+        emit_longitudinal_proof_artifact(
+            dataset,
+            fit=first_fit,
+            diagnostics=second_diagnostics,
+            generated_at=FIXED_GENERATED_AT,
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda dataset: replace(dataset, known_aggregate_se=dataset.known_aggregate_se[:-1]),
+        lambda dataset: replace(dataset, known_aggregate_se=dataset.known_aggregate_se * -1),
+        lambda dataset: replace(dataset, post=dataset.post.astype(float) + 0.5),
+        lambda dataset: replace(dataset, control_matrix=dataset.control_matrix[:-1]),
+        lambda dataset: replace(dataset, evaluation_window_refs=("unknown-window",)),
+        lambda dataset: replace(dataset, ai_fluency_snapshots=()),
+        lambda dataset: replace(
+            dataset,
+            hypothesis_plan=replace(dataset.hypothesis_plan, approval_state="draft"),
+        ),
+    ],
+)
+def test_malformed_longitudinal_structure_rejects(mutation):
+    dataset = mutation(generate_longitudinal_dataset(seed=20260710))
+    with pytest.raises(LongitudinalStructureError):
+        run_longitudinal_proof(
+            dataset,
             seed=20260710,
             generated_at=FIXED_GENERATED_AT,
         )

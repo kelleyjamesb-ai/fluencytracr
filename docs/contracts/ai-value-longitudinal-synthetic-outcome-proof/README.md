@@ -1,6 +1,10 @@
 # Longitudinal Synthetic Outcome Proof
 
-Schema version: `FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07`
+Current schema version:
+`FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07_V2`
+
+Legacy read-only schema version:
+`FT_AI_VALUE_LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_2026_07`
 
 Python emitter: `inference/src/fluencytracr_inference/longitudinal_artifact.py`
 
@@ -33,10 +37,19 @@ The proof supports:
   coefficient;
 - synthetic aggregate business controls;
 - known aggregate standard errors;
-- a Gaussian posterior smoke calculation;
-- explicit AR(1) residual diagnostic posture;
+- a closed-form Gaussian analytic smoke regression with an independent
+  Gaussian likelihood;
+- post-hoc AR(1) residual diagnostic posture only;
 - internal-only artifact emission;
-- TypeScript validation with self-hash and source-hash checks.
+- V2 synthetic-input, fit-summary, diagnostics, self-hash, and source-hash
+  consistency checks;
+- V1 legacy read compatibility that cannot satisfy V2 or future proof gates.
+
+V2 does not use NUTS, model AR(1) in the likelihood, implement partial
+pooling, or produce a historical forecast. Its pre-period placebo,
+posterior-predictive, sampler, prior-sensitivity-refit, and full
+counterfactual-stability checks are `NOT_RUN`, never passing. Every non-HOLD
+V2 result is `valid_internal_smoke_non_authorizing`.
 
 Posterior draw shares, when present, are boxed as
 `internal_draw_share_diagnostics`. They are not probability output, not
@@ -52,6 +65,31 @@ The artifact records:
 - all customer/probability/confidence/ROI/finance/causality/productivity output
   authorizations false;
 - no promotion decision.
+
+The hashes detect accidental drift and semantically inconsistent rebinding
+inside this internal bridge. They are not a trusted signature and cannot prove
+artifact authenticity against an actor who can rewrite every hash and payload
+field together. Authenticity would require a separately approved trusted
+signature/envelope, which this smoke slice does not add.
+
+V2 uses hierarchical consistency commitments. The emitted input-evidence hash
+and private dataset-remainder hash compose the synthetic-input root. The
+emitted diagnostics-evidence hash and private fit-remainder hash compose the
+diagnostics-fit root. The synthetic-input root, diagnostics-fit root, and a
+fit-output evidence hash covering the posterior summary, analytic draw count,
+and pathway evidence compose the final fit-summary root. Input, diagnostic, or
+fit-output operands changed beneath an unchanged root reject. Replacing every
+root and all of its unkeyed components remains the trusted-envelope limitation
+above.
+
+The V2 dataset contract carries no fixture `scenario` or `ground_truth` oracle
+sidecars. Fixture selection stays outside model input, and synthetic truth is
+not accepted by the artifact path. Seeds must be nonnegative integers within
+the JavaScript-safe range, `generated_at` must be a timezone-aware RFC3339
+timestamp, and business controls must use compiled synthetic control
+identity/source pairs. Unknown designs and two-group DiD designs reject before
+a longitudinal artifact can be emitted; known unsupported controlled, matched,
+staggered, and baseline-only designs remain fail-closed HOLD controls.
 
 ## Non-Implemented Scope
 
@@ -72,6 +110,7 @@ This slice does not implement:
 - repeated Fluency-wave modeling;
 - complete multivariate VBD state-space modeling;
 - NUTS longitudinal sampler hardening;
+- a real pre-period placebo intervention study;
 - replicated longitudinal calibration;
 - non-normal likelihoods;
 - staggered event-study logic.
@@ -132,10 +171,10 @@ The implementation holds or rejects for:
 - real/customer/production/live data flags;
 - respondent-level leakage.
 
-Unsafe HR/personnel/productivity controls are redacted from emitted HOLD
-artifacts before the Python-to-TypeScript bridge. Rehashed artifacts that try
-to smuggle unsafe control names or source refs are rejected by the TypeScript
-schema.
+Unsafe HR/personnel/productivity controls reject before artifact emission.
+The V2 TypeScript bridge also rejects coordinated rehash attempts that relabel
+no-fit HOLD reasons, rewrite compiled diagnostic thresholds or fit outputs, or
+introduce a redacted privacy-violation artifact.
 
 ## Relationship To DiD
 

@@ -2,6 +2,49 @@
 
 ## Current Session
 
+- Longitudinal V2 smoke proof boundary hardening (2026-07-11): completed the
+  bounded Phase 2B hardening slice on
+  `codex/longitudinal-smoke-proof-boundary-hardening`. The Python path now
+  validates finite aligned aggregate inputs, balanced ordered panels, positive
+  aggregate uncertainty, approved plans/windows/controls, and synthetic-only
+  flags before fit or emission; unsafe personnel/control metadata rejects
+  before an artifact exists. V2 now states the implemented model literally as
+  closed-form Gaussian analytic smoke regression with independent likelihood
+  and post-hoc AR(1) diagnostics only. NUTS, modeled AR(1), partial pooling,
+  historical forecasting, prior sensitivity, PPC, sampler diagnostics, and
+  full counterfactual stability remain absent or `NOT_RUN`; every non-HOLD V2
+  artifact remains `valid_internal_smoke_non_authorizing`. Hierarchical hashes
+  bind emitted input evidence to the synthetic-input root, diagnostics to the
+  private fit remainder, and the synthetic-input root plus diagnostics-fit root
+  plus posterior/draw-count/pathway evidence to the final fit-summary root.
+  TypeScript independently derives no-fit HOLD reasons and compiled smoke
+  thresholds, rejects partial rebinding and input/fit splicing, and retains
+  authentic V1 read compatibility. The model dataset admits no scenario or
+  ground-truth oracle sidecars; compiled synthetic control identities,
+  JavaScript-safe seeds, calendar-valid RFC3339 timestamps, and aligned privacy
+  vocabularies reject unsafe inputs before emission. Unknown and DiD-routed
+  designs cannot emit through the longitudinal schema, while known unsupported
+  controls remain bridge-valid HOLD artifacts. Full replacement of every
+  unkeyed payload and hash remains explicitly outside authenticity guarantees
+  pending a separately approved trusted envelope. Final CODE, BUG, and
+  ADVERSARIAL acceptance all returned GO after rerunning their reproductions.
+  Verification passed: focused longitudinal Python tests (`126 passed`), full
+  inference suite (`359 passed`), AI Fluency snapshot tests (`11 passed`),
+  longitudinal TypeScript bridge (`42 passed`), `shared` and
+  `confidence-engine` builds, four strict OpenSpec validations, docs sweep,
+  semantic-drift guard, V1 governance gates, authentic fitted and no-fit V1
+  artifacts emitted from untouched `origin/main`, and `git diff --check`. The
+  package-wide confidence-engine run remained at its known unrelated baseline
+  (`338 passed`, four golden/parity failures); no longitudinal test failed.
+  OpenSpec tasks `1.1` through `4.4` in
+  `harden-longitudinal-smoke-proof-boundary` and model-family Phase 2B tasks
+  `2.2` through `2.4` are safe to keep checked. Longitudinal tasks `5.1`
+  through `5.8`, model-family Phase 3 tasks `3.1` through `3.4`, and unfinished
+  DiD proof tasks remain unchecked. Remaining blocker before calling the
+  longitudinal Bayesian proof complete: implement and independently accept the
+  state-space/NUTS concordance slice, then run replicated calibration, null,
+  floor, lag, shock, and negative-control evidence without widening the
+  synthetic-only nonauthorizing boundary.
 - Bayesian DiD sampler diagnostic hardening no-go canary (2026-07-10):
   executed the two requested moves. First, the AI Value formula registry PR
   #404 was merged into `origin/main` at merge commit `41a71784`. Then a fresh

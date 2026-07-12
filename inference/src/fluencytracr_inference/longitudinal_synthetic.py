@@ -13,10 +13,35 @@ from .longitudinal_types import (
     DEFAULT_PRE_WINDOWS,
     AIFluencySnapshotRef,
     LongitudinalHypothesisPlan,
+    LongitudinalStructureError,
     LongitudinalSyntheticDataset,
+    validate_longitudinal_seed,
 )
 
 DEFAULT_LONGITUDINAL_SEED = 202607100
+LONGITUDINAL_SYNTHETIC_SCENARIOS = frozenset(
+    {
+        "clean_historical_pathway",
+        "null_pathway",
+        "fluency_only",
+        "vbd_only",
+        "outcome_only_common_shock",
+        "approved_control_common_shock",
+        "wrong_lag",
+        "temporary_spike",
+        "insufficient_history",
+        "missing_or_suppressed_windows",
+        "collinear_vbd",
+        "non_normal_metric_request",
+        "target_contamination",
+        "staggered_rollout_misroute",
+        "baseline_only",
+        "missing_measurement_uncertainty",
+        "respondent_data_leak",
+        "real_data_flag",
+        "unsafe_business_control",
+    }
+)
 
 
 def _hash(label: str) -> str:
@@ -132,11 +157,25 @@ def generate_longitudinal_dataset(
 ) -> LongitudinalSyntheticDataset:
     """Generate one synthetic aggregate longitudinal proof dataset."""
 
+    if not isinstance(scenario, str) or scenario not in LONGITUDINAL_SYNTHETIC_SCENARIOS:
+        raise LongitudinalStructureError("scenario is not an approved synthetic fixture")
+    validate_longitudinal_seed(seed, name="seed")
+    for name, value in (
+        ("pre_window_count", pre_window_count),
+        ("post_window_count", post_window_count),
+        ("cohort_count", cohort_count),
+    ):
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise LongitudinalStructureError(f"{name} must be a positive integer")
     if scenario == "insufficient_history":
         pre_window_count = 6
     total_windows = pre_window_count + post_window_count
     rng = np.random.default_rng(seed)
-    plan = synthetic_hypothesis_plan()
+    plan = replace(
+        synthetic_hypothesis_plan(),
+        baseline_window=f"m00-m{pre_window_count - 1:02d}",
+        observation_schedule=tuple(f"m{i:02d}" for i in range(total_windows)),
+    )
     if scenario == "non_normal_metric_request":
         plan = replace(plan, primary_metric_family="count")
     if scenario == "staggered_rollout_misroute":
@@ -277,16 +316,7 @@ def generate_longitudinal_dataset(
         suppressed_window_refs=suppressed_refs,
         stale_window_refs=stale_refs,
         imputed_window_refs=imputed_refs,
-        scenario=scenario,
         seed=seed,
-        ground_truth={
-            "beta_velocity": beta_velocity,
-            "beta_breadth": beta_breadth,
-            "depth_context_only": True,
-            "rho": 0.45,
-            "lag_windows": lag,
-            "known_meaningful_movement": scenario == "clean_historical_pathway",
-        },
         real_data_present=scenario == "real_data_flag",
         customer_data_present=False,
         production_data_present=False,

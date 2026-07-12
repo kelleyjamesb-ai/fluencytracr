@@ -14,16 +14,30 @@ export {
 
 export {
   LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_SCHEMA_VERSION,
+  LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_SCHEMA_VERSION_V1,
+  LONGITUDINAL_SYNTHETIC_OUTCOME_PROOF_SCHEMA_VERSION_V2,
   LONGITUDINAL_MODEL_FAMILY,
   LONGITUDINAL_MODEL_SLICE,
+  LONGITUDINAL_SYNTHETIC_GENERATOR_ID,
+  LONGITUDINAL_SYNTHETIC_GENERATOR_VERSION,
   LongitudinalFailingDiagnosticSchema,
   LongitudinalSyntheticOutcomeProofArtifactSchema,
+  LongitudinalSyntheticOutcomeProofV1ArtifactSchema,
+  LongitudinalSyntheticOutcomeProofV2ArtifactSchema,
+  longitudinalSyntheticOutcomeProofDiagnosticsEvidenceHash,
+  longitudinalSyntheticOutcomeProofFitOutputEvidenceHash,
+  longitudinalSyntheticOutcomeProofInputEvidenceHash,
+  longitudinalSyntheticOutcomeProofInputEvidenceHashBody,
+  longitudinalSyntheticOutcomeProofPayloadHash,
+  longitudinalSyntheticOutcomeProofPayloadHashBody,
   longitudinalSyntheticOutcomeProofSelfHash,
   longitudinalSyntheticOutcomeProofSelfHashBody
 } from "./longitudinalSyntheticOutcomeProof";
 export type {
   LongitudinalFailingDiagnostic,
-  LongitudinalSyntheticOutcomeProofArtifact
+  LongitudinalSyntheticOutcomeProofArtifact,
+  LongitudinalSyntheticOutcomeProofV1Artifact,
+  LongitudinalSyntheticOutcomeProofV2Artifact
 } from "./longitudinalSyntheticOutcomeProof";
 
 export {
