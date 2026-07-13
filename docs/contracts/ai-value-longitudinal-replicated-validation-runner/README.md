@@ -48,22 +48,25 @@ the study.
 The CLI exposes only compiled operations:
 
 ```bash
-PYTHONPATH=inference/src inference/.venv/bin/python -B \
+# Run from a clean worktree. The pinned venv must remain outside that worktree.
+export FLUENCYTRACR_INFERENCE_PYTHON=/absolute/path/to/pinned/.venv/bin/python
+
+PYTHONPATH=inference/src "$FLUENCYTRACR_INFERENCE_PYTHON" -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli plan
 
-PYTHONPATH=inference/src inference/.venv/bin/python -B \
+PYTHONPATH=inference/src "$FLUENCYTRACR_INFERENCE_PYTHON" -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   canary --replication-index 0
 
-PYTHONPATH=inference/src inference/.venv/bin/python -B \
+PYTHONPATH=inference/src "$FLUENCYTRACR_INFERENCE_PYTHON" -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   run-chunk --chunk-index 0 --workspace /private/tmp/ft-longitudinal-validation
 
-PYTHONPATH=inference/src inference/.venv/bin/python -B \
+PYTHONPATH=inference/src "$FLUENCYTRACR_INFERENCE_PYTHON" -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   run-controls --workspace /private/tmp/ft-longitudinal-validation
 
-PYTHONPATH=inference/src inference/.venv/bin/python -B \
+PYTHONPATH=inference/src "$FLUENCYTRACR_INFERENCE_PYTHON" -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   combine --workspace /private/tmp/ft-longitudinal-validation
 ```
