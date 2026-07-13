@@ -118,9 +118,13 @@ Required behavior:
 
 The follow-on calibration boundary is defined in
 `docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`.
-That contract keeps calibration in `CONTRACT_READY_NOT_RUN` until a separate
-exact-scope implementation proposal defines an internal aggregate calibration
-artifact and validates it without respondent-level export.
+That contract records
+`PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`: dimension-level snapshots may
+provide approved aggregate longitudinal context, but they are not sufficient
+to calibrate a latent measurement model or establish comparable cross-wave
+change. A separate exact-scope proposal must define privacy-safe aggregate
+sufficient statistics, form/version compatibility, equating, and longitudinal
+measurement-invariance gates without respondent-level export.
 
 ## Source Adapter Parity
 

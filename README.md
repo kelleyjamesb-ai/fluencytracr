@@ -53,9 +53,11 @@ documented value-realization layers:
   invocation mode, UGC coverage, and personal/shared/org Skill separation are
   validated.
 - **AI Fluency measurement-model calibration contract:** defines the aggregate
-  evidence and HOLD gates required before any future Fluency measurement model
-  can be implemented. Current state is `CONTRACT_READY_NOT_RUN`: no model is
-  fit, no confidence/probability output is emitted, no respondent rows are
+  snapshot-context prerequisites and missing evidence required before any
+  future Fluency measurement model can be implemented. Current state is
+  `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`: dimension summaries alone do
+  not calibrate a latent model or prove comparable cross-wave change. No model
+  is fit, no confidence/probability output is emitted, no respondent rows are
   exported, and no persistence, route, UI, connector, customer-facing output,
   ROI, causality, productivity, finance, HR, ranking, or economic output is
   authorized.

@@ -1,15 +1,17 @@
 # Current Slice Contract
 
 - Work item id: `ai-fluency-measurement-model-calibration-contract`
-- Title: `AI Fluency measurement-model calibration contract`
+- Title: `AI Fluency measurement-model calibration prerequisites boundary`
 - Status: `completed`
 
 ## Summary
 
-Define the docs/spec-only calibration boundary for the future
-`bayesian_fluency_measurement_model`. The slice records required aggregate
-inputs, HOLD gates, non-authorization boundaries, and the current
-`CONTRACT_READY_NOT_RUN` state. It does not fit a model, create runtime code,
+Define the docs/spec-only prerequisites boundary for the future
+`bayesian_fluency_measurement_model`. The slice distinguishes approved
+aggregate snapshot context from the missing privacy-safe measurement evidence,
+records HOLD and non-authorization boundaries, and sets
+`PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`. It does not fit a model, create
+runtime code,
 add schemas, persist output, expose routes/UI, run connectors, admit real data,
 export respondent rows, or authorize confidence/probability, ROI, causality,
 productivity, finance, HR, ranking, economic, or customer-facing output.
@@ -29,9 +31,15 @@ productivity, finance, HR, ranking, economic, or customer-facing output.
 
 ## Key Boundaries
 
-- Calibration state is `CONTRACT_READY_NOT_RUN`.
+- Calibration state is `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`.
 - Validated aggregate `AIFluencyInstrumentSnapshot` waves are the only allowed
-  inputs for any future implementation.
+  snapshot-context inputs for any future implementation.
+- Dimension summaries, aggregate uncertainty, and reliability metadata are not
+  sufficient to calibrate a latent model or establish comparable cross-wave
+  change.
+- A future proposal must define privacy-safe aggregate sufficient statistics,
+  exact form/item/scoring versions, form compatibility or equating, and
+  longitudinal measurement-invariance gates.
 - Missing aggregate uncertainty, reliability, source refs, source hashes,
   k-min posture, missingness posture, or respondent-composition posture HOLDS.
 - Respondent rows, raw answers, direct identifiers, HR/personnel fields,
@@ -51,10 +59,12 @@ productivity, finance, HR, ranking, economic, or customer-facing output.
 - `node scripts/ci_semantic_drift_guard.mjs`
 - `python3 scripts/ci_v1_governance_gates.py`
 - `git diff --check`
+- `./harness/scripts/verify.sh` (`274 passed`, `3 skipped`)
 
 ## Next Handoff Note
 
-After verification, the next bounded model-family item is VBD trajectory-model
-calibration contract work. It must remain separate from persistence promotion,
-backend read projection, UI integration, real-data admission, and customer
-output.
+OpenSpec task `5.5` remains incomplete. The next bounded model-family item must
+first define the missing privacy-safe aggregate measurement evidence and
+synthetic calibration design. VBD trajectory calibration, persistence
+promotion, backend read projection, UI integration, real-data admission, and
+customer output remain separate later scopes.

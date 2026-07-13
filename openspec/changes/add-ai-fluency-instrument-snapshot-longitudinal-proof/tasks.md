@@ -41,7 +41,7 @@ integration work remain separate future scopes.
 - [x] 5.2 Replicated longitudinal interval-coverage study.
 - [x] 5.3 Null false-eligibility study for the longitudinal artifact.
 - [x] 5.4 Lag recovery and common-shock robustness studies.
-- [x] 5.5 AI Fluency measurement-model calibration contract.
+- [ ] 5.5 AI Fluency measurement-model calibration.
 - [ ] 5.6 VBD trajectory-model calibration.
 - [ ] 5.7 AI Fluency snapshot persistence promotion decision.
 - [ ] 5.8 Backend read projection and UI integration after separate promotion.

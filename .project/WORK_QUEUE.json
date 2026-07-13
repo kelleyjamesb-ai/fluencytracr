@@ -151,11 +151,11 @@
     },
     {
       "id": "ai-fluency-measurement-model-calibration-contract",
-      "title": "AI Fluency measurement-model calibration contract",
-      "bound": "Docs/spec-only contract for OpenSpec task 5.5: define aggregate AI Fluency measurement-model calibration prerequisites, HOLD gates, unsafe inputs, and non-authorization boundaries; no runtime model, schemas, routes, UI, persistence, connectors, real data, respondent rows, customer output, confidence/probability, ROI, causality, productivity, finance, HR, ranking, or economic output",
+      "title": "AI Fluency measurement-model calibration prerequisites boundary",
+      "bound": "Docs/spec-only boundary: distinguish aggregate snapshot context from the missing privacy-safe measurement evidence required by OpenSpec task 5.5; define fail-closed source, form/version, equating, invariance, HOLD, unsafe-input, and non-authorization requirements; no calibration completion, runtime model, schemas, routes, UI, persistence, connectors, real data, respondent rows, customer output, confidence/probability, ROI, causality, productivity, finance, HR, ranking, or economic output",
       "status": "done",
       "risk": "high",
-      "last_note": "Done 2026-07-13: created CONTRACT_READY_NOT_RUN calibration contract and updated model-family/OpenSpec/README state. OpenSpec task 5.5 now closes only as contract boundary; VBD trajectory calibration, persistence promotion, backend read projection, UI integration, real-data admission, and customer output remain incomplete."
+      "last_note": "Done 2026-07-13: documented PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE. Dimension summaries may provide approved aggregate context but cannot calibrate latent change. OpenSpec task 5.5 remains unchecked pending privacy-safe aggregate sufficient statistics, supported likelihood/form rules, equating/invariance proof, implementation, execution, and independent acceptance."
     }
   ]
 }
