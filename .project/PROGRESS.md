@@ -39,6 +39,43 @@
   customer/public outputs remain incomplete. The next real modeling blocker is
   separate AI Fluency measurement-model calibration and VBD trajectory-model
   calibration, not another state-space replication run.
+- FluencyTracr Codex Bug email sweep (2026-07-13): audited the July Gmail
+  notification set and reconciled 80 reported findings against current
+  `origin/main`. Most were already fixed or superseded; the two surviving
+  repair families existed only on older unmerged branches. On
+  `codex/fluencytracr-codex-bug-sweep`, hardened the AI Value Formula Registry
+  so root, formula, and executable-reference fields are exact; metadata,
+  boundary pins, model layers, AI Manager formula-family coverage, input units,
+  nested numeric tunables, and README parity fail closed. Added the missing
+  `suppression_gate_default_hold` metadata bound to
+  `enforceV1EvaluationDecision` and its existing V1 test. Follow-up Codex PR
+  review aligned schema-only validation by pinning registry version `2026_07`
+  and binding every AI Manager family to its canonical formula ID, economic
+  layer, specified-only state, null executable reference, and docs-only display
+  state.
+
+  Hardened sampler-acceptance report rehydration so report JSON never
+  reconstructs the private runner-generation token. Runner proof hashes and
+  all derived acceptance/resumable/task summaries are recomputed from the
+  untrusted report body, forged summaries reject, returned objects remain
+  rehydrated/non-authorizing, and smoke reports cannot be relabeled as full
+  task evidence. Measurement-cell window evidence now rejects duplicate
+  milestone-day arrays and empty required-window references. No real,
+  customer, production, or live data; routes; UI; persistence; exports;
+  customer output; ROI; causality; productivity; new suppression reason;
+  tunable threshold; or promotion decision was added.
+
+  Verification passed: formula-registry suite `22/22`; acceptance-study suite
+  `61/61`; merged full inference suite `489/489`; four-file inference bridge set
+  `72/72` with live Python subprocesses and no skips; AI Fluency snapshot
+  `11/11`; V1 evaluation decision `18/18`; `shared` and `confidence-engine`
+  builds; strict OpenSpec validation for `add-ai-value-formula-registry` and
+  `add-bayesian-inference-proof-harness`; docs contract sweep; semantic-drift
+  guard; V1 governance gates; and `git diff --check`. The optional package-wide
+  confidence-engine suite retains the same known four parity/golden failures
+  already recorded above; the three focused failing files reproduce unchanged
+  in a disposable clean worktree at `origin/main` commit `269ccd40`, so they
+  are not caused by this sweep.
 - Longitudinal replicated-validation runner completed (2026-07-12): finished
   the bounded runner-only queue item on
   `codex/longitudinal-replicated-validation-runner` from `origin/main` at

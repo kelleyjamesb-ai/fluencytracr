@@ -19,8 +19,7 @@
       "const": "fluencytracr_ai_value_formula_registry"
     },
     "registry_version": {
-      "type": "string",
-      "minLength": 1
+      "const": "2026_07"
     },
     "schema_version": {
       "const": "FT_AI_VALUE_FORMULA_REGISTRY_2026_07"
@@ -32,16 +31,19 @@
       "const": "add-ai-value-formula-registry"
     },
     "registry_boundary": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "const": [
+        "metadata_only",
+        "not_a_formula_execution_engine",
+        "aggregate_only",
+        "no_customer_facing_economic_output",
+        "no_runtime_tunable_thresholds",
+        "no_new_events_or_suppression_reasons"
+      ]
     },
     "model_layers": {
       "type": "array",
       "minItems": 10,
+      "maxItems": 10,
       "items": {
         "enum": [
           "AI_FLUENCY_MEASUREMENT",
@@ -63,10 +65,44 @@
       "minItems": 1,
       "items": {
         "$ref": "#/$defs/formula"
-      }
+      },
+      "allOf": [
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "cycle_time_delta"}, "formula_family": {"const": "cycle_time_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "friction_rate_delta"}, "formula_family": {"const": "friction_rate_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "sales_cycle_delta"}, "formula_family": {"const": "sales_cycle_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "conversion_rate_delta"}, "formula_family": {"const": "conversion_rate_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "quality_rate_delta"}, "formula_family": {"const": "quality_rate_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "throughput_delta"}, "formula_family": {"const": "throughput_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "trust_coverage_share"}, "formula_family": {"const": "trust_coverage_share"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "exception_rate_delta"}, "formula_family": {"const": "exception_rate_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"allOf": [{"$ref": "#/$defs/aiManagerTemplate"}, {"properties": {"formula_id": {"const": "experience_metric_delta"}, "formula_family": {"const": "experience_metric_delta"}}, "required": ["formula_id", "formula_family"]}]}, "minContains": 1, "maxContains": 1}
+      ]
     }
   },
   "$defs": {
+    "aiManagerTemplate": {
+      "type": "object",
+      "required": [
+        "model_layer",
+        "implementation_state",
+        "executable_reference_function",
+        "customer_display_state"
+      ],
+      "properties": {
+        "model_layer": {
+          "const": "ECONOMIC_VALUE_TRANSLATION"
+        },
+        "implementation_state": {
+          "const": "SPECIFIED_NOT_IMPLEMENTED"
+        },
+        "executable_reference_function": {
+          "type": "null"
+        },
+        "customer_display_state": {
+          "const": "DOCS_ONLY_TEMPLATE"
+        }
+      }
+    },
     "stringArray": {
       "type": "array",
       "minItems": 1,

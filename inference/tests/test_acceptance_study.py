@@ -7,6 +7,7 @@ import dataclasses
 
 import pytest
 
+from fluencytracr_inference import acceptance_study as acceptance_study_module
 from fluencytracr_inference.acceptance_study import (
     ACCEPTANCE_METHOD_AGGREGATE_APPROXIMATION,
     ACCEPTANCE_METHOD_SAMPLER_ARTIFACT,
@@ -1437,6 +1438,168 @@ def test_rehydrated_report_json_cannot_mint_source_provenance_token():
     )
 
 
+def test_rehydrated_report_json_never_reconstructs_runner_generation_token(
+    monkeypatch,
+):
+    def fake_run_proof(dataset, **kwargs):
+        report = _internal_report(
+            dataset.injected_effect_sd - 0.1,
+            dataset.injected_effect_sd + 0.1,
+        )
+        return (
+            _artifact(
+                state="eligible_internal_only",
+                synthetic_input_hash=dataset.synthetic_input_hash(),
+                internal_report=report,
+            ),
+            report,
+        )
+
+    result = run_sampler_artifact_smoke_acceptance_study(
+        replication_count=1,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+    runner_generation_proof_hash = _runner_generation_proof_hash(
+        method=result.method,
+        mode=result.mode,
+        base_seed=result.base_seed,
+        required_cells=result.required_cells,
+        replications=result.replications,
+        sampler_settings=result.sampler_settings,
+    )
+    runner_result = dataclasses.replace(
+        result,
+        runner_generated=True,
+        runner_generation_proof_hash=runner_generation_proof_hash,
+        runner_generation_token=acceptance_study_module._RUNNER_GENERATION_TOKEN,
+    )
+    runner_report = runner_result.to_report()
+
+    inconsistent_proof = json.loads(json.dumps(runner_report))
+    inconsistent_proof["runner_generation_proof_hash"] = "f" * 64
+    inconsistent_proof["study_hash"] = acceptance_study_module.sha256_json(
+        {
+            key: value
+            for key, value in inconsistent_proof.items()
+            if key != "study_hash"
+        }
+    )
+    with pytest.raises(ValueError, match="runner generation hash is inconsistent"):
+        acceptance_study_result_from_report(inconsistent_proof)
+
+    observed_tokens = []
+    original_to_report = AcceptanceStudyResult.to_report
+
+    def record_runner_token(candidate):
+        observed_tokens.append(candidate.runner_generation_token)
+        return original_to_report(candidate)
+
+    monkeypatch.setattr(AcceptanceStudyResult, "to_report", record_runner_token)
+
+    rehydrated = acceptance_study_result_from_report(runner_report)
+
+    assert observed_tokens
+    assert all(token is None for token in observed_tokens)
+    assert rehydrated.runner_generated is False
+    assert rehydrated.runner_generation_token is None
+
+
+def test_rehydrated_passing_report_sanitizes_acceptance_and_resumable_summaries(
+    monkeypatch,
+):
+    def fake_run_proof(dataset, **kwargs):
+        report = _internal_report(
+            dataset.injected_effect_sd - 0.1,
+            dataset.injected_effect_sd + 0.1,
+        )
+        return (
+            _artifact(
+                state="eligible_internal_only",
+                synthetic_input_hash=dataset.synthetic_input_hash(),
+                internal_report=report,
+            ),
+            report,
+        )
+
+    result = run_sampler_artifact_smoke_acceptance_study(
+        replication_count=1,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+    runner_generation_proof_hash = _runner_generation_proof_hash(
+        method=result.method,
+        mode=result.mode,
+        base_seed=result.base_seed,
+        required_cells=result.required_cells,
+        replications=result.replications,
+        sampler_settings=result.sampler_settings,
+    )
+    runner_result = dataclasses.replace(
+        result,
+        runner_generated=True,
+        runner_generation_proof_hash=runner_generation_proof_hash,
+        runner_generation_token=acceptance_study_module._RUNNER_GENERATION_TOKEN,
+    )
+    monkeypatch.setattr(
+        AcceptanceStudyResult,
+        "_acceptance_evidence_complete",
+        lambda candidate, *, generated_evidence_override=None, **_: (
+            bool(generated_evidence_override)
+            if generated_evidence_override is not None
+            else candidate.runner_generation_token
+            is acceptance_study_module._RUNNER_GENERATION_TOKEN
+        ),
+    )
+    runner_report = runner_result.to_report()
+    assert runner_report["sampler_artifact_acceptance_passed"] is True
+    assert runner_report["sampler_artifact_resumable_evidence_observed"] is True
+    assert runner_report["task_3_3_acceptance_state"] == "sampler_smoke_not_authorized"
+    assert runner_report["artifact_inputs_authorized"] is False
+
+    rehydrated = acceptance_study_result_from_report(runner_report)
+
+    assert rehydrated.sampler_artifact_acceptance_passed is False
+    assert rehydrated.sampler_artifact_resumable_evidence_observed is False
+
+    for field, forged_value in (
+        ("sampler_artifact_acceptance_passed", False),
+        ("sampler_artifact_resumable_evidence_observed", False),
+        ("task_3_3_acceptance_state", "sampler_full_failed_not_authorized"),
+    ):
+        forged = json.loads(json.dumps(runner_report))
+        forged[field] = forged_value
+        forged["study_hash"] = acceptance_study_module.sha256_json(
+            {key: value for key, value in forged.items() if key != "study_hash"}
+        )
+        with pytest.raises(ValueError, match="derived summaries are inconsistent"):
+            acceptance_study_result_from_report(forged)
+
+    forged_authorization = json.loads(json.dumps(runner_report))
+    forged_authorization["artifact_inputs_authorized"] = True
+    forged_authorization["study_hash"] = acceptance_study_module.sha256_json(
+        {
+            key: value
+            for key, value in forged_authorization.items()
+            if key != "study_hash"
+        }
+    )
+    with pytest.raises(ValueError, match="must not authorize artifact inputs"):
+        acceptance_study_result_from_report(forged_authorization)
+
+    malformed_manifest = json.loads(json.dumps(runner_report))
+    malformed_manifest["acceptance_run_manifest"] = None
+    malformed_manifest["study_hash"] = acceptance_study_module.sha256_json(
+        {
+            key: value
+            for key, value in malformed_manifest.items()
+            if key != "study_hash"
+        }
+    )
+    with pytest.raises(ValueError, match="derived summaries are inconsistent"):
+        acceptance_study_result_from_report(malformed_manifest)
+
+
 def test_rehydrated_report_with_forged_hashes_cannot_observe_resumable_evidence():
     replications = []
     for cell in required_acceptance_cells():
@@ -2036,6 +2199,48 @@ def test_acceptance_sidecar_rejects_inconsistent_window_ref_derivations():
         ]
         artifact["measurement_cell_window_evidence"]["missing_window_refs"] = []
         artifact["peeking_control"]["milestone_days_included"] = [30, 60]
+        _rehash(artifact)
+        return artifact, report
+
+    result = run_sampler_artifact_smoke_acceptance_study(
+        replication_count=1,
+        study_inputs=SyntheticStudyInputs([], {}, {}),
+        proof_runner=fake_run_proof,
+    )
+
+    replication = result.replications[0]
+    assert replication.artifact_valid is False
+    assert replication.acceptance_usable_artifact is False
+    assert result.to_report()["coverage_summary"]["hard_failure_count"] == 1
+
+
+def test_acceptance_sidecar_rejects_duplicate_window_day_counts():
+    def fake_run_proof(dataset, **kwargs):
+        report = _internal_report(
+            dataset.injected_effect_sd - 0.1,
+            dataset.injected_effect_sd + 0.1,
+        )
+        artifact = _artifact(
+            state="eligible_internal_only",
+            synthetic_input_hash=dataset.synthetic_input_hash(),
+            internal_report=report,
+        )
+        window = artifact["measurement_cell_window_evidence"]
+        window["required_milestone_days"] = [30, 30]
+        window["observed_milestone_days"] = [30, 30]
+        window["required_window_refs"] = ["mcw-d030-a", "mcw-d030-b"]
+        window["observed_window_refs"] = ["mcw-d030-a", "mcw-d030-b"]
+        peeking = artifact["peeking_control"]
+        peeking.update(
+            {
+                "procedure": "always_valid_sequential_procedure_proven",
+                "repeated_evaluation": True,
+                "total_planned_looks": 2,
+                "milestone_days_included": [30, 30],
+                "sequential_method_name": "synthetic_always_valid_test",
+                "synthetic_null_proof_hash": "f" * 64,
+            }
+        )
         _rehash(artifact)
         return artifact, report
 
