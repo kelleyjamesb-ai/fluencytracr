@@ -479,11 +479,12 @@ documented value-realization layers:
   It keeps the current DiD path as `comparison_supported_bayesian_did_module`
   and defines components for aggregate Fluency, VBD, hypothesis outcome,
   economic-value context, pathway coherence, claim caps, and portfolio review.
-  The first implemented non-DiD component is an isolated synthetic smoke proof
-  for `first_longitudinal_synthetic_model_slice`, with a source-independent
-  aggregate AI Fluency snapshot validator and a separate internal-only
-  TypeScript artifact schema; it is not replicated calibration or production
-  promotion. "Human transformation" means aggregate work-pattern and
+  The first non-DiD component now has an independently accepted synthetic
+  longitudinal state-space model proof: 30 full-setting NUTS concordance fits,
+  1,200 deterministic replicated-validation slots, null/floor/lag/shock
+  controls, and strict Python/TypeScript evidence bindings. AI Fluency
+  measurement-model and VBD trajectory-model calibration remain future work,
+  and this is not production promotion. "Human transformation" means aggregate work-pattern and
   capability-change context only; it does not authorize HR analytics,
   individual scoring, employee productivity measurement, manager/team ranking,
   customer-facing confidence/probability output, ROI proof, finance output,

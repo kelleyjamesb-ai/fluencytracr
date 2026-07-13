@@ -1,0 +1,86 @@
+{
+  "schema_version": "FT_INTERNAL_LONGITUDINAL_REPLICATED_VALIDATION_ACCEPTANCE_2026_07_V1",
+  "record_class": "internal_synthetic_longitudinal_replicated_validation_independent_acceptance",
+  "reviewed_at": "2026-07-13T10:42:26Z",
+  "reviewed_change_id": "longitudinal-replicated-validation-evidence",
+  "reviewed_evidence_binding": {
+    "binding_kind": "committed_artifact_bytes",
+    "branch_review_commit": "2ab71e198716015efccb27a680574eb39bb0873d",
+    "branch_review_commit_reachability_required": false,
+    "full_artifact_sha256": "2fa64551fa49f1f606ccbea6146622171e12c0b6d8df4f1bb4d2350b48de0490",
+    "artifact_self_hash": "0ce4ff124f82f529739a8c4b19212a03d13b6a8168f48761c12f4a84f75c751f"
+  },
+  "source_evidence": {
+    "full_artifact_path": "inference/evidence/longitudinal_replicated_validation_full_2026_07.json",
+    "full_artifact_sha256": "2fa64551fa49f1f606ccbea6146622171e12c0b6d8df4f1bb4d2350b48de0490",
+    "artifact_payload_hash": "6d3f1d51aa7133f390679cf86e61ecfb8db6a505c9b735e5f5f38a2a3917b2cc",
+    "artifact_self_hash": "0ce4ff124f82f529739a8c4b19212a03d13b6a8168f48761c12f4a84f75c751f",
+    "calibration_plan_hash": "8581099031acf7093f68c12d69c8732060ddff69d2b6636083608a5949048a04",
+    "calibration_study_result_hash": "9c7ddca9d694b22f5bef6865b1794855ab4f07bd34ab110e18ec5a98539c601d",
+    "control_plan_hash": "1f6de6f2ce2f9d62435e906a968c3bf71d0995a2b898dde82ad2776688954248",
+    "control_study_result_hash": "d2803acc403f6635fd4b4e8a2ded17f5a3d7580283e91ab4a7cd63eb29b0776f",
+    "combined_study_hash": "6c94f7d2f35a1375d176365dd090eab36fa8aaff043ca1ed61623d4d0b3a15db",
+    "execution_identity_hash": "b0375be8de65e97216875551ab29690713a6a0db14e6d8e3b04d09d7523ed3e4",
+    "implementation_hash": "cc00a4ad0e785ae54c19c2215488a9c6eb0b4902aad338a99ff5214e75a519dd",
+    "source_commit": "04c1ba2b5fe6093ef173f28575cf29b0ed45f5a8",
+    "compact_summary_path": "inference/evidence/longitudinal_replicated_validation_2026_07.json",
+    "compact_summary_sha256": "ba54a59f1ac78bff543a41b33c95241e83e5e59bce6757aeffa553c3ac564526",
+    "python_requires": ">=3.13,<3.14",
+    "requirements_lock_hash": "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801"
+  },
+  "review_decisions": [
+    {
+      "role": "CODE",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f5971-0d53-7612-8bd3-b7cc27ff0439"
+    },
+    {
+      "role": "BUG",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f5971-0fe0-7433-a3d5-61f19d60b413"
+    },
+    {
+      "role": "ADVERSARIAL",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f5987-1e81-7ed1-9a40-d0a8ec8d03fd"
+    }
+  ],
+  "overall_decision": "GO",
+  "completion_state": {
+    "action": "hold_for_separate_measurement_model_and_trajectory_calibration",
+    "replicated_validation_complete": true,
+    "model_family_phase_3_complete": true,
+    "longitudinal_state_space_model_proof_complete": true,
+    "ai_fluency_measurement_model_calibration_complete": false,
+    "vbd_trajectory_model_calibration_complete": false,
+    "production_promotion_complete": false
+  },
+  "governance_pins": {
+    "synthetic_only": true,
+    "aggregate_only": true,
+    "internal_only": true,
+    "internal_model_validation_accepted": true,
+    "did_status": "isolated_incomplete",
+    "customer_output_authorized": false,
+    "probability_output_authorized": false,
+    "confidence_output_authorized": false,
+    "roi_output_authorized": false,
+    "finance_output_authorized": false,
+    "causality_output_authorized": false,
+    "productivity_output_authorized": false,
+    "creates_route": false,
+    "creates_ui": false,
+    "writes_persistence": false,
+    "creates_export": false,
+    "renders_readout": false,
+    "executes_connector": false,
+    "promotion_decision_ref": null
+  },
+  "hash_bindings": {
+    "record_self_hash": "8bcfd788fc1ebf4941bd13ad34036c7c19a0a001651759d46177ab9b710cdf9a",
+    "hash_posture": "consistency_and_drift_detection_not_coordinated_replacement_authenticity"
+  }
+}

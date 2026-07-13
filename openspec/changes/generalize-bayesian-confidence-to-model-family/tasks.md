@@ -25,7 +25,7 @@
 
 ## 4. Phase 3: Replicated synthetic validation
 
-- [ ] 3.1 Define replicated synthetic validation thresholds for the selected future model.
-- [ ] 3.2 Run and review replicated calibration, null, floor, and negative-control evidence.
-- [ ] 3.3 Record validation results without authorizing customer-facing confidence, probability, ROI, causality, productivity, finance output, routes, UI, persistence, exports, migrations, or live connector reads.
-- [ ] 3.4 Only after verification, update task status for the future model proposal.
+- [x] 3.1 Define replicated synthetic validation thresholds for the selected future model.
+- [x] 3.2 Run and review replicated calibration, null, floor, and negative-control evidence.
+- [x] 3.3 Record validation results without authorizing customer-facing confidence, probability, ROI, causality, productivity, finance output, routes, UI, persistence, exports, migrations, or live connector reads.
+- [x] 3.4 Only after verification, update task status for the future model proposal.

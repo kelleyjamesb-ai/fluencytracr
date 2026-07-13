@@ -2,6 +2,43 @@
 
 ## Current Session
 
+- Longitudinal state-space model proof accepted (2026-07-13): completed the
+  bounded full-evidence queue item on
+  `codex/longitudinal-replicated-validation-evidence` from merged runner PR
+  #413. Four full-setting canaries passed, then all 20 resumable chunks produced
+  exactly 1,200 calibration rows across effects `{0,0.2,0.5}` SD,
+  panel-group counts `{6,12}`, and 200 replications per cell at aggregate
+  `k=16`. Strict combine passed and repeated byte-identically. Per-cell 80%
+  interval coverage was `81.5%`, `80%`, `78.5%`, `74.5%`, `78%`, and `80%`;
+  both null cells were `9/200` (`4.5%`), passing the compiled `<=5%` gate.
+  Floors `k=4,8,12,16`, true-lag recovery (`30/30` for lags 1, 2, and 3), and
+  all nine shock/negative controls passed with zero hard, missing, duplicate,
+  or off-plan rows.
+
+  The full artifact is
+  `inference/evidence/longitudinal_replicated_validation_full_2026_07.json`
+  (SHA-256
+  `2fa64551fa49f1f606ccbea6146622171e12c0b6d8df4f1bb4d2350b48de0490`,
+  self-hash
+  `0ce4ff124f82f529739a8c4b19212a03d13b6a8168f48761c12f4a84f75c751f`).
+  A compact summary and separate acceptance record bind the full evidence,
+  source/runtime/implementation identities, reviewed artifact bytes, branch
+  review provenance ref `2ab71e19`, and three distinct CODE, BUG, and
+  ADVERSARIAL GO decisions. Commit reachability is not the durable gate; the
+  committed artifact SHA-256 and artifact self-hash are. The
+  generated artifact remains immutable and nonauthorizing; only the separate
+  review record marks the internal synthetic model proof accepted.
+
+  Verification passed before task/status updates: full inference (`486
+  passed`), four longitudinal TypeScript suites (`76 passed`), AI Fluency
+  snapshot (`11 passed`), `shared` and `confidence-engine` builds, four strict
+  OpenSpec validations, docs/semantic sweep, V1 governance gates, and `git diff
+  --check`. Longitudinal tasks `5.1` through `5.4` and model-family Phase 3
+  tasks `3.1` through `3.4` are complete. Tasks `5.5` through `5.8`, every
+  unfinished DiD task, production promotion, real-data admission, and all
+  customer/public outputs remain incomplete. The next real modeling blocker is
+  separate AI Fluency measurement-model calibration and VBD trajectory-model
+  calibration, not another state-space replication run.
 - Longitudinal replicated-validation runner completed (2026-07-12): finished
   the bounded runner-only queue item on
   `codex/longitudinal-replicated-validation-runner` from `origin/main` at

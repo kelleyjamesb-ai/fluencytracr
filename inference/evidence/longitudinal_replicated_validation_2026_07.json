@@ -1,0 +1,267 @@
+{
+  "schema_version": "FT_INTERNAL_LONGITUDINAL_REPLICATED_VALIDATION_EVIDENCE_2026_07_V1",
+  "generated_at": "2026-07-13T10:35:25.720890+00:00",
+  "source_evidence": {
+    "artifact_schema_version": "FT_AI_VALUE_LONGITUDINAL_REPLICATED_VALIDATION_2026_07_V1",
+    "execution_mode": "full",
+    "source_artifact_path": "inference/evidence/longitudinal_replicated_validation_full_2026_07.json",
+    "source_artifact_sha256": "2fa64551fa49f1f606ccbea6146622171e12c0b6d8df4f1bb4d2350b48de0490",
+    "artifact_payload_hash": "6d3f1d51aa7133f390679cf86e61ecfb8db6a505c9b735e5f5f38a2a3917b2cc",
+    "artifact_self_hash": "0ce4ff124f82f529739a8c4b19212a03d13b6a8168f48761c12f4a84f75c751f",
+    "calibration_plan_hash": "8581099031acf7093f68c12d69c8732060ddff69d2b6636083608a5949048a04",
+    "calibration_study_result_hash": "9c7ddca9d694b22f5bef6865b1794855ab4f07bd34ab110e18ec5a98539c601d",
+    "control_plan_hash": "1f6de6f2ce2f9d62435e906a968c3bf71d0995a2b898dde82ad2776688954248",
+    "control_study_result_hash": "d2803acc403f6635fd4b4e8a2ded17f5a3d7580283e91ab4a7cd63eb29b0776f",
+    "combined_study_hash": "6c94f7d2f35a1375d176365dd090eab36fa8aaff043ca1ed61623d4d0b3a15db",
+    "execution_identity_hash": "b0375be8de65e97216875551ab29690713a6a0db14e6d8e3b04d09d7523ed3e4",
+    "implementation_hash": "cc00a4ad0e785ae54c19c2215488a9c6eb0b4902aad338a99ff5214e75a519dd",
+    "source_commit": "04c1ba2b5fe6093ef173f28575cf29b0ed45f5a8",
+    "python_requires": ">=3.13,<3.14",
+    "requirements_lock_hash": "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801",
+    "source_artifact_committed": true,
+    "summary_only": true,
+    "posterior_draws_committed": false,
+    "latent_states_committed": false
+  },
+  "plan": {
+    "effect_sizes_sd": [0.0, 0.2, 0.5],
+    "panel_group_counts": [6, 12],
+    "replications_per_cell": 200,
+    "required_slot_count": 1200,
+    "executed_slot_count": 1200,
+    "chunk_count": 20,
+    "slots_per_chunk": 60,
+    "aggregate_measurement_cell_k": 16,
+    "missing_slot_count": 0,
+    "duplicate_slot_count": 0,
+    "off_plan_slot_count": 0,
+    "duplicate_case_binding_count": 0,
+    "duplicate_fit_summary_count": 0,
+    "hard_failure_count": 0,
+    "compiled_gates": {
+      "credible_interval_level": 0.8,
+      "coverage_count_min_inclusive": 148,
+      "coverage_count_max_inclusive": 172,
+      "null_signal_count_max_inclusive": 10,
+      "aggregate_provenance_floor_k": 5,
+      "validation_floor_k": 10
+    }
+  },
+  "calibration_cells": [
+    {
+      "cell_id": "effect_0p0__groups_6",
+      "effect_size_sd": 0.0,
+      "panel_group_count": 6,
+      "replication_count": 200,
+      "coverage_count": 163,
+      "coverage_rate": 0.815,
+      "coverage_standard_error": 0.027456784225396828,
+      "coverage_gate_passed": true,
+      "null_signal_count": 9,
+      "null_signal_rate": 0.045,
+      "null_gate_passed": true
+    },
+    {
+      "cell_id": "effect_0p0__groups_12",
+      "effect_size_sd": 0.0,
+      "panel_group_count": 12,
+      "replication_count": 200,
+      "coverage_count": 160,
+      "coverage_rate": 0.8,
+      "coverage_standard_error": 0.0282842712474619,
+      "coverage_gate_passed": true,
+      "null_signal_count": 9,
+      "null_signal_rate": 0.045,
+      "null_gate_passed": true
+    },
+    {
+      "cell_id": "effect_0p2__groups_6",
+      "effect_size_sd": 0.2,
+      "panel_group_count": 6,
+      "replication_count": 200,
+      "coverage_count": 157,
+      "coverage_rate": 0.785,
+      "coverage_standard_error": 0.02904952667428507,
+      "coverage_gate_passed": true,
+      "null_signal_count": null,
+      "null_signal_rate": null,
+      "null_gate_passed": null
+    },
+    {
+      "cell_id": "effect_0p2__groups_12",
+      "effect_size_sd": 0.2,
+      "panel_group_count": 12,
+      "replication_count": 200,
+      "coverage_count": 149,
+      "coverage_rate": 0.745,
+      "coverage_standard_error": 0.030820042180373472,
+      "coverage_gate_passed": true,
+      "null_signal_count": null,
+      "null_signal_rate": null,
+      "null_gate_passed": null
+    },
+    {
+      "cell_id": "effect_0p5__groups_6",
+      "effect_size_sd": 0.5,
+      "panel_group_count": 6,
+      "replication_count": 200,
+      "coverage_count": 156,
+      "coverage_rate": 0.78,
+      "coverage_standard_error": 0.029291637031753616,
+      "coverage_gate_passed": true,
+      "null_signal_count": null,
+      "null_signal_rate": null,
+      "null_gate_passed": null
+    },
+    {
+      "cell_id": "effect_0p5__groups_12",
+      "effect_size_sd": 0.5,
+      "panel_group_count": 12,
+      "replication_count": 200,
+      "coverage_count": 160,
+      "coverage_rate": 0.8,
+      "coverage_standard_error": 0.0282842712474619,
+      "coverage_gate_passed": true,
+      "null_signal_count": null,
+      "null_signal_rate": null,
+      "null_gate_passed": null
+    }
+  ],
+  "null_study": {
+    "eligible_cell_count": 2,
+    "worst_null_signal_count": 9,
+    "worst_null_signal_rate": 0.045,
+    "maximum_allowed_count": 10,
+    "maximum_allowed_rate": 0.05,
+    "gate_passed": true
+  },
+  "floor_controls": [
+    {
+      "aggregate_measurement_cell_k": 4,
+      "expected_outcome": "REJECTED_BEFORE_FIT_BELOW_PROVENANCE_FLOOR",
+      "observed_outcome": "REJECTED_BEFORE_FIT_BELOW_PROVENANCE_FLOOR",
+      "passed": true
+    },
+    {
+      "aggregate_measurement_cell_k": 8,
+      "expected_outcome": "VALID_INTERNAL_ONLY_BELOW_VALIDATION_FLOOR",
+      "observed_outcome": "VALID_INTERNAL_ONLY_BELOW_VALIDATION_FLOOR",
+      "passed": true
+    },
+    {
+      "aggregate_measurement_cell_k": 12,
+      "expected_outcome": "VALIDATION_FLOOR_PASSED_NONAUTHORIZING",
+      "observed_outcome": "VALIDATION_FLOOR_PASSED_NONAUTHORIZING",
+      "passed": true
+    },
+    {
+      "aggregate_measurement_cell_k": 16,
+      "expected_outcome": "VALIDATION_FLOOR_PASSED_NONAUTHORIZING",
+      "observed_outcome": "VALIDATION_FLOOR_PASSED_NONAUTHORIZING",
+      "passed": true
+    }
+  ],
+  "lag_recovery": [
+    {
+      "true_lag_windows": 1,
+      "recovered_count": 30,
+      "replication_count": 30,
+      "required_recovery_count": 24,
+      "recovery_rate": 1.0,
+      "passed": true
+    },
+    {
+      "true_lag_windows": 2,
+      "recovered_count": 30,
+      "replication_count": 30,
+      "required_recovery_count": 24,
+      "recovery_rate": 1.0,
+      "passed": true
+    },
+    {
+      "true_lag_windows": 3,
+      "recovered_count": 30,
+      "replication_count": 30,
+      "required_recovery_count": 24,
+      "recovery_rate": 1.0,
+      "passed": true
+    }
+  ],
+  "negative_controls": [
+    {
+      "control_id": "uncontrolled_common_shock",
+      "expected_outcome": "HOLD_UNMEASURED_COMMON_SHOCK",
+      "observed_outcome": "HOLD_UNMEASURED_COMMON_SHOCK",
+      "passed": true
+    },
+    {
+      "control_id": "approved_control_shock",
+      "expected_outcome": "PASS_NO_INTERNAL_SIGNAL",
+      "observed_outcome": "PASS_NO_INTERNAL_SIGNAL",
+      "passed": true
+    },
+    {
+      "control_id": "unrelated_outcome_shock",
+      "expected_outcome": "PASS_NO_INTERNAL_SIGNAL",
+      "observed_outcome": "PASS_NO_INTERNAL_SIGNAL",
+      "passed": true
+    },
+    {
+      "control_id": "temporary_movement",
+      "expected_outcome": "HOLD_NO_LATE_WINDOW_PERSISTENCE",
+      "observed_outcome": "HOLD_NO_LATE_WINDOW_PERSISTENCE",
+      "passed": true
+    },
+    {
+      "control_id": "weak_history",
+      "expected_outcome": "REJECTED_BEFORE_FIT",
+      "observed_outcome": "REJECTED_BEFORE_FIT",
+      "passed": true
+    },
+    {
+      "control_id": "missing_windows",
+      "expected_outcome": "REJECTED_BEFORE_FIT",
+      "observed_outcome": "REJECTED_BEFORE_FIT",
+      "passed": true
+    },
+    {
+      "control_id": "unsafe_data",
+      "expected_outcome": "REJECTED_BEFORE_FIT",
+      "observed_outcome": "REJECTED_BEFORE_FIT",
+      "passed": true
+    },
+    {
+      "control_id": "unsupported_route",
+      "expected_outcome": "REJECTED_BEFORE_FIT",
+      "observed_outcome": "REJECTED_BEFORE_FIT",
+      "passed": true
+    },
+    {
+      "control_id": "target_contamination",
+      "expected_outcome": "REJECTED_BEFORE_FIT",
+      "observed_outcome": "REJECTED_BEFORE_FIT",
+      "passed": true
+    }
+  ],
+  "governance": {
+    "study_status": "PASS",
+    "artifact_state": "valid_internal_validation_non_authorizing",
+    "numerical_validation_gate_passed": true,
+    "exact_manifest_complete": true,
+    "full_evidence_generation_complete": true,
+    "state_space_nuts_concordance_accepted": true,
+    "independent_acceptance_complete": false,
+    "longitudinal_state_space_model_proof_complete": false,
+    "production_promotion_complete": false,
+    "aggregate_only": true,
+    "internal_only": true,
+    "synthetic_only": true,
+    "customer_output_authorized": false,
+    "probability_output_authorized": false,
+    "confidence_output_authorized": false,
+    "roi_output_authorized": false,
+    "finance_output_authorized": false,
+    "causality_output_authorized": false,
+    "productivity_output_authorized": false
+  }
+}

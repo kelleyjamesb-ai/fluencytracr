@@ -568,13 +568,10 @@ gates, binomial standard errors, control outcomes, lag selection, hashes, and
 HOLD/non-HOLD state.
 
 The runner implementation is not generated evidence. Smoke, canary, partial,
-mixed-provenance, malformed, or incomplete results HOLD. A later exact full
-run may record a numerical
-`valid_internal_validation_non_authorizing` state, but independent acceptance,
-longitudinal proof completion, production promotion, customer output,
-confidence/probability output, ROI, causality, productivity, and finance output
-remain false until separately reviewed. No parent replicated-validation task
-is completed by the runner-only change.
+mixed-provenance, malformed, or incomplete results HOLD. The later exact full
+run recorded the numerical `valid_internal_validation_non_authorizing` state;
+the generated artifact itself retains false independent-acceptance and
+proof-completion fields because it cannot self-certify review.
 
 The accepted runner pins exact Python/package runtime, Python and Node
 lockfiles, the TypeScript hashing/export chain, and the actual accepted
@@ -582,6 +579,32 @@ concordance artifact/summary bytes. Checkpoint child symlinks reject, runner
 errors remain durable HOLD evidence, and repeated combine must regenerate the
 same artifact timestamp and content. Exact evidence completeness is tracked
 separately from numerical success.
+
+### Accepted Replicated-Validation Evidence
+
+The 2026-07-13 evidence run completed all 1,200 state-space calibration slots
+across effects `{0, 0.2, 0.5}` SD and panel-group counts `{6, 12}`. Per-cell
+80% interval coverage ranged from `74.5%` to `81.5%`; both null cells produced
+a `4.5%` false-validation-signal rate, below the compiled `5%` maximum. All
+four floor controls passed, each true lag `{1,2,3}` was recovered `30/30`
+times, all nine shock/negative controls passed, and there were no hard,
+missing, duplicate, or off-plan rows.
+
+The full artifact, compact summary, and separate independent acceptance record
+are committed under `inference/evidence/`. CODE, BUG, and ADVERSARIAL review
+returned GO against the exact full-artifact bytes generated on branch review
+ref `2ab71e19`. The durable acceptance gate is the committed full-artifact
+SHA-256 plus artifact self-hash, not reachability of that branch ref after a
+squash merge. The record also binds artifact payload hash, calibration/control
+plans and results, combined-study hash, execution identity, implementation,
+runtime, lockfile, source commit, compact-summary bytes, and reviewer IDs.
+
+This completes only the synthetic longitudinal state-space model proof and
+model-family Phase 3. It does not complete AI Fluency measurement-model or VBD
+trajectory-model calibration, and it authorizes no production promotion,
+customer output, confidence/probability output, ROI, causality, productivity,
+finance output, route, UI, persistence, export, readout, or connector. The DiD
+module remains isolated and incomplete.
 
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware

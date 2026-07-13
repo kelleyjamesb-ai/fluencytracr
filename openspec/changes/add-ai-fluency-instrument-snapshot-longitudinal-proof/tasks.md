@@ -32,15 +32,15 @@
 
 ## 5. Future Work Not Completed Here
 
-These parent-roadmap gates remain unchecked until the complete replicated
-longitudinal evidence set receives independent acceptance. A child change may
-implement an engine or concordance component without completing these combined
-proof gates.
+The complete replicated longitudinal evidence set received independent
+acceptance on 2026-07-13. The first four combined model-proof gates are
+complete; measurement-model, trajectory-model, persistence, and product
+integration work remain separate future scopes.
 
-- [ ] 5.1 Full NUTS longitudinal sampler implementation and diagnostics.
-- [ ] 5.2 Replicated longitudinal interval-coverage study.
-- [ ] 5.3 Null false-eligibility study for the longitudinal artifact.
-- [ ] 5.4 Lag recovery and common-shock robustness studies.
+- [x] 5.1 Full NUTS longitudinal sampler implementation and diagnostics.
+- [x] 5.2 Replicated longitudinal interval-coverage study.
+- [x] 5.3 Null false-eligibility study for the longitudinal artifact.
+- [x] 5.4 Lag recovery and common-shock robustness studies.
 - [ ] 5.5 AI Fluency measurement-model calibration.
 - [ ] 5.6 VBD trajectory-model calibration.
 - [ ] 5.7 AI Fluency snapshot persistence promotion decision.
