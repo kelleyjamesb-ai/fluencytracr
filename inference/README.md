@@ -179,6 +179,24 @@ Under `src/fluencytracr_inference/`:
   diagnostic-failing, PPC-failing, or
   discordant evidence remains HOLD. Replicated calibration, null, floor, lag,
   shock, and negative-control validation remain separate future work.
+- `longitudinal_replicated_validation.py`,
+  `longitudinal_replicated_validation_controls.py`,
+  `longitudinal_replicated_validation_artifact.py`, and
+  `longitudinal_replicated_validation_cli.py` implement the runner for that
+  separate future evidence step. The compiled plan contains exactly 1,200
+  deterministic state-space rows across effects `{0, 0.2, 0.5}`, panel-group
+  counts `{6, 12}`, and replication indexes `{0..199}`, with fixed `k=16`
+  aggregate Measurement Cell provenance. It uses 20 create-once atomic chunks,
+  strict resume/combine recomputation, per-cell `148..172/200` coverage,
+  worst-cell null signals at most `10/200`, floor controls at `k=4,8,12,16`,
+  lag recovery, and fixed shock/negative controls. Checkpoint workspaces must
+  remain outside the repository and reject child symlinks. Exact runtime,
+  lockfile, source, TypeScript verifier-chain, and accepted-concordance byte
+  commitments are required. Runner errors remain durable HOLD evidence, and
+  combine is idempotent. Smoke/canary/partial artifacts always HOLD; even a
+  complete numerical pass remains internal synthetic nonauthorizing until a
+  separate evidence PR receives independent acceptance. The runner PR contains
+  no full generated evidence and does not complete parent tasks.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

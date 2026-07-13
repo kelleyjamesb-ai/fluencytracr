@@ -53,6 +53,18 @@ export {
 export type { LongitudinalStateSpaceConcordanceArtifact } from "./longitudinalStateSpaceConcordance";
 
 export {
+  LONGITUDINAL_REPLICATED_VALIDATION_SCHEMA_VERSION,
+  LONGITUDINAL_REPLICATED_VALIDATION_ARTIFACT_CLASS,
+  LONGITUDINAL_REPLICATED_VALIDATION_MODEL_SLICE,
+  LongitudinalReplicatedValidationArtifactSchema,
+  longitudinalReplicatedValidationPayloadHash,
+  longitudinalReplicatedValidationPayloadHashBody,
+  longitudinalReplicatedValidationSelfHash,
+  longitudinalReplicatedValidationSelfHashBody
+} from "./longitudinalReplicatedValidation";
+export type { LongitudinalReplicatedValidationArtifact } from "./longitudinalReplicatedValidation";
+
+export {
   CONTRIBUTION_ALIGNMENT_FEATURE_STABILITY_REVIEW_SCHEMA_VERSION,
   CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_SCHEMA_VERSION,
   buildContributionAlignmentFeatureStabilityReviewFromObject,

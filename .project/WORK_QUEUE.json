@@ -132,6 +132,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-12; human-authorized via 'build the queue item'. All 30 numerical slots passed. Runner identity/recomputation and lockfile/runtime bindings are hardened; a separate commit-and-evidence-bound CODE/BUG/ADVERSARIAL GO record unblocks only the next replicated synthetic-validation PR. Replicated validation and full proof remain incomplete."
+    },
+    {
+      "id": "longitudinal-replicated-validation-runner",
+      "title": "Longitudinal replicated-validation runner",
+      "bound": "Synthetic-only inference/, required OpenSpec/docs, and confidence-engine bridge coverage; implement a compiled 1,200-slot state-space calibration plan with deterministic chunk/resume/combine validation plus null, floor, lag, shock, model-selection, and negative-control runner paths; smoke/reduced and incomplete studies HOLD; no evidence-generation commit, public surfaces, real data, or authorization",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-12: exact 1,200-slot plan, resumable chunks/combine, calibration/null gates, floor/lag/negative controls, strict artifact/TypeScript bridge, and review hardening are implemented. Full inference 474 passed; four bridges 85 passed; CODE/BUG/ADVERSARIAL GO. No 1,200-row evidence was generated; parent validation and DiD remain incomplete."
     }
   ]
 }

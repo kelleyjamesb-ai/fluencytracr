@@ -2,6 +2,76 @@
 
 ## Current Session
 
+- Longitudinal replicated-validation runner completed (2026-07-12): finished
+  the bounded runner-only queue item on
+  `codex/longitudinal-replicated-validation-runner` from `origin/main` at
+  `91b4d533`. The synthetic-only path now compiles exactly 1,200 state-space
+  calibration slots across effects `{0,0.2,0.5}`, panel-group counts `{6,12}`,
+  and 200 replications per cell; fixed `k=16` provenance remains distinct from
+  panel-group count. Twenty create-once 60-slot chunks support exact resume and
+  idempotent combine. Fixed-denominator coverage/null summaries, `k=4,8,12,16`
+  floors, 90 lag-recovery rows, and nine shock/negative controls feed a separate
+  strict summary-only artifact and TypeScript bridge. Smoke, canary, partial,
+  malformed, mixed-provenance, runner-error, or numerically failing studies
+  HOLD. Complete evidence is tracked separately from numerical success, and
+  every result remains synthetic, internal, noncausal, and nonauthorizing.
+
+  Three review rounds found and closed interval-order, runtime-pin,
+  concordance-byte, verifier-chain/Node-lock, child-symlink, structural-error,
+  runner-error-resume, combine-idempotency, bool/int parsing, calendar timestamp,
+  floor-outcome, and completion-state gaps. Final independent CODE, BUG, and
+  ADVERSARIAL review returned GO. Verification passed: focused runner tests
+  (`26 passed`), full inference (`474 passed`), all four Python-to-TypeScript
+  bridges (`85 passed`), AI Fluency snapshot (`11 passed`), Assurance Harness
+  (`274 passed`, `3 skipped`), `shared` and `confidence-engine` builds, strict
+  OpenSpec validation, docs sweep, semantic-drift guard, V1 governance gates,
+  Python compileall, and `git diff --check`. The optional package-wide
+  confidence-engine run retained its known unrelated four parity/golden
+  failures (`372 passed`, `4 failed`); no runner bridge failed.
+
+  OpenSpec runner tasks `1.1` through `5.5` are safe to check. No 1,200-row
+  evidence artifact or checkpoint workspace was generated or committed, and
+  no parent longitudinal validation, model-family Phase 3, or unfinished DiD
+  task was checked. Remaining blocker before calling the longitudinal Bayesian
+  proof complete: from fresh `origin/main`, add a separate bounded evidence
+  queue item, run the four full-setting canaries, generate/combine all 1,200
+  calibration rows plus fixed controls, and bind the resulting summary artifact
+  to independent CODE, BUG, and ADVERSARIAL acceptance.
+- Longitudinal replicated-validation runner paused handoff (2026-07-12): the
+  decision owner authorized continuation of the Longitudinal Bayesian Proof
+  Roadmap, so the bounded queue item
+  `longitudinal-replicated-validation-runner` was added and activated and the
+  fresh branch `codex/longitudinal-replicated-validation-runner` was created
+  from `origin/main` at `91b4d533`. Added and strictly validated the new
+  OpenSpec change `add-longitudinal-replicated-validation-runner`, defining
+  exactly 1,200 deterministic state-space calibration slots, 20 fixed chunks
+  of 60 slots, `k=16` calibration provenance separate from panel-group count,
+  integer coverage/null gates, floor controls, compiled lag selection, fixed
+  shock/negative controls, atomic resume semantics, and a separate
+  nonauthorizing artifact boundary. Began the Python execution spine in
+  `longitudinal_replicated_validation.py`: exact slot/seed/chunk planning,
+  summary-only fit rows, strict JSON rehydration, source/runtime/lock/plan
+  identity, atomic per-slot/chunk writes, exact workspace loading,
+  fixed-denominator calibration/null summaries, and partial canary HOLD
+  reports. The module compiles, and the plan reports `1200` slots, `20`
+  chunks, and `60` slots per chunk. The source manifest intentionally names
+  the not-yet-created controls and artifact modules, so execution identity and
+  canary/full execution remain incomplete until those files exist.
+
+  CODE review returned GO on the architecture and requested explicit seed
+  namespaces, lag tie epsilon, exact control IDs/outcomes, checkpoint version,
+  and implementation manifest. BUG review confirmed the new path must not
+  inherit fail-open DiD JSONL/count behavior: exact types/index sets,
+  atomic files, one execution identity, deterministic case recomputation,
+  global seed uniqueness, worst-null-cell gating, fixed denominators, and
+  strict separation of panel-group count from aggregate `k` need regression
+  coverage. ADVERSARIAL review was stopped when the user paused. No control
+  module, artifact emitter, CLI, TypeScript schema/bridge, contract README,
+  task checkboxes, evidence files, commit, push, PR, or full 1,200-slot run
+  exists yet. Resume next with the floor/lag/shock control module, then artifact
+  and CLI, TypeScript bridge, focused/full verification, fresh CODE/BUG/
+  ADVERSARIAL acceptance, and only then queue/status completion. Parent
+  longitudinal and DiD tasks remain unchecked.
 - PR #412 post-merge proof-boundary hardening (2026-07-12): merged current
   `origin/main`, retained both progress records, and fixed the blockers found by
   fresh BUG/ADVERSARIAL review. Python emission now accepts only the exact
