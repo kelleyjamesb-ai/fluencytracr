@@ -1600,6 +1600,10 @@ def _validate_negative_evidence(result: ControlResult) -> None:
             raise ValueError("successful negative control cannot carry rejection evidence")
         if evidence["fit_attempted"] is not True or primary is None:
             raise ValueError("statistical negative control requires a primary fit")
+        if result.control_id != "temporary_movement" and late is not None:
+            raise ValueError(
+                "only the temporary-movement control may carry a late-window refit"
+            )
         expected_primary_case_hash = sha256_json(
             {
                 "control_id": result.control_id,

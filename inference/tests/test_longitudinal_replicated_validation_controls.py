@@ -286,6 +286,33 @@ def test_negative_controls_match_every_compiled_safe_outcome():
         recompute_control_case_receipts(result)
 
 
+@pytest.mark.parametrize(
+    "control_id",
+    (
+        "approved_control_shock",
+        "unrelated_outcome_shock",
+        "uncontrolled_common_shock",
+    ),
+)
+def test_non_temporary_controls_reject_extra_late_window_fit(control_id):
+    identity = _identity()
+    result = run_negative_control(
+        control_id,
+        execution_identity=identity,
+        execution_mode="smoke",
+    )
+    forged = deepcopy(result.to_dict())
+    forged["evidence"]["late_window_fit"] = deepcopy(
+        forged["evidence"]["primary_fit"]
+    )
+    forged["result_hash"] = sha256_json(
+        {key: value for key, value in forged.items() if key != "result_hash"}
+    )
+
+    with pytest.raises(ValueError, match="only the temporary-movement control"):
+        control_result_from_dict(forged)
+
+
 def test_structural_control_requires_the_exact_compiled_rejection(monkeypatch):
     identity = _identity()
 

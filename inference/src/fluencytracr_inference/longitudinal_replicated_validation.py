@@ -651,18 +651,15 @@ def build_execution_identity(*, require_clean: bool) -> ExecutionIdentity:
     commit = _git_output("rev-parse", "HEAD")
     if not _COMMIT_RE.fullmatch(commit):
         raise ReplicatedValidationError("source commit must be a full Git SHA-1")
-    governed_paths = (*_RUNNER_SOURCE_PATHS, "inference/requirements.lock")
-    governed_status = _git_output(
+    worktree_status = _git_output(
         "status",
         "--porcelain",
         "--untracked-files=all",
-        "--",
-        *governed_paths,
     )
-    clean = governed_status == ""
+    clean = worktree_status == ""
     if require_clean and not clean:
         raise ReplicatedValidationError(
-            "full replicated validation requires a clean tracked source tree"
+            "full replicated validation requires an entirely clean worktree"
         )
     if (os.sys.version_info.major, os.sys.version_info.minor) != (3, 13):
         raise ReplicatedValidationError(
@@ -1494,7 +1491,12 @@ def replicated_validation_workspace_path(workspace: Path, *parts: str) -> Path:
 
 
 def initialize_replicated_validation_workspace(workspace_dir: str | Path) -> Path:
-    workspace = Path(workspace_dir).expanduser().resolve()
+    requested = Path(os.path.abspath(Path(workspace_dir).expanduser()))
+    if any(candidate.is_symlink() for candidate in (requested, *requested.parents)):
+        raise ReplicatedValidationWorkspaceError(
+            "replicated-validation checkpoint roots must not contain symlinks"
+        )
+    workspace = requested.resolve()
     if workspace == _repo_root() or _repo_root() in workspace.parents:
         raise ReplicatedValidationWorkspaceError(
             "replicated-validation checkpoints must remain outside the repository"

@@ -73,9 +73,9 @@ create-once and atomically published; an identical race converges, while a
 conflicting existing record fails closed. Resume and combine reject missing,
 extra, duplicate, off-plan, malformed, reordered, hash-invalid,
 mixed-identity, mixed-runtime, mixed-commit, or mixed-lockfile evidence.
-Workspace child symlinks and resolved path escapes reject. Runner errors remain
-durable rows in the exact manifest, force HOLD, and cannot disappear from a
-denominator. Repeating `combine` reuses the first artifact timestamp and
+Workspace roots, child symlinks, and resolved path escapes reject. Runner errors
+remain durable rows in the exact manifest, force HOLD, and cannot disappear from
+a denominator. Repeating `combine` reuses the first artifact timestamp and
 requires exact regeneration.
 
 Combine regenerates every deterministic calibration and control case and
@@ -88,7 +88,8 @@ exact generated evidence.
 Execution identity requires the exact Python 3.13 and locked package versions,
 hashes both Python and Node lockfiles, binds the TypeScript hashing/export
 chain, and verifies the actual accepted concordance artifact and compact
-summary bytes before any full run.
+summary bytes before any full run. The full path requires the entire Git
+worktree, including untracked files, to be clean at the bound source commit.
 
 ## Floor Controls
 

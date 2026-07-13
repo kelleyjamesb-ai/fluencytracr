@@ -231,6 +231,17 @@ def test_checkpoint_workspace_rejects_child_symlink_escape(tmp_path):
         initialize_replicated_validation_workspace(workspace)
 
 
+def test_checkpoint_workspace_rejects_symlinked_root_before_writing(tmp_path):
+    target = tmp_path / "workspace-target"
+    target.mkdir()
+    symlinked_root = tmp_path / "workspace-link"
+    symlinked_root.symlink_to(target, target_is_directory=True)
+
+    with pytest.raises(ReplicatedValidationWorkspaceError, match="symlink"):
+        initialize_replicated_validation_workspace(symlinked_root)
+    assert not (target / "plan.json").exists()
+
+
 def test_execution_identity_rejects_unpinned_runtime(monkeypatch):
     monkeypatch.setattr(
         runner.importlib.metadata,
@@ -239,6 +250,23 @@ def test_execution_identity_rejects_unpinned_runtime(monkeypatch):
     )
     with pytest.raises(ReplicatedValidationError, match="pinned pymc"):
         build_execution_identity(require_clean=False)
+
+
+def test_execution_identity_requires_the_entire_worktree_to_be_clean(monkeypatch):
+    real_git_output = runner._git_output
+    status_calls = []
+
+    def dirty_git_output(*args):
+        if args and args[0] == "status":
+            status_calls.append(args)
+            return "?? sitecustomize.py"
+        return real_git_output(*args)
+
+    monkeypatch.setattr(runner, "_git_output", dirty_git_output)
+
+    with pytest.raises(ReplicatedValidationError, match="entirely clean worktree"):
+        build_execution_identity(require_clean=True)
+    assert status_calls == [("status", "--porcelain", "--untracked-files=all")]
 
 
 def test_execution_identity_hashes_committed_concordance_evidence(monkeypatch):
