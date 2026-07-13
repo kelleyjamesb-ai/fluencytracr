@@ -14,6 +14,9 @@ export const AI_VALUE_FORMULA_REGISTRY_SCHEMA_VERSION =
 export const AI_VALUE_FORMULA_REGISTRY_ID =
   "fluencytracr_ai_value_formula_registry";
 
+const AI_VALUE_FORMULA_REGISTRY_VERSION = "2026_07";
+const AI_VALUE_FORMULA_REGISTRY_CHANGE_ID = "add-ai-value-formula-registry";
+
 export const FORMULA_REGISTRY_IMPLEMENTATION_STATES = [
   "IMPLEMENTED_AND_TESTED",
   "IMPLEMENTED_SYNTHETIC_ONLY",
@@ -56,6 +59,26 @@ export const AI_MANAGER_OUTCOME_FORMULA_FAMILIES = [
   "experience_metric_delta"
 ] as const;
 
+const FORMULA_REGISTRY_BOUNDARY_PINS = [
+  "metadata_only",
+  "not_a_formula_execution_engine",
+  "aggregate_only",
+  "no_customer_facing_economic_output",
+  "no_runtime_tunable_thresholds",
+  "no_new_events_or_suppression_reasons"
+] as const;
+
+const REGISTRY_KEYS = new Set([
+  "registry_id",
+  "registry_version",
+  "schema_version",
+  "status",
+  "generated_for_change",
+  "registry_boundary",
+  "model_layers",
+  "formulas"
+]);
+
 const REQUIRED_ENTRY_KEYS = [
   "formula_id",
   "formula_name",
@@ -79,6 +102,18 @@ const REQUIRED_ENTRY_KEYS = [
   "customer_display_state",
   "governance_state"
 ] as const;
+
+const FORMULA_ENTRY_KEYS = new Set<string>([
+  ...REQUIRED_ENTRY_KEYS,
+  "formula_family"
+]);
+
+const EXECUTABLE_REFERENCE_KEYS = new Set([
+  "source_path",
+  "export_name",
+  "execution_boundary",
+  "runtime_callable_from_registry"
+]);
 
 const REQUIRED_BLOCKED_INTERPRETATIONS = [
   "realized_roi",
@@ -147,8 +182,6 @@ export interface AiValueFormulaRegistryEntry {
   customer_display_state: FormulaCustomerDisplayState;
   governance_state: string;
   formula_family?: AiManagerOutcomeFormulaFamily;
-  allowed_input_posture?: string[];
-  blocked_outputs?: string[];
 }
 
 export interface AiValueFormulaRegistry {
@@ -186,11 +219,18 @@ function hasText(value: unknown): value is string {
 function validateNoNumericTunableValues(
   value: unknown,
   gaps: string[],
-  path = "registry"
+  path = "registry",
+  insideTunable = false
 ): void {
+  if (typeof value === "number") {
+    if (insideTunable) {
+      gaps.push(`${path} contains a numeric tunable value`);
+    }
+    return;
+  }
   if (Array.isArray(value)) {
     value.forEach((entry, index) =>
-      validateNoNumericTunableValues(entry, gaps, `${path}[${index}]`)
+      validateNoNumericTunableValues(entry, gaps, `${path}[${index}]`, insideTunable)
     );
     return;
   }
@@ -198,10 +238,12 @@ function validateNoNumericTunableValues(
 
   for (const [key, nestedValue] of Object.entries(value)) {
     const nestedPath = `${path}.${key}`;
-    if (typeof nestedValue === "number" && NUMERIC_TUNABLE_KEY_PATTERN.test(key)) {
-      gaps.push(`${nestedPath} contains a numeric tunable value`);
-    }
-    validateNoNumericTunableValues(nestedValue, gaps, nestedPath);
+    validateNoNumericTunableValues(
+      nestedValue,
+      gaps,
+      nestedPath,
+      insideTunable || NUMERIC_TUNABLE_KEY_PATTERN.test(key)
+    );
   }
 }
 
@@ -216,6 +258,14 @@ function validateExecutableReference(
   if (NON_EXECUTABLE_STATES.has(state) && executable !== null) {
     gaps.push(`${formulaId} must not declare an executable reference in ${state}`);
     return;
+  }
+
+  if (isRecord(executable)) {
+    for (const key of Object.keys(executable)) {
+      if (!EXECUTABLE_REFERENCE_KEYS.has(key)) {
+        gaps.push(`${formulaId}.executable_reference_function.${key} is not allowed`);
+      }
+    }
   }
 
   if (state === "IMPLEMENTED_AND_TESTED" || state === "IMPLEMENTED_SYNTHETIC_ONLY") {
@@ -267,13 +317,19 @@ function validateEntry(entry: unknown, gaps: string[], seenIds: Set<string>): vo
     return;
   }
 
+  const formulaId = hasText(entry.formula_id) ? entry.formula_id : "unknown_formula";
+  for (const key of Object.keys(entry)) {
+    if (!FORMULA_ENTRY_KEYS.has(key)) {
+      gaps.push(`${formulaId} has unexpected field ${key}`);
+    }
+  }
+
   for (const key of REQUIRED_ENTRY_KEYS) {
     if (!(key in entry)) {
       gaps.push(`formula entry is missing ${key}`);
     }
   }
 
-  const formulaId = hasText(entry.formula_id) ? entry.formula_id : "unknown_formula";
   if (!/^[a-z0-9_]+$/.test(formulaId)) {
     gaps.push(`${formulaId} formula_id must be stable snake_case`);
   }
@@ -324,8 +380,12 @@ function validateEntry(entry: unknown, gaps: string[], seenIds: Set<string>): vo
     }
   }
 
-  if (!isRecord(entry.input_units)) {
-    gaps.push(`${formulaId}.input_units must be an object`);
+  if (
+    !isRecord(entry.input_units) ||
+    Object.keys(entry.input_units).length === 0 ||
+    Object.values(entry.input_units).some((value) => !hasText(value))
+  ) {
+    gaps.push(`${formulaId}.input_units must map to non-blank strings`);
   }
 
   if (entry.implementation_state === "PROHIBITED" && entry.customer_display_state !== "BLOCKED") {
@@ -364,11 +424,23 @@ export function validateAiValueFormulaRegistry(
     };
   }
 
+  for (const key of Object.keys(registry)) {
+    if (!REGISTRY_KEYS.has(key)) {
+      gaps.push(`registry has unexpected field ${key}`);
+    }
+  }
+
   if (registry.registry_id !== AI_VALUE_FORMULA_REGISTRY_ID) {
     gaps.push(`registry_id must be ${AI_VALUE_FORMULA_REGISTRY_ID}`);
   }
   if (registry.schema_version !== AI_VALUE_FORMULA_REGISTRY_SCHEMA_VERSION) {
     gaps.push(`schema_version must be ${AI_VALUE_FORMULA_REGISTRY_SCHEMA_VERSION}`);
+  }
+  if (registry.registry_version !== AI_VALUE_FORMULA_REGISTRY_VERSION) {
+    gaps.push(`registry_version must be ${AI_VALUE_FORMULA_REGISTRY_VERSION}`);
+  }
+  if (registry.generated_for_change !== AI_VALUE_FORMULA_REGISTRY_CHANGE_ID) {
+    gaps.push(`generated_for_change must be ${AI_VALUE_FORMULA_REGISTRY_CHANGE_ID}`);
   }
   if (registry.status !== "canonical_metadata_registry") {
     gaps.push("status must be canonical_metadata_registry");
@@ -376,6 +448,14 @@ export function validateAiValueFormulaRegistry(
   if (!isStringArray(registry.model_layers)) {
     gaps.push("model_layers must list canonical model layers");
   } else {
+    if (new Set(registry.model_layers).size !== registry.model_layers.length) {
+      gaps.push("model_layers must not contain duplicates");
+    }
+    for (const layer of registry.model_layers) {
+      if (!MODEL_LAYERS.has(layer)) {
+        gaps.push(`model_layers contains unsupported layer ${layer}`);
+      }
+    }
     for (const layer of FORMULA_REGISTRY_MODEL_LAYERS) {
       if (!registry.model_layers.includes(layer)) {
         gaps.push(`model_layers must include ${layer}`);
@@ -384,6 +464,21 @@ export function validateAiValueFormulaRegistry(
   }
   if (!isStringArray(registry.registry_boundary)) {
     gaps.push("registry_boundary must be a string array");
+  } else {
+    const requiredPins = new Set<string>(FORMULA_REGISTRY_BOUNDARY_PINS);
+    if (new Set(registry.registry_boundary).size !== registry.registry_boundary.length) {
+      gaps.push("registry_boundary must not contain duplicates");
+    }
+    for (const pin of registry.registry_boundary) {
+      if (!requiredPins.has(pin)) {
+        gaps.push(`registry_boundary contains unsupported pin ${pin}`);
+      }
+    }
+    for (const pin of FORMULA_REGISTRY_BOUNDARY_PINS) {
+      if (!registry.registry_boundary.includes(pin)) {
+        gaps.push(`registry_boundary must include ${pin}`);
+      }
+    }
   }
 
   if (!Array.isArray(registry.formulas) || registry.formulas.length === 0) {
@@ -404,6 +499,22 @@ export function validateAiValueFormulaRegistry(
       }
       if (isRecord(formula) && formula.executable_reference_function === null) {
         nonExecutableFormulaCount += 1;
+      }
+    }
+
+    const formulaRecords = registry.formulas.filter(isRecord);
+    for (const family of AI_MANAGER_OUTCOME_FORMULA_FAMILIES) {
+      const matchingTemplates = formulaRecords.filter(
+        (formula) => formula.formula_id === family && formula.formula_family === family
+      );
+      if (matchingTemplates.length !== 1) {
+        gaps.push(`${family} must have exactly one canonical AI Manager template`);
+      }
+      const familyDeclarations = formulaRecords.filter(
+        (formula) => formula.formula_family === family
+      );
+      if (familyDeclarations.length !== 1) {
+        gaps.push(`${family} formula_family must be declared exactly once`);
       }
     }
   }

@@ -32,16 +32,19 @@
       "const": "add-ai-value-formula-registry"
     },
     "registry_boundary": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
+      "const": [
+        "metadata_only",
+        "not_a_formula_execution_engine",
+        "aggregate_only",
+        "no_customer_facing_economic_output",
+        "no_runtime_tunable_thresholds",
+        "no_new_events_or_suppression_reasons"
+      ]
     },
     "model_layers": {
       "type": "array",
       "minItems": 10,
+      "maxItems": 10,
       "items": {
         "enum": [
           "AI_FLUENCY_MEASUREMENT",
@@ -63,7 +66,18 @@
       "minItems": 1,
       "items": {
         "$ref": "#/$defs/formula"
-      }
+      },
+      "allOf": [
+        {"contains": {"properties": {"formula_family": {"const": "cycle_time_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "friction_rate_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "sales_cycle_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "conversion_rate_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "quality_rate_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "throughput_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "trust_coverage_share"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "exception_rate_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"formula_family": {"const": "experience_metric_delta"}}, "required": ["formula_family"]}, "minContains": 1, "maxContains": 1}
+      ]
     }
   },
   "$defs": {

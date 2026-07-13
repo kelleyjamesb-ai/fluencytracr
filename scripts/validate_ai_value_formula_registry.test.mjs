@@ -59,6 +59,15 @@ const NON_EXECUTABLE_STATES = new Set([
   "PROHIBITED"
 ]);
 
+const EXPECTED_REGISTRY_BOUNDARY_PINS = [
+  "metadata_only",
+  "not_a_formula_execution_engine",
+  "aggregate_only",
+  "no_customer_facing_economic_output",
+  "no_runtime_tunable_thresholds",
+  "no_new_events_or_suppression_reasons"
+];
+
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const registry = readJson(REGISTRY_PATH);
 const schema = readJson(SCHEMA_PATH);
@@ -66,6 +75,12 @@ const readme = readFileSync(README_PATH, "utf8");
 
 function formula(id) {
   const found = registry.formulas.find((entry) => entry.formula_id === id);
+  assert.ok(found, `missing formula ${id}`);
+  return found;
+}
+
+function formulaFrom(value, id) {
+  const found = value.formulas.find((entry) => entry.formula_id === id);
   assert.ok(found, `missing formula ${id}`);
   return found;
 }
@@ -80,6 +95,73 @@ test("formula registry validates as canonical metadata only", () => {
   assert.ok(result.formula_count >= 30);
   assert.ok(result.implemented_formula_count > 0);
   assert.ok(result.non_executable_formula_count > result.implemented_formula_count);
+});
+
+test("validator requires exact top-level registry metadata and fields", () => {
+  for (const field of ["registry_version", "generated_for_change"]) {
+    const mutated = structuredClone(registry);
+    delete mutated[field];
+    assert.equal(validateAiValueFormulaRegistry(mutated).valid, false, field);
+  }
+
+  const wrongVersion = structuredClone(registry);
+  wrongVersion.registry_version = "future_unreviewed";
+  assert.equal(validateAiValueFormulaRegistry(wrongVersion).valid, false);
+
+  const wrongChange = structuredClone(registry);
+  wrongChange.generated_for_change = "unreviewed-change";
+  assert.equal(validateAiValueFormulaRegistry(wrongChange).valid, false);
+
+  const extraField = structuredClone(registry);
+  extraField.runtime_formula_url = "https://example.invalid/formulas";
+  assert.equal(validateAiValueFormulaRegistry(extraField).valid, false);
+
+  assert.equal(registry.registry_version, "2026_07");
+  assert.equal(registry.generated_for_change, "add-ai-value-formula-registry");
+});
+
+test("validator requires the exact model layers and boundary pins", () => {
+  for (const mutate of [
+    (value) => value.model_layers.push("CUSTOM_ROI_ENGINE"),
+    (value) => value.model_layers.push(value.model_layers[0]),
+    (value) => value.registry_boundary.splice(0),
+    (value) => value.registry_boundary.pop(),
+    (value) => value.registry_boundary.push("customer_output_authorized")
+  ]) {
+    const mutated = structuredClone(registry);
+    mutate(mutated);
+    assert.equal(validateAiValueFormulaRegistry(mutated).valid, false);
+  }
+
+  assert.deepEqual(registry.model_layers, [...FORMULA_REGISTRY_MODEL_LAYERS]);
+  assert.deepEqual(registry.registry_boundary, EXPECTED_REGISTRY_BOUNDARY_PINS);
+});
+
+test("validator rejects unexpected formula-entry fields", () => {
+  const mutated = structuredClone(registry);
+  mutated.formulas[0].customer_output_formula = "movement * unit_value";
+
+  const result = validateAiValueFormulaRegistry(mutated);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.gaps.some((gap) => gap.includes("unexpected field customer_output_formula")));
+});
+
+test("validator requires every AI Manager family on its canonical template", () => {
+  const missingEntry = structuredClone(registry);
+  missingEntry.formulas = missingEntry.formulas.filter(
+    (entry) => entry.formula_id !== "trust_coverage_share"
+  );
+  assert.equal(validateAiValueFormulaRegistry(missingEntry).valid, false);
+
+  const missingFamily = structuredClone(registry);
+  delete formulaFrom(missingFamily, "cycle_time_delta").formula_family;
+  assert.equal(validateAiValueFormulaRegistry(missingFamily).valid, false);
+
+  const mismatchedFamily = structuredClone(registry);
+  formulaFrom(mismatchedFamily, "cycle_time_delta").formula_family =
+    "friction_rate_delta";
+  assert.equal(validateAiValueFormulaRegistry(mismatchedFamily).valid, false);
 });
 
 test("JSON schema requires the prompt field set and allowed states", () => {
@@ -117,6 +199,56 @@ test("README audit table covers every registry formula id and state", () => {
       `${entry.implementation_state} is absent from README audit table`
     );
   }
+});
+
+test("README audit table and machine registry contain the exact same formulas", () => {
+  const readmeFormulaIds = [...readme.matchAll(/^\| `([a-z0-9_]+)` \|/gm)]
+    .map((match) => match[1])
+    .sort();
+  const registryFormulaIds = registry.formulas
+    .map((entry) => entry.formula_id)
+    .sort();
+
+  assert.deepEqual(readmeFormulaIds, registryFormulaIds);
+});
+
+test("formula input units accept only non-blank string values", () => {
+  for (const invalidValue of [
+    0.5,
+    "  ",
+    { runtime_authorization: { executable: true } }
+  ]) {
+    const mutated = structuredClone(registry);
+    mutated.formulas[0].input_units.selected_metric = invalidValue;
+
+    const result = validateAiValueFormulaRegistry(mutated);
+
+    assert.equal(result.valid, false);
+    assert.ok(
+      result.gaps.some((gap) => gap.includes("input_units must map to non-blank strings"))
+    );
+  }
+
+  const emptyUnits = structuredClone(registry);
+  emptyUnits.formulas[0].input_units = {};
+  assert.equal(validateAiValueFormulaRegistry(emptyUnits).valid, false);
+});
+
+test("executable references reject undeclared fields", () => {
+  const mutated = structuredClone(registry);
+  const implemented = mutated.formulas.find(
+    (entry) => entry.executable_reference_function !== null
+  );
+  implemented.executable_reference_function.runtime_formula_url = "internal-only";
+
+  const result = validateAiValueFormulaRegistry(mutated);
+
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.gaps.some((gap) =>
+      gap.includes("executable_reference_function.runtime_formula_url is not allowed")
+    )
+  );
 });
 
 test("implemented entries reference existing governed code but remain non-callable from registry", () => {
@@ -245,6 +377,44 @@ test("runtime-tunable numeric controls are rejected", () => {
   assert.ok(
     result.gaps.some((gap) => gap.includes("runtime_weight contains a numeric tunable value"))
   );
+});
+
+test("array- and object-valued runtime tunables are rejected", () => {
+  for (const sidecar of [
+    { runtime_weights: [0.5, 0.5] },
+    { thresholds: { surface: 5 } }
+  ]) {
+    const mutated = structuredClone(registry);
+    Object.assign(mutated.formulas[0], sidecar);
+
+    const result = validateAiValueFormulaRegistry(mutated);
+
+    assert.equal(result.valid, false);
+    assert.ok(
+      result.gaps.some((gap) => gap.includes("numeric tunable value")),
+      result.gaps.join("; ")
+    );
+  }
+});
+
+test("suppression gate metadata describes every implemented fail-closed decision gate", () => {
+  const entry = formula("suppression_gate_default_hold");
+
+  assert.equal(entry.implementation_state, "IMPLEMENTED_AND_TESTED");
+  assert.equal(entry.model_layer, "DATA_QUALITY_AND_GOVERNANCE_GATES");
+  assert.equal(entry.customer_display_state, "EXISTING_INTERNAL_CONTRACT");
+  assert.equal(entry.executable_reference_function.runtime_callable_from_registry, false);
+  for (const gate of [
+    "ambiguity_flag",
+    "window_length_days < 60",
+    "behavioral_classes_present < 2",
+    "candidate_decision ?? SUPPRESS"
+  ]) {
+    assert.ok(
+      entry.mathematical_expression.includes(gate),
+      `suppression metadata omits ${gate}`
+    );
+  }
 });
 
 test("capacity and value language cannot become realized savings or productivity", () => {

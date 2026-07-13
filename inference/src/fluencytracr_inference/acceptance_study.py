@@ -1170,14 +1170,21 @@ class AcceptanceStudyResult:
         )
 
     def _acceptance_evidence_complete(
-        self, *, allow_rehydrated_source_reports: bool
+        self,
+        *,
+        allow_rehydrated_source_reports: bool,
+        generated_evidence_override: bool | None = None,
     ) -> bool:
         coverage = self.coverage_summary()
         null = self.artifact_level_null_eligibility()
-        generated_evidence = bool(
-            self.runner_generated
-            and _runner_generation_proof_valid(self)
-            and not self.source_report_rehydrated
+        generated_evidence = (
+            bool(generated_evidence_override)
+            if generated_evidence_override is not None
+            else bool(
+                self.runner_generated
+                and _runner_generation_proof_valid(self)
+                and not self.source_report_rehydrated
+            )
         )
         rehydrated_evidence = bool(
             allow_rehydrated_source_reports
@@ -1567,10 +1574,7 @@ def acceptance_study_result_from_report(report: dict) -> AcceptanceStudyResult:
             source_report_runner_generation_proof_hashes=(
                 source_report_runner_generation_proof_hashes
             ),
-            runner_generation_token=_RUNNER_GENERATION_TOKEN
-            if _strict_bool(body["runner_generated"])
-            and not source_report_rehydrated
-            else None,
+            runner_generation_token=None,
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("acceptance report has an invalid shape") from exc
@@ -1580,7 +1584,19 @@ def acceptance_study_result_from_report(report: dict) -> AcceptanceStudyResult:
     ):
         raise ValueError("acceptance report has an invalid shape")
 
-    if result.to_report() != report:
+    if result.runner_generated and result.runner_generation_proof_hash != (
+        _runner_generation_proof_hash(
+            method=result.method,
+            mode=result.mode,
+            base_seed=result.base_seed,
+            required_cells=result.required_cells,
+            replications=result.replications,
+            sampler_settings=result.sampler_settings,
+        )
+    ):
+        raise ValueError("acceptance report runner generation hash is inconsistent")
+
+    if not _acceptance_report_matches_untrusted_result(result, report):
         raise ValueError("acceptance report derived summaries are inconsistent")
     rehydrated_source_report_hashes: tuple[str, ...] = ()
     rehydrated_source_report_runner_generation_proof_hashes: tuple[str, ...] = ()
@@ -1606,6 +1622,54 @@ def acceptance_study_result_from_report(report: dict) -> AcceptanceStudyResult:
         source_report_rehydration_token=rehydration_token,
         runner_generation_token=None,
     )
+
+
+def _acceptance_report_matches_untrusted_result(
+    result: AcceptanceStudyResult,
+    report: dict,
+) -> bool:
+    expected = result.to_report()
+    if result.runner_generated is not True:
+        return expected == report
+
+    report_proof_valid = bool(
+        not result.source_report_rehydrated
+        and _sha256_hex(result.runner_generation_proof_hash)
+        and result.runner_generation_proof_hash
+        == _runner_generation_proof_hash(
+            method=result.method,
+            mode=result.mode,
+            base_seed=result.base_seed,
+            required_cells=result.required_cells,
+            replications=result.replications,
+            sampler_settings=result.sampler_settings,
+        )
+    )
+    expected_passed = result._acceptance_evidence_complete(
+        allow_rehydrated_source_reports=False,
+        generated_evidence_override=report_proof_valid,
+    )
+    expected_resumable = result._acceptance_evidence_complete(
+        allow_rehydrated_source_reports=True,
+        generated_evidence_override=report_proof_valid,
+    )
+    expected_manifest = dict(expected["acceptance_run_manifest"])
+    expected_manifest["runner_generation_proof_valid"] = report_proof_valid
+    expected["acceptance_run_manifest"] = expected_manifest
+    expected["sampler_artifact_acceptance_passed"] = expected_passed
+    expected["sampler_artifact_resumable_evidence_observed"] = expected_resumable
+    if expected_passed and result.mode == ACCEPTANCE_MODE_FULL:
+        expected["task_3_3_acceptance_state"] = (
+            "sampler_full_generated_not_authorized"
+        )
+    # Acceptance evidence is not artifact-input authorization. Preserve the
+    # independently governed property, which remains false for this method.
+    expected["artifact_inputs_authorized"] = result.artifact_inputs_authorized
+    expected_body = {
+        key: value for key, value in expected.items() if key != "study_hash"
+    }
+    expected["study_hash"] = sha256_json(expected_body)
+    return expected == report
 
 
 def combine_sampler_artifact_acceptance_reports(
@@ -2712,6 +2776,11 @@ def _measurement_cell_window_evidence_section_valid(artifact: dict) -> bool:
             return False
         if stale is None or imputed is None:
             return False
+        milestone_days = (required, observed, missing, suppressed, stale, imputed)
+        if not required or any(
+            len(set(days)) != len(days) for days in milestone_days
+        ):
+            return False
         planned = _strict_int_list(
             artifact["peeking_control"]["milestone_days_included"]
         )
@@ -2739,6 +2808,8 @@ def _measurement_cell_window_evidence_section_valid(artifact: dict) -> bool:
                 return False
             if len(set(evidence[key])) != len(evidence[key]):
                 return False
+        if not evidence["required_window_refs"]:
+            return False
 
         ref_day_pairs = (
             ("required_window_refs", "required_milestone_days"),
