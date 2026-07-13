@@ -5,9 +5,12 @@
 Internal synthetic-validation runner implemented under OpenSpec change
 `add-longitudinal-replicated-validation-runner`.
 
-This contract does not record a completed 1,200-slot study. It does not
-authorize real data, customer execution, confidence/probability output,
-causal language, economic output, or production promotion.
+The separate 1,200-slot synthetic study completed and received independent
+acceptance on 2026-07-13. Its full artifact, compact summary, and acceptance
+record are committed under `inference/evidence/` and described in Accepted
+Evidence below. This status does not authorize real data, customer execution,
+confidence/probability output, causal language, economic output, or production
+promotion.
 
 ## Purpose
 

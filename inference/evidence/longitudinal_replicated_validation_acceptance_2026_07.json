@@ -3,7 +3,13 @@
   "record_class": "internal_synthetic_longitudinal_replicated_validation_independent_acceptance",
   "reviewed_at": "2026-07-13T10:42:26Z",
   "reviewed_change_id": "longitudinal-replicated-validation-evidence",
-  "reviewed_evidence_commit": "2ab71e198716015efccb27a680574eb39bb0873d",
+  "reviewed_evidence_binding": {
+    "binding_kind": "committed_artifact_bytes",
+    "branch_review_commit": "2ab71e198716015efccb27a680574eb39bb0873d",
+    "branch_review_commit_reachability_required": false,
+    "full_artifact_sha256": "2fa64551fa49f1f606ccbea6146622171e12c0b6d8df4f1bb4d2350b48de0490",
+    "artifact_self_hash": "0ce4ff124f82f529739a8c4b19212a03d13b6a8168f48761c12f4a84f75c751f"
+  },
   "source_evidence": {
     "full_artifact_path": "inference/evidence/longitudinal_replicated_validation_full_2026_07.json",
     "full_artifact_sha256": "2fa64551fa49f1f606ccbea6146622171e12c0b6d8df4f1bb4d2350b48de0490",
@@ -74,7 +80,7 @@
     "promotion_decision_ref": null
   },
   "hash_bindings": {
-    "record_self_hash": "660e32678f901a1e3a315dafcc0a22cccacf2db7d1f4b0fb52d8de5fca8a4461",
+    "record_self_hash": "8bcfd788fc1ebf4941bd13ad34036c7c19a0a001651759d46177ab9b710cdf9a",
     "hash_posture": "consistency_and_drift_detection_not_coordinated_replacement_authenticity"
   }
 }

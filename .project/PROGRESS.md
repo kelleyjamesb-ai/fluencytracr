@@ -22,8 +22,10 @@
   self-hash
   `0ce4ff124f82f529739a8c4b19212a03d13b6a8168f48761c12f4a84f75c751f`).
   A compact summary and separate acceptance record bind the full evidence,
-  source/runtime/implementation identities, reviewed evidence commit
-  `2ab71e19`, and three distinct CODE, BUG, and ADVERSARIAL GO decisions. The
+  source/runtime/implementation identities, reviewed artifact bytes, branch
+  review provenance ref `2ab71e19`, and three distinct CODE, BUG, and
+  ADVERSARIAL GO decisions. Commit reachability is not the durable gate; the
+  committed artifact SHA-256 and artifact self-hash are. The
   generated artifact remains immutable and nonauthorizing; only the separate
   review record marks the internal synthetic model proof accepted.
 

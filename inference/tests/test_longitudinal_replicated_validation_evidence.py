@@ -282,7 +282,7 @@ def test_separate_acceptance_record_binds_reviewed_commit_and_exact_evidence():
         "record_class",
         "reviewed_at",
         "reviewed_change_id",
-        "reviewed_evidence_commit",
+        "reviewed_evidence_binding",
         "source_evidence",
         "review_decisions",
         "overall_decision",
@@ -290,9 +290,14 @@ def test_separate_acceptance_record_binds_reviewed_commit_and_exact_evidence():
         "governance_pins",
         "hash_bindings",
     }
-    assert record["reviewed_evidence_commit"] == (
+    binding = record["reviewed_evidence_binding"]
+    assert binding["binding_kind"] == "committed_artifact_bytes"
+    assert binding["branch_review_commit"] == (
         "2ab71e198716015efccb27a680574eb39bb0873d"
     )
+    assert binding["branch_review_commit_reachability_required"] is False
+    assert binding["full_artifact_sha256"] == source["full_artifact_sha256"]
+    assert binding["artifact_self_hash"] == source["artifact_self_hash"]
     assert record["reviewed_change_id"] == (
         "longitudinal-replicated-validation-evidence"
     )

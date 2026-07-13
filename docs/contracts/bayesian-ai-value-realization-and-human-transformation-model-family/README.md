@@ -592,10 +592,12 @@ missing, duplicate, or off-plan rows.
 
 The full artifact, compact summary, and separate independent acceptance record
 are committed under `inference/evidence/`. CODE, BUG, and ADVERSARIAL review
-returned GO against evidence commit `2ab71e19`; the acceptance record binds the
-full artifact SHA-256, artifact self/payload hashes, calibration/control plans
-and results, combined-study hash, execution identity, implementation, runtime,
-lockfile, source commit, compact-summary bytes, and reviewer IDs.
+returned GO against the exact full-artifact bytes generated on branch review
+ref `2ab71e19`. The durable acceptance gate is the committed full-artifact
+SHA-256 plus artifact self-hash, not reachability of that branch ref after a
+squash merge. The record also binds artifact payload hash, calibration/control
+plans and results, combined-study hash, execution identity, implementation,
+runtime, lockfile, source commit, compact-summary bytes, and reviewer IDs.
 
 This completes only the synthetic longitudinal state-space model proof and
 model-family Phase 3. It does not complete AI Fluency measurement-model or VBD
