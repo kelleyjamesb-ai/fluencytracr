@@ -293,6 +293,9 @@ def test_separate_acceptance_record_binds_reviewed_commit_and_exact_evidence():
     assert record["reviewed_evidence_commit"] == (
         "2ab71e198716015efccb27a680574eb39bb0873d"
     )
+    assert record["reviewed_change_id"] == (
+        "longitudinal-replicated-validation-evidence"
+    )
     assert REPO_ROOT / source["full_artifact_path"] == FULL_ARTIFACT_PATH
     assert REPO_ROOT / source["compact_summary_path"] == SUMMARY_PATH
     assert hashlib.sha256(FULL_ARTIFACT_PATH.read_bytes()).hexdigest() == source[

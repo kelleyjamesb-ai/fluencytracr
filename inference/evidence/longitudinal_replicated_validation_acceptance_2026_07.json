@@ -2,7 +2,7 @@
   "schema_version": "FT_INTERNAL_LONGITUDINAL_REPLICATED_VALIDATION_ACCEPTANCE_2026_07_V1",
   "record_class": "internal_synthetic_longitudinal_replicated_validation_independent_acceptance",
   "reviewed_at": "2026-07-13T10:42:26Z",
-  "reviewed_change_id": "add-longitudinal-replicated-validation-runner",
+  "reviewed_change_id": "longitudinal-replicated-validation-evidence",
   "reviewed_evidence_commit": "2ab71e198716015efccb27a680574eb39bb0873d",
   "source_evidence": {
     "full_artifact_path": "inference/evidence/longitudinal_replicated_validation_full_2026_07.json",
@@ -74,7 +74,7 @@
     "promotion_decision_ref": null
   },
   "hash_bindings": {
-    "record_self_hash": "b5c6a02705ebc3010438c6fbaa98388e64f9e67f3a678b4344b23baba5d1ca69",
+    "record_self_hash": "660e32678f901a1e3a315dafcc0a22cccacf2db7d1f4b0fb52d8de5fca8a4461",
     "hash_posture": "consistency_and_drift_detection_not_coordinated_replacement_authenticity"
   }
 }
