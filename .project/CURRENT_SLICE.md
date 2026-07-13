@@ -1,70 +1,77 @@
 # Current Slice Contract
 
-- Work item id: `ai-fluency-measurement-model-calibration-contract`
-- Title: `AI Fluency measurement-model calibration prerequisites boundary`
+- Work item id: `hypothesis-metric-longitudinal-admission-boundary`
+- Title: `Hypothesis and company-defined metric admission boundary`
 - Status: `completed`
 
 ## Summary
 
-Define the docs/spec-only prerequisites boundary for the future
-`bayesian_fluency_measurement_model`. The slice distinguishes approved
-aggregate snapshot context from the missing privacy-safe measurement evidence,
-records HOLD and non-authorization boundaries, and sets
-`PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`. It does not fit a model, create
-runtime code,
-add schemas, persist output, expose routes/UI, run connectors, admit real data,
-export respondent rows, or authorize confidence/probability, ROI, causality,
-productivity, finance, HR, ranking, economic, or customer-facing output.
+Define the docs/OpenSpec boundary that connects an enterprise portfolio of
+approved hypotheses and company-defined aggregate metrics to the single proven
+longitudinal Bayesian model family. The company metric catalog has no arbitrary
+product cap, but each analysis unit binds exactly one approved primary metric
+version to one hypothesis, aggregate cohort slice, ordered window plan,
+predeclared lag, and evidence design.
 
 ## Scope Paths
 
-- `docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`
-- `docs/contracts/ai-value-ai-fluency-instrument-snapshot/README.md`
+- `docs/contracts/ai-value-hypothesis-metric-longitudinal-admission/README.md`
 - `docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`
-- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/proposal.md`
-- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/design.md`
-- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/specs/bayesian-ai-value-realization-and-human-transformation-model-family/spec.md`
-- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/tasks.md`
+- `docs/contracts/ai-value-formula-registry/formula-registry.json`
+- `docs/contracts/ai-value-formula-registry/README.md`
+- `scripts/validate_ai_value_formula_registry.test.mjs`
+- `openspec/changes/harden-hypothesis-metric-longitudinal-admission/**`
 - `README.md`
+- `.project/WORK_QUEUE.json`
 - `.project/CURRENT_SLICE.md`
-- `.project/PROGRESS.md`
+- `.project/PROGRESS.md` only after verification
 
 ## Key Boundaries
 
-- Calibration state is `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`.
-- Validated aggregate `AIFluencyInstrumentSnapshot` waves are the only allowed
-  snapshot-context inputs for any future implementation.
-- Dimension summaries, aggregate uncertainty, and reliability metadata are not
-  sufficient to calibrate a latent model or establish comparable cross-wave
-  change.
-- A future proposal must define privacy-safe aggregate sufficient statistics,
-  exact form/item/scoring versions, form compatibility or equating, and
-  longitudinal measurement-invariance gates.
-- Missing aggregate uncertainty, reliability, source refs, source hashes,
-  k-min posture, missingness posture, or respondent-composition posture HOLDS.
-- Respondent rows, raw answers, direct identifiers, HR/personnel fields,
-  manager fields, productivity fields, raw prompts, transcripts, query text,
-  and raw event rows reject before interpretation.
-- No model result, posterior quantity, confidence percentage, probability, ROI,
-  finance, causality, productivity, HR, ranking, route, UI, export, connector,
-  persistence, real-data admission, customer output, new canonical event, new
+- Company metric definitions are not limited to a fixed count or universal
+  taxonomy.
+- Open metric intake does not imply open model eligibility.
+- Each analysis unit has exactly one predeclared primary metric version.
+- Supporting and guardrail metrics remain separate and are never blended into
+  a score or substituted for the primary estimand.
+- The current longitudinal proof supports only aggregate continuous-normal
+  identity outcomes with known positive uncertainty and every compiled
+  structural/diagnostic gate.
+- Each of the 6 or 12 model panel groups binds one exact canonical slice tuple
+  with independently passing per-window receipts; only model-level partial
+  pooling is allowed, never raw cross-slice aggregation or gate rescue.
+- Pre-outcome access receipts, baseline-Fluency hashes, separate evidence/fit
+  dependency keys, and prepared-input/fit-summary result hashes fail closed.
+- Unsupported metric families, incomplete definitions, missing uncertainty,
+  off-plan windows, or unsafe source posture HOLD without creating a new
+  canonical suppression reason.
+- The fitted `longitudinal_movement` remains a direction-adjusted associational
+  Velocity/Breadth-outcome contrast in pre-period outcome standard-deviation
+  units, separate from raw KPI movement and the categorical evidence-design
+  claim cap; none authorizes a causal or customer-facing confidence claim.
+- No runtime, schema, route, UI, persistence, export, connector, real-data
+  admission, customer output, confidence/probability output, ROI, causality,
+  productivity, finance, HR, ranking, promotion, new canonical event, new
   suppression reason, tunable threshold, or admin override is authorized.
 
 ## Completed Checks
 
-- `npx openspec validate add-ai-fluency-instrument-snapshot-longitudinal-proof --strict`
+- `npx openspec validate harden-hypothesis-metric-longitudinal-admission --strict`
 - `npx openspec validate generalize-bayesian-confidence-to-model-family --strict`
-- `npm run test:ai-value-ai-fluency-instrument-snapshot`
+- `npx openspec validate add-ai-value-formula-registry --strict`
+- `npm run test:ai-value-formula-registry`
 - `./scripts/ci_docs_contract_sweep.sh`
 - `node scripts/ci_semantic_drift_guard.mjs`
 - `python3 scripts/ci_v1_governance_gates.py`
+- `./harness/scripts/verify.sh`
 - `git diff --check`
-- `./harness/scripts/verify.sh` (`274 passed`, `3 skipped`)
+- CODE, BUG, and ADVERSARIAL review: `GO`, `GO`, `GO`
+
+Results: formula registry `22 passed`; Assurance Harness `274 passed`, `3
+skipped`; all strict validations and governance/documentation gates passed.
 
 ## Next Handoff Note
 
-OpenSpec task `5.5` remains incomplete. The next bounded model-family item must
-first define the missing privacy-safe aggregate measurement evidence and
-synthetic calibration design. VBD trajectory calibration, persistence
-promotion, backend read projection, UI integration, real-data admission, and
-customer output remain separate later scopes.
+Do not implement metric schemas, real-data admission, model routing, reporting,
+or UI from this boundary. Those require separate exact-scope proposals after
+this contract is independently accepted.

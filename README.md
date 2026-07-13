@@ -61,6 +61,13 @@ documented value-realization layers:
   exported, and no persistence, route, UI, connector, customer-facing output,
   ROI, causality, productivity, finance, HR, ranking, or economic output is
   authorized.
+- **Hypothesis and metric longitudinal admission:** allows companies to define
+  different aggregate metric catalogs without an arbitrary count cap while
+  binding each longitudinal analysis unit to one approved hypothesis and one
+  immutable primary metric version. Current eligibility remains limited to the
+  proved synthetic continuous-normal aggregate specification; unsupported
+  metric families HOLD and no AI-attribution confidence or customer output is
+  authorized.
 - **V3 production ingest:** moves beyond manual CSV dogfood by running a
   customer-side transformer in the customer's cloud, sending only aggregate
   cohort distributions to FluencyTracr, and storing immutable verdicts against
