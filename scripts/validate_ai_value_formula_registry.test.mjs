@@ -387,6 +387,45 @@ test("longitudinal synthetic slice documents no future-window leakage", () => {
   const longitudinal = formula("first_longitudinal_synthetic_model_slice");
 
   assert.equal(longitudinal.implementation_state, "IMPLEMENTED_SYNTHETIC_ONLY");
+  assert.equal(longitudinal.formula_version, "2026_07_state_space_replicated_validation");
+  assert.deepEqual(longitudinal.applicable_metric_families, ["continuous_normal_identity"]);
+  assert.equal(
+    longitudinal.output_unit,
+    "internal synthetic associational contrast in pre-period outcome standard-deviation units"
+  );
+  assert.equal(
+    longitudinal.mathematical_expression,
+    "z_y[c,t] = alpha + beta_time*z_time[t] + beta_velocity*z_lagged_velocity[c,t] + beta_breadth*z_lagged_breadth[c,t] + beta_fluency*z_baseline_fluency[c] + gamma'*z_controls[c,t] + u[c] + r[c,t] + epsilon[c,t]; epsilon[c,t] ~ Normal(0, z_known_se[c,t]^2); sum_c u[c] = 0; r[c,t] = rho*r[c,t-1] + eta[c,t]; longitudinal_movement = direction*(mean_eval(z_lagged_velocity)*beta_velocity + mean_eval(z_lagged_breadth)*beta_breadth)"
+  );
+  assert.deepEqual(longitudinal.input_units, {
+    outcome: "pre-period standardized continuous_normal_identity aggregate metric",
+    known_aggregate_se: "pre-period outcome standard-deviation units",
+    exposures: "pre-period standardized aggregate context"
+  });
+  assert.deepEqual(longitudinal.required_inputs, [
+    "synthetic aggregate ordered windows",
+    "known positive aggregate standard errors",
+    "panel-group mapping",
+    "evaluation window refs",
+    "predeclared expected metric direction",
+    "lagged Velocity exposure",
+    "lagged Breadth exposure",
+    "baseline Fluency context",
+    "predeclared approved controls",
+    "Depth context binding outside the likelihood"
+  ]);
+  assert.ok(
+    longitudinal.assumptions.includes(
+      "replicated envelope is 12 pre windows, 6 post windows, 6 or 12 panel groups, and aggregate k=16"
+    ),
+    "replicated validation envelope must remain exact"
+  );
+  assert.deepEqual(longitudinal.executable_reference_function, {
+    source_path: "inference/src/fluencytracr_inference/longitudinal_state_space.py",
+    export_name: "fit_deterministic_state_space",
+    execution_boundary: "synthetic_internal_only",
+    runtime_callable_from_registry: false
+  });
   assert.ok(
     longitudinal.assumptions.some((item) => item.includes("prior windows only")),
     "lagged exposure must use prior windows only"

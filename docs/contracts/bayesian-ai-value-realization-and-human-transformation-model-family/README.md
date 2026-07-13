@@ -162,8 +162,8 @@ outputs.
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
 | `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
 | `posterior_pathway_coherence_review` | Future internal review of whether predeclared fluency, behavior, and outcome evidence is directionally coherent. | No. | Documentation-only review concept; not a customer-facing probability, confidence, ROI, causality, or productivity output. |
-| `evidence_design_claim_cap` | Future claim-cap review applied after estimation and before interpretation. | No. | Documentation-only governance concept; unsupported designs HOLD. |
-| `enterprise_hypothesis_portfolio` | Future internal portfolio view of multiple approved hypotheses without blending them into one arbitrary enterprise index. | No. | Documentation-only portfolio concept. |
+| `evidence_design_claim_cap` | Future claim-cap review derived from the approved design at plan freeze and enforced after estimation. | No. | Documentation-only governance concept; later diagnostics/governance may only lower the cap or HOLD, and unsupported designs HOLD. |
+| `enterprise_hypothesis_portfolio` | Internal portfolio view of multiple approved hypotheses without blending them into one arbitrary enterprise index. | Docs-only admission boundary. | Company metric catalogs have no arbitrary count cap, while each immutable analysis unit binds one hypothesis and one primary metric version; no runtime, model execution, or portfolio confidence output is authorized. |
 
 The current DiD module remains valid only for two-group pre/post
 comparison-supported designs. It does not support staggered rollout and does
@@ -301,11 +301,11 @@ Required conceptual fields:
 | `cohort_scope` | Required aggregate cohort descriptor/ref. | Defines the aggregate slice; must satisfy suppression and no-identifiers boundaries. |
 | `value_route` | Required value-route enum/ref. | Planning context for the business-value pathway; not a finance result. |
 | `expected_work_change` | Required text/ref. | Predeclared behavior-change expectation; mechanism context only. |
-| `expected_metric_direction` | Required enum: `increase`, `decrease`, or `stable_or_guardrail`. | Sets interpretation direction before review; cannot be changed after observing outcomes to rescue a claim. |
+| `expected_metric_direction` | Required enum: `increase`, `decrease`, or `stable_or_guardrail`. | Must be registered and hash bound before post-baseline outcome access; cannot be changed after observing outcomes to rescue a claim. |
 | `expected_behavior_signal_lag` | Required duration/window ref. | Expected lag before behavior evidence should move; not a prior. |
 | `expected_outcome_signal_lag` | Required duration/window ref. | Expected lag before outcome evidence should move; not a prior. |
 | `primary_metric_id` | Required stable metric ref. | Principal business-outcome estimand. |
-| `primary_metric_family` | Required controlled family/ref. | Future likelihood context; today only the current normal continuous aggregate DiD path is implemented. |
+| `primary_metric_family` | Required controlled family/ref. | Likelihood context; the accepted longitudinal synthetic proof supports only the exact `continuous_normal_identity` aggregate family with known positive uncertainty. Real-data/runtime eligibility remains unimplemented. |
 | `supporting_metric_ids` | Optional list of stable metric refs. | Mechanism evidence only; cannot replace or average into the primary estimand. |
 | `guardrail_metric_ids` | Optional list of stable metric refs. | Tests quality, risk, or unintended consequences; may cap/block interpretation, not strengthen it. |
 | `relevant_fluency_dimensions` | Optional list of governed dimension refs. | Aggregate readiness/context evidence only. |
@@ -360,9 +360,10 @@ Contract semantics:
   coherence review, but they must not become statistical priors.
 - `primary_metric_id` is the principal business-outcome estimand for future
   model-family routing.
-- `primary_metric_family` selects the metric family context for future
-  likelihood review; only the current normal continuous aggregate DiD path is
-  implemented today.
+- `primary_metric_family` selects the metric family context for likelihood
+  review; the accepted longitudinal synthetic proof supports only the exact
+  `continuous_normal_identity` aggregate family with known positive
+  uncertainty, and it does not authorize real-data/runtime execution.
 - `supporting_metric_ids` are mechanism evidence only and must not replace or
   average into the primary estimand.
 - `guardrail_metric_ids` test quality, risk, or unintended consequences and
@@ -390,6 +391,54 @@ Metrics must not be blended into arbitrary fixed weighted scores. The
 enterprise may review a portfolio of hypotheses, but each hypothesis preserves
 its own primary metric, supporting mechanisms, guardrails, evidence design, and
 claim cap.
+
+## Hypothesis And Metric Admission Boundary
+
+The docs-only contract
+`docs/contracts/ai-value-hypothesis-metric-longitudinal-admission/README.md`
+defines the bridge from a company's hypotheses and metric catalog to later
+review against the proved longitudinal specification.
+
+The company metric catalog has no arbitrary product-level count cap and does
+not require one universal taxonomy. Model eligibility remains closed: each
+immutable analysis unit binds one approved hypothesis, one primary metric
+definition ref/hash, an ordered panel manifest whose groups each map one-to-one
+to one canonical aggregate slice with independent per-window gate receipts,
+one ordered window plan, one predeclared lag and direction, one evidence
+design/claim cap, the fixed model/control/exposure/baseline-Fluency hashes,
+separate evidence and fit dependency keys, a hash-bound pre-outcome access
+receipt, and one terminal look. Current metric/readiness validators remain
+non-admissive. Model-level partial pooling is limited to the 6 or 12
+independently cleared aggregate panel groups in the accepted synthetic
+envelope; raw cross-slice pooling and gate rescue are prohibited.
+
+The current longitudinal proof admits only the exact synthetic
+`continuous_normal_identity` aggregate outcome family with known positive
+uncertainty and every existing compiled gate. Unsupported families HOLD rather
+than selecting a second estimator or being coerced through the normal model.
+The accepted replicated envelope remains 12 pre windows, 6 post windows,
+panel-group counts of 6 or 12, and aggregate `k=16`; mathematical fit support
+outside that envelope is not calibrated evidence.
+
+Supporting metrics, guardrails, AI Fluency, Velocity, Breadth, Depth, and
+finance context retain their distinct roles. Existing
+`selected_metric_movement` is descriptive original-unit context. The fitted
+`longitudinal_movement` quantity is a direction-adjusted associational
+Velocity/Breadth-outcome contrast in pre-period outcome SD units, conditional
+on trend, approved controls, group effects, and AR(1) structure. Both stay
+separate from the prebound categorical `evidence_design_claim_cap`; none
+creates numeric AI-attribution confidence or customer output.
+
+For multiple hypotheses, a future portfolio runner must freeze and completely
+account for every planned analysis unit with exact manifest/result equality,
+explicit HOLD records, one fixed terminal look, and declared reused
+metric/cohort/evidence/fit dependencies. Completed fits additionally bind the
+prepared-input and fit-summary hashes; pre-fit HOLDs retain their planned keys
+and explicit null fit hashes. The accepted per-cell synthetic null rate is not
+an enterprise-wide false-claim guarantee; portfolio inference remains HOLD
+without a separately validated multiplicity procedure, and no portfolio
+probability, confidence rating, composite index, or attribution rollup is
+authorized.
 
 ## Phase 2A Contract: `first_longitudinal_synthetic_model_slice`
 
@@ -684,7 +733,7 @@ aggregate inputs with these required conceptual fields:
 | `time_window_id` | Approved Measurement Cell window ref. |
 | `primary_metric_value` | Aggregate value for the approved primary outcome metric. |
 | `primary_metric_se` | Known aggregate SE for the primary metric value. |
-| `primary_metric_family` | Must equal `normal_continuous_aggregate` for this first slice. |
+| `primary_metric_family` | Must equal the exact token `continuous_normal_identity` for this first slice; aliases HOLD. |
 | `lagged_velocity_exposure` | Predeclared aggregate Velocity exposure at the approved lag. |
 | `lagged_breadth_exposure` | Predeclared aggregate Breadth exposure at the approved lag. |
 | `lagged_depth_context` | Optional synthetic aggregate Depth pathway context at the approved lag; context only, not a model coefficient in this slice. |
@@ -803,11 +852,14 @@ review. It must not be described as:
 - probability that Glean caused the outcome;
 - customer-facing confidence.
 
-`evidence_design_claim_cap` applies after statistical estimation and before any
-interpretation. A narrow posterior interval under a weak evidence design cannot
-produce a stronger claim than the design allows. Finance assumptions, economic
-pathway context, Blueprint promises, or sponsor goals cannot upgrade design
-strength. Unsupported designs HOLD.
+`evidence_design_claim_cap` is derived from the approved evidence design and
+hash bound at plan freeze before post-baseline outcome access, then enforced
+after statistical estimation and before interpretation. Diagnostics,
+confounding, guardrails, and governance may only lower it or HOLD. A narrow
+posterior interval under a weak evidence design cannot produce a stronger claim
+than the design allows. Finance assumptions, economic pathway context,
+Blueprint promises, or sponsor goals cannot upgrade design strength.
+Unsupported designs HOLD.
 
 Claim caps remain internal-only in this docs-only Phase 1/2A contract:
 
@@ -859,6 +911,8 @@ Implemented now:
 - Docs-only Phase 1 router contract vocabulary.
 - Docs-only Hypothesis Measurement Plan contract semantics.
 - Docs-only pathway coherence and claim-cap semantics.
+- Docs-only hypothesis and company-defined metric longitudinal admission
+  boundary.
 - Docs-only Phase 2A selection and specification of
   `first_longitudinal_synthetic_model_slice`.
 

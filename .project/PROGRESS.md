@@ -2,6 +2,47 @@
 
 ## Current Session
 
+- Hypothesis and company-defined metric longitudinal admission boundary
+  completed (2026-07-13): added the docs/OpenSpec contract connecting a
+  flexible enterprise metric catalog to the single proved longitudinal model
+  family without imposing an arbitrary metric-count cap. Each frozen analysis
+  family binds one approved hypothesis-plan version and one immutable primary
+  metric; supporting and guardrail metrics retain separate roles. Each model
+  panel group maps one-to-one to one canonical
+  `(workflow_id, jbtd_id, persona_id)` tuple with independently passing
+  per-window gate receipts. Only model-level partial pooling across the exact 6
+  or 12 cleared aggregate groups is described; raw cross-slice pooling and
+  suppression rescue remain prohibited.
+
+  Admission now requires a hash-bound pre-outcome access receipt,
+  baseline-Fluency snapshot/definition hashes, model/control/Velocity/Breadth
+  source commitments, separate evidence and fit dependency keys, one fixed
+  terminal look, exact planned-unit/result equality, and explicit HOLD records.
+  Completed fits bind actual source content through `prepared_input_hash` and
+  `fit_summary_hash`; pre-fit HOLDs retain planned keys and explicit null fit
+  slots. Current eligibility remains exactly `continuous_normal_identity`
+  inside the proved 12-pre/6-post, 6-or-12-panel-group, per-window aggregate
+  `k=16` envelope. Unsupported families, shapes, missing uncertainty, unsafe
+  sources, retrospective plans, or incomplete bindings HOLD.
+
+  Formula-registry metadata and tests now pin the implemented pre-lagged
+  Velocity/Breadth state-space equation, known-SE observation error, exact
+  family/envelope/input/output units, and the direction-adjusted
+  `longitudinal_movement` contrast in pre-period outcome SD units. That
+  contrast remains separate from raw KPI movement, reporting state, causal AI
+  impact, and the prebound categorical evidence-design claim cap.
+
+  Verification passed: formula registry (`22 passed`), strict OpenSpec
+  validation for this change, the model-family change, and the formula-registry
+  change, docs contract sweep, semantic drift guard, V1 governance gates,
+  Assurance Harness (`274 passed`, `3 skipped`), `git diff --check`, and final
+  independent CODE, BUG, and ADVERSARIAL GO review. All tasks in
+  `harden-hypothesis-metric-longitudinal-admission` are complete. No runtime,
+  schemas, real-data admission, routes, persistence, reporting, customer
+  confidence/probability/attribution, ROI, causality, productivity, UI, or
+  promotion was authorized. The next bounded implementation is a synthetic-only
+  admission validator and immutable planned-unit manifest; production/real-data
+  admission remains a later separately governed decision.
 - AI Fluency measurement-model calibration prerequisites boundary documented
   (2026-07-13): added
   `docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`

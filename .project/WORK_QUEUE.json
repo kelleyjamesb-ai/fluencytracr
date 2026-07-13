@@ -156,6 +156,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-13: documented PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE. Dimension summaries may provide approved aggregate context but cannot calibrate latent change. OpenSpec task 5.5 remains unchecked pending privacy-safe aggregate sufficient statistics, supported likelihood/form rules, equating/invariance proof, implementation, execution, and independent acceptance."
+    },
+    {
+      "id": "hypothesis-metric-longitudinal-admission-boundary",
+      "title": "Hypothesis and company-defined metric admission boundary",
+      "bound": "Docs/OpenSpec, formula-registry metadata, and narrow contract-test coverage only: define a no-arbitrary-count-cap company metric catalog, one immutable primary-metric analysis unit per approved hypothesis, one-tuple-per-panel manifests, metric/source/uncertainty/Fluency bindings, pre-outcome access receipts, separate evidence/fit dependencies, current continuous-normal longitudinal eligibility, unsupported-family HOLD behavior, complete portfolio reporting, exact estimand semantics, and separation of observed movement, model contrast, and evidence-design claim caps; no runtime, schemas, routes, UI, persistence, real data, customer output, confidence/probability, causality, ROI, productivity, new canonical events, new suppression reasons, tunable thresholds, or model promotion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-13: defined the docs-only hypothesis/metric admission boundary, one-primary-metric analysis families, one-canonical-tuple-per-panel manifests, pre-outcome access receipts, baseline-Fluency/source bindings, separate evidence/fit dependency keys, exact continuous_normal_identity proof eligibility, complete HOLD accounting, and exact longitudinal_movement semantics. Formula metadata is test-pinned; strict OpenSpec, docs, semantic, V1, Harness, diff, and independent CODE/BUG/ADVERSARIAL gates passed. Runtime admission, real data, reporting, customer confidence/attribution, persistence, and UI remain unauthorized."
     }
   ]
 }
