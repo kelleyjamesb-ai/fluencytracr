@@ -145,9 +145,9 @@
       "id": "longitudinal-replicated-validation-evidence",
       "title": "Longitudinal replicated-validation full evidence run",
       "bound": "Synthetic-only evidence execution from merged runner PR #413: run four compiled canaries, all 20 chunks for exactly 1,200 calibration rows, fixed floor/lag/shock/negative controls, strict combine, sanitized artifact review, and one independent CODE/BUG/ADVERSARIAL acceptance round; no model or threshold changes unless actual execution fails, and no real data, public surfaces, customer output, or promotion",
-      "status": "in_progress",
+      "status": "done",
       "risk": "high",
-      "last_note": "Authorized 2026-07-13 by the decision owner via 'keep going now'. Fresh branch from merged origin/main; evidence generation and acceptance only."
+      "last_note": "Done 2026-07-13: four canaries, all 20 chunks, exactly 1,200 calibration rows, four floors, 90 lag rows, and nine negative/shock controls passed. Strict combine was idempotent; the committed artifact and compact summary are hash-bound to separate CODE/BUG/ADVERSARIAL GO acceptance. Longitudinal state-space model proof and model-family Phase 3 are complete; DiD, measurement-model/VBD calibration, customer output, and production promotion remain incomplete."
     }
   ]
 }

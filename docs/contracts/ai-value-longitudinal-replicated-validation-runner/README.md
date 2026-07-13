@@ -160,10 +160,21 @@ Evidence-generation completeness is separate from numerical success. An exact
 full manifest with a failed row or gate remains complete evidence but is
 `HOLD`; it cannot be relabeled as a numerical pass.
 
-## Remaining Gate
+## Accepted Evidence
 
-The runner PR does not complete the longitudinal proof. A separate fresh PR
-must run canaries, generate all 1,200 calibration rows and fixed controls,
-combine the artifact, and bind it to independent CODE, BUG, and ADVERSARIAL
-acceptance. Parent longitudinal validation tasks remain unchecked until that
-review succeeds.
+The separate evidence run completed on 2026-07-13. Four compiled canaries and
+all 20 chunks produced exactly 1,200 calibration rows; strict combine was
+idempotent, every calibration and control gate passed, and the committed full
+artifact SHA-256 is
+`2fa64551fa49f1f606ccbea6146622171e12c0b6d8df4f1bb4d2350b48de0490`.
+The compact summary and separate CODE, BUG, and ADVERSARIAL GO record are:
+
+- `inference/evidence/longitudinal_replicated_validation_2026_07.json`
+- `inference/evidence/longitudinal_replicated_validation_acceptance_2026_07.json`
+
+That record completes the synthetic longitudinal state-space model proof and
+model-family Phase 3 only. The generated artifact remains immutable with its
+own independent-acceptance and proof-completion fields false. AI Fluency
+measurement-model calibration, VBD trajectory-model calibration, persistence,
+product integration, production promotion, customer output, confidence or
+probability output, ROI, causality, finance, and productivity remain blocked.
