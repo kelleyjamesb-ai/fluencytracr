@@ -48,22 +48,22 @@ the study.
 The CLI exposes only compiled operations:
 
 ```bash
-PYTHONPATH=inference/src inference/.venv/bin/python \
+PYTHONPATH=inference/src inference/.venv/bin/python -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli plan
 
-PYTHONPATH=inference/src inference/.venv/bin/python \
+PYTHONPATH=inference/src inference/.venv/bin/python -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   canary --replication-index 0
 
-PYTHONPATH=inference/src inference/.venv/bin/python \
+PYTHONPATH=inference/src inference/.venv/bin/python -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   run-chunk --chunk-index 0 --workspace /private/tmp/ft-longitudinal-validation
 
-PYTHONPATH=inference/src inference/.venv/bin/python \
+PYTHONPATH=inference/src inference/.venv/bin/python -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   run-controls --workspace /private/tmp/ft-longitudinal-validation
 
-PYTHONPATH=inference/src inference/.venv/bin/python \
+PYTHONPATH=inference/src inference/.venv/bin/python -B \
   -m fluencytracr_inference.longitudinal_replicated_validation_cli \
   combine --workspace /private/tmp/ft-longitudinal-validation
 ```
@@ -88,8 +88,9 @@ exact generated evidence.
 Execution identity requires the exact Python 3.13 and locked package versions,
 hashes both Python and Node lockfiles, binds the TypeScript hashing/export
 chain, and verifies the actual accepted concordance artifact and compact
-summary bytes before any full run. The full path requires the entire Git
-worktree, including untracked files, to be clean at the bound source commit.
+summary bytes before any full run. The full path requires `python -B`, exact
+governed-source byte parity with `HEAD`, and the entire Git worktree, including
+untracked and ignored files, to be clean at the bound source commit.
 
 ## Floor Controls
 

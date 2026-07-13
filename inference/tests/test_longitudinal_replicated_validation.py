@@ -242,6 +242,25 @@ def test_checkpoint_workspace_rejects_symlinked_root_before_writing(tmp_path):
     assert not (target / "plan.json").exists()
 
 
+def test_checkpoint_workspace_rejects_case_alias_of_repository(tmp_path, monkeypatch):
+    repo_root = tmp_path / "Repo"
+    repo_root.mkdir()
+    case_alias = tmp_path / "REPO" / "checkpoints"
+    real_samefile = runner.os.path.samefile
+
+    def case_insensitive_samefile(left, right):
+        if str(left).casefold() == str(repo_root).casefold():
+            return str(right).casefold() == str(repo_root).casefold()
+        return real_samefile(left, right)
+
+    monkeypatch.setattr(runner, "_repo_root", lambda: repo_root)
+    monkeypatch.setattr(runner.os.path, "samefile", case_insensitive_samefile)
+
+    with pytest.raises(ReplicatedValidationWorkspaceError, match="outside"):
+        initialize_replicated_validation_workspace(case_alias)
+    assert not case_alias.exists()
+
+
 def test_execution_identity_rejects_unpinned_runtime(monkeypatch):
     monkeypatch.setattr(
         runner.importlib.metadata,
@@ -259,14 +278,52 @@ def test_execution_identity_requires_the_entire_worktree_to_be_clean(monkeypatch
     def dirty_git_output(*args):
         if args and args[0] == "status":
             status_calls.append(args)
-            return "?? sitecustomize.py"
+            return "!! sitecustomize.py"
         return real_git_output(*args)
 
     monkeypatch.setattr(runner, "_git_output", dirty_git_output)
 
     with pytest.raises(ReplicatedValidationError, match="entirely clean worktree"):
         build_execution_identity(require_clean=True)
-    assert status_calls == [("status", "--porcelain", "--untracked-files=all")]
+    assert status_calls == [
+        (
+            "status",
+            "--porcelain",
+            "--ignored=matching",
+            "--untracked-files=all",
+        )
+    ]
+
+
+def test_execution_identity_rejects_head_mismatch_hidden_from_status(monkeypatch):
+    real_git_output = runner._git_output
+
+    def clean_git_output(*args):
+        if args and args[0] == "status":
+            return ""
+        return real_git_output(*args)
+
+    monkeypatch.setattr(runner, "_git_output", clean_git_output)
+    monkeypatch.setattr(runner, "_governed_sources_match_head", lambda: False)
+
+    with pytest.raises(ReplicatedValidationError, match="entirely clean worktree"):
+        build_execution_identity(require_clean=True)
+
+
+def test_execution_identity_requires_bytecode_writes_disabled(monkeypatch):
+    real_git_output = runner._git_output
+
+    def clean_git_output(*args):
+        if args and args[0] == "status":
+            return ""
+        return real_git_output(*args)
+
+    monkeypatch.setattr(runner, "_git_output", clean_git_output)
+    monkeypatch.setattr(runner, "_governed_sources_match_head", lambda: True)
+    monkeypatch.setattr(runner.os.sys, "dont_write_bytecode", False)
+
+    with pytest.raises(ReplicatedValidationError, match="bytecode writes disabled"):
+        build_execution_identity(require_clean=True)
 
 
 def test_execution_identity_hashes_committed_concordance_evidence(monkeypatch):

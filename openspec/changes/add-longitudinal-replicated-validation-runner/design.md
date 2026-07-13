@@ -136,7 +136,9 @@ valid existing exact slot is reused; a malformed or provenance-mismatched
 existing slot fails closed instead of being silently accepted. Combine
 requires the exact 20 chunk manifests, exact control manifests, one
 implementation hash, the exact Python and Node lockfiles, one runtime manifest,
-and one entirely clean worktree at the bound source commit.
+exact governed-source byte parity with `HEAD`, disabled Python bytecode writes,
+and one entirely clean worktree, including ignored files, at the bound source
+commit.
 
 Checkpoint roots and every child path reject repository-local placement,
 symlinks, and resolved path escape. Runner-error rows are durable exact

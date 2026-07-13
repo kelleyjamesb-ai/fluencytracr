@@ -583,6 +583,31 @@ def _git_output(*args: str) -> str:
     return completed.stdout.strip()
 
 
+def _git_bytes(*args: str) -> bytes:
+    try:
+        completed = subprocess.run(
+            ("git", *args),
+            cwd=_repo_root(),
+            check=True,
+            capture_output=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ReplicatedValidationError("git source identity is unavailable") from exc
+    return completed.stdout
+
+
+def _governed_sources_match_head() -> bool:
+    root = _repo_root()
+    for relative_path in (*_RUNNER_SOURCE_PATHS, "inference/requirements.lock"):
+        path = root / relative_path
+        if path.is_symlink() or not path.is_file():
+            return False
+        head_bytes = _git_bytes("show", f"HEAD:{relative_path}")
+        if _file_sha256(path) != hashlib.sha256(head_bytes).hexdigest():
+            return False
+    return True
+
+
 def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
     completed = subprocess.run(
         ("git", "merge-base", "--is-ancestor", ancestor, descendant),
@@ -654,12 +679,17 @@ def build_execution_identity(*, require_clean: bool) -> ExecutionIdentity:
     worktree_status = _git_output(
         "status",
         "--porcelain",
+        "--ignored=matching",
         "--untracked-files=all",
     )
-    clean = worktree_status == ""
+    clean = worktree_status == "" and _governed_sources_match_head()
     if require_clean and not clean:
         raise ReplicatedValidationError(
             "full replicated validation requires an entirely clean worktree"
+        )
+    if require_clean and not os.sys.dont_write_bytecode:
+        raise ReplicatedValidationError(
+            "full replicated validation requires Python bytecode writes disabled"
         )
     if (os.sys.version_info.major, os.sys.version_info.minor) != (3, 13):
         raise ReplicatedValidationError(
@@ -1490,6 +1520,13 @@ def replicated_validation_workspace_path(workspace: Path, *parts: str) -> Path:
     return candidate
 
 
+def _same_existing_filesystem_path(left: Path, right: Path) -> bool:
+    try:
+        return os.path.samefile(left, right)
+    except OSError:
+        return False
+
+
 def initialize_replicated_validation_workspace(workspace_dir: str | Path) -> Path:
     requested = Path(os.path.abspath(Path(workspace_dir).expanduser()))
     if any(candidate.is_symlink() for candidate in (requested, *requested.parents)):
@@ -1497,7 +1534,12 @@ def initialize_replicated_validation_workspace(workspace_dir: str | Path) -> Pat
             "replicated-validation checkpoint roots must not contain symlinks"
         )
     workspace = requested.resolve()
-    if workspace == _repo_root() or _repo_root() in workspace.parents:
+    repo_root = _repo_root()
+    workspace_chain = (workspace, *workspace.parents)
+    if any(
+        _same_existing_filesystem_path(candidate, repo_root)
+        for candidate in workspace_chain
+    ):
         raise ReplicatedValidationWorkspaceError(
             "replicated-validation checkpoints must remain outside the repository"
         )
