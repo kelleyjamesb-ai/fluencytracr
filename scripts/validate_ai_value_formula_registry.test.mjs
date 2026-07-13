@@ -162,6 +162,11 @@ test("validator requires every AI Manager family on its canonical template", () 
   formulaFrom(mismatchedFamily, "cycle_time_delta").formula_family =
     "friction_rate_delta";
   assert.equal(validateAiValueFormulaRegistry(mismatchedFamily).valid, false);
+
+  const wrongLayer = structuredClone(registry);
+  formulaFrom(wrongLayer, "cycle_time_delta").model_layer =
+    "AI_FLUENCY_MEASUREMENT";
+  assert.equal(validateAiValueFormulaRegistry(wrongLayer).valid, false);
 });
 
 test("JSON schema requires the prompt field set and allowed states", () => {
@@ -184,6 +189,31 @@ test("JSON schema requires the prompt field set and allowed states", () => {
     schema.$defs.formula.properties.model_layer.enum,
     [...FORMULA_REGISTRY_MODEL_LAYERS]
   );
+  assert.equal(schema.properties.registry_version.const, "2026_07");
+
+  const template = schema.$defs.aiManagerTemplate;
+  assert.equal(template.properties.model_layer.const, "ECONOMIC_VALUE_TRANSLATION");
+  assert.equal(
+    template.properties.implementation_state.const,
+    "SPECIFIED_NOT_IMPLEMENTED"
+  );
+  assert.equal(template.properties.executable_reference_function.type, "null");
+  assert.equal(template.properties.customer_display_state.const, "DOCS_ONLY_TEMPLATE");
+
+  const familyClauses = schema.properties.formulas.allOf;
+  assert.equal(familyClauses.length, AI_MANAGER_OUTCOME_FORMULA_FAMILIES.length);
+  for (const family of AI_MANAGER_OUTCOME_FORMULA_FAMILIES) {
+    const clause = familyClauses.find(
+      (candidate) =>
+        candidate.contains.allOf[1].properties.formula_family.const === family
+    );
+    assert.ok(clause, `missing schema clause for ${family}`);
+    const binding = clause.contains.allOf[1];
+    assert.equal(binding.properties.formula_id.const, family);
+    assert.deepEqual(binding.required, ["formula_id", "formula_family"]);
+    assert.equal(clause.minContains, 1);
+    assert.equal(clause.maxContains, 1);
+  }
 });
 
 test("README audit table covers every registry formula id and state", () => {

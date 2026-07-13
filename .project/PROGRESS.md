@@ -48,7 +48,11 @@
   boundary pins, model layers, AI Manager formula-family coverage, input units,
   nested numeric tunables, and README parity fail closed. Added the missing
   `suppression_gate_default_hold` metadata bound to
-  `enforceV1EvaluationDecision` and its existing V1 test.
+  `enforceV1EvaluationDecision` and its existing V1 test. Follow-up Codex PR
+  review aligned schema-only validation by pinning registry version `2026_07`
+  and binding every AI Manager family to its canonical formula ID, economic
+  layer, specified-only state, null executable reference, and docs-only display
+  state.
 
   Hardened sampler-acceptance report rehydration so report JSON never
   reconstructs the private runner-generation token. Runner proof hashes and
@@ -62,8 +66,8 @@
   tunable threshold; or promotion decision was added.
 
   Verification passed: formula-registry suite `22/22`; acceptance-study suite
-  `61/61`; full inference suite `485/485`; exact inference CI bridge command
-  `71/71` with live Python subprocesses and no skips; AI Fluency snapshot
+  `61/61`; merged full inference suite `489/489`; four-file inference bridge set
+  `72/72` with live Python subprocesses and no skips; AI Fluency snapshot
   `11/11`; V1 evaluation decision `18/18`; `shared` and `confidence-engine`
   builds; strict OpenSpec validation for `add-ai-value-formula-registry` and
   `add-bayesian-inference-proof-harness`; docs contract sweep; semantic-drift

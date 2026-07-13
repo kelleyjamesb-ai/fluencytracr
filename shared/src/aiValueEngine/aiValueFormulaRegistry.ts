@@ -309,6 +309,9 @@ function validateFormulaFamily(
   if (entry.customer_display_state !== "DOCS_ONLY_TEMPLATE") {
     gaps.push(`${formulaId} AI Manager formula templates must be docs-only templates`);
   }
+  if (entry.model_layer !== "ECONOMIC_VALUE_TRANSLATION") {
+    gaps.push(`${formulaId} AI Manager formula templates must use the economic layer`);
+  }
 }
 
 function validateEntry(entry: unknown, gaps: string[], seenIds: Set<string>): void {
