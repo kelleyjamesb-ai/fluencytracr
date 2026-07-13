@@ -555,6 +555,34 @@ confidence/probability output, ROI, causality, productivity, finance output,
 new canonical event, suppression reason, tunable threshold, or promotion
 decision.
 
+### Current Replicated-Validation Runner Boundary
+
+The exact-scope change `add-longitudinal-replicated-validation-runner`
+implements the synthetic-only execution path for the remaining replicated
+study. It compiles exactly 1,200 deterministic state-space calibration slots,
+20 create-once atomic chunks, strict resume/combine recomputation, separate
+aggregate `k` floor controls, fixed lag recovery, and shock/negative controls.
+The strict sibling TypeScript artifact schema independently recomputes slot
+identity, seeds, manifests, interval coverage, null z diagnostics, integer
+gates, binomial standard errors, control outcomes, lag selection, hashes, and
+HOLD/non-HOLD state.
+
+The runner implementation is not generated evidence. Smoke, canary, partial,
+mixed-provenance, malformed, or incomplete results HOLD. A later exact full
+run may record a numerical
+`valid_internal_validation_non_authorizing` state, but independent acceptance,
+longitudinal proof completion, production promotion, customer output,
+confidence/probability output, ROI, causality, productivity, and finance output
+remain false until separately reviewed. No parent replicated-validation task
+is completed by the runner-only change.
+
+The accepted runner pins exact Python/package runtime, Python and Node
+lockfiles, the TypeScript hashing/export chain, and the actual accepted
+concordance artifact/summary bytes. Checkpoint child symlinks reject, runner
+errors remain durable HOLD evidence, and repeated combine must regenerate the
+same artifact timestamp and content. Exact evidence completeness is tracked
+separately from numerical success.
+
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware
 RFC3339 generation timestamps, and compiled synthetic control identity/source
