@@ -27,10 +27,15 @@ proves three boundaries:
   Gaussian longitudinal smoke model, diagnostics, and artifact emission.
 - Add a new confidence-engine Zod schema and bridge tests for the
   longitudinal synthetic artifact.
-- Record that this is synthetic smoke proof only; replicated calibration,
-  NUTS sampler hardening, real-data promotion, persistence, backend routes,
-  frontend UI, exports, customer-facing confidence/probability, ROI,
-  causality, productivity, and finance output remain blocked.
+- Add a docs-only AI Fluency measurement-model calibration contract that
+  defines aggregate snapshot-context prerequisites, records the missing
+  privacy-safe measurement evidence, and preserves HOLD/non-authorization
+  boundaries without fitting a model or completing calibration.
+- Record this change's artifact as synthetic smoke proof only. Later exact-scope
+  changes completed NUTS concordance and replicated synthetic validation;
+  real-data promotion, persistence, backend routes, frontend UI, exports,
+  customer-facing confidence/probability, ROI, causality, productivity, and
+  finance output remain blocked.
 
 ## What Does Not Change
 
@@ -52,6 +57,7 @@ proves three boundaries:
   - `packages/confidence-engine/src/longitudinalSyntheticOutcomeProof.ts`
 - Affected docs:
   - snapshot contract
+  - measurement-model calibration contract
   - longitudinal synthetic proof contract
   - inference README
   - model-family contract implementation status

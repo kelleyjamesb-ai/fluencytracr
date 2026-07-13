@@ -156,8 +156,8 @@ outputs.
 | Module or component | Contract role | Implemented today | Current contract eligibility |
 | --- | --- | --- | --- |
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
-| `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as an exact-scope synthetic smoke prototype added by OpenSpec change `add-ai-fluency-instrument-snapshot-longitudinal-proof`. | Internal synthetic smoke proof only. It validates aggregate snapshot/source-hash/artifact mechanics and HOLD controls; it does not authorize real data, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, exports, or replicated calibration. |
-| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | No. | Documentation-only future module. |
+| `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as a smoke prototype followed by state-space/NUTS concordance and accepted 1,200-slot replicated synthetic validation. | Completed internal synthetic proof only. It does not authorize real data, runtime routing, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, exports, or promotion. |
+| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Prerequisites boundary only. | State is `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`; current dimension summaries do not identify a latent measurement model or cross-wave change. No runtime model, posterior output, customer output, persistence, UI, routes, exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
 | `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
 | `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
@@ -174,8 +174,8 @@ probability, ROI, causality, productivity, or economic output.
 
 The model family uses this additive router vocabulary. Production routing
 remains future work, but the exact-scope
-`first_longitudinal_synthetic_model_slice` now implements an internal
-synthetic smoke route for historical/repeated longitudinal fixtures only.
+`first_longitudinal_synthetic_model_slice` has completed its fixed internal
+synthetic proof for historical/repeated longitudinal fixtures only.
 
 | Evidence design | Contract support status | Current contract-eligible module | Required gates before eligibility | Claim cap | Unsupported / HOLD behavior |
 | --- | --- | --- | --- | --- | --- |
@@ -183,8 +183,8 @@ synthetic smoke route for historical/repeated longitudinal fixtures only.
 | `TWO_GROUP_PRE_POST_COMPARISON` | Current specialized contract eligibility. | `comparison_supported_bayesian_did_module`. | Credible comparison cohort; exact baseline/post windows; same selected metric and direction; declared lag; aggregate floors; no suppressed/stale/missing/imputed windows; pre-trend check; sampler diagnostics; posterior predictive checks; prior sensitivity; calibration/null/floor proof; fixed-horizon peeking control; TypeScript artifact validation. | Internal-only comparison-supported contribution-estimate eligibility at most; no customer-facing confidence/probability and no causal, ROI, productivity, or economic claim. | HOLD or evidence-tier-only if any comparison, window, floor, diagnostic, calibration, peeking, source-binding, or artifact-validation gate fails. |
 | `MATCHED_COMPARISON` | Conditional current contract eligibility. | `comparison_supported_bayesian_did_module` only when matching still yields a true two-group pre/post design at the aggregate Measurement Cell grain. | Reviewer-owned matching/design adequacy memo; matched cohorts remain aggregate-only and non-identifying; same metric/window/direction/lag; balance and pre-period plausibility reviewed; every DiD gate above passes. | Internal-only matched-comparison-ready context or DiD contribution-estimate eligibility when all gates pass; no causal language from matching alone. | HOLD or remain future-model-only if matching does not reduce to a valid two-group pre/post DiD design. |
 | `STAGGERED_ROLLOUT` | Unsupported by the current DiD module. | None. | Future event-time, calendar-time, adoption-time, and not-yet-treated comparison logic must be implemented, calibrated, and validated in a separate approved proposal before any contract eligibility exists. | HOLD only under the current implementation. | Must HOLD as unsupported; must not be coerced into current two-group DiD or treated as current event-study support. |
-| `HISTORICAL_STATE_SPACE` | Synthetic smoke route only in the exact Phase 2B prototype; full longitudinal contract eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for synthetic/internal smoke artifacts only. | Aggregate synthetic inputs; approved hypothesis metadata; complete ordered windows; aggregate AI Fluency snapshot context; separated lagged Velocity/Breadth exposures plus synthetic Depth pathway context only; approved synthetic controls; source hashes; diagnostics; TypeScript smoke artifact validation. Full NUTS sampler hardening and replicated calibration remain future work. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD or reject for real/customer/live data, incomplete windows, unsupported likelihoods, missing uncertainty, unsafe controls, respondent leakage, failed diagnostics, or any output/promotion side door. |
-| `REPEATED_PRE_POST` | Synthetic smoke route only when the exact Phase 2B prototype's compiled historical-window requirements are met; full repeated-window contract eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for synthetic/internal smoke artifacts only. | Same synthetic-only longitudinal smoke gates as `HISTORICAL_STATE_SPACE`; no sequential or always-valid repeated-look procedure is implemented. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD if compiled historical-window requirements fail or if repeated looks are used to bypass peeking controls. |
+| `HISTORICAL_STATE_SPACE` | Fixed synthetic specification has completed smoke, concordance, and replicated validation; real-data/runtime contract eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for internal synthetic validation artifacts only. | Aggregate synthetic inputs; approved hypothesis metadata; complete ordered windows; aggregate AI Fluency snapshot context; separate lagged Velocity/Breadth exposures; Depth as context only; approved synthetic controls; source hashes; state-space/NUTS diagnostics; TypeScript validation; accepted replicated calibration/null/floor/lag/shock evidence. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD or reject for real/customer/live data, incomplete windows, unsupported likelihoods, missing uncertainty, unsafe controls, respondent leakage, failed diagnostics, or any output/promotion side door. |
+| `REPEATED_PRE_POST` | Fixed synthetic specification has completed validation only under its compiled historical-window rules; real-data/runtime repeated-window eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for internal synthetic validation artifacts only. | Same accepted synthetic longitudinal gates as `HISTORICAL_STATE_SPACE`; no sequential or always-valid repeated-look production procedure is implemented. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD if compiled historical-window requirements fail, real data are supplied, or repeated looks are used to bypass peeking controls. |
 | `BASELINE_ONLY` | Planning context only. | None. | Aggregate source review, suppression checks, and metric definition review may support planning context only. | Context-only; no contribution confidence, no comparison-supported estimate, no probability/confidence output. | HOLD for contribution-confidence or causal/economic interpretation. |
 
 Router contract rules:
@@ -606,6 +606,49 @@ customer output, confidence/probability output, ROI, causality, productivity,
 finance output, route, UI, persistence, export, readout, or connector. The DiD
 module remains isolated and incomplete.
 
+### AI Fluency Measurement-Model Calibration Contract
+
+The exact-scope contract
+`docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`
+defines the gate for the future `bayesian_fluency_measurement_model`.
+
+Current state:
+
+```text
+PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE
+```
+
+The contract defines aggregate snapshot-context prerequisites and identifies
+the missing measurement evidence required before any future calibration
+artifact can exist:
+
+- validated aggregate `AIFluencyInstrumentSnapshot` waves only;
+- immutable baseline/retest wave identity;
+- source refs and source hashes;
+- finite, nonnegative, complete aggregate uncertainty for the overall estimate
+  and all five dimensions;
+- reliability or sufficient aggregate precision evidence;
+- coverage, missingness, and respondent-composition posture;
+- k-min posture at the aggregate cohort grain;
+- exact instrument, form, item-set, item-to-dimension, and scoring-derivation
+  versions;
+- a separately approved privacy-safe aggregate sufficient-statistics contract;
+- same-form compatibility or an approved cross-form equating record;
+- predeclared longitudinal measurement-invariance gates;
+- CODE, BUG, and ADVERSARIAL review against exact artifact bytes for any later
+  implementation.
+
+The calibration contract does not fit a model. It does not create latent
+trait estimates, posterior intervals, probability output, confidence output,
+runtime code, schemas, persistence, routes, UI, exports, connectors, customer
+readouts, real-data admission, ROI, causality, productivity, finance output,
+or economic output. Dimension summaries, standard errors, and reliability
+metadata may support aggregate context but cannot be treated as sufficient
+measurement-model calibration evidence. Missing uncertainty, inadmissible
+source posture, form/version incompatibility, missing aggregate sufficient
+statistics, or missing/failed invariance evidence remains a HOLD condition and
+must not be filled with respondent-level export or invented precision.
+
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware
 RFC3339 generation timestamps, and compiled synthetic control identity/source
@@ -712,14 +755,14 @@ override, promotion decision, or output authorization.
 Unsupported, incomplete, unsafe, missing, suppressed, stale, imputed, or
 repeatedly peeked evidence HOLDS or rejects before interpretation.
 
-### Future Synthetic Validation Plan
+### Synthetic Validation Record
 
-Future Phase 2B/3 implementation must distinguish smoke validation, replicated
-calibration, and negative controls. Smoke validation may prove that a tiny
-synthetic path executes locally. It must not be described as replicated
-calibration and must not complete replicated validation tasks.
+Phase 2B/3 work distinguished smoke validation, replicated calibration, and
+negative controls. The smoke artifact proved only that the bounded synthetic
+path executed. Later state-space/NUTS concordance and the accepted 1,200-slot
+replicated-validation evidence completed the synthetic longitudinal proof.
 
-Required future synthetic scenarios:
+The accepted synthetic evidence covers:
 
 - clean longitudinal pathway;
 - VBD-only movement;
@@ -734,8 +777,10 @@ Required future synthetic scenarios:
 - claimed staggered rollout HOLD;
 - financial double-counting attempt HOLD.
 
-Replicated calibration remains future work. No Phase 2A text marks replicated
-calibration complete, and no current evidence authorizes customer-facing
+This completion is limited to the synthetic longitudinal state-space proof. AI
+Fluency measurement-model calibration, VBD trajectory calibration, real-data
+admission, runtime routing, persistence, and customer-facing interpretation
+remain incomplete. No current evidence authorizes customer-facing
 confidence/probability, ROI, causality, productivity, finance, or economic
 output.
 
@@ -772,8 +817,8 @@ Claim caps remain internal-only in this docs-only Phase 1/2A contract:
 | Baseline-only context | Planning context only; no contribution confidence. |
 | Directional or mechanism evidence without valid comparison | Internal directional context only. |
 | Valid two-group pre/post DiD contract eligibility with all gates passing | Internal-only comparison-supported contribution-estimate eligibility; no customer-facing confidence/probability, ROI, causality, productivity, or economic output. |
-| Synthetic historical/repeated longitudinal smoke route with compiled gates passing | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. |
-| Full longitudinal, staggered, controlled, or economic contract route beyond implemented smoke scope | HOLD until a later approved proposal implements and validates that exact route. |
+| Accepted synthetic historical/repeated longitudinal proof with compiled gates passing | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. |
+| Real-data longitudinal, staggered, controlled, or economic contract route | HOLD until a later approved proposal implements, validates, and promotes that exact route. |
 
 ## Claim Boundary
 
@@ -817,7 +862,7 @@ Implemented now:
 - Docs-only Phase 2A selection and specification of
   `first_longitudinal_synthetic_model_slice`.
 
-Not implemented now:
+Not implemented by the original Phase 1/2A decision itself:
 
 - Runtime model family.
 - Production model-family router.
@@ -831,8 +876,6 @@ Not implemented now:
   `harden-longitudinal-smoke-proof-boundary`.
 - Production longitudinal runtime model code, state-space models, event-study
   models, controlled-test models, or economic value models.
-- Replicated calibration, negative-control, null, or floor evidence for the
-  first longitudinal slice.
 - Customer-facing confidence, probability, ROI, causality, productivity, or
   finance output.
 
@@ -865,15 +908,24 @@ Implemented by the later exact-scope concordance change
   CODE/BUG/ADVERSARIAL acceptance.
 - Separate summary-only evidence that does not contain posterior draws or
   authorize replicated execution, customer output, or production use.
-- A separate acceptance record unblocks only the next replicated synthetic
-  validation PR; it does not mark replication, calibration, or the full
-  longitudinal proof complete.
+- The separate acceptance record was the prerequisite later consumed by the
+  replicated-validation change; concordance alone did not mark replication or
+  the full longitudinal proof complete.
 
-Still not implemented by that smoke change:
+Implemented by the later exact-scope replicated-validation runner and evidence
+changes:
 
-- Replicated interval coverage.
-- Longitudinal null false-eligibility calibration.
-- Lag recovery and common-shock robustness studies.
+- Exact 1,200-slot deterministic state-space calibration across the six
+  compiled effect/group cells.
+- Accepted interval coverage, null false-signal, floor, lag-recovery, shock,
+  and negative-control evidence with strict resumable combination and
+  artifact-byte review binding.
+- Separate compact summary and CODE/BUG/ADVERSARIAL acceptance record that
+  authorize only the completed internal synthetic longitudinal proof.
+
+Still not implemented after the accepted longitudinal replicated-validation
+evidence:
+
 - AI Fluency measurement-model calibration.
 - VBD trajectory-model calibration.
 - AI Fluency snapshot persistence promotion.

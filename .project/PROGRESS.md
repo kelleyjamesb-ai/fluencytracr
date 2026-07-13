@@ -2,6 +2,42 @@
 
 ## Current Session
 
+- AI Fluency measurement-model calibration prerequisites boundary documented
+  (2026-07-13): added
+  `docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`
+  with current state `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`. Validated
+  aggregate `AIFluencyInstrumentSnapshot` waves may provide approved
+  longitudinal context, but dimension means, standard errors, reliability
+  summaries, and coverage posture do not identify a latent measurement model
+  or comparable cross-wave change. A future proposal must define privacy-safe
+  aggregate sufficient statistics, exact instrument/form/item/scoring
+  versions, same-form compatibility or equating, per-item
+  coverage/missingness, and longitudinal measurement-invariance gates. Source
+  admission now explicitly requires unsuppressed, owner-approved,
+  `approved_for_model_context` snapshots with a passing longitudinal-context
+  feed.
+
+  This boundary does not close OpenSpec task `5.5`; measurement-model
+  calibration remains unchecked until it is implemented, executed, and
+  independently accepted. This slice does not fit a Bayesian measurement
+  model, estimate latent traits, emit posterior intervals, create
+  confidence/probability output, admit real data, export respondent rows,
+  create schemas, persistence, routes, UI, exports, or connectors, or authorize
+  customer output, ROI, finance, causality, productivity, HR analytics,
+  ranking, economic output, new canonical events, new suppression reasons,
+  tunable thresholds, or admin overrides.
+
+  Corrective verification passed: strict OpenSpec validation for
+  `add-ai-fluency-instrument-snapshot-longitudinal-proof` and
+  `generalize-bayesian-confidence-to-model-family`, AI Fluency instrument
+  snapshot contract tests (`11 passed`), docs contract sweep, semantic drift
+  guard, V1 governance gates, `git diff --check`, and the Assurance Harness
+  (`274 passed`, `3 skipped`). Remaining model-family blockers begin with
+  actual AI Fluency measurement-model
+  calibration (`5.5`), followed by VBD trajectory-model calibration (`5.6`),
+  AI Fluency snapshot persistence promotion (`5.7`), backend read projection/UI
+  integration (`5.8`), unfinished DiD proof work, production promotion,
+  real-data admission, and all customer/public outputs.
 - Longitudinal state-space model proof accepted (2026-07-13): completed the
   bounded full-evidence queue item on
   `codex/longitudinal-replicated-validation-evidence` from merged runner PR

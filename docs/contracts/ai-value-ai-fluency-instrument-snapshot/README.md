@@ -116,6 +116,16 @@ Required behavior:
 - Missing uncertainty must not be filled by invented precision.
 - Respondent-level rows must not be exported to solve the gap.
 
+The follow-on calibration boundary is defined in
+`docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`.
+That contract records
+`PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`: dimension-level snapshots may
+provide approved aggregate longitudinal context, but they are not sufficient
+to calibrate a latent measurement model or establish comparable cross-wave
+change. A separate exact-scope proposal must define privacy-safe aggregate
+sufficient statistics, form/version compatibility, equating, and longitudinal
+measurement-invariance gates without respondent-level export.
+
 ## Source Adapter Parity
 
 The current Apps Script adapter remains a source adapter only. It may aggregate

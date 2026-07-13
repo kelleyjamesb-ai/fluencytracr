@@ -148,6 +148,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-13: four canaries, all 20 chunks, exactly 1,200 calibration rows, four floors, 90 lag rows, and nine negative/shock controls passed. Strict combine was idempotent; the committed artifact and compact summary are hash-bound to separate CODE/BUG/ADVERSARIAL GO acceptance. Longitudinal state-space model proof and model-family Phase 3 are complete; DiD, measurement-model/VBD calibration, customer output, and production promotion remain incomplete."
+    },
+    {
+      "id": "ai-fluency-measurement-model-calibration-contract",
+      "title": "AI Fluency measurement-model calibration prerequisites boundary",
+      "bound": "Docs/spec-only boundary: distinguish aggregate snapshot context from the missing privacy-safe measurement evidence required by OpenSpec task 5.5; define fail-closed source, form/version, equating, invariance, HOLD, unsafe-input, and non-authorization requirements; no calibration completion, runtime model, schemas, routes, UI, persistence, connectors, real data, respondent rows, customer output, confidence/probability, ROI, causality, productivity, finance, HR, ranking, or economic output",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-13: documented PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE. Dimension summaries may provide approved aggregate context but cannot calibrate latent change. OpenSpec task 5.5 remains unchecked pending privacy-safe aggregate sufficient statistics, supported likelihood/form rules, equating/invariance proof, implementation, execution, and independent acceptance."
     }
   ]
 }
