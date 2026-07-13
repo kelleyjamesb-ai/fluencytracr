@@ -140,6 +140,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-12: exact 1,200-slot plan, resumable chunks/combine, calibration/null gates, floor/lag/negative controls, strict artifact/TypeScript bridge, and review hardening are implemented. Full inference 474 passed; four bridges 85 passed; CODE/BUG/ADVERSARIAL GO. No 1,200-row evidence was generated; parent validation and DiD remain incomplete."
+    },
+    {
+      "id": "longitudinal-replicated-validation-evidence",
+      "title": "Longitudinal replicated-validation full evidence run",
+      "bound": "Synthetic-only evidence execution from merged runner PR #413: run four compiled canaries, all 20 chunks for exactly 1,200 calibration rows, fixed floor/lag/shock/negative controls, strict combine, sanitized artifact review, and one independent CODE/BUG/ADVERSARIAL acceptance round; no model or threshold changes unless actual execution fails, and no real data, public surfaces, customer output, or promotion",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "Authorized 2026-07-13 by the decision owner via 'keep going now'. Fresh branch from merged origin/main; evidence generation and acceptance only."
     }
   ]
 }
