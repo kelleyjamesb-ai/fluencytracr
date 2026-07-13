@@ -52,6 +52,13 @@ documented value-realization layers:
   unspecified-share, parent attribution, canonical identity, versioning,
   invocation mode, UGC coverage, and personal/shared/org Skill separation are
   validated.
+- **AI Fluency measurement-model calibration contract:** defines the aggregate
+  evidence and HOLD gates required before any future Fluency measurement model
+  can be implemented. Current state is `CONTRACT_READY_NOT_RUN`: no model is
+  fit, no confidence/probability output is emitted, no respondent rows are
+  exported, and no persistence, route, UI, connector, customer-facing output,
+  ROI, causality, productivity, finance, HR, ranking, or economic output is
+  authorized.
 - **V3 production ingest:** moves beyond manual CSV dogfood by running a
   customer-side transformer in the customer's cloud, sending only aggregate
   cohort distributions to FluencyTracr, and storing immutable verdicts against

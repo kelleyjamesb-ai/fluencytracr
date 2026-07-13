@@ -157,7 +157,7 @@ outputs.
 | --- | --- | --- | --- |
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
 | `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as an exact-scope synthetic smoke prototype added by OpenSpec change `add-ai-fluency-instrument-snapshot-longitudinal-proof`. | Internal synthetic smoke proof only. It validates aggregate snapshot/source-hash/artifact mechanics and HOLD controls; it does not authorize real data, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, exports, or replicated calibration. |
-| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | No. | Documentation-only future module. |
+| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Contract boundary only. | Calibration contract is `CONTRACT_READY_NOT_RUN`; no runtime model, posterior output, customer output, persistence, UI, routes, exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
 | `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
 | `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
@@ -605,6 +605,39 @@ trajectory-model calibration, and it authorizes no production promotion,
 customer output, confidence/probability output, ROI, causality, productivity,
 finance output, route, UI, persistence, export, readout, or connector. The DiD
 module remains isolated and incomplete.
+
+### AI Fluency Measurement-Model Calibration Contract
+
+The exact-scope contract
+`docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`
+defines the gate for the future `bayesian_fluency_measurement_model`.
+
+Current state:
+
+```text
+CONTRACT_READY_NOT_RUN
+```
+
+The contract defines the aggregate inputs and gates required before any future
+calibration artifact can exist:
+
+- validated aggregate `AIFluencyInstrumentSnapshot` waves only;
+- immutable baseline/retest wave identity;
+- source refs and source hashes;
+- finite, nonnegative, complete aggregate uncertainty for the overall estimate
+  and all five dimensions;
+- reliability or sufficient aggregate precision evidence;
+- coverage, missingness, and respondent-composition posture;
+- k-min posture at the aggregate cohort grain;
+- CODE, BUG, and ADVERSARIAL review against exact artifact bytes for any later
+  implementation.
+
+The calibration contract does not fit a model. It does not create latent
+trait estimates, posterior intervals, probability output, confidence output,
+runtime code, schemas, persistence, routes, UI, exports, connectors, customer
+readouts, real-data admission, ROI, causality, productivity, finance output,
+or economic output. Missing uncertainty remains a HOLD condition and must not
+be filled with respondent-level export or invented precision.
 
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware

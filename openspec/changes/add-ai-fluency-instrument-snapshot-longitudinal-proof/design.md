@@ -27,6 +27,25 @@ Missing standard errors or reliability estimates remain visible. Missing
 measurement uncertainty blocks full Fluency measurement-model authorization
 but does not require respondent-level export.
 
+## Measurement-Model Calibration Boundary
+
+The follow-on `bayesian_fluency_measurement_model` remains non-runtime. The
+current slice defines only the calibration contract:
+`CONTRACT_READY_NOT_RUN`.
+
+Calibration requires validated aggregate `AIFluencyInstrumentSnapshot` waves,
+complete finite nonnegative aggregate uncertainty for the overall estimate and
+all five dimensions, reliability or sufficient aggregate precision evidence,
+coverage/missingness/respondent-composition posture, immutable source refs and
+hashes, k-min posture, and independent CODE/BUG/ADVERSARIAL review before any
+future implementation can consume an artifact.
+
+This boundary does not fit latent traits, produce posterior output, authorize
+customer-facing confidence or probability, create persistence, add routes/UI,
+run connectors, admit real data, or emit ROI, causality, productivity, finance,
+HR, ranking, or economic output. Missing uncertainty remains a HOLD condition
+and must not be solved by respondent-level export or invented precision.
+
 ## Persistence Boundary
 
 Prisma/Postgres remains the current durable persistence stack. Existing AI

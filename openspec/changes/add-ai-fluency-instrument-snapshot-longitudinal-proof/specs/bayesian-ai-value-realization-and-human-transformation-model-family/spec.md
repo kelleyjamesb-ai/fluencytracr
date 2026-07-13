@@ -53,6 +53,56 @@ source ref, source hash, caveats, `aggregate_only=true`, and
   source ref, and source hash rather than relying on a source-supplied movement
   delta as sole durable authority
 
+### Requirement: AI Fluency Measurement-Model Calibration Contract
+
+The system SHALL define a docs-only calibration contract for
+`bayesian_fluency_measurement_model` with current state
+`CONTRACT_READY_NOT_RUN`. The contract SHALL require only validated aggregate
+`AIFluencyInstrumentSnapshot` wave inputs, complete finite nonnegative
+aggregate uncertainty for the overall estimate and all five dimensions,
+reliability or sufficient aggregate precision evidence, coverage posture,
+missingness posture, respondent-composition posture, source refs, source
+hashes, k-min posture, and independent CODE, BUG, and ADVERSARIAL review
+before any later implementation may consume a calibration artifact.
+
+The calibration contract SHALL NOT implement a runtime model, fit latent
+traits, emit posterior intervals, emit confidence or probability output,
+authorize customer output, create schemas, persistence, routes, UI, exports,
+connectors, real-data admission, ROI, finance, causality, productivity, HR
+analytics, ranking, economic output, new canonical events, new suppression
+reasons, tunable thresholds, or admin overrides.
+
+#### Scenario: Calibration contract is ready but not run
+
+- **GIVEN** the model family has accepted the longitudinal synthetic proof
+  evidence
+- **WHEN** the AI Fluency measurement-model calibration contract is reviewed
+- **THEN** the state is `CONTRACT_READY_NOT_RUN`
+- **AND** no model result, posterior quantity, confidence percentage,
+  probability, customer output, persistence, route, UI, export, connector, ROI,
+  finance, causality, productivity, HR, ranking, or economic output is
+  authorized
+
+#### Scenario: Missing uncertainty holds calibration
+
+- **GIVEN** an otherwise valid aggregate AI Fluency wave lacks complete
+  aggregate uncertainty or reliability evidence
+- **WHEN** the measurement-model calibration gate evaluates the wave
+- **THEN** calibration remains HOLD
+- **AND** respondent-level export, invented precision, or source-supplied
+  movement deltas cannot fill the gap
+
+#### Scenario: Unsafe fields reject before calibration
+
+- **GIVEN** a candidate calibration input contains respondent rows, raw
+  answers, free text, direct identifiers, emails, employee IDs, respondent IDs,
+  user IDs, HRIS fields, manager fields, level, tenure, compensation,
+  performance, productivity, raw prompts, transcripts, query text, raw event
+  rows, or output authorization flags
+- **WHEN** the measurement-model calibration gate evaluates the input
+- **THEN** the input is rejected before interpretation
+- **AND** it cannot feed model context or customer-facing output
+
 ### Requirement: First Longitudinal Synthetic Proof Prototype
 
 The system SHALL implement `first_longitudinal_synthetic_model_slice` as an

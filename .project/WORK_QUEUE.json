@@ -148,6 +148,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-13: four canaries, all 20 chunks, exactly 1,200 calibration rows, four floors, 90 lag rows, and nine negative/shock controls passed. Strict combine was idempotent; the committed artifact and compact summary are hash-bound to separate CODE/BUG/ADVERSARIAL GO acceptance. Longitudinal state-space model proof and model-family Phase 3 are complete; DiD, measurement-model/VBD calibration, customer output, and production promotion remain incomplete."
+    },
+    {
+      "id": "ai-fluency-measurement-model-calibration-contract",
+      "title": "AI Fluency measurement-model calibration contract",
+      "bound": "Docs/spec-only contract for OpenSpec task 5.5: define aggregate AI Fluency measurement-model calibration prerequisites, HOLD gates, unsafe inputs, and non-authorization boundaries; no runtime model, schemas, routes, UI, persistence, connectors, real data, respondent rows, customer output, confidence/probability, ROI, causality, productivity, finance, HR, ranking, or economic output",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-13: created CONTRACT_READY_NOT_RUN calibration contract and updated model-family/OpenSpec/README state. OpenSpec task 5.5 now closes only as contract boundary; VBD trajectory calibration, persistence promotion, backend read projection, UI integration, real-data admission, and customer output remain incomplete."
     }
   ]
 }

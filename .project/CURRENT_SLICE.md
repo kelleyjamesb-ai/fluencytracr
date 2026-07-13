@@ -1,72 +1,60 @@
 # Current Slice Contract
 
-- Work item id: `ai-value-ui-view-model-adapter`
-- Title: `UI View Model Adapter`
+- Work item id: `ai-fluency-measurement-model-calibration-contract`
+- Title: `AI Fluency measurement-model calibration contract`
 - Status: `completed`
 
 ## Summary
 
-Add a single frontend-safe adapter that consumes the Measurement Journey State
-Model and safe upstream posture labels to produce a clean UI object for later
-Journey / Workspace / Readout integration. The adapter is product-facing,
-aggregate-only, label-only, and fail-closed. It does not import Node runners,
-create routes, add schemas, persist customer output, export anything, call live
-connectors, recompute the active journey state, expose reviewer-owned payloads,
-or surface raw evidence, source refs, hashes, prompts, transcripts, query text,
-identifiers, reviewer names, or person-level data.
+Define the docs/spec-only calibration boundary for the future
+`bayesian_fluency_measurement_model`. The slice records required aggregate
+inputs, HOLD gates, non-authorization boundaries, and the current
+`CONTRACT_READY_NOT_RUN` state. It does not fit a model, create runtime code,
+add schemas, persist output, expose routes/UI, run connectors, admit real data,
+export respondent rows, or authorize confidence/probability, ROI, causality,
+productivity, finance, HR, ranking, economic, or customer-facing output.
 
 ## Scope Paths
 
-- `frontend/src/lib/aiValueUiViewModelAdapter.ts`
-- `frontend/src/lib/aiValueUiViewModelAdapter.test.ts`
-- `package.json`
+- `docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`
+- `docs/contracts/ai-value-ai-fluency-instrument-snapshot/README.md`
+- `docs/contracts/bayesian-ai-value-realization-and-human-transformation-model-family/README.md`
+- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/proposal.md`
+- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/design.md`
+- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/specs/bayesian-ai-value-realization-and-human-transformation-model-family/spec.md`
+- `openspec/changes/add-ai-fluency-instrument-snapshot-longitudinal-proof/tasks.md`
+- `README.md`
 - `.project/CURRENT_SLICE.md`
 - `.project/PROGRESS.md`
 
 ## Key Boundaries
 
-- The Measurement Journey State Model remains the active-state source of truth.
-- The adapter maps state ids to approved product labels and never advances
-  beyond the active source-model state.
-- Unknown, unsafe, malformed, missing, or weakened source-model states fail
-  closed to `NO_BLUEPRINT`.
-- Required non-authorization fields must be present and false; supplied
-  `blocked_outputs` and `feeds` must all remain false.
-- `model_review_posture` remains
-  `BLOCKED_UNTIL_GOVERNED_DIAGNOSTICS_EVIDENCE` even when source refs align.
-- Aligned source refs remain review-only and do not imply evidence
-  satisfaction, causality, confidence, probability, ROI, productivity,
-  Bayesian readiness, or model eligibility.
-- Divergent source refs require reviewer interpretation and do not imply
-  failure.
-- Safety booleans are hardcoded false:
-  `can_show_confidence`, `can_show_probability`, `can_show_roi`,
-  `can_show_productivity`, `can_show_causality`, `can_export`, and
-  `can_persist_customer_output`.
+- Calibration state is `CONTRACT_READY_NOT_RUN`.
+- Validated aggregate `AIFluencyInstrumentSnapshot` waves are the only allowed
+  inputs for any future implementation.
+- Missing aggregate uncertainty, reliability, source refs, source hashes,
+  k-min posture, missingness posture, or respondent-composition posture HOLDS.
+- Respondent rows, raw answers, direct identifiers, HR/personnel fields,
+  manager fields, productivity fields, raw prompts, transcripts, query text,
+  and raw event rows reject before interpretation.
+- No model result, posterior quantity, confidence percentage, probability, ROI,
+  finance, causality, productivity, HR, ranking, route, UI, export, connector,
+  persistence, real-data admission, customer output, new canonical event, new
+  suppression reason, tunable threshold, or admin override is authorized.
 
 ## Completed Checks
 
-- `npm run test:ai-value-ui-view-model-adapter`
-- `npm run test:ai-value-measurement-journey-state-model`
-- `npm run test:ai-value-triangulated-evidence-alignment-review`
-- `npm run test:ai-value-contribution-alignment-comparison-design-adequacy-evidence-review`
-- `npm run test:ai-value-reviewer-owned-comparison-design-source-package-collection`
-- `npm run test:ai-value-comparison-design-source-package-preparation-binding`
-- `npm run test:ai-value-aggregate-data-collection-planning-contract`
-- `bash scripts/ci_docs_contract_sweep.sh`
-- `python3 scripts/ci_v1_governance_gates.py`
+- `npx openspec validate add-ai-fluency-instrument-snapshot-longitudinal-proof --strict`
+- `npx openspec validate generalize-bayesian-confidence-to-model-family --strict`
+- `npm run test:ai-value-ai-fluency-instrument-snapshot`
+- `./scripts/ci_docs_contract_sweep.sh`
 - `node scripts/ci_semantic_drift_guard.mjs`
-- `npm run build --workspace frontend`
+- `python3 scripts/ci_v1_governance_gates.py`
 - `git diff --check`
 
 ## Next Handoff Note
 
-The product is ready for the bounded Journey / Workspace / Readout integration
-slice that consumes `buildAiValueUiViewModelAdapter` inside existing AI Value
-surfaces. That slice should reuse the existing UI, render only adapter labels
-and safe booleans, preserve model-review blocking, and still avoid routes,
-schemas, persistence, exports, live connectors, diagnostics evidence, Bayesian
-readiness, promotion, posterior interpretation, confidence/probability output,
-ROI, finance, causality, productivity, customer-facing economic output, raw
-rows, identifiers, query text, prompts, transcripts, reviewer names, or
-person-level data.
+After verification, the next bounded model-family item is VBD trajectory-model
+calibration contract work. It must remain separate from persistence promotion,
+backend read projection, UI integration, real-data admission, and customer
+output.

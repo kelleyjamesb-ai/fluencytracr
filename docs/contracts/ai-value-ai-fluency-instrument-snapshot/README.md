@@ -116,6 +116,12 @@ Required behavior:
 - Missing uncertainty must not be filled by invented precision.
 - Respondent-level rows must not be exported to solve the gap.
 
+The follow-on calibration boundary is defined in
+`docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`.
+That contract keeps calibration in `CONTRACT_READY_NOT_RUN` until a separate
+exact-scope implementation proposal defines an internal aggregate calibration
+artifact and validates it without respondent-level export.
+
 ## Source Adapter Parity
 
 The current Apps Script adapter remains a source adapter only. It may aggregate

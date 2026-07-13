@@ -2,6 +2,35 @@
 
 ## Current Session
 
+- AI Fluency measurement-model calibration contract completed (2026-07-13):
+  advanced the next bounded model-family blocker after PR #414 as a docs/spec
+  contract only. Added
+  `docs/contracts/ai-value-ai-fluency-measurement-model-calibration/README.md`
+  with current state `CONTRACT_READY_NOT_RUN`, required aggregate
+  `AIFluencyInstrumentSnapshot` wave inputs, aggregate uncertainty,
+  reliability/precision, coverage, missingness, respondent-composition,
+  source-ref/hash, k-min, and CODE/BUG/ADVERSARIAL review gates. Updated the
+  instrument snapshot contract, model-family contract, README, and active
+  OpenSpec change to state that calibration remains non-runtime and
+  nonauthorizing.
+
+  This closes only OpenSpec task `5.5` as a calibration contract boundary. It
+  does not fit a Bayesian measurement model, estimate latent traits, emit
+  posterior intervals, create confidence/probability output, admit real data,
+  export respondent rows, create schemas, persistence, routes, UI, exports, or
+  connectors, or authorize customer output, ROI, finance, causality,
+  productivity, HR analytics, ranking, economic output, new canonical events,
+  new suppression reasons, tunable thresholds, or admin overrides.
+
+  Verification passed: strict OpenSpec validation for
+  `add-ai-fluency-instrument-snapshot-longitudinal-proof` and
+  `generalize-bayesian-confidence-to-model-family`, AI Fluency instrument
+  snapshot contract tests (`11 passed`), docs contract sweep, semantic drift
+  guard, V1 governance gates, and `git diff --check`. Remaining model-family
+  blockers are VBD trajectory-model calibration (`5.6`), AI Fluency snapshot
+  persistence promotion decision (`5.7`), backend read projection/UI
+  integration after separate promotion (`5.8`), unfinished DiD proof work,
+  production promotion, real-data admission, and all customer/public outputs.
 - Longitudinal state-space model proof accepted (2026-07-13): completed the
   bounded full-evidence queue item on
   `codex/longitudinal-replicated-validation-evidence` from merged runner PR
