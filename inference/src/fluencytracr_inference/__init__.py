@@ -48,6 +48,10 @@ Slice 2 Phase B2 layout (Phase A shipped the skeleton + pinned environment):
   (eligible only when every gate passes; otherwise HOLD naming every failure;
   contribution-estimate authorization additionally requires the compiled null
   false-eligibility guard to exclude zero)
+- ``ai_fluency_measurement_*`` and ``ai_fluency_ordinal_measurement`` —
+  separate synthetic-only aggregate ordinal measurement proof for the frozen
+  24-item long form. Smoke/partial evidence HOLDS; the full fixed 800-slot
+  evidence run remains pending and authorizes no real-data or customer output.
 - ``design_router`` and ``longitudinal_*`` — sibling synthetic-only Phase 2B
   prototype for ``first_longitudinal_synthetic_model_slice``. It emits a
   separate internal smoke artifact for aggregate historical longitudinal

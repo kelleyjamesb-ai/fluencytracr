@@ -1,6 +1,6 @@
 # AI Fluency Measurement-Model Calibration
 
-Contract status: `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`
+Contract status: `SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING`
 
 Owning model-family component:
 `bayesian_fluency_measurement_model`
@@ -11,31 +11,42 @@ This contract defines the calibration gate for future aggregate AI Fluency
 measurement modeling inside the Bayesian AI Value Realization And Human
 Transformation model family.
 
-It is a documentation and specification boundary only. It does not implement a
-Bayesian measurement model, fit latent dimensions, create posterior output,
-authorize confidence or probability output, create persistence, expose a route,
-render UI, run connectors, ingest respondent rows, or produce customer-facing
-economic output.
+The current implementation is an internal synthetic proof boundary only. It
+does not authorize a real-data measurement model, respondent scores, customer
+posterior output, confidence or probability output, persistence, routes, UI,
+live connector execution, or customer-facing economic output.
 
 ## Current Decision
 
 The current state is:
 
 ```text
-PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE
+SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING
 ```
 
 Meaning:
 
-- Aggregate snapshot-context prerequisites and missing calibration inputs are
-  defined.
-- Calibration has not been executed.
+- The exact 24-item `ai_fluency_long_v1` manifest, eight first-order
+  constructs, five-core second-order structure, ordered response scale, and
+  same-form wave policy are frozen.
+- A source-side Google Sheets adapter computes item-category and all 276
+  pairwise 5x5 aggregate count tables without emitting respondent join keys,
+  raw answers, profiles, item text, or behavior fields. It is locked during
+  publication, writes READY metadata last, binds canonical question/form and
+  organization-overall cohort identities, and hashes only emitted aggregates.
+- A synthetic-only aggregate ordinal-probit composite runner now computes
+  reliability, loading recovery, second-order recovery, loading invariance,
+  and threshold invariance after freeing construct-level follow-up latent
+  means. Its Laplace uncertainty uses exact nonlinear loading curvature,
+  shared-loading GLS propagation, and joint cumulative-Dirichlet threshold
+  covariance.
+- Focused smoke execution is verified, but the fixed full plan of 200 seeds in
+  each of four scenarios has not been executed or independently accepted.
 - The current dimension-level snapshots are not sufficient to calibrate a
   latent measurement model or establish comparable change across waves.
 - No model output is authorized.
 - No customer-facing output is authorized.
-- Future implementation requires a separate exact-scope proposal, artifacts,
-  validation, and independent review.
+- Parent OpenSpec task `5.5` remains incomplete.
 
 ## Snapshot Context Is Not Calibration Evidence
 
@@ -44,10 +55,12 @@ retest context to an otherwise approved longitudinal analysis. Their overall
 and dimension estimates, standard errors, reliability summaries, and coverage
 posture do not by themselves identify an AI Fluency measurement model.
 
-A future measurement-model proposal must define two immutable, hash-bound
+A measurement-model calibration requires two immutable, hash-bound
 aggregate input lanes: validated snapshot context and a separately approved
 privacy-safe aggregate measurement-evidence artifact that supports the chosen
-likelihood. The second lane does not exist today. At minimum, it must bind:
+likelihood. The synthetic proof implements the second lane's strict shape. A
+future real-data admission decision must separately approve its source use. The
+lane binds:
 
 - exact instrument, form, item-set, and scoring-derivation versions;
 - the approved item-to-dimension map;
@@ -60,9 +73,10 @@ likelihood. The second lane does not exist today. At minimum, it must bind:
 - predeclared longitudinal measurement-invariance gates before change is
   interpreted.
 
-The exact sufficient-statistics representation, privacy floors, likelihood,
-invariance tests, and compiled calibration acceptance gates require a separate
-OpenSpec proposal. This contract does not authorize creating or exporting them.
+The sufficient-statistics representation, privacy floors, likelihood,
+invariance tests, and compiled synthetic acceptance gates are defined by
+`add-ai-fluency-longitudinal-sem-calibration-proof`. This does not authorize
+real-data ingestion or execution.
 
 ## Required Input Lanes
 
@@ -103,12 +117,25 @@ This lane is necessary but not sufficient for measurement-model calibration.
 
 ### Aggregate Measurement-Evidence Lane
 
-This lane is not implemented or authorized. A future OpenSpec proposal must
-define a strict artifact carrying only the privacy-safe aggregate sufficient
-statistics required by its selected likelihood, along with the form,
-item-to-dimension, scoring, coverage, equating, invariance, source, and privacy
-bindings above. Missing, sparse, suppressed, unreviewed, incompatible, or
-unbound evidence in this lane HOLDS calibration.
+The synthetic lane is implemented as a strict two-wave package containing all
+24 item-category vectors and all 276 pairwise 5x5 tables per wave. It binds the
+form manifest, cohort, wave, window, source, fixed aggregate observed-count
+floor, generator identity, seed, scenario, and hierarchical hashes. Pair
+margins must reconcile to item counts and missingness. Missing, sparse,
+unreviewed, incompatible, off-plan, unsafe, non-synthetic, or hash-invalid
+evidence rejects or HOLDS before fitting.
+
+Pair-local margin reconciliation does not prove that arbitrary pair tables came
+from one global 24-item respondent distribution. The synthetic model path
+therefore regenerates the complete package from the bound generator, scenario,
+seed, and compiled sample size and requires exact equality before fitting.
+Future real aggregate evidence requires a separately approved trusted source
+attestation; self-declared hashes cannot provide that admission.
+
+The paste-in Google Apps Script adapter creates the same aggregate evidence
+ingredients inside the beta workbook. It is not executed by this repository,
+does not admit those counts into the model, and is not a live connector or
+real-data promotion decision.
 
 The model family may review baseline and retest snapshots only as independently
 traceable aggregate wave snapshots. Source-supplied movement deltas are not
@@ -116,7 +143,7 @@ durable authority by themselves.
 
 ## Calibration Gates
 
-A future calibration artifact must remain `HOLD` unless every gate below is
+A calibration artifact must remain `HOLD` unless every gate below is
 satisfied:
 
 | Gate | Required behavior |
@@ -128,8 +155,9 @@ satisfied:
 | `coverage_gate` | Eligible population, response count, response rate, missingness, and composition posture are present for every wave. |
 | `reliability_gate` | Reliability or sufficient aggregate precision evidence is present at the overall and dimension level. |
 | `form_and_scoring_gate` | Exact form, item-set, item-to-dimension map, and scoring-derivation versions are immutable and compatible across waves or have an approved equating record. |
-| `aggregate_sufficient_statistics_gate` | A later approved privacy-safe aggregate statistics contract supplies the information required by the selected measurement likelihood; dimension summaries alone do not pass. |
-| `measurement_invariance_gate` | Predeclared cross-wave invariance checks are present and pass before latent change is interpreted. |
+| `aggregate_sufficient_statistics_gate` | The complete 24-item and 276-pair aggregate grid reconciles, passes the fixed observed-count floor, and is form/source/hash bound; dimension summaries alone do not pass. |
+| `measurement_invariance_gate` | Predeclared configural, loading, and threshold checks pass after construct-level follow-up latent means are free; latent movement cannot be mislabeled as threshold drift. |
+| `replicated_study_gate` | All 200 compiled seeds in each invariant, invariant-latent-shift, loading-drift, and threshold-drift scenario are freshly recomputed; smoke or partial evidence HOLDS. |
 | `construct_gate` | The five dimensions remain separate; no arbitrary composite or weighted score is introduced. |
 | `privacy_gate` | No respondent rows, raw answers, free text, direct identifiers, HR/personnel fields, manager fields, or productivity fields are present. |
 | `output_gate` | Confidence, probability, ROI, finance, causality, productivity, route, UI, export, persistence, connector, and customer-output authorizations remain false. |
@@ -177,9 +205,9 @@ The calibration state must remain `HOLD` when any of the following are true:
 
 This contract does not authorize:
 
-- Bayesian measurement-model runtime code;
+- production or real-data Bayesian measurement-model runtime code;
 - latent trait estimation;
-- posterior intervals;
+- respondent or customer posterior intervals;
 - probability or confidence output;
 - customer-facing readouts;
 - ROI, finance, causality, productivity, HR analytics, ranking, or economic
@@ -190,7 +218,7 @@ This contract does not authorize:
 - frontend UI;
 - Prisma schemas or migrations;
 - persistence writes;
-- exports;
+- public or downstream exports beyond the source-side aggregate evidence tabs;
 - a dedicated `ai_fluency_instrument_snapshots` table;
 - use of raw respondent rows to fill aggregate uncertainty gaps;
 - treating dimension means, standard errors, or reliability summaries as
@@ -198,11 +226,15 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-The only allowed next step is a separate exact-scope proposal for the missing
-privacy-safe aggregate measurement evidence and synthetic calibration design.
-It must define the sufficient-statistics shape, supported instrument forms,
-likelihood, form-equating and longitudinal-invariance gates, fixed validation
-rules, synthetic fixtures, artifact shape, independent review, and fail-closed
-HOLD behavior before any calibration run exists. OpenSpec task `5.5` remains
-incomplete until that calibration is implemented, executed, and independently
-accepted.
+The next bounded step is to merge the runner, execute the fixed 800-slot full
+synthetic study (200 seeds in each of four scenarios), commit only the
+summary-only hash-bound artifact, and obtain independent CODE, BUG, and
+ADVERSARIAL acceptance of those exact bytes. The full run freshly recomputes
+every slot during artifact emission, so opaque result hashes cannot certify
+execution.
+
+OpenSpec task `5.5` remains incomplete until that evidence run is complete and
+accepted. Real aggregate calibration, source admission, beta sample-size
+adequacy, the 14-item equating study, structural Attitude/Intent/Impact paths,
+persistence, runtime monitoring, customer language, and UI wiring remain
+separate later decisions.

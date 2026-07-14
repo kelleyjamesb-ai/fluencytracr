@@ -180,6 +180,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-13: conditionally selected only the accepted HISTORICAL_STATE_SPACE artifact for prerequisite docs/OpenSpec hardening. Execution remains HOLD pending calibrations, real-data/source admission, monitoring, readout governance, frozen manifest, and a separate human execution decision. Full inference 489/489; bridges 76/76; CODE/BUG/ADVERSARIAL GO. Tasks 5.5-5.8 remain open."
+    },
+    {
+      "id": "ai-fluency-longitudinal-sem-calibration-proof",
+      "title": "AI Fluency longitudinal ordinal SEM calibration proof",
+      "bound": "Synthetic-only inference/, Google Apps Script aggregate-evidence adapter, focused tests, OpenSpec, and docs/status: freeze the 24-item long-form manifest; define privacy-safe item-category and pairwise aggregate evidence; implement fail-closed ordinal measurement and longitudinal invariance calibration proof; keep the 14-item form pulse-only and behavior questions separate; no real/live/customer data, respondent rows, UI, routes, persistence, customer output, confidence/probability, ROI, causality, productivity, new events/reasons/thresholds, or task 5.5 completion without full executed evidence and independent acceptance",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-14: frozen the 24-item long form; added aggregate-only item/pair evidence, hardened Sheets adapter, ordinal composite runner, fixed 4x200 plan, and smoke HOLD. Verified 539 inference, 47 Node boundary, 86 bridge, 276 harness (3 skipped), builds/OpenSpec/governance; CODE/BUG/ADVERSARIAL GO. Full 800-slot run and parent 5.5 remain open."
     }
   ]
 }
