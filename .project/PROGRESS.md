@@ -2,6 +2,19 @@
 
 ## Current Session
 
+- Inference Harness duplicate-run cleanup completed (2026-07-14) on
+  `codex/inference-ci-deduplication` from `origin/main` at `24851995`.
+  Restricted workflow `push` execution to `main` while retaining the existing
+  path-filtered `pull_request` trigger. Added event-qualified concurrency keyed
+  by PR number for pull requests and unique run ID for main pushes; only
+  superseded runs of the same PR cancel, so post-merge main validation is never
+  discarded. All path filters, jobs, commands, timeouts, statistical gates,
+  and fail-closed behavior are unchanged. Baseline PR #422 evidence confirmed
+  duplicate `push` and `pull_request` runs for the same SHA. YAML semantic
+  assertions, queue validation, `git diff --check`, and independent CODE, BUG,
+  and ADVERSARIAL review passed. Next: push the branch, open the isolated PR,
+  and confirm GitHub creates one PR-triggered Inference Harness run and no
+  feature-push duplicate.
 - GitHub Actions Node 24 compatibility cleanup completed (2026-07-14) on
   `codex/ci-node24-action-upgrades` from merged `origin/main` at `ecdfc5cc`.
   Replaced all ten warning-producing `actions/setup-python@v5` and
