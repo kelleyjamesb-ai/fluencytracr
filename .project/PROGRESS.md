@@ -26,12 +26,14 @@
   (`15`), V1 decision/evaluation (`26`), focused trace/ingest and assurance
   coverage, backend/shared builds, both affected strict OpenSpec validations,
   docs contract sweep, semantic drift guard, V1 governance gates, LMSYS
-  self-test, and `git diff --check`. Full backend completed with `921 passed`
-  and the sole `observability_api` ghost-use residual assertion failing exactly
-  as reproduced on clean `origin/main`; it is not caused by this branch. Final
-  independent CODE, BUG, and ADVERSARIAL reviews all returned GO. Corrective
-  OpenSpec tasks and the human-authorized queue item are complete. Pre-existing
-  untracked files remain untouched.
+  self-test, and `git diff --check`. A date-rot failure in the ghost-use API
+  fixture was then repaired by freezing only `Date`, leaving asynchronous
+  timers real, and placing fixed observations safely inside the current and
+  previous windows. The focused API suite passed in UTC and Pacific/Kiritimati
+  (`7/7` each), and the full backend now passes `927/927`. Final independent
+  CODE, BUG, and ADVERSARIAL reviews returned GO. Corrective OpenSpec tasks and
+  the human-authorized queue item are complete. Pre-existing untracked files
+  remain untouched.
 - Hypothesis and company-defined metric longitudinal admission boundary
   completed (2026-07-13): added the docs/OpenSpec contract connecting a
   flexible enterprise metric catalog to the single proved longitudinal model
