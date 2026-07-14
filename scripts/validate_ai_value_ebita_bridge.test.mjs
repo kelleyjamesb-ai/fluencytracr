@@ -365,6 +365,32 @@ test("held source causality lane cannot authorize EBITA causality", () => {
   );
 });
 
+for (const mode of ["DIRECTIONAL_EBITA_BRIDGE", "MODELED_EBITA_SCENARIO"]) {
+  test(`held ROI lane invalidates a prebuilt ${mode}`, () => {
+    const bridge = structuredClone(baseEbitaBridge);
+    bridge.financial_translation_policy.mode = mode;
+    if (mode === "MODELED_EBITA_SCENARIO") {
+      bridge.financial_translation_policy.customer_owned_financials_required = true;
+      bridge.evidence_quality.financial_evidence = "SUPPORTED";
+      bridge.ebita_levers[0].claim_level = "MODELED_EBITA_SCENARIO";
+      bridge.ebita_levers[0].financial_assumption_ids = ["customer_assumption_v1"];
+    }
+    const roiScenario = structuredClone(sourceRoiScenario);
+    roiScenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
+
+    const result = validateEbitaBridge(bridge, { roiScenario });
+
+    assert.equal(result.valid, false);
+    assert.equal(result.feeds.executive_readout, false);
+    assert.equal(
+      result.gaps.includes(
+        "source roiScenario requests a held product lane; financial_translation_policy.mode must be NO_FINANCIAL_TRANSLATION"
+      ),
+      true
+    );
+  });
+}
+
 test("missing blocked claims in safe language is invalid", () => {
   const bridge = structuredClone(baseEbitaBridge);
   bridge.safe_language.blocked_claims = ["usage_proves_ebita"];

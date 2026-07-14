@@ -272,7 +272,10 @@ export abstract class ConnectorBase {
           PERSON_IDENTIFIER_FIELD_SET.has(normalizedKey) ||
           tokens.some((token) => PERSON_IDENTIFIER_TOKENS.has(token));
         const isDeclaredInputPath = !key.includes(".") && declaredInputPaths.has(fullPath);
-        const containsUndeclaredId = tokens.includes("id") && !isDeclaredInputPath;
+        const containsUndeclaredId =
+          this.mapping.strict_input_paths === true &&
+          tokens.includes("id") &&
+          !isDeclaredInputPath;
         const containsUndeclaredField =
           this.mapping.strict_input_paths === true && !isDeclaredInputPath;
         const isPlainObject =

@@ -30,10 +30,14 @@
   fixture was then repaired by freezing only `Date`, leaving asynchronous
   timers real, and placing fixed observations safely inside the current and
   previous windows. The focused API suite passed in UTC and Pacific/Kiritimati
-  (`7/7` each), and the full backend now passes `927/927`. Final independent
-  CODE, BUG, and ADVERSARIAL reviews returned GO. Corrective OpenSpec tasks and
-  the human-authorized queue item are complete. Pre-existing untracked files
-  remain untouched.
+  (`7/7` each). GitHub review then closed two final gaps: held ROI lanes now
+  invalidate every prebuilt non-`NO_FINANCIAL_TRANSLATION` EBITA bridge, while
+  non-strict open connector containers may carry non-person workflow IDs and
+  still reject nested person identifiers. Focused connectors pass `80/80`,
+  ROI/EBITA/executive tests pass `93/93`, and the full backend passes `928/928`.
+  Final independent CODE, BUG, and ADVERSARIAL reviews returned GO. Corrective
+  OpenSpec tasks and the human-authorized queue item are complete. Pre-existing
+  untracked files remain untouched.
 - Hypothesis and company-defined metric longitudinal admission boundary
   completed (2026-07-13): added the docs/OpenSpec contract connecting a
   flexible enterprise metric catalog to the single proved longitudinal model

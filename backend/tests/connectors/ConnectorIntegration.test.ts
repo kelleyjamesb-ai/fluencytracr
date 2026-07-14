@@ -416,7 +416,7 @@ describe("Connector Integration Tests", () => {
         {
           event_type: "workflow.parameters.updated",
           timestamp: "2026-01-12T10:00:00Z",
-          parameter_changes: { param1: "value1" },
+          parameter_changes: { param1: "value1", workflow_id: "workflow-123" },
           updated_by: "user"
         }
       ];
@@ -426,6 +426,23 @@ describe("Connector Integration Tests", () => {
       expect(result.success).toBe(true);
       expect(result.signals).toHaveLength(1);
       expect(result.signals[0].signal_name).toBe("refine_request");
+    });
+
+    it("should reject person identifiers inside open parameter changes", () => {
+      const result = connector.transform([
+        {
+          event_type: "workflow.parameters.updated",
+          timestamp: "2026-01-12T10:00:00Z",
+          parameter_changes: { user_id: "person-123" },
+          updated_by: "user"
+        }
+      ]);
+
+      expect(result.success).toBe(false);
+      expect(result.signals).toHaveLength(0);
+      expect(result.errors).toContainEqual(
+        expect.stringContaining("parameter_changes.user_id: Privacy: Never collect direct person identifiers")
+      );
     });
 
     it("should transform workflow.result.approved to accept_output", () => {

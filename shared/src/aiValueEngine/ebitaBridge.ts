@@ -364,6 +364,14 @@ function collectPolicyGaps(bridge: any, context: any): string[] {
   if (policy.mode && !ALLOWED_TRANSLATION_MODES.has(policy.mode)) {
     gaps.push(`financial_translation_policy.mode is invalid: ${policy.mode}`);
   }
+  if (
+    roiScenarioRequestsHeldProductLane(context?.roiScenario) &&
+    mode !== "NO_FINANCIAL_TRANSLATION"
+  ) {
+    gaps.push(
+      "source roiScenario requests a held product lane; financial_translation_policy.mode must be NO_FINANCIAL_TRANSLATION"
+    );
+  }
 
   if (mode === "NO_FINANCIAL_TRANSLATION") {
     if (policy.realized_ebita_claim_allowed !== false) {

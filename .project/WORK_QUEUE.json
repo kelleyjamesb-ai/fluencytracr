@@ -171,7 +171,7 @@
       "bound": "Enforce the compiled 60-day Causal Delta fail-closed gate; remove and reject direct chat connector user_id; correct trace reconstruction documentation to match sanitized runtime and compiled thresholds; clarify canonical external suppression reasons versus non-output internal diagnostics; record internal dollarization, causal-language, and aggregate-productivity ROI lanes as HOLD pending an explicit product-governance decision; no UI, live data, new events, new suppression reasons, tunable thresholds, customer-facing economic output, or policy widening",
       "status": "done",
       "risk": "high",
-      "last_note": "Done 2026-07-13: 60-day Causal Delta fail-closed gating, strict identifier-free direct-chat inputs, sanitized trace contract alignment, suppression vocabulary separation, ROI lane HOLD enforcement, and deterministic ghost-use API fixtures verified with CODE/BUG/ADVERSARIAL GO; full backend 927/927."
+      "last_note": "Done 2026-07-13: 60-day Causal Delta gating, strict direct-chat inputs, trace/suppression alignment, ROI HOLD enforcement through prebuilt EBITA validation, non-person open-container IDs, and deterministic ghost-use fixtures verified with CODE/BUG/ADVERSARIAL GO; backend 928/928."
     }
   ]
 }
