@@ -156,7 +156,7 @@ outputs.
 | Module or component | Contract role | Implemented today | Current contract eligibility |
 | --- | --- | --- | --- |
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
-| `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as a smoke prototype followed by state-space/NUTS concordance and accepted 1,200-slot replicated synthetic validation. | Completed internal synthetic proof only. It does not authorize real data, runtime routing, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, exports, or promotion. |
+| `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as a smoke prototype followed by state-space/NUTS concordance and accepted 1,200-slot replicated synthetic validation. | Completed internal synthetic proof. A separate decision conditionally selects only its `HISTORICAL_STATE_SPACE` route for docs/OpenSpec prerequisite hardening while execution remains HOLD. It does not authorize real data, runtime routing or execution promotion, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, or exports. |
 | `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Prerequisites boundary only. | State is `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`; current dimension summaries do not identify a latent measurement model or cross-wave change. No runtime model, posterior output, customer output, persistence, UI, routes, exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
 | `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
@@ -169,6 +169,39 @@ The current DiD module remains valid only for two-group pre/post
 comparison-supported designs. It does not support staggered rollout and does
 not authorize real/customer/live data or customer-facing confidence,
 probability, ROI, causality, productivity, or economic output.
+
+## Bounded Internal-Dogfood Decision
+
+The separate
+[Longitudinal Internal-Dogfood Promotion Decision](../ai-value-longitudinal-internal-dogfood-promotion-decision/README.md)
+records both:
+
+```text
+CONDITIONAL_PROMOTION_TO_BOUNDED_INTERNAL_DOGFOOD
+HOLD_PENDING_LONGITUDINAL_DOGFOOD_PREREQUISITES
+```
+
+The decision selects only the `HISTORICAL_STATE_SPACE` route using the accepted
+artifact `model_slice=longitudinal_state_space_replicated_validation` with
+`gaussian_longitudinal_zero_sum_ar1_state_space` and
+`continuous_normal_identity`. That artifact slice is the accepted validation
+implementation under the conceptual component
+`first_longitudinal_synthetic_model_slice`; the conceptual name is not an
+alternate artifact `model_slice` value. The decision does not select
+`REPEATED_PRE_POST`, DiD, controlled-test, staggered-rollout,
+alternate-likelihood, or economic routes.
+
+No execution is authorized. AI Fluency measurement-model calibration, VBD
+trajectory-model calibration, real-data admission/source binding, runtime
+monitoring/fail-closed behavior, readout language/HOLD presentation, and a
+frozen non-activating pilot manifest are conjunctive prerequisites. A separate
+explicit human real-data execution decision must then bind that exact manifest
+and every passing prerequisite before access, preparation, fitting, or artifact
+emission. The manifest cannot activate itself.
+OpenSpec tasks `5.5` through `5.8` remain incomplete. Customer output,
+confidence/probability language, AI-impact attribution, ROI, causality,
+productivity, finance, routes, UI, persistence, connectors, exports, schemas,
+new events/reasons/thresholds, and DiD work remain blocked.
 
 ## Evidence-Design Router Vocabulary
 
@@ -183,7 +216,7 @@ synthetic proof for historical/repeated longitudinal fixtures only.
 | `TWO_GROUP_PRE_POST_COMPARISON` | Current specialized contract eligibility. | `comparison_supported_bayesian_did_module`. | Credible comparison cohort; exact baseline/post windows; same selected metric and direction; declared lag; aggregate floors; no suppressed/stale/missing/imputed windows; pre-trend check; sampler diagnostics; posterior predictive checks; prior sensitivity; calibration/null/floor proof; fixed-horizon peeking control; TypeScript artifact validation. | Internal-only comparison-supported contribution-estimate eligibility at most; no customer-facing confidence/probability and no causal, ROI, productivity, or economic claim. | HOLD or evidence-tier-only if any comparison, window, floor, diagnostic, calibration, peeking, source-binding, or artifact-validation gate fails. |
 | `MATCHED_COMPARISON` | Conditional current contract eligibility. | `comparison_supported_bayesian_did_module` only when matching still yields a true two-group pre/post design at the aggregate Measurement Cell grain. | Reviewer-owned matching/design adequacy memo; matched cohorts remain aggregate-only and non-identifying; same metric/window/direction/lag; balance and pre-period plausibility reviewed; every DiD gate above passes. | Internal-only matched-comparison-ready context or DiD contribution-estimate eligibility when all gates pass; no causal language from matching alone. | HOLD or remain future-model-only if matching does not reduce to a valid two-group pre/post DiD design. |
 | `STAGGERED_ROLLOUT` | Unsupported by the current DiD module. | None. | Future event-time, calendar-time, adoption-time, and not-yet-treated comparison logic must be implemented, calibrated, and validated in a separate approved proposal before any contract eligibility exists. | HOLD only under the current implementation. | Must HOLD as unsupported; must not be coerced into current two-group DiD or treated as current event-study support. |
-| `HISTORICAL_STATE_SPACE` | Fixed synthetic specification has completed smoke, concordance, and replicated validation; real-data/runtime contract eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for internal synthetic validation artifacts only. | Aggregate synthetic inputs; approved hypothesis metadata; complete ordered windows; aggregate AI Fluency snapshot context; separate lagged Velocity/Breadth exposures; Depth as context only; approved synthetic controls; source hashes; state-space/NUTS diagnostics; TypeScript validation; accepted replicated calibration/null/floor/lag/shock evidence. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD or reject for real/customer/live data, incomplete windows, unsupported likelihoods, missing uncertainty, unsafe controls, respondent leakage, failed diagnostics, or any output/promotion side door. |
+| `HISTORICAL_STATE_SPACE` | Fixed synthetic specification has completed smoke, concordance, and replicated validation. A separate decision conditionally selects prerequisite docs/OpenSpec hardening only; real-data/runtime contract eligibility remains future work and execution remains HOLD. | `first_longitudinal_synthetic_model_slice` for internal synthetic validation artifacts only; accepted artifact identity uses `model_slice=longitudinal_state_space_replicated_validation`. | Aggregate synthetic inputs; approved hypothesis metadata; complete ordered windows; aggregate AI Fluency snapshot context; separate lagged Velocity/Breadth exposures; Depth as context only; approved synthetic controls; source hashes; state-space/NUTS diagnostics; TypeScript validation; accepted replicated calibration/null/floor/lag/shock evidence. | Internal synthetic noncausal contribution-alignment review only. Conditional promotion permits prerequisite contract hardening, not execution or output; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, or exports. | HOLD or reject for real/customer/live data, incomplete windows, unsupported likelihoods, missing uncertainty, unsafe controls, respondent leakage, failed diagnostics, or any execution/output-promotion side door. |
 | `REPEATED_PRE_POST` | Fixed synthetic specification has completed validation only under its compiled historical-window rules; real-data/runtime repeated-window eligibility remains future work. | `first_longitudinal_synthetic_model_slice` for internal synthetic validation artifacts only. | Same accepted synthetic longitudinal gates as `HISTORICAL_STATE_SPACE`; no sequential or always-valid repeated-look production procedure is implemented. | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. | HOLD if compiled historical-window requirements fail, real data are supplied, or repeated looks are used to bypass peeking controls. |
 | `BASELINE_ONLY` | Planning context only. | None. | Aggregate source review, suppression checks, and metric definition review may support planning context only. | Context-only; no contribution confidence, no comparison-supported estimate, no probability/confidence output. | HOLD for contribution-confidence or causal/economic interpretation. |
 
@@ -869,7 +902,7 @@ Claim caps remain internal-only in this docs-only Phase 1/2A contract:
 | Baseline-only context | Planning context only; no contribution confidence. |
 | Directional or mechanism evidence without valid comparison | Internal directional context only. |
 | Valid two-group pre/post DiD contract eligibility with all gates passing | Internal-only comparison-supported contribution-estimate eligibility; no customer-facing confidence/probability, ROI, causality, productivity, or economic output. |
-| Accepted synthetic historical/repeated longitudinal proof with compiled gates passing | Internal synthetic noncausal contribution-alignment review only; no customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, exports, or promotion. |
+| Accepted synthetic historical/repeated longitudinal proof with compiled gates passing | Internal synthetic noncausal contribution-alignment review only by default. The separate dogfood decision permits docs/OpenSpec prerequisite hardening for `HISTORICAL_STATE_SPACE` only; no real-data/runtime execution, customer-facing confidence/probability, ROI, causality, productivity, finance, persistence, routes, UI, or exports. |
 | Real-data longitudinal, staggered, controlled, or economic contract route | HOLD until a later approved proposal implements, validates, and promotes that exact route. |
 
 ## Claim Boundary
