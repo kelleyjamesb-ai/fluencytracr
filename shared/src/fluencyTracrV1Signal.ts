@@ -116,6 +116,8 @@ export type FluencyTracrV1ReliabilityComponents = z.infer<
   typeof FluencyTracrV1ReliabilityComponentsSchema
 >;
 
+// Internal evaluator diagnostics only. Product verdicts use the canonical five
+// SuppressionReason values and must never expose these SUPP_* codes.
 export const FluencyTracrV1SuppressReasonCodeSchema = z.enum([
   "SUPP_INTERNAL_INVARIANT_FAIL",
   "SUPP_AMBIGUITY_PRESENT",

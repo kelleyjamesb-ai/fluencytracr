@@ -3,8 +3,8 @@
  *
  * This stage sits above value scenarios and evidence readiness. It creates a
  * stricter value-modeling artifact for planning conversations. Person-level
- * and raw-content claims remain hard-blocked; financial and aggregate workforce
- * outputs require explicit gates before they can be surfaced.
+ * and raw-content claims remain hard-blocked. Financial gates validate local
+ * hypothetical structure, while held product lanes cannot feed execution.
  */
 
 const RESULT_SCHEMA_VERSION = "FT_AI_VALUE_ROI_SCENARIO_VALIDATION_2026_06";
@@ -174,6 +174,12 @@ const FINANCIAL_GATE_REQUIREMENTS: Record<string, string[]> = {
     "outcome_metric_accepted"
   ]
 };
+
+const HELD_PRODUCT_AUTHORIZATION_LANES = [
+  "dollarized_output",
+  "causality_language",
+  "aggregate_workflow_productivity"
+];
 
 const FINANCIAL_OUTPUT_TO_LEGACY_BOUNDARY: Record<string, string> = {
   realized_roi_calculation: "realized_roi_calculation",
@@ -428,6 +434,16 @@ function financialOutputRequested(scenario: any, output: string): boolean {
   );
 }
 
+export function roiScenarioRequestsHeldProductLane(scenario: any): boolean {
+  return HELD_PRODUCT_AUTHORIZATION_LANES.some((lane) => {
+    const declaredValue = scenario?.financial_claim_gate?.allowed_outputs?.[lane];
+    return (
+      (declaredValue !== undefined && declaredValue !== false) ||
+      financialOutputRequested(scenario, lane)
+    );
+  });
+}
+
 function workforceOutputRequested(scenario: any, output: string): boolean {
   return scenario?.workforce_analytics_gate?.allowed_outputs?.[output] === true;
 }
@@ -678,6 +694,12 @@ function collectFinancialClaimGateGaps(scenario: any): string[] {
     gaps.push(`financial_claim_gate.mode is invalid: ${gate.mode}`);
   }
 
+  for (const output of Object.keys(FINANCIAL_GATE_REQUIREMENTS)) {
+    if (gate.allowed_outputs?.[output] !== true && gate.allowed_outputs?.[output] !== false) {
+      gaps.push(`financial_claim_gate.allowed_outputs.${output} must be boolean`);
+    }
+  }
+
   for (const output of requestedOutputs) {
     requireTrue(
       gate.allowed_outputs?.[output],
@@ -704,6 +726,11 @@ function collectFinancialClaimGateGaps(scenario: any): string[] {
         gate.data_sufficiency?.[requirement],
         `financial_claim_gate.allowed_outputs.${output} requires data_sufficiency.${requirement}`,
         gaps
+      );
+    }
+    if (HELD_PRODUCT_AUTHORIZATION_LANES.includes(output)) {
+      gaps.push(
+        `financial_claim_gate.allowed_outputs.${output} is held pending an explicit product-governance decision`
       );
     }
   }
@@ -785,6 +812,8 @@ export function validateRoiScenario(scenario: any): RoiScenarioValidationResult 
     ...collectGovernanceGaps(scenario)
   ];
   const readinessDecision = scenario?.evidence_status?.readiness_decision ?? null;
+  const heldProductLaneRequested = roiScenarioRequestsHeldProductLane(scenario);
+  const executionFeedAllowed = gaps.length === 0 && !heldProductLaneRequested;
   return {
     schema_version: RESULT_SCHEMA_VERSION,
     roi_scenario_id: scenario?.roi_scenario_id ?? null,
@@ -798,9 +827,9 @@ export function validateRoiScenario(scenario: any): RoiScenarioValidationResult 
     valid: gaps.length === 0,
     gaps,
     feeds: {
-      value_modeling: gaps.length === 0,
+      value_modeling: executionFeedAllowed,
       executive_readout:
-        gaps.length === 0 &&
+        executionFeedAllowed &&
         !["STOP_FOR_GOVERNANCE_REVIEW", "HOLD_FOR_SOURCE_COVERAGE"].includes(
           String(readinessDecision ?? "")
         ),

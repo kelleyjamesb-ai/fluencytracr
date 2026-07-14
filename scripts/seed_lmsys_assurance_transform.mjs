@@ -308,6 +308,7 @@ function buildCausalDeltaScenario({
   scenarioId,
   runLabel,
   eventAtMs,
+  observedThroughMs,
   preFactory,
   postFactory,
   preCount,
@@ -354,8 +355,9 @@ function buildCausalDeltaScenario({
     causal_delta_manifest: {
       endpoint: "/api/v1/causal-delta",
       event_at: iso(eventAtMs, 0),
-      pre_window_days: 30,
-      post_window_days: 30,
+      observed_through: iso(observedThroughMs, 0),
+      pre_window_days: 60,
+      post_window_days: 60,
       methodology: "pre/post aggregate pattern shift; correlation only, not causation",
       no_statistical_claims: true
     },
@@ -585,7 +587,7 @@ export function buildAssuranceCases(options = {}) {
   const workflowPrefix = `lmsys-assurance-${runLabel}`;
   const caseCount = Math.max(minCohortSize, 5);
   const frictionCaseCount = Math.max(caseCount, 50);
-  const causalDeltaEventAtMs = baseMs - 45 * 24 * 60 * 60 * 1000;
+  const causalDeltaEventAtMs = baseMs - 75 * 24 * 60 * 60 * 1000;
   const objectiveCaseCount = Math.max(30, caseCount);
 
   const subThresholdEvents = buildExecutions({
@@ -848,6 +850,7 @@ export function buildAssuranceCases(options = {}) {
       scenarioId: "causal_delta_improved",
       runLabel,
       eventAtMs: causalDeltaEventAtMs,
+      observedThroughMs: baseMs,
       preFactory: blindExecution,
       postFactory: calibratedExecution,
       preCount: caseCount,
@@ -860,6 +863,7 @@ export function buildAssuranceCases(options = {}) {
       scenarioId: "causal_delta_held",
       runLabel,
       eventAtMs: causalDeltaEventAtMs,
+      observedThroughMs: baseMs,
       preFactory: calibratedExecution,
       postFactory: calibratedExecution,
       preCount: caseCount,
@@ -872,6 +876,7 @@ export function buildAssuranceCases(options = {}) {
       scenarioId: "causal_delta_regressed",
       runLabel,
       eventAtMs: causalDeltaEventAtMs,
+      observedThroughMs: baseMs,
       preFactory: calibratedExecution,
       postFactory: frictionExecution,
       preCount: caseCount,
@@ -884,6 +889,7 @@ export function buildAssuranceCases(options = {}) {
       scenarioId: "causal_delta_indeterminate",
       runLabel,
       eventAtMs: causalDeltaEventAtMs,
+      observedThroughMs: baseMs,
       preFactory: calibratedExecution,
       postFactory: calibratedExecution,
       preCount: Math.max(1, minCohortSize - 1),

@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "FluencyTracr V1 Evaluation Decision (Internal Only)",
+  "title": "FluencyTracr V1 SURFACE Export Projection (No Runtime Binding)",
+  "description": "Allowlist for a projected SURFACE export only. Raw internal runtime decisions are not instances of this schema, and no runtime projector is currently bound to it.",
   "type": "object",
   "additionalProperties": false,
   "properties": {

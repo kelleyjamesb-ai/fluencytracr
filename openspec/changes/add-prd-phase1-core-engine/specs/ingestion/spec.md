@@ -24,9 +24,48 @@ The server SHALL assign a deterministic `execution_id` for every stored fluency 
 
 ### Requirement: Trace reconstruction read API
 
-The server SHALL expose `GET /api/traces/reconstructed` for roles `ADMIN` and `ENABLEMENT_LEAD`, requiring at least one of `workflow_id` or `execution_id`, returning ordered event ids and deterministic retry/step groupings for matching stored events.
+The server SHALL expose `GET /api/traces/reconstructed` for roles `ADMIN` and
+`ENABLEMENT_LEAD`, requiring at least one of `workflow_id` or `execution_id`.
+The response SHALL return sanitized deterministic retry indexes and step/tool
+group identifiers for matching stored events. It SHALL NOT return internal
+`execution_id` values or ordered event identifiers.
 
 #### Scenario: Missing query parameters rejected
 
 - **WHEN** the client omits both `workflow_id` and `execution_id`
 - **THEN** the server responds with 400
+
+#### Scenario: Matching traces are sanitized
+
+- **WHEN** an authorized caller requests matching reconstructed traces
+- **THEN** the response includes sanitized retry indexes and step/tool group identifiers
+- **AND** internal `execution_id` and ordered event identifiers are omitted
+
+---
+
+### Requirement: Direct connector identifier rejection
+
+Declarative connector mappings SHALL reject direct user identifiers at any
+nesting depth and SHALL return no partial signals from a batch containing a
+privacy violation. The direct chat connector SHALL accept only `event_type`,
+`timestamp`, and input paths explicitly declared by the active compiled
+mapping; undeclared fields are privacy-invalid. Declared correlation values
+MUST use the mapping's namespaced opaque UUID format, and timestamps MUST be
+offset datetimes. Chat session mapping MUST NOT require `user_id`.
+
+#### Scenario: Chat event contains a direct user identifier
+
+- **WHEN** a direct chat connector batch contains `user_id` or a casing/nesting alias
+- **THEN** the connector rejects the batch
+- **AND** no signals from that batch are returned
+
+#### Scenario: Chat event contains an undeclared field
+
+- **WHEN** a direct chat connector event contains a path not declared by its active mapping
+- **THEN** the connector rejects the batch fail closed
+- **AND** no signals from that batch are returned
+
+#### Scenario: Chat event omits a direct user identifier
+
+- **WHEN** a valid `chat.session.started` event contains its governed session correlation key and no direct identifier
+- **THEN** the event may map without requiring `user_id`

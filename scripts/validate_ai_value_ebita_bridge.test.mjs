@@ -49,11 +49,11 @@ const sourceRoiScenario = {
       experimental_or_quasi_experimental_design: false
     },
     allowed_outputs: {
-      dollarized_output: true,
+      dollarized_output: false,
       realized_roi_calculation: false,
       customer_facing_economic_output: false,
       causality_language: false,
-      aggregate_workflow_productivity: true
+      aggregate_workflow_productivity: false
     }
   }
 };
@@ -349,7 +349,7 @@ test("causality allowed without source causal gate is invalid", () => {
   );
 });
 
-test("causality allowed with source causal gate is valid", () => {
+test("held source causality lane cannot authorize EBITA causality", () => {
   const bridge = structuredClone(baseEbitaBridge);
   bridge.financial_translation_policy.causality_claim_allowed = true;
   const causalRoiScenario = structuredClone(sourceRoiScenario);
@@ -358,7 +358,11 @@ test("causality allowed with source causal gate is valid", () => {
 
   const result = validateEbitaBridge(bridge, { roiScenario: causalRoiScenario });
 
-  assert.equal(result.valid, true);
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("source roiScenario causality gate must be approved when causality_claim_allowed is true"),
+    true
+  );
 });
 
 test("missing blocked claims in safe language is invalid", () => {
@@ -415,4 +419,27 @@ test("buildEbitaBridgeFromValueObjects creates a caveated directional EBITA brid
   assert.equal(bridge.workflow.value_routes.includes("CAPACITY_CREATION"), true);
   assert.equal(bridge.ebita_levers.some((lever) => lever.ebita_driver === "CAPACITY_CREATION"), true);
   assert.equal(bridge.safe_language.blocked_claims.includes("usage_proves_ebita"), true);
+});
+
+test("held ROI lane reduces the generated EBITA bridge to no financial translation", () => {
+  const blueprint = readExample("customer-support-blueprint.json");
+  const metricsLibrary = readExample("customer-support-metrics-library.json");
+  const valueScenario = readExample("customer-support-value-scenario.json");
+  const readiness = readExample("customer-support-evidence-readiness.json");
+  const claimBoundary = readExample("customer-support-claim-boundary.json");
+  const roiScenario = structuredClone(sourceRoiScenario);
+  roiScenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
+
+  const bridge = buildEbitaBridgeFromValueObjects({
+    blueprint,
+    metricsLibrary,
+    valueScenario,
+    readiness,
+    claimBoundary,
+    roiScenario
+  });
+
+  assert.equal(bridge.financial_translation_policy.mode, "NO_FINANCIAL_TRANSLATION");
+  assert.deepEqual(bridge.ebita_levers, []);
+  assert.equal(validateEbitaBridge(bridge, { roiScenario }).valid, true);
 });

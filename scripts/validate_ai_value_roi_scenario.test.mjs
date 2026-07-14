@@ -44,6 +44,79 @@ const financialClaimGate = {
   }
 };
 
+test("records ROI scenario product lanes as held independently of structural validation", () => {
+  const decision = readFileSync(
+    "docs/contracts/ai-value-intelligence/roi-scenario-product-governance-decision.md",
+    "utf8"
+  );
+
+  assert.match(decision, /Decision: \*\*HOLD pending an explicit, exact-scope product-governance decision\*\*/);
+  assert.match(decision, /`dollarized_output`/);
+  assert.match(decision, /`causality_language`/);
+  assert.match(decision, /`aggregate_workflow_productivity`/);
+  assert.match(decision, /The validator rejects\s+their activation/);
+  assert.match(
+    decision,
+    /must\s+remain `false` in product, production, customer, and internal dogfood execution/
+  );
+  assert.match(decision, /validation is invalid and all value-modeling and\s+executive-readout execution feeds remain `false`/);
+});
+
+for (const heldLane of [
+  "dollarized_output",
+  "causality_language",
+  "aggregate_workflow_productivity"
+]) {
+  test(`rejects ${heldLane} until an explicit product-governance decision`, () => {
+    const scenario = structuredClone(baseRoiScenario);
+    scenario.financial_claim_gate.mode = "INTERNAL_MODELING";
+    scenario.financial_claim_gate.allowed_outputs[heldLane] = true;
+    Object.assign(scenario.financial_claim_gate.data_sufficiency, {
+      aggregate_only: true,
+      baseline_present: true,
+      comparison_present: true,
+      outcome_metric_accepted: true,
+      financial_assumptions_present: true,
+      experimental_or_quasi_experimental_design: true
+    });
+
+    const result = validateAiValueRoiScenario(scenario);
+
+    assert.equal(result.valid, false);
+    assert.equal(
+      result.gaps.includes(
+        `financial_claim_gate.allowed_outputs.${heldLane} is held pending an explicit product-governance decision`
+      ),
+      true
+    );
+    assert.deepEqual(result.feeds, {
+      value_modeling: false,
+      executive_readout: false,
+      customer_facing_economic_output: false
+    });
+  });
+}
+
+test("rejects a non-boolean held lane without enabling downstream feeds", () => {
+  const scenario = structuredClone(baseRoiScenario);
+  scenario.financial_claim_gate.allowed_outputs.dollarized_output = "true";
+
+  const result = validateAiValueRoiScenario(scenario);
+
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes(
+      "financial_claim_gate.allowed_outputs.dollarized_output must be boolean"
+    ),
+    true
+  );
+  assert.deepEqual(result.feeds, {
+    value_modeling: false,
+    executive_readout: false,
+    customer_facing_economic_output: false
+  });
+});
+
 const workforceAnalyticsGate = {
   mode: "BLOCKED",
   aggregate_only: false,
@@ -298,7 +371,7 @@ test("rejects missing source refs and missing baseline/comparison windows", () =
   assert.equal(result.gaps.includes("baseline_comparison.comparison_window.rule is missing"), true);
 });
 
-test("allows dollarized output only when the financial claim gate has aggregate accepted assumptions", () => {
+test("requires dollarized prerequisites but keeps the product lane held", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.financial_claim_gate.mode = "INTERNAL_MODELING";
   scenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
@@ -325,7 +398,15 @@ test("allows dollarized output only when the financial claim gate has aggregate 
 
   const allowed = validateAiValueRoiScenario(scenario);
 
-  assert.equal(allowed.valid, true);
+  assert.equal(allowed.valid, false);
+  assert.equal(
+    allowed.gaps.includes(
+      "financial_claim_gate.allowed_outputs.dollarized_output is held pending an explicit product-governance decision"
+    ),
+    true
+  );
+  assert.equal(allowed.feeds.value_modeling, false);
+  assert.equal(allowed.feeds.executive_readout, false);
 });
 
 test("routes dollarized fields through the financial claim gate instead of broad key blocking", () => {
@@ -356,7 +437,15 @@ test("routes dollarized fields through the financial claim gate instead of broad
 
   const gated = validateAiValueRoiScenario(scenario);
 
-  assert.equal(gated.valid, true);
+  assert.equal(gated.valid, false);
+  assert.equal(
+    gated.gaps.includes(
+      "financial_claim_gate.allowed_outputs.dollarized_output is held pending an explicit product-governance decision"
+    ),
+    true
+  );
+  assert.equal(gated.feeds.value_modeling, false);
+  assert.equal(gated.feeds.executive_readout, false);
 });
 
 test("blocks realized ROI even when finance context fields are present", () => {
@@ -518,7 +607,7 @@ test("routes customer-facing economic output fields through the financial claim 
   );
 });
 
-test("allows causality language only with experimental or quasi-experimental design", () => {
+test("requires a causal design but keeps the product lane held", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.financial_claim_gate.mode = "EXECUTIVE_CAVEATED";
   scenario.financial_claim_gate.allowed_outputs.causality_language = true;
@@ -535,10 +624,16 @@ test("allows causality language only with experimental or quasi-experimental des
 
   const allowed = validateAiValueRoiScenario(scenario);
 
-  assert.equal(allowed.valid, true);
+  assert.equal(allowed.valid, false);
+  assert.equal(
+    allowed.gaps.includes(
+      "financial_claim_gate.allowed_outputs.causality_language is held pending an explicit product-governance decision"
+    ),
+    true
+  );
 });
 
-test("allows aggregate workflow productivity only with aggregate baseline comparison and an accepted outcome metric", () => {
+test("requires aggregate workflow productivity evidence but keeps the product lane held", () => {
   const scenario = structuredClone(baseRoiScenario);
   scenario.financial_claim_gate.mode = "EXECUTIVE_CAVEATED";
   scenario.financial_claim_gate.allowed_outputs.aggregate_workflow_productivity = true;
@@ -560,7 +655,13 @@ test("allows aggregate workflow productivity only with aggregate baseline compar
 
   const allowed = validateAiValueRoiScenario(scenario);
 
-  assert.equal(allowed.valid, true);
+  assert.equal(allowed.valid, false);
+  assert.equal(
+    allowed.gaps.includes(
+      "financial_claim_gate.allowed_outputs.aggregate_workflow_productivity is held pending an explicit product-governance decision"
+    ),
+    true
+  );
 });
 
 test("allows aggregate HRIS-derived workforce context only with all workforce safety checks and no persisted HRIS join", () => {

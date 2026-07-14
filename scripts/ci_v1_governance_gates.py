@@ -13,6 +13,16 @@ ENFORCEMENT_SPEC = ROOT / "docs" / "ENFORCEMENT_SPEC.md"
 EVAL_DECISION_SCHEMA = ROOT / "schemas" / "ft_v1_evaluation_decision.schema.json"
 EVAL_DECISION_CODE = ROOT / "backend" / "src" / "v1" / "evaluationDecision.ts"
 DEFAULT_SUPPRESS_TEST = ROOT / "backend" / "tests" / "v1_evaluation_decision.test.ts"
+CANONICAL_SUPPRESSION_SOURCE = ROOT / "shared" / "src" / "fluencyTracrConfidence.ts"
+INTERNAL_DIAGNOSTIC_SOURCE = ROOT / "shared" / "src" / "fluencyTracrV1Signal.ts"
+
+EXPECTED_CANONICAL_SUPPRESSION_REASONS = {
+    "INSUFFICIENT_TIME",
+    "INSUFFICIENT_VOLUME",
+    "NO_CONVERGENCE",
+    "BASELINE_UNSTABLE",
+    "HIGH_AMBIGUITY",
+}
 
 
 def _fail(message: str) -> None:
@@ -75,6 +85,32 @@ def main() -> None:
 
     if "suppress_reason_code" in decision_schema.get("properties", {}):
         _fail("evaluation decision schema must not include suppress_reason_code")
+
+    if "SURFACE Export Projection" not in decision_schema.get("title", ""):
+        _fail("evaluation decision schema must identify the unbound SURFACE export projection")
+
+    canonical_source = _read_text(CANONICAL_SUPPRESSION_SOURCE)
+    canonical_reasons = set(
+        re.findall(
+            r'"(INSUFFICIENT_TIME|INSUFFICIENT_VOLUME|NO_CONVERGENCE|BASELINE_UNSTABLE|HIGH_AMBIGUITY)"',
+            canonical_source,
+        )
+    )
+    if canonical_reasons != EXPECTED_CANONICAL_SUPPRESSION_REASONS:
+        _fail("canonical suppression reason source does not match the locked five")
+
+    internal_diagnostics = set(
+        re.findall(r'"(SUPP_[A-Z0-9_]+)"', _read_text(INTERNAL_DIAGNOSTIC_SOURCE))
+    )
+    if not internal_diagnostics:
+        _fail("no internal SUPP diagnostics found")
+    if canonical_reasons.intersection(internal_diagnostics):
+        _fail("internal SUPP diagnostics overlap canonical suppression reasons")
+
+    for boundary_root in (ROOT / "schemas", ROOT / "docs" / "api"):
+        for boundary_path in boundary_root.rglob("*"):
+            if boundary_path.is_file() and "SUPP_" in _read_text(boundary_path):
+                _fail(f"internal SUPP diagnostic leaked into product boundary: {boundary_path}")
 
     code_text = _read_text(EVAL_DECISION_CODE)
     if "FT_V1_2026_01" not in code_text or "FT_V1_EVALUATION_DECISION" not in code_text:

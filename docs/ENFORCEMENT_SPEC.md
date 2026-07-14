@@ -14,7 +14,9 @@ Purpose: describe what is enforced, where it is enforced (runtime and CI), and h
 - Deterministic SURFACE/SUPPRESS decision.
 - Ambiguity precedence.
 - Windowing, adjacency, cohort size, and confidence gating.
-- Exactly one suppress_reason_code on SUPPRESS; no reason codes on SURFACE.
+- Exactly one internal `SUPP_*` diagnostic on an internal SUPPRESS candidate;
+  no internal reason code on SURFACE. Product-facing SUPPRESS verdicts use only
+  the canonical five suppression reasons.
 
 3) Non-negotiables
 - No new metrics, no content capture, no individual attribution, no rankings.
@@ -57,7 +59,8 @@ These are the locations to enforce or extend enforcement without changing contra
 6) Apply cohort size gate (privacy suppression).
 7) Apply confidence gating as defined in Phase 2.
 8) Emit a binary decision only: SURFACE or SUPPRESS.
-9) If SUPPRESS, emit exactly one suppress_reason_code; if SURFACE, emit no reason code.
+9) If an internal candidate is SUPPRESS, retain exactly one internal diagnostic;
+   if SURFACE, retain none. Never relay `SUPP_*` through a product boundary.
 
 ## Explicit statement of constraints
 - No new metrics are introduced by this spec.

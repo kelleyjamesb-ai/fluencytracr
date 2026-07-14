@@ -2,6 +2,36 @@
 
 ## Current Session
 
+- Governance drift repair completed (2026-07-13) on
+  `codex/governance-drift-repair` from `origin/main` at `94465660`. Enforced the
+  compiled 60-day Causal Delta floor across API, direct helper, dogfood, and
+  assurance fixtures; sub-60 and not-yet-elapsed post windows now fail closed
+  with `INSUFFICIENT_TIME`, malformed/unsafe integers reject, and Day 30 remains
+  operating context only. Removed the direct chat connector's `user_id`
+  requirement and made its compiled input contract exact and fail closed:
+  undeclared/casing/nesting aliases, malformed containers or metadata, invalid
+  timestamps, and non-opaque correlation values invalidate the whole batch with
+  no partial signals. Correlation IDs are namespaced UUIDs and trace docs now
+  match sanitized runtime output and the compiled disclosure minimum.
+
+  Clarified internal `SUPP_*` diagnostics versus the five canonical product
+  reasons, labeled the V1 schema as an unbound SURFACE export projection, and
+  added mechanical vocabulary guards. Recorded `dollarized_output`,
+  `causality_language`, and `aggregate_workflow_productivity` as HOLD; activation
+  or malformed flag types invalidate ROI scenarios, keep execution feeds false,
+  and reduce downstream EBITA/executive artifacts to no financial translation.
+
+  Verification passed: connector suites (`79`), ROI/EBITA/executive suites
+  (`91`), Harness (`276 passed`, `3 skipped`), Causal Delta (`14`), dogfood
+  (`15`), V1 decision/evaluation (`26`), focused trace/ingest and assurance
+  coverage, backend/shared builds, both affected strict OpenSpec validations,
+  docs contract sweep, semantic drift guard, V1 governance gates, LMSYS
+  self-test, and `git diff --check`. Full backend completed with `921 passed`
+  and the sole `observability_api` ghost-use residual assertion failing exactly
+  as reproduced on clean `origin/main`; it is not caused by this branch. Final
+  independent CODE, BUG, and ADVERSARIAL reviews all returned GO. Corrective
+  OpenSpec tasks and the human-authorized queue item are complete. Pre-existing
+  untracked files remain untouched.
 - Hypothesis and company-defined metric longitudinal admission boundary
   completed (2026-07-13): added the docs/OpenSpec contract connecting a
   flexible enterprise metric catalog to the single proved longitudinal model

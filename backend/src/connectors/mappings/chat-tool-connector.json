@@ -5,6 +5,7 @@
     "vendor": "example-chat-vendor",
     "tool_class": "llm_chat"
   },
+  "strict_input_paths": true,
   "signal_mappings": [
     {
       "external_event_type": "chat.session.started",
@@ -12,12 +13,9 @@
       "requires_side_effect": false,
       "validation_rules": [
         {
-          "rule_type": "field_exists",
-          "field_path": "session_id"
-        },
-        {
-          "rule_type": "field_exists",
-          "field_path": "user_id"
+          "rule_type": "field_matches",
+          "field_path": "session_id",
+          "pattern": "^session:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
         }
       ],
       "metadata_extraction": {
@@ -52,8 +50,9 @@
       "requires_side_effect": false,
       "validation_rules": [
         {
-          "rule_type": "field_exists",
-          "field_path": "action_id"
+          "rule_type": "field_matches",
+          "field_path": "action_id",
+          "pattern": "^action:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
         },
         {
           "rule_type": "field_equals",
@@ -123,6 +122,30 @@
     }
   ],
   "forbidden_fields": [
+    {
+      "field_name": "user_id",
+      "reason": "Privacy: Never collect direct user identifiers"
+    },
+    {
+      "field_name": "userid",
+      "reason": "Privacy: Never collect direct user identifiers"
+    },
+    {
+      "field_name": "uid",
+      "reason": "Privacy: Never collect direct user identifiers"
+    },
+    {
+      "field_name": "email_address",
+      "reason": "Privacy: Never collect direct user identifiers"
+    },
+    {
+      "field_name": "actor_id",
+      "reason": "Privacy: Never collect direct user identifiers"
+    },
+    {
+      "field_name": "account_id",
+      "reason": "Privacy: Never collect direct user identifiers"
+    },
     {
       "field_name": "prompt_content",
       "reason": "Privacy: Never collect prompt text"

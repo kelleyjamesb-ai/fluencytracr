@@ -13,3 +13,11 @@ Paul's ROI Framework needs a pre/post workflow comparator that can say whether a
 - Affected specs: value-realization
 - Affected code: backend read/analysis route and derive-on-read causal delta service
 - No persistence or Prisma migration required.
+
+## Corrective Governance Approval
+
+James Kelley approved the bounded governance-drift repair on 2026-07-13. The
+repair supersedes the legacy 14-day surfacing floor and 30-day defaults with the
+canonical compiled 60-day minimum. Sub-minimum positive integer windows remain
+operating context but return `SUPPRESS` with `INSUFFICIENT_TIME`; they do not
+run pattern classification.

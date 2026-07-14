@@ -117,8 +117,8 @@ class DogfoodEndToEndTest(unittest.TestCase):
             recovery_rate=0.90,
             verification_rate=0.92,
             friction_rate=0.05,
-            days=30,
-            start_offset_days=30,
+            days=60,
+            start_offset_days=60,
             run_prefix="run",
         )
         post = build_fixture(
@@ -128,7 +128,7 @@ class DogfoodEndToEndTest(unittest.TestCase):
             recovery_rate=0.25,
             verification_rate=0.20,
             friction_rate=0.58,
-            days=30,
+            days=60,
             run_prefix="run",
         )
         stale = build_fixture(
@@ -139,15 +139,15 @@ class DogfoodEndToEndTest(unittest.TestCase):
             verification_rate=0.20,
             friction_rate=0.58,
             days=30,
-            start_offset_days=70,
+            start_offset_days=140,
             run_prefix="stale",
         )
         fixture = {
             **post,
-            "days": 60,
+            "days": 120,
             "change_event": {
                 "label": "Agent prompt rollout",
-                "event_at": "2026-04-22T00:00:00Z",
+                "event_at": "2026-03-23T00:00:00Z",
             },
             "events": stale["events"] + pre["events"] + post["events"],
         }
@@ -189,7 +189,67 @@ class DogfoodEndToEndTest(unittest.TestCase):
             readout = run_json("--fixture", str(output))
 
         self.assertEqual(readout["causal_delta"]["verdict"], "SUPPRESS")
+        self.assertEqual(
+            readout["causal_delta"]["suppression_reason"], "INSUFFICIENT_TIME"
+        )
         self.assertEqual(readout["causal_delta"]["shift"], "INDETERMINATE")
+
+    def test_causal_delta_suppresses_incomplete_post_window(self) -> None:
+        fixture = build_fixture(
+            workflow_family="eng-on-call-triage",
+            cohort_size=30,
+            abandonment_rate=0.0,
+            recovery_rate=0.90,
+            verification_rate=0.90,
+            friction_rate=0.0,
+        )
+        fixture["change_event"] = {
+            "label": "Incomplete post window",
+            "event_at": "2026-04-22T00:00:00Z",
+            "pre_window_days": 60,
+            "post_window_days": 60,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "incomplete-causal-window.json"
+            output.write_text(json.dumps(fixture))
+            readout = run_json("--fixture", str(output))
+
+        self.assertEqual(readout["causal_delta"]["verdict"], "SUPPRESS")
+        self.assertEqual(
+            readout["causal_delta"]["suppression_reason"], "INSUFFICIENT_TIME"
+        )
+
+    def test_causal_delta_rejects_coerced_window_values(self) -> None:
+        fixture = build_fixture(
+            workflow_family="eng-on-call-triage",
+            cohort_size=30,
+            abandonment_rate=0.0,
+            recovery_rate=0.90,
+            verification_rate=0.90,
+            friction_rate=0.0,
+        )
+        fixture["change_event"] = {
+            "label": "Invalid string window",
+            "event_at": "2026-03-23T00:00:00Z",
+            "pre_window_days": "60",
+            "post_window_days": 60,
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "coerced-causal-window.json"
+            output.write_text(json.dumps(fixture))
+            completed = subprocess.run(
+                [sys.executable, str(RUNNER), "--fixture", str(output), "--json"],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("change_event.pre_window_days must be a positive integer", completed.stderr)
 
     def test_sparse_workflow_suppresses_and_nulls_value_outputs(self) -> None:
         readout = run_json("--scenario", "sparse")

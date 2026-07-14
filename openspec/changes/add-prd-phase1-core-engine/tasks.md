@@ -7,3 +7,10 @@
 - [x] Add `GET /api/traces/reconstructed` with Zod query validation.
 - [x] Tests: `trace_engine.test.ts`, fix fixtures for `execution_id`.
 - [x] Document API (`docs/api/traces-reconstructed.md`).
+
+## Corrective Governance Hardening
+
+- [x] Remove the contradictory `user_id` requirement from the direct chat connector.
+- [x] Reject nested/casing aliases and return no partial signals for privacy-invalid batches.
+- [x] Align reconstructed-trace docs with sanitized runtime output and the compiled disclosure minimum.
+- [x] Run focused connector, backend, OpenSpec, and governance verification.

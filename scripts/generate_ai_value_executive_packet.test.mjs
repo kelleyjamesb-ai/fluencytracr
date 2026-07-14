@@ -41,11 +41,11 @@ const sourceRoiScenario = {
       experimental_or_quasi_experimental_design: false
     },
     allowed_outputs: {
-      dollarized_output: true,
+      dollarized_output: false,
       realized_roi_calculation: false,
       customer_facing_economic_output: false,
       causality_language: false,
-      aggregate_workflow_productivity: true
+      aggregate_workflow_productivity: false
     }
   }
 };
@@ -390,6 +390,20 @@ test("modeled EBITA scenario carries required caveats and next evidence actions"
     ),
     true
   );
+});
+
+test("held ROI lane reduces an executive EBITA summary to no financial translation", () => {
+  const roiScenario = structuredClone(sourceRoiScenario);
+  roiScenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
+
+  const packet = buildPacketWithEbita(
+    ebitaBridge("MODELED_EBITA_SCENARIO"),
+    roiScenario
+  );
+
+  assert.equal(packet.ebita_impact_summary.status, "NO_FINANCIAL_TRANSLATION");
+  assert.deepEqual(packet.ebita_impact_summary.primary_ebita_levers, []);
+  assert.equal(validateExecutiveValidationPacket(packet).valid, true);
 });
 
 test("finance validated EBITA case allows finance-validated language only", () => {

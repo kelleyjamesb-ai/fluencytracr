@@ -16,7 +16,7 @@ from generate_gce_fixtures import SCHEMA_VERSION, build_fixture
 
 MIN_COHORT_SIZE = 5
 MIN_WINDOW_DAYS = 60
-MIN_CAUSAL_WINDOW_DAYS = 14
+MIN_CAUSAL_WINDOW_DAYS = 60
 MIN_CONVERGENT_SIGNAL_CLASSES = 2
 AMBIGUITY_RATE_THRESHOLD = 0.20
 FORBIDDEN_FIXTURE_KEYS = {
@@ -55,10 +55,17 @@ def _parse_timestamp(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def _positive_integer(value: Any, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"{field} must be a positive integer")
+    return value
+
+
 def _window_id(days: int) -> str:
     start_by_days = {
         30: "2026-04-22",
         60: "2026-03-23",
+        120: "2026-01-22",
     }
     return f"{start_by_days.get(days, '2026-03-23')}__2026-05-22"
 
@@ -103,8 +110,8 @@ def scenario_fixture(name: str) -> dict[str, Any]:
             recovery_rate=0.90,
             verification_rate=0.92,
             friction_rate=0.05,
-            days=30,
-            start_offset_days=30,
+            days=60,
+            start_offset_days=60,
             run_prefix="pre",
         )
         post = build_fixture(
@@ -114,12 +121,12 @@ def scenario_fixture(name: str) -> dict[str, Any]:
             recovery_rate=0.25,
             verification_rate=0.20,
             friction_rate=0.58,
-            days=30,
+            days=60,
             run_prefix="post",
         )
         return {
             **post,
-            "days": 60,
+            "days": 120,
             "parameters": {
                 "cohort_size": 24,
                 "abandonment_rate": "pre/post",
@@ -129,7 +136,7 @@ def scenario_fixture(name: str) -> dict[str, Any]:
             },
             "change_event": {
                 "label": "Agent prompt rollout",
-                "event_at": "2026-04-22T00:00:00Z",
+                "event_at": "2026-03-23T00:00:00Z",
             },
             "events": pre["events"] + post["events"],
         }
@@ -459,17 +466,32 @@ def compute_causal_delta(fixture: dict[str, Any], canonical_events: list[dict[st
         return None
 
     change_at = _parse_timestamp(change_event["event_at"])
-    pre_window_days = int(change_event.get("pre_window_days", 30))
-    post_window_days = int(change_event.get("post_window_days", 30))
-    if pre_window_days < MIN_CAUSAL_WINDOW_DAYS or post_window_days < MIN_CAUSAL_WINDOW_DAYS:
+    pre_window_days = _positive_integer(
+        change_event.get("pre_window_days", MIN_CAUSAL_WINDOW_DAYS),
+        "change_event.pre_window_days",
+    )
+    post_window_days = _positive_integer(
+        change_event.get("post_window_days", MIN_CAUSAL_WINDOW_DAYS),
+        "change_event.post_window_days",
+    )
+    generated_at = _parse_timestamp(fixture["generated_at"])
+    observation_days = _positive_integer(fixture.get("days", 60), "days")
+    observation_start = generated_at - timedelta(days=observation_days)
+    pre_start = change_at - timedelta(days=pre_window_days)
+    post_end = change_at + timedelta(days=post_window_days)
+    if (
+        pre_window_days < MIN_CAUSAL_WINDOW_DAYS
+        or post_window_days < MIN_CAUSAL_WINDOW_DAYS
+        or pre_start < observation_start
+        or post_end > generated_at
+    ):
         return {
             "verdict": "SUPPRESS",
+            "suppression_reason": "INSUFFICIENT_TIME",
             "shift": "INDETERMINATE",
             "pre_pattern": None,
             "post_pattern": None,
         }
-    pre_start = change_at - timedelta(days=pre_window_days)
-    post_end = change_at + timedelta(days=post_window_days)
     pre_events = [
         event
         for event in canonical_events

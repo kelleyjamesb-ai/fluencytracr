@@ -1,11 +1,15 @@
 import request from "supertest";
 
 import { app } from "../src/app";
-import { causalDeltaWindowsOverlap } from "../src/value_realization/causal_delta";
+import {
+  causalDeltaWindowsOverlap,
+  computeCausalDelta,
+  MIN_CAUSAL_DELTA_WINDOW_DAYS
+} from "../src/value_realization/causal_delta";
 import { buildFluencyEventRecord, store, type FluencyEventRecord } from "../src/store";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const EVENT_AT = new Date(Date.now() - 45 * MS_PER_DAY).toISOString();
+const EVENT_AT = new Date(Date.now() - 75 * MS_PER_DAY).toISOString();
 
 beforeEach(() => {
   store.reset();
@@ -144,8 +148,8 @@ const postCausalDelta = (body: Record<string, unknown>) =>
 const bodyFor = (workflowId: string, overrides: Record<string, unknown> = {}) => ({
   workflow_id: workflowId,
   event_at: EVENT_AT,
-  pre_window_days: 30,
-  post_window_days: 30,
+  pre_window_days: MIN_CAUSAL_DELTA_WINDOW_DAYS,
+  post_window_days: MIN_CAUSAL_DELTA_WINDOW_DAYS,
   label: "Skill publish",
   ...overrides
 });
@@ -169,6 +173,23 @@ describe("POST /api/v1/causal-delta", () => {
       evidence_grade: "QUALITATIVE"
     });
     expect(Date.parse(res.body.computed_at)).not.toBeNaN();
+  });
+
+  it("uses the compiled 60-day windows when window fields are omitted", async () => {
+    seedWindow("wf-default-window", "pre", 5, blindExecution);
+    seedWindow("wf-default-window", "post", 5, calibratedExecution);
+    const body = bodyFor("wf-default-window");
+    delete body.pre_window_days;
+    delete body.post_window_days;
+
+    const res = await postCausalDelta(body);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      verdict: "SURFACE",
+      suppression_reason: null,
+      shift: "IMPROVED"
+    });
   });
 
   it("surfaces HELD when the dominant pattern is unchanged", async () => {
@@ -292,10 +313,81 @@ describe("POST /api/v1/causal-delta", () => {
     expect(res.body.error).toBe("Invalid causal delta request");
   });
 
-  it("rejects windows below the hard-coded 14 day minimum", async () => {
-    const res = await postCausalDelta(bodyFor("wf-short-window", { pre_window_days: 13 }));
+  it("suppresses windows below the compiled 60-day surfacing minimum", async () => {
+    seedWindow("wf-short-window", "pre", 5, blindExecution);
+    seedWindow("wf-short-window", "post", 5, calibratedExecution);
+
+    const res = await postCausalDelta(bodyFor("wf-short-window", { pre_window_days: 59 }));
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      verdict: "SUPPRESS",
+      suppression_reason: "INSUFFICIENT_TIME",
+      pre_pattern: null,
+      post_pattern: null,
+      shift: "INDETERMINATE"
+    });
+  });
+
+  it("suppresses when the nominal 60-day post window has not fully elapsed", async () => {
+    const recentEventAt = new Date(Date.now() - 45 * MS_PER_DAY).toISOString();
+
+    const res = await postCausalDelta(
+      bodyFor("wf-incomplete-post-window", { event_at: recentEventAt })
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      verdict: "SUPPRESS",
+      suppression_reason: "INSUFFICIENT_TIME",
+      pre_pattern: null,
+      post_pattern: null,
+      shift: "INDETERMINATE"
+    });
+  });
+
+  it("suppresses when only the post window is below 60 days", async () => {
+    const res = await postCausalDelta(
+      bodyFor("wf-short-post-window", { post_window_days: 59 })
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      verdict: "SUPPRESS",
+      suppression_reason: "INSUFFICIENT_TIME",
+      pre_pattern: null,
+      post_pattern: null,
+      shift: "INDETERMINATE"
+    });
+  });
+
+  it("rejects unsafe integer window values", async () => {
+    const res = await postCausalDelta(
+      bodyFor("wf-unsafe-window", { pre_window_days: Number.MAX_SAFE_INTEGER + 1 })
+    );
 
     expect(res.status).toBe(400);
-    expect(res.body.reason_code).toBe("window_below_minimum");
+    expect(res.body.error).toBe("Invalid causal delta request");
+  });
+
+  it("fails closed below 60 days when the domain helper is called directly", () => {
+    seedWindow("wf-direct-short-window", "pre", 5, blindExecution);
+    seedWindow("wf-direct-short-window", "post", 5, calibratedExecution);
+
+    const result = computeCausalDelta({
+      workflowId: "wf-direct-short-window",
+      eventAt: EVENT_AT,
+      preWindowDays: 59,
+      postWindowDays: MIN_CAUSAL_DELTA_WINDOW_DAYS,
+      events: [...store.fluencyEvents.values()]
+    });
+
+    expect(result).toMatchObject({
+      verdict: "SUPPRESS",
+      suppression_reason: "INSUFFICIENT_TIME",
+      pre_pattern: null,
+      post_pattern: null,
+      shift: "INDETERMINATE"
+    });
   });
 });

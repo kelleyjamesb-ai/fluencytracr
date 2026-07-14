@@ -44,7 +44,7 @@ type CausalDeltaInput = {
   now?: Date;
 };
 
-export const MIN_CAUSAL_DELTA_WINDOW_DAYS = 14;
+export const MIN_CAUSAL_DELTA_WINDOW_DAYS = 60;
 
 const AMBIGUITY_RATE_THRESHOLD = 0.2;
 const OBJECTIVE_COHORT_SIZE = 30;
@@ -245,7 +245,8 @@ export const computeCausalDelta = ({
   events,
   now = new Date()
 }: CausalDeltaInput): CausalDeltaResponse => {
-  const computedAt = now.toISOString();
+  const nowMs = now.getTime();
+  const computedAt = Number.isFinite(nowMs) ? now.toISOString() : new Date(0).toISOString();
   const changeAt = new Date(eventAt);
   const preStart = addDays(changeAt, -preWindowDays);
   const preEnd = changeAt;
@@ -258,6 +259,32 @@ export const computeCausalDelta = ({
   const preEvents = workflowEvents.filter((event) => inWindow(event, preStart, preEnd));
   const postEvents = workflowEvents.filter((event) => inWindow(event, postStart, postEnd));
   const allWindowEvents = workflowEvents.filter((event) => inWindow(event, preStart, postEnd));
+
+  if (
+    !Number.isSafeInteger(preWindowDays) ||
+    !Number.isSafeInteger(postWindowDays) ||
+    preWindowDays < MIN_CAUSAL_DELTA_WINDOW_DAYS ||
+    postWindowDays < MIN_CAUSAL_DELTA_WINDOW_DAYS ||
+    !Number.isFinite(changeAt.getTime()) ||
+    !Number.isFinite(preStart.getTime()) ||
+    !Number.isFinite(postEnd.getTime()) ||
+    !Number.isFinite(nowMs) ||
+    postEnd.getTime() > nowMs
+  ) {
+    return suppress({
+      workflowId,
+      jbtdId,
+      personaId,
+      reason: "INSUFFICIENT_TIME",
+      prePattern: null,
+      postPattern: null,
+      preCohortSize: groupEventsByExecution(preEvents).size,
+      postCohortSize: groupEventsByExecution(postEvents).size,
+      preWindowDays,
+      postWindowDays,
+      computedAt
+    });
+  }
 
   const pre = summarizeWindow(preEvents, allWindowEvents, now);
   const post = summarizeWindow(postEvents, allWindowEvents, now);

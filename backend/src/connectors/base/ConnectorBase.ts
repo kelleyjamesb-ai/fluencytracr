@@ -1,4 +1,39 @@
+import { PERSON_IDENTIFIER_FIELDS } from "@fluencytracr/shared";
 import { z } from "zod";
+
+const normalizeForbiddenFieldName = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const PERSON_IDENTIFIER_FIELD_SET = new Set(
+  PERSON_IDENTIFIER_FIELDS.map(normalizeForbiddenFieldName)
+);
+const PERSON_IDENTIFIER_TOKENS = new Set([
+  "user",
+  "userid",
+  "uid",
+  "person",
+  "employee",
+  "actor",
+  "account",
+  "principal",
+  "subject",
+  "email",
+  "phone",
+  "name",
+  "username",
+  "identifier",
+  "hash",
+  "hashed"
+]);
+
+const fieldNameTokens = (value: string): string[] =>
+  value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+
+const ConnectorTimestampSchema = z.string().datetime({ offset: true });
 
 export interface ExternalEvent {
   event_type: string;
@@ -54,6 +89,7 @@ export interface ConnectorMapping {
     tool_class: string;
   };
   signal_mappings: SignalMapping[];
+  strict_input_paths?: boolean;
   forbidden_fields: Array<{
     field_name: string;
     reason: string;
@@ -184,6 +220,36 @@ export abstract class ConnectorBase {
   protected checkForbiddenFields(event: ExternalEvent): string[] {
     const violations: string[] = [];
     const stack: Array<{ obj: unknown; path: string }> = [{ obj: event, path: "" }];
+    const matchingMappings = this.mapping.signal_mappings.filter(
+      (mapping) => mapping.external_event_type === event.event_type
+    );
+    const declaredPathValues = [
+      "event_type",
+      "timestamp",
+      ...matchingMappings.flatMap((mapping) => [
+        ...mapping.validation_rules.map((rule) => rule.field_path),
+        ...Object.values(mapping.metadata_extraction ?? {})
+      ])
+    ];
+    const declaredInputPaths = new Set<string>();
+    const declaredContainerPaths = new Set<string>();
+    for (const declaredPath of declaredPathValues) {
+      const parts = declaredPath.split(".");
+      for (let length = 1; length <= parts.length; length += 1) {
+        const path = parts.slice(0, length).join(".");
+        declaredInputPaths.add(path);
+        if (length < parts.length) declaredContainerPaths.add(path);
+      }
+    }
+    const booleanMetadataPaths = new Set(
+      matchingMappings.flatMap((mapping) =>
+        Object.values(mapping.metadata_extraction ?? {})
+      )
+    );
+    const rulesByPath = new Map<string, ValidationRule[]>();
+    for (const rule of matchingMappings.flatMap((mapping) => mapping.validation_rules)) {
+      rulesByPath.set(rule.field_path, [...(rulesByPath.get(rule.field_path) ?? []), rule]);
+    }
 
     while (stack.length > 0) {
       const current = stack.pop();
@@ -193,10 +259,77 @@ export abstract class ConnectorBase {
 
       for (const [key, value] of Object.entries(current.obj as Record<string, unknown>)) {
         const fullPath = current.path ? `${current.path}.${key}` : key;
-
-        const forbidden = this.mapping.forbidden_fields.find((f) => f.field_name === key);
-        if (forbidden) {
-          violations.push(`${fullPath}: ${forbidden.reason}`);
+        const pathSegments = fullPath.split(".");
+        const normalizedAliases = pathSegments.map((_, index) =>
+          normalizeForbiddenFieldName(pathSegments.slice(index).join("."))
+        );
+        const forbidden = this.mapping.forbidden_fields.find(
+          (field) => normalizedAliases.includes(normalizeForbiddenFieldName(field.field_name))
+        );
+        const normalizedKey = normalizeForbiddenFieldName(key);
+        const tokens = fieldNameTokens(key);
+        const containsPersonIdentifier =
+          PERSON_IDENTIFIER_FIELD_SET.has(normalizedKey) ||
+          tokens.some((token) => PERSON_IDENTIFIER_TOKENS.has(token));
+        const isDeclaredInputPath = !key.includes(".") && declaredInputPaths.has(fullPath);
+        const containsUndeclaredId = tokens.includes("id") && !isDeclaredInputPath;
+        const containsUndeclaredField =
+          this.mapping.strict_input_paths === true && !isDeclaredInputPath;
+        const isPlainObject =
+          value !== null && typeof value === "object" && !Array.isArray(value);
+        const rules = rulesByPath.get(fullPath) ?? [];
+        const violatesRule = rules.some((rule) => {
+          switch (rule.rule_type) {
+            case "field_exists":
+              return (
+                value === undefined ||
+                value === null ||
+                (rule.expected_value !== undefined && value !== rule.expected_value)
+              );
+            case "field_equals":
+              return value !== rule.expected_value;
+            case "field_matches":
+              return (
+                !rule.pattern ||
+                typeof value !== "string" ||
+                !new RegExp(rule.pattern).test(value)
+              );
+            case "value_in_range":
+              return (
+                typeof value !== "number" ||
+                (rule.min !== undefined && value < rule.min) ||
+                (rule.max !== undefined && value > rule.max)
+              );
+            default:
+              return true;
+          }
+        });
+        const containsInvalidDeclaredValue =
+          this.mapping.strict_input_paths === true &&
+          isDeclaredInputPath &&
+          ((declaredContainerPaths.has(fullPath) && !isPlainObject) ||
+            (booleanMetadataPaths.has(fullPath) && typeof value !== "boolean") ||
+            violatesRule ||
+            (fullPath === "event_type" && typeof value !== "string") ||
+            (fullPath === "timestamp" &&
+              (!ConnectorTimestampSchema.safeParse(value).success ||
+                typeof value !== "string" ||
+                !Number.isFinite(Date.parse(value)))));
+        if (
+          forbidden ||
+          containsPersonIdentifier ||
+          containsUndeclaredId ||
+          containsUndeclaredField ||
+          containsInvalidDeclaredValue
+        ) {
+          const fallbackReason = containsPersonIdentifier || containsUndeclaredId
+            ? "Privacy: Never collect direct person identifiers"
+            : containsInvalidDeclaredValue
+              ? "Privacy: Declared connector fields must match the compiled shape"
+              : "Privacy: Undeclared connector fields are not accepted";
+          violations.push(
+            `${fullPath}: ${forbidden?.reason ?? fallbackReason}`
+          );
         }
 
         if (value && typeof value === "object") {
