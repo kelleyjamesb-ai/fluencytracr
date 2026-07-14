@@ -180,6 +180,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-13: conditionally selected only the accepted HISTORICAL_STATE_SPACE artifact for prerequisite docs/OpenSpec hardening. Execution remains HOLD pending calibrations, real-data/source admission, monitoring, readout governance, frozen manifest, and a separate human execution decision. Full inference 489/489; bridges 76/76; CODE/BUG/ADVERSARIAL GO. Tasks 5.5-5.8 remain open."
+    },
+    {
+      "id": "inference-harness-ci-deduplication",
+      "title": "Inference Harness duplicate-run cleanup",
+      "bound": ".github/workflows/inference-harness.yml plus queue/progress status only; run feature-branch validation through pull_request, retain push validation on main, and cancel superseded runs with collision-safe workflow concurrency; preserve all path filters, jobs, commands, timeouts, statistical gates, and fail-closed behavior",
+      "status": "done",
+      "risk": "low",
+      "last_note": "Done 2026-07-14: feature pushes no longer duplicate PR inference runs; main pushes remain validated, and only superseded runs of the same PR cancel. Path filters, job, commands, timeout, and statistical gates are unchanged. YAML assertions, queue validation, diff check, and CODE/BUG/ADVERSARIAL review passed."
     }
   ]
 }
