@@ -26,6 +26,8 @@ export type EvaluationDecision = {
   suppress_reason_code?: SuppressReasonCode;
 };
 
+// Internal candidate-decision diagnostics; this object is not a product output
+// contract and SUPP_* values must not cross route or render boundaries.
 export type SuppressReasonCode =
   | "SUPP_INTERNAL_INVARIANT_FAIL"
   | "SUPP_AMBIGUITY_PRESENT"

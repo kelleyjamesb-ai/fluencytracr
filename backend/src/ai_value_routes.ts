@@ -650,6 +650,15 @@ export function registerAiValueRoutes(app: Express): void {
             ?.payload ?? null
         : null;
 
+      const currentRoiValidation = aiValueEngine.validateRoiScenario(loaded.roi_scenario);
+      if (!currentRoiValidation.valid) {
+        return res.status(422).json({
+          error: "ROI scenario is no longer admissible for evidence-case assembly",
+          reason: "INVALID_ROI_SCENARIO_SOURCE",
+          gaps: currentRoiValidation.gaps
+        });
+      }
+
       const evidenceCase = aiValueEngine.buildValueEvidenceCase(
         {
           dataBoundary: loaded.data_boundary,

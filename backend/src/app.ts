@@ -4110,13 +4110,19 @@ const sanitizeTraceForApi = (trace: Record<string, any>) => {
   };
 };
 
+const CausalDeltaWindowDaysSchema = z
+  .number()
+  .int()
+  .positive()
+  .refine(Number.isSafeInteger, "window days must be a safe integer");
+
 const CausalDeltaBodySchema = z.object({
   workflow_id: z.string().min(1),
   jbtd_id: FluencyJoinKeySchema.nullable().optional(),
   persona_id: FluencyJoinKeySchema.nullable().optional(),
   event_at: z.string().datetime({ offset: true }),
-  pre_window_days: z.number().int().positive().default(30),
-  post_window_days: z.number().int().positive().default(30),
+  pre_window_days: CausalDeltaWindowDaysSchema.default(MIN_CAUSAL_DELTA_WINDOW_DAYS),
+  post_window_days: CausalDeltaWindowDaysSchema.default(MIN_CAUSAL_DELTA_WINDOW_DAYS),
   label: z.string()
 }).strict();
 
@@ -4171,17 +4177,6 @@ app.post(
     }
 
     const { workflow_id, jbtd_id, persona_id, event_at, pre_window_days, post_window_days } = parsed.data;
-    if (
-      pre_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS ||
-      post_window_days < MIN_CAUSAL_DELTA_WINDOW_DAYS
-    ) {
-      return res.status(400).json({
-        error: "Invalid causal delta request",
-        reason_code: "window_below_minimum",
-        min_window_days: MIN_CAUSAL_DELTA_WINDOW_DAYS
-      });
-    }
-
     const changeAt = new Date(event_at);
     const preStart = new Date(changeAt.getTime() - pre_window_days * 24 * 60 * 60 * 1000);
     const preEnd = changeAt;

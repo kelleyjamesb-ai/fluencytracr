@@ -1,3 +1,7 @@
+import {
+  FluencyTracrV1SuppressReasonCodeSchema,
+  SuppressionReasonSchema
+} from "@fluencytracr/shared";
 import { enforceV1EvaluationDecision } from "../src/v1/evaluationDecision";
 
 const baseInput = {
@@ -13,6 +17,15 @@ const baseInput = {
   positive_evidence_present: false,
   ghost_use_candidate: false
 };
+
+it("keeps internal SUPP diagnostics outside the canonical product vocabulary", () => {
+  const canonicalReasons = new Set(SuppressionReasonSchema.options);
+
+  for (const diagnostic of FluencyTracrV1SuppressReasonCodeSchema.options) {
+    expect(canonicalReasons.has(diagnostic as never)).toBe(false);
+    expect(SuppressionReasonSchema.safeParse(diagnostic).success).toBe(false);
+  }
+});
 
 it("defaults to SUPPRESS with a reason code", () => {
   const result = enforceV1EvaluationDecision(baseInput);

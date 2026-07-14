@@ -49,11 +49,11 @@ const sourceRoiScenario = {
       experimental_or_quasi_experimental_design: false
     },
     allowed_outputs: {
-      dollarized_output: true,
+      dollarized_output: false,
       realized_roi_calculation: false,
       customer_facing_economic_output: false,
       causality_language: false,
-      aggregate_workflow_productivity: true
+      aggregate_workflow_productivity: false
     }
   }
 };
@@ -349,7 +349,7 @@ test("causality allowed without source causal gate is invalid", () => {
   );
 });
 
-test("causality allowed with source causal gate is valid", () => {
+test("held source causality lane cannot authorize EBITA causality", () => {
   const bridge = structuredClone(baseEbitaBridge);
   bridge.financial_translation_policy.causality_claim_allowed = true;
   const causalRoiScenario = structuredClone(sourceRoiScenario);
@@ -358,8 +358,38 @@ test("causality allowed with source causal gate is valid", () => {
 
   const result = validateEbitaBridge(bridge, { roiScenario: causalRoiScenario });
 
-  assert.equal(result.valid, true);
+  assert.equal(result.valid, false);
+  assert.equal(
+    result.gaps.includes("source roiScenario causality gate must be approved when causality_claim_allowed is true"),
+    true
+  );
 });
+
+for (const mode of ["DIRECTIONAL_EBITA_BRIDGE", "MODELED_EBITA_SCENARIO"]) {
+  test(`held ROI lane invalidates a prebuilt ${mode}`, () => {
+    const bridge = structuredClone(baseEbitaBridge);
+    bridge.financial_translation_policy.mode = mode;
+    if (mode === "MODELED_EBITA_SCENARIO") {
+      bridge.financial_translation_policy.customer_owned_financials_required = true;
+      bridge.evidence_quality.financial_evidence = "SUPPORTED";
+      bridge.ebita_levers[0].claim_level = "MODELED_EBITA_SCENARIO";
+      bridge.ebita_levers[0].financial_assumption_ids = ["customer_assumption_v1"];
+    }
+    const roiScenario = structuredClone(sourceRoiScenario);
+    roiScenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
+
+    const result = validateEbitaBridge(bridge, { roiScenario });
+
+    assert.equal(result.valid, false);
+    assert.equal(result.feeds.executive_readout, false);
+    assert.equal(
+      result.gaps.includes(
+        "source roiScenario requests a held product lane; financial_translation_policy.mode must be NO_FINANCIAL_TRANSLATION"
+      ),
+      true
+    );
+  });
+}
 
 test("missing blocked claims in safe language is invalid", () => {
   const bridge = structuredClone(baseEbitaBridge);
@@ -415,4 +445,27 @@ test("buildEbitaBridgeFromValueObjects creates a caveated directional EBITA brid
   assert.equal(bridge.workflow.value_routes.includes("CAPACITY_CREATION"), true);
   assert.equal(bridge.ebita_levers.some((lever) => lever.ebita_driver === "CAPACITY_CREATION"), true);
   assert.equal(bridge.safe_language.blocked_claims.includes("usage_proves_ebita"), true);
+});
+
+test("held ROI lane reduces the generated EBITA bridge to no financial translation", () => {
+  const blueprint = readExample("customer-support-blueprint.json");
+  const metricsLibrary = readExample("customer-support-metrics-library.json");
+  const valueScenario = readExample("customer-support-value-scenario.json");
+  const readiness = readExample("customer-support-evidence-readiness.json");
+  const claimBoundary = readExample("customer-support-claim-boundary.json");
+  const roiScenario = structuredClone(sourceRoiScenario);
+  roiScenario.financial_claim_gate.allowed_outputs.dollarized_output = true;
+
+  const bridge = buildEbitaBridgeFromValueObjects({
+    blueprint,
+    metricsLibrary,
+    valueScenario,
+    readiness,
+    claimBoundary,
+    roiScenario
+  });
+
+  assert.equal(bridge.financial_translation_policy.mode, "NO_FINANCIAL_TRANSLATION");
+  assert.deepEqual(bridge.ebita_levers, []);
+  assert.equal(validateEbitaBridge(bridge, { roiScenario }).valid, true);
 });

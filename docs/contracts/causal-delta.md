@@ -14,13 +14,15 @@ This is the counterfactual primitive Paul's ROI Framework can consume before mak
 {
   "workflow_id": "sales_proposal_drafting",
   "event_at": "2026-05-01T00:00:00.000Z",
-  "pre_window_days": 30,
-  "post_window_days": 30,
+  "pre_window_days": 60,
+  "post_window_days": 60,
   "label": "Skill publish"
 }
 ```
 
-`pre_window_days` and `post_window_days` default to `30`. Each window must be at least `14` days. The windows are anchored around `event_at` and do not overlap:
+`pre_window_days` and `post_window_days` default to the compiled `60`-day
+surfacing minimum. The windows are anchored around `event_at` and do not
+overlap:
 
 - Pre window: `[event_at - pre_window_days, event_at)`
 - Post window: `[event_at, event_at + post_window_days)`
@@ -42,6 +44,17 @@ This is the counterfactual primitive Paul's ROI Framework can consume before mak
 ```
 
 When either window fails suppression gates, the endpoint returns `verdict: SUPPRESS` and `shift: INDETERMINATE`. Patterns are only populated when the existing pattern detector can safely surface them.
+
+A positive integer window shorter than `60` days is valid operating context but
+is not eligible for Causal Delta surfacing. The endpoint returns `SUPPRESS` with
+`suppression_reason: INSUFFICIENT_TIME`; it does not classify either window.
+Zero, negative, fractional, or malformed window values remain invalid requests.
+
+The post window must also be fully elapsed at computation time. A nominal
+60-day request made before `event_at + 60 days` returns `SUPPRESS` with
+`INSUFFICIENT_TIME`. Day 30 Measurement Cells remain operating context only;
+combining two 30-day milestones does not satisfy the 60-day minimum for each
+independent Causal Delta window.
 
 ## Pattern Reuse
 

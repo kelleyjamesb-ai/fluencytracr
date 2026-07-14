@@ -164,6 +164,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-13: defined the docs-only hypothesis/metric admission boundary, one-primary-metric analysis families, one-canonical-tuple-per-panel manifests, pre-outcome access receipts, baseline-Fluency/source bindings, separate evidence/fit dependency keys, exact continuous_normal_identity proof eligibility, complete HOLD accounting, and exact longitudinal_movement semantics. Formula metadata is test-pinned; strict OpenSpec, docs, semantic, V1, Harness, diff, and independent CODE/BUG/ADVERSARIAL gates passed. Runtime admission, real data, reporting, customer confidence/attribution, persistence, and UI remain unauthorized."
+    },
+    {
+      "id": "governance-drift-repair",
+      "title": "Governance drift repair for Causal Delta, chat identifiers, traces, suppression vocabulary, and ROI policy",
+      "bound": "Enforce the compiled 60-day Causal Delta fail-closed gate; remove and reject direct chat connector user_id; correct trace reconstruction documentation to match sanitized runtime and compiled thresholds; clarify canonical external suppression reasons versus non-output internal diagnostics; record internal dollarization, causal-language, and aggregate-productivity ROI lanes as HOLD pending an explicit product-governance decision; no UI, live data, new events, new suppression reasons, tunable thresholds, customer-facing economic output, or policy widening",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-13: 60-day Causal Delta gating, strict direct-chat inputs, trace/suppression alignment, ROI HOLD enforcement through prebuilt EBITA validation, non-person open-container IDs, and deterministic ghost-use fixtures verified with CODE/BUG/ADVERSARIAL GO; backend 928/928."
     }
   ]
 }

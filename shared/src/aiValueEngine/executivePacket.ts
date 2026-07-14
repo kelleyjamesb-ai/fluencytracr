@@ -7,6 +7,7 @@
  */
 
 import { getAiValueDisplayLabel } from "./language";
+import { roiScenarioRequestsHeldProductLane } from "./roiScenario";
 
 const RESULT_SCHEMA_VERSION = "FT_AI_VALUE_EXECUTIVE_PACKET_VALIDATION_2026_06";
 
@@ -738,6 +739,9 @@ function statusForEbitaBridge(
   roiScenario: any,
   evidenceQuality: ExecutiveEbitaImpactSummary["evidence_quality"]
 ): ExecutiveEbitaImpactSummary["status"] {
+  if (roiScenarioRequestsHeldProductLane(roiScenario)) {
+    return "NO_FINANCIAL_TRANSLATION";
+  }
   const rawStatus = String(
     bridge?.financial_translation_policy?.mode ?? "NO_FINANCIAL_TRANSLATION"
   );

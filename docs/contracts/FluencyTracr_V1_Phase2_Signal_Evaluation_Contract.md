@@ -61,6 +61,13 @@ If `cohort_size < 5` then:
 
 ### Suppression Rules (k=5)
 
+**Legacy rollup notice:** the generic team/role rollup algorithm below predates
+the governed `(workflow_id, jbtd_id, persona_id)` slice contract. It is retained
+as historical implementation context only. It must not aggregate across slices,
+sum suppressed child counts into a larger slice, or rescue a suppressed slice.
+The independent-slice and no-rescue rules in the Phase 1 Event Contract
+supersede any conflicting rollup language here.
+
 1. **Count Threshold**: If `count < 5`, set `suppressed = true` and `count = null`
 2. **Implied Group Size**: We assume `count` approximates number of contributors (not always true, but conservative)
 3. **Suppression Scope**: Apply to `team` and `role` groups only (not `function` or `org`)
@@ -180,6 +187,32 @@ Ambiguity suppression takes precedence over all other inference logic, including
 7) Apply confidence gating as defined in Phase 2.
 8) Emit a binary decision only: SURFACE or SUPPRESS.
 9) If SUPPRESS, emit exactly one suppress_reason_code; if SURFACE, emit no reason code.
+
+## Internal diagnostics and product suppression reasons
+
+The `SUPP_*` values in the V1 evaluator are internal diagnostic codes. They
+explain why an internal candidate decision remained suppressed, but they are
+not members of the canonical product suppression vocabulary and must not be
+emitted by product routes, exports, rendered readouts, or customer-facing
+artifacts.
+
+Product-facing outputs that include `verdict: SUPPRESS` use only the five
+canonical reasons:
+
+- `INSUFFICIENT_TIME`
+- `INSUFFICIENT_VOLUME`
+- `NO_CONVERGENCE`
+- `BASELINE_UNSTABLE`
+- `HIGH_AMBIGUITY`
+
+The JSON Schema at `schemas/ft_v1_evaluation_decision.schema.json` is
+intentionally a SURFACE-only export projection. It is not the serialization
+contract for either raw internal runtime shape, and no runtime projector is
+currently bound to it. Internal runtime evaluators may retain `SUPP_*`
+diagnostics for fail-closed control flow, but suppressed candidates are
+non-renderable and cannot be passed through that schema. A future product
+adapter must apply its canonical gate and emit one of the five product reasons;
+it must never relay an internal diagnostic code.
 
 ## AIVM value-realization metadata (additive)
 

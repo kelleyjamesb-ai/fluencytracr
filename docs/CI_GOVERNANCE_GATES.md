@@ -18,8 +18,13 @@ Purpose: define CI gates Kiln will implement to enforce V1 governance requiremen
 - Unknown event names are rejected.
 
 2) Reason-code invariants
-- SUPPRESS => exactly one suppress_reason_code.
-- SURFACE => no suppress_reason_code.
+- Internal candidate `SUPPRESS` => exactly one internal `SUPP_*`
+  `suppress_reason_code`; `SURFACE` => no internal reason code.
+- Product-facing `verdict: SUPPRESS` => exactly one of the five canonical
+  suppression reasons; internal `SUPP_*` diagnostics must not cross a route,
+  export, render, or customer-artifact boundary.
+- `schemas/ft_v1_evaluation_decision.schema.json` remains a SURFACE-only
+  render/export allowlist, not an internal SUPPRESS serialization schema.
 
 3) Ambiguity suppression precedence
 - Any ambiguity must result in SUPPRESS and must not surface.

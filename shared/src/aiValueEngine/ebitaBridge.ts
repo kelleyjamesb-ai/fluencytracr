@@ -7,6 +7,8 @@
  * telemetry.
  */
 
+import { roiScenarioRequestsHeldProductLane } from "./roiScenario";
+
 const RESULT_SCHEMA_VERSION = "FT_AI_VALUE_EBITA_BRIDGE_VALIDATION_2026_06";
 export const EBITA_BRIDGE_SCHEMA_VERSION = "FT_AI_VALUE_EBITA_BRIDGE_2026_06";
 
@@ -186,6 +188,7 @@ function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Se
 }
 
 function roiGate(context: any): any {
+  if (roiScenarioRequestsHeldProductLane(context?.roiScenario)) return null;
   return context?.roiScenario?.financial_claim_gate ?? null;
 }
 
@@ -360,6 +363,14 @@ function collectPolicyGaps(bridge: any, context: any): string[] {
   requireField(policy.mode, "financial_translation_policy.mode", gaps);
   if (policy.mode && !ALLOWED_TRANSLATION_MODES.has(policy.mode)) {
     gaps.push(`financial_translation_policy.mode is invalid: ${policy.mode}`);
+  }
+  if (
+    roiScenarioRequestsHeldProductLane(context?.roiScenario) &&
+    mode !== "NO_FINANCIAL_TRANSLATION"
+  ) {
+    gaps.push(
+      "source roiScenario requests a held product lane; financial_translation_policy.mode must be NO_FINANCIAL_TRANSLATION"
+    );
   }
 
   if (mode === "NO_FINANCIAL_TRANSLATION") {
@@ -577,6 +588,9 @@ function metricIdForRoute(inputs: BuildEbitaBridgeInputs, valueRoute: string): s
 }
 
 function bridgeModeFromRoiScenario(roiScenario: any): string {
+  if (roiScenarioRequestsHeldProductLane(roiScenario)) {
+    return "NO_FINANCIAL_TRANSLATION";
+  }
   const gate = roiScenario?.financial_claim_gate;
   if (!gate || gate.mode === "BLOCKED") return "NO_FINANCIAL_TRANSLATION";
   if (gate.mode === "CUSTOMER_FACING_APPROVED") return "CUSTOMER_FACING_APPROVED";

@@ -348,8 +348,13 @@ for (const entry of causalDeltaCases) {
   assert.ok(entry.workflow_id.includes(entry.id.replaceAll("_", "-")));
   assert.ok(["IMPROVED", "HELD", "REGRESSED", "INDETERMINATE"].includes(entry.expected.causal_delta_shift));
   assert.equal(entry.causal_delta_manifest.endpoint, "/api/v1/causal-delta");
-  assert.equal(entry.causal_delta_manifest.pre_window_days, 30);
-  assert.equal(entry.causal_delta_manifest.post_window_days, 30);
+  assert.equal(entry.causal_delta_manifest.pre_window_days, 60);
+  assert.equal(entry.causal_delta_manifest.post_window_days, 60);
+  assert.ok(
+    Date.parse(entry.causal_delta_manifest.event_at) +
+      entry.causal_delta_manifest.post_window_days * 24 * 60 * 60 * 1000 <=
+      Date.parse(entry.causal_delta_manifest.observed_through)
+  );
   assert.equal(entry.causal_delta_manifest.no_statistical_claims, true);
 }
 

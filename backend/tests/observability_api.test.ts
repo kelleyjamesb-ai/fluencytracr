@@ -119,23 +119,43 @@ it("nulls Reliability Factor fields when workflow disclosure is suppressed", asy
 });
 
 it("returns ghost-use as residual observability only", async () => {
-  const current = "2026-05-15T00:00:00.000Z";
-  const previous = "2026-03-16T00:00:00.000Z";
-  for (let i = 0; i < 5; i += 1) {
-    workOnly("wf-ghost-api", `ghost-api-current-${i}`, current).forEach((e) => store.fluencyEvents.set(e.event_id, e));
-    workOnly("wf-ghost-api", `ghost-api-previous-${i}`, previous).forEach((e) => store.fluencyEvents.set(e.event_id, e));
+  jest.useFakeTimers({
+    doNotFake: [
+      "hrtime",
+      "nextTick",
+      "performance",
+      "queueMicrotask",
+      "setImmediate",
+      "clearImmediate",
+      "setInterval",
+      "clearInterval",
+      "setTimeout",
+      "clearTimeout"
+    ]
+  });
+  jest.setSystemTime(new Date("2026-06-15T12:00:00.000Z"));
+
+  try {
+    const current = "2026-05-16T12:00:00.000Z";
+    const previous = "2026-03-17T12:00:00.000Z";
+    for (let i = 0; i < 5; i += 1) {
+      workOnly("wf-ghost-api", `ghost-api-current-${i}`, current).forEach((e) => store.fluencyEvents.set(e.event_id, e));
+      workOnly("wf-ghost-api", `ghost-api-previous-${i}`, previous).forEach((e) => store.fluencyEvents.set(e.event_id, e));
+    }
+
+    const res = await request(app)
+      .get("/api/observability/org-1?window=60d")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(res.status).toBe(200);
+    const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-ghost-api");
+    expect(row?.residual_patterns).toEqual({ ghost_use: "PRESENT" });
+    expect(row?.pattern_distribution?.["Undertrust Avoidance"]).toBe("LOW");
+    expect(row?.allowed_interpretation_hints).toContain("no observed AI evidence in window");
+    expect(JSON.stringify(row).toLowerCase()).not.toMatch(/resistance|underperformance|lack of fluency/);
+  } finally {
+    jest.useRealTimers();
   }
-
-  const res = await request(app)
-    .get("/api/observability/org-1?window=60d")
-    .set({ "x-role": "EXEC_VIEWER" });
-
-  expect(res.status).toBe(200);
-  const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-ghost-api");
-  expect(row?.residual_patterns).toEqual({ ghost_use: "PRESENT" });
-  expect(row?.pattern_distribution?.["Undertrust Avoidance"]).toBe("LOW");
-  expect(row?.allowed_interpretation_hints).toContain("no observed AI evidence in window");
-  expect(JSON.stringify(row).toLowerCase()).not.toMatch(/resistance|underperformance|lack of fluency/);
 });
 
 it("returns categorical prevalence bands only at the executive boundary", async () => {

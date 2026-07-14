@@ -55,13 +55,19 @@ export class DeclarativeConnector extends ConnectorBase {
     const signals: InternalSignal[] = [];
     const errors: string[] = [];
 
+    // Privacy violations invalidate the whole batch; never return partial signals.
     for (const event of events) {
       const forbiddenViolations = this.checkForbiddenFields(event);
       if (forbiddenViolations.length > 0) {
         errors.push(`Event ${event.event_type} contains forbidden fields: ${forbiddenViolations.join(", ")}`);
-        continue;
       }
+    }
 
+    if (errors.length > 0) {
+      return { success: false, signals: [], errors };
+    }
+
+    for (const event of events) {
       const matchingMappings = this.mapping.signal_mappings.filter(
         (m) => m.external_event_type === event.event_type
       );

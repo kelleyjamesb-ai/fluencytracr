@@ -90,6 +90,14 @@ individual scoring, person-level HR analytics, HRIS inference, productivity
 ranking, autonomous customer action, raw prompt/response storage, direct
 identifier, or customer-facing economic output is authorized by this contract.
 
+The current product-authorization decision for the ROI Scenario's legacy
+dollarization, causal-language, and aggregate-workflow-productivity lanes is
+[HOLD](./roi-scenario-product-governance-decision.md). Schema presence or
+prerequisite satisfaction does not authorize a route, UI, production execution,
+internal dogfood readout, customer readout, or claim. The validator rejects an
+activated held lane and disables all execution feeds. Each lane requires a
+later exact-scope governance decision before use.
+
 For the Data Boundary and ROI Evidence Contract, use
 [`scripts/validate_ai_value_data_boundary.mjs`](../../../scripts/validate_ai_value_data_boundary.mjs)
 with the seeded Customer Support data-boundary fixture in
@@ -146,17 +154,18 @@ governed value-scenario modeling when all of these are true:
   measurement, ungated causality claims, and ungated realized ROI proof are
   absent.
 
-Passing these gates means the platform can determine which ROI or value metrics
-should be modeled, reviewed, and carried into a caveated executive readout. It
-does not mean FluencyTracr has proven ROI, calculated realized savings, or
-created customer-facing economic output.
+Passing these gates means the platform can determine which non-dollarized ROI
+or value metrics should be routed and reviewed. It does not release a held lane,
+prove ROI, calculate realized savings, or create customer-facing economic
+output.
 
-### Claim Governance Is Two-Tier (Amended 2026-06-12)
+### Legacy Structural Claim-Gate Model (Current Product Authorization Held)
 
-Claim boundaries on the Value Evidence Case are no longer one flat blocked
-list. The purpose of the governance layer is to back every claim with real
-customer-owned data — so value claims are evidence-gated, not categorically
-banned:
+The earlier two-tier claim-gate model describes structural evidence conditions
+that a future exact-scope decision would need. It does not currently unlock the
+three held ROI Scenario product lanes. The
+[ROI Scenario Product Governance Decision](./roi-scenario-product-governance-decision.md)
+takes precedence:
 
 - **Privacy boundaries never relax**, regardless of evidence strength:
   individual scoring, team or manager ranking, individual-level HR analytics,
@@ -166,24 +175,21 @@ banned:
   permitted evidence inputs under the data-boundary contract, exactly like any
   other aggregate — the `hr_analytics` token everywhere in the engine means
   person-level HR analytics.
-- **Evidence-gated claims unlock by rung.** ROI proof, realized ROI language,
-  and customer-facing economic figures unlock at the VALIDATED rung (token
-  `STRONG`): accepted aggregate outcome evidence, exact window alignment,
-  resolved customer-owned assumptions, and a `customer_validation` block
-  recording the customer's sign-off on the economic inputs. Causality has its
-  own gate and additionally requires an approved baseline/comparison evidence
-  design.
-- **Figures stay customer-owned even when unlocked.** FluencyTracr still never
-  computes or stores economic output (`economic_output_policy` stays false); a
-  validated case references the customer's own approved figures via the
-  validation reference, and its caveats must say the figures are
-  customer-computed and customer-approved.
+- **Evidence-gated claims become review candidates by rung.** Accepted
+  aggregate outcome evidence, exact window alignment, resolved customer-owned
+  assumptions, and customer validation can establish readiness for a later
+  governance decision. They do not release dollarized output, causal language,
+  aggregate workflow productivity, realized ROI, or customer-facing economic
+  figures today.
+- **Customer-owned figures remain references only.** FluencyTracr does not
+  compute or store economic output. A validation reference may identify a
+  customer-owned assumption or figure for review, but it does not authorize
+  display or claim language.
 
-Each case carries `claim_gates` showing every gated claim, its LOCKED or
-UNLOCKED state, and what unlocks it. The validator recomputes gate states
-fail-closed: a case cannot drop a locked claim from `blocked_claims`, cannot
-claim the VALIDATED rung without the customer validation, and cannot use
-causal language without the approved design.
+Each case may carry structural `claim_gates` showing which prerequisites are
+present. Those gate results are not product authorization. Activating a held
+lane makes ROI validation invalid and keeps value-modeling and executive-readout
+execution feeds false until a later decision explicitly releases one named lane.
 
 For Phase 14 Value Improvement Loop, use
 [`scripts/validate_ai_value_improvement_loop.mjs`](../../../scripts/validate_ai_value_improvement_loop.mjs)

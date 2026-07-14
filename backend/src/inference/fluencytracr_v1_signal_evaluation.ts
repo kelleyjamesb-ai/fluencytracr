@@ -12,6 +12,8 @@ import {
   reliabilityComponentsFromCanonicalEvents
 } from "../value_realization/reliability_factor";
 
+// Internal evaluation diagnostics only; product verdicts emit the canonical
+// five SuppressionReason values instead of these SUPP_* codes.
 type FluencyTracrV1SuppressReasonCode =
   | "SUPP_INTERNAL_INVARIANT_FAIL"
   | "SUPP_AMBIGUITY_PRESENT"

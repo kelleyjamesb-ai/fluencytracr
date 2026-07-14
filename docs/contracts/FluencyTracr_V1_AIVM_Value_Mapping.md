@@ -12,7 +12,11 @@ Every V1 verdict payload includes:
 | `value_type` | `ACCELERATION`, `QUALITY_PREMIUM`, `NET_NEW`, `UNCLASSIFIED` | `UNCLASSIFIED` |
 | `evidence_grade` | `OBJECTIVE`, `CALIBRATED`, `QUALITATIVE` | `QUALITATIVE` |
 
-Existing fields remain unchanged. Consumers that ignore unknown fields can continue to read `decision`, `suppress_reason_code`, cohort keys, and renderability exactly as before.
+Existing internal candidate-decision fields remain unchanged. `SUPP_*`
+`suppress_reason_code` values and `renderable` are internal control-flow
+diagnostics, not product output fields. The current JSON Schema is an unbound
+SURFACE-only export projection; product-facing SUPPRESS verdicts use only the
+canonical five suppression reasons.
 
 ## Deterministic Mapping
 

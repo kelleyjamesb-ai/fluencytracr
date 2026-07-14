@@ -36,6 +36,7 @@ const ConnectorMappingSchema = z.object({
     tool_class: z.string()
   }),
   signal_mappings: z.array(SignalMappingSchema),
+  strict_input_paths: z.boolean().optional(),
   forbidden_fields: z.array(
     z.object({
       field_name: z.string(),
