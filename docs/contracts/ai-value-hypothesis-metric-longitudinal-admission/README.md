@@ -373,3 +373,14 @@ synthetic-only admission validator and immutable planned-unit manifest for the
 current supported metric family. It must not admit real data, execute the
 model, emit posterior/customer output, or create production schemas, routes,
 persistence, exports, connectors, or UI.
+
+The later
+[Longitudinal Internal-Dogfood Promotion Decision](../ai-value-longitudinal-internal-dogfood-promotion-decision/README.md)
+does not override this implementation boundary. It permits separate
+docs/OpenSpec prerequisite proposals only. A real-data admission and
+source-binding proposal must reconcile and preserve the synthetic validator's
+immutable analysis-unit semantics, one-canonical-tuple panel bindings,
+independent per-window gate receipts, fixed terminal look, hash-bound
+pre-outcome access receipt, and no-retrospective-repair rule. It cannot access,
+prepare, fit, or emit artifacts from real data. Any later execution still
+requires a separate explicit human-approved real-data execution decision.

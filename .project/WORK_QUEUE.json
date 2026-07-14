@@ -172,6 +172,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-13: 60-day Causal Delta gating, strict direct-chat inputs, trace/suppression alignment, ROI HOLD enforcement through prebuilt EBITA validation, non-person open-container IDs, and deterministic ghost-use fixtures verified with CODE/BUG/ADVERSARIAL GO; backend 928/928."
+    },
+    {
+      "id": "longitudinal-internal-dogfood-promotion-decision",
+      "title": "Longitudinal Bayesian bounded internal-dogfood promotion decision",
+      "bound": "Docs/OpenSpec/status only: record a conditional decision for the accepted longitudinal Gaussian state-space model family, limited to a later bounded internal-dogfood evidence review; define audience, purpose, exact model family, prerequisites, HOLD behavior, and blocked outputs; require separate real-data admission/source binding, runtime monitoring/fail-closed, and readout-language decisions before execution; no execution, real/live/customer data, routes, UI, persistence, connectors, exports, schemas, customer output, confidence/probability language, ROI, causality, productivity, finance, new events/reasons/thresholds, DiD work, or completion of model-family tasks 5.5-5.8",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-13: conditionally selected only the accepted HISTORICAL_STATE_SPACE artifact for prerequisite docs/OpenSpec hardening. Execution remains HOLD pending calibrations, real-data/source admission, monitoring, readout governance, frozen manifest, and a separate human execution decision. Full inference 489/489; bridges 76/76; CODE/BUG/ADVERSARIAL GO. Tasks 5.5-5.8 remain open."
     }
   ]
 }

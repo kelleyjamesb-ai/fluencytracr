@@ -2,6 +2,41 @@
 
 ## Current Session
 
+- Longitudinal bounded internal-dogfood promotion decision completed
+  (2026-07-13) on
+  `codex/longitudinal-internal-dogfood-promotion-decision` from merged
+  `origin/main` at `cb6262f2`. Recorded the paired governance state
+  `CONDITIONAL_PROMOTION_TO_BOUNDED_INTERNAL_DOGFOOD` and
+  `HOLD_PENDING_LONGITUDINAL_DOGFOOD_PREREQUISITES`. The decision selects only
+  `HISTORICAL_STATE_SPACE` and the accepted artifact identity
+  `model_slice=longitudinal_state_space_replicated_validation` under the
+  conceptual `first_longitudinal_synthetic_model_slice`; it excludes
+  `REPEATED_PRE_POST`, DiD, alternate likelihoods, controlled/staggered routes,
+  and economic model components.
+
+  The decision permits only separately approved prerequisite docs/OpenSpec
+  proposals. No data access, preparation, fitting, artifact emission, or output
+  is authorized. AI Fluency measurement-model calibration, VBD trajectory-model
+  calibration, immutable real-data admission/source binding, runtime monitoring
+  and fail-closed behavior, restricted readout/HOLD language, a frozen
+  non-activating pilot manifest, and a separate explicit human real-data
+  execution decision remain conjunctive prerequisites. The existing Glean
+  dogfood adapter grants no model-source clearance; `k=16` remains synthetic
+  proof provenance, not a promoted runtime threshold. Every posterior or
+  derived result remains blocked by this decision.
+
+  Verification passed: full inference (`489 passed`), four longitudinal
+  TypeScript bridges (`76 passed`), AI Fluency snapshots (`11 passed`), shared
+  and confidence-engine builds, Assurance Harness (`276 passed`, `3 skipped`),
+  strict OpenSpec validation for the new decision and three aligned parent
+  changes, docs and link sweeps, semantic drift guard, V1 governance gates, and
+  `git diff --check`. Final independent CODE, BUG, and ADVERSARIAL reviews
+  returned GO after proof-scope, identity, manifest-activation, admission, and
+  output-language gaps were closed. OpenSpec tasks `5.5` through `5.8` remain
+  unchecked. No runtime, real data, schemas, routes, UI, persistence,
+  connectors, exports, customer output, confidence/probability language, ROI,
+  causality, productivity, finance output, new canonical event/reason/threshold,
+  or DiD work was added.
 - Governance drift repair completed (2026-07-13) on
   `codex/governance-drift-repair` from `origin/main` at `94465660`. Enforced the
   compiled 60-day Causal Delta floor across API, direct helper, dogfood, and

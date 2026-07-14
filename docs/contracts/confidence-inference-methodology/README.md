@@ -320,10 +320,13 @@ promotion decision authorizes a narrower customer-facing claim.**
 | `CONTROLLED_TEST_READY`        | future customer-safe ceiling only - not currently authorized | internal-only                     | Internal measured-effect language with the test design named; no customer-facing output.                      |
 | `CALIBRATED_ATTRIBUTION_READY` | future customer-safe ceiling only - not currently authorized | internal-only                     | Internal calibrated-attribution language only after later promotion; no customer-facing output.               |
 
-Until a separate recorded human promotion decision exists, the effective
-status of every non-withheld tier is capped at internal-only:
-`customer_facing_output`, `confidence_output`, and `probability_output`
-remain in `CONFIDENCE_MODEL_BLOCKED_USES`.
+Until a separate recorded human promotion decision authorizes an exact
+customer-facing claim, the effective status of every non-withheld tier is
+capped at internal-only: `customer_facing_output`, `confidence_output`, and
+`probability_output` remain in `CONFIDENCE_MODEL_BLOCKED_USES`. The docs-only
+longitudinal internal-dogfood decision is not that customer-facing decision. It
+keeps execution held pending separate prerequisites and does not remove any
+blocked use.
 
 ## Expert review record
 
