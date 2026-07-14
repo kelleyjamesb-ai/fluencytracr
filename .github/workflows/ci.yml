@@ -18,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install Python dependencies
@@ -71,7 +71,7 @@ jobs:
         run: bash scripts/ci_linkcheck_fluency_docs.sh
       - name: Upload suppression evidence artifact
         if: always() && hashFiles('artifacts/phase3/suppression/**') != ''
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: suppression-evidence
           path: artifacts/phase3/suppression

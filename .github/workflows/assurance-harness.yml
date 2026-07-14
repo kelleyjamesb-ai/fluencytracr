@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -128,7 +128,7 @@ jobs:
 
       - name: Upload assurance report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: assurance-report
           path: scripts/assurance-report.md
@@ -136,7 +136,7 @@ jobs:
 
       - name: Upload backend log on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: assurance-backend-log
           path: backend.log

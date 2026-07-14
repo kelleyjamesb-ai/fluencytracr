@@ -2,6 +2,19 @@
 
 ## Current Session
 
+- GitHub Actions Node 24 compatibility cleanup completed (2026-07-14) on
+  `codex/ci-node24-action-upgrades` from merged `origin/main` at `ecdfc5cc`.
+  Replaced all ten warning-producing `actions/setup-python@v5` and
+  `actions/upload-artifact@v5` references with their Node-24-native `v6`
+  majors across the CI, inference, and Assurance workflows. Commands, triggers,
+  conditions, permissions, artifact names/paths, and test inputs are unchanged.
+
+  Workflow YAML parses, both `v6` tags resolve, no deprecated references
+  remain, Assurance Harness passes (`276 passed`, `3 skipped`), and V1
+  governance, semantic drift, docs sweep, and `git diff --check` pass. Final
+  independent CODE, BUG, and ADVERSARIAL review returned GO. The prior PR #419
+  checks were all successful; its visible issue was warning annotations, not a
+  failed CI job.
 - Longitudinal bounded internal-dogfood promotion decision completed
   (2026-07-13) on
   `codex/longitudinal-internal-dogfood-promotion-decision` from merged

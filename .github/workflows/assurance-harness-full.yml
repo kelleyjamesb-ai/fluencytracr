@@ -68,7 +68,7 @@ jobs:
 
       - name: Set up Python
         if: steps.lmsys-credentials.outputs.available == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -167,7 +167,7 @@ jobs:
 
       - name: Upload assurance report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: assurance-report-full-scale
           path: scripts/assurance-report.md
@@ -175,7 +175,7 @@ jobs:
 
       - name: Upload backend log on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: assurance-backend-log-full-scale
           path: backend.log
