@@ -1,0 +1,210 @@
+{
+  "schema_version": "FT_INTERNAL_AI_FLUENCY_MEASUREMENT_CALIBRATION_EVIDENCE_2026_07_V1",
+  "generated_at": "2026-07-15T17:22:18.823959+00:00",
+  "source_evidence": {
+    "artifact_schema_version": "FT_AI_FLUENCY_ORDINAL_MEASUREMENT_CALIBRATION_2026_07_V1",
+    "artifact_state": "VALID_INTERNAL_SYNTHETIC_NON_AUTHORIZING",
+    "execution_mode": "full",
+    "source_artifact_path": "inference/evidence/ai_fluency_measurement_calibration_full_2026_07.json",
+    "source_artifact_sha256": "05adf24f92aa41546e036c192ac8bf675c7f3ce06cb633f7261b34d57e0bce5a",
+    "artifact_payload_hash": "b33253a88b284fc8ba7964672516ae191457bf6e4c1d4d899f702d24a2defac0",
+    "artifact_self_hash": "9666146e8ef78ba588a4755be6ffcf87cd32920cf5c4c8385371f597dc74424c",
+    "manifest_hash": "1b1523baab5bd3007e0c42e732da8d71cf67594074a54d17bb4b741292565434",
+    "study_hash": "79ac5365981182994fc172838a5b734a01c3f390e3160ec2ba303d4ea7dd2ad9",
+    "slot_result_hashes_hash": "5db4eb75cd24747ca5bbb2bb4cf217c50b652d95e1e1224debb2bb1b63f00ec4",
+    "execution_verification_hash": "8c1bd6af9541ffaf35ef11abce6c989f35cf3dc50827da65fe3723192a53db3d",
+    "execution_identity_hash": "7049149bf8efb160839268d84f109a12852351b918ca79139fe375ad763adee3",
+    "implementation_hash": "748b127e50ea496445df7f8183f46b6bf2e438822101c190dd880688a81c8bf1",
+    "plan_hash": "d84964e89056f1a9478bfd23c2961ee917591239d23d35b995a9cd7a362086b8",
+    "primary_phase_hash": "f938b28b9dd3c35464c3c40a1acb2d77eb6111527c41860a984c958a344fb72b",
+    "recompute_phase_hash": "00b3308ec7beab1a3876b9ba9a89423584e3e767bf402bd5f3abfa4cdbafe81e",
+    "primary_checkpoint_manifest_hash": "7ca012963b70033db20f75cd6280c8ff8f12f00e37d386bea40a4cc42b42740b",
+    "recompute_checkpoint_manifest_hash": "0a3b33c147c574071113308244698f487713a7d3fa82b77f2d079db4ab7ca316",
+    "primary_process_tokens_hash": "daf78dd4b87552b24b5254d1c56657a122b419a6bbdecdfa498110f921c6eac4",
+    "recompute_process_tokens_hash": "a93751457e47648dcbc9e77bfe39f28fc9547a4005dacce9ed2b3ea47188d0e2",
+    "source_commit": "935879417295f6b9677c832adfb905da747aa6e6",
+    "requirements_lock_hash": "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801",
+    "source_artifact_committed": true,
+    "summary_only": true,
+    "primary_slot_results_committed": false,
+    "recomputation_slot_results_committed": false,
+    "respondent_rows_committed": false,
+    "raw_answers_committed": false,
+    "posterior_draws_committed": false,
+    "latent_states_committed": false
+  },
+  "plan": {
+    "scenarios": [
+      "invariant",
+      "invariant_latent_shift",
+      "loading_drift",
+      "threshold_drift"
+    ],
+    "replications_per_scenario": 200,
+    "required_slot_count": 800,
+    "executed_slot_count": 800,
+    "sample_size_per_wave": 800,
+    "execution_mode": "full",
+    "complete_full_plan": true,
+    "separate_phase_execution": true,
+    "all_compiled_slots_freshly_recomputed": true,
+    "failing_check_count": 0,
+    "runner_error_count": 0
+  },
+  "scenario_results": [
+    {
+      "scenario": "invariant",
+      "replication_count": 200,
+      "expected_result_count": 199,
+      "expected_result_rate": 0.995,
+      "recovery_pass_count": 200,
+      "recovery_pass_rate": 1.0,
+      "runner_error_count": 0
+    },
+    {
+      "scenario": "invariant_latent_shift",
+      "replication_count": 200,
+      "expected_result_count": 198,
+      "expected_result_rate": 0.99,
+      "recovery_pass_count": 200,
+      "recovery_pass_rate": 1.0,
+      "runner_error_count": 0
+    },
+    {
+      "scenario": "loading_drift",
+      "replication_count": 200,
+      "expected_result_count": 194,
+      "expected_result_rate": 0.97,
+      "recovery_pass_count": 200,
+      "recovery_pass_rate": 1.0,
+      "runner_error_count": 0
+    },
+    {
+      "scenario": "threshold_drift",
+      "replication_count": 200,
+      "expected_result_count": 200,
+      "expected_result_rate": 1.0,
+      "recovery_pass_count": 200,
+      "recovery_pass_rate": 1.0,
+      "runner_error_count": 0
+    }
+  ],
+  "gate_results": {
+    "invariant_false_hold": [
+      {
+        "scenario": "invariant",
+        "false_hold_count": 1,
+        "false_hold_rate": 0.005,
+        "maximum_allowed_count": 10,
+        "maximum_allowed_rate": 0.05,
+        "passed": true
+      },
+      {
+        "scenario": "invariant_latent_shift",
+        "false_hold_count": 2,
+        "false_hold_rate": 0.01,
+        "maximum_allowed_count": 10,
+        "maximum_allowed_rate": 0.05,
+        "passed": true
+      }
+    ],
+    "drift_detection": [
+      {
+        "scenario": "loading_drift",
+        "detected_count": 194,
+        "detection_rate": 0.97,
+        "minimum_required_count": 160,
+        "minimum_required_rate": 0.8,
+        "passed": true
+      },
+      {
+        "scenario": "threshold_drift",
+        "detected_count": 200,
+        "detection_rate": 1.0,
+        "minimum_required_count": 160,
+        "minimum_required_rate": 0.8,
+        "passed": true
+      }
+    ],
+    "recovery": [
+      {
+        "scenario": "invariant",
+        "recovery_pass_count": 200,
+        "recovery_pass_rate": 1.0,
+        "minimum_required_count": 180,
+        "minimum_required_rate": 0.9,
+        "passed": true
+      },
+      {
+        "scenario": "invariant_latent_shift",
+        "recovery_pass_count": 200,
+        "recovery_pass_rate": 1.0,
+        "minimum_required_count": 180,
+        "minimum_required_rate": 0.9,
+        "passed": true
+      },
+      {
+        "scenario": "loading_drift",
+        "recovery_pass_count": 200,
+        "recovery_pass_rate": 1.0,
+        "minimum_required_count": 180,
+        "minimum_required_rate": 0.9,
+        "passed": true
+      },
+      {
+        "scenario": "threshold_drift",
+        "recovery_pass_count": 200,
+        "recovery_pass_rate": 1.0,
+        "minimum_required_count": 180,
+        "minimum_required_rate": 0.9,
+        "passed": true
+      }
+    ]
+  },
+  "compiled_gates": {
+    "full_replications_per_scenario": 200,
+    "loading_invariance_rope_half_width": 0.2,
+    "maximum_invariant_false_hold_rate": 0.05,
+    "maximum_loading_recovery_rmse": 0.1,
+    "maximum_second_order_recovery_rmse": 0.15,
+    "maximum_threshold_recovery_rmse": 0.12,
+    "minimum_drift_detection_rate": 0.8,
+    "minimum_first_order_loading": 0.4,
+    "minimum_invariance_posterior_probability": 0.8,
+    "minimum_ordinal_omega": 0.7,
+    "minimum_recovery_pass_rate": 0.9,
+    "minimum_second_order_loading": 0.45,
+    "threshold_invariance_rope_half_width": 0.35,
+    "thresholds_runtime_configurable": false
+  },
+  "governance": {
+    "study_status": "PASS",
+    "artifact_state": "VALID_INTERNAL_SYNTHETIC_NON_AUTHORIZING",
+    "numerical_calibration_gate_passed": true,
+    "exact_plan_complete": true,
+    "full_evidence_generation_complete": true,
+    "independent_acceptance_complete": false,
+    "ai_fluency_measurement_model_calibration_complete": false,
+    "parent_openspec_task_5_5_complete": false,
+    "real_data_calibration_complete": false,
+    "short_form_equating_complete": false,
+    "structural_path_calibration_complete": false,
+    "aggregate_only": true,
+    "internal_only": true,
+    "synthetic_only": true,
+    "customer_output_authorized": false,
+    "probability_output_authorized": false,
+    "confidence_output_authorized": false,
+    "roi_output_authorized": false,
+    "finance_output_authorized": false,
+    "causality_output_authorized": false,
+    "productivity_output_authorized": false,
+    "creates_route": false,
+    "creates_ui": false,
+    "writes_persistence": false,
+    "creates_export": false,
+    "renders_readout": false,
+    "executes_connector": false,
+    "promotion_decision_ref": null
+  }
+}
