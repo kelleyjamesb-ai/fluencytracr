@@ -42,6 +42,10 @@ persistence, and product-integration work remain separate future scopes.
 - [x] 5.3 Null false-eligibility study for the longitudinal artifact.
 - [x] 5.4 Lag recovery and common-shock robustness studies.
 - [x] 5.5 AI Fluency measurement-model calibration.
-- [ ] 5.6 VBD trajectory-model calibration.
+- [ ] 5.6 VBD trajectory-model calibration. The contract and synthetic proof
+  plan are defined by `add-vbd-trajectory-calibration-contract`; implementation,
+  full execution, fresh recomputation, exact-byte independent acceptance, and
+  explicit human acceptance remain incomplete. Downstream three-lane outcome-
+  model integration remains a separate blocker before dogfood execution.
 - [ ] 5.7 AI Fluency snapshot persistence promotion decision.
 - [ ] 5.8 Backend read projection and UI integration after separate promotion.

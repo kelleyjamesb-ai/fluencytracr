@@ -53,14 +53,19 @@ documented value-realization layers:
   invocation mode, UGC coverage, and personal/shared/org Skill separation are
   validated.
 - **AI Fluency measurement-model calibration contract:** defines the aggregate
-  snapshot-context prerequisites and missing evidence required before any
-  future Fluency measurement model can be implemented. Current state is
-  `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`: dimension summaries alone do
-  not calibrate a latent model or prove comparable cross-wave change. No model
-  is fit, no confidence/probability output is emitted, no respondent rows are
-  exported, and no persistence, route, UI, connector, customer-facing output,
-  ROI, causality, productivity, finance, HR, ranking, or economic output is
-  authorized.
+  24-item aggregate ordinal evidence boundary and accepted internal synthetic
+  proof. Current state is
+  `SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING`: 800 primary slots and
+  800 fresh recomputations passed exact-byte review, while dimension summaries
+  alone remain insufficient and real-data admission, output, persistence,
+  routes, UI, connectors, ROI, causality, productivity, finance, HR, ranking,
+  and economic use remain blocked.
+- **VBD trajectory-model calibration contract:** defines non-overlapping
+  aggregate frequency, engagement, and Breadth trajectories, with Depth kept
+  as source-bound context outside the likelihood. Current state is
+  `CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING`: composite Velocity/VBD
+  scores are inadmissible, implementation approval is pending, and parent task
+  `5.6` remains incomplete.
 - **Hypothesis and metric longitudinal admission:** allows companies to define
   different aggregate metric catalogs without an arbitrary count cap while
   binding each longitudinal analysis unit to one approved hypothesis and one
@@ -499,8 +504,9 @@ documented value-realization layers:
   longitudinal state-space model proof: 30 full-setting NUTS concordance fits,
   1,200 deterministic replicated-validation slots, null/floor/lag/shock
   controls, and strict Python/TypeScript evidence bindings. AI Fluency
-  measurement-model and VBD trajectory-model calibration remain future work,
-  and this is not production promotion. "Human transformation" means aggregate work-pattern and
+  measurement calibration is accepted only at the internal synthetic boundary;
+  the VBD trajectory contract is defined while implementation and evidence
+  remain future work. This is not production promotion. "Human transformation" means aggregate work-pattern and
   capability-change context only; it does not authorize HR analytics,
   individual scoring, employee productivity measurement, manager/team ranking,
   customer-facing confidence/probability output, ROI proof, finance output,

@@ -158,7 +158,7 @@ outputs.
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
 | `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as a smoke prototype followed by state-space/NUTS concordance and accepted 1,200-slot replicated synthetic validation. | Completed internal synthetic proof. A separate decision conditionally selects only its `HISTORICAL_STATE_SPACE` route for docs/OpenSpec prerequisite hardening while execution remains HOLD. It does not authorize real data, runtime routing or execution promotion, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, or exports. |
 | `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Synthetic runner and full 800-slot evidence independently accepted. | State is `SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING`; the frozen long form, aggregate count contract, ordinal proof, full primary study, and separate 800-slot recomputation passed exact-byte review. Dimension summaries alone still do not identify latent change. No real-data model, customer posterior output, persistence, UI, routes, public exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
-| `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
+| `bayesian_vbd_behavioral_trajectory_model` | Future model for non-overlapping aggregate frequency, engagement, and Breadth primitive movement, with optional Depth context only; canonical Velocity remains unchanged. | Contract and synthetic proof plan only; no implementation or execution. | State is `CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING`. Composite Velocity/VBD values are inadmissible; implementation, evidence, independent acceptance, and parent task `5.6` remain incomplete. Downstream integration is a separate blocker. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
 | `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
 | `posterior_pathway_coherence_review` | Future internal review of whether predeclared fluency, behavior, and outcome evidence is directionally coherent. | No. | Documentation-only review concept; not a customer-facing probability, confidence, ROI, causality, or productivity output. |
@@ -192,8 +192,10 @@ alternate artifact `model_slice` value. The decision does not select
 alternate-likelihood, or economic routes.
 
 No execution is authorized. AI Fluency measurement-model calibration is now
-accepted only at the internal synthetic boundary. VBD trajectory-model
-calibration, real-data admission/source binding, runtime monitoring/fail-closed
+accepted only at the internal synthetic boundary. The VBD trajectory-model
+contract and proof plan are defined, while implementation, full calibration,
+and downstream integration reconciliation remain incomplete. Real-data
+admission/source binding, runtime monitoring/fail-closed
 behavior, readout language/HOLD presentation, and a frozen non-activating pilot
 manifest remain conjunctive prerequisites. A separate explicit human real-data
 execution decision must then bind that exact manifest and every passing
@@ -741,6 +743,50 @@ causality, productivity, finance output, or economic output is authorized.
 Dimension summaries remain context only and cannot replace item-level aggregate
 sufficient statistics.
 
+### VBD Trajectory-Model Calibration Contract
+
+The exact-scope contract
+`docs/contracts/ai-value-vbd-trajectory-model-calibration/README.md` records:
+
+```text
+CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING
+```
+
+It resolves the existing exposure-definition ambiguity before implementation.
+The product `velocity_index` already contains Breadth, so it cannot appear
+beside a separate Breadth term. Legacy weighted VBD scores also lack admitted
+aggregate uncertainty. The selected future proof instead keeps three active
+likelihood lanes separate:
+
+- p50 frequency in runs per active day, transformed with `log1p`;
+- p50 engagement as an eligible-day share, transformed with
+  `asin(sqrt(proportion))`; and
+- p50 Breadth as an eligible-surface share under one immutable taxonomy,
+  transformed with `asin(sqrt(proportion))`.
+
+The proof does not estimate or redefine canonical Velocity. Frequency,
+engagement, and Breadth remain separate primitive trajectories. Depth may remain
+a non-numeric source-bound aggregate context reference outside every
+likelihood, estimand, eligibility rule, and numerical artifact. Missing Depth
+context cannot change trajectory acceptance.
+
+The proposal specifies a future independent Gaussian state-space block per
+active lane, deterministic-primary/PyMC-NUTS concordance, a fixed six-cell
+1,200-slot primary study, 360 targeted lane-separation slots, 360 replicated
+drift slots, 12 floor controls, 68 fixed negative controls, fresh recomputation
+of all 2,000 cases, four predeclared full-setting canaries, a familywise `<=5%` null gate,
+floor checks at `k={4,5,8,10,12,16}`, drift and negative controls, exact hash
+bindings, and fail-closed behavior. These are internal synthetic proof
+requirements only.
+
+The accepted longitudinal outcome proof currently consumes one scalar Velocity
+term and one scalar Breadth term. This contract therefore does not authorize
+integration. A later approved change must reconcile the exact three-lane
+interface and rerun all affected outcome-model proof gates. That integration is
+a separate blocker before dogfood execution, not part of task `5.6`.
+Implementation approval, execution, evidence, independent acceptance, explicit
+human acceptance, and parent task `5.6` remain incomplete.
+
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware
 RFC3339 generation timestamps, and compiled synthetic control identity/source
@@ -870,9 +916,10 @@ The accepted synthetic evidence covers:
 - financial double-counting attempt HOLD.
 
 This completion is limited to the synthetic longitudinal state-space proof. AI
-Fluency measurement-model calibration, VBD trajectory calibration, real-data
-admission, runtime routing, persistence, and customer-facing interpretation
-remain incomplete. No current evidence authorizes customer-facing
+Fluency synthetic measurement calibration is accepted, while real aggregate AI
+Fluency calibration, VBD trajectory calibration, real-data admission, runtime
+routing, persistence, and customer-facing interpretation remain incomplete. No
+current evidence authorizes customer-facing
 confidence/probability, ROI, causality, productivity, finance, or economic
 output.
 
@@ -1020,12 +1067,13 @@ changes:
 - Separate compact summary and CODE/BUG/ADVERSARIAL acceptance record that
   authorize only the completed internal synthetic longitudinal proof.
 
-Still incomplete after the accepted longitudinal replicated-validation
-evidence and the measurement-runner implementation:
+Still incomplete after the accepted longitudinal replicated-validation and AI
+Fluency measurement evidence:
 
-- Full AI Fluency synthetic measurement evidence execution and exact-byte
-  acceptance, followed separately by governed real aggregate calibration.
-- VBD trajectory-model calibration.
+- Governed real aggregate AI Fluency calibration.
+- VBD trajectory-model implementation, execution, exact-byte acceptance, and
+  explicit human acceptance.
+- Downstream three-lane outcome-model integration and renewed affected proof.
 - AI Fluency snapshot persistence promotion.
 - Backend read projection or UI integration.
 

@@ -2,6 +2,39 @@
 
 ## Current Session
 
+- VBD trajectory-model calibration contract and synthetic proof plan completed
+  (2026-07-15) on `codex/vbd-trajectory-calibration-contract` from
+  `origin/main` at `8787b375`. The docs/OpenSpec-only change records
+  `CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING` and keeps parent task
+  `5.6` unchecked. It rejects composite Velocity/VBD inputs, models frequency,
+  engagement, and Breadth as separate primitive Gaussian state-space lanes,
+  keeps Depth optional and nonnumeric, and blocks the current scalar outcome-
+  model interface pending a separate three-lane integration change and renewed
+  affected proof.
+
+  The future proof is frozen to an exact source-private bootstrap/aggregate-
+  receipt boundary, field-specific allowlisted refs, pre-period-only
+  standardization, lane-direction vectors, injective sampler/PPC seeds, exact
+  PPC and weighted-quantile rules, reviewed source commit `S` followed by
+  manifest-only freeze child `F`, 30 concordance bundles with 90 NUTS plus 90
+  primary and 90 fresh deterministic lane fits, four full-setting canaries,
+  1,200 primary, 360 targeted, 360 drift, 12 floor, and 68 negative-control
+  cases, plus fresh recomputation of all 2,000 deterministic cases. Targeted
+  `N=30` coverage uses a simultaneous Bonferroni Clopper-Pearson compatibility
+  gate; primary coverage retains the compiled `74-86%` point-rate gate.
+
+  Final CODE, BUG, and ADVERSARIAL reviews returned GO on the exact normative
+  bytes. Verification passed: full inference `565 passed`; longitudinal
+  TypeScript bridges `76 passed`; AI Fluency snapshots `11 passed`; Assurance
+  Harness `276 passed, 3 skipped`; `shared` and `confidence-engine` builds;
+  strict validation of both affected OpenSpec changes; docs sweep; semantic
+  drift; V1 governance; queue guard; and `git diff --check`. No implementation,
+  engine execution, canary, concordance, 2,000-case evidence run, real/customer/
+  live data, route, UI, persistence, connector, export, customer output,
+  confidence/probability, ROI, causality, productivity, ranking, new event/
+  reason/threshold, DiD work, or promotion was added. Next requires separate
+  explicit implementation approval; real-data admission and downstream outcome
+  integration remain later blockers.
 - AI Fluency measurement calibration full evidence accepted (2026-07-15) on
   `codex/ai-fluency-measurement-calibration-evidence`. From hardened source
   commit `93587941`, the fixed serial runner completed 800 primary slots and

@@ -234,9 +234,13 @@ This contract does not authorize:
 ## Allowed Next Step
 
 The bounded synthetic calibration step is complete. The next model-family
-prerequisite is separately governed VBD trajectory-model calibration under
-parent task `5.6`; it must not reuse this measurement acceptance as outcome,
-causal, economic, or production authorization.
+prerequisite is the separately governed
+[VBD trajectory-model calibration](../ai-value-vbd-trajectory-model-calibration/README.md)
+under parent task `5.6`; its contract and proof plan are defined, but
+implementation approval, execution, evidence acceptance, and downstream
+integration reconciliation remain incomplete. It must not reuse this
+measurement acceptance as outcome, causal, economic, or production
+authorization.
 
 Real aggregate calibration, immutable source admission, beta sample-size
 adequacy, the 14-item equating study, structural Attitude/Intent/Impact paths,
