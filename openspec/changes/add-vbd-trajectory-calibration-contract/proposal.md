@@ -2,7 +2,8 @@
 
 Draft authorization: James Kelley, 2026-07-15.
 
-Implementation approval: `PENDING`.
+Implementation approval:
+`APPROVED_BY_JAMES_KELLEY_2026_07_15_FOR_SYNTHETIC_TASKS_2_2_THROUGH_5_6`.
 
 ## Why
 
@@ -42,8 +43,10 @@ trajectory contract before implementation or real-data admission can proceed.
   cannot consume this three-lane definition without a separately approved
   integration change and renewed affected-model validation; that separate
   integration does not become part of parent task `5.6`.
-- Leave implementation, execution, evidence generation, independent
-  acceptance, and parent task `5.6` incomplete.
+- Record that implementation and the sequential synthetic proof stages are now
+  explicitly approved, while execution, evidence generation, independent
+  acceptance, and parent task `5.6` remain incomplete until their exact gates
+  pass.
 
 ## Impact
 

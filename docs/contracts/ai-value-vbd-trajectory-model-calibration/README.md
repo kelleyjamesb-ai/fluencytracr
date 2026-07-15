@@ -1,11 +1,12 @@
 # VBD Trajectory-Model Calibration
 
-Contract status: `CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING`
+Contract status: `SYNTHETIC_IMPLEMENTATION_AUTHORIZED_INCOMPLETE`
 
 Owning model-family component:
 `bayesian_vbd_behavioral_trajectory_model`
 
-Implementation approval: `PENDING`
+Implementation approval:
+`APPROVED_BY_JAMES_KELLEY_2026_07_15_FOR_SYNTHETIC_TASKS_2_2_THROUGH_5_6`
 
 Parent OpenSpec task: `5.6` remains incomplete.
 
@@ -311,9 +312,10 @@ model uses:
 
 The primary planned engine is deterministic Gaussian state-space integration.
 The reference planned engine is PyMC NUTS under the same model and the accepted
-four-chain sampler/diagnostic posture. Engine implementation remains blocked
-pending proposal acceptance followed by a separate explicit implementation
-decision; proposal acceptance alone is insufficient.
+four-chain sampler/diagnostic posture. James Kelley separately approved the
+sequential synthetic implementation and proof stages on 2026-07-15. That
+approval does not satisfy implementation, execution, evidence, review, human
+acceptance, parent completion, real-data admission, or downstream integration.
 
 ## Internal Estimands
 
@@ -1017,8 +1019,8 @@ slice for model admission.
 
 This contract does not authorize:
 
-- implementation or execution before the separate post-proposal implementation
-  decision;
+- implementation or execution outside the exact sequential queue items and
+  freeze/review gates approved on 2026-07-15;
 - real, customer, production, live, or respondent-level data;
 - customer-facing or broad internal output;
 - confidence or probability output;
@@ -1033,8 +1035,8 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Review and approve or reject the OpenSpec proposal
-`add-vbd-trajectory-calibration-contract`. Only a separate explicit approval
-may activate the future synthetic implementation tasks. Parent task `5.6`,
-real-data admission, runtime monitoring, readout language, pilot manifest,
-execution approval, persistence, and UI remain incomplete.
+Implement and verify OpenSpec tasks `2.2` through `2.5` without using any
+acceptance-plan seed or generating concordance, canary, or full-study evidence.
+Parent task `5.6`, real-data admission, runtime monitoring, readout language,
+pilot manifest, downstream three-lane outcome integration, persistence, and UI
+remain incomplete.
