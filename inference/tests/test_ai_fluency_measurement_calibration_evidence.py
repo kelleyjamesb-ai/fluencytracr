@@ -182,6 +182,22 @@ def _assert_exact_artifact_shape(artifact: dict) -> None:
         "roi_output_authorized",
         "writes_persistence",
     }
+    assert set(artifact["compiled_validation_gates"]) == {
+        "full_replications_per_scenario",
+        "loading_invariance_rope_half_width",
+        "maximum_invariant_false_hold_rate",
+        "maximum_loading_recovery_rmse",
+        "maximum_second_order_recovery_rmse",
+        "maximum_threshold_recovery_rmse",
+        "minimum_drift_detection_rate",
+        "minimum_first_order_loading",
+        "minimum_invariance_posterior_probability",
+        "minimum_ordinal_omega",
+        "minimum_recovery_pass_rate",
+        "minimum_second_order_loading",
+        "threshold_invariance_rope_half_width",
+        "thresholds_runtime_configurable",
+    }
     assert set(artifact["completion_posture"]) == {
         "full_study_executed",
         "independent_adversarial_review",
