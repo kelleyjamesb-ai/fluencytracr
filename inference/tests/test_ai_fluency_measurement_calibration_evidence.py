@@ -1,11 +1,14 @@
 import hashlib
 import json
+import math
 from pathlib import Path
+import re
 
 import pytest
 
 from fluencytracr_inference.artifact import lockfile_hash
 from fluencytracr_inference.ai_fluency_measurement_calibration_artifact import (
+    MEASUREMENT_CALIBRATION_ARTIFACT_CLASS,
     MEASUREMENT_CALIBRATION_ARTIFACT_SCHEMA_VERSION,
     measurement_calibration_artifact_payload_hash,
     measurement_calibration_artifact_self_hash,
@@ -17,6 +20,13 @@ EVIDENCE_DIR = Path(__file__).resolve().parents[1] / "evidence"
 SUMMARY_PATH = EVIDENCE_DIR / "ai_fluency_measurement_calibration_2026_07.json"
 FULL_ARTIFACT_PATH = (
     EVIDENCE_DIR / "ai_fluency_measurement_calibration_full_2026_07.json"
+)
+SUMMARY_SCHEMA_VERSION = (
+    "FT_INTERNAL_AI_FLUENCY_MEASUREMENT_CALIBRATION_EVIDENCE_2026_07_V1"
+)
+_EMAIL_RE = re.compile(r"(?i)\b[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}\b")
+_IDENTIFIER_VALUE_RE = re.compile(
+    r"(?i)\b(?:respondent|employee|user|person|manager)[ _-]?(?:id|name|row)s?\b"
 )
 
 
@@ -34,11 +44,26 @@ def _reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict:
 
 
 def _loads(payload: str | bytes) -> dict:
-    return json.loads(
+    value = json.loads(
         payload,
         object_pairs_hook=_reject_duplicate_json_keys,
         parse_constant=_reject_nonfinite_json,
     )
+    if not isinstance(value, dict):
+        raise ValueError("evidence JSON must be an object")
+    _reject_nonfinite_numbers(value)
+    return value
+
+
+def _reject_nonfinite_numbers(value) -> None:
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("non-finite JSON number is forbidden")
+    if isinstance(value, dict):
+        for item in value.values():
+            _reject_nonfinite_numbers(item)
+    elif isinstance(value, list):
+        for item in value:
+            _reject_nonfinite_numbers(item)
 
 
 def _load(path: Path) -> dict:
@@ -464,11 +489,31 @@ def _normalized_keys(value) -> set[str]:
     }
 
 
+def _all_strings(value) -> tuple[str, ...]:
+    if isinstance(value, dict):
+        return tuple(
+            string
+            for item in value.values()
+            for string in _all_strings(item)
+        )
+    if isinstance(value, list):
+        return tuple(string for item in value for string in _all_strings(item))
+    return (value,) if isinstance(value, str) else ()
+
+
+def _assert_no_identifier_strings(value) -> None:
+    for string in _all_strings(value):
+        assert _EMAIL_RE.search(string) is None
+        assert _IDENTIFIER_VALUE_RE.search(string) is None
+
+
 def test_evidence_json_rejects_duplicates_nonfinite_values_and_unknown_fields():
     with pytest.raises(ValueError, match="duplicate JSON key"):
         _loads('{"state":"HOLD","state":"PASS"}')
     with pytest.raises(ValueError, match="non-finite JSON constant"):
         _loads('{"rate":NaN}')
+    with pytest.raises(ValueError, match="non-finite JSON number"):
+        _loads('{"rate":1e9999}')
 
     unknown_summary = _summary()
     unknown_summary["respondent_rows"] = [{"employee_name": "not allowed"}]
@@ -480,6 +525,11 @@ def test_evidence_json_rejects_duplicates_nonfinite_values_and_unknown_fields():
     with pytest.raises(AssertionError):
         _assert_exact_artifact_shape(unknown_artifact)
 
+    identifier_summary = _summary()
+    identifier_summary["schema_version"] = "employee_name james@example.com"
+    with pytest.raises(AssertionError):
+        _assert_no_identifier_strings(identifier_summary)
+
 
 def test_compact_summary_is_exactly_derived_from_committed_full_artifact():
     evidence = _summary()
@@ -489,6 +539,8 @@ def test_compact_summary_is_exactly_derived_from_committed_full_artifact():
 
     _assert_exact_summary_shape(evidence)
     _assert_exact_artifact_shape(artifact)
+    assert evidence["schema_version"] == SUMMARY_SCHEMA_VERSION
+    assert artifact["artifact_class"] == MEASUREMENT_CALIBRATION_ARTIFACT_CLASS
 
     assert REPO_ROOT / source["source_artifact_path"] == FULL_ARTIFACT_PATH
     assert FULL_ARTIFACT_PATH.resolve().is_relative_to(REPO_ROOT)
@@ -670,6 +722,8 @@ def test_committed_evidence_remains_summary_only_private_and_nonauthorizing():
     }
     assert not (forbidden_normalized_keys & _normalized_keys(artifact))
     assert not (forbidden_normalized_keys & _normalized_keys(evidence))
+    _assert_no_identifier_strings(artifact)
+    _assert_no_identifier_strings(evidence)
 
     assert governance["study_status"] == "PASS"
     assert governance["artifact_state"] == (
