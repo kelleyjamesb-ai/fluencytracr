@@ -226,7 +226,9 @@ eta[d,c,t] ~ Normal(0, sigma_r[d]^2)
 ```
 
 `tau[t]` SHALL standardize ordered `t in {0,...,17}` with the mean and sample
-standard deviation of pre-period `{0,...,11}` only. The proof SHALL use known
+standard deviation of the twelve unique pre-period values `{0,...,11}` only,
+then broadcast that vector to panel groups; repeated group rows SHALL NOT enter
+the time-scale calculation. The proof SHALL use known
 aggregate standard errors exactly as likelihood standard deviations, pooled
 pre-period-only standardization, zero-sum panel-group effects, stationary AR(1)
 initialization, `alpha,beta ~ Normal(0,1)`, `sigma_u,sigma_r ~ HalfNormal(1)`,
@@ -239,6 +241,16 @@ mean latent level over all twelve pre-period windows, in pre-period standard
 deviation units. The estimand SHALL be labeled as an internal observed-path
 smoothing contrast, not a causal effect, forecast, counterfactual,
 productivity measure, score, or business-outcome estimate.
+
+At every deterministic hyperparameter support, the proof SHALL analytically
+condition the Gaussian coefficient/group vector and AR(1) states and compute
+the exact conditional Normal mean and variance of that latent-level contrast
+using the `K`, `R`, `B=K+R`, `H`, and contrast-vector equations frozen in the
+contract. The deterministic engine SHALL expand that conditional Normal with
+the frozen 16-point Gauss-Hermite `normal_quadrature_v1` beneath the accepted
+8,192-point outer integration and SHALL compute 80% and 99% endpoints with
+`weighted_quantile_v1`. The NUTS engine SHALL sample the matching conditional
+scalar at every retained draw. Neither engine SHALL emit a latent path.
 
 Each plan SHALL freeze one ordered three-lane direction vector with components
 in `{+1,-1}` before generated truth or post-period evidence is inspected. With
@@ -402,9 +414,16 @@ The numerical generator SHALL emit direct aggregate packages under
 member rows or claim source-bootstrap clearance. Context quantiles SHALL use
 standardized offsets `delta={p10:-.20,p50:0,p90:+.20,p99:+.30}` under exact
 `z_q=offset[d]+scale[d]*(x_star[d,c,t]+delta[q])`, followed by the same lane
-inverse. Offsets SHALL therefore be multiplied by lane scale. Frequency SHALL
+inverse. Quantile deltas SHALL therefore be multiplied by lane scale.
+Frequency SHALL
 remain nonnegative and Engagement/Breadth angles SHALL
 remain strictly inside `(0,pi/2)`; violations SHALL be runner errors.
+
+The numerical DGP SHALL use `Generator(PCG64DXSM(seed))`, float64 arrays, the
+exact four-call group/initial-state/innovation/observation-error sequence,
+canonical `(panel_group,time,lane)` ordering, and lower-Cholesky row-vector
+factorization frozen in the contract. A different bit generator, call order,
+factor orientation, array ordering, or substream SHALL be source drift.
 
 Source-bootstrap conformance SHALL separately use the exact process-local
 `k=16` fixture frozen in the contract. Engagement active-day and Breadth
@@ -416,6 +435,11 @@ SHALL use zero-based `floor((n-1)*p+.5)` without interpolation and yield `9`,
 algorithm drift SHALL bind that changed result and reject before fit. Fixture
 rows SHALL never enter a numerical slot, prepared input, checkpoint, artifact,
 or committed evidence.
+
+The bootstrap fixture SHALL also match the frozen private-root, 52-bit seed,
+transformed 3x3 covariance, marginal standard errors, and canonical oracle hash
+recorded in the contract. A self-consistent implementation that matches only
+the three medians SHALL NOT satisfy conformance.
 
 The full proof SHALL first run PyMC NUTS concordance for five fixed seeds in
 each cell of effects `{0, 0.2, 0.5}` pre-period SD by panel-group counts
@@ -445,6 +469,12 @@ use stable chain-major/draw-major order and
 equal `count(T_rep>=T_observed)/4000`, ties included with no smoothing. Its
 inclusive gate SHALL be `[.05,.95]`; formula, seed, order, or sidedness drift
 SHALL HOLD.
+
+Each replicate SHALL draw a fresh conditional smoothed AR(1) path followed by
+new known-SE observation error under `Generator(PCG64DXSM(ppc_seed))`; it SHALL
+NOT reuse a stored path or draw a new unconditional AR path. Predictive 80%
+endpoints SHALL use `weighted_quantile_v1` with equal chain-major/draw-major
+weights.
 
 The concordance universe SHALL be 30 bundle executions, each with three nested
 primary deterministic, three nested NUTS, and three separately regenerated

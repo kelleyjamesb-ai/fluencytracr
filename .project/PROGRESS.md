@@ -15,6 +15,17 @@
   committed bytes. No real/customer/live data, outcome integration, routes,
   UI, persistence, connectors, exports, customer output, promotion, or task
   `5.6` completion is authorized by this activation.
+- Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
+  evidence-breaking ambiguities in the merged plan: the existing outcome
+  engine did not recover the latent AR(1) smoothing contrast, deterministic
+  interval support was undefined under `weighted_quantile_v1`, the seeded DGP
+  draw sequence was not portable, and PPC conditioning was unspecified. The
+  contract/design/spec now freeze exact conditional-Gaussian contrast
+  equations, unique-pre-index time encoding, the accepted 8,192-point outer
+  integration plus 16-point Gauss-Hermite support, PCG64DXSM draw order and
+  Cholesky orientation, conditional-smoothed-path PPC generation, corrected
+  quantile-delta wording, and an independent bootstrap root/seed/covariance/SE
+  oracle. No engine code or acceptance seed was run in this correction slice.
 - VBD trajectory-model calibration contract and synthetic proof plan completed
   (2026-07-15) on `codex/vbd-trajectory-calibration-contract` from
   `origin/main` at `8787b375`. The docs/OpenSpec-only change records

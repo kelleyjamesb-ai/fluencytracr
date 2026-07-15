@@ -138,6 +138,15 @@ AR(1) initialization, `alpha,beta ~ Normal(0,1)`, `sigma_u,sigma_r ~
 HalfNormal(1)`, and `rho ~ Uniform(-0.95,0.95)`. It adds no free observation-
 noise term and shares no coefficient, state, or scale across lanes.
 
+Time encoding uses the twelve unique pre-period indexes once, then broadcasts
+the result to panel groups. The latent-level contrast is recovered by exact
+conditional Gaussian fixed-interval smoothing at every hyperparameter support;
+it is not the existing fixed-coefficient movement contrast. Deterministic
+intervals use the frozen 8,192-point outer integration and a 16-point
+Gauss-Hermite conditional-Normal support, followed by `weighted_quantile_v1`.
+The NUTS reference samples the matching scalar conditional latent contrast at
+each retained draw.
+
 The lane estimand is the direction-adjusted difference between the mean latent
 level over the final three predeclared evaluation windows and the mean latent
 level over all twelve pre-period windows, in that lane's pre-period standard
@@ -188,6 +197,13 @@ Pre-freeze development smoke uses only the disjoint
 `2_055_900_000..2_055_900_999` namespace, computes no aggregate acceptance
 gate, and always HOLDS. It may expose mechanical defects only; it cannot change
 the frozen statistical contract or enter later evidence.
+
+The direct-aggregate generator is reproducible under
+`Generator(PCG64DXSM(seed))` with one frozen draw sequence and lower-Cholesky
+row-vector convention. NUTS PPC replicates draw a fresh conditional smoothed
+AR path plus new known-SE observation error for every retained draw; they do
+not draw a new unconditional AR path. The source-bootstrap conformance fixture
+has a frozen private-root/seed/covariance/SE oracle recorded in the contract.
 
 The six primary cells are effects `{0, 0.2, 0.5}` pre-period SD by panel-group
 counts `{6, 12}`, with aggregate Measurement Cell `k=16`. Every cell reports
