@@ -204,6 +204,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-15: 800 primary slots plus 800 separate recomputations passed with zero runner errors. Committed full artifact, compact summary, strict evidence tests, and self-hashed exact-byte CODE/BUG/ADVERSARIAL acceptance. Internal synthetic calibration only; real data, short-form equating, structural paths, VBD trajectory calibration, persistence, UI, customer output, and promotion remain open."
+    },
+    {
+      "id": "vbd-trajectory-calibration-contract",
+      "title": "VBD trajectory-model calibration contract and synthetic proof plan",
+      "bound": "Docs/OpenSpec/status only: define separate aggregate frequency, engagement, and Breadth primitive trajectories without redefining canonical Velocity; keep Depth as optional context outside the likelihood; define exact immutable exposure/source/hash bindings and a fail-closed synthetic calibration/null/floor/drift/negative-control plan; no implementation, execution, evidence artifact, task 5.6 completion, real/customer/live data, respondent rows, composite VBD output, routes, UI, persistence, connectors, exports, schemas, customer output, confidence/probability, ROI, causality, productivity, ranking, new events/reasons/thresholds, DiD work, or promotion decision",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-15: docs/OpenSpec freeze separate frequency, engagement, and Breadth trajectories; Depth context-only; private source roots, exact freeze/review ordering, 30 concordance bundles, four canaries, and a 2,000-case plus 2,000-recompute proof plan. CODE/BUG/ADVERSARIAL GO and all gates passed. No implementation or execution; parent 5.6 and downstream integration remain incomplete."
     }
   ]
 }
