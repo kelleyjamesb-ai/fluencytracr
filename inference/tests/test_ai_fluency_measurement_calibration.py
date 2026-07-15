@@ -10,12 +10,14 @@ from fluencytracr_inference.ai_fluency_measurement_calibration import (
     ScenarioStudySummary,
     _study_failures,
     run_measurement_calibration_study,
+    validate_measurement_calibration_slot_result,
     validate_measurement_calibration_study,
 )
 from fluencytracr_inference.ai_fluency_measurement_calibration_artifact import (
     emit_measurement_calibration_artifact,
     measurement_calibration_artifact_payload_hash,
     measurement_calibration_artifact_self_hash,
+    run_measurement_calibration_proof,
 )
 from fluencytracr_inference.ai_fluency_measurement_calibration_cli import main
 from fluencytracr_inference.hashing import sha256_json
@@ -46,6 +48,8 @@ def test_fixed_full_and_smoke_plans_are_not_runtime_tunable(smoke_study):
     )
     assert all(summary.expected_result_rate == 1.0 for summary in smoke_study.scenario_summaries)
     assert all(summary.recovery_pass_rate == 1.0 for summary in smoke_study.scenario_summaries)
+    with pytest.raises(MeasurementCalibrationStudyError, match="resumable"):
+        run_measurement_calibration_study(execution_mode="full")
 
 
 def test_smoke_study_and_artifact_fail_closed(smoke_study, smoke_artifact):
@@ -131,6 +135,22 @@ def test_opaque_hash_forgery_cannot_pass_artifact_execution_recomputation(smoke_
         emit_measurement_calibration_artifact(forged)
 
 
+def test_successful_slot_cannot_hide_a_runner_error_diagnostic(smoke_study):
+    original = smoke_study.slot_results[0]
+    body = original.to_dict()
+    body.pop("result_hash")
+    body["failing_diagnostics"] = ["runner_error"]
+    body["expected_result_observed"] = False
+    malformed = replace(
+        original,
+        failing_diagnostics=("runner_error",),
+        expected_result_observed=False,
+        result_hash=sha256_json(body),
+    )
+    with pytest.raises(MeasurementCalibrationStudyError, match="cannot claim"):
+        validate_measurement_calibration_slot_result(malformed)
+
+
 def test_exact_rate_boundaries_pass_without_float_error():
     summaries = (
         ScenarioStudySummary("invariant", 200, 190, 0.95, 180, 0.90, 0),
@@ -155,3 +175,17 @@ def test_cli_exposes_only_fixed_mode_choice(capsys, monkeypatch, smoke_artifact)
     output = capsys.readouterr().out
     assert '"state":"HOLD"' in output
     assert '"parent_openspec_task_5_5_complete":false' in output
+
+    assert main(["--mode", "full"]) == 2
+
+
+def test_legacy_full_proof_api_is_closed_before_execution(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        "fluencytracr_inference.ai_fluency_measurement_calibration."
+        "run_measurement_calibration_study",
+        lambda **_kwargs: calls.append(True),
+    )
+    with pytest.raises(ValueError, match="resumable"):
+        run_measurement_calibration_proof(execution_mode="full")
+    assert calls == []

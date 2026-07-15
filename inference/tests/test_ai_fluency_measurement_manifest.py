@@ -208,7 +208,7 @@ print(json.dumps({
         "1b1523baab5bd3007e0c42e732da8d71cf67594074a54d17bb4b741292565434"
     )
     assert Path(result["module_path"]).is_relative_to(install_target)
-    assert str(inference_root) not in "\n".join(result["sys_path"])
+    assert str(inference_root / "src") not in "\n".join(result["sys_path"])
 
     (install_target / resource_member).unlink()
     missing_resource = subprocess.run(

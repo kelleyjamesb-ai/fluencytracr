@@ -203,7 +203,7 @@
       "bound": "Synthetic-only evidence execution from merged PR #422: run bounded canaries, execute exactly 200 compiled replications in each of four measurement scenarios (800 primary slots), perform mandatory fresh artifact recomputation, commit only the summary artifact and acceptance record, and obtain exact-byte CODE/BUG/ADVERSARIAL review; no model or threshold changes unless execution fails, no real/customer/live data, public surfaces, customer output, or task completion without passing evidence",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "Paused cleanly 2026-07-15 for user battery. Fresh pinned venv is installed on the origin/main evidence branch. Runner is exact 800 primary slots plus mandatory 800-slot artifact recomputation; no canary, full run, or evidence output has started. Resume with smoke/canary timing, then CODE/BUG/ADVERSARIAL review."
+      "last_note": "Runner hardening verified 2026-07-15: fixed serial 20-chunk primary plus separate 20-chunk fresh-recompute phases, clean source/runtime/native/plan identity, exact atomic checkpoints, crash resume, and independent CODE/BUG/ADVERSARIAL GO. Full inference 559 passed; required Node/build/OpenSpec/governance gates pass. No full slot or evidence artifact has run. Next: commit hardening, run both phases, combine, then exact-byte acceptance."
     }
   ]
 }

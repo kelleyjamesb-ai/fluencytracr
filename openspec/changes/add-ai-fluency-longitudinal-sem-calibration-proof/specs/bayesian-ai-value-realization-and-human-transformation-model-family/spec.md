@@ -83,7 +83,10 @@ NOT reconstruct or emit respondent scores, posterior draws, or latent states.
 The runner SHALL provide a fixed full plan with 200 seeded replications in each
 of invariant, invariant-latent-shift, loading-drift, and threshold-drift
 scenarios and a reduced smoke mode. Artifact emission SHALL freshly recompute
-every compiled slot. Smoke, partial, duplicate, off-plan,
+every compiled slot through a separately identified resumable recomputation
+phase, and atomic combine SHALL admit only exact primary and recomputation
+checkpoint manifests bound to the same clean source, runtime, and immutable
+plan. Smoke, partial, duplicate, off-plan,
 malformed, hash-invalid, or runner-error evidence SHALL HOLD and SHALL NOT
 complete parent task `5.5`.
 

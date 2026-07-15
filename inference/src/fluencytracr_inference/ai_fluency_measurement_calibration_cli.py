@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from typing import Sequence
 
 from .ai_fluency_measurement_calibration_artifact import (
@@ -26,6 +27,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.mode == "full":
+        print(
+            "full evidence requires ai_fluency_measurement_calibration_resumable_cli",
+            file=sys.stderr,
+        )
+        return 2
     artifact = run_measurement_calibration_proof(execution_mode=args.mode)
     print(json.dumps(artifact, sort_keys=True, separators=(",", ":")))
     return 0
