@@ -214,9 +214,19 @@ Under `src/fluencytracr_inference/`:
   exact nonlinear loading curvature, and emits no respondent scores, latent
   states, or posterior draws. The fixed
   full plan has 200 seeds in each of four scenarios (800 slots), and artifact
-  emission freshly recomputes all slots. Smoke or incomplete evidence always
-  HOLDS; full evidence has not been generated in this change, and parent task
-  `5.5` remains incomplete.
+  emission freshly recomputes all slots. The full evidence path uses 20 fixed
+  serial chunks in each of two distinct phases: create-once primary checkpoints
+  followed by separately identified fresh recomputation checkpoints. The
+  external workspace binds the clean source commit, governed implementation
+  files, lockfile, pinned runtime, immutable plan, phase manifests, and exact
+  slot hashes; malformed, partial, stale, copied-across-phase, off-plan, or
+  mismatched checkpoints fail closed. Checkpoints stay outside the repository,
+  and only the summary-only artifact is atomically published. Smoke or
+  incomplete evidence always HOLDS. The accepted full run completed all 800
+  primary slots and all 800 separate recomputations with zero runner errors;
+  the full artifact, compact summary, and self-hashed independent acceptance
+  record are committed under `inference/evidence/`. Parent task `5.5` is
+  complete only for this internal synthetic measurement-calibration boundary.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as
@@ -267,9 +277,26 @@ PYTHONPATH=inference/src inference/.venv/bin/python \
   -m fluencytracr_inference.ai_fluency_measurement_calibration_cli --mode smoke
 ```
 
-The fixed full command is intentionally not configurable:
+The fixed full evidence path is intentionally serial and not configurable.
+Run primary and recomputation as separate commands so either phase can resume
+after interruption:
 
 ```bash
-PYTHONPATH=inference/src inference/.venv/bin/python \
-  -m fluencytracr_inference.ai_fluency_measurement_calibration_cli --mode full
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH=inference/src
+export WORKSPACE=/private/tmp/fluencytracr-ai-fluency-measurement-calibration
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+export VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+
+inference/.venv/bin/python \
+  -m fluencytracr_inference.ai_fluency_measurement_calibration_resumable_cli \
+  run-primary --workspace "$WORKSPACE"
+
+inference/.venv/bin/python \
+  -m fluencytracr_inference.ai_fluency_measurement_calibration_resumable_cli \
+  run-recompute --workspace "$WORKSPACE"
+
+inference/.venv/bin/python \
+  -m fluencytracr_inference.ai_fluency_measurement_calibration_resumable_cli \
+  combine --workspace "$WORKSPACE"
 ```

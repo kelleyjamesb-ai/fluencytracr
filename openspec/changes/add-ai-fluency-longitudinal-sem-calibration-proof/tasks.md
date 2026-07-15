@@ -49,14 +49,14 @@
 - [x] 4.6 Update queue/progress and calibration contract status only after all
   required verification passes.
 
-## 5. Explicitly Incomplete Future Work
+## 5. Evidence Closeout And Remaining Future Work
 
-- [ ] 5.1 Execute and independently accept the full >=200-replication
+- [x] 5.1 Execute and independently accept the full >=200-replication
   measurement calibration evidence set.
 - [ ] 5.2 Equate the 14-item pulse form, if a later proposal justifies it.
 - [ ] 5.3 Admit and calibrate governed real aggregate evidence under a separate
   source-binding and promotion decision.
 - [ ] 5.4 Estimate Attitude/Intent/Impact structural paths after measurement
   invariance is accepted.
-- [ ] 5.5 Mark parent task `5.5` complete only after full evidence execution and
+- [x] 5.5 Mark parent task `5.5` complete only after full evidence execution and
   exact-byte independent acceptance.

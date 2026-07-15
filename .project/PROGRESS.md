@@ -2,6 +2,68 @@
 
 ## Current Session
 
+- AI Fluency measurement calibration full evidence accepted (2026-07-15) on
+  `codex/ai-fluency-measurement-calibration-evidence`. From hardened source
+  commit `93587941`, the fixed serial runner completed 800 primary slots and
+  800 separately identified fresh recomputations across invariant,
+  invariant-latent-shift, loading-drift, and threshold-drift scenarios with
+  zero runner errors. Expected-result counts were `199/200`, `198/200`,
+  `194/200`, and `200/200`; every scenario passed recovery `200/200`.
+
+  The summary-only full artifact SHA-256 is
+  `05adf24f92aa41546e036c192ac8bf675c7f3ce06cb633f7261b34d57e0bce5a`,
+  with artifact self-hash
+  `9666146e8ef78ba588a4755be6ffcf87cd32920cf5c4c8385371f597dc74424c`.
+  A compact summary is exactly derived from those bytes. Evidence admission now
+  rejects duplicate keys, literal and exponent-overflow nonfinite JSON, unknown
+  nested fields, identifier-bearing keys or strings, hidden slot rows, and all
+  authorization attempts. CODE, BUG, and ADVERSARIAL reviewers returned GO on
+  exact commit `9c87dc26`; the separate acceptance record binds that commit,
+  both evidence files, the strict evidence test, source/runtime/plan/phase
+  hashes, and all three reviewer IDs.
+
+  OpenSpec measurement tasks `5.1` and `5.5` plus parent task `5.5` are complete
+  only for internal synthetic calibration. Short-form equating, real aggregate
+  admission/calibration, structural Attitude/Intent/Impact paths, VBD trajectory
+  calibration (`5.6`), persistence (`5.7`), UI integration (`5.8`), customer
+  output, confidence/probability, ROI, causality, productivity, and promotion
+  remain incomplete and unauthorized. Verification and publication details are
+  recorded in the final branch commits and PR. Final verification passed: full
+  inference `565 passed`; focused measurement/evidence suites `30 passed`;
+  evidence plus acceptance binding `6 passed`; aggregate adapter/snapshot Node
+  `38 passed`; TypeScript inference bridge `10 passed`; `shared` and
+  `confidence-engine` builds; strict validation of both affected OpenSpec
+  changes; docs sweep; semantic drift; V1 governance; Assurance Harness
+  `276 passed, 3 skipped`; and `git diff --check`.
+- AI Fluency measurement-calibration evidence runner hardened before full
+  execution (2026-07-15) on
+  `codex/ai-fluency-measurement-calibration-evidence` from merged PR #422 at
+  `600b7fc9`. The user authorized the exact four-scenario, 200-replication-per-
+  scenario study. The four-scenario smoke passed expected behavior in 36.48s
+  and remained `HOLD(full_replication_plan_incomplete)`. CODE, BUG, and
+  ADVERSARIAL audit rejected the interruption-prone one-shot path, so full
+  evidence now requires a fixed serial two-phase workspace: 20 create-once
+  primary chunks followed in separate processes by 20 fresh-recomputation
+  chunks. The runner binds the exact clean source, implementation files,
+  lockfile, interpreter/native binaries, NumPy/BLAS build, platform, package
+  versions, threadpool state, single-thread environment, phase identities,
+  checkpoint manifests, and fresh-execution attestations. Canonical ordering,
+  nonblocking locks, crash-temp cleanup, exact tree admission, atomic output,
+  and nonzero full/HOLD exits fail closed; legacy one-shot full APIs are closed.
+
+  Verification passed: full inference `559 passed`; focused measurement,
+  resumability, and wheel packaging `32 passed`; aggregate adapter/snapshot
+  Node `38 passed`; inference TypeScript bridge `10 passed`; `shared` and
+  `confidence-engine` builds; strict OpenSpec; docs/semantic/V1 governance;
+  Assurance Harness `276 passed, 3 skipped`; and `git diff --check`. Final
+  independent CODE, BUG, and ADVERSARIAL reviews returned GO. The broader
+  confidence-engine package suite remains red on four unrelated pre-existing
+  June golden parity drifts (`377/381`); the required build and inference bridge
+  pass and this branch changes neither package nor shared source. No full
+  primary/recomputation slot, artifact, or evidence output has run yet. Next:
+  commit this hardening, execute both phases from that clean commit, atomically
+  combine, and bind the exact summary bytes to a separate acceptance record.
+  Tasks `5.1` and parent `5.5` remain unchecked until that evidence passes.
 - PR #422 manifest-packaging review fix completed (2026-07-14) on
   `codex/ai-fluency-longitudinal-sem-calibration-proof`. Moved the single
   canonical 24-item manifest under `fluencytracr_inference`, declared it as

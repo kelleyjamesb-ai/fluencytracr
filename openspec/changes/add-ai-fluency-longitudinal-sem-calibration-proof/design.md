@@ -111,8 +111,10 @@ The runner has two modes:
 - `smoke`: a small deterministic seed set for development; and
 - `full`: exactly 200 replications in each of invariant,
   invariant-with-latent-shift, loading-drift, and threshold-drift scenarios
-  (800 primary slots), followed by fresh slot recomputation during artifact
-  emission.
+  (800 primary slots), followed by fresh slot recomputation in a separately
+  identified resumable artifact-emission phase. Atomic combine is the terminal
+  artifact-emission step and admits only the exact primary/recompute checkpoint
+  manifests under one clean source/runtime/plan identity.
 
 Smoke, partial, duplicate, malformed, off-plan, or hash-invalid studies emit
 HOLD. Parent OpenSpec task `5.5` remains unchecked until the full study is

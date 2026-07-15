@@ -196,6 +196,14 @@
       "status": "done",
       "risk": "low",
       "last_note": "Done 2026-07-14: feature pushes no longer duplicate PR inference runs; main pushes remain validated, and only superseded runs of the same PR cancel. Path filters, job, commands, timeout, and statistical gates are unchanged. YAML assertions, queue validation, diff check, and CODE/BUG/ADVERSARIAL review passed."
+    },
+    {
+      "id": "ai-fluency-measurement-calibration-full-evidence",
+      "title": "AI Fluency measurement calibration full evidence run",
+      "bound": "Synthetic-only evidence execution from merged PR #422: run bounded canaries, execute exactly 200 compiled replications in each of four measurement scenarios (800 primary slots), perform mandatory fresh artifact recomputation, commit only the summary artifact and acceptance record, and obtain exact-byte CODE/BUG/ADVERSARIAL review; no model or threshold changes unless execution fails, no real/customer/live data, public surfaces, customer output, or task completion without passing evidence",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-15: 800 primary slots plus 800 separate recomputations passed with zero runner errors. Committed full artifact, compact summary, strict evidence tests, and self-hashed exact-byte CODE/BUG/ADVERSARIAL acceptance. Internal synthetic calibration only; real data, short-form equating, structural paths, VBD trajectory calibration, persistence, UI, customer output, and promotion remain open."
     }
   ]
 }
