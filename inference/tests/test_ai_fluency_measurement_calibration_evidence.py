@@ -2,6 +2,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from fluencytracr_inference.artifact import lockfile_hash
 from fluencytracr_inference.ai_fluency_measurement_calibration_artifact import (
     MEASUREMENT_CALIBRATION_ARTIFACT_SCHEMA_VERSION,
@@ -18,8 +20,29 @@ FULL_ARTIFACT_PATH = (
 )
 
 
+def _reject_nonfinite_json(value: str):
+    raise ValueError(f"non-finite JSON constant is forbidden: {value}")
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key is forbidden: {key}")
+        result[key] = value
+    return result
+
+
+def _loads(payload: str | bytes) -> dict:
+    return json.loads(
+        payload,
+        object_pairs_hook=_reject_duplicate_json_keys,
+        parse_constant=_reject_nonfinite_json,
+    )
+
+
 def _load(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return _loads(path.read_bytes())
 
 
 def _summary() -> dict:
@@ -28,6 +51,294 @@ def _summary() -> dict:
 
 def _artifact() -> dict:
     return _load(FULL_ARTIFACT_PATH)
+
+
+def _assert_exact_summary_shape(evidence: dict) -> None:
+    assert set(evidence) == {
+        "schema_version",
+        "generated_at",
+        "source_evidence",
+        "plan",
+        "scenario_results",
+        "gate_results",
+        "compiled_gates",
+        "governance",
+    }
+    assert set(evidence["source_evidence"]) == {
+        "artifact_schema_version",
+        "artifact_state",
+        "execution_mode",
+        "source_artifact_path",
+        "source_artifact_sha256",
+        "artifact_payload_hash",
+        "artifact_self_hash",
+        "manifest_hash",
+        "study_hash",
+        "slot_result_hashes_hash",
+        "execution_verification_hash",
+        "execution_identity_hash",
+        "implementation_hash",
+        "plan_hash",
+        "primary_phase_hash",
+        "recompute_phase_hash",
+        "primary_checkpoint_manifest_hash",
+        "recompute_checkpoint_manifest_hash",
+        "primary_process_tokens_hash",
+        "recompute_process_tokens_hash",
+        "source_commit",
+        "requirements_lock_hash",
+        "source_artifact_committed",
+        "summary_only",
+        "primary_slot_results_committed",
+        "recomputation_slot_results_committed",
+        "respondent_rows_committed",
+        "raw_answers_committed",
+        "posterior_draws_committed",
+        "latent_states_committed",
+    }
+    assert set(evidence["plan"]) == {
+        "scenarios",
+        "replications_per_scenario",
+        "required_slot_count",
+        "executed_slot_count",
+        "sample_size_per_wave",
+        "execution_mode",
+        "complete_full_plan",
+        "separate_phase_execution",
+        "all_compiled_slots_freshly_recomputed",
+        "failing_check_count",
+        "runner_error_count",
+    }
+    assert set(evidence["gate_results"]) == {
+        "invariant_false_hold",
+        "drift_detection",
+        "recovery",
+    }
+    assert set(evidence["governance"]) == {
+        "study_status",
+        "artifact_state",
+        "numerical_calibration_gate_passed",
+        "exact_plan_complete",
+        "full_evidence_generation_complete",
+        "independent_acceptance_complete",
+        "ai_fluency_measurement_model_calibration_complete",
+        "parent_openspec_task_5_5_complete",
+        "real_data_calibration_complete",
+        "short_form_equating_complete",
+        "structural_path_calibration_complete",
+        "aggregate_only",
+        "internal_only",
+        "synthetic_only",
+        "customer_output_authorized",
+        "probability_output_authorized",
+        "confidence_output_authorized",
+        "roi_output_authorized",
+        "finance_output_authorized",
+        "causality_output_authorized",
+        "productivity_output_authorized",
+        "creates_route",
+        "creates_ui",
+        "writes_persistence",
+        "creates_export",
+        "renders_readout",
+        "executes_connector",
+        "promotion_decision_ref",
+    }
+
+
+def _assert_exact_artifact_shape(artifact: dict) -> None:
+    assert set(artifact) == {
+        "artifact_class",
+        "blocked_outputs",
+        "compiled_validation_gates",
+        "completion_posture",
+        "evidence_contract",
+        "execution_identity",
+        "execution_recomputation",
+        "failing_checks",
+        "generated_at",
+        "harness_version",
+        "hash_bindings",
+        "measurement_manifest",
+        "model_specification",
+        "schema_version",
+        "scope",
+        "state",
+        "study",
+    }
+    assert set(artifact["blocked_outputs"]) == {
+        "causality_output_authorized",
+        "confidence_output_authorized",
+        "creates_export",
+        "creates_route",
+        "creates_ui",
+        "customer_output_authorized",
+        "executes_connector",
+        "finance_output_authorized",
+        "full_pathway_coherence_authorized",
+        "probability_output_authorized",
+        "productivity_output_authorized",
+        "renders_readout",
+        "roi_output_authorized",
+        "writes_persistence",
+    }
+    assert set(artifact["completion_posture"]) == {
+        "full_study_executed",
+        "independent_adversarial_review",
+        "independent_bug_review",
+        "independent_code_review",
+        "parent_openspec_task_5_5_complete",
+        "real_data_calibration_complete",
+        "short_form_equating_complete",
+        "structural_path_calibration_complete",
+    }
+    assert set(artifact["evidence_contract"]) == {
+        "aggregate_observed_count_floor",
+        "behavior_fields_emitted",
+        "independent_repeated_cross_sectional_waves",
+        "pair_table_shape",
+        "pairwise_tables_prove_global_joint_distribution",
+        "raw_answers_emitted",
+        "real_source_attestation_required_by_future_admission",
+        "required_item_count_vectors_per_wave",
+        "required_pair_tables_per_wave",
+        "required_wave_count",
+        "respondent_identifiers_emitted",
+        "respondent_rows_consumed_by_model",
+        "synthetic_packages_freshly_regenerated_before_fit",
+    }
+    identity = artifact["execution_identity"]
+    assert set(identity) == {
+        "identity_hash",
+        "implementation_manifest",
+        "plan_hash",
+        "primary_checkpoint_manifest_hash",
+        "primary_phase_hash",
+        "primary_process_tokens_hash",
+        "recompute_checkpoint_manifest_hash",
+        "recompute_phase_hash",
+        "recompute_process_tokens_hash",
+        "requirements_lock_hash",
+        "runtime",
+        "separate_phase_execution",
+        "source_commit",
+        "source_tree_clean",
+        "workspace_identity_hash",
+    }
+    implementation = identity["implementation_manifest"]
+    assert set(implementation) == {"files", "implementation_hash"}
+    assert all(set(item) == {"path", "sha256"} for item in implementation["files"])
+    runtime = identity["runtime"]
+    assert set(runtime) == {
+        "arviz",
+        "blas_backend_hash",
+        "native_binary_manifest_hash",
+        "numpy",
+        "numpy_build_config_hash",
+        "platform_machine",
+        "platform_release",
+        "platform_system",
+        "platform_tag",
+        "pymc",
+        "python",
+        "python_compiler",
+        "python_executable_sha256",
+        "python_implementation",
+        "python_thread_count",
+        "scipy",
+        "thread_environment",
+        "threadpool_runtime_entry_count",
+        "threadpool_runtime_hash",
+        "threadpoolctl",
+    }
+    assert set(runtime["thread_environment"]) == {
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+    }
+    assert set(artifact["execution_recomputation"]) == {
+        "all_compiled_slots_freshly_recomputed",
+        "slot_result_hashes_hash",
+        "verification_hash",
+        "verification_mode",
+    }
+    assert set(artifact["hash_bindings"]) == {
+        "artifact_payload_hash",
+        "artifact_self_hash",
+        "hash_posture",
+        "manifest_hash",
+        "study_hash",
+    }
+    assert set(artifact["measurement_manifest"]) == {
+        "behavior_evidence_role",
+        "core_second_order_construct_count",
+        "first_order_construct_count",
+        "form_id",
+        "item_count",
+        "manifest_hash",
+        "short_form_id",
+        "short_form_role",
+    }
+    model = artifact["model_specification"]
+    assert set(model) == {
+        "category_prior",
+        "diagnostic_followup_construct_latent_means_free",
+        "diagnostic_threshold_invariance_after_construct_mean_alignment",
+        "engine_kind",
+        "full_information_sem",
+        "latent_states_emitted",
+        "likelihood",
+        "loading_curvature",
+        "loading_prior",
+        "model_kind",
+        "nuts_used",
+        "pair_correlation_prior",
+        "posterior_draws_generated",
+        "respondent_scores_emitted",
+        "second_order_ratio_pooling",
+        "structural_paths_estimated",
+        "threshold_uncertainty_representation",
+    }
+    assert set(model["category_prior"]) == {"concentration_per_category", "family"}
+    assert set(model["loading_prior"]) == {"family", "mean", "sd"}
+    assert set(model["pair_correlation_prior"]) == {"family", "sd"}
+    assert set(artifact["scope"]) == {
+        "aggregate_only",
+        "customer_data_admitted",
+        "internal_only",
+        "live_data_source_admitted",
+        "nonauthorizing",
+        "noncausal",
+        "production_data_admitted",
+        "real_data_admitted",
+        "synthetic_only",
+    }
+    study = artifact["study"]
+    assert set(study) == {
+        "complete_full_plan",
+        "execution_mode",
+        "failing_checks",
+        "replications_per_scenario",
+        "sample_size_per_wave",
+        "scenario_summaries",
+        "slot_result_hashes_hash",
+        "study_hash",
+        "total_slot_count",
+    }
+    assert all(
+        set(item) == {
+            "expected_result_count",
+            "expected_result_rate",
+            "recovery_pass_count",
+            "recovery_pass_rate",
+            "replication_count",
+            "runner_error_count",
+            "scenario",
+        }
+        for item in study["scenario_summaries"]
+    )
 
 
 def _derived_plan(artifact: dict) -> dict:
@@ -130,11 +441,38 @@ def _all_keys(value) -> set[str]:
     return set()
 
 
+def _normalized_keys(value) -> set[str]:
+    return {
+        "".join(character for character in key.lower() if character.isalnum())
+        for key in _all_keys(value)
+    }
+
+
+def test_evidence_json_rejects_duplicates_nonfinite_values_and_unknown_fields():
+    with pytest.raises(ValueError, match="duplicate JSON key"):
+        _loads('{"state":"HOLD","state":"PASS"}')
+    with pytest.raises(ValueError, match="non-finite JSON constant"):
+        _loads('{"rate":NaN}')
+
+    unknown_summary = _summary()
+    unknown_summary["respondent_rows"] = [{"employee_name": "not allowed"}]
+    with pytest.raises(AssertionError):
+        _assert_exact_summary_shape(unknown_summary)
+
+    unknown_artifact = _artifact()
+    unknown_artifact["evidence_contract"]["respondent_rows"] = []
+    with pytest.raises(AssertionError):
+        _assert_exact_artifact_shape(unknown_artifact)
+
+
 def test_compact_summary_is_exactly_derived_from_committed_full_artifact():
     evidence = _summary()
     source = evidence["source_evidence"]
     artifact_bytes = FULL_ARTIFACT_PATH.read_bytes()
-    artifact = json.loads(artifact_bytes)
+    artifact = _loads(artifact_bytes)
+
+    _assert_exact_summary_shape(evidence)
+    _assert_exact_artifact_shape(artifact)
 
     assert REPO_ROOT / source["source_artifact_path"] == FULL_ARTIFACT_PATH
     assert FULL_ARTIFACT_PATH.resolve().is_relative_to(REPO_ROOT)
@@ -165,6 +503,9 @@ def test_compact_summary_is_exactly_derived_from_committed_full_artifact():
     identity = artifact["execution_identity"]
     bindings = artifact["hash_bindings"]
     recomputation = artifact["execution_recomputation"]
+    assert artifact["study"]["slot_result_hashes_hash"] == recomputation[
+        "slot_result_hashes_hash"
+    ]
     expected_bindings = {
         "manifest_hash": bindings["manifest_hash"],
         "study_hash": bindings["study_hash"],
@@ -290,19 +631,29 @@ def test_committed_evidence_remains_summary_only_private_and_nonauthorizing():
             "latent_states_committed",
         )
     )
-    forbidden_keys = {
-        "slot_results",
-        "category_counts",
-        "cell_counts",
-        "raw_answers",
-        "respondent_id",
-        "user_id",
+    forbidden_normalized_keys = {
+        "slotresults",
+        "categorycounts",
+        "cellcounts",
+        "rawanswer",
+        "rawanswers",
+        "rawrow",
+        "rawrows",
+        "respondentid",
+        "respondentrow",
+        "respondentrows",
+        "userid",
+        "personid",
+        "employeeid",
+        "employeename",
+        "managerid",
         "email",
-        "posterior_draws",
-        "latent_states",
+        "emailaddress",
+        "posteriordraws",
+        "latentstates",
     }
-    assert not (forbidden_keys & _all_keys(artifact))
-    assert not (forbidden_keys & _all_keys(evidence))
+    assert not (forbidden_normalized_keys & _normalized_keys(artifact))
+    assert not (forbidden_normalized_keys & _normalized_keys(evidence))
 
     assert governance["study_status"] == "PASS"
     assert governance["artifact_state"] == (
