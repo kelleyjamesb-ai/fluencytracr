@@ -197,6 +197,26 @@ Under `src/fluencytracr_inference/`:
   complete numerical pass remains internal synthetic nonauthorizing until a
   separate evidence PR receives independent acceptance. The runner PR contains
   no full generated evidence and does not complete parent tasks.
+- `ai_fluency_measurement_manifest.py`,
+  `ai_fluency_measurement_evidence.py`,
+  `ai_fluency_measurement_synthetic.py`,
+  `ai_fluency_ordinal_measurement.py`,
+  `ai_fluency_measurement_diagnostics.py`, and
+  `ai_fluency_measurement_calibration*.py` implement the separate AI Fluency
+  measurement-proof runner. The frozen `ai_fluency_long_v1` manifest contains
+  24 ordered items across eight three-item constructs; five core constructs
+  feed the second-order Fluency structure, while Attitude, Behavioral Intent,
+  and Perceived Impact remain separate. The model consumes only complete
+  aggregate item counts and all 276 pair tables per wave. It uses a
+  regularized ordinal-probit pairwise-composite Laplace approximation, frees
+  construct-level follow-up latent means before threshold-invariance review,
+  preserves joint cumulative-threshold and shared-loading covariance, uses
+  exact nonlinear loading curvature, and emits no respondent scores, latent
+  states, or posterior draws. The fixed
+  full plan has 200 seeds in each of four scenarios (800 slots), and artifact
+  emission freshly recomputes all slots. Smoke or incomplete evidence always
+  HOLDS; full evidence has not been generated in this change, and parent task
+  `5.5` remains incomplete.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as
@@ -239,3 +259,17 @@ no-network / no-connector posture. Expect ~6-8 minutes warm (NUTS fits
 dominate; the first pytensor compile adds ~25s cold).
 
 CI runs the same suite in `.github/workflows/inference-harness.yml`.
+
+Run the fast measurement-proof smoke artifact (always `HOLD`):
+
+```bash
+PYTHONPATH=inference/src inference/.venv/bin/python \
+  -m fluencytracr_inference.ai_fluency_measurement_calibration_cli --mode smoke
+```
+
+The fixed full command is intentionally not configurable:
+
+```bash
+PYTHONPATH=inference/src inference/.venv/bin/python \
+  -m fluencytracr_inference.ai_fluency_measurement_calibration_cli --mode full
+```

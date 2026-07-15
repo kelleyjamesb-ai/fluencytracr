@@ -1,0 +1,260 @@
+{
+  "schema_version": "FT_AI_FLUENCY_MEASUREMENT_MANIFEST_2026_07_V1",
+  "conceptual_model_version": "AI Fluency Flywheel v2.3",
+  "form_id": "ai_fluency_long_v1",
+  "form_role": "baseline_and_formal_followup",
+  "item_count": 24,
+  "measurement_structure": {
+    "first_order_construct_count": 8,
+    "items_per_first_order_construct": 3,
+    "second_order_factor_id": "ai_fluency",
+    "second_order_indicator_construct_ids": [
+      "confidence",
+      "usage_quality",
+      "behavior_change",
+      "leadership_reinforcement",
+      "capability_growth"
+    ],
+    "separate_construct_ids": [
+      "ai_attitude",
+      "behavioral_intent",
+      "perceived_ai_impact"
+    ],
+    "structural_paths_in_calibration_scope": false
+  },
+  "response_scale": {
+    "kind": "ordered_likert",
+    "values": [1, 2, 3, 4, 5],
+    "anchors": [
+      "Strongly disagree",
+      "Disagree",
+      "Neither agree nor disagree",
+      "Agree",
+      "Strongly agree"
+    ],
+    "reverse_coded_item_ids": []
+  },
+  "constructs": [
+    {
+      "construct_id": "confidence",
+      "role": "core_first_order",
+      "item_ids": ["ai-fluency-q01", "ai-fluency-q02", "ai-fluency-q03"]
+    },
+    {
+      "construct_id": "usage_quality",
+      "role": "core_first_order",
+      "item_ids": ["ai-fluency-q04", "ai-fluency-q05", "ai-fluency-q06"]
+    },
+    {
+      "construct_id": "behavior_change",
+      "role": "core_first_order",
+      "item_ids": ["ai-fluency-q07", "ai-fluency-q08", "ai-fluency-q09"]
+    },
+    {
+      "construct_id": "leadership_reinforcement",
+      "role": "core_first_order",
+      "item_ids": ["ai-fluency-q10", "ai-fluency-q11", "ai-fluency-q12"]
+    },
+    {
+      "construct_id": "capability_growth",
+      "role": "core_first_order",
+      "item_ids": ["ai-fluency-q13", "ai-fluency-q14", "ai-fluency-q15"]
+    },
+    {
+      "construct_id": "ai_attitude",
+      "role": "separate_first_order",
+      "item_ids": ["ai-fluency-q16", "ai-fluency-q17", "ai-fluency-q18"]
+    },
+    {
+      "construct_id": "behavioral_intent",
+      "role": "separate_first_order",
+      "item_ids": ["ai-fluency-q19", "ai-fluency-q20", "ai-fluency-q21"]
+    },
+    {
+      "construct_id": "perceived_ai_impact",
+      "role": "separate_first_order",
+      "item_ids": ["ai-fluency-q22", "ai-fluency-q23", "ai-fluency-q24"]
+    }
+  ],
+  "items": [
+    {
+      "item_id": "ai-fluency-q01",
+      "item_index": 1,
+      "construct_id": "confidence",
+      "prompt": "I feel confident using AI tools to support my day-to-day work."
+    },
+    {
+      "item_id": "ai-fluency-q02",
+      "item_index": 2,
+      "construct_id": "confidence",
+      "prompt": "When I use AI, I usually know how to get useful output from it."
+    },
+    {
+      "item_id": "ai-fluency-q03",
+      "item_index": 3,
+      "construct_id": "confidence",
+      "prompt": "I can recover quickly when an AI response is not immediately useful."
+    },
+    {
+      "item_id": "ai-fluency-q04",
+      "item_index": 4,
+      "construct_id": "usage_quality",
+      "prompt": "I use AI in ways that improve the quality of my work, not just the speed."
+    },
+    {
+      "item_id": "ai-fluency-q05",
+      "item_index": 5,
+      "construct_id": "usage_quality",
+      "prompt": "I check and refine AI outputs before relying on them."
+    },
+    {
+      "item_id": "ai-fluency-q06",
+      "item_index": 6,
+      "construct_id": "usage_quality",
+      "prompt": "I can tell the difference between low-value and high-value uses of AI in my work."
+    },
+    {
+      "item_id": "ai-fluency-q07",
+      "item_index": 7,
+      "construct_id": "behavior_change",
+      "prompt": "AI has meaningfully changed how I approach at least one recurring workflow."
+    },
+    {
+      "item_id": "ai-fluency-q08",
+      "item_index": 8,
+      "construct_id": "behavior_change",
+      "prompt": "Using AI has become part of my normal way of working, not just occasional experimentation."
+    },
+    {
+      "item_id": "ai-fluency-q09",
+      "item_index": 9,
+      "construct_id": "behavior_change",
+      "prompt": "I regularly rethink how work gets done because AI is available."
+    },
+    {
+      "item_id": "ai-fluency-q10",
+      "item_index": 10,
+      "construct_id": "leadership_reinforcement",
+      "prompt": "Leaders in my organization clearly signal that thoughtful AI use matters."
+    },
+    {
+      "item_id": "ai-fluency-q11",
+      "item_index": 11,
+      "construct_id": "leadership_reinforcement",
+      "prompt": "People here are recognized for improving work with AI in responsible ways."
+    },
+    {
+      "item_id": "ai-fluency-q12",
+      "item_index": 12,
+      "construct_id": "leadership_reinforcement",
+      "prompt": "My organization provides clear guidance on when and how AI should be used."
+    },
+    {
+      "item_id": "ai-fluency-q13",
+      "item_index": 13,
+      "construct_id": "capability_growth",
+      "prompt": "I have the support I need to improve how I use AI at work."
+    },
+    {
+      "item_id": "ai-fluency-q14",
+      "item_index": 14,
+      "construct_id": "capability_growth",
+      "prompt": "I am getting better over time at using AI for meaningful work outcomes."
+    },
+    {
+      "item_id": "ai-fluency-q15",
+      "item_index": 15,
+      "construct_id": "capability_growth",
+      "prompt": "I know what the next step would be to become more effective with AI."
+    },
+    {
+      "item_id": "ai-fluency-q16",
+      "item_index": 16,
+      "construct_id": "ai_attitude",
+      "prompt": "AI makes work feel more possible, not more overwhelming."
+    },
+    {
+      "item_id": "ai-fluency-q17",
+      "item_index": 17,
+      "construct_id": "ai_attitude",
+      "prompt": "I feel positive about AI becoming a bigger part of how work gets done."
+    },
+    {
+      "item_id": "ai-fluency-q18",
+      "item_index": 18,
+      "construct_id": "ai_attitude",
+      "prompt": "AI feels like a helpful advantage in my work, not a distraction."
+    },
+    {
+      "item_id": "ai-fluency-q19",
+      "item_index": 19,
+      "construct_id": "behavioral_intent",
+      "prompt": "I intend to use AI more often in the next few months."
+    },
+    {
+      "item_id": "ai-fluency-q20",
+      "item_index": 20,
+      "construct_id": "behavioral_intent",
+      "prompt": "I intend to expand AI into more meaningful parts of my work."
+    },
+    {
+      "item_id": "ai-fluency-q21",
+      "item_index": 21,
+      "construct_id": "behavioral_intent",
+      "prompt": "I intend to invest time in getting better at using AI effectively."
+    },
+    {
+      "item_id": "ai-fluency-q22",
+      "item_index": 22,
+      "construct_id": "perceived_ai_impact",
+      "prompt": "AI has already made a meaningful positive difference in my work."
+    },
+    {
+      "item_id": "ai-fluency-q23",
+      "item_index": 23,
+      "construct_id": "perceived_ai_impact",
+      "prompt": "AI helps me produce stronger work outcomes than I could without it."
+    },
+    {
+      "item_id": "ai-fluency-q24",
+      "item_index": 24,
+      "construct_id": "perceived_ai_impact",
+      "prompt": "AI is increasing my effectiveness in ways that matter."
+    }
+  ],
+  "formal_wave_policy": {
+    "baseline_form_id": "ai_fluency_long_v1",
+    "followup_form_id": "ai_fluency_long_v1",
+    "three_month_and_six_month_are_distinct_waves": true,
+    "person_level_linkage_allowed": false,
+    "analysis_design": "independent_repeated_cross_sectional_aggregate"
+  },
+  "short_form_policy": {
+    "form_id": "ai_fluency_short_v1",
+    "item_count": 14,
+    "role": "pulse_only",
+    "equated_to_long_form": false,
+    "eligible_for_longitudinal_change_calibration": false
+  },
+  "behavior_evidence_policy": {
+    "item_keys": [
+      "real_work_task",
+      "first_draft_with_ai",
+      "improved_ai_output",
+      "summarized_insights_using_ai",
+      "decision_support",
+      "repeatable_ai_workflow"
+    ],
+    "role": "separate_pathway_and_corroboration_evidence",
+    "loads_on_ai_fluency": false,
+    "changes_measurement_eligibility": false,
+    "changes_outcome_estimates": false,
+    "can_rescue_hold": false
+  },
+  "source_lineage": {
+    "candidate_artifact_name": "ai-fluency-24-item.html",
+    "candidate_artifact_sha256": "268edeec251d253fbcc96bcf03a750ab6c31e236c914ae99095193ca3748e1fd",
+    "canonical_repo_artifact": "frontend/public/ai-fluency/assessment-24-item.html",
+    "measurement_configuration_match_reviewed": true
+  }
+}

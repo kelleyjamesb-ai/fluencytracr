@@ -25,6 +25,9 @@ test = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+fluencytracr_inference = ["ai_fluency_long_v1_manifest.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # The harness suite imports the package straight from src/ (no editable

@@ -157,7 +157,7 @@ outputs.
 | --- | --- | --- | --- |
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
 | `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as a smoke prototype followed by state-space/NUTS concordance and accepted 1,200-slot replicated synthetic validation. | Completed internal synthetic proof. A separate decision conditionally selects only its `HISTORICAL_STATE_SPACE` route for docs/OpenSpec prerequisite hardening while execution remains HOLD. It does not authorize real data, runtime routing or execution promotion, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, or exports. |
-| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Prerequisites boundary only. | State is `PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE`; current dimension summaries do not identify a latent measurement model or cross-wave change. No runtime model, posterior output, customer output, persistence, UI, routes, exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
+| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Synthetic runner implemented; full evidence pending. | State is `SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING`; the frozen long form, aggregate count contract, synthetic ordinal proof, and full 800-slot plan exist, but only smoke evidence has run. Dimension summaries still do not identify latent change. No real-data model, customer posterior output, persistence, UI, routes, public exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
 | `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
 | `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
@@ -697,12 +697,11 @@ defines the gate for the future `bayesian_fluency_measurement_model`.
 Current state:
 
 ```text
-PREREQUISITES_DEFINED_CALIBRATION_INCOMPLETE
+SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING
 ```
 
-The contract defines aggregate snapshot-context prerequisites and identifies
-the missing measurement evidence required before any future calibration
-artifact can exist:
+The contract now defines aggregate snapshot-context prerequisites plus the
+implemented synthetic measurement-evidence and runner boundary:
 
 - validated aggregate `AIFluencyInstrumentSnapshot` waves only;
 - immutable baseline/retest wave identity;
@@ -714,22 +713,27 @@ artifact can exist:
 - k-min posture at the aggregate cohort grain;
 - exact instrument, form, item-set, item-to-dimension, and scoring-derivation
   versions;
-- a separately approved privacy-safe aggregate sufficient-statistics contract;
+- a frozen privacy-safe aggregate sufficient-statistics contract with all 24
+  item marginals and 276 pair tables per wave;
 - same-form compatibility or an approved cross-form equating record;
 - predeclared longitudinal measurement-invariance gates;
 - CODE, BUG, and ADVERSARIAL review against exact artifact bytes for any later
   implementation.
 
-The calibration contract does not fit a model. It does not create latent
-trait estimates, posterior intervals, probability output, confidence output,
-runtime code, schemas, persistence, routes, UI, exports, connectors, customer
-readouts, real-data admission, ROI, causality, productivity, finance output,
-or economic output. Dimension summaries, standard errors, and reliability
-metadata may support aggregate context but cannot be treated as sufficient
-measurement-model calibration evidence. Missing uncertainty, inadmissible
-source posture, form/version incompatibility, missing aggregate sufficient
-statistics, or missing/failed invariance evidence remains a HOLD condition and
-must not be filled with respondent-level export or invented precision.
+The current runtime is isolated to synthetic aggregate validation. It uses a
+regularized ordinal-probit pairwise-composite Laplace proof, frees
+construct-level follow-up latent means before threshold-invariance review, and
+freshly recomputes every study slot before artifact emission. Smoke, partial,
+off-plan, unsafe, real-source, or hash-invalid evidence HOLDS. The fixed full
+plan is 200 seeds in each of invariant, invariant-latent-shift, loading-drift,
+and threshold-drift scenarios; it has not been run or independently accepted.
+
+No respondent latent traits, customer posterior intervals, probability output,
+confidence output, production runtime, schemas, persistence, routes, UI,
+public exports, live connectors, customer readouts, real-data admission, ROI,
+causality, productivity, finance output, or economic output is authorized.
+Dimension summaries remain context only and cannot replace item-level aggregate
+sufficient statistics.
 
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware
@@ -1010,10 +1014,11 @@ changes:
 - Separate compact summary and CODE/BUG/ADVERSARIAL acceptance record that
   authorize only the completed internal synthetic longitudinal proof.
 
-Still not implemented after the accepted longitudinal replicated-validation
-evidence:
+Still incomplete after the accepted longitudinal replicated-validation
+evidence and the measurement-runner implementation:
 
-- AI Fluency measurement-model calibration.
+- Full AI Fluency synthetic measurement evidence execution and exact-byte
+  acceptance, followed separately by governed real aggregate calibration.
 - VBD trajectory-model calibration.
 - AI Fluency snapshot persistence promotion.
 - Backend read projection or UI integration.

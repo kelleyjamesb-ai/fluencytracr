@@ -182,6 +182,14 @@
       "last_note": "Done 2026-07-13: conditionally selected only the accepted HISTORICAL_STATE_SPACE artifact for prerequisite docs/OpenSpec hardening. Execution remains HOLD pending calibrations, real-data/source admission, monitoring, readout governance, frozen manifest, and a separate human execution decision. Full inference 489/489; bridges 76/76; CODE/BUG/ADVERSARIAL GO. Tasks 5.5-5.8 remain open."
     },
     {
+      "id": "ai-fluency-longitudinal-sem-calibration-proof",
+      "title": "AI Fluency longitudinal ordinal SEM calibration proof",
+      "bound": "Synthetic-only inference/, Google Apps Script aggregate-evidence adapter, focused tests, OpenSpec, and docs/status: freeze the 24-item long-form manifest; define privacy-safe item-category and pairwise aggregate evidence; implement fail-closed ordinal measurement and longitudinal invariance calibration proof; keep the 14-item form pulse-only and behavior questions separate; no real/live/customer data, respondent rows, UI, routes, persistence, customer output, confidence/probability, ROI, causality, productivity, new events/reasons/thresholds, or task 5.5 completion without full executed evidence and independent acceptance",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-14: review fix packages the single frozen manifest, loads it only via importlib.resources, and proves clean wheel contents/install, source isolation, hash stability, and missing-resource HOLD. Full inference 540/540, Node 27/27, strict OpenSpec, diff, and CODE/BUG/ADVERSARIAL GO. Full 800-slot run and parent 5.5 remain open."
+    },
+    {
       "id": "inference-harness-ci-deduplication",
       "title": "Inference Harness duplicate-run cleanup",
       "bound": ".github/workflows/inference-harness.yml plus queue/progress status only; run feature-branch validation through pull_request, retain push validation on main, and cancel superseded runs with collision-safe workflow concurrency; preserve all path filters, jobs, commands, timeouts, statistical gates, and fail-closed behavior",
