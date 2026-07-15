@@ -33,15 +33,15 @@
 ## 5. Future Work Not Completed Here
 
 The complete replicated longitudinal evidence set received independent
-acceptance on 2026-07-13. The first four combined model-proof gates are
-complete; measurement-model, trajectory-model, persistence, and product
-integration work remain separate future scopes.
+acceptance on 2026-07-13. AI Fluency measurement-model calibration received
+separate internal synthetic acceptance on 2026-07-15. Trajectory-model,
+persistence, and product-integration work remain separate future scopes.
 
 - [x] 5.1 Full NUTS longitudinal sampler implementation and diagnostics.
 - [x] 5.2 Replicated longitudinal interval-coverage study.
 - [x] 5.3 Null false-eligibility study for the longitudinal artifact.
 - [x] 5.4 Lag recovery and common-shock robustness studies.
-- [ ] 5.5 AI Fluency measurement-model calibration.
+- [x] 5.5 AI Fluency measurement-model calibration.
 - [ ] 5.6 VBD trajectory-model calibration.
 - [ ] 5.7 AI Fluency snapshot persistence promotion decision.
 - [ ] 5.8 Backend read projection and UI integration after separate promotion.

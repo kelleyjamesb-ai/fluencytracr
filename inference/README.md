@@ -222,8 +222,11 @@ Under `src/fluencytracr_inference/`:
   slot hashes; malformed, partial, stale, copied-across-phase, off-plan, or
   mismatched checkpoints fail closed. Checkpoints stay outside the repository,
   and only the summary-only artifact is atomically published. Smoke or
-  incomplete evidence always HOLDS; full evidence has not been generated in
-  this change, and parent task `5.5` remains incomplete.
+  incomplete evidence always HOLDS. The accepted full run completed all 800
+  primary slots and all 800 separate recomputations with zero runner errors;
+  the full artifact, compact summary, and self-hashed independent acceptance
+  record are committed under `inference/evidence/`. Parent task `5.5` is
+  complete only for this internal synthetic measurement-calibration boundary.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

@@ -1,6 +1,6 @@
 # AI Fluency Measurement-Model Calibration
 
-Contract status: `SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING`
+Contract status: `SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING`
 
 Owning model-family component:
 `bayesian_fluency_measurement_model`
@@ -21,7 +21,7 @@ live connector execution, or customer-facing economic output.
 The current state is:
 
 ```text
-SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING
+SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING
 ```
 
 Meaning:
@@ -40,13 +40,20 @@ Meaning:
   means. Its Laplace uncertainty uses exact nonlinear loading curvature,
   shared-loading GLS propagation, and joint cumulative-Dirichlet threshold
   covariance.
-- Focused smoke execution is verified, but the fixed full plan of 200 seeds in
-  each of four scenarios has not been executed or independently accepted.
+- The fixed full plan executed 200 seeds in each of four scenarios, followed by
+  a separate fresh recomputation of all 800 slots. Invariant acceptance was
+  `199/200`, invariant-latent-shift acceptance was `198/200`, loading-drift
+  detection was `194/200`, threshold-drift detection was `200/200`, and every
+  scenario passed recovery `200/200` with zero runner errors.
+- The full artifact, compact summary, and self-hashed acceptance record are
+  committed under `inference/evidence/`. Independent CODE, BUG, and
+  ADVERSARIAL reviewers returned GO against exact evidence commit `9c87dc26`.
 - The current dimension-level snapshots are not sufficient to calibrate a
   latent measurement model or establish comparable change across waves.
 - No model output is authorized.
 - No customer-facing output is authorized.
-- Parent OpenSpec task `5.5` remains incomplete.
+- Parent OpenSpec task `5.5` is complete only for this accepted internal
+  synthetic calibration boundary.
 
 ## Snapshot Context Is Not Calibration Evidence
 
@@ -226,15 +233,12 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-The next bounded step is to merge the runner, execute the fixed 800-slot full
-synthetic study (200 seeds in each of four scenarios), commit only the
-summary-only hash-bound artifact, and obtain independent CODE, BUG, and
-ADVERSARIAL acceptance of those exact bytes. The full run freshly recomputes
-every slot during artifact emission, so opaque result hashes cannot certify
-execution.
+The bounded synthetic calibration step is complete. The next model-family
+prerequisite is separately governed VBD trajectory-model calibration under
+parent task `5.6`; it must not reuse this measurement acceptance as outcome,
+causal, economic, or production authorization.
 
-OpenSpec task `5.5` remains incomplete until that evidence run is complete and
-accepted. Real aggregate calibration, source admission, beta sample-size
+Real aggregate calibration, immutable source admission, beta sample-size
 adequacy, the 14-item equating study, structural Attitude/Intent/Impact paths,
 persistence, runtime monitoring, customer language, and UI wiring remain
 separate later decisions.

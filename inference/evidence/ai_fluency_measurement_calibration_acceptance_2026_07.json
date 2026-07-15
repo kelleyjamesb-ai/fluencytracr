@@ -1,0 +1,101 @@
+{
+  "schema_version": "FT_INTERNAL_AI_FLUENCY_MEASUREMENT_CALIBRATION_ACCEPTANCE_2026_07_V1",
+  "record_class": "internal_synthetic_ai_fluency_measurement_calibration_independent_acceptance",
+  "reviewed_at": "2026-07-15T17:56:27Z",
+  "reviewed_change_id": "ai-fluency-measurement-calibration-full-evidence",
+  "reviewed_evidence_binding": {
+    "binding_kind": "committed_artifact_bytes",
+    "branch_review_commit": "9c87dc2679e4d27483d8ea0de686d00e39743f65",
+    "branch_review_commit_reachability_required": false,
+    "full_artifact_sha256": "05adf24f92aa41546e036c192ac8bf675c7f3ce06cb633f7261b34d57e0bce5a",
+    "compact_summary_sha256": "1d24c58385f0e00435373de92851a095b1efc573ebb461525a765cc02b8a9e06",
+    "artifact_self_hash": "9666146e8ef78ba588a4755be6ffcf87cd32920cf5c4c8385371f597dc74424c",
+    "evidence_test_sha256": "c9a1e8ea431fd120ad03ee53e7d1573f7b89f25e3a51ff2ff8687363a6f1266a"
+  },
+  "source_evidence": {
+    "full_artifact_path": "inference/evidence/ai_fluency_measurement_calibration_full_2026_07.json",
+    "full_artifact_sha256": "05adf24f92aa41546e036c192ac8bf675c7f3ce06cb633f7261b34d57e0bce5a",
+    "compact_summary_path": "inference/evidence/ai_fluency_measurement_calibration_2026_07.json",
+    "compact_summary_sha256": "1d24c58385f0e00435373de92851a095b1efc573ebb461525a765cc02b8a9e06",
+    "evidence_test_path": "inference/tests/test_ai_fluency_measurement_calibration_evidence.py",
+    "evidence_test_sha256": "c9a1e8ea431fd120ad03ee53e7d1573f7b89f25e3a51ff2ff8687363a6f1266a",
+    "artifact_payload_hash": "b33253a88b284fc8ba7964672516ae191457bf6e4c1d4d899f702d24a2defac0",
+    "artifact_self_hash": "9666146e8ef78ba588a4755be6ffcf87cd32920cf5c4c8385371f597dc74424c",
+    "manifest_hash": "1b1523baab5bd3007e0c42e732da8d71cf67594074a54d17bb4b741292565434",
+    "study_hash": "79ac5365981182994fc172838a5b734a01c3f390e3160ec2ba303d4ea7dd2ad9",
+    "slot_result_hashes_hash": "5db4eb75cd24747ca5bbb2bb4cf217c50b652d95e1e1224debb2bb1b63f00ec4",
+    "execution_verification_hash": "8c1bd6af9541ffaf35ef11abce6c989f35cf3dc50827da65fe3723192a53db3d",
+    "execution_identity_hash": "7049149bf8efb160839268d84f109a12852351b918ca79139fe375ad763adee3",
+    "implementation_hash": "748b127e50ea496445df7f8183f46b6bf2e438822101c190dd880688a81c8bf1",
+    "plan_hash": "d84964e89056f1a9478bfd23c2961ee917591239d23d35b995a9cd7a362086b8",
+    "primary_phase_hash": "f938b28b9dd3c35464c3c40a1acb2d77eb6111527c41860a984c958a344fb72b",
+    "recompute_phase_hash": "00b3308ec7beab1a3876b9ba9a89423584e3e767bf402bd5f3abfa4cdbafe81e",
+    "primary_checkpoint_manifest_hash": "7ca012963b70033db20f75cd6280c8ff8f12f00e37d386bea40a4cc42b42740b",
+    "recompute_checkpoint_manifest_hash": "0a3b33c147c574071113308244698f487713a7d3fa82b77f2d079db4ab7ca316",
+    "primary_process_tokens_hash": "daf78dd4b87552b24b5254d1c56657a122b419a6bbdecdfa498110f921c6eac4",
+    "recompute_process_tokens_hash": "a93751457e47648dcbc9e77bfe39f28fc9547a4005dacce9ed2b3ea47188d0e2",
+    "source_commit": "935879417295f6b9677c832adfb905da747aa6e6",
+    "requirements_lock_hash": "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801"
+  },
+  "review_decisions": [
+    {
+      "role": "CODE",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f66cf-0833-7a02-86cd-53df79b671ed"
+    },
+    {
+      "role": "BUG",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f66cf-08d3-7902-a3d5-61f19d60b413"
+    },
+    {
+      "role": "ADVERSARIAL",
+      "decision": "GO",
+      "reviewer_kind": "independent_codex_subagent",
+      "review_ref": "019f66cf-0978-7540-98b7-bcffc14f70a3"
+    }
+  ],
+  "overall_decision": "GO",
+  "completion_state": {
+    "action": "accept_internal_synthetic_measurement_calibration_only",
+    "full_measurement_calibration_evidence_complete": true,
+    "synthetic_measurement_calibration_accepted": true,
+    "parent_openspec_task_5_5_complete": true,
+    "real_data_calibration_complete": false,
+    "short_form_equating_complete": false,
+    "structural_path_calibration_complete": false,
+    "vbd_trajectory_model_calibration_complete": false,
+    "snapshot_persistence_promotion_complete": false,
+    "ui_integration_complete": false,
+    "production_promotion_complete": false
+  },
+  "governance_pins": {
+    "synthetic_only": true,
+    "aggregate_only": true,
+    "internal_only": true,
+    "internal_measurement_validation_accepted": true,
+    "long_form_id": "ai_fluency_long_v1",
+    "short_form_role": "pulse_only_unequated",
+    "behavior_evidence_role": "separate_pathway_and_corroboration_only",
+    "customer_output_authorized": false,
+    "probability_output_authorized": false,
+    "confidence_output_authorized": false,
+    "roi_output_authorized": false,
+    "finance_output_authorized": false,
+    "causality_output_authorized": false,
+    "productivity_output_authorized": false,
+    "creates_route": false,
+    "creates_ui": false,
+    "writes_persistence": false,
+    "creates_export": false,
+    "renders_readout": false,
+    "executes_connector": false,
+    "promotion_decision_ref": null
+  },
+  "hash_bindings": {
+    "record_self_hash": "291062deb0e14574ec1ae41fc6d404fda836ca58da3d459af7569a652726456b",
+    "hash_posture": "consistency_and_drift_detection_not_coordinated_replacement_authenticity"
+  }
+}

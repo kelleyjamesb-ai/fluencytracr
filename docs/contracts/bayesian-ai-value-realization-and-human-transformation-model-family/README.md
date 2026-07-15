@@ -157,7 +157,7 @@ outputs.
 | --- | --- | --- | --- |
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
 | `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as a smoke prototype followed by state-space/NUTS concordance and accepted 1,200-slot replicated synthetic validation. | Completed internal synthetic proof. A separate decision conditionally selects only its `HISTORICAL_STATE_SPACE` route for docs/OpenSpec prerequisite hardening while execution remains HOLD. It does not authorize real data, runtime routing or execution promotion, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, or exports. |
-| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Synthetic runner implemented; full evidence pending. | State is `SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING`; the frozen long form, aggregate count contract, synthetic ordinal proof, and full 800-slot plan exist, but only smoke evidence has run. Dimension summaries still do not identify latent change. No real-data model, customer posterior output, persistence, UI, routes, public exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
+| `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Synthetic runner and full 800-slot evidence independently accepted. | State is `SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING`; the frozen long form, aggregate count contract, ordinal proof, full primary study, and separate 800-slot recomputation passed exact-byte review. Dimension summaries alone still do not identify latent change. No real-data model, customer posterior output, persistence, UI, routes, public exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
 | `bayesian_vbd_behavioral_trajectory_model` | Future model for Velocity, Breadth, and Depth movement over time at approved aggregate cells. | No. | Documentation-only future module. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
 | `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
@@ -191,14 +191,15 @@ alternate artifact `model_slice` value. The decision does not select
 `REPEATED_PRE_POST`, DiD, controlled-test, staggered-rollout,
 alternate-likelihood, or economic routes.
 
-No execution is authorized. AI Fluency measurement-model calibration, VBD
-trajectory-model calibration, real-data admission/source binding, runtime
-monitoring/fail-closed behavior, readout language/HOLD presentation, and a
-frozen non-activating pilot manifest are conjunctive prerequisites. A separate
-explicit human real-data execution decision must then bind that exact manifest
-and every passing prerequisite before access, preparation, fitting, or artifact
-emission. The manifest cannot activate itself.
-OpenSpec tasks `5.5` through `5.8` remain incomplete. Customer output,
+No execution is authorized. AI Fluency measurement-model calibration is now
+accepted only at the internal synthetic boundary. VBD trajectory-model
+calibration, real-data admission/source binding, runtime monitoring/fail-closed
+behavior, readout language/HOLD presentation, and a frozen non-activating pilot
+manifest remain conjunctive prerequisites. A separate explicit human real-data
+execution decision must then bind that exact manifest and every passing
+prerequisite before access, preparation, fitting, or artifact emission. The
+manifest cannot activate itself. OpenSpec tasks `5.6` through `5.8` remain
+incomplete. Customer output,
 confidence/probability language, AI-impact attribution, ROI, causality,
 productivity, finance, routes, UI, persistence, connectors, exports, schemas,
 new events/reasons/thresholds, and DiD work remain blocked.
@@ -697,7 +698,7 @@ defines the gate for the future `bayesian_fluency_measurement_model`.
 Current state:
 
 ```text
-SYNTHETIC_RUNNER_IMPLEMENTED_FULL_EVIDENCE_PENDING
+SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING
 ```
 
 The contract now defines aggregate snapshot-context prerequisites plus the
@@ -726,7 +727,12 @@ construct-level follow-up latent means before threshold-invariance review, and
 freshly recomputes every study slot before artifact emission. Smoke, partial,
 off-plan, unsafe, real-source, or hash-invalid evidence HOLDS. The fixed full
 plan is 200 seeds in each of invariant, invariant-latent-shift, loading-drift,
-and threshold-drift scenarios; it has not been run or independently accepted.
+and threshold-drift scenarios. All 800 primary slots and all 800 separate fresh
+recomputations completed with zero runner errors. The observed expected-result
+counts were `199`, `198`, `194`, and `200`; all four recovery counts were
+`200/200`. The summary-only full artifact and compact summary are byte-bound to
+a self-hashed CODE/BUG/ADVERSARIAL acceptance record under
+`inference/evidence/`.
 
 No respondent latent traits, customer posterior intervals, probability output,
 confidence output, production runtime, schemas, persistence, routes, UI,

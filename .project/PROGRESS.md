@@ -2,6 +2,39 @@
 
 ## Current Session
 
+- AI Fluency measurement calibration full evidence accepted (2026-07-15) on
+  `codex/ai-fluency-measurement-calibration-evidence`. From hardened source
+  commit `93587941`, the fixed serial runner completed 800 primary slots and
+  800 separately identified fresh recomputations across invariant,
+  invariant-latent-shift, loading-drift, and threshold-drift scenarios with
+  zero runner errors. Expected-result counts were `199/200`, `198/200`,
+  `194/200`, and `200/200`; every scenario passed recovery `200/200`.
+
+  The summary-only full artifact SHA-256 is
+  `05adf24f92aa41546e036c192ac8bf675c7f3ce06cb633f7261b34d57e0bce5a`,
+  with artifact self-hash
+  `9666146e8ef78ba588a4755be6ffcf87cd32920cf5c4c8385371f597dc74424c`.
+  A compact summary is exactly derived from those bytes. Evidence admission now
+  rejects duplicate keys, literal and exponent-overflow nonfinite JSON, unknown
+  nested fields, identifier-bearing keys or strings, hidden slot rows, and all
+  authorization attempts. CODE, BUG, and ADVERSARIAL reviewers returned GO on
+  exact commit `9c87dc26`; the separate acceptance record binds that commit,
+  both evidence files, the strict evidence test, source/runtime/plan/phase
+  hashes, and all three reviewer IDs.
+
+  OpenSpec measurement tasks `5.1` and `5.5` plus parent task `5.5` are complete
+  only for internal synthetic calibration. Short-form equating, real aggregate
+  admission/calibration, structural Attitude/Intent/Impact paths, VBD trajectory
+  calibration (`5.6`), persistence (`5.7`), UI integration (`5.8`), customer
+  output, confidence/probability, ROI, causality, productivity, and promotion
+  remain incomplete and unauthorized. Verification and publication details are
+  recorded in the final branch commits and PR. Final verification passed: full
+  inference `565 passed`; focused measurement/evidence suites `30 passed`;
+  evidence plus acceptance binding `6 passed`; aggregate adapter/snapshot Node
+  `38 passed`; TypeScript inference bridge `10 passed`; `shared` and
+  `confidence-engine` builds; strict validation of both affected OpenSpec
+  changes; docs sweep; semantic drift; V1 governance; Assurance Harness
+  `276 passed, 3 skipped`; and `git diff --check`.
 - AI Fluency measurement-calibration evidence runner hardened before full
   execution (2026-07-15) on
   `codex/ai-fluency-measurement-calibration-evidence` from merged PR #422 at
