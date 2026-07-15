@@ -2,6 +2,20 @@
 
 ## Current Session
 
+- AI Fluency measurement-calibration full evidence run started and paused
+  cleanly (2026-07-15) on
+  `codex/ai-fluency-measurement-calibration-evidence` from merged PR #422 at
+  `600b7fc9`. The user authorized the exact four-scenario, 200-replication-per-
+  scenario study. Inspection confirmed that the existing one-shot full runner
+  executes 800 primary slots and artifact emission freshly recomputes all 800
+  slots, for 1,600 total slot evaluations; no resume/chunk path exists. A fresh
+  `inference/.venv` was created and the pinned `requirements.lock` installed
+  successfully. No canary, full run, artifact, or evidence output has started.
+  All exploratory subagents and command sessions were stopped. Resume by timing
+  the smoke/canary path, confirming the one-shot runtime is operationally safe,
+  then execute the full proof and bind the exact summary artifact to independent
+  CODE, BUG, and ADVERSARIAL acceptance. Do not check tasks `5.1` or parent
+  `5.5` until the complete evidence passes.
 - PR #422 manifest-packaging review fix completed (2026-07-14) on
   `codex/ai-fluency-longitudinal-sem-calibration-proof`. Moved the single
   canonical 24-item manifest under `fluencytracr_inference`, declared it as
