@@ -12,7 +12,7 @@ const adapterPath = path.join(
 );
 const manifestPath = path.join(
   repoRoot,
-  "inference/config/ai_fluency_long_v1_manifest.json"
+  "inference/src/fluencytracr_inference/ai_fluency_long_v1_manifest.json"
 );
 
 const CONSTRUCTS = [

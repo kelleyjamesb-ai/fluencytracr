@@ -185,9 +185,9 @@
       "id": "ai-fluency-longitudinal-sem-calibration-proof",
       "title": "AI Fluency longitudinal ordinal SEM calibration proof",
       "bound": "Synthetic-only inference/, Google Apps Script aggregate-evidence adapter, focused tests, OpenSpec, and docs/status: freeze the 24-item long-form manifest; define privacy-safe item-category and pairwise aggregate evidence; implement fail-closed ordinal measurement and longitudinal invariance calibration proof; keep the 14-item form pulse-only and behavior questions separate; no real/live/customer data, respondent rows, UI, routes, persistence, customer output, confidence/probability, ROI, causality, productivity, new events/reasons/thresholds, or task 5.5 completion without full executed evidence and independent acceptance",
-      "status": "in_progress",
+      "status": "done",
       "risk": "high",
-      "last_note": "Review fix in progress 2026-07-14: package the frozen manifest with the inference wheel, load it through package resources, and add clean installed-wheel regression coverage. Full 800-slot run and parent 5.5 remain open."
+      "last_note": "Done 2026-07-14: review fix packages the single frozen manifest, loads it only via importlib.resources, and proves clean wheel contents/install, source isolation, hash stability, and missing-resource HOLD. Full inference 540/540, Node 27/27, strict OpenSpec, diff, and CODE/BUG/ADVERSARIAL GO. Full 800-slot run and parent 5.5 remain open."
     },
     {
       "id": "inference-harness-ci-deduplication",

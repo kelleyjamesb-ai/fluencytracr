@@ -1,3 +1,10 @@
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import zipfile
+
 from fluencytracr_inference.ai_fluency_measurement_manifest import (
     BEHAVIOR_EVIDENCE_KEYS,
     CONSTRUCT_IDS,
@@ -86,3 +93,133 @@ def test_manifest_loader_returns_defensive_copies():
     assert measurement_manifest_hash() == (
         "1b1523baab5bd3007e0c42e732da8d71cf67594074a54d17bb4b741292565434"
     )
+
+
+def test_built_wheel_loads_frozen_manifest_outside_checkout(tmp_path):
+    inference_root = Path(__file__).resolve().parents[1]
+    clean_project = tmp_path / "clean-project"
+    clean_package = clean_project / "src" / "fluencytracr_inference"
+    clean_package.parent.mkdir(parents=True)
+    shutil.copy2(inference_root / "pyproject.toml", clean_project / "pyproject.toml")
+    shutil.copytree(
+        inference_root / "src" / "fluencytracr_inference",
+        clean_package,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    wheelhouse = tmp_path / "wheelhouse"
+    wheelhouse.mkdir()
+
+    build = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "wheel",
+            "--no-index",
+            "--no-cache-dir",
+            "--no-deps",
+            "--no-build-isolation",
+            "--wheel-dir",
+            str(wheelhouse),
+            str(clean_project),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert build.returncode == 0, build.stdout + build.stderr
+
+    wheels = tuple(wheelhouse.glob("fluencytracr_inference-*.whl"))
+    assert len(wheels) == 1
+    resource_member = "fluencytracr_inference/ai_fluency_long_v1_manifest.json"
+    canonical_resource = (
+        inference_root
+        / "src"
+        / "fluencytracr_inference"
+        / "ai_fluency_long_v1_manifest.json"
+    )
+    with zipfile.ZipFile(wheels[0]) as wheel:
+        matching_members = tuple(
+            name
+            for name in wheel.namelist()
+            if name.endswith("/ai_fluency_long_v1_manifest.json")
+        )
+        assert matching_members == (resource_member,)
+        assert wheel.read(resource_member) == canonical_resource.read_bytes()
+
+    install_target = tmp_path / "installed"
+    install = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--no-index",
+            "--no-deps",
+            "--no-compile",
+            "--target",
+            str(install_target),
+            str(wheels[0]),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert install.returncode == 0, install.stdout + install.stderr
+
+    outside_checkout = tmp_path / "outside-checkout"
+    outside_checkout.mkdir()
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            """
+import json
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from fluencytracr_inference import ai_fluency_measurement_manifest as manifest_module
+
+print(json.dumps({
+    "form_id": manifest_module.load_measurement_manifest()["form_id"],
+    "item_count": manifest_module.load_measurement_manifest()["item_count"],
+    "manifest_hash": manifest_module.measurement_manifest_hash(),
+    "module_path": manifest_module.__file__,
+    "sys_path": sys.path,
+}))
+""",
+            str(install_target),
+        ],
+        cwd=outside_checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert probe.returncode == 0, probe.stdout + probe.stderr
+    assert probe.stderr == ""
+    result = json.loads(probe.stdout)
+
+    assert result["form_id"] == "ai_fluency_long_v1"
+    assert result["item_count"] == 24
+    assert result["manifest_hash"] == (
+        "1b1523baab5bd3007e0c42e732da8d71cf67594074a54d17bb4b741292565434"
+    )
+    assert Path(result["module_path"]).is_relative_to(install_target)
+    assert str(inference_root) not in "\n".join(result["sys_path"])
+
+    (install_target / resource_member).unlink()
+    missing_resource = subprocess.run(
+        probe.args,
+        cwd=outside_checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert missing_resource.returncode != 0
+    assert "MeasurementManifestError: unable to load measurement manifest" in (
+        missing_resource.stderr
+    )
+    assert str(inference_root) not in missing_resource.stderr

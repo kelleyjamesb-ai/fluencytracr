@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import copy
 from functools import lru_cache
+from importlib import resources
 import json
-from pathlib import Path
 
 from .hashing import sha256_json
 
@@ -40,10 +40,6 @@ BEHAVIOR_EVIDENCE_KEYS = (
 
 class MeasurementManifestError(ValueError):
     """The committed instrument manifest is malformed or has drifted."""
-
-
-def _manifest_path() -> Path:
-    return Path(__file__).resolve().parents[2] / "config" / "ai_fluency_long_v1_manifest.json"
 
 
 def _require_exact_keys(value: dict, expected: set[str], *, name: str) -> None:
@@ -260,7 +256,11 @@ def _load_measurement_manifest_cached() -> dict:
     """Load and validate the committed canonical manifest once."""
 
     try:
-        manifest = json.loads(_manifest_path().read_text(encoding="utf-8"))
+        manifest = json.loads(
+            resources.files(__package__)
+            .joinpath("ai_fluency_long_v1_manifest.json")
+            .read_text(encoding="utf-8")
+        )
     except (OSError, json.JSONDecodeError) as exc:
         raise MeasurementManifestError("unable to load measurement manifest") from exc
     if not isinstance(manifest, dict):

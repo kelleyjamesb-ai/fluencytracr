@@ -2,6 +2,19 @@
 
 ## Current Session
 
+- PR #422 manifest-packaging review fix completed (2026-07-14) on
+  `codex/ai-fluency-longitudinal-sem-calibration-proof`. Moved the single
+  canonical 24-item manifest under `fluencytracr_inference`, declared it as
+  package data, and replaced checkout-relative loading with
+  `importlib.resources`. The regression builds from a clean copied project,
+  confirms one byte-identical manifest in the wheel, pip-installs that wheel,
+  imports it with `python -I` outside the checkout, verifies the frozen hash
+  and installed provenance, then deletes the installed resource and proves the
+  loader fails closed without a source fallback. Verification: full inference
+  `540 passed`; Google Apps Script adapter `27 passed`; strict OpenSpec and
+  `git diff --check` passed; independent CODE, BUG, and ADVERSARIAL reviews
+  returned GO. No model behavior or calibration decision changed. The full
+  800-slot evidence run and parent task `5.5` remain incomplete.
 - Inference Harness duplicate-run cleanup completed (2026-07-14) on
   `codex/inference-ci-deduplication` from `origin/main` at `24851995`.
   Restricted workflow `push` execution to `main` while retaining the existing

@@ -43,11 +43,12 @@ Non-goals:
 
 ### Frozen Long Form
 
-`inference/config/ai_fluency_long_v1_manifest.json` is the immutable model
-manifest. Item identity is `ai-fluency-q01` through `ai-fluency-q24`, in source
-order. Every item uses the ordered categories 1 through 5 and none is reverse
-coded. The conceptual `AI Fluency Flywheel v2.3` label is recorded separately
-from the technical form id.
+`inference/src/fluencytracr_inference/ai_fluency_long_v1_manifest.json` is the
+immutable model manifest. Item identity is `ai-fluency-q01` through
+`ai-fluency-q24`, in source order. Every item uses the ordered categories 1
+through 5 and none is reverse coded. The conceptual
+`AI Fluency Flywheel v2.3` label is recorded separately from the technical
+form id.
 
 Baseline and formal follow-up use this same 24-item form. Three-month and
 six-month collections are distinct waves, not interchangeable labels. The
