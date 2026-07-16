@@ -51,6 +51,8 @@ from .vbd_trajectory_validation_resumable import (
     _cleanup_stale_atomic_temps,
     _exclusive_lock,
     _file_sha256,
+    _frozen_child_command,
+    _frozen_source_bundle,
     _launch_capability,
     _repo_root,
     _safe_workspace_path,
@@ -495,9 +497,7 @@ def _execution_evidence_snapshot(workspace: Path) -> dict:
 
 
 def _child_command() -> tuple[str, ...]:
-    return (
-        sys.executable,
-        "-m",
+    return _frozen_child_command(
         "fluencytracr_inference.vbd_trajectory_concordance_cli",
         "_execute-bundle",
     )
@@ -654,27 +654,39 @@ def _launch_child(
 ) -> tuple[int, int, bytes, bytes]:
     verify_lock_identity()
     capability = _launch_capability(receipt, capability_token)
+    frozen_source = _frozen_source_bundle()
     capability_read, capability_write = os.pipe()
     liveness_read, liveness_write = os.pipe()
+    source_read, source_write = os.pipe()
     process = None
     try:
         process = subprocess.Popen(
             _child_command(),
-            cwd=_repo_root(),
+            cwd="/",
             env=_child_environment(
                 capability_fd=capability_read,
                 parent_liveness_fd=liveness_read,
+                frozen_source_fd=source_read,
             ),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             close_fds=True,
-            pass_fds=(capability_read, liveness_read),
+            pass_fds=(capability_read, liveness_read, source_read),
         )
         os.close(capability_read)
         capability_read = -1
         os.close(liveness_read)
         liveness_read = -1
+        os.close(source_read)
+        source_read = -1
+        source_written = 0
+        while source_written < len(frozen_source):
+            source_written += os.write(
+                source_write, frozen_source[source_written:]
+            )
+        os.close(source_write)
+        source_write = -1
         encoded = _canonical_json_bytes(capability)
         written = 0
         while written < len(encoded):
@@ -698,6 +710,8 @@ def _launch_child(
             capability_write,
             liveness_read,
             liveness_write,
+            source_read,
+            source_write,
         ):
             if descriptor >= 0:
                 try:
@@ -1893,10 +1907,25 @@ def _diagnostic_summary(primary: list[dict], nuts: list[dict], concordance: list
                 item["absolute_mean_difference_reference_sd"]
                 for item in concordance
             ),
-            "max_endpoint_difference_reference_sd": max(
+            "max_interval_80_endpoint_difference_reference_sd": max(
                 max(
-                    item["lower_endpoint_difference_reference_sd"],
-                    item["upper_endpoint_difference_reference_sd"],
+                    item[
+                        "interval_80_lower_endpoint_difference_reference_sd"
+                    ],
+                    item[
+                        "interval_80_upper_endpoint_difference_reference_sd"
+                    ],
+                )
+                for item in concordance
+            ),
+            "max_interval_99_endpoint_difference_reference_sd": max(
+                max(
+                    item[
+                        "interval_99_lower_endpoint_difference_reference_sd"
+                    ],
+                    item[
+                        "interval_99_upper_endpoint_difference_reference_sd"
+                    ],
                 )
                 for item in concordance
             ),

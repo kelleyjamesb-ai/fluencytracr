@@ -26,7 +26,8 @@ VBD_TRAJECTORY_CONCORDANCE_BUNDLE_SEED_BASE = 2_056_500_000
 VBD_TRAJECTORY_CONCORDANCE_CHAIN_SEED_BASE = 2_056_520_000
 VBD_TRAJECTORY_CONCORDANCE_PPC_SEED_BASE = 2_106_500_000
 VBD_TRAJECTORY_CONCORDANCE_MEAN_MAX_REFERENCE_SD = 0.15
-VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD = 0.20
+VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD = 0.20
+VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD = 0.20
 VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MIN = 0.85
 VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MAX = 1.15
 
@@ -204,8 +205,11 @@ def vbd_trajectory_concordance_plan() -> dict:
             "mean_max_reference_sd": (
                 VBD_TRAJECTORY_CONCORDANCE_MEAN_MAX_REFERENCE_SD
             ),
-            "endpoint_max_reference_sd": (
-                VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD
+            "interval_80_endpoint_max_reference_sd": (
+                VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD
+            ),
+            "interval_99_endpoint_max_reference_sd": (
+                VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD
             ),
             "sd_ratio_min": VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MIN,
             "sd_ratio_max": VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MAX,
@@ -276,10 +280,14 @@ def evaluate_vbd_trajectory_quantity_concordance(
         primary.posterior_sd,
         primary.interval_80_lower,
         primary.interval_80_upper,
+        primary.interval_99_lower,
+        primary.interval_99_upper,
         reference.posterior_mean,
         reference.posterior_sd,
         reference.interval_80_lower,
         reference.interval_80_upper,
+        reference.interval_99_lower,
+        reference.interval_99_upper,
     )
     if any(not math.isfinite(float(value)) for value in values):
         raise VbdTrajectoryConcordanceError("concordance summaries must be finite")
@@ -289,19 +297,29 @@ def evaluate_vbd_trajectory_quantity_concordance(
         )
     reference_sd = float(reference.posterior_sd)
     mean_difference = abs(primary.posterior_mean - reference.posterior_mean) / reference_sd
-    lower_difference = abs(
+    interval_80_lower_difference = abs(
         primary.interval_80_lower - reference.interval_80_lower
     ) / reference_sd
-    upper_difference = abs(
+    interval_80_upper_difference = abs(
         primary.interval_80_upper - reference.interval_80_upper
+    ) / reference_sd
+    interval_99_lower_difference = abs(
+        primary.interval_99_lower - reference.interval_99_lower
+    ) / reference_sd
+    interval_99_upper_difference = abs(
+        primary.interval_99_upper - reference.interval_99_upper
     ) / reference_sd
     sd_ratio = primary.posterior_sd / reference_sd
     passed = (
         mean_difference <= VBD_TRAJECTORY_CONCORDANCE_MEAN_MAX_REFERENCE_SD
-        and lower_difference
-        <= VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD
-        and upper_difference
-        <= VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD
+        and interval_80_lower_difference
+        <= VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD
+        and interval_80_upper_difference
+        <= VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD
+        and interval_99_lower_difference
+        <= VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD
+        and interval_99_upper_difference
+        <= VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD
         and VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MIN
         <= sd_ratio
         <= VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MAX
@@ -309,8 +327,18 @@ def evaluate_vbd_trajectory_quantity_concordance(
     body = {
         "quantity_name": "trajectory_movement",
         "absolute_mean_difference_reference_sd": float(mean_difference),
-        "lower_endpoint_difference_reference_sd": float(lower_difference),
-        "upper_endpoint_difference_reference_sd": float(upper_difference),
+        "interval_80_lower_endpoint_difference_reference_sd": float(
+            interval_80_lower_difference
+        ),
+        "interval_80_upper_endpoint_difference_reference_sd": float(
+            interval_80_upper_difference
+        ),
+        "interval_99_lower_endpoint_difference_reference_sd": float(
+            interval_99_lower_difference
+        ),
+        "interval_99_upper_endpoint_difference_reference_sd": float(
+            interval_99_upper_difference
+        ),
         "primary_to_reference_sd_ratio": float(sd_ratio),
         "passed": passed,
     }

@@ -6,7 +6,6 @@ import argparse
 import json
 import sys
 
-from .vbd_trajectory_artifact import run_vbd_trajectory_smoke_artifact
 from .vbd_trajectory_validation_execution import execute_vbd_trajectory_child
 from .vbd_trajectory_validation_plan import vbd_trajectory_validation_plan
 from .vbd_trajectory_validation_resumable import (
@@ -23,6 +22,14 @@ from .vbd_trajectory_validation_resumable import (
 
 def _print_json(value: object) -> None:
     print(json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False))
+
+
+def run_vbd_trajectory_smoke_artifact() -> dict:
+    from .vbd_trajectory_artifact import (
+        run_vbd_trajectory_smoke_artifact as run_smoke,
+    )
+
+    return run_smoke()
 
 
 def build_parser() -> argparse.ArgumentParser:

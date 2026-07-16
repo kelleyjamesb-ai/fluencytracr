@@ -5,7 +5,8 @@ import pytest
 
 from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.vbd_trajectory_concordance import (
-    VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD,
+    VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD,
+    VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD,
     VBD_TRAJECTORY_CONCORDANCE_MEAN_MAX_REFERENCE_SD,
     VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MAX,
     VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MIN,
@@ -64,15 +65,23 @@ from fluencytracr_inference.vbd_trajectory_validation_resumable import (
 )
 
 
-def _summary(*, mean=0.0, sd=1.0, lower=-1.0, upper=1.0):
+def _summary(
+    *,
+    mean=0.0,
+    sd=1.0,
+    lower_80=-1.0,
+    upper_80=1.0,
+    lower_99=-2.0,
+    upper_99=2.0,
+):
     return TrajectoryPosteriorSummary(
         quantity_name="trajectory_movement",
         posterior_mean=mean,
         posterior_sd=sd,
-        interval_80_lower=lower,
-        interval_80_upper=upper,
-        interval_99_lower=lower - 1.0,
-        interval_99_upper=upper + 1.0,
+        interval_80_lower=lower_80,
+        interval_80_upper=upper_80,
+        interval_99_lower=lower_99,
+        interval_99_upper=upper_99,
     )
 
 
@@ -119,16 +128,68 @@ def test_cross_engine_gates_pass_at_boundaries_and_fail_outside():
     passing = _summary(
         mean=VBD_TRAJECTORY_CONCORDANCE_MEAN_MAX_REFERENCE_SD,
         sd=VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MAX,
-        lower=-1.0 + VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD,
-        upper=1.0 - VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD,
+        lower_80=(
+            -1.0
+            + VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD
+        ),
+        upper_80=(
+            1.0
+            - VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD
+        ),
+        lower_99=(
+            -2.0
+            + VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD
+        ),
+        upper_99=(
+            2.0
+            - VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD
+        ),
     )
     result = evaluate_vbd_trajectory_quantity_concordance(passing, reference)
     assert result["passed"] is True
+    assert result[
+        "interval_80_lower_endpoint_difference_reference_sd"
+    ] == pytest.approx(0.2)
+    assert result[
+        "interval_80_upper_endpoint_difference_reference_sd"
+    ] == pytest.approx(0.2)
+    assert result[
+        "interval_99_lower_endpoint_difference_reference_sd"
+    ] == pytest.approx(0.2)
+    assert result[
+        "interval_99_upper_endpoint_difference_reference_sd"
+    ] == pytest.approx(0.2)
 
     for primary in (
         _summary(mean=VBD_TRAJECTORY_CONCORDANCE_MEAN_MAX_REFERENCE_SD + 1e-8),
-        _summary(lower=-1.0 - VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD - 1e-8),
-        _summary(upper=1.0 + VBD_TRAJECTORY_CONCORDANCE_ENDPOINT_MAX_REFERENCE_SD + 1e-8),
+        _summary(
+            lower_80=(
+                -1.0
+                - VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD
+                - 1e-8
+            )
+        ),
+        _summary(
+            upper_80=(
+                1.0
+                + VBD_TRAJECTORY_CONCORDANCE_INTERVAL_80_ENDPOINT_MAX_REFERENCE_SD
+                + 1e-8
+            )
+        ),
+        _summary(
+            lower_99=(
+                -2.0
+                - VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD
+                - 1e-8
+            )
+        ),
+        _summary(
+            upper_99=(
+                2.0
+                + VBD_TRAJECTORY_CONCORDANCE_INTERVAL_99_ENDPOINT_MAX_REFERENCE_SD
+                + 1e-8
+            )
+        ),
         _summary(sd=VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MIN - 1e-8),
         _summary(sd=VBD_TRAJECTORY_CONCORDANCE_SD_RATIO_MAX + 1e-8),
     ):
@@ -275,7 +336,14 @@ def _fake_deterministic_fit(prepared):
         lane=prepared.lane,
         prepared_input_hash=prepared.prepared_input_hash,
         model_input_hash=prepared.model_input_hash,
-        movement_summary=_summary(mean=0.1, sd=0.5, lower=-0.4, upper=0.6),
+        movement_summary=_summary(
+            mean=0.1,
+            sd=0.5,
+            lower_80=-0.4,
+            upper_80=0.6,
+            lower_99=-0.9,
+            upper_99=1.1,
+        ),
         integration_diagnostics=diagnostics,
     )
 
@@ -333,7 +401,14 @@ def _fake_nuts_fit(prepared, binding):
         settings=settings,
         chain_seeds=binding.chain_seeds,
         ppc_seed=binding.ppc_seed,
-        movement_summary=_summary(mean=0.1, sd=0.5, lower=-0.4, upper=0.6),
+        movement_summary=_summary(
+            mean=0.1,
+            sd=0.5,
+            lower_80=-0.4,
+            upper_80=0.6,
+            lower_99=-0.9,
+            upper_99=1.1,
+        ),
         sampler_diagnostics=diagnostics,
         posterior_predictive_checks=ppc,
         concordance_binding_hash=binding.binding_hash,
@@ -417,6 +492,19 @@ def test_child_output_is_summary_only_hash_bound_and_revalidates(monkeypatch, ph
     assert value["input_arrays_emitted"] is False
     assert len(value["deterministic_records"]) == (3 if phase == "primary" else 1)
     assert len(value["nuts_records"]) == (3 if phase == "primary" else 0)
+    if phase == "primary":
+        assert set(value["concordance_records"][0]) == {
+            "lane",
+            "quantity_name",
+            "absolute_mean_difference_reference_sd",
+            "interval_80_lower_endpoint_difference_reference_sd",
+            "interval_80_upper_endpoint_difference_reference_sd",
+            "interval_99_lower_endpoint_difference_reference_sd",
+            "interval_99_upper_endpoint_difference_reference_sd",
+            "primary_to_reference_sd_ratio",
+            "passed",
+            "concordance_hash",
+        }
 
     forged = deepcopy(value)
     forged["deterministic_records"][0]["fit"]["movement_summary"][
@@ -425,6 +513,37 @@ def test_child_output_is_summary_only_hash_bound_and_revalidates(monkeypatch, ph
     body = {key: item for key, item in forged.items() if key != "child_output_hash"}
     forged["child_output_hash"] = sha256_json(body)
     with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        _validate_child_output(
+            forged, receipt=receipt, observed_child_pid=child_pid
+        )
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "interval_99_lower_endpoint_difference_reference_sd",
+        "interval_99_upper_endpoint_difference_reference_sd",
+    ],
+)
+def test_child_output_rejects_rehashed_missing_99_percent_endpoint(
+    monkeypatch, key
+):
+    receipt, child_pid, value = _execute_fake_phase(monkeypatch, "primary")
+    forged = deepcopy(value)
+    record = forged["concordance_records"][0]
+    record.pop(key)
+    concordance_body = {
+        item_key: item_value
+        for item_key, item_value in record.items()
+        if item_key != "concordance_hash"
+    }
+    record["concordance_hash"] = sha256_json(concordance_body)
+    _coordinated_rehash_child_output(forged)
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="not independently rederived",
+    ):
         _validate_child_output(
             forged, receipt=receipt, observed_child_pid=child_pid
         )
@@ -736,8 +855,10 @@ def test_combiner_requires_all_120_process_attestations(monkeypatch, tmp_path):
             concordance_records.append(
                 {
                     "absolute_mean_difference_reference_sd": 0.01,
-                    "lower_endpoint_difference_reference_sd": 0.01,
-                    "upper_endpoint_difference_reference_sd": 0.01,
+                    "interval_80_lower_endpoint_difference_reference_sd": 0.01,
+                    "interval_80_upper_endpoint_difference_reference_sd": 0.01,
+                    "interval_99_lower_endpoint_difference_reference_sd": 0.01,
+                    "interval_99_upper_endpoint_difference_reference_sd": 0.01,
                     "primary_to_reference_sd_ratio": 1.0,
                     "passed": True,
                 }
@@ -834,6 +955,14 @@ def test_combiner_requires_all_120_process_attestations(monkeypatch, tmp_path):
     assert combined["diagnostic_summary_hash"] == combined["diagnostic_summary"][
         "diagnostic_summary_hash"
     ]
+    assert combined["diagnostic_summary"]["cross_engine_concordance"] == {
+        "max_mean_difference_reference_sd": 0.01,
+        "max_interval_80_endpoint_difference_reference_sd": 0.01,
+        "max_interval_99_endpoint_difference_reference_sd": 0.01,
+        "min_primary_to_reference_sd_ratio": 1.0,
+        "max_primary_to_reference_sd_ratio": 1.0,
+        "failure_count": 0,
+    }
 
     recomputation[0]["truth_receipt_hash"] = "d" * 64
     with pytest.raises(

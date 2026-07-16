@@ -274,9 +274,12 @@ Under `src/fluencytracr_inference/`:
   recomputation processes, independently reconstructs typed fit summaries and
   all sampler/PPC/cross-engine gates, rederives each compiled bundle's source
   roots, preserves every child HOLD, and publishes only a hash-bound compact
-  diagnostic summary plus a workspace-verifiable receipt. Full generator or
+  diagnostic summary plus a workspace-verifiable receipt. Cross-engine checks
+  cover both endpoints of the 80% and 99% intervals. Full generator or
   NUTS admission requires exact clean freeze `F`; direct pre-freeze execution
-  fails closed.
+  fails closed. Child execution uses isolated Python and a deny-by-default
+  in-memory loader only after every reviewed Git source byte matches the freeze
+  manifest.
 - `vbd_trajectory_artifact.py` — runner-owned, summary-only three-lane
   development-smoke artifact. It binds prepared inputs, deterministic fit
   summaries, diagnostics, transform/source roots, model/runtime identity, and
@@ -296,7 +299,9 @@ Under `src/fluencytracr_inference/`:
   The immutable plan contains exactly 2,000 original slots and 2,000 separately
   regenerated recomputation slots in 40 ordered chunks, plus four ordered
   full-setting canaries. Every child launch uses a create-once receipt with an
-  inherited one-time capability and parent-liveness pipe. Workspace path and
+  inherited frozen-source, one-time capability, and parent-liveness pipes.
+  Locked JSON I/O is descriptor-relative with root and admitted-subdirectory
+  inode binding. Workspace path and
   inode identity, plan/freeze/concordance bytes, launch ordering, process
   attestations, phase roots, exact evidence bytes, and final combined readback
   fail closed. A copied or renamed workspace rejects, incomplete or malformed
@@ -308,9 +313,9 @@ Under `src/fluencytracr_inference/`:
   exercises production validation boundaries, including an explicit all-lane
   common-availability shock, a generated all-lane zero-variance panel through
   production preparation, and recomputation-shaped copied-checkpoint rejection
-  at execution attestation. Canonical
-  concordance admission accepts only a receipt reverified from its complete
-  external workspace. No replacement acceptance seed, concordance fit,
+  at execution attestation. Canonical concordance admission persists the
+  external receipt path/hash/device/inode and accepts only a receipt reverified
+  from its complete external workspace on every load. No replacement acceptance seed, concordance fit,
   acceptance canary, or 2,000-slot evidence row has run in this source slice;
   exact candidate commit `S`, four independent GO reviews, and manifest-only
   freeze child `F` remain mandatory before execution.

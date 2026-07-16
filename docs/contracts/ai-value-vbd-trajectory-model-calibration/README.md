@@ -756,8 +756,14 @@ lane, or chain seed stream.
 The reference engine uses four chains, 1,000 retained draws per chain, 2,000
 tuning draws per chain, `target_accept=0.99`, and `max_treedepth=15`. All three
 active lanes are evaluated separately. Cross-engine mean differences
-must be at most `0.15` reference posterior SD, interval endpoint differences at
-most `0.20` reference posterior SD, and SD ratios within `[0.85,1.15]`.
+must be at most `0.15` reference posterior SD. The lower and upper endpoints of
+both the 80% and 99% movement intervals are independently rederived and each
+must differ by at most `0.20` reference posterior SD. SD ratios must remain
+within `[0.85,1.15]`. The 99% endpoint gate is required because the later null
+false-movement decision uses the direction-adjusted 99% lower endpoint.
+Each hashed lane record names all four normalized endpoint differences, and the
+compact diagnostic summary reports separate worst-case 80% and 99% endpoint
+differences. Missing, merged, or ambiguously labeled endpoint evidence HOLDS.
 Reference diagnostics require R-hat `<=1.01`, bulk/tail ESS `>=400`, zero
 divergences, zero treedepth saturation, BFMI `>=0.3`, MCSE/posterior-SD ratio
 `<=0.1`, and every PPC p-value within `[0.05,0.95]`. Any lane or hard failure
@@ -811,6 +817,26 @@ ordered-panel, lane-observation, and truth-receipt roots across the primary and
 all three recomputation processes. Every child HOLD remains HOLD. Full generator
 and full-NUTS entry points verify the exact clean manifest-only freeze before
 any replacement acceptance seed or sampler can execute.
+
+Every concordance and later validation child starts with isolated Python
+(`-I -S`), no repository `PYTHONPATH`, and `/` as its working directory. The
+parent reads the exact reviewed candidate blobs from trusted Git objects,
+hash-checks every in-scope module against the freeze manifest, and transmits
+the complete source set over an inherited one-way descriptor. A minimal
+standard-library bootstrap verifies every source byte in memory before it
+installs a deny-by-default package loader or imports an execution module.
+Missing, extra-fallback, mutable-working-tree, or pre-verification package code
+cannot execute the child.
+
+Once an external workspace lock is held, workspace JSON reads and create-once
+publications use no-follow, descriptor-relative traversal. Existing
+subdirectories are inode-bound when admitted; a root or intermediate-directory
+rename/substitution cannot redirect an evidence read or write and instead
+fails closed. The later full-study workspace additionally persists the
+canonical external concordance receipt path, path hash, device, and inode. It
+reruns complete external concordance workspace verification on every load and
+requires its copied receipt to equal the independently recomputed external
+receipt; an internally minted shape-only token is never sufficient.
 
 ### Stage 3: Replicated Calibration
 

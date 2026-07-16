@@ -1,7 +1,11 @@
 from copy import deepcopy
 from contextlib import contextmanager
+import base64
+import hashlib
 import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -18,7 +22,9 @@ from fluencytracr_inference.vbd_trajectory_concordance import (
 from fluencytracr_inference.vbd_trajectory_validation_resumable import (
     VBD_TRAJECTORY_FREEZE_MANIFEST_SCHEMA_VERSION,
     VBD_TRAJECTORY_CONCORDANCE_RECEIPT_SCHEMA_VERSION,
+    VBD_TRAJECTORY_RUNNER_WORKSPACE_SCHEMA_VERSION,
     VbdTrajectoryValidationWorkspaceError,
+    _FROZEN_CHILD_BOOTSTRAP,
     _canary_chain_root,
     _canary_phase_manifest,
     _combined_commit_record,
@@ -52,7 +58,10 @@ from fluencytracr_inference.vbd_trajectory_validation_resumable import (
 )
 
 
-def _fake_workspace_record(workspace: Path | None = None):
+def _fake_workspace_record(
+    workspace: Path | None = None,
+    concordance_path: Path | None = None,
+):
     location = (
         {
             "workspace_path_hash": sha256_json(str(workspace)),
@@ -66,8 +75,31 @@ def _fake_workspace_record(workspace: Path | None = None):
             "workspace_inode": 1,
         }
     )
+    concordance_location = (
+        {
+            "concordance_receipt_path": str(concordance_path),
+            "concordance_receipt_path_hash": sha256_json(str(concordance_path)),
+            "concordance_receipt_device": concordance_path.stat(
+                follow_symlinks=False
+            ).st_dev,
+            "concordance_receipt_inode": concordance_path.stat(
+                follow_symlinks=False
+            ).st_ino,
+        }
+        if concordance_path is not None
+        else {
+            "concordance_receipt_path": (
+                "/external/vbd-concordance/concordance_receipt.json"
+            ),
+            "concordance_receipt_path_hash": sha256_json(
+                "/external/vbd-concordance/concordance_receipt.json"
+            ),
+            "concordance_receipt_device": 1,
+            "concordance_receipt_inode": 1,
+        }
+    )
     body = {
-        "schema_version": "FT_AI_VALUE_VBD_TRAJECTORY_RUNNER_WORKSPACE_2026_07_V1",
+        "schema_version": VBD_TRAJECTORY_RUNNER_WORKSPACE_SCHEMA_VERSION,
         "freeze_commit": "a" * 40,
         "freeze_manifest_hash": "b" * 64,
         "candidate_source_commit": "c" * 40,
@@ -79,6 +111,7 @@ def _fake_workspace_record(workspace: Path | None = None):
         "plan_hash": immutable_vbd_trajectory_validation_plan().plan_hash,
         "seed_manifest_hash": immutable_vbd_trajectory_validation_plan().seeds_hash,
         "concordance_receipt_hash": "1" * 64,
+        **concordance_location,
         **location,
         "created_at": "2026-07-15T12:00:00+00:00",
         "workspace_token": "2" * 64,
@@ -385,6 +418,77 @@ def test_workspace_directory_lock_detects_replaced_workspace_inode(tmp_path):
             verify_lock()
 
 
+def test_locked_publication_cannot_be_redirected_by_workspace_substitution(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    displaced = tmp_path / "displaced"
+    real_link = runner.os.link
+    substituted = False
+
+    def substitute_then_link(source, destination, **kwargs):
+        nonlocal substituted
+        if not substituted:
+            workspace.rename(displaced)
+            workspace.mkdir()
+            substituted = True
+        return real_link(source, destination, **kwargs)
+
+    monkeypatch.setattr(runner.os, "link", substitute_then_link)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError, match="lock identity changed"
+    ):
+        with _exclusive_lock(workspace / ".runner.lock") as verify_lock:
+            write_json_create_once(
+                workspace / "record.json",
+                {"value": 1},
+                lock_verifier=verify_lock,
+            )
+    assert not (workspace / "record.json").exists()
+    assert read_strict_json(displaced / "record.json") == {"value": 1}
+
+
+def test_locked_publication_cannot_be_redirected_by_subdirectory_substitution(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    workspace = tmp_path / "workspace"
+    phase = workspace / "phase"
+    phase.mkdir(parents=True)
+    displaced = workspace / "displaced-phase"
+    real_link = runner.os.link
+    substituted = False
+
+    def substitute_then_link(source, destination, **kwargs):
+        nonlocal substituted
+        if not substituted:
+            phase.rename(displaced)
+            phase.mkdir()
+            substituted = True
+        return real_link(source, destination, **kwargs)
+
+    monkeypatch.setattr(runner.os, "link", substitute_then_link)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="workspace directory identity changed",
+    ):
+        with _exclusive_lock(workspace / ".runner.lock") as verify_lock:
+            destination = runner._safe_workspace_path(
+                workspace, "phase", "record.json"
+            )
+            write_json_create_once(
+                destination,
+                {"value": 1},
+                lock_verifier=verify_lock,
+            )
+    assert not (phase / "record.json").exists()
+    assert read_strict_json(displaced / "record.json") == {"value": 1}
+
+
 def test_workspace_identity_rejects_copy_and_idle_rename(tmp_path):
     workspace = tmp_path / "workspace"
     copied = tmp_path / "copied"
@@ -563,15 +667,12 @@ def test_freeze_manifest_requires_exact_source_set_and_self_hash():
         _validate_freeze_manifest(nonstring_review)
 
 
-def test_self_hashed_concordance_pass_cannot_initialize_replication():
-    freeze_identity = {
-        "freeze_commit": "a" * 40,
-        "freeze_manifest_hash": "b" * 64,
-        "plan_hash": immutable_vbd_trajectory_validation_plan().plan_hash,
-    }
+def _self_hashed_concordance_receipt(freeze_identity, *, marker="6"):
     body = {
         "schema_version": VBD_TRAJECTORY_CONCORDANCE_RECEIPT_SCHEMA_VERSION,
-        **freeze_identity,
+        "freeze_commit": freeze_identity["freeze_commit"],
+        "freeze_manifest_hash": freeze_identity["freeze_manifest_hash"],
+        "plan_hash": immutable_vbd_trajectory_validation_plan().plan_hash,
         "bundle_count": 30,
         "primary_deterministic_lane_fit_count": 90,
         "nuts_lane_fit_count": 90,
@@ -581,7 +682,7 @@ def test_self_hashed_concordance_pass_cannot_initialize_replication():
         "nuts_records_hash": "3" * 64,
         "fresh_deterministic_records_hash": "4" * 64,
         "execution_attestations_hash": "5" * 64,
-        "diagnostic_summary_hash": "6" * 64,
+        "diagnostic_summary_hash": marker * 64,
         "hard_failure_count": 0,
         "cross_engine_failure_count": 0,
         "sampler_failure_count": 0,
@@ -593,12 +694,210 @@ def test_self_hashed_concordance_pass_cannot_initialize_replication():
         "acceptance_complete": False,
         "task_5_6_complete": False,
     }
-    receipt = {**body, "receipt_hash": sha256_json(body)}
+    return {**body, "receipt_hash": sha256_json(body)}
+
+
+def test_self_hashed_concordance_pass_cannot_initialize_replication():
+    freeze_identity = {
+        "freeze_commit": "a" * 40,
+        "freeze_manifest_hash": "b" * 64,
+        "plan_hash": immutable_vbd_trajectory_validation_plan().plan_hash,
+    }
+    receipt = _self_hashed_concordance_receipt(freeze_identity)
     with pytest.raises(
         VbdTrajectoryValidationWorkspaceError,
         match="concordance admission remains disabled",
     ):
         _validate_concordance_receipt(receipt, freeze_identity)
+
+
+def _patch_workspace_load_prerequisites(monkeypatch, record):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    identity_keys = (
+        "freeze_commit",
+        "freeze_manifest_hash",
+        "candidate_source_commit",
+        "candidate_source_tree",
+        "implementation_hash",
+        "runtime_identity_hash",
+        "executable_sha256",
+        "native_library_identity_hash",
+        "plan_hash",
+        "seed_manifest_hash",
+    )
+    identity = {key: record[key] for key in identity_keys}
+    monkeypatch.setattr(
+        runner,
+        "vbd_trajectory_validation_plan_from_dict",
+        lambda _value: immutable_vbd_trajectory_validation_plan(),
+    )
+    monkeypatch.setattr(runner, "_validate_freeze_manifest", lambda _value: {})
+    monkeypatch.setattr(runner, "_verify_current_freeze", lambda _value: identity)
+    return identity
+
+
+def _write_workspace_load_roots(workspace, record, concordance):
+    workspace.mkdir(exist_ok=True)
+    write_json_create_once(workspace / "workspace.json", record)
+    write_json_create_once(workspace / "plan.json", {})
+    write_json_create_once(workspace / "freeze_manifest.json", {})
+    write_json_create_once(workspace / "concordance_receipt.json", concordance)
+
+
+def test_workspace_record_persists_canonical_external_concordance_identity(tmp_path):
+    workspace = tmp_path / "validation-workspace"
+    workspace.mkdir()
+    concordance_workspace = tmp_path / "concordance-workspace"
+    concordance_workspace.mkdir()
+    receipt_path = concordance_workspace / "concordance_receipt.json"
+    receipt_path.write_text("{}\n", encoding="utf-8")
+    base = _fake_workspace_record(workspace, receipt_path)
+    freeze_identity = {
+        key: base[key]
+        for key in (
+            "freeze_commit",
+            "freeze_manifest_hash",
+            "candidate_source_commit",
+            "candidate_source_tree",
+            "implementation_hash",
+            "runtime_identity_hash",
+            "executable_sha256",
+            "native_library_identity_hash",
+            "plan_hash",
+            "seed_manifest_hash",
+        )
+    }
+
+    record = _workspace_record(
+        freeze_identity,
+        {"receipt_hash": "1" * 64},
+        workspace,
+        receipt_path,
+    )
+
+    assert record["concordance_receipt_path"] == str(receipt_path)
+    assert record["concordance_receipt_path_hash"] == sha256_json(
+        str(receipt_path)
+    )
+    assert record["concordance_receipt_device"] == receipt_path.stat().st_dev
+    assert record["concordance_receipt_inode"] == receipt_path.stat().st_ino
+    assert _validate_workspace_record(record, workspace=workspace) == record
+
+
+def test_workspace_load_recomputes_external_concordance_every_time(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_concordance_resumable
+
+    concordance_workspace = tmp_path / "concordance-workspace"
+    concordance_workspace.mkdir()
+    external_receipt = concordance_workspace / "concordance_receipt.json"
+    external_receipt.write_text("{}\n", encoding="utf-8")
+    workspace = tmp_path / "validation-workspace"
+    workspace.mkdir()
+    record = _fake_workspace_record(workspace, external_receipt)
+    verified = {"receipt_hash": record["concordance_receipt_hash"]}
+    _write_workspace_load_roots(workspace, record, verified)
+    identity = _patch_workspace_load_prerequisites(monkeypatch, record)
+    calls = []
+
+    def verify(path, *, freeze_identity):
+        calls.append((path, freeze_identity))
+        return verified
+
+    monkeypatch.setattr(
+        vbd_trajectory_concordance_resumable,
+        "verify_vbd_trajectory_concordance_receipt_path",
+        verify,
+    )
+
+    assert _load_workspace(workspace) == (workspace, record)
+    assert _load_workspace(workspace) == (workspace, record)
+    assert calls == [
+        (external_receipt, identity),
+        (external_receipt, identity),
+    ]
+
+
+def test_rehashed_fabricated_workspace_receipt_cannot_bypass_external_recomputation(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_concordance_resumable
+
+    concordance_workspace = tmp_path / "concordance-workspace"
+    concordance_workspace.mkdir()
+    external_receipt = concordance_workspace / "concordance_receipt.json"
+    external_receipt.write_text("{}\n", encoding="utf-8")
+    workspace = tmp_path / "validation-workspace"
+    workspace.mkdir()
+    record = _fake_workspace_record(workspace, external_receipt)
+    identity = {
+        "freeze_commit": record["freeze_commit"],
+        "freeze_manifest_hash": record["freeze_manifest_hash"],
+    }
+    fabricated = _self_hashed_concordance_receipt(identity, marker="6")
+    externally_recomputed = _self_hashed_concordance_receipt(
+        identity, marker="7"
+    )
+    record_body = {
+        key: value for key, value in record.items() if key != "workspace_hash"
+    }
+    record_body["concordance_receipt_hash"] = fabricated["receipt_hash"]
+    record = {**record_body, "workspace_hash": sha256_json(record_body)}
+    _write_workspace_load_roots(workspace, record, fabricated)
+    _patch_workspace_load_prerequisites(monkeypatch, record)
+    calls = []
+
+    def verify(path, *, freeze_identity):
+        calls.append((path, freeze_identity))
+        return externally_recomputed
+
+    monkeypatch.setattr(
+        vbd_trajectory_concordance_resumable,
+        "verify_vbd_trajectory_concordance_receipt_path",
+        verify,
+    )
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="differs from externally recomputed evidence",
+    ):
+        _load_workspace(workspace)
+    assert len(calls) == 1
+
+
+def test_workspace_load_rejects_replaced_external_concordance_receipt_before_verify(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_concordance_resumable
+
+    concordance_workspace = tmp_path / "concordance-workspace"
+    concordance_workspace.mkdir()
+    external_receipt = concordance_workspace / "concordance_receipt.json"
+    external_receipt.write_text("{}\n", encoding="utf-8")
+    workspace = tmp_path / "validation-workspace"
+    workspace.mkdir()
+    record = _fake_workspace_record(workspace, external_receipt)
+    verified = {"receipt_hash": record["concordance_receipt_hash"]}
+    _write_workspace_load_roots(workspace, record, verified)
+    _patch_workspace_load_prerequisites(monkeypatch, record)
+    replacement = concordance_workspace / "replacement.json"
+    replacement.write_text("{}\n", encoding="utf-8")
+    replacement.replace(external_receipt)
+    monkeypatch.setattr(
+        vbd_trajectory_concordance_resumable,
+        "verify_vbd_trajectory_concordance_receipt_path",
+        lambda *_a, **_k: pytest.fail(
+            "replaced receipt must be rejected before external verification"
+        ),
+    )
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="external concordance receipt identity is stale",
+    ):
+        _load_workspace(workspace)
 
 
 def test_workspace_load_rejects_tampered_plan_before_other_admission(tmp_path):
@@ -618,16 +917,25 @@ def test_workspace_load_rechecks_published_execution_evidence_snapshot(
 ):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
-    record = _fake_workspace_record(tmp_path)
+    concordance_workspace = tmp_path / "concordance-workspace"
+    concordance_workspace.mkdir()
+    external_receipt = concordance_workspace / "concordance_receipt.json"
+    external_receipt.write_text("{}\n", encoding="utf-8")
+    record = _fake_workspace_record(tmp_path, external_receipt)
     combined = _fake_combined(record)
+    verified_concordance = {
+        "receipt_hash": record["concordance_receipt_hash"]
+    }
     for name in (
         "workspace.json",
         "plan.json",
         "freeze_manifest.json",
-        "concordance_receipt.json",
         "combined.json",
     ):
         write_json_create_once(tmp_path / name, {})
+    write_json_create_once(
+        tmp_path / "concordance_receipt.json", verified_concordance
+    )
     if commit_marker_present:
         write_json_create_once(tmp_path / "combined_commit.json", {})
 
@@ -639,10 +947,12 @@ def test_workspace_load_rechecks_published_execution_evidence_snapshot(
     )
     monkeypatch.setattr(runner, "_validate_freeze_manifest", lambda _value: {})
     monkeypatch.setattr(runner, "_verify_current_freeze", lambda _value: {})
+    from fluencytracr_inference import vbd_trajectory_concordance_resumable
+
     monkeypatch.setattr(
-        runner,
-        "_validate_concordance_receipt",
-        lambda *_a, **_k: {"receipt_hash": record["concordance_receipt_hash"]},
+        vbd_trajectory_concordance_resumable,
+        "verify_vbd_trajectory_concordance_receipt_path",
+        lambda *_a, **_k: verified_concordance,
     )
     monkeypatch.setattr(runner, "_validate_combined_value", lambda *_a: combined)
     monkeypatch.setattr(
@@ -891,7 +1201,7 @@ def test_successful_checkpoint_resumes_without_relaunch(tmp_path, monkeypatch):
     assert resumed_checkpoint == checkpoint
 
 
-def test_child_launch_uses_inherited_capability_and_liveness_pipes(monkeypatch):
+def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypatch):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
     record = _fake_workspace_record()
@@ -914,11 +1224,13 @@ def test_child_launch_uses_inherited_capability_and_liveness_pipes(monkeypatch):
         pid = 4242
         returncode = 0
 
-        def __init__(self, _command, **kwargs):
+        def __init__(self, command, **kwargs):
+            captured["command"] = command
             captured.update(kwargs)
-            capability_fd, liveness_fd = kwargs["pass_fds"]
+            capability_fd, liveness_fd, source_fd = kwargs["pass_fds"]
             self.capability_fd = os.dup(capability_fd)
             self.liveness_fd = os.dup(liveness_fd)
+            self.source_fd = os.dup(source_fd)
 
         def communicate(self, _stdin, timeout):
             assert timeout == runner.VBD_TRAJECTORY_CHILD_TIMEOUT_SECONDS
@@ -930,6 +1242,8 @@ def test_child_launch_uses_inherited_capability_and_liveness_pipes(monkeypatch):
                 encoded.extend(block)
             os.close(self.capability_fd)
             os.close(self.liveness_fd)
+            captured["frozen_source"] = os.read(self.source_fd, 4096)
+            os.close(self.source_fd)
             captured["capability"] = _decode_json_bytes(
                 bytes(encoded), "test capability"
             )
@@ -937,6 +1251,7 @@ def test_child_launch_uses_inherited_capability_and_liveness_pipes(monkeypatch):
 
     monkeypatch.setattr(runner.subprocess, "Popen", FakeProcess)
     monkeypatch.setattr(runner, "_revalidate_launch_admission", lambda *_args: None)
+    monkeypatch.setattr(runner, "_frozen_source_bundle", lambda: b"frozen-source")
     verifier_calls = []
 
     def verify_lock():
@@ -949,15 +1264,173 @@ def test_child_launch_uses_inherited_capability_and_liveness_pipes(monkeypatch):
         verify_lock_identity=verify_lock,
     )
     assert (child_pid, return_code, stdout, stderr) == (4242, 0, b"", b"")
-    assert len(captured["pass_fds"]) == 2
+    assert len(captured["pass_fds"]) == 3
+    assert captured["command"][1:3] == ("-I", "-S")
+    assert "-m" not in captured["command"]
+    assert "PYTHONPATH" not in captured["env"]
     assert captured["env"]["FT_VBD_TRAJECTORY_CAPABILITY_FD"]
     assert captured["env"]["FT_VBD_TRAJECTORY_PARENT_LIVENESS_FD"]
+    assert captured["env"]["FT_VBD_TRAJECTORY_FROZEN_SOURCE_FD"]
+    assert captured["frozen_source"] == b"frozen-source"
     assert captured["capability"]["launch_receipt_hash"] == receipt[
         "launch_receipt_hash"
     ]
     assert captured["capability"]["workspace_hash"] == record["workspace_hash"]
     assert receipt["capability_token_hash"] == sha256_json(_capability_token())
     assert len(verifier_calls) >= 4
+
+
+def test_frozen_bootstrap_executes_captured_bytes_not_mutable_package(tmp_path):
+    package_path = tmp_path / "fluencytracr_inference"
+    package_path.mkdir()
+    (package_path / "__init__.py").write_text(
+        "raise RuntimeError('mutable package executed')\n", encoding="utf-8"
+    )
+    (package_path / "test_cli.py").write_text(
+        "raise RuntimeError('mutable module executed')\n", encoding="utf-8"
+    )
+    sources = {
+        "fluencytracr_inference": b"",
+        "fluencytracr_inference.test_cli": (
+            b"def main(args):\n"
+            b"    print('frozen:' + args[0])\n"
+            b"    return 0\n"
+        ),
+    }
+    modules = []
+    for name, source in sources.items():
+        modules.append(
+            {
+                "module": name,
+                "path": name.replace(".", "/")
+                + ("/__init__.py" if name == "fluencytracr_inference" else ".py"),
+                "sha256": hashlib.sha256(source).hexdigest(),
+                "source_base64": base64.b64encode(source).decode("ascii"),
+                "is_package": name == "fluencytracr_inference",
+            }
+        )
+    body = {
+        "schema_version": "FT_AI_VALUE_VBD_FROZEN_CHILD_SOURCE_2026_07_V1",
+        "candidate_source_commit": "a" * 40,
+        "freeze_manifest_hash": "b" * 64,
+        "repository_root": str(tmp_path),
+        "site_package_paths": [str(tmp_path / "unused-site-packages")],
+        "modules": modules,
+    }
+    bundle = _canonical_json_bytes({**body, "bundle_hash": sha256_json(body)})
+    source_read, source_write = os.pipe()
+    environment = {
+        "FT_VBD_TRAJECTORY_FROZEN_SOURCE_FD": str(source_read),
+        "PATH": os.environ.get("PATH", ""),
+    }
+    process = subprocess.Popen(
+        (
+            sys.executable,
+            "-I",
+            "-S",
+            "-c",
+            _FROZEN_CHILD_BOOTSTRAP,
+            "fluencytracr_inference.test_cli",
+            "ok",
+        ),
+        cwd=tmp_path,
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        pass_fds=(source_read,),
+    )
+    os.close(source_read)
+    written = 0
+    while written < len(bundle):
+        written += os.write(source_write, bundle[written:])
+    os.close(source_write)
+    stdout, stderr = process.communicate(timeout=10)
+    assert process.returncode == 0, stderr.decode("utf-8", errors="replace")
+    assert stdout == b"frozen:ok\n"
+
+
+@pytest.mark.parametrize(
+    "target,argument",
+    [
+        (
+            "fluencytracr_inference.vbd_trajectory_concordance_cli",
+            "_execute-bundle",
+        ),
+        (
+            "fluencytracr_inference.vbd_trajectory_validation_cli",
+            "_execute-slot",
+        ),
+    ],
+)
+def test_frozen_source_set_closes_both_child_import_graphs(target, argument):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    modules = []
+    for relative in runner._RUNNER_SOURCE_PATHS:
+        if not relative.endswith(".py"):
+            continue
+        source = (runner._repo_root() / relative).read_bytes()
+        module = relative.removeprefix("inference/src/").removesuffix(
+            ".py"
+        ).replace("/", ".")
+        is_package = module.endswith(".__init__")
+        if is_package:
+            module = module.removesuffix(".__init__")
+        modules.append(
+            {
+                "module": module,
+                "path": relative,
+                "sha256": hashlib.sha256(source).hexdigest(),
+                "source_base64": base64.b64encode(source).decode("ascii"),
+                "is_package": is_package,
+            }
+        )
+    body = {
+        "schema_version": "FT_AI_VALUE_VBD_FROZEN_CHILD_SOURCE_2026_07_V1",
+        "candidate_source_commit": "a" * 40,
+        "freeze_manifest_hash": "b" * 64,
+        "repository_root": str(runner._repo_root()),
+        "site_package_paths": runner._pinned_site_package_paths(),
+        "modules": modules,
+    }
+    bundle = _canonical_json_bytes({**body, "bundle_hash": sha256_json(body)})
+    source_read, source_write = os.pipe()
+    environment = {
+        "FT_VBD_TRAJECTORY_FROZEN_SOURCE_FD": str(source_read),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONHASHSEED": "0",
+        "PATH": os.environ.get("PATH", ""),
+        **{
+            key: "1"
+            for key in runner._THREAD_ENV_KEYS
+        },
+    }
+    process = subprocess.Popen(
+        (
+            sys.executable,
+            "-I",
+            "-S",
+            "-c",
+            _FROZEN_CHILD_BOOTSTRAP,
+            target,
+            argument,
+        ),
+        cwd="/",
+        env=environment,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        pass_fds=(source_read,),
+    )
+    os.close(source_read)
+    written = 0
+    while written < len(bundle):
+        written += os.write(source_write, bundle[written:])
+    os.close(source_write)
+    stdout, stderr = process.communicate(_canonical_json_bytes({}), timeout=30)
+    assert process.returncode == 2, (
+        stdout + b"\n" + stderr
+    ).decode("utf-8", errors="replace")
 
 
 def test_child_launch_rejects_capability_not_committed_by_receipt(monkeypatch):

@@ -490,10 +490,17 @@ chain_index` for chain indexes `0..3`; implicit or cross-bundle/lane/chain seed
 reuse SHALL reject.
 NUTS SHALL use four chains, 1,000 retained draws and 2,000 tuning draws per
 chain, `target_accept=.99`, and `max_treedepth=15`.
-Mean differences SHALL be `<=0.15` reference SD, interval endpoint differences
-`<=0.20` reference SD, and SD ratios within `[0.85,1.15]`. R-hat SHALL be
+Mean differences SHALL be `<=0.15` reference SD. The lower and upper endpoints
+of both the 80% and 99% movement intervals SHALL be independently rederived,
+and each endpoint difference SHALL be `<=0.20` reference SD. This SHALL include
+the 99% lower endpoint used by the later null false-movement decision. SD ratios
+SHALL remain within `[0.85,1.15]`. R-hat SHALL be
 `<=1.01`, bulk/tail ESS `>=400`, divergences and treedepth saturation zero,
 BFMI `>=0.3`, MCSE/SD `<=0.1`, and PPC p-values within `[0.05,0.95]`.
+Each hashed lane record SHALL name all four normalized endpoint differences,
+and the compact diagnostic summary SHALL report separate worst-case 80% and
+99% endpoint differences. Missing, merged, or ambiguously labeled endpoint
+evidence SHALL HOLD.
 
 Every lane SHALL use the five exact `vbd_trajectory_ppc_v1` statistics defined
 in the contract: pre/post mean movement, `ddof=1` between-group variance, mean
@@ -525,6 +532,25 @@ regenerate each compiled bundle and require exact ordered-panel,
 lane-observation, and truth-receipt roots across its primary and all three fresh
 deterministic processes. A child HOLD SHALL remain HOLD after combination, and
 sampler and PPC failure counts SHALL remain disjoint.
+
+Every concordance and later validation child SHALL start under isolated Python
+with site startup disabled, no repository `PYTHONPATH`, and no repository
+working directory. Before any execution-module import, a standard-library-only
+bootstrap SHALL verify the complete reviewed package source set received over
+an inherited descriptor and SHALL install a deny-by-default in-memory loader.
+The source bytes SHALL come from the candidate Git objects and match every
+freeze-manifest file hash. Missing source, mutable-source fallback, package
+startup before verification, or source-hash drift SHALL fail before execution.
+
+While the external workspace lock is held, workspace JSON reads and
+create-once writes SHALL traverse no-follow directory descriptors rooted at the
+held workspace inode. Admitted intermediate directories SHALL remain
+inode-bound; root or subdirectory substitution SHALL fail and SHALL NOT
+redirect evidence I/O. A later validation workspace SHALL persist the
+canonical external concordance receipt path, path hash, device, and inode,
+rerun full external concordance verification on every load, and require the
+local receipt copy to equal that externally recomputed receipt. A local
+shape-only verification token SHALL NOT admit replicated validation.
 
 After concordance and before any full chunk, canaries SHALL run exact slots
 `primary/(0,6,0)`, `primary/(.5,12,199)`,
