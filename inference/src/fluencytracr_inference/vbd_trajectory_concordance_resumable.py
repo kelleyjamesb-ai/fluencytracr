@@ -50,13 +50,16 @@ from .vbd_trajectory_validation_resumable import (
     _canonical_json_bytes,
     _child_environment,
     _cleanup_stale_atomic_temps,
+    _create_or_load_attempt_anchor,
     _ensure_workspace_directories,
     _exclusive_lock,
     _file_sha256,
     _frozen_child_command,
     _frozen_source_bundle,
     _launch_capability,
+    _load_attempt_anchor,
     _repo_root,
+    _restore_attempt_anchored_launches,
     _safe_workspace_path,
     _strict_sha256,
     _strict_timestamp,
@@ -67,6 +70,8 @@ from .vbd_trajectory_validation_resumable import (
     _validate_tree_links,
     _verify_current_freeze,
     _workspace_from_user_path,
+    _attempt_anchor_root_binding,
+    _validate_attempt_anchor_root,
     _workspace_directory_bindings,
     _workspace_directory_entries,
     _workspace_entry_stat,
@@ -133,6 +138,7 @@ def _workspace_body(workspace: Path, identity: dict) -> dict:
         **identity,
         "concordance_plan_hash": plan["plan_hash"],
         **_workspace_location(workspace),
+        **_attempt_anchor_root_binding(workspace, create=False),
         "workspace_directory_bindings": _workspace_directory_bindings(
             workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
         ),
@@ -170,6 +176,10 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
         "workspace_path_hash",
         "workspace_device",
         "workspace_inode",
+        "attempt_anchor_root_path_hash",
+        "attempt_anchor_root_device",
+        "attempt_anchor_root_inode",
+        "attempt_anchor_directory_bindings",
         "workspace_directory_bindings",
         "created_at",
         "workspace_token",
@@ -230,6 +240,7 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
     ):
         _strict_sha256(value[key], key)
     _strict_timestamp(value["created_at"], "workspace created_at")
+    _validate_attempt_anchor_root(workspace, value)
     if (
         type(value["workspace_directory_bindings"]) is not list
         or [
@@ -319,6 +330,7 @@ def initialize_vbd_trajectory_concordance_workspace(
         _ensure_workspace_directories(
             workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
         )
+        _attempt_anchor_root_binding(workspace, create=True)
         manifest_path = _repo_root() / VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH
         freeze = _validate_freeze_manifest(read_strict_json(manifest_path))
         identity = _verify_current_freeze(freeze)
@@ -365,7 +377,11 @@ def initialize_vbd_trajectory_concordance_workspace(
     return workspace
 
 
-def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict, dict, dict]:
+def _load_workspace(
+    workspace_dir: str | Path,
+    *,
+    verify_lock_identity,
+) -> tuple[Path, dict, dict, dict]:
     workspace = _workspace_from_user_path(workspace_dir)
     if not workspace.is_dir():
         raise VbdTrajectoryValidationWorkspaceError(
@@ -405,6 +421,19 @@ def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict, dict, dict]:
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance phase tokens must be disjoint"
         )
+    _restore_attempt_anchored_launches(
+        workspace=workspace,
+        workspace_record=record,
+        phase_launch_directories={
+            "primary": workspace / "primary" / "launches",
+            "recomputation": workspace / "recomputation" / "launches",
+        },
+        expected_stems={
+            "primary": _expected_phase_stems("primary"),
+            "recomputation": _expected_phase_stems("recomputation"),
+        },
+        verify_lock_identity=verify_lock_identity,
+    )
     _validate_tree_links(workspace)
     _validate_workspace_tree(workspace, complete=False)
     return workspace, record, primary, recomputation
@@ -509,6 +538,27 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
         launches = phase_names["launches"]
         results = phase_names["results"]
         failures = phase_names["failures"]
+        if launches:
+            workspace_record = _validate_workspace(
+                read_strict_json(
+                    _safe_workspace_path(workspace, "workspace.json")
+                ),
+                workspace,
+            )
+            for name in launches:
+                anchor = _load_attempt_anchor(
+                    workspace=workspace,
+                    workspace_record=workspace_record,
+                    phase=phase,
+                    stem=name,
+                )
+                launch_value = read_strict_json(
+                    _safe_workspace_path(workspace, phase, "launches", name)
+                )
+                if anchor is None or anchor["launch_receipt"] != launch_value:
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "concordance launch differs from its external attempt anchor"
+                    )
         if not results.issubset(launches) or not failures.issubset(launches):
             raise VbdTrajectoryValidationWorkspaceError(
                 "concordance result or failure lacks a launch"
@@ -995,8 +1045,13 @@ def _nuts_fit_from_dict(value: object) -> TrajectoryNutsFit:
                 posterior_mean_mcse=_strict_float(
                     item["posterior_mean_mcse"], "posterior mean MCSE"
                 ),
-                interval_endpoint_mcse=_strict_float(
-                    item["interval_endpoint_mcse"], "interval endpoint MCSE"
+                interval_80_endpoint_mcse=_strict_float(
+                    item["interval_80_endpoint_mcse"],
+                    "80 percent interval endpoint MCSE",
+                ),
+                interval_99_endpoint_mcse=_strict_float(
+                    item["interval_99_endpoint_mcse"],
+                    "99 percent interval endpoint MCSE",
                 ),
                 posterior_sd=_strict_float(item["posterior_sd"], "posterior SD"),
             )
@@ -1670,6 +1725,18 @@ def _run_phase_bundle(
     launch_path = _safe_workspace_path(workspace, phase, "launches", stem)
     result_path = _safe_workspace_path(workspace, phase, "results", stem)
     failure_path = _safe_workspace_path(workspace, phase, "failures", stem)
+    anchor = _load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        stem=stem,
+    )
+    if anchor is not None and not _workspace_path_exists(launch_path):
+        write_json_create_once(
+            launch_path,
+            anchor["launch_receipt"],
+            lock_verifier=verify_lock_identity,
+        )
     if _workspace_path_exists(result_path):
         if not _workspace_path_exists(launch_path):
             raise VbdTrajectoryValidationWorkspaceError(
@@ -1683,6 +1750,10 @@ def _run_phase_bundle(
             lane_ordinal=lane_ordinal,
             workspace_record=workspace_record,
         )
+        if anchor is None or anchor["launch_receipt"] != launch:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "concordance result launch lacks its external attempt anchor"
+            )
         return _validate_checkpoint(
             read_strict_json(result_path), receipt=launch
         )["child_output"]
@@ -1699,6 +1770,10 @@ def _run_phase_bundle(
             lane_ordinal=lane_ordinal,
             workspace_record=workspace_record,
         )
+        if anchor is None or anchor["launch_receipt"] != launch:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "concordance failure launch lacks its external attempt anchor"
+            )
         _validate_failure(read_strict_json(failure_path), receipt=launch)
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance phase contains a durable runner failure"
@@ -1712,6 +1787,10 @@ def _run_phase_bundle(
             lane_ordinal=lane_ordinal,
             workspace_record=workspace_record,
         )
+        if anchor is None or anchor["launch_receipt"] != launch:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "concordance launch lacks its external attempt anchor"
+            )
         failure = _failure_record(
             launch=launch,
             failure_code="interrupted_before_checkpoint",
@@ -1734,6 +1813,13 @@ def _run_phase_bundle(
         lane_ordinal=lane_ordinal,
         workspace_record=workspace_record,
         capability_token_hash=sha256_json(capability_token),
+    )
+    _create_or_load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        stem=stem,
+        launch_receipt=launch,
     )
     write_json_create_once(launch_path, launch, lock_verifier=verify_lock_identity)
     child_pid, return_code, stdout, stderr = _launch_child(
@@ -1789,7 +1875,9 @@ def run_vbd_trajectory_concordance_bundle(
     workspace = _workspace_from_user_path(workspace_dir)
     with _exclusive_lock(_safe_workspace_path(workspace, ".runner.lock")) as verify:
         verify()
-        workspace, record, primary_phase, recompute_phase = _load_workspace(workspace)
+        workspace, record, primary_phase, recompute_phase = _load_workspace(
+            workspace, verify_lock_identity=verify
+        )
         primary = _run_phase_bundle(
             workspace=workspace,
             workspace_record=record,
@@ -2347,7 +2435,9 @@ def combine_vbd_trajectory_concordance_workspace(
 ) -> dict:
     workspace = _workspace_from_user_path(workspace_dir)
     with _exclusive_lock(_safe_workspace_path(workspace, ".runner.lock")) as verify:
-        workspace, record, primary, recomputation = _load_workspace(workspace)
+        workspace, record, primary, recomputation = _load_workspace(
+            workspace, verify_lock_identity=verify
+        )
         combined = _combined_value(workspace, record, (primary, recomputation))
         receipt = _receipt_from_combined(combined)
         summary = _summary_from_combined(combined, receipt)
@@ -2482,8 +2572,10 @@ def verify_vbd_trajectory_concordance_receipt_path(
             "concordance receipt must use the canonical workspace path"
         )
     workspace = _workspace_from_user_path(path.parent)
-    with _exclusive_lock(_safe_workspace_path(workspace, ".runner.lock")):
-        workspace, record, primary, recomputation = _load_workspace(workspace)
+    with _exclusive_lock(_safe_workspace_path(workspace, ".runner.lock")) as verify:
+        workspace, record, primary, recomputation = _load_workspace(
+            workspace, verify_lock_identity=verify
+        )
         if any(record[key] != item for key, item in freeze_identity.items()):
             raise VbdTrajectoryValidationWorkspaceError(
                 "concordance receipt workspace uses another freeze"

@@ -358,7 +358,8 @@ def _fake_nuts_fit(prepared, binding):
             bulk_ess=500.0,
             tail_ess=500.0,
             posterior_mean_mcse=0.01,
-            interval_endpoint_mcse=0.01,
+            interval_80_endpoint_mcse=0.01,
+            interval_99_endpoint_mcse=0.01,
             posterior_sd=0.5,
         )
         for name in names
@@ -667,6 +668,22 @@ def test_coordinated_rehash_cannot_launder_unknown_or_forged_nuts_content(
     receipt, child_pid, value = _execute_fake_phase(monkeypatch, "primary")
     forged = deepcopy(value)
     mutation(forged["nuts_records"][0]["fit"])
+    _coordinated_rehash_child_output(forged)
+
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        _validate_child_output(
+            forged, receipt=receipt, observed_child_pid=child_pid
+        )
+
+
+def test_child_output_requires_separate_80_and_99_endpoint_mcse(monkeypatch):
+    receipt, child_pid, value = _execute_fake_phase(monkeypatch, "primary")
+    forged = deepcopy(value)
+    parameter = forged["nuts_records"][0]["fit"]["sampler_diagnostics"][
+        "parameters"
+    ][0]
+    parameter.pop("interval_99_endpoint_mcse")
+    parameter["interval_endpoint_mcse"] = 0.01
     _coordinated_rehash_child_output(forged)
 
     with pytest.raises(VbdTrajectoryValidationWorkspaceError):
@@ -1127,6 +1144,24 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
         "posterior_interval_endpoints_emitted"
     ] is False
 
+    primary_launch = workspace / "primary" / "launches" / "bundle_00.json"
+    primary_result = workspace / "primary" / "results" / "bundle_00.json"
+    primary_launch.unlink()
+    primary_result.unlink()
+    monkeypatch.setattr(
+        resumable,
+        "_launch_child",
+        lambda **_kwargs: pytest.fail("deleted concordance evidence must not rerun"),
+    )
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="interrupted before a create-once result",
+    ):
+        resumable.run_vbd_trajectory_concordance_bundle(workspace, 0)
+    assert launches["count"] == 120
+    assert primary_launch.is_file()
+    assert (workspace / "primary" / "failures" / "bundle_00.json").is_file()
+
 
 def test_concordance_workspace_rejects_completed_subtree_replacement(tmp_path):
     from fluencytracr_inference import vbd_trajectory_concordance_resumable as runner
@@ -1149,6 +1184,7 @@ def test_concordance_workspace_rejects_completed_subtree_replacement(tmp_path):
         runner._ensure_workspace_directories(
             workspace, runner._CONCORDANCE_WORKSPACE_DIRECTORIES
         )
+        runner._attempt_anchor_root_binding(workspace, create=True)
         body = runner._workspace_body(workspace, identity)
         record = {**body, "workspace_hash": sha256_json(body)}
         assert runner._validate_workspace(record, workspace) == record

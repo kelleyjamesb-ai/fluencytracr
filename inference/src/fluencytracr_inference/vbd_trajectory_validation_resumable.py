@@ -205,6 +205,15 @@ _VALIDATION_WORKSPACE_DIRECTORIES = (
 _CHILD_STDOUT_LIMIT = 2 * 1024 * 1024
 _CHILD_STDERR_LIMIT = 64 * 1024
 VBD_TRAJECTORY_CHILD_TIMEOUT_SECONDS = 600
+VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION = (
+    "FT_AI_VALUE_VBD_TRAJECTORY_ATTEMPT_ANCHOR_2026_07_V1"
+)
+VBD_TRAJECTORY_ATTEMPT_ANCHOR_PHASES = (
+    "canaries",
+    "original",
+    "primary",
+    "recomputation",
+)
 _EXECUTION_ATTESTATION_KEYS = {
     "attestation_version",
     "execution_kind",
@@ -1266,8 +1275,12 @@ def _workspace_directory_entries(directory: Path) -> tuple[tuple[str, str], ...]
                 kind = "other"
             entries.append((name, kind))
         return tuple(entries)
-    except FileNotFoundError:
-        return ()
+    except FileNotFoundError as exc:
+        if descriptor < 0:
+            return ()
+        raise VbdTrajectoryValidationWorkspaceError(
+            "workspace entry disappeared during descriptor enumeration"
+        ) from exc
     except VbdTrajectoryValidationWorkspaceError:
         raise
     except OSError as exc:
@@ -1358,6 +1371,445 @@ def _workspace_directory_bindings(
         )
     handle.verify()
     return bindings
+
+
+def _attempt_anchor_root(workspace: Path) -> Path:
+    if not workspace.is_absolute() or not workspace.name:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor requires an absolute named workspace"
+        )
+    return workspace.parent / f".{workspace.name}.vbd-proof-anchor"
+
+
+def _attempt_anchor_root_binding(workspace: Path, *, create: bool) -> dict:
+    root = _attempt_anchor_root(workspace)
+    if create:
+        root.mkdir(mode=0o700, parents=False, exist_ok=True)
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        before = os.lstat(root)
+        descriptor = os.open(root, flags)
+        try:
+            opened = os.fstat(descriptor)
+            phase_bindings = []
+            for phase in VBD_TRAJECTORY_ATTEMPT_ANCHOR_PHASES:
+                if create:
+                    try:
+                        os.mkdir(phase, 0o700, dir_fd=descriptor)
+                    except FileExistsError:
+                        pass
+                phase_before = os.stat(
+                    phase, dir_fd=descriptor, follow_symlinks=False
+                )
+                phase_descriptor = os.open(phase, flags, dir_fd=descriptor)
+                try:
+                    phase_opened = os.fstat(phase_descriptor)
+                finally:
+                    os.close(phase_descriptor)
+                phase_after = os.stat(
+                    phase, dir_fd=descriptor, follow_symlinks=False
+                )
+                if (
+                    not stat.S_ISDIR(phase_opened.st_mode)
+                    or phase_opened.st_dev != opened.st_dev
+                    or (phase_opened.st_mode & 0o077) != 0
+                    or (phase_before.st_dev, phase_before.st_ino)
+                    != (phase_opened.st_dev, phase_opened.st_ino)
+                    or (phase_after.st_dev, phase_after.st_ino)
+                    != (phase_opened.st_dev, phase_opened.st_ino)
+                ):
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "attempt anchor phase is not a private stable directory"
+                    )
+                phase_bindings.append(
+                    {
+                        "phase": phase,
+                        "device": phase_opened.st_dev,
+                        "inode": phase_opened.st_ino,
+                    }
+                )
+        finally:
+            os.close(descriptor)
+        after = os.lstat(root)
+    except OSError as exc:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor root is missing, linked, or not a directory"
+        ) from exc
+    if (
+        not stat.S_ISDIR(opened.st_mode)
+        or (opened.st_mode & 0o077) != 0
+        or (before.st_dev, before.st_ino)
+        != (opened.st_dev, opened.st_ino)
+        or (after.st_dev, after.st_ino)
+        != (opened.st_dev, opened.st_ino)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor root is missing, linked, or not a private directory"
+        )
+    return {
+        "attempt_anchor_root_path_hash": sha256_json(str(root)),
+        "attempt_anchor_root_device": opened.st_dev,
+        "attempt_anchor_root_inode": opened.st_ino,
+        "attempt_anchor_directory_bindings": phase_bindings,
+    }
+
+
+def _validate_attempt_anchor_root(workspace: Path, workspace_record: dict) -> Path:
+    expected = _attempt_anchor_root_binding(workspace, create=False)
+    if any(workspace_record.get(key) != value for key, value in expected.items()):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor root differs from its create-once identity"
+        )
+    return _attempt_anchor_root(workspace)
+
+
+def _attempt_anchor_path(workspace: Path, phase: str, stem: str) -> Path:
+    if (
+        re.fullmatch(r"[a-z][a-z0-9_]*", phase) is None
+        or re.fullmatch(r"[a-z0-9_]+\.json", stem) is None
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor coordinates are invalid"
+        )
+    return _attempt_anchor_root(workspace) / phase / stem
+
+
+@contextmanager
+def _attempt_anchor_phase_descriptor(
+    *, workspace: Path, workspace_record: dict, phase: str, create: bool
+):
+    if re.fullmatch(r"[a-z][a-z0-9_]*", phase) is None:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor phase is invalid"
+        )
+    root = _validate_attempt_anchor_root(workspace, workspace_record)
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    root_descriptor = -1
+    phase_descriptor = -1
+    try:
+        root_descriptor = os.open(root, flags)
+        root_stat = os.fstat(root_descriptor)
+        if (
+            root_stat.st_dev != workspace_record["attempt_anchor_root_device"]
+            or root_stat.st_ino != workspace_record["attempt_anchor_root_inode"]
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor root changed before phase access"
+            )
+        if create:
+            try:
+                os.mkdir(phase, 0o700, dir_fd=root_descriptor)
+            except FileExistsError:
+                pass
+        try:
+            before = os.stat(
+                phase, dir_fd=root_descriptor, follow_symlinks=False
+            )
+        except FileNotFoundError:
+            if create:
+                raise
+            yield None
+            return
+        phase_descriptor = os.open(phase, flags, dir_fd=root_descriptor)
+        opened = os.fstat(phase_descriptor)
+        after = os.stat(
+            phase, dir_fd=root_descriptor, follow_symlinks=False
+        )
+        expected_binding = next(
+            (
+                item
+                for item in workspace_record[
+                    "attempt_anchor_directory_bindings"
+                ]
+                if item["phase"] == phase
+            ),
+            None,
+        )
+        if (
+            expected_binding is None
+            or not stat.S_ISDIR(opened.st_mode)
+            or opened.st_dev != root_stat.st_dev
+            or opened.st_dev != expected_binding["device"]
+            or opened.st_ino != expected_binding["inode"]
+            or (opened.st_mode & 0o077) != 0
+            or (before.st_dev, before.st_ino)
+            != (opened.st_dev, opened.st_ino)
+            or (after.st_dev, after.st_ino)
+            != (opened.st_dev, opened.st_ino)
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor phase changed identity"
+            )
+        yield phase_descriptor
+        final = os.stat(
+            phase, dir_fd=root_descriptor, follow_symlinks=False
+        )
+        if (final.st_dev, final.st_ino) != (opened.st_dev, opened.st_ino):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor phase changed during access"
+            )
+    except VbdTrajectoryValidationWorkspaceError:
+        raise
+    except OSError as exc:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor phase cannot be accessed safely"
+        ) from exc
+    finally:
+        if phase_descriptor >= 0:
+            os.close(phase_descriptor)
+        if root_descriptor >= 0:
+            os.close(root_descriptor)
+
+
+def _create_or_load_attempt_anchor(
+    *,
+    workspace: Path,
+    workspace_record: dict,
+    phase: str,
+    stem: str,
+    launch_receipt: dict,
+) -> dict:
+    _validate_attempt_anchor_root(workspace, workspace_record)
+    body = {
+        "schema_version": VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION,
+        "workspace_hash": workspace_record["workspace_hash"],
+        "phase": phase,
+        "stem": stem,
+        "launch_receipt": launch_receipt,
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+    expected = {**body, "anchor_hash": sha256_json(body)}
+    _attempt_anchor_path(workspace, phase, stem)
+    with _attempt_anchor_phase_descriptor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        create=True,
+    ) as descriptor:
+        if descriptor is None:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor phase was not created"
+            )
+        try:
+            encoded = _read_descriptor_bytes(descriptor, stem)
+        except FileNotFoundError:
+            _write_json_create_once_descriptor(
+                descriptor, stem, expected, lock_verifier=None
+            )
+            encoded = _read_descriptor_bytes(descriptor, stem)
+        existing = _decode_json_bytes(encoded, stem)
+        if encoded != _canonical_json_bytes(existing) or existing != expected:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor differs from the planned launch"
+            )
+    return expected
+
+
+def _load_attempt_anchor(
+    *, workspace: Path, workspace_record: dict, phase: str, stem: str
+) -> dict | None:
+    _attempt_anchor_path(workspace, phase, stem)
+    with _attempt_anchor_phase_descriptor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        create=False,
+    ) as descriptor:
+        if descriptor is None:
+            return None
+        try:
+            encoded = _read_descriptor_bytes(descriptor, stem)
+        except FileNotFoundError:
+            return None
+        value = _decode_json_bytes(encoded, stem)
+        if encoded != _canonical_json_bytes(value):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor JSON is not canonical"
+            )
+    if (
+        type(value) is not dict
+        or set(value)
+        != {
+            "schema_version",
+            "workspace_hash",
+            "phase",
+            "stem",
+            "launch_receipt",
+            "internal_only",
+            "synthetic_only",
+            "customer_output_authorized",
+            "anchor_hash",
+        }
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor shape is invalid"
+        )
+    body = {key: item for key, item in value.items() if key != "anchor_hash"}
+    if (
+        value["schema_version"]
+        != VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION
+        or value["workspace_hash"] != workspace_record["workspace_hash"]
+        or value["phase"] != phase
+        or value["stem"] != stem
+        or type(value["launch_receipt"]) is not dict
+        or value["internal_only"] is not True
+        or value["synthetic_only"] is not True
+        or value["customer_output_authorized"] is not False
+        or value["anchor_hash"] != sha256_json(body)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor is invalid"
+        )
+    return value
+
+
+def _attempt_anchor_names(
+    *, workspace: Path, workspace_record: dict, phase: str
+) -> tuple[str, ...]:
+    with _attempt_anchor_phase_descriptor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        create=False,
+    ) as descriptor:
+        if descriptor is None:
+            return ()
+        names = []
+        try:
+            listed = sorted(os.listdir(descriptor))
+            for name in listed:
+                opened = os.stat(
+                    name, dir_fd=descriptor, follow_symlinks=False
+                )
+                if (
+                    not stat.S_ISREG(opened.st_mode)
+                    or opened.st_nlink != 1
+                    or re.fullmatch(r"[a-z0-9_]+\.json", name) is None
+                ):
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "attempt anchor phase contains an unsafe entry"
+                    )
+                names.append(name)
+        except FileNotFoundError as exc:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor entry disappeared during enumeration"
+            ) from exc
+        return tuple(names)
+
+
+def _restore_attempt_anchored_launches(
+    *,
+    workspace: Path,
+    workspace_record: dict,
+    phase_launch_directories: dict[str, Path],
+    expected_stems: dict[str, set[str]],
+    verify_lock_identity: Callable[[], None],
+) -> None:
+    if set(phase_launch_directories) != set(expected_stems):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor restoration plan is incomplete"
+        )
+    for phase, launch_directory in phase_launch_directories.items():
+        for stem in _attempt_anchor_names(
+            workspace=workspace,
+            workspace_record=workspace_record,
+            phase=phase,
+        ):
+            if stem not in expected_stems[phase]:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "attempt anchor is outside the immutable execution plan"
+                )
+            anchor = _load_attempt_anchor(
+                workspace=workspace,
+                workspace_record=workspace_record,
+                phase=phase,
+                stem=stem,
+            )
+            if anchor is None:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "enumerated attempt anchor disappeared"
+                )
+            launch_path = launch_directory / stem
+            if not _workspace_path_exists(launch_path):
+                write_json_create_once(
+                    launch_path,
+                    anchor["launch_receipt"],
+                    lock_verifier=verify_lock_identity,
+                )
+            elif read_strict_json(launch_path) != anchor["launch_receipt"]:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "workspace launch differs from its external attempt anchor"
+                )
+
+
+def _restore_validation_attempt_launches(
+    *,
+    workspace: Path,
+    workspace_record: dict,
+    verify_lock_identity: Callable[[], None],
+) -> None:
+    _restore_attempt_anchored_launches(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase_launch_directories={
+            "canaries": workspace / "canaries" / "launches",
+            "original": workspace / "original" / "launches",
+            "recomputation": workspace / "recomputation" / "launches",
+        },
+        expected_stems={
+            "canaries": {f"canary_{index:02d}.json" for index in range(4)},
+            "original": {f"slot_{index:04d}.json" for index in range(2_000)},
+            "recomputation": {
+                f"slot_{index:04d}.json" for index in range(2_000)
+            },
+        },
+        verify_lock_identity=verify_lock_identity,
+    )
+
+
+def _validate_validation_launch_anchors(workspace: Path) -> None:
+    workspace_path = workspace / "workspace.json"
+    if not _workspace_path_exists(workspace_path):
+        return
+    workspace_record = _validate_workspace_record(
+        read_strict_json(workspace_path), workspace=workspace
+    )
+    for phase, launch_directory in (
+        ("canaries", workspace / "canaries" / "launches"),
+        ("original", workspace / "original" / "launches"),
+        ("recomputation", workspace / "recomputation" / "launches"),
+    ):
+        if not _workspace_path_is_dir(launch_directory):
+            continue
+        for stem, kind in _workspace_directory_entries(launch_directory):
+            if kind != "file":
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "launch directory contains a special entry"
+                )
+            anchor = _load_attempt_anchor(
+                workspace=workspace,
+                workspace_record=workspace_record,
+                phase=phase,
+                stem=stem,
+            )
+            if (
+                anchor is None
+                or anchor["launch_receipt"]
+                != read_strict_json(launch_directory / stem)
+            ):
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "workspace launch lacks its external attempt anchor"
+                )
 
 
 def _workspace_from_user_path(workspace_dir: str | Path) -> Path:
@@ -2124,6 +2576,7 @@ def _workspace_record(
         "concordance_receipt_hash": concordance["receipt_hash"],
         **_concordance_receipt_location_binding(concordance_path),
         **_workspace_location_binding(workspace),
+        **_attempt_anchor_root_binding(workspace, create=False),
         "workspace_directory_bindings": _workspace_directory_bindings(
             workspace, _VALIDATION_WORKSPACE_DIRECTORIES
         ),
@@ -2183,6 +2636,7 @@ def initialize_vbd_trajectory_validation_workspace(
         _ensure_workspace_directories(
             workspace, _VALIDATION_WORKSPACE_DIRECTORIES
         )
+        _attempt_anchor_root_binding(workspace, create=True)
         freeze_value = read_strict_json(manifest_path)
         if type(freeze_value) is not dict:
             raise VbdTrajectoryValidationWorkspaceError(
@@ -2271,6 +2725,10 @@ def _validate_workspace_record(
         "workspace_path_hash",
         "workspace_device",
         "workspace_inode",
+        "attempt_anchor_root_path_hash",
+        "attempt_anchor_root_device",
+        "attempt_anchor_root_inode",
+        "attempt_anchor_directory_bindings",
         "workspace_directory_bindings",
         "created_at",
         "workspace_token",
@@ -2325,6 +2783,29 @@ def _validate_workspace_record(
         or value["workspace_device"] < 0
         or type(value["workspace_inode"]) is not int
         or value["workspace_inode"] <= 0
+        or _strict_sha256(
+            value["attempt_anchor_root_path_hash"],
+            "attempt anchor root path hash",
+        )
+        != value["attempt_anchor_root_path_hash"]
+        or type(value["attempt_anchor_root_device"]) is not int
+        or value["attempt_anchor_root_device"] < 0
+        or type(value["attempt_anchor_root_inode"]) is not int
+        or value["attempt_anchor_root_inode"] <= 0
+        or type(value["attempt_anchor_directory_bindings"]) is not list
+        or [
+            item.get("phase") if type(item) is dict else None
+            for item in value["attempt_anchor_directory_bindings"]
+        ]
+        != list(VBD_TRAJECTORY_ATTEMPT_ANCHOR_PHASES)
+        or any(
+            set(item) != {"phase", "device", "inode"}
+            or type(item["device"]) is not int
+            or item["device"] < 0
+            or type(item["inode"]) is not int
+            or item["inode"] <= 0
+            for item in value["attempt_anchor_directory_bindings"]
+        )
         or type(value["workspace_directory_bindings"]) is not list
         or [
             item.get("path") if type(item) is dict else None
@@ -2379,6 +2860,7 @@ def _validate_workspace_record(
             raise VbdTrajectoryValidationWorkspaceError(
                 "workspace directory bindings differ from create-once identities"
             )
+        _validate_attempt_anchor_root(workspace, value)
     return value
 
 
@@ -2920,6 +3402,8 @@ def _revalidate_launch_admission(workspace: Path, receipt: dict) -> None:
             "launches",
             f"canary_{canary.canary_ordinal:02d}.json",
         )
+        anchor_phase = "canaries"
+        anchor_stem = f"canary_{canary.canary_ordinal:02d}.json"
         expected_state = "CANARIES"
     else:
         phase = receipt["phase"]
@@ -2948,6 +3432,8 @@ def _revalidate_launch_admission(workspace: Path, receipt: dict) -> None:
             "launches",
             f"{_slot_file_stem(receipt['slot_index'])}.json",
         )
+        anchor_phase = phase
+        anchor_stem = f"{_slot_file_stem(receipt['slot_index'])}.json"
         expected_state = "PRIMARY" if phase == "original" else "RECOMPUTE"
     persisted = _validate_launch_receipt(
         read_strict_json(launch_path),
@@ -2959,7 +3445,18 @@ def _revalidate_launch_admission(workspace: Path, receipt: dict) -> None:
         workspace_record=workspace_record,
         canary=canary,
     )
-    if persisted != receipt or _validate_progress_state(workspace) != expected_state:
+    anchor = _load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=anchor_phase,
+        stem=anchor_stem,
+    )
+    if (
+        persisted != receipt
+        or anchor is None
+        or anchor["launch_receipt"] != receipt
+        or _validate_progress_state(workspace) != expected_state
+    ):
         raise VbdTrajectoryValidationWorkspaceError(
             "child launch is not the current create-once workspace action"
         )
@@ -3294,7 +3791,27 @@ def _run_one_study_slot(
     stem = _slot_file_stem(slot_index)
     launch_path = _phase_path(workspace, phase_manifest["phase"], "launches", f"{stem}.json")
     checkpoint_path = _phase_path(workspace, phase_manifest["phase"], "slots", f"{stem}.json")
+    anchor = _load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase_manifest["phase"],
+        stem=f"{stem}.json",
+    )
+    if anchor is not None and not _workspace_path_exists(launch_path):
+        write_json_create_once(
+            launch_path,
+            anchor["launch_receipt"],
+            lock_verifier=verify_lock_identity,
+        )
+    if anchor is not None and read_strict_json(launch_path) != anchor["launch_receipt"]:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "study launch differs from its external attempt anchor"
+        )
     if _workspace_path_exists(checkpoint_path):
+        if anchor is None:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "checkpoint lacks its external attempt anchor"
+            )
         return _load_checkpoint(
             checkpoint_path,
             workspace_record=workspace_record,
@@ -3314,6 +3831,10 @@ def _run_one_study_slot(
             workspace_record=workspace_record,
             canary=None,
         )
+        if anchor is None or anchor["launch_receipt"] != receipt:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "study launch lacks its external attempt anchor"
+            )
         result = _runner_error_result(slot, "interrupted_launch")
         checkpoint = _checkpoint(
             phase_manifest=phase_manifest,
@@ -3347,6 +3868,13 @@ def _run_one_study_slot(
         workspace_record=workspace_record,
         canary=None,
         capability_token_hash=sha256_json(capability_token),
+    )
+    _create_or_load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase_manifest["phase"],
+        stem=f"{stem}.json",
+        launch_receipt=receipt,
     )
     write_json_create_once(
         launch_path, receipt, lock_verifier=verify_lock_identity
@@ -3476,6 +4004,16 @@ def _load_checkpoint(
         workspace_record=workspace_record,
         canary=None,
     )
+    anchor = _load_attempt_anchor(
+        workspace=path.parents[2],
+        workspace_record=workspace_record,
+        phase=phase_manifest["phase"],
+        stem=f"{_slot_file_stem(slot_index)}.json",
+    )
+    if anchor is None or anchor["launch_receipt"] != receipt:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "checkpoint launch lacks its external attempt anchor"
+        )
     if value["launch_receipt_hash"] != receipt["launch_receipt_hash"]:
         raise VbdTrajectoryValidationWorkspaceError(
             "checkpoint launch binding is invalid"
@@ -3654,7 +4192,7 @@ def _load_canary_launch(
         "launches",
         f"canary_{canary.canary_ordinal:02d}.json",
     )
-    return _validate_launch_receipt(
+    launch = _validate_launch_receipt(
         read_strict_json(path),
         execution_kind="canary",
         phase="canary",
@@ -3664,6 +4202,17 @@ def _load_canary_launch(
         workspace_record=workspace_record,
         canary=canary,
     )
+    anchor = _load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase="canaries",
+        stem=f"canary_{canary.canary_ordinal:02d}.json",
+    )
+    if anchor is None or anchor["launch_receipt"] != launch:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "canary launch lacks its external attempt anchor"
+        )
+    return launch
 
 
 def run_vbd_trajectory_validation_chunk(
@@ -3682,6 +4231,11 @@ def run_vbd_trajectory_validation_chunk(
         _cleanup_stale_atomic_temps(workspace)
         verify_lock_identity()
         workspace, workspace_record = _load_workspace(workspace)
+        _restore_validation_attempt_launches(
+            workspace=workspace,
+            workspace_record=workspace_record,
+            verify_lock_identity=verify_lock_identity,
+        )
         _validate_workspace_tree(workspace, complete=False)
         _require_canaries_complete(
             workspace,
@@ -4150,6 +4704,11 @@ def run_vbd_trajectory_validation_canary(
         _cleanup_stale_atomic_temps(workspace)
         verify_lock_identity()
         workspace, workspace_record = _load_workspace(workspace)
+        _restore_validation_attempt_launches(
+            workspace=workspace,
+            workspace_record=workspace_record,
+            verify_lock_identity=verify_lock_identity,
+        )
         _validate_workspace_tree(workspace, complete=False)
         phase_manifest = _canary_phase_manifest(
             workspace,
@@ -4206,6 +4765,19 @@ def run_vbd_trajectory_validation_canary(
                 phase_manifest=phase_manifest,
                 canary=canaries[canary_index],
             )
+            current_anchor = _load_attempt_anchor(
+                workspace=workspace,
+                workspace_record=workspace_record,
+                phase="canaries",
+                stem=f"canary_{canary_index:02d}.json",
+            )
+            if (
+                current_anchor is None
+                or current_anchor["launch_receipt"] != current_launch
+            ):
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "canary receipt lacks its external attempt anchor"
+                )
             current_output_path = _safe_workspace_path(
                 workspace,
                 "canaries",
@@ -4247,6 +4819,18 @@ def run_vbd_trajectory_validation_canary(
         output_path = _safe_workspace_path(
             workspace, "canaries", "outputs", f"canary_{canary_index:02d}.json"
         )
+        anchor = _load_attempt_anchor(
+            workspace=workspace,
+            workspace_record=workspace_record,
+            phase="canaries",
+            stem=f"canary_{canary_index:02d}.json",
+        )
+        if anchor is not None and not _workspace_path_exists(launch_path):
+            write_json_create_once(
+                launch_path,
+                anchor["launch_receipt"],
+                lock_verifier=verify_lock_identity,
+            )
         child_output = None
         if _workspace_path_exists(launch_path):
             launch = _validate_launch_receipt(
@@ -4259,6 +4843,10 @@ def run_vbd_trajectory_validation_canary(
                 workspace_record=workspace_record,
                 canary=canary,
             )
+            if anchor is None or anchor["launch_receipt"] != launch:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "canary launch lacks its external attempt anchor"
+                )
             if _workspace_path_exists(output_path):
                 child_output = read_strict_json(output_path)
                 raw_attestation = (
@@ -4304,6 +4892,13 @@ def run_vbd_trajectory_validation_canary(
                 workspace_record=workspace_record,
                 canary=canary,
                 capability_token_hash=sha256_json(capability_token),
+            )
+            _create_or_load_attempt_anchor(
+                workspace=workspace,
+                workspace_record=workspace_record,
+                phase="canaries",
+                stem=f"canary_{canary_index:02d}.json",
+                launch_receipt=launch,
             )
             write_json_create_once(
                 launch_path,
@@ -4688,6 +5283,11 @@ def combine_vbd_trajectory_validation_workspace(
         _cleanup_stale_atomic_temps(workspace)
         verify_lock_identity()
         workspace, workspace_record = _load_workspace(workspace)
+        _restore_validation_attempt_launches(
+            workspace=workspace,
+            workspace_record=workspace_record,
+            verify_lock_identity=verify_lock_identity,
+        )
         output = _safe_workspace_path(workspace, "combined.json")
         commit_path = _safe_workspace_path(
             workspace, "combined_commit.json"
@@ -5251,6 +5851,8 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
                 f"{phase} tree contains an unexpected entry"
             )
     if complete:
+        _validate_validation_launch_anchors(workspace)
+    if complete:
         required_root = {("file", name) for name in _ROOT_STATIC_FILES}
         required_root.update(
             {
@@ -5301,6 +5903,7 @@ def _validate_workspace_ready_for_combined(workspace: Path) -> None:
     """Validate the exact sealed tree before atomically publishing PASS/HOLD."""
 
     _validate_workspace_tree(workspace, complete=False)
+    _validate_validation_launch_anchors(workspace)
     if _workspace_has_atomic_temps(workspace):
         raise VbdTrajectoryValidationWorkspaceError(
             "sealed workspace contains stale atomic temporaries"

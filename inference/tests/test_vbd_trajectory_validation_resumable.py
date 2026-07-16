@@ -76,11 +76,40 @@ def _fake_workspace_record(
             }
             for relative in _VALIDATION_WORKSPACE_DIRECTORIES
         ]
+        anchor_root = workspace.parent / f".{workspace.name}.vbd-proof-anchor"
+        anchor_root.mkdir(mode=0o700, exist_ok=True)
+        anchor_phases = ("canaries", "original", "primary", "recomputation")
+        for phase in anchor_phases:
+            (anchor_root / phase).mkdir(mode=0o700, exist_ok=True)
+        anchor_binding = {
+            "attempt_anchor_root_path_hash": sha256_json(str(anchor_root)),
+            "attempt_anchor_root_device": anchor_root.stat().st_dev,
+            "attempt_anchor_root_inode": anchor_root.stat().st_ino,
+            "attempt_anchor_directory_bindings": [
+                {
+                    "phase": phase,
+                    "device": (anchor_root / phase).stat().st_dev,
+                    "inode": (anchor_root / phase).stat().st_ino,
+                }
+                for phase in anchor_phases
+            ],
+        }
     else:
         directory_bindings = [
             {"path": relative, "device": 1, "inode": index + 1}
             for index, relative in enumerate(_VALIDATION_WORKSPACE_DIRECTORIES)
         ]
+        anchor_binding = {
+            "attempt_anchor_root_path_hash": "8" * 64,
+            "attempt_anchor_root_device": 1,
+            "attempt_anchor_root_inode": 1,
+            "attempt_anchor_directory_bindings": [
+                {"phase": phase, "device": 1, "inode": index + 1}
+                for index, phase in enumerate(
+                    ("canaries", "original", "primary", "recomputation")
+                )
+            ],
+        }
     location = (
         {
             "workspace_path_hash": sha256_json(str(workspace)),
@@ -132,6 +161,7 @@ def _fake_workspace_record(
         "concordance_receipt_hash": "1" * 64,
         **concordance_location,
         **location,
+        **anchor_binding,
         "workspace_directory_bindings": directory_bindings,
         "created_at": "2026-07-15T12:00:00+00:00",
         "workspace_token": "2" * 64,
@@ -163,13 +193,13 @@ def _capability_token():
     return "9" * 64
 
 
-def _runtime_bound_workspace_record():
+def _runtime_bound_workspace_record(workspace=None):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
     native_libraries = []
     body = {
         key: value
-        for key, value in _fake_workspace_record().items()
+        for key, value in _fake_workspace_record(workspace).items()
         if key != "workspace_hash"
     }
     body["executable_sha256"] = runner._file_sha256(
@@ -1078,7 +1108,9 @@ def test_execution_entrypoints_load_workspace_only_under_lock(
 def test_orphaned_launch_becomes_durable_runner_error_without_relaunch(
     tmp_path, monkeypatch
 ):
-    record = _fake_workspace_record()
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    record = _fake_workspace_record(tmp_path)
     phase = _phase_manifest(record)
     slot = required_vbd_trajectory_validation_slots()[0]
     launch = _launch_receipt(
@@ -1094,6 +1126,13 @@ def test_orphaned_launch_becomes_durable_runner_error_without_relaunch(
     )
     launch_path = tmp_path / "original" / "launches" / "slot_0000.json"
     write_json_create_once(launch_path, launch)
+    runner._create_or_load_attempt_anchor(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase="original",
+        stem="slot_0000.json",
+        launch_receipt=launch,
+    )
     monkeypatch.setattr(
         "fluencytracr_inference.vbd_trajectory_validation_resumable._launch_child",
         lambda **kwargs: pytest.fail("orphaned receipt must never relaunch"),
@@ -1126,7 +1165,7 @@ def test_copied_original_checkpoint_rejects_in_recomputation_loader(
 ):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
-    record = _runtime_bound_workspace_record()
+    record = _runtime_bound_workspace_record(tmp_path)
     original_phase = _phase_manifest(record, "original")
     recomputation_phase = _phase_manifest(record, "recomputation")
     slot_index = next(
@@ -1181,6 +1220,13 @@ def test_copied_original_checkpoint_rejects_in_recomputation_loader(
         tmp_path / "recomputation" / "launches" / stem,
         recomputation_launch,
     )
+    runner._create_or_load_attempt_anchor(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase="recomputation",
+        stem=stem,
+        launch_receipt=recomputation_launch,
+    )
     write_json_create_once(
         tmp_path / "recomputation" / "slots" / stem,
         copied,
@@ -1203,7 +1249,7 @@ def test_copied_original_checkpoint_rejects_in_recomputation_loader(
 
 
 def test_child_failure_is_sanitized_and_create_once(tmp_path, monkeypatch):
-    record = _fake_workspace_record()
+    record = _fake_workspace_record(tmp_path)
     phase = _phase_manifest(record)
     calls = []
 
@@ -1233,7 +1279,7 @@ def test_child_failure_is_sanitized_and_create_once(tmp_path, monkeypatch):
 def test_successful_checkpoint_resumes_without_relaunch(tmp_path, monkeypatch):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
-    record = _runtime_bound_workspace_record()
+    record = _runtime_bound_workspace_record(tmp_path)
     phase = _phase_manifest(record)
     slot_index = next(
         index
@@ -1268,6 +1314,116 @@ def test_successful_checkpoint_resumes_without_relaunch(tmp_path, monkeypatch):
     )
     assert resumed_result == result
     assert resumed_checkpoint == checkpoint
+
+
+def test_deleted_slot_evidence_restores_launch_and_becomes_durable_error(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    record = _runtime_bound_workspace_record(tmp_path)
+    phase = _phase_manifest(record)
+    slot_index = next(
+        index
+        for index, slot in enumerate(required_vbd_trajectory_validation_slots())
+        if slot.scenario_or_control_id == "copied_recompute"
+    )
+    _patch_successful_in_process_child(monkeypatch)
+    result, _checkpoint_value = _run_one_study_slot(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase_manifest=phase,
+        slot_index=slot_index,
+        original_result=None,
+        verify_lock_identity=lambda: None,
+    )
+    stem = f"slot_{slot_index:04d}.json"
+    (tmp_path / "original" / "launches" / stem).unlink()
+    monkeypatch.setattr(
+        runner,
+        "_launch_child",
+        lambda **_kwargs: pytest.fail("restored launch must never relaunch"),
+    )
+    resumed, _resumed_checkpoint = _run_one_study_slot(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase_manifest=phase,
+        slot_index=slot_index,
+        original_result=None,
+        verify_lock_identity=lambda: None,
+    )
+    assert resumed == result
+
+    (tmp_path / "original" / "launches" / stem).unlink()
+    (tmp_path / "original" / "slots" / stem).unlink()
+
+    recovered, checkpoint = _run_one_study_slot(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase_manifest=phase,
+        slot_index=slot_index,
+        original_result=None,
+        verify_lock_identity=lambda: None,
+    )
+    assert recovered.row_state == "RUNNER_ERROR"
+    assert recovered.failure_code == "interrupted_launch"
+    assert checkpoint["child_return_class"] == "interrupted_before_checkpoint"
+    assert recovered.semantic_result_hash != result.semantic_result_hash
+
+
+def test_descriptor_enumeration_fails_if_a_listed_entry_disappears(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    (tmp_path / "entry.json").write_text("{}\n", encoding="utf-8")
+    original_stat = runner.os.stat
+
+    def disappearing_stat(path, *args, **kwargs):
+        if path == "entry.json" and kwargs.get("dir_fd") is not None:
+            raise FileNotFoundError("simulated concurrent deletion")
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(runner.os, "stat", disappearing_stat)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="disappeared during descriptor enumeration",
+    ):
+        runner._workspace_directory_entries(tmp_path)
+
+
+def test_attempt_anchor_rejects_root_replacement_and_phase_symlink(tmp_path):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    workspace = tmp_path / "workspace"
+    record = _fake_workspace_record(workspace)
+    anchor_root = workspace.parent / f".{workspace.name}.vbd-proof-anchor"
+    displaced = workspace.parent / "displaced-anchor"
+    anchor_root.rename(displaced)
+    anchor_root.mkdir(mode=0o700)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="attempt anchor root",
+    ):
+        runner._validate_attempt_anchor_root(workspace, record)
+
+    anchor_root.rmdir()
+    displaced.rename(anchor_root)
+    target = tmp_path / "phase-target"
+    target.mkdir()
+    (anchor_root / "original").rename(anchor_root / "original-displaced")
+    (anchor_root / "original").symlink_to(target, target_is_directory=True)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="attempt anchor",
+    ):
+        runner._create_or_load_attempt_anchor(
+            workspace=workspace,
+            workspace_record=record,
+            phase="original",
+            stem="slot_0000.json",
+            launch_receipt={"launch_receipt_hash": "1" * 64},
+        )
 
 
 def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypatch):
@@ -1629,7 +1785,7 @@ def test_launch_admission_revalidates_the_persisted_create_once_receipt(
 ):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
-    record = _fake_workspace_record()
+    record = _fake_workspace_record(tmp_path)
     phase = _phase_manifest(record)
     slot = required_vbd_trajectory_validation_slots()[0]
     receipt = _launch_receipt(
@@ -1647,6 +1803,13 @@ def test_launch_admission_revalidates_the_persisted_create_once_receipt(
     launch_path = tmp_path / "original" / "launches" / "slot_0000.json"
     write_json_create_once(phase_path, phase)
     write_json_create_once(launch_path, receipt)
+    runner._create_or_load_attempt_anchor(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase="original",
+        stem="slot_0000.json",
+        launch_receipt=receipt,
+    )
     monkeypatch.setattr(runner, "_load_workspace", lambda _path: (tmp_path, record))
     monkeypatch.setattr(runner, "_validate_workspace_tree", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(runner, "_validate_progress_state", lambda _path: "PRIMARY")

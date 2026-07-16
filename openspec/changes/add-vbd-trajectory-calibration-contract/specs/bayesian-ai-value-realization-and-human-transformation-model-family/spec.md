@@ -497,6 +497,11 @@ the 99% lower endpoint used by the later null false-movement decision. SD ratios
 SHALL remain within `[0.85,1.15]`. R-hat SHALL be
 `<=1.01`, bulk/tail ESS `>=400`, divergences and treedepth saturation zero,
 BFMI `>=0.3`, MCSE/SD `<=0.1`, and PPC p-values within `[0.05,0.95]`.
+MCSE/SD SHALL be computed separately for the posterior mean, both 80%
+endpoints, and both 99% endpoints. Every ArviZ diagnostic array SHALL match the
+posterior parameter dimensions, coordinate labels, and cardinality exactly
+before joining; positional truncation, reordered labels, or missing rows SHALL
+HOLD.
 Each hashed lane record SHALL name all four normalized endpoint differences,
 and the compact diagnostic summary SHALL report separate worst-case 80% and
 99% endpoint differences. Missing, merged, or ambiguously labeled endpoint
@@ -556,6 +561,17 @@ canonical external concordance receipt path, path hash, device, and inode,
 rerun full external concordance verification on every load, and require the
 local receipt copy to equal that externally recomputed receipt. A local
 shape-only verification token SHALL NOT admit replicated validation.
+
+Before each child launch, the runner SHALL write a create-once sibling
+attempt-anchor outside the deletable evidence workspace and bind it to the
+workspace identity, sibling-root path/device/inode, all four phase-directory
+inodes, phase, immutable slot/bundle stem, and complete launch receipt. Resume
+SHALL restore a missing workspace launch from that anchor. If
+the corresponding result/checkpoint is missing, the attempt SHALL become a
+durable runner failure and SHALL NOT execute again. Missing, replaced,
+malformed, or off-plan anchors and directory-entry disappearance during locked
+enumeration SHALL fail closed. Attempt anchors SHALL remain internal
+crash/replay state and SHALL NOT be evidence artifacts or committed outputs.
 
 The runner SHALL name
 `trusted_frozen_host_crash_replay_and_workspace_tamper_detection_v1` as its

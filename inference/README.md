@@ -275,7 +275,9 @@ Under `src/fluencytracr_inference/`:
   all sampler/PPC/cross-engine gates, rederives each compiled bundle's source
   roots, preserves every child HOLD, and publishes only a hash-bound compact
   diagnostic summary plus a workspace-verifiable receipt. Cross-engine checks
-  cover both endpoints of the 80% and 99% intervals. Full generator or
+  cover both endpoints of the 80% and 99% intervals. Sampler MCSE separately
+  covers the posterior mean and both endpoint pairs, and ArviZ rows join only
+  after exact parameter labels and cardinalities match. Full generator or
   NUTS admission requires exact clean freeze `F`; direct pre-freeze execution
   fails closed. Child execution uses isolated Python and a deny-by-default
   in-memory loader only after every reviewed Git source byte matches the freeze
@@ -300,6 +302,11 @@ Under `src/fluencytracr_inference/`:
   regenerated recomputation slots in 40 ordered chunks, plus four ordered
   full-setting canaries. Every child launch uses a create-once receipt with an
   inherited frozen-source, one-time capability, and parent-liveness pipes.
+  The admitted receipt is first written to a private create-once sibling
+  attempt-anchor outside the deletable evidence workspace. Resume restores a
+  missing launch from that binding; if its result is also missing, the attempt
+  becomes a durable runner failure and never executes again. Anchor drift and
+  disappearing directory entries fail closed.
   Locked JSON I/O is descriptor-relative with root and admitted-subdirectory
   inode binding. Workspace path and
   inode identity, plan/freeze/concordance bytes, launch ordering, process

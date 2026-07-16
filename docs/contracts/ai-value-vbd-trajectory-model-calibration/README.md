@@ -766,7 +766,11 @@ compact diagnostic summary reports separate worst-case 80% and 99% endpoint
 differences. Missing, merged, or ambiguously labeled endpoint evidence HOLDS.
 Reference diagnostics require R-hat `<=1.01`, bulk/tail ESS `>=400`, zero
 divergences, zero treedepth saturation, BFMI `>=0.3`, MCSE/posterior-SD ratio
-`<=0.1`, and every PPC p-value within `[0.05,0.95]`. Any lane or hard failure
+`<=0.1` separately for the posterior mean, both 80% endpoints, and both 99%
+endpoints, and every PPC p-value within `[0.05,0.95]`. ArviZ diagnostic arrays
+must have identical parameter dimensions, coordinate labels, and cardinality
+before values are joined; positional truncation or an unlabeled join HOLDS.
+Any lane or hard failure
 blocks replication.
 
 Every lane uses the exact `vbd_trajectory_ppc_v1` manifest. For observed or
@@ -842,6 +846,17 @@ canonical external concordance receipt path, path hash, device, and inode. It
 reruns complete external concordance workspace verification on every load and
 requires its copied receipt to equal the independently recomputed external
 receipt; an internally minted shape-only token is never sufficient.
+
+Before a child starts, its create-once launch receipt is also written to a
+private sibling attempt-anchor rooted outside the deletable evidence workspace
+and bound by root path hash/device/inode, all four phase-directory inodes,
+workspace hash, phase, and slot/bundle stem. Resume restores a missing
+workspace launch from that anchor. A launch
+whose result/checkpoint is also missing becomes a durable runner failure and
+is never sampled or integrated again. Missing, replaced, malformed, or
+off-plan anchors fail closed; directory-entry disappearance during a locked
+scan is an error, never an empty-directory result. Attempt anchors are internal
+crash/replay state and are not evidence artifacts or committed outputs.
 
 The compiled runner threat model is
 `trusted_frozen_host_crash_replay_and_workspace_tamper_detection_v1`. It

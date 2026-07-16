@@ -208,6 +208,13 @@ Pre-freeze development smoke uses only the disjoint
 gate, and always HOLDS. It may expose mechanical defects only; it cannot change
 the frozen statistical contract or enter later evidence.
 
+Sampler MCSE is evaluated independently for the posterior mean and the 80%
+and 99% interval endpoint pairs. Diagnostic outputs are joined only after exact
+parameter-dimension, coordinate-label, and cardinality equality. The resumable
+runner writes each admitted launch to a private sibling attempt-anchor before
+execution; deletion of workspace launch/result suffixes can therefore restore
+the admitted launch and fail durably without re-executing a seed.
+
 The direct-aggregate generator is reproducible under
 `Generator(PCG64DXSM(seed))` with one frozen draw sequence and lower-Cholesky
 row-vector convention. NUTS PPC replicates draw a fresh conditional smoothed

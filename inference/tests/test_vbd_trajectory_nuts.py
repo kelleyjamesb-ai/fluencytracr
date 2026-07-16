@@ -11,6 +11,7 @@ from fluencytracr_inference.vbd_trajectory_nuts import (
     TrajectorySamplerDiagnostics,
     TrajectorySamplerParameterDiagnostic,
     _build_reference_model,
+    _compute_sampler_diagnostics,
     _compute_posterior_predictive_checks,
     _conditional_state_distribution,
     _expected_parameter_names,
@@ -238,7 +239,8 @@ def _boundary_sampler_diagnostics(panel_group_count=6):
             bulk_ess=400.0,
             tail_ess=400.0,
             posterior_mean_mcse=0.1,
-            interval_endpoint_mcse=0.1,
+            interval_80_endpoint_mcse=0.1,
+            interval_99_endpoint_mcse=0.1,
             posterior_sd=1.0,
         )
         for name in required_names
@@ -269,6 +271,8 @@ def test_sampler_diagnostic_boundaries_are_inclusive_and_fail_closed():
         replace(first, bulk_ess=np.nextafter(400.0, -math.inf)),
         replace(first, tail_ess=np.nextafter(400.0, -math.inf)),
         replace(first, posterior_mean_mcse=np.nextafter(0.1, math.inf)),
+        replace(first, interval_80_endpoint_mcse=np.nextafter(0.1, math.inf)),
+        replace(first, interval_99_endpoint_mcse=np.nextafter(0.1, math.inf)),
     )
     for mutation in mutations:
         altered = replace(
@@ -314,6 +318,68 @@ def test_malformed_sample_stats_fail_shape_and_type_validation():
         binary=False,
         threshold=10,
     ) == (-1, False)
+
+
+@pytest.mark.parametrize("mutation", ["labels", "cardinality"])
+def test_sampler_diagnostics_reject_misaligned_arviz_rows(
+    monkeypatch, prepared, mutation
+):
+    settings = vbd_nuts_execution_settings("smoke")
+    rng = np.random.default_rng(20260716)
+    scalar = lambda: rng.normal(size=(settings.chains, settings.draws))
+    idata = az.from_dict(
+        {
+            "posterior": {
+                "alpha": scalar(),
+                "beta": scalar(),
+                "sigma_u": np.abs(scalar()) + 0.1,
+                "u": rng.normal(
+                    size=(settings.chains, settings.draws, 6)
+                ),
+                "sigma_r": np.abs(scalar()) + 0.1,
+                "rho": np.tanh(scalar()),
+                "trajectory_movement": scalar(),
+            },
+            "sample_stats": {
+                "diverging": np.zeros(
+                    (settings.chains, settings.draws), dtype=int
+                ),
+                "tree_depth": np.ones(
+                    (settings.chains, settings.draws), dtype=int
+                ),
+            },
+        }
+    )
+    original_mcse = nuts.az.mcse
+
+    def misaligned_mcse(*args, **kwargs):
+        result = original_mcse(*args, **kwargs)
+        if (
+            kwargs.get("method") == "quantile"
+            and kwargs.get("prob") == nuts.VBD_TRAJECTORY_INTERVAL_99[1]
+        ):
+            result = result.to_dataset()
+            if mutation == "labels":
+                result = result.assign_coords(u_dim_0=[1, 0, 2, 3, 4, 5])
+            else:
+                result = result.isel(u_dim_0=slice(0, 5))
+        return result
+
+    monkeypatch.setattr(nuts.az, "mcse", misaligned_mcse)
+    monkeypatch.setattr(nuts, "_bfmi_values", lambda _idata: np.ones(2))
+
+    diagnostics = _compute_sampler_diagnostics(
+        idata,
+        prepared=prepared,
+        settings=settings,
+    )
+
+    assert diagnostics.trace_shape_matches is False
+    assert "parameter_diagnostics" in diagnostics.failing_diagnostics
+    assert all(
+        not parameter.parameter_name.startswith("u[")
+        for parameter in diagnostics.parameters
+    )
 
 
 def test_ppc_gate_boundaries_are_inclusive():

@@ -26,6 +26,7 @@ from .vbd_trajectory_state_space import _stationary_ar1_covariance
 from .vbd_trajectory_statistics import (
     TrajectoryPosteriorSummary,
     VBD_TRAJECTORY_INTERVAL_80,
+    VBD_TRAJECTORY_INTERVAL_99,
     summarize_weighted_support,
     weighted_quantile_v1,
 )
@@ -263,7 +264,8 @@ class TrajectorySamplerParameterDiagnostic:
     bulk_ess: float
     tail_ess: float
     posterior_mean_mcse: float
-    interval_endpoint_mcse: float
+    interval_80_endpoint_mcse: float
+    interval_99_endpoint_mcse: float
     posterior_sd: float
 
     def __post_init__(self) -> None:
@@ -274,7 +276,8 @@ class TrajectorySamplerParameterDiagnostic:
             self.bulk_ess,
             self.tail_ess,
             self.posterior_mean_mcse,
-            self.interval_endpoint_mcse,
+            self.interval_80_endpoint_mcse,
+            self.interval_99_endpoint_mcse,
             self.posterior_sd,
         ):
             if isinstance(value, (bool, np.bool_)) or not isinstance(
@@ -286,7 +289,11 @@ class TrajectorySamplerParameterDiagnostic:
     def max_mcse_ratio(self) -> float:
         if not math.isfinite(self.posterior_sd) or self.posterior_sd <= 0.0:
             return math.inf
-        return max(self.posterior_mean_mcse, self.interval_endpoint_mcse) / self.posterior_sd
+        return max(
+            self.posterior_mean_mcse,
+            self.interval_80_endpoint_mcse,
+            self.interval_99_endpoint_mcse,
+        ) / self.posterior_sd
 
     def to_dict(self) -> dict:
         return {
@@ -295,7 +302,8 @@ class TrajectorySamplerParameterDiagnostic:
             "bulk_ess": float(self.bulk_ess),
             "tail_ess": float(self.tail_ess),
             "posterior_mean_mcse": float(self.posterior_mean_mcse),
-            "interval_endpoint_mcse": float(self.interval_endpoint_mcse),
+            "interval_80_endpoint_mcse": float(self.interval_80_endpoint_mcse),
+            "interval_99_endpoint_mcse": float(self.interval_99_endpoint_mcse),
             "posterior_sd": float(self.posterior_sd),
             "max_mcse_to_posterior_sd_ratio": float(self.max_mcse_ratio),
         }
@@ -394,8 +402,10 @@ class TrajectorySamplerDiagnostics:
         if any(
             not math.isfinite(parameter.posterior_mean_mcse)
             or parameter.posterior_mean_mcse < 0.0
-            or not math.isfinite(parameter.interval_endpoint_mcse)
-            or parameter.interval_endpoint_mcse < 0.0
+            or not math.isfinite(parameter.interval_80_endpoint_mcse)
+            or parameter.interval_80_endpoint_mcse < 0.0
+            or not math.isfinite(parameter.interval_99_endpoint_mcse)
+            or parameter.interval_99_endpoint_mcse < 0.0
             or not math.isfinite(parameter.max_mcse_ratio)
             or parameter.max_mcse_ratio > VBD_TRAJECTORY_NUTS_MCSE_RATIO_MAX
             for parameter in self.parameters
@@ -752,21 +762,75 @@ def _build_reference_model(prepared: TrajectoryPreparedInput) -> pm.Model:
     return model
 
 
-def _tree_values(tree, variable_name: str) -> np.ndarray:
+def _tree_variable(tree, variable_name: str):
     node = tree
     if hasattr(tree, "children") and "posterior" in getattr(tree, "children", {}):
         node = tree["posterior"]
-    return np.asarray(node[variable_name], dtype=float)
+    return node[variable_name]
 
 
-def _flatten_named(variable_name: str, values: np.ndarray) -> list[tuple[str, float]]:
-    flat = np.asarray(values, dtype=float).reshape(-1)
-    if flat.size == 1:
-        return [(variable_name, float(flat[0]))]
-    return [
-        (f"{variable_name}[{index}]", float(value))
-        for index, value in enumerate(flat)
-    ]
+def _parameter_labels_and_coordinates(variable_name: str, posterior_variable):
+    parameter_dimensions = tuple(
+        str(dimension) for dimension in posterior_variable.dims[2:]
+    )
+    parameter_shape = tuple(np.asarray(posterior_variable).shape[2:])
+    if variable_name == "u":
+        if (
+            parameter_dimensions != ("u_dim_0",)
+            or len(parameter_shape) != 1
+        ):
+            raise TrajectoryNutsError("group-effect posterior coordinates are invalid")
+        coordinate = np.asarray(
+            posterior_variable.coords[parameter_dimensions[0]]
+        )
+        expected_coordinate = np.arange(parameter_shape[0])
+        if (
+            coordinate.dtype.kind not in "iu"
+            or coordinate.shape != expected_coordinate.shape
+            or not np.array_equal(coordinate, expected_coordinate)
+        ):
+            raise TrajectoryNutsError("group-effect posterior labels are noncanonical")
+        labels = tuple(f"u[{index}]" for index in expected_coordinate)
+        coordinates = (coordinate.copy(),)
+    else:
+        if parameter_dimensions or parameter_shape:
+            raise TrajectoryNutsError("scalar posterior parameter has extra coordinates")
+        labels = (variable_name,)
+        coordinates = ()
+    return parameter_dimensions, parameter_shape, coordinates, labels
+
+
+def _labeled_diagnostic_rows(
+    tree,
+    variable_name: str,
+    *,
+    parameter_dimensions: tuple[str, ...],
+    parameter_shape: tuple[int, ...],
+    parameter_coordinates: tuple[np.ndarray, ...],
+    parameter_labels: tuple[str, ...],
+) -> tuple[tuple[str, float], ...]:
+    variable = _tree_variable(tree, variable_name)
+    if (
+        tuple(str(dimension) for dimension in variable.dims)
+        != parameter_dimensions
+        or tuple(np.asarray(variable).shape) != parameter_shape
+    ):
+        raise TrajectoryNutsError(
+            "sampler diagnostic cardinality differs from its posterior parameter"
+        )
+    for index, dimension in enumerate(parameter_dimensions):
+        coordinate = np.asarray(variable.coords[dimension])
+        if (
+            coordinate.shape != parameter_coordinates[index].shape
+            or not np.array_equal(coordinate, parameter_coordinates[index])
+        ):
+            raise TrajectoryNutsError(
+                "sampler diagnostic labels differ from its posterior parameter"
+            )
+    values = np.asarray(variable, dtype=float).reshape(-1)
+    if len(values) != len(parameter_labels):
+        raise TrajectoryNutsError("sampler diagnostic row count is ambiguous")
+    return tuple(zip(parameter_labels, (float(value) for value in values), strict=True))
 
 
 def _bfmi_values(idata) -> np.ndarray:
@@ -901,44 +965,88 @@ def _compute_sampler_diagnostics(
             method="quantile",
             prob=VBD_TRAJECTORY_INTERVAL_80[1],
         )
+        mcse_q005 = az.mcse(
+            idata,
+            var_names=list(present_variables),
+            method="quantile",
+            prob=VBD_TRAJECTORY_INTERVAL_99[0],
+        )
+        mcse_q995 = az.mcse(
+            idata,
+            var_names=list(present_variables),
+            method="quantile",
+            prob=VBD_TRAJECTORY_INTERVAL_99[1],
+        )
         for variable_name in present_variables:
-            draws = np.asarray(posterior[variable_name], dtype=float)
-            flattened_draws = draws.reshape(
-                draws.shape[0] * draws.shape[1], -1
-            )
-            posterior_sd = flattened_draws.std(axis=0, ddof=1)
-            rows = {
-                "rhat": _flatten_named(
-                    variable_name, _tree_values(rhat, variable_name)
-                ),
-                "bulk": _flatten_named(
-                    variable_name, _tree_values(ess_bulk, variable_name)
-                ),
-                "tail": _flatten_named(
-                    variable_name, _tree_values(ess_tail, variable_name)
-                ),
-                "mean": _flatten_named(
-                    variable_name, _tree_values(mcse_mean, variable_name)
-                ),
-                "q10": _flatten_named(
-                    variable_name, _tree_values(mcse_q10, variable_name)
-                ),
-                "q90": _flatten_named(
-                    variable_name, _tree_values(mcse_q90, variable_name)
-                ),
-            }
-            row_count = min(len(values) for values in rows.values())
-            row_count = min(row_count, len(posterior_sd))
-            for index in range(row_count):
+            posterior_variable = posterior[variable_name]
+            try:
+                (
+                    parameter_dimensions,
+                    parameter_shape,
+                    parameter_coordinates,
+                    parameter_labels,
+                ) = _parameter_labels_and_coordinates(
+                    variable_name, posterior_variable
+                )
+                rows = {
+                    key: _labeled_diagnostic_rows(
+                        tree,
+                        variable_name,
+                        parameter_dimensions=parameter_dimensions,
+                        parameter_shape=parameter_shape,
+                        parameter_coordinates=parameter_coordinates,
+                        parameter_labels=parameter_labels,
+                    )
+                    for key, tree in (
+                        ("rhat", rhat),
+                        ("bulk", ess_bulk),
+                        ("tail", ess_tail),
+                        ("mean", mcse_mean),
+                        ("q10", mcse_q10),
+                        ("q90", mcse_q90),
+                        ("q005", mcse_q005),
+                        ("q995", mcse_q995),
+                    )
+                }
+                if any(
+                    tuple(label for label, _value in values) != parameter_labels
+                    for values in rows.values()
+                ):
+                    raise TrajectoryNutsError(
+                        "sampler diagnostic labels do not match exactly"
+                    )
+                draws = np.asarray(posterior_variable, dtype=float)
+                flattened_draws = draws.reshape(
+                    draws.shape[0] * draws.shape[1], -1
+                )
+                posterior_sd = flattened_draws.std(axis=0, ddof=1)
+                if len(posterior_sd) != len(parameter_labels):
+                    raise TrajectoryNutsError(
+                        "posterior standard-deviation cardinality is ambiguous"
+                    )
+            except (
+                AttributeError,
+                IndexError,
+                KeyError,
+                TypeError,
+                ValueError,
+                TrajectoryNutsError,
+            ):
+                trace_shape_matches = False
+                continue
+            for index, parameter_name in enumerate(parameter_labels):
                 parameters.append(
                     TrajectorySamplerParameterDiagnostic(
-                        parameter_name=rows["rhat"][index][0],
+                        parameter_name=parameter_name,
                         r_hat=rows["rhat"][index][1],
                         bulk_ess=rows["bulk"][index][1],
                         tail_ess=rows["tail"][index][1],
                         posterior_mean_mcse=rows["mean"][index][1],
-                        interval_endpoint_mcse=max(
+                        interval_80_endpoint_mcse=max(
                             rows["q10"][index][1], rows["q90"][index][1]
+                        ),
+                        interval_99_endpoint_mcse=max(
+                            rows["q005"][index][1], rows["q995"][index][1]
                         ),
                         posterior_sd=float(posterior_sd[index]),
                     )
