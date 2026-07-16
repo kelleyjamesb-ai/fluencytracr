@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
+from itertools import product
 import math
 
 import numpy as np
@@ -46,6 +47,8 @@ from .vbd_trajectory_types import (
     VBD_TRAJECTORY_VALIDATION_PLAN_REF,
     VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE,
     aggregate_output_hash_body,
+    canonicalize_vbd_trajectory_numeric,
+    canonicalize_vbd_trajectory_uncertainty,
     expected_bundle_source_content_root,
     expected_gate_receipt_hash,
     expected_joint_uncertainty_root,
@@ -569,7 +572,7 @@ def _inverse_lane(lane_index: int, transformed: float) -> float:
         result = math.expm1(transformed)
         if not math.isfinite(result) or result < 0.0:
             raise VbdSyntheticRunnerError("frequency inverse transform left its domain")
-        return result
+        return canonicalize_vbd_trajectory_numeric(result)
     denominator = (
         VBD_TRAJECTORY_ELIGIBLE_DAY_COUNT
         if lane_index == 1
@@ -577,17 +580,23 @@ def _inverse_lane(lane_index: int, transformed: float) -> float:
     )
     if not math.isfinite(transformed) or not 0.0 < transformed < math.pi / 2.0:
         raise VbdSyntheticRunnerError("proportion inverse transform left its regular domain")
-    return float(denominator * math.sin(transformed) ** 2)
+    return canonicalize_vbd_trajectory_numeric(
+        float(denominator * math.sin(transformed) ** 2)
+    )
+
+
+def _canonical_transformed_p50(lane_index: int, prepared_value: float) -> float:
+    return canonicalize_vbd_trajectory_numeric(
+        float(_LANE_OFFSETS[lane_index] + _LANE_SCALES[lane_index] * prepared_value)
+    )
 
 
 def _distribution(lane_index: int, prepared_value: float) -> PrimitiveDistribution:
+    transformed_p50 = _canonical_transformed_p50(lane_index, prepared_value)
     values = {
         name: _inverse_lane(
             lane_index,
-            float(
-                _LANE_OFFSETS[lane_index]
-                + _LANE_SCALES[lane_index] * (prepared_value + delta)
-            ),
+            float(transformed_p50 + _LANE_SCALES[lane_index] * delta),
         )
         for name, delta in _QUANTILE_DELTAS.items()
     }
@@ -619,9 +628,7 @@ def _primitive_observation(
         "source:vbd-synthetic-engagement",
         "source:vbd-synthetic-breadth",
     )
-    transformed_p50 = float(
-        _LANE_OFFSETS[lane_index] + _LANE_SCALES[lane_index] * prepared_value
-    )
+    transformed_p50 = _canonical_transformed_p50(lane_index, prepared_value)
     placeholder = PrimitiveTrajectoryObservation(
         lane=lane,
         event_schema_version=VBD_TRAJECTORY_EVENT_SCHEMA_VERSION,
@@ -632,7 +639,9 @@ def _primitive_observation(
         distribution=_distribution(lane_index, prepared_value),
         denominator=denominator,
         transformed_p50=transformed_p50,
-        transformed_standard_error=float(raw_transformed_se),
+        transformed_standard_error=canonicalize_vbd_trajectory_numeric(
+            raw_transformed_se
+        ),
         definition_ref=_lane_definition_ref(lane_index),
         definition_hash=_lane_definition_hash(lane_index),
         denominator_definition_ref=_denominator_definition_ref(lane_index),
@@ -754,12 +763,14 @@ def _build_bundle(
     active_set_commitment = sha256_json(
         {"cohort_ref": cohort_ref, "active_set": "fixed-across-windows", "aggregate_k": aggregate_k}
     )
-    raw_standard_errors = np.sqrt(np.diag(raw_transformed_covariance))
+    canonical_covariance, raw_standard_errors = (
+        canonicalize_vbd_trajectory_uncertainty(raw_transformed_covariance)
+    )
     observations = tuple(
         _primitive_observation(
             lane_index=lane_index,
             prepared_value=float(prepared_values[lane_index]),
-            raw_transformed_se=float(raw_standard_errors[lane_index]),
+            raw_transformed_se=raw_standard_errors[lane_index],
             source_hash="0" * 64,
             direction_vector=direction_vector,
             direction_vector_root=direction_vector_root,
@@ -790,10 +801,7 @@ def _build_bundle(
         direction_vector=direction_vector,
         direction_vector_root=direction_vector_root,
         covariance_lane_order=VBD_TRAJECTORY_COVARIANCE_LANE_ORDER,
-        transformed_covariance=tuple(
-            tuple(float(value) for value in row)
-            for row in raw_transformed_covariance
-        ),
+        transformed_covariance=canonical_covariance,
         uncertainty_derivation_id=VBD_TRAJECTORY_SYNTHETIC_DERIVATION,
         quantile_algorithm_id=VBD_TRAJECTORY_QUANTILE_ALGORITHM,
         runtime_ref=VBD_TRAJECTORY_RUNTIME_REF,
@@ -811,6 +819,49 @@ def _build_bundle(
         live_data_source_present=False,
     )
     return _rebind_bundle_hashes(placeholder)
+
+
+def _validate_canonical_generated_evidence(
+    panel: TrajectoryObservationPanel,
+    expected_prepared: np.ndarray,
+    raw_transformed_covariance: np.ndarray,
+    *,
+    identity: str,
+) -> None:
+    expected_covariance, expected_standard_errors = (
+        canonicalize_vbd_trajectory_uncertainty(
+            raw_transformed_covariance
+        )
+    )
+    for bundle in panel.bundles:
+        if bundle.transformed_covariance != expected_covariance:
+            raise TrajectoryStructureError(
+                f"panel covariance does not regenerate from the declared {identity}"
+            )
+        for lane_index, observation in enumerate(bundle.observations):
+            prepared_value = float(
+                expected_prepared[
+                    bundle.panel_group_index,
+                    bundle.window_index,
+                    lane_index,
+                ]
+            )
+            if (
+                observation.transformed_p50
+                != _canonical_transformed_p50(lane_index, prepared_value)
+                or observation.distribution
+                != _distribution(lane_index, prepared_value)
+            ):
+                raise TrajectoryStructureError(
+                    f"panel observations do not regenerate from the declared {identity}"
+                )
+            if (
+                observation.transformed_standard_error
+                != expected_standard_errors[lane_index]
+            ):
+                raise TrajectoryStructureError(
+                    f"panel uncertainty does not regenerate from the declared {identity}"
+                )
 
 
 def _generate_base_paths(
@@ -986,58 +1037,33 @@ def _validate_vbd_trajectory_synthetic_generation_legacy(
             axis=(0, 1)
         )
     )
-    actual_prepared = np.empty_like(base_prepared)
-    for bundle in panel.bundles:
-        for lane_index, observation in enumerate(bundle.observations):
-            actual_prepared[
-                bundle.panel_group_index, bundle.window_index, lane_index
-            ] = (
-                observation.transformed_p50 - _LANE_OFFSETS[lane_index]
-            ) / _LANE_SCALES[lane_index]
-    delta = actual_prepared - base_prepared
-    if not np.allclose(
-        delta[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :],
-        0.0,
-        rtol=0.0,
-        atol=1e-12,
-    ):
-        raise TrajectoryStructureError(
-            "panel observations do not regenerate from the declared seed"
-        )
-    truth: list[float] = []
-    shifts: list[float] = []
-    for lane_index in range(3):
-        post_delta = delta[:, VBD_TRAJECTORY_PRE_WINDOW_COUNT:, lane_index]
-        shift = float(post_delta.flat[0])
-        if not np.allclose(post_delta, shift, rtol=0.0, atol=1e-12):
-            raise TrajectoryStructureError(
-                "panel post movement is not a constant synthetic shift"
-            )
-        realized_truth = float(base_terminal[lane_index] + shift)
-        matched = next(
-            (
-                candidate
-                for candidate in (0.0, 0.2, 0.5)
-                if np.allclose(
-                    realized_truth, candidate, rtol=0.0, atol=1e-12
+    truth = next(
+        (
+            candidate
+            for candidate in product((0.0, 0.2, 0.5), repeat=3)
+            if panel.study_plan_root
+            == sha256_json(
+                _development_smoke_plan_body(
+                    scenario_id=panel.scenario_id,
+                    panel_group_count=panel.panel_group_count,
+                    aggregate_k=panel.aggregate_k,
+                    terminal_truth=candidate,
+                    direction_vector=panel.direction_vector,
+                    group_correlation=panel.dgp_group_correlation,
+                    innovation_correlation=panel.dgp_innovation_correlation,
+                    observation_correlation=panel.dgp_observation_correlation,
                 )
-            ),
-            None,
-        )
-        if matched is None:
-            raise TrajectoryStructureError(
-                "panel post movement is not a compiled constant synthetic effect"
             )
-        truth.append(matched)
-        shifts.append(shift)
-    expected_observed = base_prepared.copy()
-    expected_observed[:, VBD_TRAJECTORY_PRE_WINDOW_COUNT:, :] += np.asarray(
-        shifts, dtype=float
+        ),
+        None,
     )
-    if not np.allclose(
-        actual_prepared, expected_observed, rtol=0.0, atol=1e-12
-    ):
-        raise TrajectoryStructureError("panel seeded observation regeneration drifted")
+    if truth is None:
+        raise TrajectoryStructureError(
+            "study plan root does not match regenerated synthetic inputs"
+        )
+    shifts = np.asarray(truth, dtype=float) - base_terminal
+    expected_observed = base_prepared.copy()
+    expected_observed[:, VBD_TRAJECTORY_PRE_WINDOW_COUNT:, :] += shifts
     expected_raw_covariance = (
         np.diag(_LANE_SCALES)
         @ (
@@ -1047,32 +1073,12 @@ def _validate_vbd_trajectory_synthetic_generation_legacy(
         )
         @ np.diag(_LANE_SCALES)
     )
-    for bundle in panel.bundles:
-        if not np.allclose(
-            np.asarray(bundle.transformed_covariance, dtype=float),
-            expected_raw_covariance,
-            rtol=0.0,
-            atol=1e-15,
-        ):
-            raise TrajectoryStructureError(
-                "panel covariance does not regenerate from the declared seed"
-            )
-    expected_plan_root = sha256_json(
-        _development_smoke_plan_body(
-            scenario_id=panel.scenario_id,
-            panel_group_count=panel.panel_group_count,
-            aggregate_k=panel.aggregate_k,
-            terminal_truth=tuple(truth),
-            direction_vector=panel.direction_vector,
-            group_correlation=panel.dgp_group_correlation,
-            innovation_correlation=panel.dgp_innovation_correlation,
-            observation_correlation=panel.dgp_observation_correlation,
-        )
+    _validate_canonical_generated_evidence(
+        panel,
+        expected_observed,
+        expected_raw_covariance,
+        identity="seed",
     )
-    if panel.study_plan_root != expected_plan_root:
-        raise TrajectoryStructureError(
-            "study plan root does not match regenerated synthetic inputs"
-        )
 
 
 def _generate_vbd_trajectory_smoke_case_legacy(
@@ -1898,18 +1904,6 @@ def _validate_general_generated_panel(
     )[None, :, :]
     if spec.zero_pre_period_variance:
         expected[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :] = 0.0
-    actual = np.empty_like(expected)
-    for bundle in panel.bundles:
-        for lane_index, observation in enumerate(bundle.observations):
-            actual[
-                bundle.panel_group_index, bundle.window_index, lane_index
-            ] = (
-                observation.transformed_p50 - _LANE_OFFSETS[lane_index]
-            ) / _LANE_SCALES[lane_index]
-    if not np.allclose(actual, expected, rtol=0.0, atol=1e-12):
-        raise TrajectoryStructureError(
-            "panel observations do not regenerate from the declared scenario"
-        )
     true_prepared_covariance = (
         np.diag(1.0 / pre_sd)
         @ working_covariance
@@ -1921,16 +1915,12 @@ def _validate_general_generated_panel(
         @ np.diag(_LANE_SCALES)
         * spec.reported_covariance_ratio
     )
-    for bundle in panel.bundles:
-        if not np.allclose(
-            np.asarray(bundle.transformed_covariance, dtype=float),
-            expected_raw_covariance,
-            rtol=0.0,
-            atol=1e-15,
-        ):
-            raise TrajectoryStructureError(
-                "panel covariance does not regenerate from the declared scenario"
-            )
+    _validate_canonical_generated_evidence(
+        panel,
+        expected,
+        expected_raw_covariance,
+        identity="scenario",
+    )
     if panel.study_plan_root != spec.plan_hash:
         raise TrajectoryStructureError(
             "study plan root does not match regenerated scenario inputs"

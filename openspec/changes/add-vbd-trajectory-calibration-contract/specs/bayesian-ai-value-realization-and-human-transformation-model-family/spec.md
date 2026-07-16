@@ -65,11 +65,39 @@ SHALL NOT leave the source boundary. The current canonical endpoint without
 this uncertainty package SHALL remain insufficient, and this proposal SHALL
 NOT authorize real-source use.
 
-No caller tolerance SHALL be accepted. For
-`s=max(1,max(abs(covariance)))`, symmetry and diagonal/SE-square error SHALL
-each be `<=1e-12*s`, and pinned-runtime `eigvalsh` minimum SHALL be
-`>=-1e-10*s`, all before symmetrization or repair. These SHALL be compiled
-internal numerical tolerances only.
+No caller tolerance SHALL be accepted. Raw generated covariance SHALL be
+validated before canonicalization and the canonical covariance/SE package SHALL
+be revalidated. Raw covariance SHALL be an exact native 3x3 NumPy binary64
+array; coercible alternate dtypes or array subclasses SHALL reject before
+conversion. For
+`s=max(max(abs(covariance)),max(abs(se^2)))`, `s` SHALL be finite and positive,
+symmetry and diagonal/SE-square error divided by `s` SHALL each be `<=1e-12`,
+and pinned-runtime `eigvalsh(covariance/s)` minimum SHALL be `>=-1e-10`, all
+before symmetrization or repair. These SHALL be compiled
+internal numerical tolerances only. Each canonical SE SHALL additionally equal
+the exact canonicalization of the square root of its matching canonical
+covariance diagonal.
+
+Every hash-bound synthetic or source-bootstrap-oracle distribution percentile,
+transformed p50, transformed marginal standard error, and covariance element
+SHALL use the compiled
+`python_binary64_format_13_significant_digits_v1` boundary before evidence
+hashing and preparation: Python binary64 general formatting with `.13g`, parsed
+back to binary64, with negative zero normalized to `0.0`. Generation and
+regeneration SHALL apply the identical operation, and noncanonical evidence
+SHALL reject even after coordinated rehashing. The canonical transformed p50
+and standard error SHALL be the admitted model inputs; preparation and model
+calculation SHALL apply no further canonicalization. Prepared, fit, diagnostic,
+and result hashes SHALL remain bound to the exact platform/native runtime and
+SHALL NOT claim cross-platform numeric identity. Canonical evidence hashes SHALL
+commit canonical values rather than raw floating intermediates; raw provenance
+SHALL remain separately bound by source-private or synthetic implementation/
+seed/runtime identities. The precision SHALL NOT be configurable or interpreted
+as a product threshold, caller tolerance, or authorization to repair invalid
+evidence.
+Canonical evidence numerics SHALL retain native float representation; integer,
+Boolean, float-subclass, and negative-zero alternatives SHALL reject even when
+value equality and dependent hashes would otherwise reconcile.
 
 Source-local active-member slots SHALL use non-emitted HMAC-SHA256 digest order
 under a source-held window secret. A private

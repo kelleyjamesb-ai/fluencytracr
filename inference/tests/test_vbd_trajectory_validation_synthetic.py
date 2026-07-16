@@ -16,6 +16,7 @@ from fluencytracr_inference.vbd_trajectory_synthetic import (
 )
 from fluencytracr_inference.vbd_trajectory_types import (
     VBD_TRAJECTORY_LANES,
+    VBD_TRAJECTORY_NUMERIC_SIGNIFICANT_DIGITS,
     VBD_TRAJECTORY_SMOKE_SEED_MAX,
     VBD_TRAJECTORY_SMOKE_SEED_MIN,
     validate_trajectory_panel,
@@ -33,10 +34,10 @@ def _terminal_truth(case):
     )
 
 
-def test_original_smoke_interface_and_hash_remain_unchanged():
+def test_original_smoke_interface_has_portable_canonical_hash():
     case = generate_vbd_trajectory_smoke_case()
     assert case.panel.ordered_panel_manifest_root == (
-        "16225b6431b12ae9b33be902c19989c6fb47cdd2df29bb6b6c9eea10e38318a5"
+        "fa5b815c8d50e8c6f617b57b0de6ca91111775e1611b6012d530cbb7455164ca"
     )
     validate_trajectory_panel(case.panel)
 
@@ -121,7 +122,13 @@ def test_understated_uncertainty_reports_half_se_and_quarter_covariance():
         case.truth.true_raw_transformed_covariance, dtype=float
     )
     reported = np.asarray(case.panel.bundles[0].transformed_covariance, dtype=float)
-    assert np.allclose(reported, 0.25 * true_covariance, rtol=0.0, atol=1e-15)
+    canonical_rtol = 5.0 * 10.0 ** -(VBD_TRAJECTORY_NUMERIC_SIGNIFICANT_DIGITS - 1)
+    assert np.allclose(
+        reported,
+        0.25 * true_covariance,
+        rtol=canonical_rtol,
+        atol=np.finfo(float).tiny,
+    )
     reported_se = np.asarray(
         [
             observation.transformed_standard_error
@@ -131,8 +138,8 @@ def test_understated_uncertainty_reports_half_se_and_quarter_covariance():
     assert np.allclose(
         reported_se,
         0.5 * np.sqrt(np.diag(true_covariance)),
-        rtol=0.0,
-        atol=1e-15,
+        rtol=canonical_rtol,
+        atol=np.finfo(float).tiny,
     )
 
 

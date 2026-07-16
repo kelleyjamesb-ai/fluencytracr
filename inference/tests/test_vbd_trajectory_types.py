@@ -21,14 +21,20 @@ from fluencytracr_inference.vbd_trajectory_types import (
     VBD_TRAJECTORY_MISSING_DEPTH_CONTEXT_ROOT,
     VBD_TRAJECTORY_BOOTSTRAP_DERIVATION,
     VBD_TRAJECTORY_EVENT_SCHEMA_VERSION,
+    VBD_TRAJECTORY_NUMERIC_CANONICALIZATION_ID,
+    VBD_TRAJECTORY_NUMERIC_SIGNIFICANT_DIGITS,
     VBD_TRAJECTORY_RUNTIME_REF,
     VBD_TRAJECTORY_STATISTICS,
     TrajectoryReferenceManifest,
+    canonicalize_vbd_trajectory_numeric,
+    canonicalize_vbd_trajectory_uncertainty,
     expected_ordered_panel_manifest_root,
     reference_manifest_hash,
     trajectory_panel_depth_context_available,
     validate_trajectory_bundle,
+    validate_trajectory_covariance,
     validate_trajectory_panel,
+    vbd_trajectory_model_manifest_body,
 )
 
 
@@ -51,7 +57,7 @@ def test_smoke_panel_is_complete_deterministic_and_hash_bound(smoke_case):
 
     assert len(panel.bundles) == 6 * 18
     assert panel.ordered_panel_manifest_root == (
-        "16225b6431b12ae9b33be902c19989c6fb47cdd2df29bb6b6c9eea10e38318a5"
+        "fa5b815c8d50e8c6f617b57b0de6ca91111775e1611b6012d530cbb7455164ca"
     )
     assert tuple(lane for lane, _ in panel.lane_observation_roots) == VBD_TRAJECTORY_LANES
     assert generate_vbd_trajectory_smoke_case().panel == panel
@@ -60,6 +66,228 @@ def test_smoke_panel_is_complete_deterministic_and_hash_bound(smoke_case):
         .panel.ordered_panel_manifest_root
         != panel.ordered_panel_manifest_root
     )
+
+
+def test_evidence_numeric_canonicalization_is_declared_and_model_internal_only(
+    smoke_case,
+):
+    manifest = vbd_trajectory_model_manifest_body()
+    canonicalization = manifest["evidence_numeric_canonicalization"]
+    assert canonicalization == {
+        "algorithm_id": VBD_TRAJECTORY_NUMERIC_CANONICALIZATION_ID,
+        "significant_decimal_digits": VBD_TRAJECTORY_NUMERIC_SIGNIFICANT_DIGITS,
+        "rendering": "python_general_format",
+        "negative_zero": "normalized_to_positive_zero",
+        "admitted_representation": "exact_native_python_float",
+        "rejected_equal_value_representations": [
+            "boolean",
+            "integer",
+            "float_subclass",
+            "negative_zero",
+        ],
+        "scope": "aggregate_evidence_values_only",
+        "applies_before_evidence_hashing_and_preparation": True,
+        "canonical_values_are_model_inputs": True,
+        "post_admission_model_rounding": False,
+        "canonical_hashes_exclude_raw_float_intermediates": True,
+    }
+    assert canonicalize_vbd_trajectory_numeric(1.2345678901234) == 1.234567890123
+    assert canonicalize_vbd_trajectory_numeric(1.2345678901236) == 1.234567890124
+    assert canonicalize_vbd_trajectory_numeric(4.9e-20) == 4.9e-20
+    assert math.copysign(1.0, canonicalize_vbd_trajectory_numeric(-0.0)) == 1.0
+
+    evidence_values = []
+    for bundle in smoke_case.panel.bundles:
+        evidence_values.extend(value for row in bundle.transformed_covariance for value in row)
+        for observation in bundle.observations:
+            evidence_values.extend(observation.distribution.values())
+            evidence_values.extend(
+                (observation.transformed_p50, observation.transformed_standard_error)
+            )
+    assert all(canonicalize_vbd_trajectory_numeric(value) == value for value in evidence_values)
+    assert any(
+        canonicalize_vbd_trajectory_numeric(float(value)) != value
+        for value in smoke_case.truth.transformed_latent_paths.flat
+    )
+
+
+def test_noncanonical_evidence_rejects_even_after_bundle_rehash(smoke_case):
+    bundle = smoke_case.panel.bundles[0]
+    observation = bundle.observations[0]
+    noncanonical_observation = replace(
+        observation,
+        transformed_p50=observation.transformed_p50 + 1e-13,
+    )
+    forged = _replace_observation(bundle, 0, noncanonical_observation)
+    with pytest.raises(TrajectoryStructureError, match="canonical evidence precision"):
+        validate_trajectory_bundle(forged, smoke_case.panel.reference_manifest)
+
+
+@pytest.mark.parametrize(
+    ("field", "noncanonical_value", "message"),
+    (
+        ("distribution", 0, "canonical float representation"),
+        ("distribution", -0.0, "normalize negative zero"),
+        ("standard_error", 1, "canonical float representation"),
+        ("standard_error", -0.0, "normalize negative zero"),
+    ),
+)
+def test_noncanonical_observation_representation_rejects_after_rehash(
+    smoke_case, field, noncanonical_value, message
+):
+    bundle = smoke_case.panel.bundles[0]
+    observation = bundle.observations[0]
+    if field == "distribution":
+        forged_observation = replace(
+            observation,
+            distribution=replace(
+                observation.distribution,
+                p10=noncanonical_value,
+            ),
+        )
+    else:
+        forged_observation = replace(
+            observation,
+            transformed_standard_error=noncanonical_value,
+        )
+    forged = _replace_observation(bundle, 0, forged_observation)
+
+    with pytest.raises(TrajectoryStructureError, match=message):
+        validate_trajectory_bundle(forged, smoke_case.panel.reference_manifest)
+
+
+@pytest.mark.parametrize("noncanonical_zero", [-0.0, 0])
+def test_noncanonical_covariance_representation_rejects_after_rehash(
+    smoke_case, noncanonical_zero
+):
+    bundle = smoke_case.panel.bundles[0]
+    covariance = [list(row) for row in bundle.transformed_covariance]
+    covariance[0][1] = noncanonical_zero
+    covariance[1][0] = noncanonical_zero
+    forged = _rebind_bundle_hashes(
+        replace(
+            bundle,
+            transformed_covariance=tuple(tuple(row) for row in covariance),
+        )
+    )
+
+    with pytest.raises(
+        TrajectoryCovarianceError,
+        match="canonical float representation|normalize negative zero",
+    ) as error:
+        validate_trajectory_bundle(forged, smoke_case.panel.reference_manifest)
+    assert error.value.stage == "required_covariance_presence"
+
+
+@pytest.mark.parametrize(
+    ("noncanonical_standard_error", "message"),
+    (
+        (1, "canonical float representation"),
+        (-0.0, "normalize negative zero"),
+    ),
+)
+def test_noncanonical_covariance_standard_error_representation_rejects(
+    noncanonical_standard_error, message
+):
+    covariance = (
+        (1.0, 0.0, 0.0),
+        (0.0, 1.0, 0.0),
+        (0.0, 0.0, 1.0),
+    )
+
+    with pytest.raises(TrajectoryCovarianceError, match=message) as error:
+        validate_trajectory_covariance(
+            covariance,
+            (noncanonical_standard_error, 1.0, 1.0),
+        )
+    assert error.value.stage == "covariance_diagonal_consistency"
+
+
+def test_covariance_standard_errors_reject_stateful_iterable():
+    class StatefulStandardErrors:
+        def __iter__(self):
+            yield from (1.0, 1.0, 1.0)
+
+        def __len__(self):
+            return 3
+
+    covariance = (
+        (1.0, 0.0, 0.0),
+        (0.0, 1.0, 0.0),
+        (0.0, 0.0, 1.0),
+    )
+
+    with pytest.raises(TrajectoryCovarianceError) as error:
+        validate_trajectory_covariance(covariance, StatefulStandardErrors())
+    assert error.value.stage == "covariance_diagonal_consistency"
+
+
+@pytest.mark.parametrize(
+    "raw_covariance",
+    (
+        np.eye(3, dtype=bool),
+        np.eye(3, dtype=int),
+        np.eye(3, dtype=np.float32),
+        np.eye(3, dtype=complex) * (1.0 + 1.0j),
+        np.eye(3, dtype=object),
+        np.eye(3, dtype=">f8"),
+    ),
+)
+def test_raw_covariance_rejects_coercible_non_native_binary64_arrays(
+    raw_covariance,
+):
+    with pytest.raises(TrajectoryCovarianceError, match="native binary64") as error:
+        canonicalize_vbd_trajectory_uncertainty(raw_covariance)
+    assert error.value.stage == "required_covariance_presence"
+
+
+def test_canonical_hash_scope_has_an_explicit_bounded_equivalence_class():
+    center = 0.12345678901234
+
+    assert canonicalize_vbd_trajectory_numeric(center) == (
+        canonicalize_vbd_trajectory_numeric(center + 1e-15)
+    )
+    assert canonicalize_vbd_trajectory_numeric(center) != (
+        canonicalize_vbd_trajectory_numeric(center + 1e-12)
+    )
+
+
+def test_significant_digit_boundary_preserves_tiny_positive_uncertainty():
+    raw = np.diag(np.asarray([1e-20, 2e-20, 3e-20], dtype=float))
+    covariance, standard_errors = canonicalize_vbd_trajectory_uncertainty(raw)
+
+    assert all(value > 0.0 for value in standard_errors)
+    validate_trajectory_covariance(covariance, standard_errors)
+
+
+def test_scale_relative_psd_gate_rejects_small_absolute_negative_eigenvalue():
+    covariance = (
+        (1e-8, 1.0001e-8, 0.0),
+        (1.0001e-8, 1e-8, 0.0),
+        (0.0, 0.0, 1e-8),
+    )
+    standard_errors = (0.0001, 0.0001, 0.0001)
+
+    with pytest.raises(TrajectoryCovarianceError) as error:
+        validate_trajectory_covariance(covariance, standard_errors)
+    assert error.value.stage == "covariance_positive_semidefinite"
+
+
+def test_scale_relative_psd_gate_rejects_subnormal_negative_eigenvalue():
+    tiny = float(np.nextafter(0.0, 1.0))
+    covariance = (
+        (tiny, 2.0 * tiny, 0.0),
+        (2.0 * tiny, tiny, 0.0),
+        (0.0, 0.0, tiny),
+    )
+    standard_error = canonicalize_vbd_trajectory_numeric(math.sqrt(tiny))
+
+    with pytest.raises(TrajectoryCovarianceError) as error:
+        validate_trajectory_covariance(
+            covariance,
+            (standard_error, standard_error, standard_error),
+        )
+    assert error.value.stage == "covariance_positive_semidefinite"
 
 
 def test_truth_sidecar_and_unsafe_material_never_enter_panel(smoke_case):
@@ -266,7 +494,9 @@ def test_coordinated_rehash_rejects_denominator_and_quantile_formula_drift(
     frequency = bundle.observations[0]
     drifted_distribution = replace(
         frequency.distribution,
-        p90=frequency.distribution.p90 + 1e-4,
+        p90=canonicalize_vbd_trajectory_numeric(
+            frequency.distribution.p90 + 1e-4
+        ),
     )
     wrong_quantile = _replace_observation(
         bundle, 0, replace(frequency, distribution=drifted_distribution)
@@ -410,7 +640,11 @@ def test_covariance_controls_fail_at_compiled_stages(smoke_case):
         replace(
             bundle,
             transformed_covariance=tuple(
-                tuple(float(value) for value in row) for row in bad_covariance
+                tuple(
+                    canonicalize_vbd_trajectory_numeric(float(value))
+                    for value in row
+                )
+                for row in bad_covariance
             ),
         )
     )
@@ -675,7 +909,9 @@ def test_mutable_containers_and_scalar_subclasses_reject(smoke_case):
         bundle.observations[0].distribution,
         p50=HostileFloat(bundle.observations[0].distribution.p50),
     )
-    with pytest.raises(TrajectoryStructureError, match="must be numeric"):
+    with pytest.raises(
+        TrajectoryStructureError, match="canonical float representation"
+    ):
         validate_trajectory_bundle(
             _replace_observation(
                 bundle,

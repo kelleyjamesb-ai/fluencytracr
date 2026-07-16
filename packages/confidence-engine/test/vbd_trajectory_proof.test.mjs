@@ -278,6 +278,12 @@ test("engine, prior, quadrature, and diagnostic claims are immutable", { skip: v
       artifact.input_manifest.model_manifest.diagnostic_gates.r_hat_max = 1.1;
     },
     (artifact) => {
+      artifact.input_manifest.model_manifest.evidence_numeric_canonicalization.significant_decimal_digits = 10;
+    },
+    (artifact) => {
+      artifact.input_manifest.model_manifest.evidence_numeric_canonicalization.post_admission_model_rounding = true;
+    },
+    (artifact) => {
       artifact.lane_records[0].deterministic_fit.integration_diagnostics.random_numbers_used = true;
     }
   ];

@@ -11,11 +11,14 @@ import numpy as np
 from .hashing import sha256_json
 from .vbd_trajectory_types import (
     VBD_TRAJECTORY_LANES,
+    canonicalize_vbd_trajectory_uncertainty,
     validate_vbd_trajectory_runtime,
+    vbd_trajectory_numeric_canonicalization_body,
 )
 
 
 VBD_BOOTSTRAP_FIXTURE_ID = "vbd_source_bootstrap_conformance_v1"
+VBD_BOOTSTRAP_ORACLE_VERSION = "vbd_source_bootstrap_conformance_oracle_v2"
 VBD_BOOTSTRAP_RESAMPLE_COUNT = 2_000
 VBD_BOOTSTRAP_COHORT_SIZE = 16
 VBD_BOOTSTRAP_PRIVATE_ROOT = (
@@ -23,19 +26,19 @@ VBD_BOOTSTRAP_PRIVATE_ROOT = (
 )
 VBD_BOOTSTRAP_SEED = 3_765_976_209_925_714
 VBD_BOOTSTRAP_ORACLE_HASH = (
-    "ad5e4e5f79d94ee9faaf6a94029372b0348c1c187503edf063a0bb03f98130c4"
+    "f32b94e2a15df01d6aa257995c2201dfef788fcd25a48ea64241a2fb78f14a5e"
 )
 VBD_BOOTSTRAP_EXPECTED_TYPE7_P50 = (8.5, 15.0, 3.5)
 VBD_BOOTSTRAP_EXPECTED_NEAREST_P50 = (9.0, 16.0, 4.0)
 VBD_BOOTSTRAP_EXPECTED_COVARIANCE = (
-    (0.04044726358395627, 0.01440591242854434, 0.018974533403407882),
-    (0.01440591242854434, 0.0051578092626584655, 0.006849798111473459),
-    (0.018974533403407882, 0.006849798111473459, 0.009585006951479746),
+    (0.04044726358396, 0.01440591242854, 0.01897453340341),
+    (0.01440591242854, 0.005157809262658, 0.006849798111473),
+    (0.01897453340341, 0.006849798111473, 0.00958500695148),
 )
 VBD_BOOTSTRAP_EXPECTED_STANDARD_ERRORS = (
-    0.20111505061520452,
-    0.07181788957257422,
-    0.09790304873434609,
+    0.2011150506152,
+    0.07181788957257,
+    0.09790304873435,
 )
 
 _ENGAGEMENT_ACTIVE_DAYS = (1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30)
@@ -61,6 +64,10 @@ class BootstrapConformanceResult:
     def to_dict(self) -> dict:
         return {
             "fixture_id": self.fixture_id,
+            "oracle_version": VBD_BOOTSTRAP_ORACLE_VERSION,
+            "numeric_canonicalization": (
+                vbd_trajectory_numeric_canonicalization_body()
+            ),
             "type7_p50": list(self.type7_p50),
             "nearest_index_p50": list(self.nearest_index_p50),
             "transformed_covariance": [
@@ -162,10 +169,6 @@ def _transform_bootstrap_medians(medians: np.ndarray) -> np.ndarray:
     )
 
 
-def _tuple_matrix(value: np.ndarray) -> tuple[tuple[float, float, float], ...]:
-    return tuple(tuple(float(item) for item in row) for row in value)
-
-
 def run_bootstrap_conformance() -> BootstrapConformanceResult:
     validate_vbd_trajectory_runtime()
     private_body = bootstrap_fixture_private_body()
@@ -196,10 +199,12 @@ def run_bootstrap_conformance() -> BootstrapConformanceResult:
     medians = np.quantile(resamples, 0.5, axis=1, method="linear")
     transformed = _transform_bootstrap_medians(medians)
     covariance_array = np.cov(transformed, rowvar=False, ddof=1)
-    standard_errors_array = np.sqrt(np.diag(covariance_array))
-    covariance = _tuple_matrix(covariance_array)
-    standard_errors = tuple(float(value) for value in standard_errors_array)
+    covariance, standard_errors = canonicalize_vbd_trajectory_uncertainty(
+        covariance_array
+    )
     oracle_body = {
+        "oracle_version": VBD_BOOTSTRAP_ORACLE_VERSION,
+        "numeric_canonicalization": vbd_trajectory_numeric_canonicalization_body(),
         "prebootstrap_bundle_content_root": private_root,
         "bootstrap_seed": seed,
         "type7_p50": list(type7_p50),

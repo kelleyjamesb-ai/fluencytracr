@@ -43,6 +43,7 @@ from .vbd_trajectory_types import (
     VBD_TRAJECTORY_LANES,
     VBD_TRAJECTORY_TOTAL_WINDOW_COUNT,
     _assert_no_forbidden_keys,
+    canonicalize_vbd_trajectory_numeric,
     expected_ordered_panel_manifest_root,
     validate_trajectory_lane_window_manifest,
     validate_trajectory_panel,
@@ -758,7 +759,9 @@ def _covariance_panel(
                 )
             )
         if control_id == "covariance_diagonal_mismatch":
-            standard_error = 1.1 * math.sqrt(bundle.transformed_covariance[0][0])
+            standard_error = canonicalize_vbd_trajectory_numeric(
+                1.1 * math.sqrt(bundle.transformed_covariance[0][0])
+            )
             return _replace_observation(
                 bundle, "frequency", transformed_standard_error=standard_error
             )
@@ -769,9 +772,11 @@ def _covariance_panel(
             )
             covariance = tuple(
                 tuple(
-                    standard_errors[row]
-                    * _BAD_NON_PSD_CORRELATION[row][column]
-                    * standard_errors[column]
+                    canonicalize_vbd_trajectory_numeric(
+                        standard_errors[row]
+                        * _BAD_NON_PSD_CORRELATION[row][column]
+                        * standard_errors[column]
+                    )
                     for column in range(3)
                 )
                 for row in range(3)

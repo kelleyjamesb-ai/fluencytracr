@@ -46,6 +46,10 @@ VBD_TRAJECTORY_RUNTIME_REF = (
 )
 VBD_TRAJECTORY_NUMPY_VERSION = "2.4.6"
 VBD_TRAJECTORY_SCIPY_VERSION = "1.18.0"
+VBD_TRAJECTORY_NUMERIC_CANONICALIZATION_ID = (
+    "python_binary64_format_13_significant_digits_v1"
+)
+VBD_TRAJECTORY_NUMERIC_SIGNIFICANT_DIGITS = 13
 VBD_TRAJECTORY_GENERATOR_ID = "vbd_trajectory_direct_aggregate_dgp_v1"
 VBD_TRAJECTORY_RNG_ID = "numpy.random.PCG64DXSM"
 VBD_TRAJECTORY_SMOKE_SEED_MIN = 2_055_900_000
@@ -269,6 +273,54 @@ def _finite(value: object, name: str, *, positive: bool = False) -> float:
     return result
 
 
+def canonicalize_vbd_trajectory_numeric(
+    value: object,
+    *,
+    name: str = "VBD trajectory evidence numeric",
+) -> float:
+    """Canonicalize a finite evidence-bound float without rounding model internals."""
+
+    numeric = _finite(value, name)
+    canonical = float(
+        format(numeric, f".{VBD_TRAJECTORY_NUMERIC_SIGNIFICANT_DIGITS}g")
+    )
+    return 0.0 if canonical == 0.0 else canonical
+
+
+def _canonical_evidence_float(value: object, name: str) -> float:
+    if type(value) is not float:
+        raise TrajectoryStructureError(f"{name} must use canonical float representation")
+    numeric = _finite(value, name)
+    if numeric == 0.0 and math.copysign(1.0, numeric) < 0.0:
+        raise TrajectoryStructureError(f"{name} must normalize negative zero")
+    if numeric != canonicalize_vbd_trajectory_numeric(numeric):
+        raise TrajectoryStructureError(
+            f"{name} exceeds the canonical evidence precision"
+        )
+    return numeric
+
+
+def vbd_trajectory_numeric_canonicalization_body() -> dict:
+    return {
+        "algorithm_id": VBD_TRAJECTORY_NUMERIC_CANONICALIZATION_ID,
+        "significant_decimal_digits": VBD_TRAJECTORY_NUMERIC_SIGNIFICANT_DIGITS,
+        "rendering": "python_general_format",
+        "negative_zero": "normalized_to_positive_zero",
+        "admitted_representation": "exact_native_python_float",
+        "rejected_equal_value_representations": [
+            "boolean",
+            "integer",
+            "float_subclass",
+            "negative_zero",
+        ],
+        "scope": "aggregate_evidence_values_only",
+        "applies_before_evidence_hashing_and_preparation": True,
+        "canonical_values_are_model_inputs": True,
+        "post_admission_model_rounding": False,
+        "canonical_hashes_exclude_raw_float_intermediates": True,
+    }
+
+
 def _strict_bool(value: object, name: str) -> bool:
     if type(value) is not bool:
         raise TrajectoryStructureError(f"{name} must be a boolean")
@@ -372,6 +424,9 @@ def vbd_trajectory_model_manifest_body() -> dict:
             "interval_80_probabilities": [0.10, 0.90],
             "interval_99_probabilities": [0.005, 0.995],
         },
+        "evidence_numeric_canonicalization": (
+            vbd_trajectory_numeric_canonicalization_body()
+        ),
         "posterior_predictive_check": {
             "manifest_id": "vbd_trajectory_ppc_v1",
             "rng": "numpy.random.PCG64DXSM",
@@ -1209,38 +1264,81 @@ def expected_bundle_source_content_root(bundle: TrajectoryObservationBundle) -> 
     )
 
 
-def validate_trajectory_covariance(
-    covariance: object,
+def _validate_covariance_matrix(
+    matrix: np.ndarray,
     lane_standard_errors: tuple[float, float, float],
+    *,
+    require_exact_canonical_standard_errors: bool,
 ) -> np.ndarray:
-    if type(covariance) is not tuple or len(covariance) != 3:
-        raise TrajectoryCovarianceError("required_covariance_presence", "covariance must be a 3x3 tuple")
-    if any(type(row) is not tuple or len(row) != 3 for row in covariance):
-        raise TrajectoryCovarianceError("required_covariance_presence", "covariance must be a 3x3 tuple")
-    try:
-        matrix = np.asarray(
-            [[_finite(value, "covariance value") for value in row] for row in covariance],
-            dtype=float,
+    if type(lane_standard_errors) is not tuple or len(lane_standard_errors) != 3:
+        raise TrajectoryCovarianceError(
+            "covariance_diagonal_consistency",
+            "lane standard errors must be an exact three-float tuple",
         )
-    except TrajectoryStructureError as exc:
-        raise TrajectoryCovarianceError("required_covariance_presence", str(exc)) from exc
-    scale = max(1.0, float(np.max(np.abs(matrix))))
-    if float(np.max(np.abs(matrix - matrix.T))) > 1e-12 * scale:
-        raise TrajectoryCovarianceError("covariance_symmetry", "covariance is not symmetric")
-    expected_diagonal = np.square(
-        np.asarray(
-            [_finite(value, "lane standard error", positive=True) for value in lane_standard_errors]
+    if any(type(value) is not float for value in lane_standard_errors):
+        raise TrajectoryCovarianceError(
+            "covariance_diagonal_consistency",
+            "lane standard error must use canonical float representation",
         )
+    if require_exact_canonical_standard_errors:
+        try:
+            for value in lane_standard_errors:
+                _canonical_evidence_float(value, "lane standard error")
+        except TrajectoryStructureError as exc:
+            raise TrajectoryCovarianceError(
+                "covariance_diagonal_consistency", str(exc)
+            ) from exc
+    standard_errors = np.asarray(
+        [
+            _finite(value, "lane standard error", positive=True)
+            for value in lane_standard_errors
+        ],
+        dtype=float,
     )
-    if float(np.max(np.abs(np.diag(matrix) - expected_diagonal))) > 1e-12 * scale:
+    expected_diagonal = np.square(standard_errors)
+    scale = max(
+        float(np.max(np.abs(matrix))),
+        float(np.max(np.abs(expected_diagonal))),
+    )
+    if not math.isfinite(scale) or scale <= 0.0:
+        raise TrajectoryCovarianceError(
+            "covariance_diagonal_consistency",
+            "covariance scale must be finite and positive",
+        )
+    if float(np.max(np.abs(matrix - matrix.T))) / scale > 1e-12:
+        raise TrajectoryCovarianceError("covariance_symmetry", "covariance is not symmetric")
+    if float(np.max(np.abs(np.diag(matrix) - expected_diagonal))) / scale > 1e-12:
         raise TrajectoryCovarianceError(
             "covariance_diagonal_consistency",
             "covariance diagonal does not match marginal standard errors",
         )
-    minimum_eigenvalue = float(np.linalg.eigvalsh(matrix).min())
-    if minimum_eigenvalue < -1e-10 * scale:
+    if require_exact_canonical_standard_errors:
+        diagonal = np.diag(matrix)
+        if np.any(diagonal <= 0.0) or tuple(standard_errors) != tuple(
+            canonicalize_vbd_trajectory_numeric(math.sqrt(float(value)))
+            for value in diagonal
+        ):
+            raise TrajectoryCovarianceError(
+                "covariance_diagonal_consistency",
+                "covariance diagonal does not exactly derive the canonical marginal standard errors",
+            )
+    minimum_scaled_eigenvalue = float(np.linalg.eigvalsh(matrix / scale).min())
+    if minimum_scaled_eigenvalue < -1e-10:
         raise TrajectoryCovarianceError("covariance_positive_semidefinite", "covariance is not positive semidefinite")
     return matrix
+
+
+def validate_trajectory_covariance(
+    covariance: object,
+    lane_standard_errors: tuple[float, float, float],
+) -> np.ndarray:
+    _validate_covariance_presence(covariance)
+    matrix = np.asarray(covariance, dtype=float)
+    return _validate_covariance_matrix(
+        matrix,
+        lane_standard_errors,
+        require_exact_canonical_standard_errors=True,
+    )
 
 
 def _validate_covariance_presence(covariance: object) -> None:
@@ -1255,11 +1353,56 @@ def _validate_covariance_presence(covariance: object) -> None:
     for row in covariance:
         for value in row:
             try:
-                _finite(value, "covariance value")
+                _canonical_evidence_float(value, "covariance value")
             except TrajectoryStructureError as exc:
                 raise TrajectoryCovarianceError(
                     "required_covariance_presence", str(exc)
                 ) from exc
+
+
+def canonicalize_vbd_trajectory_uncertainty(
+    covariance: np.ndarray,
+) -> tuple[
+    tuple[tuple[float, float, float], ...],
+    tuple[float, float, float],
+]:
+    """Validate raw uncertainty, then return its canonical evidence boundary."""
+
+    if type(covariance) is not np.ndarray or covariance.shape != (3, 3):
+        raise TrajectoryCovarianceError(
+            "required_covariance_presence", "raw covariance must be a 3x3 array"
+        )
+    if covariance.dtype != np.dtype(np.float64) or not covariance.dtype.isnative:
+        raise TrajectoryCovarianceError(
+            "required_covariance_presence",
+            "raw covariance must be an exact native binary64 array",
+        )
+    matrix = np.array(covariance, copy=True)
+    if not np.all(np.isfinite(matrix)) or np.any(np.diag(matrix) <= 0.0):
+        raise TrajectoryCovarianceError(
+            "required_covariance_presence", "raw covariance must be finite with a positive diagonal"
+        )
+    raw_standard_errors = tuple(
+        float(math.sqrt(float(value))) for value in np.diag(matrix)
+    )
+    _validate_covariance_matrix(
+        matrix,
+        raw_standard_errors,
+        require_exact_canonical_standard_errors=False,
+    )
+    canonical_covariance = tuple(
+        tuple(canonicalize_vbd_trajectory_numeric(float(value)) for value in row)
+        for row in matrix
+    )
+    canonical_standard_errors = tuple(
+        canonicalize_vbd_trajectory_numeric(math.sqrt(float(value)))
+        for value in np.diag(np.asarray(canonical_covariance, dtype=float))
+    )
+    validate_trajectory_covariance(
+        canonical_covariance,
+        canonical_standard_errors,
+    )
+    return canonical_covariance, canonical_standard_errors
 
 
 def _validate_distribution(
@@ -1267,6 +1410,14 @@ def _validate_distribution(
 ) -> None:
     if type(observation.distribution) is not PrimitiveDistribution:
         raise TrajectoryStructureError("primitive distribution has an unsupported type")
+    raw_values = (
+        observation.distribution.p10,
+        observation.distribution.p50,
+        observation.distribution.p90,
+        observation.distribution.p99,
+    )
+    for name, value in zip(VBD_TRAJECTORY_PERCENTILES, raw_values):
+        _canonical_evidence_float(value, f"{observation.lane} distribution.{name}")
     values = observation.distribution.values()
     denominator = observation.denominator
     expected_denominator = VBD_TRAJECTORY_DENOMINATORS.get(observation.lane)
@@ -1286,6 +1437,10 @@ def _validate_distribution(
     if tuple(sorted(values)) != values:
         raise TrajectoryStructureError(f"{observation.lane} distribution must be ordered")
     expected = transform_trajectory_value(observation.lane, values[1], denominator)
+    _canonical_evidence_float(
+        observation.transformed_p50,
+        f"{observation.lane} transformed p50",
+    )
     if not math.isclose(expected, observation.transformed_p50, rel_tol=1e-12, abs_tol=1e-12):
         raise TrajectoryStructureError(f"{observation.lane} transformed p50 drifted")
     scale = VBD_TRAJECTORY_RAW_SCALES[observation.lane]
@@ -1294,18 +1449,18 @@ def _validate_distribution(
             scale * VBD_TRAJECTORY_QUANTILE_DELTAS[quantile]
         )
         if observation.lane == "frequency":
-            expected_quantile = math.expm1(transformed_quantile)
+            expected_quantile = canonicalize_vbd_trajectory_numeric(
+                math.expm1(transformed_quantile)
+            )
         else:
             if not 0.0 < transformed_quantile < math.pi / 2.0:
                 raise TrajectoryStructureError(
                     f"{observation.lane} synthetic quantile left its regular domain"
                 )
-            expected_quantile = float(
-                expected_denominator * math.sin(transformed_quantile) ** 2
+            expected_quantile = canonicalize_vbd_trajectory_numeric(
+                float(expected_denominator * math.sin(transformed_quantile) ** 2)
             )
-        if not math.isclose(
-            actual, expected_quantile, rel_tol=1e-12, abs_tol=1e-12
-        ):
+        if actual != expected_quantile:
             raise TrajectoryStructureError(
                 f"{observation.lane} synthetic quantile formula drifted"
             )
@@ -1343,7 +1498,15 @@ def validate_primitive_observation(
     if observation.transform_id != VBD_TRAJECTORY_TRANSFORMS[observation.lane]:
         raise TrajectoryStructureError("observation transform drifted")
     _validate_distribution(observation)
-    _finite(observation.transformed_standard_error, "transformed standard error", positive=True)
+    _canonical_evidence_float(
+        observation.transformed_standard_error,
+        "transformed standard error",
+    )
+    _finite(
+        observation.transformed_standard_error,
+        "transformed standard error",
+        positive=True,
+    )
     _sha256(observation.definition_hash, "definition_hash")
     _sha256(observation.denominator_definition_hash, "denominator_definition_hash")
     _sha256(observation.source_hash, "source_hash")

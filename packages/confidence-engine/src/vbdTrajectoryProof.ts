@@ -78,6 +78,24 @@ const MODEL_MANIFEST = {
     interval_80_probabilities: [0.1, 0.9],
     interval_99_probabilities: [0.005, 0.995]
   },
+  evidence_numeric_canonicalization: {
+    algorithm_id: "python_binary64_format_13_significant_digits_v1",
+    significant_decimal_digits: 13,
+    rendering: "python_general_format",
+    negative_zero: "normalized_to_positive_zero",
+    admitted_representation: "exact_native_python_float",
+    rejected_equal_value_representations: [
+      "boolean",
+      "integer",
+      "float_subclass",
+      "negative_zero"
+    ],
+    scope: "aggregate_evidence_values_only",
+    applies_before_evidence_hashing_and_preparation: true,
+    canonical_values_are_model_inputs: true,
+    post_admission_model_rounding: false,
+    canonical_hashes_exclude_raw_float_intermediates: true
+  },
   posterior_predictive_check: {
     manifest_id: "vbd_trajectory_ppc_v1",
     rng: "numpy.random.PCG64DXSM",

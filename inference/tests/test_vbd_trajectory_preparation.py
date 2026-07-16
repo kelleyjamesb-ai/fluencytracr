@@ -41,6 +41,36 @@ def test_preparation_recovers_exact_pre_standardization_and_fixed_estimand(
     assert prepared.fixed_effect_names == ("alpha", "beta")
 
 
+@pytest.mark.parametrize("lane", VBD_TRAJECTORY_LANES)
+def test_preparation_uses_canonical_evidence_values_without_hidden_raw_inputs(
+    smoke_case, lane
+):
+    lane_index = VBD_TRAJECTORY_LANES.index(lane)
+    raw = np.asarray(
+        [
+            bundle.observations[lane_index].transformed_p50
+            for bundle in smoke_case.panel.bundles
+        ],
+        dtype=float,
+    )
+    raw_se = np.asarray(
+        [
+            bundle.observations[lane_index].transformed_standard_error
+            for bundle in smoke_case.panel.bundles
+        ],
+        dtype=float,
+    )
+    prepared = prepare_vbd_trajectory_lane(smoke_case.panel, lane)
+    pre = raw[prepared.post == 0]
+    expected_mean = float(pre.mean())
+    expected_sd = float(pre.std(ddof=1))
+
+    assert prepared.raw_pre_mean == expected_mean
+    assert prepared.raw_pre_sd == expected_sd
+    assert np.array_equal(prepared.y, (raw - expected_mean) / expected_sd)
+    assert np.array_equal(prepared.known_se, raw_se / expected_sd)
+
+
 def test_time_encoding_uses_unique_pre_indexes_not_repeated_rows(smoke_case):
     prepared = prepare_vbd_trajectory_lane(smoke_case.panel, "frequency")
     unique_pre = np.arange(12, dtype=float)

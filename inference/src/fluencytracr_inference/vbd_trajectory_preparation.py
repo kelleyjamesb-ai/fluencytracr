@@ -264,11 +264,11 @@ def prepare_vbd_trajectory_lane(
     joint_roots: list[str] = []
     for bundle in panel.bundles:
         observation = bundle.observations[lane_index]
-        transformed = transform_trajectory_value(
+        recomputed_transform = transform_trajectory_value(
             lane, observation.distribution.p50, observation.denominator
         )
         if not math.isclose(
-            transformed,
+            recomputed_transform,
             observation.transformed_p50,
             rel_tol=1e-12,
             abs_tol=1e-12,
@@ -276,7 +276,7 @@ def prepare_vbd_trajectory_lane(
             raise TrajectoryPreparationError(
                 "transform_reconciliation", "transformed p50 does not reconcile"
             )
-        values.append(transformed)
+        values.append(float(observation.transformed_p50))
         standard_errors.append(float(observation.transformed_standard_error))
         time_index.append(bundle.window_index)
         group_index.append(bundle.panel_group_index)

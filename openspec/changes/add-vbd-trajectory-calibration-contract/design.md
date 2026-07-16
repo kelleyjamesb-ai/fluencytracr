@@ -77,6 +77,16 @@ valid active-day/surface fixtures test bootstrap conformance without entering
 model inputs or evidence. The current endpoint and approximate/nearest-index
 adapter percentiles are not admitted by this proposal.
 
+Hash-bound synthetic and bootstrap-oracle evidence numerics use Python binary64
+general formatting at 13 significant decimal digits (`.13g`), parsed back to
+binary64 with negative-zero normalization. Producer and regeneration paths
+apply the same compiled operation and reject noncanonical evidence. The
+canonical transformed p50 and SE become the admitted preparation inputs; no
+additional rounding occurs in preparation or model calculations. Raw DGP
+intermediates remain bound separately by the private source root or by the
+synthetic seed/generator/runtime/implementation. Prepared and fit hashes remain
+exact-runtime bound rather than claiming cross-platform identity.
+
 The model must not consume clamped sub-index values, `velocity_index`, a
 source-supplied Velocity score, `overall_vbd_score`, `integration_score`, a VBD
 quadrant, or a weighted VBD composite. This also prevents Breadth from entering

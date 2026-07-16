@@ -8,6 +8,7 @@ from fluencytracr_inference.vbd_trajectory_bootstrap_conformance import (
     VBD_BOOTSTRAP_EXPECTED_STANDARD_ERRORS,
     VBD_BOOTSTRAP_EXPECTED_TYPE7_P50,
     VBD_BOOTSTRAP_ORACLE_HASH,
+    VBD_BOOTSTRAP_ORACLE_VERSION,
     VBD_BOOTSTRAP_PRIVATE_ROOT,
     bootstrap_fixture_private_body,
     nearest_index_quantile,
@@ -36,6 +37,17 @@ def test_bootstrap_conformance_matches_frozen_portable_oracle():
 def test_bootstrap_summary_emits_no_member_material():
     summary = run_bootstrap_conformance().to_dict()
 
+    assert summary["oracle_version"] == VBD_BOOTSTRAP_ORACLE_VERSION
+    assert summary["numeric_canonicalization"]["significant_decimal_digits"] == 13
+    assert summary["numeric_canonicalization"]["scope"] == (
+        "aggregate_evidence_values_only"
+    )
+    assert summary["numeric_canonicalization"]["admitted_representation"] == (
+        "exact_native_python_float"
+    )
+    assert summary["numeric_canonicalization"][
+        "rejected_equal_value_representations"
+    ] == ["boolean", "integer", "float_subclass", "negative_zero"]
     assert summary["fixture_rows_emitted"] is False
     assert summary["member_material_emitted"] is False
     assert summary["private_root_emitted"] is False
