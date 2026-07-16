@@ -35,7 +35,7 @@
 
 ## 3. Future Engine Concordance
 
-- [ ] 3.1 Verify the complete implementation and runner without acceptance-
+- [x] 3.1 Verify the complete implementation and runner without acceptance-
   plan execution, then create clean candidate source commit `S`.
 - [ ] 3.2 Obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO against
   exact commit `S`; then, before concordance or any acceptance canary, create

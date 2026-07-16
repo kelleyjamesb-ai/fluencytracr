@@ -22,6 +22,8 @@ from .vbd_trajectory_types import (
     TrajectoryReferenceManifest,
     TrajectoryStructureError,
     VBD_TRAJECTORY_BLOCKED_USES,
+    VBD_TRAJECTORY_CONCORDANCE_PLAN_REF,
+    VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE,
     VBD_TRAJECTORY_COVARIANCE_LANE_ORDER,
     VBD_TRAJECTORY_EVENT_SCHEMA_VERSION,
     VBD_TRAJECTORY_EVENTS,
@@ -93,6 +95,10 @@ _VALIDATION_CAPABILITY_HASH: ContextVar[str | None] = ContextVar(
     "vbd_trajectory_validation_capability_hash", default=None
 )
 _VALIDATION_GENERATION_RUNNER_TOKEN = object()
+_CONCORDANCE_CAPABILITY_HASH: ContextVar[str | None] = ContextVar(
+    "vbd_trajectory_concordance_capability_hash", default=None
+)
+_CONCORDANCE_GENERATION_RUNNER_TOKEN = object()
 _STANDARD_ERROR_RATIO = 1.0
 _COVARIANCE_RATIO = 1.0
 _UNDERSTATED_STANDARD_ERROR_RATIO = 0.5
@@ -1430,14 +1436,35 @@ def _generate_vbd_trajectory_case(
             or not spec.scenario_id.startswith(_DEVELOPMENT_SCENARIO_PREFIX)
         ):
             raise ValueError("development scenario generation is outside smoke")
-    elif (
-        spec.plan_ref != VBD_TRAJECTORY_VALIDATION_PLAN_REF
-        or spec.seed_namespace != VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE
-        or type(spec.acceptance_slot_key) is not str
-        or not spec.acceptance_slot_key
-        or spec.plan_hash != immutable_vbd_trajectory_validation_plan().plan_hash
-    ):
-        raise ValueError("validation generation identity is not compiled")
+    elif spec.plan_ref == VBD_TRAJECTORY_VALIDATION_PLAN_REF:
+        if (
+            spec.seed_namespace != VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE
+            or type(spec.acceptance_slot_key) is not str
+            or not spec.acceptance_slot_key
+            or spec.plan_hash != immutable_vbd_trajectory_validation_plan().plan_hash
+        ):
+            raise ValueError("validation generation identity is not compiled")
+    elif spec.plan_ref == VBD_TRAJECTORY_CONCORDANCE_PLAN_REF:
+        from .vbd_trajectory_concordance import (
+            required_vbd_trajectory_concordance_bundles,
+            vbd_trajectory_concordance_plan,
+        )
+
+        matches = tuple(
+            bundle
+            for bundle in required_vbd_trajectory_concordance_bundles()
+            if bundle.bundle_seed == seed
+        )
+        if (
+            spec.seed_namespace != VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE
+            or type(spec.acceptance_slot_key) is not str
+            or len(matches) != 1
+            or spec.acceptance_slot_key != matches[0].bundle_id
+            or spec.plan_hash != vbd_trajectory_concordance_plan()["plan_hash"]
+        ):
+            raise ValueError("concordance generation identity is not compiled")
+    else:
+        raise ValueError("synthetic generation plan identity is not compiled")
 
     group_effects, states, observation_errors, working_covariance = (
         _generate_base_paths(
@@ -1770,6 +1797,107 @@ def generate_vbd_trajectory_validation_case(
     return _generate_vbd_trajectory_case(_validation_generation_spec(slot))
 
 
+@contextmanager
+def _concordance_generation_context(
+    *,
+    capability_hash: str,
+    capability_token_hash: str,
+    launch_receipt_hash: str,
+    _runner_token: object,
+):
+    hashes = (capability_hash, capability_token_hash, launch_receipt_hash)
+    if (
+        _runner_token is not _CONCORDANCE_GENERATION_RUNNER_TOKEN
+        or any(
+            type(value) is not str
+            or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+            for value in hashes
+        )
+    ):
+        raise VbdSyntheticRunnerError(
+            "concordance generation capability is invalid"
+        )
+    context_token = _CONCORDANCE_CAPABILITY_HASH.set(
+        sha256_json(
+            {
+                "capability_hash": capability_hash,
+                "capability_token_hash": capability_token_hash,
+                "launch_receipt_hash": launch_receipt_hash,
+            }
+        )
+    )
+    try:
+        yield
+    finally:
+        _CONCORDANCE_CAPABILITY_HASH.reset(context_token)
+
+
+def generate_vbd_trajectory_concordance_case(bundle) -> VbdTrajectorySyntheticCase:
+    """Generate one exact concordance bundle only inside an admitted child."""
+
+    from .vbd_trajectory_concordance import (
+        VBD_TRAJECTORY_CONCORDANCE_AGGREGATE_K,
+        VbdTrajectoryConcordanceBundle,
+        required_vbd_trajectory_concordance_bundles,
+        vbd_trajectory_concordance_plan,
+    )
+
+    if _CONCORDANCE_CAPABILITY_HASH.get() is None:
+        raise VbdSyntheticRunnerError(
+            "concordance generation requires an admitted child capability"
+        )
+    if (
+        type(bundle) is not VbdTrajectoryConcordanceBundle
+        or bundle not in required_vbd_trajectory_concordance_bundles()
+    ):
+        raise VbdSyntheticRunnerError("concordance bundle is off plan")
+    from .vbd_trajectory_validation_resumable import (
+        VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH,
+        _repo_root,
+        _verify_current_freeze,
+        read_strict_json,
+    )
+
+    _verify_current_freeze(
+        read_strict_json(
+            _repo_root() / VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH
+        )
+    )
+    effect_token = str(bundle.effect_size_sd).replace(".", "p")
+    return _generate_vbd_trajectory_case(
+        _VbdTrajectoryGenerationSpec(
+            scenario_id=(
+                f"concordance_effect_{effect_token}_"
+                f"groups_{bundle.panel_group_count}_seed_{bundle.seed_index}"
+            ),
+            seed=bundle.bundle_seed,
+            panel_group_count=bundle.panel_group_count,
+            aggregate_k=VBD_TRAJECTORY_CONCORDANCE_AGGREGATE_K,
+            terminal_truth=(
+                bundle.effect_size_sd,
+                bundle.effect_size_sd,
+                bundle.effect_size_sd,
+            ),
+            direction_vector=(1, 1, 1),
+            post_pattern=VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
+            correlations=(
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+            ),
+            plan_ref=VBD_TRAJECTORY_CONCORDANCE_PLAN_REF,
+            plan_hash=vbd_trajectory_concordance_plan()["plan_hash"],
+            seed_namespace=VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE,
+            acceptance_slot_key=bundle.bundle_id,
+            depth_context_ref="depth-context:a",
+            shock_kind=None,
+            reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
+            reported_covariance_ratio=_COVARIANCE_RATIO,
+        )
+    )
+
+
 def _generate_vbd_trajectory_depth_validation_pair(
     slot: VbdTrajectoryValidationSlot,
 ) -> tuple[VbdTrajectorySyntheticCase, VbdTrajectorySyntheticCase]:
@@ -1810,6 +1938,53 @@ def _spec_for_panel(panel: TrajectoryObservationPanel) -> _VbdTrajectoryGenerati
             )
         return _validation_generation_spec(
             matches[0], require_fit_expected=False
+        )
+    if panel.seed_namespace == VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE:
+        from .vbd_trajectory_concordance import (
+            VBD_TRAJECTORY_CONCORDANCE_AGGREGATE_K,
+            required_vbd_trajectory_concordance_bundles,
+            vbd_trajectory_concordance_plan,
+        )
+
+        matches = tuple(
+            bundle
+            for bundle in required_vbd_trajectory_concordance_bundles()
+            if bundle.bundle_seed == panel.seed
+        )
+        if len(matches) != 1:
+            raise TrajectoryStructureError(
+                "concordance seed does not resolve one compiled bundle"
+            )
+        bundle = matches[0]
+        effect_token = str(bundle.effect_size_sd).replace(".", "p")
+        return _VbdTrajectoryGenerationSpec(
+            scenario_id=(
+                f"concordance_effect_{effect_token}_"
+                f"groups_{bundle.panel_group_count}_seed_{bundle.seed_index}"
+            ),
+            seed=bundle.bundle_seed,
+            panel_group_count=bundle.panel_group_count,
+            aggregate_k=VBD_TRAJECTORY_CONCORDANCE_AGGREGATE_K,
+            terminal_truth=(
+                bundle.effect_size_sd,
+                bundle.effect_size_sd,
+                bundle.effect_size_sd,
+            ),
+            direction_vector=(1, 1, 1),
+            post_pattern=VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
+            correlations=(
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+            ),
+            plan_ref=VBD_TRAJECTORY_CONCORDANCE_PLAN_REF,
+            plan_hash=vbd_trajectory_concordance_plan()["plan_hash"],
+            seed_namespace=VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE,
+            acceptance_slot_key=bundle.bundle_id,
+            depth_context_ref="depth-context:a",
+            shock_kind=None,
+            reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
+            reported_covariance_ratio=_COVARIANCE_RATIO,
         )
     if not panel.scenario_id.startswith(_DEVELOPMENT_SCENARIO_PREFIX):
         raise TrajectoryStructureError("synthetic scenario is outside compiled smoke")

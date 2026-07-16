@@ -56,8 +56,12 @@ VBD_TRAJECTORY_SMOKE_SEED_MIN = 2_055_900_000
 VBD_TRAJECTORY_SMOKE_SEED_MAX = 2_055_900_999
 VBD_TRAJECTORY_SMOKE_PLAN_REF = "plan:vbd-trajectory-development-smoke-v1"
 VBD_TRAJECTORY_VALIDATION_PLAN_REF = "plan:vbd-trajectory-validation-v1"
+VBD_TRAJECTORY_CONCORDANCE_PLAN_REF = (
+    "plan:ai-value-vbd-trajectory-concordance-2026-07-v1"
+)
 VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE = "development_smoke_nonacceptance"
 VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE = "validation_plan_acceptance"
+VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE = "concordance_plan_acceptance"
 VBD_TRAJECTORY_TRANSFORMS = {
     "frequency": "log1p_p50_v1",
     "engagement": "asin_sqrt_proportion_p50_v1",
@@ -998,11 +1002,14 @@ def _reference_spec_for_plan_ref(
 ) -> dict[str, tuple[str, str]]:
     if plan_ref == VBD_TRAJECTORY_SMOKE_PLAN_REF:
         return dict(VBD_TRAJECTORY_REFERENCE_SPEC)
-    if plan_ref != VBD_TRAJECTORY_VALIDATION_PLAN_REF:
+    if plan_ref not in (
+        VBD_TRAJECTORY_VALIDATION_PLAN_REF,
+        VBD_TRAJECTORY_CONCORDANCE_PLAN_REF,
+    ):
         raise TrajectoryStructureError("reference manifest study plan is off plan")
     return {
         (
-            VBD_TRAJECTORY_VALIDATION_PLAN_REF
+            plan_ref
             if ref_value == VBD_TRAJECTORY_SMOKE_PLAN_REF
             else ref_value
         ): semantics
@@ -1885,6 +1892,24 @@ def _validation_panel_scenario_id(slot) -> str:
     return f"{slot.family}_{slot.scenario_or_control_id}".replace("=", "_")
 
 
+def _concordance_bundle_and_plan_hash(seed: int):
+    from .vbd_trajectory_concordance import (
+        required_vbd_trajectory_concordance_bundles,
+        vbd_trajectory_concordance_plan,
+    )
+
+    matches = tuple(
+        bundle
+        for bundle in required_vbd_trajectory_concordance_bundles()
+        if bundle.bundle_seed == seed
+    )
+    if len(matches) != 1:
+        raise TrajectoryStructureError(
+            "concordance seed does not resolve one unique compiled bundle"
+        )
+    return matches[0], vbd_trajectory_concordance_plan()["plan_hash"]
+
+
 def validate_trajectory_lane_window_manifest(
     keys: tuple[tuple[int, str, int], ...], *, panel_group_count: int
 ) -> None:
@@ -2116,7 +2141,7 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
             )
         if not VBD_TRAJECTORY_SMOKE_SEED_MIN <= seed <= VBD_TRAJECTORY_SMOKE_SEED_MAX:
             raise TrajectoryStructureError("panel seed is outside the smoke namespace")
-    else:
+    elif plan_ref == VBD_TRAJECTORY_VALIDATION_PLAN_REF:
         if panel.seed_namespace != VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE:
             raise TrajectoryStructureError(
                 "seed namespace is not the compiled validation namespace"
@@ -2149,6 +2174,44 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
                 "validation panel metadata drifted from its seed-resolved slot"
             )
         acceptance_slot_key = slot.slot_id
+    else:
+        if panel.seed_namespace != VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE:
+            raise TrajectoryStructureError(
+                "seed namespace is not the compiled concordance namespace"
+            )
+        bundle, concordance_plan_hash = _concordance_bundle_and_plan_hash(seed)
+        if panel.study_plan_root != concordance_plan_hash:
+            raise TrajectoryStructureError(
+                "concordance panel does not bind the compiled concordance plan"
+            )
+        expected_scenario_id = (
+            "concordance_effect_"
+            f"{str(bundle.effect_size_sd).replace('.', 'p')}_"
+            f"groups_{bundle.panel_group_count}_seed_{bundle.seed_index}"
+        )
+        observed_bundle_semantics = (
+            panel.scenario_id,
+            panel.panel_group_count,
+            panel.aggregate_k,
+            panel.direction_vector,
+            (
+                panel.dgp_group_correlation,
+                panel.dgp_innovation_correlation,
+                panel.dgp_observation_correlation,
+            ),
+        )
+        expected_bundle_semantics = (
+            expected_scenario_id,
+            bundle.panel_group_count,
+            16,
+            (1, 1, 1),
+            (0.35, 0.35, 0.25),
+        )
+        if observed_bundle_semantics != expected_bundle_semantics:
+            raise TrajectoryStructureError(
+                "concordance panel metadata drifted from its seed-resolved bundle"
+            )
+        acceptance_slot_key = bundle.bundle_id
     expected_seed_root = sha256_json(
         {
             "seed_namespace": panel.seed_namespace,

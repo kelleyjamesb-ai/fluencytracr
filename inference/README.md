@@ -261,11 +261,22 @@ Under `src/fluencytracr_inference/`:
   explicit chain/PPC seed boundary, exact conditional movement draw, strict
   sampler diagnostics, and the five frozen conditional-smoothed-path PPCs.
   Development smoke is permanently nonaccepting. Full settings are compiled,
-  but direct execution remains blocked until the candidate source is committed,
-  independently reviewed, frozen, and admitted by canonical concordance
-  evidence. No posterior draws, latent paths, or PPC replicates leave the fit
-  function. Concordance, evidence execution, parent task `5.6`, real data, and
-  UI remain incomplete.
+  and every full call verifies the exact clean manifest-only freeze before seed
+  admission or sampling. No posterior draws, latent paths, or PPC replicates
+  leave the fit function. Concordance execution, replicated evidence, parent
+  task `5.6`, real data, and UI remain incomplete.
+- `vbd_trajectory_concordance.py`,
+  `vbd_trajectory_concordance_execution.py`,
+  `vbd_trajectory_concordance_resumable.py`, and
+  `vbd_trajectory_concordance_cli.py` implement the frozen 30-bundle
+  state-space/NUTS gate without executing it. The external create-once
+  workspace owns 30 primary processes and 90 separate deterministic
+  recomputation processes, independently reconstructs typed fit summaries and
+  all sampler/PPC/cross-engine gates, rederives each compiled bundle's source
+  roots, preserves every child HOLD, and publishes only a hash-bound compact
+  diagnostic summary plus a workspace-verifiable receipt. Full generator or
+  NUTS admission requires exact clean freeze `F`; direct pre-freeze execution
+  fails closed.
 - `vbd_trajectory_artifact.py` — runner-owned, summary-only three-lane
   development-smoke artifact. It binds prepared inputs, deterministic fit
   summaries, diagnostics, transform/source roots, model/runtime identity, and
@@ -298,9 +309,11 @@ Under `src/fluencytracr_inference/`:
   common-availability shock, a generated all-lane zero-variance panel through
   production preparation, and recomputation-shaped copied-checkpoint rejection
   at execution attestation. Canonical
-  concordance admission remains intentionally disabled until OpenSpec task 3;
-  no acceptance canary, concordance fit, or 2,000-slot evidence row was run in
-  the task-2.5 implementation slice.
+  concordance admission accepts only a receipt reverified from its complete
+  external workspace. No replacement acceptance seed, concordance fit,
+  acceptance canary, or 2,000-slot evidence row has run in this source slice;
+  exact candidate commit `S`, four independent GO reviews, and manifest-only
+  freeze child `F` remain mandatory before execution.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

@@ -79,6 +79,113 @@ class TrajectoryNutsError(RuntimeError):
     """The matched NUTS reference failed a compiled requirement."""
 
 
+_VBD_TRAJECTORY_CONCORDANCE_RUNNER_TOKEN = object()
+
+
+@dataclass(frozen=True)
+class TrajectoryNutsConcordanceBinding:
+    bundle_id: str
+    bundle_seed: int
+    cell_ordinal: int
+    seed_index: int
+    lane: str
+    lane_ordinal: int
+    plan_hash: str
+    chain_seeds: tuple[int, int, int, int]
+    ppc_seed: int
+    binding_hash: str
+
+    def body_without_hash(self) -> dict:
+        return {
+            "bundle_id": self.bundle_id,
+            "bundle_seed": self.bundle_seed,
+            "cell_ordinal": self.cell_ordinal,
+            "seed_index": self.seed_index,
+            "lane": self.lane,
+            "lane_ordinal": self.lane_ordinal,
+            "plan_hash": self.plan_hash,
+            "chain_seeds": list(self.chain_seeds),
+            "ppc_seed": self.ppc_seed,
+        }
+
+    def __post_init__(self) -> None:
+        expected_bundle_seed = 2_056_500_000 + 10 * self.cell_ordinal + self.seed_index
+        expected_chain_base = (
+            2_056_520_000
+            + 1_000 * self.cell_ordinal
+            + 100 * self.seed_index
+            + 10 * self.lane_ordinal
+        )
+        expected_ppc_seed = (
+            2_106_500_000
+            + 1_000 * self.cell_ordinal
+            + 100 * self.seed_index
+            + 10 * self.lane_ordinal
+        )
+        if (
+            type(self.bundle_id) is not str
+            or not self.bundle_id
+            or type(self.cell_ordinal) is not int
+            or not 0 <= self.cell_ordinal < 6
+            or type(self.seed_index) is not int
+            or not 0 <= self.seed_index < 5
+            or self.lane not in VBD_TRAJECTORY_LANES
+            or type(self.lane_ordinal) is not int
+            or not 0 <= self.lane_ordinal < len(VBD_TRAJECTORY_LANES)
+            or VBD_TRAJECTORY_LANES[self.lane_ordinal] != self.lane
+            or type(self.plan_hash) is not str
+            or len(self.plan_hash) != 64
+            or any(character not in "0123456789abcdef" for character in self.plan_hash)
+            or self.bundle_seed != expected_bundle_seed
+            or self.chain_seeds
+            != tuple(expected_chain_base + index for index in range(4))
+            or self.ppc_seed != expected_ppc_seed
+            or self.binding_hash != sha256_json(self.body_without_hash())
+        ):
+            raise TrajectoryNutsError("full NUTS concordance binding is invalid")
+
+
+def build_vbd_trajectory_nuts_concordance_binding(
+    *,
+    bundle_id: str,
+    bundle_seed: int,
+    cell_ordinal: int,
+    seed_index: int,
+    lane: str,
+    lane_ordinal: int,
+    plan_hash: str,
+) -> TrajectoryNutsConcordanceBinding:
+    chain_base = (
+        2_056_520_000
+        + 1_000 * cell_ordinal
+        + 100 * seed_index
+        + 10 * lane_ordinal
+    )
+    body = {
+        "bundle_id": bundle_id,
+        "bundle_seed": bundle_seed,
+        "cell_ordinal": cell_ordinal,
+        "seed_index": seed_index,
+        "lane": lane,
+        "lane_ordinal": lane_ordinal,
+        "plan_hash": plan_hash,
+        "chain_seeds": [chain_base + index for index in range(4)],
+        "ppc_seed": (
+            2_106_500_000
+            + 1_000 * cell_ordinal
+            + 100 * seed_index
+            + 10 * lane_ordinal
+        ),
+    }
+    return TrajectoryNutsConcordanceBinding(
+        **{
+            **body,
+            "chain_seeds": tuple(body["chain_seeds"]),
+            "binding_hash": sha256_json(body),
+        }
+    )
+
+
 @dataclass(frozen=True)
 class TrajectoryNutsSettings:
     mode: Literal["full", "smoke"]
@@ -406,6 +513,7 @@ class TrajectoryNutsFit:
     movement_summary: TrajectoryPosteriorSummary
     sampler_diagnostics: TrajectorySamplerDiagnostics
     posterior_predictive_checks: tuple[TrajectoryPpcResult, ...]
+    concordance_binding_hash: str | None = None
     engine_kind: str = VBD_TRAJECTORY_NUTS_REFERENCE_ENGINE
 
     def __post_init__(self) -> None:
@@ -432,8 +540,20 @@ class TrajectoryNutsFit:
         ):
             raise TrajectoryNutsError("NUTS fit structure is invalid")
         if self.settings.mode == "full":
+            if (
+                type(self.concordance_binding_hash) is not str
+                or len(self.concordance_binding_hash) != 64
+                or any(
+                    character not in "0123456789abcdef"
+                    for character in self.concordance_binding_hash
+                )
+            ):
+                raise TrajectoryNutsError(
+                    "full NUTS fits require the runner-owned concordance binding"
+                )
+        elif self.concordance_binding_hash is not None:
             raise TrajectoryNutsError(
-                "full NUTS fits require the future runner-owned slot binding"
+                "smoke NUTS fits cannot carry a concordance binding"
             )
         ppc_names = tuple(
             check.statistic_name for check in self.posterior_predictive_checks
@@ -446,12 +566,16 @@ class TrajectoryNutsFit:
             or ppc_names != VBD_TRAJECTORY_PPC_STATISTIC_NAMES
         ):
             raise TrajectoryNutsError("NUTS fit requires all five ordered PPCs")
+        ppc_failed = not all(
+            check.passed for check in self.posterior_predictive_checks
+        )
         if (
-            not all(check.passed for check in self.posterior_predictive_checks)
-            and "posterior_predictive_check"
-            not in self.sampler_diagnostics.failing_diagnostics
-        ):
-            raise TrajectoryNutsError("failed PPC is missing its diagnostic failure")
+            "posterior_predictive_check"
+            in self.sampler_diagnostics.failing_diagnostics
+        ) is not ppc_failed:
+            raise TrajectoryNutsError(
+                "PPC diagnostic failure differs from the predictive checks"
+            )
 
     def _hash_body(self) -> dict:
         return {
@@ -462,6 +586,7 @@ class TrajectoryNutsFit:
             "settings": self.settings.to_dict(),
             "chain_seeds": list(self.chain_seeds),
             "ppc_seed": self.ppc_seed,
+            "concordance_binding_hash": self.concordance_binding_hash,
             "movement_summary": self.movement_summary.to_dict(),
             "sampler_diagnostics": self.sampler_diagnostics.to_dict(),
             "posterior_predictive_checks": [
@@ -517,11 +642,19 @@ def _validate_reference_seeds(
     settings: TrajectoryNutsSettings,
     chain_seeds: object,
     ppc_seed: object,
+    *,
+    concordance_binding: TrajectoryNutsConcordanceBinding | None = None,
+    runner_token: object | None = None,
 ) -> tuple[tuple[int, ...], int]:
-    if settings.mode == "full":
-        raise ValueError(
-            "full NUTS seeds require the future runner-owned slot binding"
-        )
+    if settings.mode == "full" and (
+        runner_token is not _VBD_TRAJECTORY_CONCORDANCE_RUNNER_TOKEN
+        or type(concordance_binding) is not TrajectoryNutsConcordanceBinding
+    ):
+        raise ValueError("full NUTS seeds require the runner-owned slot binding")
+    if settings.mode == "smoke" and (
+        concordance_binding is not None or runner_token is not None
+    ):
+        raise ValueError("smoke NUTS cannot use the concordance runner binding")
     if type(chain_seeds) is not tuple or len(chain_seeds) != settings.chains:
         raise ValueError("NUTS requires one explicit seed per chain")
     validated_chains = tuple(
@@ -533,6 +666,11 @@ def _validate_reference_seeds(
         raise ValueError("NUTS chain seeds must be unique")
     if validated_ppc in validated_chains:
         raise ValueError("PPC seed must be distinct from every chain seed")
+    if settings.mode == "full" and (
+        validated_chains != concordance_binding.chain_seeds
+        or validated_ppc != concordance_binding.ppc_seed
+    ):
+        raise ValueError("full NUTS seeds differ from the concordance binding")
     if settings.mode == "smoke" and any(
         not VBD_TRAJECTORY_SMOKE_SEED_MIN
         <= seed
@@ -667,8 +805,12 @@ def _sample_stat_count(
 ) -> tuple[int, bool]:
     if name not in sample_stats.data_vars:
         return -1, False
-    values = np.asarray(sample_stats[name])
-    if values.shape != (settings.chains, settings.draws):
+    variable = sample_stats[name]
+    values = np.asarray(variable)
+    if (
+        tuple(str(dimension) for dimension in variable.dims) != ("chain", "draw")
+        or values.shape != (settings.chains, settings.draws)
+    ):
         return -1, False
     if binary:
         if values.dtype.kind not in "biu" or not np.all(
@@ -720,8 +862,19 @@ def _compute_sampler_diagnostics(
         for name in actual_variables
         if name not in VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES
     )
+    expected_shapes = {
+        "alpha": (settings.chains, settings.draws),
+        "beta": (settings.chains, settings.draws),
+        "sigma_u": (settings.chains, settings.draws),
+        "u": (settings.chains, settings.draws, prepared.panel_group_count),
+        "sigma_r": (settings.chains, settings.draws),
+        "rho": (settings.chains, settings.draws),
+        "trajectory_movement": (settings.chains, settings.draws),
+    }
     trace_shape_matches = all(
-        np.asarray(posterior[name]).shape[:2] == (settings.chains, settings.draws)
+        tuple(str(dimension) for dimension in posterior[name].dims[:2])
+        == ("chain", "draw")
+        and np.asarray(posterior[name]).shape == expected_shapes[name]
         for name in present_variables
     )
     parameters: list[TrajectorySamplerParameterDiagnostic] = []
@@ -810,21 +963,36 @@ def _compute_sampler_diagnostics(
         sample_stats, "diverging", settings, binary=True
     )
     trace_shape_matches = trace_shape_matches and divergence_valid
+    reached_count = None
+    reached_valid = False
+    depth_count = None
+    depth_valid = False
     if "reached_max_treedepth" in sample_stats.data_vars:
-        treedepth_saturation, treedepth_valid = _sample_stat_count(
+        reached_count, reached_valid = _sample_stat_count(
             sample_stats,
             "reached_max_treedepth",
             settings,
             binary=True,
         )
-    elif "tree_depth" in sample_stats.data_vars:
-        treedepth_saturation, treedepth_valid = _sample_stat_count(
+    if "tree_depth" in sample_stats.data_vars:
+        depth_count, depth_valid = _sample_stat_count(
             sample_stats,
             "tree_depth",
             settings,
             binary=False,
             threshold=settings.max_treedepth,
         )
+    if reached_count is not None and depth_count is not None:
+        treedepth_saturation = reached_count
+        treedepth_valid = (
+            reached_valid and depth_valid and reached_count == depth_count
+        )
+    elif reached_count is not None:
+        treedepth_saturation = reached_count
+        treedepth_valid = reached_valid
+    elif depth_count is not None:
+        treedepth_saturation = depth_count
+        treedepth_valid = depth_valid
     else:
         treedepth_saturation, treedepth_valid = -1, False
     trace_shape_matches = trace_shape_matches and treedepth_valid
@@ -1066,6 +1234,8 @@ def fit_vbd_trajectory_nuts_reference(
     chain_seeds: tuple[int, ...],
     ppc_seed: int,
     mode: Literal["full", "smoke"] = "smoke",
+    concordance_binding: TrajectoryNutsConcordanceBinding | None = None,
+    _runner_token: object | None = None,
 ) -> TrajectoryNutsFit:
     """Run the matched sampler and return summaries without retaining draws."""
 
@@ -1075,9 +1245,33 @@ def fit_vbd_trajectory_nuts_reference(
         raise TypeError("NUTS reference requires an exact source panel")
     validate_prepared_vbd_trajectory(prepared, source_panel)
     settings = vbd_nuts_execution_settings(mode)
+    if settings.mode == "full":
+        from .vbd_trajectory_validation_resumable import (
+            VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH,
+            _repo_root,
+            _verify_current_freeze,
+            read_strict_json,
+        )
+
+        _verify_current_freeze(
+            read_strict_json(
+                _repo_root() / VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH
+            )
+        )
     validated_chain_seeds, validated_ppc_seed = _validate_reference_seeds(
-        settings, chain_seeds, ppc_seed
+        settings,
+        chain_seeds,
+        ppc_seed,
+        concordance_binding=concordance_binding,
+        runner_token=_runner_token,
     )
+    if settings.mode == "full" and (
+        concordance_binding is None
+        or concordance_binding.bundle_seed != source_panel.seed
+        or concordance_binding.lane != prepared.lane
+        or concordance_binding.plan_hash != source_panel.study_plan_root
+    ):
+        raise ValueError("full NUTS binding differs from its prepared source panel")
     if source_panel.seed in (*validated_chain_seeds, validated_ppc_seed):
         raise ValueError("generator, NUTS chain, and PPC seeds must be distinct")
     model = _build_reference_model(prepared)
@@ -1124,4 +1318,9 @@ def fit_vbd_trajectory_nuts_reference(
         movement_summary=movement_summary,
         sampler_diagnostics=diagnostics,
         posterior_predictive_checks=ppc,
+        concordance_binding_hash=(
+            concordance_binding.binding_hash
+            if concordance_binding is not None
+            else None
+        ),
     )

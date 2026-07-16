@@ -711,6 +711,16 @@ study input, checkpoint, generated artifact, or future real-source package.
 
 ### Stage 2: NUTS Concordance
 
+The original pre-freeze concordance seed families rooted at
+`2_056_000_000`, `2_056_020_000`, and `2_106_000_000` are retired. During
+task-3 runner hardening on 2026-07-16, an interrupted mocked child test
+instantiated the first original generator seed before candidate source commit
+`S` or freeze `F` existed. The sampler and deterministic engines were mocked,
+and no fit, gate, or numerical summary was produced or inspected. The
+replacement families below are a one-time pre-freeze integrity rotation, not
+post-result tuning. They are immutable in candidate `S`, require all four
+exact-commit reviews, and cannot change after `F`.
+
 Run five fixed NUTS concordance seeds in each of six cells:
 
 ```text
@@ -725,7 +735,7 @@ Cells use lexicographic order over effects `(0, 0.2, 0.5)` and group counts
 `i in {0,...,4}` maps to:
 
 ```text
-seed = 2_056_000_000 + 10 * cell_ordinal + i
+seed = 2_056_500_000 + 10 * cell_ordinal + i
 ```
 
 The bundle seed generates the correlated three-lane synthetic package. With
@@ -733,7 +743,7 @@ lane ordinals `frequency=0`, `engagement=1`, and `breadth=2`, each NUTS lane
 uses four explicit, injective chain seeds:
 
 ```text
-nuts_chain_seed = 2_056_020_000
+nuts_chain_seed = 2_056_520_000
                 + 1_000*cell_ordinal
                 + 100*i
                 + 10*lane_ordinal
@@ -769,7 +779,7 @@ lag_one_within_group_autocorrelation =
 
 A nonpositive lag denominator returns zero. One posterior-predictive replicate
 is generated per retained draw in stable chain-major/draw-major order with
-`ppc_seed = 2_106_000_000 + 1_000*cell_ordinal + 100*i + 10*lane_ordinal`.
+`ppc_seed = 2_106_500_000 + 1_000*cell_ordinal + 100*i + 10*lane_ordinal`.
 The PPC generator is `Generator(PCG64DXSM(ppc_seed))`. For each retained draw
 and panel group in order, it first draws one length-18 standard-normal vector
 for a fresh conditional smoothed AR(1) path from
@@ -796,6 +806,11 @@ deterministic result must have a distinct process/phase attestation and exact
 prepared-input and semantic-result equality with its primary fit. Missing,
 copied, or mismatched recomputation blocks replication. Bundle execution count
 and nested lane-fit count must never be conflated.
+The combiner independently regenerates each compiled bundle and requires exact
+ordered-panel, lane-observation, and truth-receipt roots across the primary and
+all three recomputation processes. Every child HOLD remains HOLD. Full generator
+and full-NUTS entry points verify the exact clean manifest-only freeze before
+any replacement acceptance seed or sampler can execute.
 
 ### Stage 3: Replicated Calibration
 
@@ -1189,10 +1204,10 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Merge the verified task `2.2` through `2.5` implementation, then start task
-`3.1` from a fresh branch at that merged `origin/main`. Create and review the
-exact candidate source commit `S`, followed by its manifest-only freeze child
-`F`, before running concordance or any acceptance canary. Parent task `5.6`,
-full evidence, real-data admission, runtime monitoring, readout language, pilot
-manifest, downstream three-lane outcome integration, persistence, and UI remain
+Complete task `3.1` verification and commit the exact candidate source as `S`.
+Obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO against those
+exact bytes, then create the manifest-only sole-child freeze `F` before running
+concordance or any acceptance canary. Parent task `5.6`, full evidence,
+real-data admission, runtime monitoring, readout language, pilot manifest,
+downstream three-lane outcome integration, persistence, and UI remain
 incomplete.

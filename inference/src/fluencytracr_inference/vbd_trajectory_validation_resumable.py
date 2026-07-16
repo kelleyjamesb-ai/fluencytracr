@@ -109,6 +109,7 @@ _REVIEW_ROLE_SLUGS = {
     "ADVERSARIAL": "adversarial",
     "STATISTICAL_METHODOLOGY": "statistical-methodology",
 }
+_VERIFIED_CONCORDANCE_RECEIPT_TOKEN = object()
 _SAFE_TIMESTAMP_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?\+00:00$"
 )
@@ -130,6 +131,12 @@ _ALLOWED_COMMAND_IDS = (
     "vbd_trajectory_plan",
     "vbd_trajectory_runner_smoke",
     "vbd_trajectory_build_freeze_manifest",
+    "vbd_trajectory_concordance_plan",
+    "vbd_trajectory_concordance_initialize",
+    "vbd_trajectory_concordance_run_bundle",
+    "vbd_trajectory_concordance_run",
+    "vbd_trajectory_concordance_combine",
+    "vbd_trajectory_concordance_child",
     "vbd_trajectory_run_canary",
     "vbd_trajectory_run_original_chunk",
     "vbd_trajectory_run_recomputation_chunk",
@@ -144,6 +151,10 @@ _RUNNER_SOURCE_PATHS = (
     "inference/src/fluencytracr_inference/longitudinal_types.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_artifact.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_bootstrap_conformance.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_concordance.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_concordance_execution.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_concordance_resumable.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_concordance_cli.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_nuts.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_types.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_synthetic.py",
@@ -258,11 +269,52 @@ def _utc_now() -> str:
 
 
 def _file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = -1
+    try:
+        before = os.lstat(path)
+        descriptor = os.open(path, flags)
+        opened = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(before.st_mode)
+            or not stat.S_ISREG(opened.st_mode)
+            or (before.st_dev, before.st_ino) != (opened.st_dev, opened.st_ino)
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "hashed file changed identity before open"
+            )
+        digest = hashlib.sha256()
+        while True:
+            block = os.read(descriptor, 1024 * 1024)
+            if not block:
+                break
             digest.update(block)
-    return digest.hexdigest()
+        after_open = os.fstat(descriptor)
+        after_path = os.lstat(path)
+        identities = {
+            (
+                item.st_dev,
+                item.st_ino,
+                item.st_size,
+                item.st_mtime_ns,
+                item.st_ctime_ns,
+            )
+            for item in (before, opened, after_open, after_path)
+        }
+        if len(identities) != 1:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "hashed file changed identity during read"
+            )
+        return digest.hexdigest()
+    except OSError as exc:
+        raise VbdTrajectoryValidationWorkspaceError(
+            f"file cannot be hashed safely: {path.name}"
+        ) from exc
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
 
 
 def _strict_sha256(value: object, name: str) -> str:
@@ -854,6 +906,39 @@ def _native_linkage_hash(path: Path) -> str | None:
     return sha256_json(dependencies)
 
 
+def _locked_runtime_package_versions() -> dict[str, str]:
+    lock_path = _repo_root() / "inference/requirements.lock"
+    _validate_regular_file(lock_path, label="inference requirements lock")
+    versions: dict[str, str] = {}
+    for line in lock_path.read_text(encoding="utf-8").splitlines():
+        if not line or line.startswith("#"):
+            continue
+        name, separator, version = line.partition("==")
+        if (
+            separator != "=="
+            or not name
+            or not version
+            or name in versions
+            or any(character.isspace() for character in line)
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "inference requirements lock is not an exact package manifest"
+            )
+        versions[name] = version
+    if not versions:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "inference requirements lock is empty"
+        )
+    installed = {
+        name: importlib.metadata.version(name) for name in sorted(versions)
+    }
+    if installed != {name: versions[name] for name in sorted(versions)}:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "installed inference environment differs from requirements.lock"
+        )
+    return installed
+
+
 @lru_cache(maxsize=1)
 def build_vbd_trajectory_runtime_identity() -> dict:
     if (sys.version_info.major, sys.version_info.minor) != (3, 13):
@@ -895,6 +980,7 @@ def build_vbd_trajectory_runtime_identity() -> dict:
         "python_build": list(platform.python_build()),
         "executable_sha256": _file_sha256(executable),
         "package_versions": versions,
+        "locked_package_versions": _locked_runtime_package_versions(),
         "thread_environment": environment,
         "python_dont_write_bytecode": True,
         "numpy_build_config_hash": sha256_json(np.show_config(mode="dicts")),
@@ -918,6 +1004,8 @@ def _validate_freeze_manifest(value: object) -> dict:
         "interface_source_hash",
         "plan_hash",
         "seed_manifest_hash",
+        "concordance_plan_hash",
+        "concordance_seed_manifest_hash",
         "pre_run_roots_hash",
         "allowed_command_ids",
         "execution_state",
@@ -993,6 +1081,8 @@ def _validate_freeze_manifest(value: object) -> dict:
         "interface_source_hash",
         "plan_hash",
         "seed_manifest_hash",
+        "concordance_plan_hash",
+        "concordance_seed_manifest_hash",
         "pre_run_roots_hash",
     ):
         _strict_sha256(value[key], key)
@@ -1028,6 +1118,10 @@ def _pre_run_roots_hash(roots: dict) -> str:
             "interface_source_hash": roots["interface_source_hash"],
             "plan_hash": roots["plan_hash"],
             "seed_manifest_hash": roots["seed_manifest_hash"],
+            "concordance_plan_hash": roots["concordance_plan_hash"],
+            "concordance_seed_manifest_hash": roots[
+                "concordance_seed_manifest_hash"
+            ],
             "allowed_command_ids": list(_ALLOWED_COMMAND_IDS),
         }
     )
@@ -1090,6 +1184,12 @@ def build_vbd_trajectory_freeze_manifest(
     implementation = vbd_trajectory_runner_implementation_manifest()
     runtime = build_vbd_trajectory_runtime_identity()
     plan = immutable_vbd_trajectory_validation_plan()
+    from .vbd_trajectory_concordance import (
+        vbd_trajectory_concordance_plan,
+        vbd_trajectory_concordance_seed_manifest_hash,
+    )
+
+    concordance_plan = vbd_trajectory_concordance_plan()
     roots = {
         "runtime_identity_hash": runtime["runtime_identity_hash"],
         "implementation_hash": implementation["implementation_hash"],
@@ -1103,6 +1203,10 @@ def build_vbd_trajectory_freeze_manifest(
         "interface_source_hash": _interface_source_hash(),
         "plan_hash": plan.plan_hash,
         "seed_manifest_hash": plan.seeds_hash,
+        "concordance_plan_hash": concordance_plan["plan_hash"],
+        "concordance_seed_manifest_hash": (
+            vbd_trajectory_concordance_seed_manifest_hash()
+        ),
     }
     body = {
         "schema_version": VBD_TRAJECTORY_FREEZE_MANIFEST_SCHEMA_VERSION,
@@ -1185,6 +1289,21 @@ def _verify_current_freeze(value: dict) -> dict:
         "plan_hash": immutable_vbd_trajectory_validation_plan().plan_hash,
         "seed_manifest_hash": immutable_vbd_trajectory_validation_plan().seeds_hash,
     }
+    from .vbd_trajectory_concordance import (
+        vbd_trajectory_concordance_plan,
+        vbd_trajectory_concordance_seed_manifest_hash,
+    )
+
+    expected_roots.update(
+        {
+            "concordance_plan_hash": vbd_trajectory_concordance_plan()[
+                "plan_hash"
+            ],
+            "concordance_seed_manifest_hash": (
+                vbd_trajectory_concordance_seed_manifest_hash()
+            ),
+        }
+    )
     for key, expected in expected_roots.items():
         if manifest[key] != expected:
             raise VbdTrajectoryValidationWorkspaceError(
@@ -1208,7 +1327,19 @@ def _verify_current_freeze(value: dict) -> dict:
     }
 
 
-def _validate_concordance_receipt(value: object, freeze_identity: dict) -> dict:
+def _validate_concordance_receipt(
+    value: object,
+    freeze_identity: dict,
+    *,
+    _verified_token: object | None = None,
+) -> dict:
+    if _verified_token is not _VERIFIED_CONCORDANCE_RECEIPT_TOKEN:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance admission remains disabled without complete external "
+            "workspace verification"
+        )
+    from .vbd_trajectory_concordance import vbd_trajectory_concordance_plan
+
     expected = {
         "schema_version",
         "freeze_commit",
@@ -1223,6 +1354,7 @@ def _validate_concordance_receipt(value: object, freeze_identity: dict) -> dict:
         "nuts_records_hash",
         "fresh_deterministic_records_hash",
         "execution_attestations_hash",
+        "diagnostic_summary_hash",
         "hard_failure_count",
         "cross_engine_failure_count",
         "sampler_failure_count",
@@ -1246,7 +1378,7 @@ def _validate_concordance_receipt(value: object, freeze_identity: dict) -> dict:
         or value["freeze_commit"] != freeze_identity["freeze_commit"]
         or value["freeze_manifest_hash"]
         != freeze_identity["freeze_manifest_hash"]
-        or value["plan_hash"] != freeze_identity["plan_hash"]
+        or value["plan_hash"] != vbd_trajectory_concordance_plan()["plan_hash"]
         or value["bundle_count"] != 30
         or value["primary_deterministic_lane_fit_count"] != 90
         or value["nuts_lane_fit_count"] != 90
@@ -1259,6 +1391,7 @@ def _validate_concordance_receipt(value: object, freeze_identity: dict) -> dict:
                 "nuts_records_hash",
                 "fresh_deterministic_records_hash",
                 "execution_attestations_hash",
+                "diagnostic_summary_hash",
             )
         )
         or any(
@@ -1281,10 +1414,7 @@ def _validate_concordance_receipt(value: object, freeze_identity: dict) -> dict:
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance receipt is incomplete or mismatched"
         )
-    raise VbdTrajectoryValidationWorkspaceError(
-        "concordance admission remains disabled until canonical execution "
-        "records and attestations are implemented and recomputed"
-    )
+    return value
 
 
 def _workspace_location_binding(workspace: Path) -> dict:
@@ -1373,9 +1503,12 @@ def initialize_vbd_trajectory_validation_workspace(
                 "freeze manifest must be an object"
             )
         freeze_identity = _verify_current_freeze(freeze_value)
-        concordance_value = read_strict_json(concordance_path)
-        concordance = _validate_concordance_receipt(
-            concordance_value, freeze_identity
+        from .vbd_trajectory_concordance_resumable import (
+            verify_vbd_trajectory_concordance_receipt_path,
+        )
+
+        concordance = verify_vbd_trajectory_concordance_receipt_path(
+            concordance_path, freeze_identity=freeze_identity
         )
         plan = immutable_vbd_trajectory_validation_plan().to_dict()
         records = (
@@ -1548,6 +1681,7 @@ def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict]:
     concordance = _validate_concordance_receipt(
         read_strict_json(_safe_workspace_path(workspace, "concordance_receipt.json")),
         identity,
+        _verified_token=_VERIFIED_CONCORDANCE_RECEIPT_TOKEN,
     )
     if concordance["receipt_hash"] != record["concordance_receipt_hash"]:
         raise VbdTrajectoryValidationWorkspaceError(
@@ -4352,7 +4486,11 @@ def vbd_trajectory_validation_runner_summary() -> dict:
         "slots_per_chunk": 50,
         "freeze_required": True,
         "concordance_required_before_canaries": True,
-        "concordance_admission_implemented": False,
+        "concordance_admission_implemented": True,
+        "concordance_bundle_count": 30,
+        "concordance_primary_process_count": 30,
+        "concordance_recomputation_process_count": 90,
+        "concordance_complete": False,
         "acceptance_plan_execution_authorized": False,
         "internal_only": True,
         "synthetic_only": True,

@@ -11,6 +11,10 @@ from fluencytracr_inference.vbd_trajectory_validation_plan import (
     required_vbd_trajectory_canaries,
     required_vbd_trajectory_validation_slots,
 )
+from fluencytracr_inference.vbd_trajectory_concordance import (
+    vbd_trajectory_concordance_plan,
+    vbd_trajectory_concordance_seed_manifest_hash,
+)
 from fluencytracr_inference.vbd_trajectory_validation_resumable import (
     VBD_TRAJECTORY_FREEZE_MANIFEST_SCHEMA_VERSION,
     VBD_TRAJECTORY_CONCORDANCE_RECEIPT_SCHEMA_VERSION,
@@ -233,7 +237,8 @@ def test_runner_summary_is_nonexecuting_and_exact():
     assert value["slot_count_per_phase"] == 2_000
     assert value["fresh_process_count_required"] == 4_000
     assert value["canary_count"] == 4
-    assert value["concordance_admission_implemented"] is False
+    assert value["concordance_admission_implemented"] is True
+    assert value["concordance_complete"] is False
     assert value["acceptance_plan_execution_authorized"] is False
     assert value["task_5_6_complete"] is False
 
@@ -495,6 +500,10 @@ def test_freeze_manifest_requires_exact_source_set_and_self_hash():
         "interface_source_hash": "1" * 64,
         "plan_hash": immutable_vbd_trajectory_validation_plan().plan_hash,
         "seed_manifest_hash": immutable_vbd_trajectory_validation_plan().seeds_hash,
+        "concordance_plan_hash": vbd_trajectory_concordance_plan()["plan_hash"],
+        "concordance_seed_manifest_hash": (
+            vbd_trajectory_concordance_seed_manifest_hash()
+        ),
         "pre_run_roots_hash": "2" * 64,
         "allowed_command_ids": list(runner._ALLOWED_COMMAND_IDS),
         "execution_state": "NOT_RUN",
@@ -572,6 +581,7 @@ def test_self_hashed_concordance_pass_cannot_initialize_replication():
         "nuts_records_hash": "3" * 64,
         "fresh_deterministic_records_hash": "4" * 64,
         "execution_attestations_hash": "5" * 64,
+        "diagnostic_summary_hash": "6" * 64,
         "hard_failure_count": 0,
         "cross_engine_failure_count": 0,
         "sampler_failure_count": 0,

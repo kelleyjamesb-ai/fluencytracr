@@ -469,15 +469,23 @@ transformed 3x3 covariance, marginal standard errors, and canonical oracle hash
 recorded in the contract. A self-consistent implementation that matches only
 the three medians SHALL NOT satisfy conformance.
 
+The original pre-freeze concordance seed families rooted at
+`2_056_000_000`, `2_056_020_000`, and `2_106_000_000` SHALL remain retired
+after an interrupted mocked task-3 child test instantiated the first original
+generator seed before candidate source commit `S` or freeze `F`. No fit, gate,
+or numerical summary was produced or inspected. The replacement families
+below SHALL be a one-time pre-freeze integrity rotation and SHALL NOT change
+after reviewed candidate `S` and its manifest-only freeze child `F`.
+
 The full proof SHALL first run PyMC NUTS concordance for five fixed seeds in
 each cell of effects `{0, 0.2, 0.5}` pre-period SD by panel-group counts
 `{6, 12}`. Cell order SHALL be lexicographic over those listed sets, with group
 ordinal `6->0`, `12->1`, and
 concordance seed SHALL equal
-`2_056_000_000 + 10*cell_ordinal + seed_index` for `seed_index={0,...,4}`.
+`2_056_500_000 + 10*cell_ordinal + seed_index` for `seed_index={0,...,4}`.
 That bundle seed SHALL generate correlated data. For lane ordinals
 `frequency=0`, `engagement=1`, `breadth=2`, explicit NUTS chain seed SHALL be
-`2_056_020_000+1_000*cell_ordinal+100*seed_index+10*lane_ordinal+
+`2_056_520_000+1_000*cell_ordinal+100*seed_index+10*lane_ordinal+
 chain_index` for chain indexes `0..3`; implicit or cross-bundle/lane/chain seed
 reuse SHALL reject.
 NUTS SHALL use four chains, 1,000 retained draws and 2,000 tuning draws per
@@ -492,7 +500,7 @@ in the contract: pre/post mean movement, `ddof=1` between-group variance, mean
 `ddof=1` within-group variance, maximum absolute global-mean deviation, and the
 specified pooled lag-one centered ratio. One replicate per retained draw SHALL
 use stable chain-major/draw-major order and
-`ppc_seed=2_106_000_000+1_000*cell_ordinal+100*seed_index+
+`ppc_seed=2_106_500_000+1_000*cell_ordinal+100*seed_index+
 10*lane_ordinal`. Each one-sided upper-tail p-value SHALL
 equal `count(T_rep>=T_observed)/4000`, ties included with no smoothing. Its
 inclusive gate SHALL be `[.05,.95]`; formula, seed, order, or sidedness drift
@@ -511,6 +519,12 @@ fresh deterministic records. Fresh deterministic processes SHALL refuse every
 primary result/artifact/checkpoint, carry distinct attestations, and match
 prepared-input and semantic-result hashes exactly. Bundle and nested-fit counts
 SHALL remain distinct.
+Every full generator and full-NUTS entry SHALL verify exact clean freeze `F`
+before acceptance-seed admission or sampling. Combination SHALL independently
+regenerate each compiled bundle and require exact ordered-panel,
+lane-observation, and truth-receipt roots across its primary and all three fresh
+deterministic processes. A child HOLD SHALL remain HOLD after combination, and
+sampler and PPC failure counts SHALL remain disjoint.
 
 After concordance and before any full chunk, canaries SHALL run exact slots
 `primary/(0,6,0)`, `primary/(.5,12,199)`,

@@ -9,6 +9,8 @@ def test_runner_summary_cli_is_compact_and_nonauthorizing(capsys):
     value = json.loads(capsys.readouterr().out)
     assert value["slot_count_per_phase"] == 2_000
     assert value["fresh_process_count_required"] == 4_000
+    assert value["concordance_admission_implemented"] is True
+    assert value["concordance_complete"] is False
     assert value["acceptance_plan_execution_authorized"] is False
     assert value["task_5_6_complete"] is False
 

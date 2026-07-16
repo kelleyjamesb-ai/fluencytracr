@@ -225,9 +225,9 @@
       "id": "vbd-trajectory-engine-concordance",
       "title": "VBD trajectory source freeze and NUTS concordance",
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
-      "status": "pending",
+      "status": "in_progress",
       "risk": "high",
-      "last_note": "Human-authorized future queue item. Activate only after the implementation/runner item is merged and exact source commit S is available."
+      "last_note": "Task 3.1 source candidate verified without acceptance-seed execution: full Python, focused lifecycle, VBD/longitudinal bridges, builds, Assurance Harness, OpenSpec, docs, semantic, and governance gates pass. Commit S and exact-S four-role review remain next."
     },
     {
       "id": "vbd-trajectory-full-evidence",
