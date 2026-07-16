@@ -27,7 +27,7 @@
 - [x] 2.4 Add a summary-only internal artifact and strict confidence-engine
   bridge that reject unknown fields, composite inputs, unsafe claims, Depth
   promotion, stale hashes, incomplete evidence, and self-authorization.
-- [ ] 2.5 Implement the exact 2,000-case planner, resumable chunking, combiner,
+- [x] 2.5 Implement the exact 2,000-case planner, resumable chunking, combiner,
   four canary receipts, fresh-recomputation isolation, fast smoke, and the
   complete negative-control suite. Smoke, partial, malformed, missing,
   duplicate, off-plan, or mixed-provenance studies MUST HOLD; do not execute

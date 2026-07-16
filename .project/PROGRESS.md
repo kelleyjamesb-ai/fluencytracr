@@ -5,16 +5,16 @@
 - James Kelley explicitly authorized the sequential bounded VBD synthetic
   implementation, concordance, full-evidence, and exact-byte acceptance queue
   items on 2026-07-15. The first item,
-  `vbd-trajectory-synthetic-implementation-runner`, is active on
+  `vbd-trajectory-synthetic-implementation-runner`, completed on 2026-07-16 on
   `codex/vbd-trajectory-engine-calibration` from merged `origin/main` at
-  `2e3df0fd`. This item is limited to OpenSpec tasks `2.1-2.5`; acceptance-plan
-  concordance, canary, primary, targeted, drift, floor, and negative-control
-  seeds remain blocked until exact source review and the manifest-only freeze.
-  Future queue items are pending and must be activated sequentially. The final
+  `2e3df0fd`. No VBD queue item is active until this implementation merges;
+  `vbd-trajectory-engine-concordance` remains pending and must start from the
+  merged source commit. Acceptance-plan concordance, canary, primary, targeted,
+  drift, floor, and negative-control seeds were not executed. The final
   acceptance record still requires James's explicit approval of its exact
   committed bytes. No real/customer/live data, outcome integration, routes,
   UI, persistence, connectors, exports, customer output, promotion, or task
-  `5.6` completion is authorized by this activation.
+  `5.6` completion is authorized.
 - OpenSpec task `2.2` completed on 2026-07-15. The implementation adds strict
   three-lane aggregate records, canonical V2 source/schema/definition and
   covariance bindings, a runtime-pinned integer bootstrap conformance oracle,
@@ -70,6 +70,26 @@
   passed. No acceptance-plan seed or evidence was executed. Task `2.5` is next;
   tasks `3.1+`, parent `5.6`, real data, outcome integration, persistence,
   reports, and UI remain incomplete.
+- OpenSpec task `2.5` completed on 2026-07-16. The exact immutable planner now
+  defines 1,200 primary, 360 targeted, 360 drift, 12 floor, and 68 negative-
+  control slots, partitioned into 40 ordered chunks for both original and
+  separately regenerated recomputation phases. The runner adds four ordered
+  canaries, create-once launch/checkpoint/chunk records, inherited one-time
+  capabilities and parent-liveness pipes, workspace path/inode replay binding,
+  lock-verified load/write/launch boundaries, durable runner-error rows, exact
+  evidence snapshots, strict combined PASS/HOLD derivation, and a final commit
+  marker after descriptor-stable combined readback. Controls hit production
+  validators, including explicit common-availability shock mechanics and the
+  pre-period scale gate. Canonical concordance admission remains deliberately
+  disabled until task 3, so no acceptance canary, concordance fit, or evidence
+  slot ran. Final CODE, BUG, and ADVERSARIAL reviews returned GO. Verification:
+  VBD `265 passed`; full inference `830 passed`; TypeScript bridges `104
+  passed`; AI Fluency snapshots `11 passed`; Assurance Harness `276 passed, 3
+  skipped`; shared and confidence-engine builds; inference wheel build and
+  isolated wheel import; strict OpenSpec; docs sweep; semantic drift; V1
+  governance; agentic guard; and `git diff --check`. Tasks `3.1+`, parent task
+  `5.6`, real data, three-lane outcome integration, persistence, reports, and
+  UI remain incomplete.
 - Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
   evidence-breaking ambiguities in the merged plan: the existing outcome
   engine did not recover the latent AR(1) smoothing contrast, deterministic

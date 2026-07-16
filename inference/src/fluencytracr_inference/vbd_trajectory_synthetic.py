@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 import math
 
@@ -32,13 +34,17 @@ from .vbd_trajectory_types import (
     VBD_TRAJECTORY_RNG_ID,
     VBD_TRAJECTORY_RUNTIME_REF,
     VBD_TRAJECTORY_SCHEMA_VERSION,
+    VBD_TRAJECTORY_SMOKE_PLAN_REF,
     VBD_TRAJECTORY_STATISTICS,
     VBD_TRAJECTORY_SMOKE_SEED_MAX,
     VBD_TRAJECTORY_SMOKE_SEED_MIN,
+    VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
     VBD_TRAJECTORY_SYNTHETIC_DERIVATION,
     VBD_TRAJECTORY_TOTAL_WINDOW_COUNT,
     VBD_TRAJECTORY_TRANSFORMS,
     VBD_TRAJECTORY_UNITS,
+    VBD_TRAJECTORY_VALIDATION_PLAN_REF,
+    VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE,
     aggregate_output_hash_body,
     expected_bundle_source_content_root,
     expected_gate_receipt_hash,
@@ -57,6 +63,11 @@ from .vbd_trajectory_types import (
     vbd_eligible_surface_set_hash,
     vbd_trajectory_model_manifest_body,
 )
+from .vbd_trajectory_validation_plan import (
+    VbdTrajectoryValidationSlot,
+    immutable_vbd_trajectory_validation_plan,
+    required_vbd_trajectory_validation_slots,
+)
 
 
 VBD_TRAJECTORY_DGP_ALPHA = 0.0
@@ -69,6 +80,21 @@ VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION = 0.25
 VBD_TRAJECTORY_ELIGIBLE_DAY_COUNT = 60
 VBD_TRAJECTORY_ELIGIBLE_SURFACE_COUNT = 12
 VBD_TRAJECTORY_SYNTHETIC_TAXONOMY = "definition:synthetic-surface-taxonomy-v1"
+VBD_TRAJECTORY_SUSTAINED_POST_PATTERN = "sustained_all_six_post_windows"
+VBD_TRAJECTORY_TEMPORARY_PULSE_POST_PATTERN = (
+    "plus_0.5_all_lanes_w12_w14_then_zero_w15_w17"
+)
+VBD_TRAJECTORY_COMMON_AVAILABILITY_SHOCK_TERMINAL = (0.5, 0.5, 0.5)
+
+_VALIDATION_CAPABILITY_HASH: ContextVar[str | None] = ContextVar(
+    "vbd_trajectory_validation_capability_hash", default=None
+)
+_VALIDATION_GENERATION_RUNNER_TOKEN = object()
+_STANDARD_ERROR_RATIO = 1.0
+_COVARIANCE_RATIO = 1.0
+_UNDERSTATED_STANDARD_ERROR_RATIO = 0.5
+_UNDERSTATED_COVARIANCE_RATIO = 0.25
+_DEVELOPMENT_SCENARIO_PREFIX = "development_smoke_scenario_"
 
 _LANE_OFFSETS = np.asarray([2.5, 0.8, 0.6], dtype=float)
 _LANE_SCALES = np.asarray(
@@ -94,12 +120,41 @@ class VbdTrajectoryTruth:
     working_ar1_states: np.ndarray
     pre_observation_mean: tuple[float, float, float]
     pre_observation_sd: tuple[float, float, float]
+    post_pattern: str = VBD_TRAJECTORY_SUSTAINED_POST_PATTERN
+    shock_kind: str | None = None
+    structural_terminal_truth: tuple[float, float, float] = ()
+    common_shock_terminal_shift: tuple[float, float, float] = ()
+    true_raw_transformed_covariance: tuple[
+        tuple[float, float, float], ...
+    ] = ()
+    reported_standard_error_ratio: float = _STANDARD_ERROR_RATIO
+    reported_covariance_ratio: float = _COVARIANCE_RATIO
 
 
 @dataclass(frozen=True, eq=False)
 class VbdTrajectorySyntheticCase:
     panel: TrajectoryObservationPanel
     truth: VbdTrajectoryTruth
+
+
+@dataclass(frozen=True, slots=True)
+class _VbdTrajectoryGenerationSpec:
+    scenario_id: str
+    seed: int
+    panel_group_count: int
+    aggregate_k: int
+    terminal_truth: tuple[float, float, float]
+    direction_vector: tuple[int, int, int]
+    post_pattern: str
+    correlations: tuple[float, float, float]
+    plan_ref: str
+    plan_hash: str
+    seed_namespace: str
+    acceptance_slot_key: str | None
+    depth_context_ref: str
+    shock_kind: str | None
+    reported_standard_error_ratio: float
+    reported_covariance_ratio: float
 
 
 def _equicorrelation(value: float) -> np.ndarray:
@@ -138,6 +193,124 @@ def _strict_truth(value: object) -> tuple[float, float, float]:
     if any(item not in (0.0, 0.2, 0.5) for item in result):
         raise ValueError("terminal truth must use the compiled calibration effects")
     return result
+
+
+def _strict_internal_truth(value: object) -> tuple[float, float, float]:
+    if (
+        type(value) is not tuple
+        or len(value) != 3
+        or any(type(item) is not float for item in value)
+        or any(not math.isfinite(item) for item in value)
+        or any(item not in (-0.5, 0.0, 0.2, 0.5) for item in value)
+    ):
+        raise ValueError("internal truth must use the compiled three-lane effects")
+    return value
+
+
+def _strict_correlations(
+    value: object,
+) -> tuple[float, float, float]:
+    if (
+        type(value) is not tuple
+        or len(value) != 3
+        or any(type(item) is not float for item in value)
+        or any(not math.isfinite(item) or not -0.49 < item < 1.0 for item in value)
+    ):
+        raise ValueError("correlations must be a compiled three-item float tuple")
+    return value
+
+
+def _post_adjustments(
+    *,
+    base_terminal: np.ndarray,
+    terminal_truth: tuple[float, float, float],
+    post_pattern: str,
+) -> np.ndarray:
+    truth = np.asarray(terminal_truth, dtype=float)
+    if post_pattern == VBD_TRAJECTORY_SUSTAINED_POST_PATTERN:
+        return np.tile(
+            truth - base_terminal,
+            (VBD_TRAJECTORY_POST_WINDOW_COUNT, 1),
+        )
+    if post_pattern == VBD_TRAJECTORY_TEMPORARY_PULSE_POST_PATTERN:
+        if terminal_truth != (0.0, 0.0, 0.0):
+            raise VbdSyntheticRunnerError(
+                "temporary pulse requires exact zero terminal truth"
+            )
+        adjustments = np.tile(
+            -base_terminal,
+            (VBD_TRAJECTORY_POST_WINDOW_COUNT, 1),
+        )
+        adjustments[:3, :] += 0.5
+        return adjustments
+    raise VbdSyntheticRunnerError("post pattern is not compiled")
+
+
+def _development_scenario_semantics(
+    scenario_id: str,
+    *,
+    depth_context_ref: str,
+) -> dict:
+    aliases = {
+        "sustained_primary": "primary",
+        "sustained_floor": "floor",
+    }
+    scenario = aliases.get(scenario_id, scenario_id)
+    truths = {
+        "primary": (0.5, 0.5, 0.5),
+        "floor": (0.5, 0.5, 0.5),
+        "frequency_only": (0.5, 0.0, 0.0),
+        "engagement_only": (0.0, 0.5, 0.0),
+        "breadth_only": (0.0, 0.0, 0.5),
+        "correlated_null": (0.0, 0.0, 0.0),
+        "composition_rotation": (0.5, -0.5, 0.0),
+        "temporary_pulse": (0.0, 0.0, 0.0),
+        "common_availability_shock": (0.5, 0.5, 0.5),
+        "depth_context_perturbation": (0.0, 0.0, 0.0),
+        "understated_uncertainty": (0.5, 0.5, 0.5),
+    }
+    if type(scenario_id) is not str or scenario not in truths:
+        raise ValueError("development scenario is not compiled")
+    if scenario != "depth_context_perturbation" and depth_context_ref != "depth-context:a":
+        raise ValueError(
+            "only the Depth perturbation scenario may vary Depth context"
+        )
+    return {
+        "terminal_truth": truths[scenario],
+        "direction_vector": (
+            (1, -1, 1) if scenario == "composition_rotation" else (1, 1, 1)
+        ),
+        "post_pattern": (
+            VBD_TRAJECTORY_TEMPORARY_PULSE_POST_PATTERN
+            if scenario == "temporary_pulse"
+            else VBD_TRAJECTORY_SUSTAINED_POST_PATTERN
+        ),
+        "correlations": (
+            (0.8, 0.8, 0.8)
+            if scenario == "correlated_null"
+            else (
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+            )
+        ),
+        "shock_kind": (
+            "common_availability"
+            if scenario == "common_availability_shock"
+            else None
+        ),
+        "reported_standard_error_ratio": (
+            _UNDERSTATED_STANDARD_ERROR_RATIO
+            if scenario == "understated_uncertainty"
+            else _STANDARD_ERROR_RATIO
+        ),
+        "reported_covariance_ratio": (
+            _UNDERSTATED_COVARIANCE_RATIO
+            if scenario == "understated_uncertainty"
+            else _COVARIANCE_RATIO
+        ),
+        "depth_context_ref": depth_context_ref,
+    }
 
 
 def _lane_definition_ref(lane_index: int) -> str:
@@ -185,6 +358,7 @@ def _reference_entries(
     *,
     aggregate_k: int,
     plan_hash: str,
+    plan_ref: str = VBD_TRAJECTORY_SMOKE_PLAN_REF,
 ) -> tuple[TrajectoryReferenceEntry, ...]:
     entries = [
         TrajectoryReferenceEntry(
@@ -266,7 +440,7 @@ def _reference_entries(
             source_definition_ref="definition:synthetic-known-aggregate-uncertainty-v1",
         ),
         TrajectoryReferenceEntry(
-            ref="plan:vbd-trajectory-development-smoke-v1",
+            ref=plan_ref,
             field_role="study_plan",
             owner_role="synthetic_generator",
             source_definition_ref="definition:synthetic-known-aggregate-uncertainty-v1",
@@ -318,7 +492,7 @@ def _reference_entries(
             for index in range(3)
         }
     )
-    bound_hashes["plan:vbd-trajectory-development-smoke-v1"] = plan_hash
+    bound_hashes[plan_ref] = plan_hash
     for group in range(panel_group_count):
         bound_hashes[f"cohort:vbd-synthetic-g{group:02d}"] = _cohort_hash(
             group, aggregate_k
@@ -346,9 +520,13 @@ def build_synthetic_reference_manifest(
     *,
     aggregate_k: int,
     plan_hash: str,
+    plan_ref: str = VBD_TRAJECTORY_SMOKE_PLAN_REF,
 ) -> TrajectoryReferenceManifest:
     entries = _reference_entries(
-        panel_group_count, aggregate_k=aggregate_k, plan_hash=plan_hash
+        panel_group_count,
+        aggregate_k=aggregate_k,
+        plan_hash=plan_hash,
+        plan_ref=plan_ref,
     )
     return TrajectoryReferenceManifest(
         entries=entries,
@@ -559,6 +737,7 @@ def _build_bundle(
     aggregate_k: int,
     direction_vector: tuple[int, int, int],
     direction_vector_root: str,
+    plan_ref: str,
     plan_hash: str,
     partition_root: str,
     depth_context: TrajectoryDepthContext,
@@ -605,7 +784,7 @@ def _build_bundle(
         cohort_hash=cohort_hash,
         active_set_commitment=active_set_commitment,
         partition_attestation_root=partition_root,
-        plan_ref="plan:vbd-trajectory-development-smoke-v1",
+        plan_ref=plan_ref,
         plan_hash=plan_hash,
         direction_vector=direction_vector,
         direction_vector_root=direction_vector_root,
@@ -732,7 +911,41 @@ def _development_smoke_plan_body(
     }
 
 
-def validate_vbd_trajectory_synthetic_generation(
+def _development_scenario_plan_body(
+    *,
+    scenario_key: str,
+    scenario_id: str,
+    panel_group_count: int,
+    aggregate_k: int,
+    terminal_truth: tuple[float, float, float],
+    direction_vector: tuple[int, int, int],
+    post_pattern: str,
+    correlations: tuple[float, float, float],
+    shock_kind: str | None,
+    reported_standard_error_ratio: float,
+    reported_covariance_ratio: float,
+) -> dict:
+    body = _development_smoke_plan_body(
+        scenario_id=scenario_id,
+        panel_group_count=panel_group_count,
+        aggregate_k=aggregate_k,
+        terminal_truth=terminal_truth,
+        direction_vector=direction_vector,
+        group_correlation=correlations[0],
+        innovation_correlation=correlations[1],
+        observation_correlation=correlations[2],
+    )
+    return {
+        **body,
+        "development_scenario_key": scenario_key,
+        "post_pattern": post_pattern,
+        "shock_kind": shock_kind,
+        "reported_standard_error_ratio": reported_standard_error_ratio,
+        "reported_covariance_ratio": reported_covariance_ratio,
+    }
+
+
+def _validate_vbd_trajectory_synthetic_generation_legacy(
     panel: TrajectoryObservationPanel,
 ) -> None:
     """Recompute the seeded DGP and reject panels copied across seed identities."""
@@ -861,7 +1074,7 @@ def validate_vbd_trajectory_synthetic_generation(
         )
 
 
-def generate_vbd_trajectory_smoke_case(
+def _generate_vbd_trajectory_smoke_case_legacy(
     *,
     seed: int = VBD_TRAJECTORY_SMOKE_SEED_MIN,
     panel_group_count: int = 6,
@@ -991,6 +1204,7 @@ def generate_vbd_trajectory_smoke_case(
             aggregate_k=aggregate_k,
             direction_vector=directions,
             direction_vector_root=direction_root,
+            plan_ref=plan_ref,
             plan_hash=plan_hash,
             partition_root=partition_root,
             depth_context=depth_context,
@@ -1073,3 +1287,678 @@ def generate_vbd_trajectory_smoke_case(
         pre_observation_sd=tuple(float(value) for value in pre_sd),
     )
     return VbdTrajectorySyntheticCase(panel=panel, truth=truth)
+
+
+def _validation_panel_scenario_id(slot: VbdTrajectoryValidationSlot) -> str:
+    return f"{slot.family}_{slot.scenario_or_control_id}".replace("=", "_")
+
+
+def _validation_generation_spec(
+    slot: VbdTrajectoryValidationSlot,
+    *,
+    depth_context_ref: str | None = None,
+    require_fit_expected: bool = True,
+) -> _VbdTrajectoryGenerationSpec:
+    if type(slot) is not VbdTrajectoryValidationSlot:
+        raise ValueError("validation generation requires the exact slot type")
+    canonical = next(
+        (
+            candidate
+            for candidate in required_vbd_trajectory_validation_slots()
+            if candidate.slot_id == slot.slot_id
+        ),
+        None,
+    )
+    if canonical is None or slot != canonical:
+        raise ValueError("validation generation requires one canonical slot")
+    if require_fit_expected and slot.fit_expected is not True:
+        raise ValueError("validation generation requires one canonical fit slot")
+    context_ref = depth_context_ref
+    if context_ref is None:
+        context_ref = (
+            "depth-context:b"
+            if slot.scenario_or_control_id == "depth_context_perturbation"
+            else "depth-context:a"
+        )
+    understate = slot.scenario_or_control_id == "understated_uncertainty"
+    return _VbdTrajectoryGenerationSpec(
+        scenario_id=_validation_panel_scenario_id(slot),
+        seed=slot.seed,
+        panel_group_count=slot.panel_group_count,
+        aggregate_k=slot.k,
+        terminal_truth=slot.truth_vector,
+        direction_vector=slot.direction_vector,
+        post_pattern=slot.post_pattern,
+        correlations=slot.correlations,
+        plan_ref=VBD_TRAJECTORY_VALIDATION_PLAN_REF,
+        plan_hash=immutable_vbd_trajectory_validation_plan().plan_hash,
+        seed_namespace=VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE,
+        acceptance_slot_key=slot.slot_id,
+        depth_context_ref=context_ref,
+        shock_kind=(
+            "common_availability"
+            if slot.scenario_or_control_id == "common_availability_shock"
+            else None
+        ),
+        reported_standard_error_ratio=(
+            _UNDERSTATED_STANDARD_ERROR_RATIO
+            if understate
+            else _STANDARD_ERROR_RATIO
+        ),
+        reported_covariance_ratio=(
+            _UNDERSTATED_COVARIANCE_RATIO
+            if understate
+            else _COVARIANCE_RATIO
+        ),
+    )
+
+
+def _generate_vbd_trajectory_case(
+    spec: _VbdTrajectoryGenerationSpec,
+) -> VbdTrajectorySyntheticCase:
+    if type(spec) is not _VbdTrajectoryGenerationSpec:
+        raise ValueError("generation spec must use the exact immutable type")
+    validate_vbd_trajectory_runtime()
+    seed = validate_longitudinal_seed(spec.seed, name="VBD trajectory seed")
+    if type(spec.panel_group_count) is not int or spec.panel_group_count not in (6, 12):
+        raise ValueError("panel group count must be 6 or 12")
+    if type(spec.aggregate_k) is not int or spec.aggregate_k < 1:
+        raise ValueError("aggregate k must be a positive integer")
+    truth_vector = _strict_internal_truth(spec.terminal_truth)
+    directions = _strict_direction(spec.direction_vector)
+    correlations = _strict_correlations(spec.correlations)
+    if spec.post_pattern not in (
+        VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
+        VBD_TRAJECTORY_TEMPORARY_PULSE_POST_PATTERN,
+    ):
+        raise ValueError("post pattern is not compiled")
+    if spec.shock_kind not in (None, "common_availability"):
+        raise ValueError("shock kind is not compiled")
+    if spec.shock_kind == "common_availability" and (
+        spec.post_pattern != VBD_TRAJECTORY_SUSTAINED_POST_PATTERN
+        or truth_vector
+        != VBD_TRAJECTORY_COMMON_AVAILABILITY_SHOCK_TERMINAL
+    ):
+        raise ValueError("common availability shock semantics drifted")
+    if (
+        type(spec.reported_standard_error_ratio) is not float
+        or type(spec.reported_covariance_ratio) is not float
+        or (
+            spec.reported_standard_error_ratio,
+            spec.reported_covariance_ratio,
+        )
+        not in (
+            (_STANDARD_ERROR_RATIO, _COVARIANCE_RATIO),
+            (
+                _UNDERSTATED_STANDARD_ERROR_RATIO,
+                _UNDERSTATED_COVARIANCE_RATIO,
+            ),
+        )
+        or not math.isclose(
+            spec.reported_standard_error_ratio**2,
+            spec.reported_covariance_ratio,
+            rel_tol=0.0,
+            abs_tol=0.0,
+        )
+    ):
+        raise ValueError("reported uncertainty ratios are not compiled")
+    if spec.plan_ref == VBD_TRAJECTORY_SMOKE_PLAN_REF:
+        if (
+            spec.seed_namespace != VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE
+            or spec.acceptance_slot_key is not None
+            or not VBD_TRAJECTORY_SMOKE_SEED_MIN
+            <= seed
+            <= VBD_TRAJECTORY_SMOKE_SEED_MAX
+            or not spec.scenario_id.startswith(_DEVELOPMENT_SCENARIO_PREFIX)
+        ):
+            raise ValueError("development scenario generation is outside smoke")
+    elif (
+        spec.plan_ref != VBD_TRAJECTORY_VALIDATION_PLAN_REF
+        or spec.seed_namespace != VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE
+        or type(spec.acceptance_slot_key) is not str
+        or not spec.acceptance_slot_key
+        or spec.plan_hash != immutable_vbd_trajectory_validation_plan().plan_hash
+    ):
+        raise ValueError("validation generation identity is not compiled")
+
+    group_effects, states, observation_errors, working_covariance = (
+        _generate_base_paths(
+            panel_group_count=spec.panel_group_count,
+            aggregate_k=spec.aggregate_k,
+            seed=seed,
+            group_correlation=correlations[0],
+            innovation_correlation=correlations[1],
+            observation_correlation=correlations[2],
+        )
+    )
+    tau = _time_encoding()
+    base_latent = (
+        VBD_TRAJECTORY_DGP_ALPHA
+        + VBD_TRAJECTORY_DGP_BETA * tau[None, :, None]
+        + group_effects[:, None, :]
+        + states
+    )
+    base_observed = base_latent + observation_errors
+    pre_observed = base_observed[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :]
+    pre_mean = pre_observed.reshape(-1, 3).mean(axis=0)
+    pre_sd = pre_observed.reshape(-1, 3).std(axis=0, ddof=1)
+    if not np.all(np.isfinite(pre_sd)) or np.any(pre_sd <= 0.0):
+        raise VbdSyntheticRunnerError("generated pre-period scale is invalid")
+    prepared_observed = (
+        base_observed - pre_mean[None, None, :]
+    ) / pre_sd[None, None, :]
+    prepared_latent = (
+        base_latent - pre_mean[None, None, :]
+    ) / pre_sd[None, None, :]
+    prepared_covariance = (
+        np.diag(1.0 / pre_sd)
+        @ working_covariance
+        @ np.diag(1.0 / pre_sd)
+    )
+    base_terminal = (
+        prepared_latent[:, 15:18, :].mean(axis=(0, 1))
+        - prepared_latent[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :].mean(
+            axis=(0, 1)
+        )
+    )
+    common_shock_terminal = np.asarray(
+        VBD_TRAJECTORY_COMMON_AVAILABILITY_SHOCK_TERMINAL
+        if spec.shock_kind == "common_availability"
+        else (0.0, 0.0, 0.0),
+        dtype=float,
+    )
+    structural_terminal = np.asarray(truth_vector) - common_shock_terminal
+    structural_adjustments = _post_adjustments(
+        base_terminal=base_terminal,
+        terminal_truth=tuple(float(value) for value in structural_terminal),
+        post_pattern=spec.post_pattern,
+    )
+    common_shock_adjustments = np.zeros_like(structural_adjustments)
+    if spec.shock_kind == "common_availability":
+        common_shock_adjustments[:, :] = common_shock_terminal[None, :]
+    adjustments = structural_adjustments + common_shock_adjustments
+    prepared_observed[:, VBD_TRAJECTORY_PRE_WINDOW_COUNT:, :] += adjustments[
+        None, :, :
+    ]
+    prepared_latent[:, VBD_TRAJECTORY_PRE_WINDOW_COUNT:, :] += adjustments[
+        None, :, :
+    ]
+    realized = (
+        prepared_latent[:, 15:18, :].mean(axis=(0, 1))
+        - prepared_latent[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :].mean(
+            axis=(0, 1)
+        )
+    )
+    if not np.allclose(realized, np.asarray(truth_vector), rtol=0.0, atol=1e-12):
+        raise VbdSyntheticRunnerError("generator failed to realize terminal truth")
+
+    true_raw_covariance = (
+        np.diag(_LANE_SCALES)
+        @ prepared_covariance
+        @ np.diag(_LANE_SCALES)
+    )
+    reported_raw_covariance = (
+        true_raw_covariance * spec.reported_covariance_ratio
+    )
+    manifest = build_synthetic_reference_manifest(
+        spec.panel_group_count,
+        aggregate_k=spec.aggregate_k,
+        plan_hash=spec.plan_hash,
+        plan_ref=spec.plan_ref,
+    )
+    direction_root = sha256_json(
+        {
+            "lane_order": list(VBD_TRAJECTORY_LANES),
+            "direction_vector": list(directions),
+            "plan_ref": spec.plan_ref,
+        }
+    )
+    tuple_keys = [
+        [
+            f"workflow-vbd-{group:02d}",
+            "jbtd-vbd-trajectory",
+            "persona-vbd-synthetic",
+        ]
+        for group in range(spec.panel_group_count)
+    ]
+    partition_root = sha256_json(
+        {
+            "tuple_keys": tuple_keys,
+            "disjoint": True,
+            "nested": False,
+            "complementary": False,
+            "differenceable": False,
+        }
+    )
+    depth_context = _depth_context(spec.depth_context_ref)
+    bundles = tuple(
+        _build_bundle(
+            panel_group_index=group,
+            window_index=window,
+            prepared_values=prepared_observed[group, window, :],
+            raw_transformed_covariance=reported_raw_covariance,
+            aggregate_k=spec.aggregate_k,
+            direction_vector=directions,
+            direction_vector_root=direction_root,
+            plan_ref=spec.plan_ref,
+            plan_hash=spec.plan_hash,
+            partition_root=partition_root,
+            depth_context=depth_context,
+        )
+        for group in range(spec.panel_group_count)
+        for window in range(VBD_TRAJECTORY_TOTAL_WINDOW_COUNT)
+    )
+    lane_roots = tuple(
+        (
+            lane,
+            sha256_json(
+                [
+                    bundle.observations[lane_index].marginal_uncertainty_root
+                    for bundle in bundles
+                ]
+            ),
+        )
+        for lane_index, lane in enumerate(VBD_TRAJECTORY_LANES)
+    )
+    placeholder_panel = TrajectoryObservationPanel(
+        schema_version=VBD_TRAJECTORY_SCHEMA_VERSION,
+        panel_group_count=spec.panel_group_count,
+        pre_window_count=VBD_TRAJECTORY_PRE_WINDOW_COUNT,
+        post_window_count=VBD_TRAJECTORY_POST_WINDOW_COUNT,
+        aggregate_k=spec.aggregate_k,
+        direction_vector=directions,
+        direction_vector_root=direction_root,
+        reference_manifest=manifest,
+        bundles=bundles,
+        lane_observation_roots=lane_roots,
+        ordered_panel_manifest_root="0" * 64,
+        depth_context_root=depth_context.context_root,
+        cohort_partition_root=partition_root,
+        model_manifest_root=sha256_json(vbd_trajectory_model_manifest_body()),
+        study_plan_root=spec.plan_hash,
+        scenario_id=spec.scenario_id,
+        dgp_group_correlation=correlations[0],
+        dgp_innovation_correlation=correlations[1],
+        dgp_observation_correlation=correlations[2],
+        seed_namespace=spec.seed_namespace,
+        seed=seed,
+        generator_id=VBD_TRAJECTORY_GENERATOR_ID,
+        rng_id=VBD_TRAJECTORY_RNG_ID,
+        seed_manifest_root=sha256_json(
+            {
+                "seed_namespace": spec.seed_namespace,
+                "seed": seed,
+                "generator_id": VBD_TRAJECTORY_GENERATOR_ID,
+                "rng_id": VBD_TRAJECTORY_RNG_ID,
+                "acceptance_slot_key": spec.acceptance_slot_key,
+            }
+        ),
+        synthetic_only=True,
+        aggregate_only=True,
+        real_data_present=False,
+        customer_data_present=False,
+        production_data_present=False,
+        live_data_source_present=False,
+    )
+    panel = replace(
+        placeholder_panel,
+        ordered_panel_manifest_root=expected_ordered_panel_manifest_root(
+            placeholder_panel
+        ),
+    )
+    validate_trajectory_panel(panel)
+    true_covariance_tuple = tuple(
+        tuple(float(value) for value in row) for row in true_raw_covariance
+    )
+    truth = VbdTrajectoryTruth(
+        scenario_id=spec.scenario_id,
+        seed=seed,
+        requested_terminal_truth=truth_vector,
+        direction_vector=directions,
+        direction_adjusted_truth=tuple(
+            float(directions[index] * truth_vector[index]) for index in range(3)
+        ),
+        transformed_latent_paths=prepared_latent.copy(),
+        working_group_effects=group_effects.copy(),
+        working_ar1_states=states.copy(),
+        pre_observation_mean=tuple(float(value) for value in pre_mean),
+        pre_observation_sd=tuple(float(value) for value in pre_sd),
+        post_pattern=spec.post_pattern,
+        shock_kind=spec.shock_kind,
+        structural_terminal_truth=tuple(
+            float(value) for value in structural_terminal
+        ),
+        common_shock_terminal_shift=tuple(
+            float(value) for value in common_shock_terminal
+        ),
+        true_raw_transformed_covariance=true_covariance_tuple,
+        reported_standard_error_ratio=spec.reported_standard_error_ratio,
+        reported_covariance_ratio=spec.reported_covariance_ratio,
+    )
+    return VbdTrajectorySyntheticCase(panel=panel, truth=truth)
+
+
+def generate_vbd_trajectory_scenario_smoke_case(
+    scenario_key: str,
+    *,
+    seed: int = VBD_TRAJECTORY_SMOKE_SEED_MIN,
+    panel_group_count: int = 6,
+    aggregate_k: int = 16,
+    depth_context_ref: str = "depth-context:a",
+) -> VbdTrajectorySyntheticCase:
+    """Exercise compiled scenario mechanics only in the disjoint smoke namespace."""
+
+    validated_seed = validate_longitudinal_seed(
+        seed, name="VBD scenario smoke seed"
+    )
+    if not VBD_TRAJECTORY_SMOKE_SEED_MIN <= validated_seed <= VBD_TRAJECTORY_SMOKE_SEED_MAX:
+        raise ValueError("scenario smoke must use its disjoint seed namespace")
+    semantics = _development_scenario_semantics(
+        scenario_key, depth_context_ref=depth_context_ref
+    )
+    scenario_id = f"{_DEVELOPMENT_SCENARIO_PREFIX}{scenario_key}"
+    plan_body = _development_scenario_plan_body(
+        scenario_key=scenario_key,
+        scenario_id=scenario_id,
+        panel_group_count=panel_group_count,
+        aggregate_k=aggregate_k,
+        terminal_truth=semantics["terminal_truth"],
+        direction_vector=semantics["direction_vector"],
+        post_pattern=semantics["post_pattern"],
+        correlations=semantics["correlations"],
+        shock_kind=semantics["shock_kind"],
+        reported_standard_error_ratio=semantics[
+            "reported_standard_error_ratio"
+        ],
+        reported_covariance_ratio=semantics["reported_covariance_ratio"],
+    )
+    return _generate_vbd_trajectory_case(
+        _VbdTrajectoryGenerationSpec(
+            scenario_id=scenario_id,
+            seed=validated_seed,
+            panel_group_count=panel_group_count,
+            aggregate_k=aggregate_k,
+            terminal_truth=semantics["terminal_truth"],
+            direction_vector=semantics["direction_vector"],
+            post_pattern=semantics["post_pattern"],
+            correlations=semantics["correlations"],
+            plan_ref=VBD_TRAJECTORY_SMOKE_PLAN_REF,
+            plan_hash=sha256_json(plan_body),
+            seed_namespace=VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+            acceptance_slot_key=None,
+            depth_context_ref=semantics["depth_context_ref"],
+            shock_kind=semantics["shock_kind"],
+            reported_standard_error_ratio=semantics[
+                "reported_standard_error_ratio"
+            ],
+            reported_covariance_ratio=semantics[
+                "reported_covariance_ratio"
+            ],
+        )
+    )
+
+
+@contextmanager
+def _validation_generation_context(
+    *,
+    capability_hash: str,
+    capability_token_hash: str,
+    launch_receipt_hash: str,
+    _runner_token: object,
+):
+    hashes = (capability_hash, capability_token_hash, launch_receipt_hash)
+    if (
+        _runner_token is not _VALIDATION_GENERATION_RUNNER_TOKEN
+        or any(
+            type(value) is not str
+            or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+            for value in hashes
+        )
+    ):
+        raise VbdSyntheticRunnerError(
+            "validation generation capability is invalid"
+        )
+    context_token = _VALIDATION_CAPABILITY_HASH.set(
+        sha256_json(
+            {
+                "capability_hash": capability_hash,
+                "capability_token_hash": capability_token_hash,
+                "launch_receipt_hash": launch_receipt_hash,
+            }
+        )
+    )
+    try:
+        yield
+    finally:
+        _VALIDATION_CAPABILITY_HASH.reset(context_token)
+
+
+def _require_validation_generation_context() -> None:
+    if _VALIDATION_CAPABILITY_HASH.get() is None:
+        raise VbdSyntheticRunnerError(
+            "validation generation requires an admitted child capability"
+        )
+
+
+def generate_vbd_trajectory_validation_case(
+    slot: VbdTrajectoryValidationSlot,
+) -> VbdTrajectorySyntheticCase:
+    """Regenerate one compiled full slot only for the future frozen runner."""
+
+    _require_validation_generation_context()
+    return _generate_vbd_trajectory_case(_validation_generation_spec(slot))
+
+
+def _generate_vbd_trajectory_depth_validation_pair(
+    slot: VbdTrajectoryValidationSlot,
+) -> tuple[VbdTrajectorySyntheticCase, VbdTrajectorySyntheticCase]:
+    _require_validation_generation_context()
+    if slot.scenario_or_control_id != "depth_context_perturbation":
+        raise ValueError("Depth pair requires the compiled perturbation slot")
+    return (
+        _generate_vbd_trajectory_case(
+            _validation_generation_spec(slot, depth_context_ref="depth-context:a")
+        ),
+        _generate_vbd_trajectory_case(
+            _validation_generation_spec(slot, depth_context_ref="depth-context:b")
+        ),
+    )
+
+
+def _generate_vbd_trajectory_control_base(
+    slot: VbdTrajectoryValidationSlot,
+) -> VbdTrajectorySyntheticCase:
+    _require_validation_generation_context()
+    if slot.fit_expected is True:
+        raise ValueError("control base requires a structural-control slot")
+    return _generate_vbd_trajectory_case(
+        _validation_generation_spec(slot, require_fit_expected=False)
+    )
+
+
+def _spec_for_panel(panel: TrajectoryObservationPanel) -> _VbdTrajectoryGenerationSpec:
+    if panel.seed_namespace == VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE:
+        matches = tuple(
+            slot
+            for slot in required_vbd_trajectory_validation_slots()
+            if slot.seed == panel.seed
+        )
+        if len(matches) != 1:
+            raise TrajectoryStructureError(
+                "validation seed does not resolve one compiled slot"
+            )
+        return _validation_generation_spec(
+            matches[0], require_fit_expected=False
+        )
+    if not panel.scenario_id.startswith(_DEVELOPMENT_SCENARIO_PREFIX):
+        raise TrajectoryStructureError("synthetic scenario is outside compiled smoke")
+    scenario_key = panel.scenario_id.removeprefix(_DEVELOPMENT_SCENARIO_PREFIX)
+    depth = panel.bundles[0].depth_context
+    depth_ref = (
+        depth.context_ref if depth is not None else "depth-context:unavailable"
+    )
+    semantics = _development_scenario_semantics(
+        scenario_key, depth_context_ref=depth_ref
+    )
+    plan_body = _development_scenario_plan_body(
+        scenario_key=scenario_key,
+        scenario_id=panel.scenario_id,
+        panel_group_count=panel.panel_group_count,
+        aggregate_k=panel.aggregate_k,
+        terminal_truth=semantics["terminal_truth"],
+        direction_vector=semantics["direction_vector"],
+        post_pattern=semantics["post_pattern"],
+        correlations=semantics["correlations"],
+        shock_kind=semantics["shock_kind"],
+        reported_standard_error_ratio=semantics[
+            "reported_standard_error_ratio"
+        ],
+        reported_covariance_ratio=semantics["reported_covariance_ratio"],
+    )
+    return _VbdTrajectoryGenerationSpec(
+        scenario_id=panel.scenario_id,
+        seed=panel.seed,
+        panel_group_count=panel.panel_group_count,
+        aggregate_k=panel.aggregate_k,
+        terminal_truth=semantics["terminal_truth"],
+        direction_vector=semantics["direction_vector"],
+        post_pattern=semantics["post_pattern"],
+        correlations=semantics["correlations"],
+        plan_ref=VBD_TRAJECTORY_SMOKE_PLAN_REF,
+        plan_hash=sha256_json(plan_body),
+        seed_namespace=VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+        acceptance_slot_key=None,
+        depth_context_ref=depth_ref,
+        shock_kind=semantics["shock_kind"],
+        reported_standard_error_ratio=semantics[
+            "reported_standard_error_ratio"
+        ],
+        reported_covariance_ratio=semantics["reported_covariance_ratio"],
+    )
+
+
+def _validate_general_generated_panel(
+    panel: TrajectoryObservationPanel,
+) -> None:
+    spec = _spec_for_panel(panel)
+    group_effects, states, observation_errors, working_covariance = (
+        _generate_base_paths(
+            panel_group_count=panel.panel_group_count,
+            aggregate_k=panel.aggregate_k,
+            seed=panel.seed,
+            group_correlation=panel.dgp_group_correlation,
+            innovation_correlation=panel.dgp_innovation_correlation,
+            observation_correlation=panel.dgp_observation_correlation,
+        )
+    )
+    tau = _time_encoding()
+    base_latent = (
+        VBD_TRAJECTORY_DGP_ALPHA
+        + VBD_TRAJECTORY_DGP_BETA * tau[None, :, None]
+        + group_effects[:, None, :]
+        + states
+    )
+    base_observed = base_latent + observation_errors
+    pre = base_observed[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :]
+    pre_mean = pre.reshape(-1, 3).mean(axis=0)
+    pre_sd = pre.reshape(-1, 3).std(axis=0, ddof=1)
+    if not np.all(np.isfinite(pre_sd)) or np.any(pre_sd <= 0.0):
+        raise TrajectoryStructureError("seeded DGP pre-period scale is invalid")
+    expected = (base_observed - pre_mean[None, None, :]) / pre_sd[
+        None, None, :
+    ]
+    base_latent_prepared = (
+        base_latent - pre_mean[None, None, :]
+    ) / pre_sd[None, None, :]
+    base_terminal = (
+        base_latent_prepared[:, 15:18, :].mean(axis=(0, 1))
+        - base_latent_prepared[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :].mean(
+            axis=(0, 1)
+        )
+    )
+    expected[:, VBD_TRAJECTORY_PRE_WINDOW_COUNT:, :] += _post_adjustments(
+        base_terminal=base_terminal,
+        terminal_truth=spec.terminal_truth,
+        post_pattern=spec.post_pattern,
+    )[None, :, :]
+    actual = np.empty_like(expected)
+    for bundle in panel.bundles:
+        for lane_index, observation in enumerate(bundle.observations):
+            actual[
+                bundle.panel_group_index, bundle.window_index, lane_index
+            ] = (
+                observation.transformed_p50 - _LANE_OFFSETS[lane_index]
+            ) / _LANE_SCALES[lane_index]
+    if not np.allclose(actual, expected, rtol=0.0, atol=1e-12):
+        raise TrajectoryStructureError(
+            "panel observations do not regenerate from the declared scenario"
+        )
+    true_prepared_covariance = (
+        np.diag(1.0 / pre_sd)
+        @ working_covariance
+        @ np.diag(1.0 / pre_sd)
+    )
+    expected_raw_covariance = (
+        np.diag(_LANE_SCALES)
+        @ true_prepared_covariance
+        @ np.diag(_LANE_SCALES)
+        * spec.reported_covariance_ratio
+    )
+    for bundle in panel.bundles:
+        if not np.allclose(
+            np.asarray(bundle.transformed_covariance, dtype=float),
+            expected_raw_covariance,
+            rtol=0.0,
+            atol=1e-15,
+        ):
+            raise TrajectoryStructureError(
+                "panel covariance does not regenerate from the declared scenario"
+            )
+    if panel.study_plan_root != spec.plan_hash:
+        raise TrajectoryStructureError(
+            "study plan root does not match regenerated scenario inputs"
+        )
+
+
+def validate_vbd_trajectory_synthetic_generation(
+    panel: TrajectoryObservationPanel,
+) -> None:
+    """Regenerate smoke or runner-owned compiled inputs before every fit."""
+
+    if (
+        panel.seed_namespace == VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE
+        and not panel.scenario_id.startswith(_DEVELOPMENT_SCENARIO_PREFIX)
+    ):
+        _validate_vbd_trajectory_synthetic_generation_legacy(panel)
+        return
+    _validate_general_generated_panel(panel)
+
+
+def generate_vbd_trajectory_smoke_case(
+    *,
+    seed: int = VBD_TRAJECTORY_SMOKE_SEED_MIN,
+    panel_group_count: int = 6,
+    aggregate_k: int = 16,
+    terminal_truth: tuple[float, float, float] = (0.5, 0.5, 0.5),
+    direction_vector: tuple[int, int, int] = (1, 1, 1),
+    scenario_id: str = "development_smoke_primary",
+    depth_context_ref: str = "depth-context:a",
+    group_correlation: float = VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+    innovation_correlation: float = VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+    observation_correlation: float = VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+) -> VbdTrajectorySyntheticCase:
+    """Preserve the original permanent-HOLD smoke interface and bytes."""
+
+    return _generate_vbd_trajectory_smoke_case_legacy(
+        seed=seed,
+        panel_group_count=panel_group_count,
+        aggregate_k=aggregate_k,
+        terminal_truth=terminal_truth,
+        direction_vector=direction_vector,
+        scenario_id=scenario_id,
+        depth_context_ref=depth_context_ref,
+        group_correlation=group_correlation,
+        innovation_correlation=innovation_correlation,
+        observation_correlation=observation_correlation,
+    )

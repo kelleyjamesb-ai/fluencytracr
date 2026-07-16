@@ -261,10 +261,11 @@ Under `src/fluencytracr_inference/`:
   explicit chain/PPC seed boundary, exact conditional movement draw, strict
   sampler diagnostics, and the five frozen conditional-smoothed-path PPCs.
   Development smoke is permanently nonaccepting. Full settings are compiled,
-  but direct full execution remains blocked until the exact task-2.5 runner
-  owns and verifies the planned slot binding. No posterior draws, latent paths,
-  or PPC replicates leave the fit function. OpenSpec task `2.5`, evidence
-  execution, parent task `5.6`, real data, and UI remain incomplete.
+  but direct execution remains blocked until the candidate source is committed,
+  independently reviewed, frozen, and admitted by canonical concordance
+  evidence. No posterior draws, latent paths, or PPC replicates leave the fit
+  function. Concordance, evidence execution, parent task `5.6`, real data, and
+  UI remain incomplete.
 - `vbd_trajectory_artifact.py` — runner-owned, summary-only three-lane
   development-smoke artifact. It binds prepared inputs, deterministic fit
   summaries, diagnostics, transform/source roots, model/runtime identity, and
@@ -273,6 +274,26 @@ Under `src/fluencytracr_inference/`:
   zero. The strict confidence-engine bridge independently rederives the
   emitted binding graph, rejects malformed or unsafe coordinated rewrites,
   and permits only permanent `HOLD` smoke evidence.
+- `vbd_trajectory_validation_plan.py`,
+  `vbd_trajectory_validation_controls.py`,
+  `vbd_trajectory_validation_execution.py`,
+  `vbd_trajectory_validation_study.py`,
+  `vbd_trajectory_validation_resumable.py`, and
+  `vbd_trajectory_validation_cli.py` implement the nonexecuted proof runner.
+  The immutable plan contains exactly 2,000 original slots and 2,000 separately
+  regenerated recomputation slots in 40 ordered chunks, plus four ordered
+  full-setting canaries. Every child launch uses a create-once receipt with an
+  inherited one-time capability and parent-liveness pipe. Workspace path and
+  inode identity, plan/freeze/concordance bytes, launch ordering, process
+  attestations, phase roots, exact evidence bytes, and final combined readback
+  fail closed. A copied or renamed workspace rejects, incomplete or malformed
+  evidence HOLDS, and `combined.json` is not committed until a separate marker
+  binds its hash and unchanged evidence snapshot. The complete compiled control
+  set exercises production validation boundaries, including an explicit
+  all-lane common-availability shock and pre-period scale rejection. Canonical
+  concordance admission remains intentionally disabled until OpenSpec task 3;
+  no acceptance canary, concordance fit, or 2,000-slot evidence row was run in
+  the task-2.5 implementation slice.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

@@ -720,7 +720,7 @@ def test_missing_duplicate_and_off_plan_panels_reject(smoke_case):
         panel,
         bundles=panel.bundles[:-1] + (panel.bundles[-2],),
     )
-    with pytest.raises(TrajectoryStructureError, match="ordering drifted"):
+    with pytest.raises(TrajectoryStructureError, match="duplicated"):
         validate_trajectory_panel(duplicate)
 
     off_plan_bundle = replace(panel.bundles[-1], window_id="w99")

@@ -3,12 +3,14 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
+import fluencytracr_inference.vbd_trajectory_preparation as preparation
 from fluencytracr_inference.vbd_trajectory_preparation import (
     TrajectoryPreparedInput,
     TrajectoryPreparationError,
     _model_input_body,
     prepare_vbd_trajectory_lane,
     validate_prepared_vbd_trajectory,
+    validate_vbd_trajectory_pre_period_scale,
 )
 from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.vbd_trajectory_synthetic import (
@@ -82,6 +84,45 @@ def test_k4_rejects_at_existing_aggregate_floor_before_fit():
     assert error.value.stage == "aggregate_floor"
 
 
+@pytest.mark.parametrize(
+    "scale",
+    [0, 0.0, -1.0, float("nan"), float("inf"), float("-inf"), True, None, "1"],
+)
+def test_pre_period_scale_validator_fails_closed(scale):
+    with pytest.raises(
+        TrajectoryPreparationError, match="pre-period scale"
+    ) as error:
+        validate_vbd_trajectory_pre_period_scale(scale)
+    assert error.value.stage == "pre_period_standardization"
+
+
+def test_pre_period_scale_validator_preserves_compiled_positive_semantics():
+    assert validate_vbd_trajectory_pre_period_scale(1) == 1.0
+    assert validate_vbd_trajectory_pre_period_scale(1e-12) == 1e-12
+
+
+def test_preparation_uses_the_production_pre_period_scale_validator(
+    smoke_case, monkeypatch
+):
+    observed: list[object] = []
+    production_validator = preparation.validate_vbd_trajectory_pre_period_scale
+
+    def recording_validator(scale):
+        observed.append(scale)
+        return production_validator(scale)
+
+    monkeypatch.setattr(
+        preparation,
+        "validate_vbd_trajectory_pre_period_scale",
+        recording_validator,
+    )
+    prepared = preparation.prepare_vbd_trajectory_lane(
+        smoke_case.panel, "frequency"
+    )
+
+    assert observed == [prepared.raw_pre_sd, prepared.raw_pre_sd]
+
+
 def test_post_period_values_cannot_change_pre_period_transform():
     null_case = generate_vbd_trajectory_smoke_case(terminal_truth=(0.0, 0.0, 0.0))
     moved_case = generate_vbd_trajectory_smoke_case(terminal_truth=(0.5, 0.5, 0.5))
@@ -115,6 +156,9 @@ def _rehash_model_input(prepared):
             panel_group_count=prepared.panel_group_count,
             aggregate_k=prepared.aggregate_k,
             series_evidence_eligible=prepared.series_evidence_eligible,
+            standardization_window_indexes=(
+                prepared.standardization_window_indexes
+            ),
             y=prepared.y,
             known_se=prepared.known_se,
             time_index=prepared.time_index,
@@ -280,6 +324,16 @@ def test_public_validation_cannot_skip_exact_source_reconciliation(smoke_case):
             smoke_case.panel,
             _skip_source_reconciliation=True,
         )
+
+
+def test_post_period_standardization_hits_public_prepared_validation(smoke_case):
+    prepared = prepare_vbd_trajectory_lane(smoke_case.panel, "frequency")
+    forged = replace(
+        prepared, standardization_window_indexes=tuple(range(18))
+    )
+    with pytest.raises(TrajectoryPreparationError) as error:
+        validate_prepared_vbd_trajectory(forged, smoke_case.panel)
+    assert error.value.stage == "pre_period_standardization"
 
 
 def test_hostile_prepared_subclasses_are_rejected(smoke_case):

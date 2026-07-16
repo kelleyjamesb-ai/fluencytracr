@@ -43,6 +43,33 @@ class TrajectoryPreparationError(TrajectoryStructureError):
         self.stage = stage
 
 
+def validate_vbd_trajectory_standardization_window_indexes(
+    indexes: tuple[int, ...],
+) -> None:
+    """Enforce the pre-period-only standardization boundary."""
+
+    if indexes != tuple(range(VBD_TRAJECTORY_PRE_WINDOW_COUNT)):
+        raise TrajectoryPreparationError(
+            "pre_period_standardization",
+            "standardization must use only the twelve pre-period windows",
+        )
+
+
+def validate_vbd_trajectory_pre_period_scale(scale: object) -> float:
+    """Return one finite, positive pre-period sample scale."""
+
+    if (
+        type(scale) not in (int, float)
+        or not math.isfinite(scale)
+        or scale <= 0.0
+    ):
+        raise TrajectoryPreparationError(
+            "pre_period_standardization",
+            "pre-period scale must be finite and positive",
+        )
+    return float(scale)
+
+
 def _prepared_sha256(value: object, name: str) -> str:
     if type(value) is not str or not _SHA256_RE.fullmatch(value):
         raise TrajectoryPreparationError(
@@ -57,6 +84,7 @@ class TrajectoryPreparedInput:
     panel_group_count: int
     aggregate_k: int
     series_evidence_eligible: bool
+    standardization_window_indexes: tuple[int, ...]
     y: np.ndarray
     known_se: np.ndarray
     time_index: np.ndarray
@@ -111,6 +139,7 @@ class TrajectoryPreparedInput:
             panel_group_count=self.panel_group_count,
             aggregate_k=self.aggregate_k,
             series_evidence_eligible=self.series_evidence_eligible,
+            standardization_window_indexes=self.standardization_window_indexes,
             y=self.y,
             known_se=self.known_se,
             time_index=self.time_index,
@@ -145,6 +174,7 @@ def _model_input_body(
     panel_group_count: int,
     aggregate_k: int,
     series_evidence_eligible: bool,
+    standardization_window_indexes: tuple[int, ...],
     y: np.ndarray,
     known_se: np.ndarray,
     time_index: np.ndarray,
@@ -167,6 +197,9 @@ def _model_input_body(
         "panel_group_count": panel_group_count,
         "aggregate_k": aggregate_k,
         "series_evidence_eligible": series_evidence_eligible,
+        "standardization_window_indexes": list(
+            standardization_window_indexes
+        ),
         "y": [float(value) for value in y],
         "known_se": [float(value) for value in known_se],
         "time_index": [int(value) for value in time_index],
@@ -220,6 +253,9 @@ def prepare_vbd_trajectory_lane(
             "aggregate_floor",
             "aggregate k is below the existing schema floor",
         )
+    validate_vbd_trajectory_standardization_window_indexes(
+        tuple(range(VBD_TRAJECTORY_PRE_WINDOW_COUNT))
+    )
     lane_index = VBD_TRAJECTORY_LANES.index(lane)
     values: list[float] = []
     standard_errors: list[float] = []
@@ -256,11 +292,9 @@ def prepare_vbd_trajectory_lane(
     if raw_pre.size != panel.panel_group_count * VBD_TRAJECTORY_PRE_WINDOW_COUNT:
         raise TrajectoryPreparationError("panel_alignment", "pre-period panel is incomplete")
     raw_pre_mean = float(raw_pre.mean())
-    raw_pre_sd = float(raw_pre.std(ddof=1))
-    if not math.isfinite(raw_pre_sd) or raw_pre_sd <= 0.0:
-        raise TrajectoryPreparationError(
-            "pre_period_standardization", "pre-period scale must be positive"
-        )
+    raw_pre_sd = validate_vbd_trajectory_pre_period_scale(
+        float(raw_pre.std(ddof=1))
+    )
     y = (raw - raw_pre_mean) / raw_pre_sd
     known_se = raw_se / raw_pre_sd
     if not np.all(np.isfinite(y)):
@@ -302,6 +336,9 @@ def prepare_vbd_trajectory_lane(
         aggregate_k=panel.aggregate_k,
         series_evidence_eligible=(
             panel.aggregate_k >= VBD_TRAJECTORY_SERIES_EVIDENCE_FLOOR_K
+        ),
+        standardization_window_indexes=tuple(
+            range(VBD_TRAJECTORY_PRE_WINDOW_COUNT)
         ),
         y=y,
         known_se=known_se,
@@ -346,6 +383,9 @@ def prepare_vbd_trajectory_lane(
         aggregate_k=panel.aggregate_k,
         series_evidence_eligible=(
             panel.aggregate_k >= VBD_TRAJECTORY_SERIES_EVIDENCE_FLOOR_K
+        ),
+        standardization_window_indexes=tuple(
+            range(VBD_TRAJECTORY_PRE_WINDOW_COUNT)
         ),
         y=y,
         known_se=known_se,
@@ -418,18 +458,16 @@ def _validate_prepared_structure_and_hashes(
         raise TrajectoryPreparationError(
             "prepared_shape", "series evidence eligibility drifted"
         )
+    validate_vbd_trajectory_standardization_window_indexes(
+        prepared.standardization_window_indexes
+    )
     if type(prepared.direction_sign) is not int or prepared.direction_sign not in (-1, 1):
         raise TrajectoryPreparationError("estimand_contrast", "direction sign drifted")
     if type(prepared.raw_pre_mean) not in (int, float) or not math.isfinite(
         prepared.raw_pre_mean
     ):
         raise TrajectoryPreparationError("pre_period_standardization", "raw pre mean is invalid")
-    if (
-        type(prepared.raw_pre_sd) not in (int, float)
-        or not math.isfinite(prepared.raw_pre_sd)
-        or prepared.raw_pre_sd <= 0.0
-    ):
-        raise TrajectoryPreparationError("pre_period_standardization", "raw pre scale is invalid")
+    validate_vbd_trajectory_pre_period_scale(prepared.raw_pre_sd)
     for name, value in (
         ("y", prepared.y),
         ("known_se", prepared.known_se),
@@ -550,7 +588,7 @@ def _validate_prepared_structure_and_hashes(
             "raw_pre_mean": prepared.raw_pre_mean,
             "raw_pre_sd": prepared.raw_pre_sd,
             "standard_error_scaling": 1.0 / prepared.raw_pre_sd,
-            "pre_window_indexes": list(range(VBD_TRAJECTORY_PRE_WINDOW_COUNT)),
+            "pre_window_indexes": list(prepared.standardization_window_indexes),
         }
     )
     if prepared.transform_root != expected_transform_root:
@@ -577,6 +615,7 @@ def _validate_prepared_structure_and_hashes(
         panel_group_count=prepared.panel_group_count,
         aggregate_k=prepared.aggregate_k,
         series_evidence_eligible=prepared.series_evidence_eligible,
+        standardization_window_indexes=prepared.standardization_window_indexes,
         y=prepared.y,
         known_se=prepared.known_se,
         time_index=prepared.time_index,

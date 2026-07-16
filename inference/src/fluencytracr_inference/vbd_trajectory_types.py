@@ -50,6 +50,10 @@ VBD_TRAJECTORY_GENERATOR_ID = "vbd_trajectory_direct_aggregate_dgp_v1"
 VBD_TRAJECTORY_RNG_ID = "numpy.random.PCG64DXSM"
 VBD_TRAJECTORY_SMOKE_SEED_MIN = 2_055_900_000
 VBD_TRAJECTORY_SMOKE_SEED_MAX = 2_055_900_999
+VBD_TRAJECTORY_SMOKE_PLAN_REF = "plan:vbd-trajectory-development-smoke-v1"
+VBD_TRAJECTORY_VALIDATION_PLAN_REF = "plan:vbd-trajectory-validation-v1"
+VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE = "development_smoke_nonacceptance"
+VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE = "validation_plan_acceptance"
 VBD_TRAJECTORY_TRANSFORMS = {
     "frequency": "log1p_p50_v1",
     "engagement": "asin_sqrt_proportion_p50_v1",
@@ -176,7 +180,7 @@ VBD_TRAJECTORY_REFERENCE_SPEC = {
         "gate_receipt",
         "definition:synthetic-known-aggregate-uncertainty-v1",
     ),
-    "plan:vbd-trajectory-development-smoke-v1": (
+    VBD_TRAJECTORY_SMOKE_PLAN_REF: (
         "study_plan",
         "definition:synthetic-known-aggregate-uncertainty-v1",
     ),
@@ -209,7 +213,8 @@ _SAFE_ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._:/-]{0,95}$")
 _FORBIDDEN_KEY_RE = re.compile(
     r"(?:^|_)(?:user|email|employee|respondent|person|member_id|raw_rows?|"
     r"prompt|response|transcript|customer_name|overall_vbd_score|"
-    r"integration_score|vbd_quadrant|velocity_index|depth_value)(?:_|$)",
+    r"integration_score|vbd_quadrant|velocity_index|depth_value|"
+    r"blueprint_target_value|primary_outcome_value|ai_fluency_value)(?:_|$)",
     re.IGNORECASE,
 )
 _FORBIDDEN_REF_FRAGMENT_RE = re.compile(
@@ -933,6 +938,36 @@ def expected_synthetic_cohort_hash(panel_group_index: int, aggregate_k: int) -> 
     )
 
 
+def _reference_spec_for_plan_ref(
+    plan_ref: str,
+) -> dict[str, tuple[str, str]]:
+    if plan_ref == VBD_TRAJECTORY_SMOKE_PLAN_REF:
+        return dict(VBD_TRAJECTORY_REFERENCE_SPEC)
+    if plan_ref != VBD_TRAJECTORY_VALIDATION_PLAN_REF:
+        raise TrajectoryStructureError("reference manifest study plan is off plan")
+    return {
+        (
+            VBD_TRAJECTORY_VALIDATION_PLAN_REF
+            if ref_value == VBD_TRAJECTORY_SMOKE_PLAN_REF
+            else ref_value
+        ): semantics
+        for ref_value, semantics in VBD_TRAJECTORY_REFERENCE_SPEC.items()
+    }
+
+
+def _manifest_study_plan_ref(manifest: TrajectoryReferenceManifest) -> str:
+    plan_refs = tuple(
+        entry.ref for entry in manifest.entries if entry.field_role == "study_plan"
+    )
+    if len(plan_refs) != 1:
+        raise TrajectoryStructureError(
+            "reference manifest must bind exactly one study plan"
+        )
+    plan_ref = plan_refs[0]
+    _reference_spec_for_plan_ref(plan_ref)
+    return plan_ref
+
+
 def validate_synthetic_reference_manifest(
     manifest: TrajectoryReferenceManifest,
     *,
@@ -942,7 +977,9 @@ def validate_synthetic_reference_manifest(
 
     validate_reference_manifest(manifest)
     entries = manifest.by_ref()
-    static_refs = set(VBD_TRAJECTORY_REFERENCE_SPEC)
+    plan_ref = _manifest_study_plan_ref(manifest)
+    reference_spec = _reference_spec_for_plan_ref(plan_ref)
+    static_refs = set(reference_spec)
     cohort_refs = sorted(ref for ref in entries if ref.startswith("cohort:"))
     expected_group_count = len(cohort_refs)
     if expected_group_count not in VBD_TRAJECTORY_PANEL_GROUP_COUNTS:
@@ -951,7 +988,7 @@ def validate_synthetic_reference_manifest(
         f"cohort:vbd-synthetic-g{group:02d}"
         for group in range(expected_group_count)
     ]
-    expected_ref_order = list(VBD_TRAJECTORY_REFERENCE_SPEC) + expected_cohort_refs
+    expected_ref_order = list(reference_spec) + expected_cohort_refs
     if [entry.ref for entry in manifest.entries] != expected_ref_order:
         raise TrajectoryStructureError("reference manifest order drifted")
     if cohort_refs != expected_cohort_refs or set(entries) != static_refs | set(
@@ -959,7 +996,7 @@ def validate_synthetic_reference_manifest(
     ):
         raise TrajectoryStructureError("reference manifest ref set drifted")
     for ref_value, (expected_role, expected_source_definition) in (
-        VBD_TRAJECTORY_REFERENCE_SPEC.items()
+        reference_spec.items()
     ):
         entry = entries[ref_value]
         if (
@@ -968,7 +1005,7 @@ def validate_synthetic_reference_manifest(
             or entry.owner_role != "synthetic_generator"
         ):
             raise TrajectoryStructureError("reference manifest semantic role drifted")
-        if ref_value != "plan:vbd-trajectory-development-smoke-v1":
+        if ref_value != plan_ref:
             expected_bound_hash = expected_static_reference_content_hash(
                 ref_value, expected_role, expected_source_definition
             )
@@ -1665,6 +1702,74 @@ def expected_ordered_panel_manifest_root(panel: TrajectoryObservationPanel) -> s
     )
 
 
+def _validation_slot_and_plan_hash(seed: int):
+    from .vbd_trajectory_validation_plan import (
+        immutable_vbd_trajectory_validation_plan,
+        required_vbd_trajectory_validation_slots,
+    )
+
+    matches = tuple(
+        slot for slot in required_vbd_trajectory_validation_slots() if slot.seed == seed
+    )
+    if len(matches) != 1:
+        raise TrajectoryStructureError(
+            "validation seed does not resolve one unique compiled slot"
+        )
+    return matches[0], immutable_vbd_trajectory_validation_plan().plan_hash
+
+
+def _validation_panel_scenario_id(slot) -> str:
+    return f"{slot.family}_{slot.scenario_or_control_id}".replace("=", "_")
+
+
+def validate_trajectory_lane_window_manifest(
+    keys: tuple[tuple[int, str, int], ...], *, panel_group_count: int
+) -> None:
+    """Validate the exact lane/window universe admitted by panel preparation."""
+
+    if type(keys) is not tuple or type(panel_group_count) is not int:
+        raise TrajectoryStructureError("lane/window manifest is malformed")
+    if any(
+        type(key) is not tuple
+        or len(key) != 3
+        or type(key[0]) is not int
+        or key[1] not in VBD_TRAJECTORY_LANES
+        or type(key[2]) is not int
+        for key in keys
+    ):
+        raise TrajectoryStructureError("lane/window manifest is malformed")
+    if len(set(keys)) != len(keys):
+        raise TrajectoryStructureError("lane/window key is duplicated")
+
+    grouped: dict[tuple[int, str], set[int]] = {}
+    for group, lane, window in keys:
+        grouped.setdefault((group, lane), set()).add(window)
+    for group in range(panel_group_count):
+        lane_sets = [
+            grouped.get((group, lane), set()) for lane in VBD_TRAJECTORY_LANES
+        ]
+        if not all(value == lane_sets[0] for value in lane_sets[1:]):
+            raise TrajectoryStructureError("lane windows are misaligned")
+
+    windows = tuple(window for _, _, window in keys)
+    if VBD_TRAJECTORY_TOTAL_WINDOW_COUNT in windows:
+        raise TrajectoryStructureError("fit input contains a lookahead window")
+    if any(
+        window < 0 or window >= VBD_TRAJECTORY_TOTAL_WINDOW_COUNT
+        for window in windows
+    ):
+        raise TrajectoryStructureError("lane/window key is off plan")
+
+    expected = {
+        (group, lane, window)
+        for group in range(panel_group_count)
+        for lane in VBD_TRAJECTORY_LANES
+        for window in range(VBD_TRAJECTORY_TOTAL_WINDOW_COUNT)
+    }
+    if set(keys) != expected or len(keys) != len(expected):
+        raise TrajectoryStructureError("lane/window manifest is incomplete")
+
+
 def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
     if type(panel) is not TrajectoryObservationPanel:
         raise TrajectoryStructureError("trajectory panel has an unsupported type")
@@ -1706,7 +1811,8 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
     ):
         raise TrajectoryStructureError("panel direction vector is malformed")
     validate_reference_manifest(panel.reference_manifest)
-    expected_reference_spec = dict(VBD_TRAJECTORY_REFERENCE_SPEC)
+    plan_ref = _manifest_study_plan_ref(panel.reference_manifest)
+    expected_reference_spec = _reference_spec_for_plan_ref(plan_ref)
     for group in range(panel.panel_group_count):
         expected_reference_spec[f"cohort:vbd-synthetic-g{group:02d}"] = (
             "cohort",
@@ -1723,7 +1829,7 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
             or entry.owner_role != "synthetic_generator"
         ):
             raise TrajectoryStructureError("reference manifest semantic role drifted")
-        if not ref_value.startswith("cohort:") and ref_value != "plan:vbd-trajectory-development-smoke-v1":
+        if not ref_value.startswith("cohort:") and ref_value != plan_ref:
             expected_bound_hash = expected_static_reference_content_hash(
                 ref_value, expected_role, expected_source_definition
             )
@@ -1732,6 +1838,14 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
     expected_count = panel.panel_group_count * VBD_TRAJECTORY_TOTAL_WINDOW_COUNT
     if len(panel.bundles) != expected_count:
         raise TrajectoryStructureError("trajectory panel is incomplete")
+    validate_trajectory_lane_window_manifest(
+        tuple(
+            (bundle.panel_group_index, lane, bundle.window_index)
+            for bundle in panel.bundles
+            for lane in VBD_TRAJECTORY_LANES
+        ),
+        panel_group_count=panel.panel_group_count,
+    )
     seen: set[tuple[int, int]] = set()
     tuple_keys: list[tuple[str, str, str]] = []
     depth_context_statuses: list[tuple[str, str | None, bool]] = []
@@ -1808,9 +1922,9 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
         raise TrajectoryStructureError("model manifest root drifted")
     if any(bundle.plan_hash != panel.study_plan_root for bundle in panel.bundles):
         raise TrajectoryStructureError("study plan root drifted")
+    if actual_entries[plan_ref].bound_content_hash != panel.study_plan_root:
+        raise TrajectoryStructureError("study plan manifest binding drifted")
     _safe_id(panel.scenario_id, "panel scenario_id")
-    if not panel.scenario_id.startswith("development_smoke_"):
-        raise TrajectoryStructureError("panel scenario is outside the smoke namespace")
     for name, value in (
         ("group correlation", panel.dgp_group_correlation),
         ("innovation correlation", panel.dgp_innovation_correlation),
@@ -1819,25 +1933,66 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
         correlation = _finite(value, name)
         if not -0.49 < correlation < 1.0:
             raise TrajectoryStructureError(f"{name} is outside the compiled range")
-    if panel.seed_namespace != "development_smoke_nonacceptance":
-        raise TrajectoryStructureError("seed namespace is not a development-smoke namespace")
     _safe_id(panel.seed_namespace, "panel seed_namespace")
     seed = _strict_int(panel.seed, "panel seed")
-    if not VBD_TRAJECTORY_SMOKE_SEED_MIN <= seed <= VBD_TRAJECTORY_SMOKE_SEED_MAX:
-        raise TrajectoryStructureError("panel seed is outside the smoke namespace")
     if panel.generator_id != VBD_TRAJECTORY_GENERATOR_ID:
         raise TrajectoryStructureError("generator id drifted")
     if panel.rng_id != VBD_TRAJECTORY_RNG_ID:
         raise TrajectoryStructureError("RNG id drifted")
     _safe_id(panel.generator_id, "panel generator_id")
     _safe_id(panel.rng_id, "panel rng_id")
+    acceptance_slot_key = None
+    if plan_ref == VBD_TRAJECTORY_SMOKE_PLAN_REF:
+        if not panel.scenario_id.startswith("development_smoke_"):
+            raise TrajectoryStructureError(
+                "panel scenario is outside the smoke namespace"
+            )
+        if panel.seed_namespace != VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE:
+            raise TrajectoryStructureError(
+                "seed namespace is not a development-smoke namespace"
+            )
+        if not VBD_TRAJECTORY_SMOKE_SEED_MIN <= seed <= VBD_TRAJECTORY_SMOKE_SEED_MAX:
+            raise TrajectoryStructureError("panel seed is outside the smoke namespace")
+    else:
+        if panel.seed_namespace != VBD_TRAJECTORY_VALIDATION_SEED_NAMESPACE:
+            raise TrajectoryStructureError(
+                "seed namespace is not the compiled validation namespace"
+            )
+        slot, validation_plan_hash = _validation_slot_and_plan_hash(seed)
+        if panel.study_plan_root != validation_plan_hash:
+            raise TrajectoryStructureError(
+                "validation panel does not bind the global compiled plan hash"
+            )
+        observed_slot_semantics = (
+            panel.scenario_id,
+            panel.panel_group_count,
+            panel.aggregate_k,
+            panel.direction_vector,
+            (
+                panel.dgp_group_correlation,
+                panel.dgp_innovation_correlation,
+                panel.dgp_observation_correlation,
+            ),
+        )
+        expected_slot_semantics = (
+            _validation_panel_scenario_id(slot),
+            slot.panel_group_count,
+            slot.k,
+            slot.direction_vector,
+            slot.correlations,
+        )
+        if observed_slot_semantics != expected_slot_semantics:
+            raise TrajectoryStructureError(
+                "validation panel metadata drifted from its seed-resolved slot"
+            )
+        acceptance_slot_key = slot.slot_id
     expected_seed_root = sha256_json(
         {
             "seed_namespace": panel.seed_namespace,
             "seed": seed,
             "generator_id": panel.generator_id,
             "rng_id": panel.rng_id,
-            "acceptance_slot_key": None,
+            "acceptance_slot_key": acceptance_slot_key,
         }
     )
     if panel.seed_manifest_root != expected_seed_root:
