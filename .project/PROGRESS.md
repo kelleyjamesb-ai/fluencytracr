@@ -2,6 +2,30 @@
 
 ## Current Session
 
+- James Kelley explicitly authorized the sequential bounded VBD synthetic
+  implementation, concordance, full-evidence, and exact-byte acceptance queue
+  items on 2026-07-15. The first item,
+  `vbd-trajectory-synthetic-implementation-runner`, is active on
+  `codex/vbd-trajectory-engine-calibration` from merged `origin/main` at
+  `2e3df0fd`. This item is limited to OpenSpec tasks `2.1-2.5`; acceptance-plan
+  concordance, canary, primary, targeted, drift, floor, and negative-control
+  seeds remain blocked until exact source review and the manifest-only freeze.
+  Future queue items are pending and must be activated sequentially. The final
+  acceptance record still requires James's explicit approval of its exact
+  committed bytes. No real/customer/live data, outcome integration, routes,
+  UI, persistence, connectors, exports, customer output, promotion, or task
+  `5.6` completion is authorized by this activation.
+- Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
+  evidence-breaking ambiguities in the merged plan: the existing outcome
+  engine did not recover the latent AR(1) smoothing contrast, deterministic
+  interval support was undefined under `weighted_quantile_v1`, the seeded DGP
+  draw sequence was not portable, and PPC conditioning was unspecified. The
+  contract/design/spec now freeze exact conditional-Gaussian contrast
+  equations, unique-pre-index time encoding, the accepted 8,192-point outer
+  integration plus 16-point Gauss-Hermite support, PCG64DXSM draw order and
+  Cholesky orientation, conditional-smoothed-path PPC generation, corrected
+  quantile-delta wording, and an independent bootstrap root/seed/covariance/SE
+  oracle. No engine code or acceptance seed was run in this correction slice.
 - VBD trajectory-model calibration contract and synthetic proof plan completed
   (2026-07-15) on `codex/vbd-trajectory-calibration-contract` from
   `origin/main` at `8787b375`. The docs/OpenSpec-only change records

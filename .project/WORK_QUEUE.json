@@ -212,6 +212,38 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-15: docs/OpenSpec freeze separate frequency, engagement, and Breadth trajectories; Depth context-only; private source roots, exact freeze/review ordering, 30 concordance bundles, four canaries, and a 2,000-case plus 2,000-recompute proof plan. CODE/BUG/ADVERSARIAL GO and all gates passed. No implementation or execution; parent 5.6 and downstream integration remain incomplete."
+    },
+    {
+      "id": "vbd-trajectory-synthetic-implementation-runner",
+      "title": "VBD trajectory synthetic implementation and resumable proof runner",
+      "bound": "Synthetic-only inference/, packages/confidence-engine internal bridge coverage, and required OpenSpec/docs/status: complete add-vbd-trajectory-calibration-contract tasks 2.1-2.5 with strict three-lane aggregate types, deterministic generator/preparer, bootstrap conformance fixtures, deterministic state-space and PyMC reference engines, diagnostics/PPC, summary-only artifact boundary, exact 2,000-case planner, resumable fresh recomputation, canary machinery, smoke, and controls; no acceptance-plan concordance/canary/full-evidence execution, real/customer/live data, public schemas, routes, UI, persistence, connectors, exports, customer output, confidence/probability output, ROI, causality, productivity, ranking, new events/reasons/thresholds, DiD, promotion, or task 5.6 completion",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "Authorized by James Kelley on 2026-07-15. Implement and verify tasks 2.1-2.5 only; commit and push each verified slice. Acceptance-plan seeds remain blocked until exact source review and freeze."
+    },
+    {
+      "id": "vbd-trajectory-engine-concordance",
+      "title": "VBD trajectory source freeze and NUTS concordance",
+      "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authorized future queue item. Activate only after the implementation/runner item is merged and exact source commit S is available."
+    },
+    {
+      "id": "vbd-trajectory-full-evidence",
+      "title": "VBD trajectory full synthetic calibration evidence",
+      "bound": "Synthetic-only execution from accepted frozen concordance: complete tasks 4.1-4.4 and 5.1 by running four compiled canaries, exactly 1,200 primary, 360 targeted, 360 drift, 12 floor, and 68 negative-control cases plus fresh recomputation of all 2,000 deterministic cases, strict exact-slot combination, and committing only the full summary artifact and byte-derived compact summary; no acceptance record, task 5.6 completion, real/customer/live data, public surfaces, customer output, or promotion",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authorized future queue item. Activate only after accepted full-setting NUTS concordance from the frozen source."
+    },
+    {
+      "id": "vbd-trajectory-evidence-acceptance",
+      "title": "VBD trajectory exact-byte evidence acceptance and parent closeout",
+      "bound": "Synthetic-only evidence review/status: complete tasks 5.2-5.6 by obtaining exact-byte CODE, BUG, ADVERSARIAL, and statistical-methodology review, committing a separate self-hashed acceptance record, obtaining explicit human acceptance of those exact bytes, and only then closing parent task 5.6 while recording downstream three-lane outcome integration, real-data admission, monitoring, readout, persistence, and UI as separate blockers; no model/evidence changes, real/customer/live data, public surfaces, customer output, or promotion",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authorized future queue item. Explicit human acceptance of the final exact committed record remains nondelegable."
     }
   ]
 }

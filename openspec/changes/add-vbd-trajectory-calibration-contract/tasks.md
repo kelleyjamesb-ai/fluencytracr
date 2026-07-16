@@ -16,7 +16,7 @@
 
 ## 2. Future Synthetic Implementation
 
-- [ ] 2.1 Obtain separate explicit implementation approval. Proposal or
+- [x] 2.1 Obtain separate explicit implementation approval. Proposal or
   contract acceptance SHALL NOT satisfy this gate.
 - [ ] 2.2 Add strict aggregate-only VBD trajectory types, deterministic
   known-aggregate synthetic generation, integer-valid source-bootstrap

@@ -1,11 +1,12 @@
 # VBD Trajectory-Model Calibration
 
-Contract status: `CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING`
+Contract status: `SYNTHETIC_IMPLEMENTATION_AUTHORIZED_INCOMPLETE`
 
 Owning model-family component:
 `bayesian_vbd_behavioral_trajectory_model`
 
-Implementation approval: `PENDING`
+Implementation approval:
+`APPROVED_BY_JAMES_KELLEY_2026_07_15_FOR_SYNTHETIC_TASKS_2_2_THROUGH_2_5`
 
 Parent OpenSpec task: `5.6` remains incomplete.
 
@@ -20,9 +21,11 @@ frequency, engagement, and breadth. Reusing that composite beside a separate
 Breadth term would count Breadth twice. The legacy 0-100 VBD intake also lacks
 admitted aggregate uncertainty. Neither representation is valid model input.
 
-This contract is documentation and proof planning only. No trajectory engine,
-artifact schema, bridge, study execution, real-data admission, or output is
-implemented or authorized.
+This contract is documentation and proof planning plus bounded synthetic
+implementation authorization for tasks `2.2` through `2.5` only. No trajectory
+engine, artifact schema, bridge, study execution, real-data admission, or
+output is implemented. Concordance, evidence execution, independent
+acceptance, and parent closeout remain separately gated.
 
 ## Current Decision
 
@@ -284,8 +287,10 @@ eta[d,c,t] ~ Normal(0, sigma_r[d]^2)
 `x_star` and `se_star` are the pre-period-standardized transformed observation
 and standard error. Ordered time is `t in {0,...,17}`. `tau[t]` is computed by
 subtracting the mean of `{0,...,11}` and dividing by the sample standard
-deviation of `{0,...,11}` with `ddof=1`; no post-period time contributes to the
-encoding.
+deviation of those twelve unique values with `ddof=1`, then broadcasting that
+single encoded vector to every panel group. Repeating time values once per
+panel group before computing the standard deviation is prohibited. No
+post-period time contributes to the encoding.
 
 The exact priors are independent by lane:
 
@@ -311,9 +316,10 @@ model uses:
 
 The primary planned engine is deterministic Gaussian state-space integration.
 The reference planned engine is PyMC NUTS under the same model and the accepted
-four-chain sampler/diagnostic posture. Engine implementation remains blocked
-pending proposal acceptance followed by a separate explicit implementation
-decision; proposal acceptance alone is insufficient.
+four-chain sampler/diagnostic posture. James Kelley separately approved the
+sequential synthetic implementation and proof stages on 2026-07-15. That
+approval does not satisfy implementation, execution, evidence, review, human
+acceptance, parent completion, real-data admission, or downstream integration.
 
 ## Internal Estimands
 
@@ -341,6 +347,50 @@ Panel groups and windows receive equal weight. The posterior uses fixed-interval
 smoothing conditional on exactly the frozen `w00..w17` panel. It uses no window
 after `w17`, makes no forecast, and has no lag selector. Any downstream
 exposure lag belongs to a separate predeclared outcome-integration plan.
+
+The fixed-interval contrast is recovered analytically rather than relabeling a
+fixed-coefficient contrast. For one lane and one outer hyperparameter support,
+let `H` be the intercept, encoded-time, and zero-sum group design; let `K_c` be
+the stationary AR(1) covariance; let `R_c=diag(se_c^2)`; let
+`B_c=K_c+R_c`; and let `a_c` contain direction-adjusted weights
+`-1/(12*C)` in pre windows, `+1/(3*C)` in `w15..w17`, and zero elsewhere.
+After analytically conditioning the Gaussian coefficient/group vector
+`theta | y,h ~ Normal(m_h,S_h)`, define:
+
+```text
+g_h = sum_c H_c' * (a_c - solve(B_c, K_c*a_c))
+q_mean_h = sum_c a_c' * K_c * solve(B_c,y_c) + g_h' * m_h
+q_var_h = sum_c a_c' * (K_c-K_c*solve(B_c,K_c)) * a_c
+          + g_h' * S_h * g_h
+```
+
+Every solve uses the unmodified supplied known-SE covariance. Nonfinite or
+nonpositive `q_var_h`, failed factorization, or an unbound contrast HOLDS. This
+is the exact conditional Gaussian distribution of the latent-level contrast at
+that hyperparameter support; no latent path is emitted.
+
+The deterministic engine reuses the accepted outer integration constants:
+8,192 unscrambled Sobol points, transformed through the same three-dimensional
+Student-t proposal plus chi-square coordinate, with the existing finite-point,
+effective-sample-size, and maximum-normalized-weight gates. Conditional
+Gaussian contrast uncertainty is expanded with
+`normal_quadrature_v1`: the 16 nodes and weights returned by
+`numpy.polynomial.hermite.hermgauss(16)` under the pinned runtime, transformed
+to standard-normal support as `z_j=sqrt(2)*node_j` and
+`w_j=weight_j/sqrt(pi)`. For retained outer node ordinal `i`, movement support
+is `q_mean_i + z_j*sqrt(q_var_i)`, combined weight is the normalized outer
+weight times `w_j`, and stable support index is `16*i+j`; `i` is the original
+Sobol ordinal, not a compacted finite-node index. Posterior mean/SD and every
+80% or 99% endpoint are computed from this support with
+`weighted_quantile_v1`. No mixture-CDF inversion, random draw, or caller-
+selected quadrature is permitted.
+
+The NUTS reference uses the same marginalized Gaussian likelihood. At each
+retained draw it samples one scalar `trajectory_movement` from the exact
+conditional Normal latent-contrast distribution above, conditional on that
+draw's coefficients, zero-sum group effects, and hyperparameters. Those 4,000
+chain-major/draw-major movement draws have equal weight and use
+`weighted_quantile_v1`; they are not emitted in an artifact.
 
 It is an internal observed-path smoothing contrast. It is not:
 
@@ -542,11 +592,25 @@ use standardized offsets
 `delta={p10:-0.20,p50:0,p90:+0.20,p99:+0.30}`. For lane `d`, cell `c,t`, and
 quantile `q`, the complete formula is
 `z_q[d,c,t]=offset[d]+scale[d]*(x_star[d,c,t]+delta[q])`, followed by the exact
-lane inverse in the table above. Thus offsets are multiplied by the lane scale,
-not added after it. All frequency values must remain
+lane inverse in the table above. Thus quantile deltas are multiplied by the
+lane scale rather than added after it. All frequency values must remain
 nonnegative and every Engagement/Breadth angle must remain strictly inside
 `(0,pi/2)`; violation is a runner error, never clipping. The resulting ordered
 quantiles, p50, transformed marginal SE, and covariance must reconcile exactly.
+
+All numerical study generation uses exactly
+`numpy.random.Generator(numpy.random.PCG64DXSM(seed))` and float64 arrays. No
+random call may precede the fixed sequence: (1) standard normals of shape
+`(C,3)` for group effects, (2) shape `(C,3)` for stationary initial states,
+(3) shape `(C,17,3)` for innovations, and (4) shape `(C,18,3)` for observation
+errors. Equicorrelation matrices use `numpy.linalg.cholesky` in canonical lane
+order and row-vector multiplication by the lower factor transpose. Group
+effects are centered independently by lane after correlation. Initial states
+use `sigma_r/sqrt(1-rho^2)`; innovations and observation errors are applied in
+panel-group, time, lane C-order. Targeted/drift mutations occur only after
+these base draws unless their compiled scenario explicitly changes a
+correlation matrix. Any bit generator, factor orientation, array order, call
+order, or implicit substream change is implementation drift.
 
 Source-bootstrap conformance is tested separately with one fixed process-local
 synthetic `k=16` fixture in canonical member-slot order:
@@ -569,6 +633,30 @@ mutation uses zero-based `floor((n-1)*p + 0.5)` without interpolation and yields
 fixture result, so every drift slot rejects before fit. Conformance fixture
 rows remain process-local test inputs and never enter a numerical study slot,
 prepared model input, checkpoint, artifact, or committed evidence.
+
+The portable conformance oracle is frozen under the pinned NumPy runtime. Its
+fixture-private body is canonical JSON over the arrays above plus
+`fixture_id=vbd_source_bootstrap_conformance_v1`, `cohort_size=16`, canonical
+lane order, denominators `60` and `12`, window `w00`, the fixture active-set
+commitment, and the three fixed definition hashes. Its
+`prebootstrap_bundle_content_root` is
+`fb43e8e9c7cdbb2faf943013fa1c9aca9004898539870cd2dc3d02bd84829967`,
+which yields bootstrap seed `3765976209925714`. The exact transformed
+covariance in canonical lane order is:
+
+```text
+[[0.04044726358395627,  0.01440591242854434,  0.018974533403407882],
+ [0.01440591242854434, 0.0051578092626584655, 0.006849798111473459],
+ [0.018974533403407882,0.006849798111473459,  0.009585006951479746]]
+```
+
+The matching standard errors are
+`[0.20111505061520452,0.07181788957257422,0.09790304873434609]`.
+The canonical oracle body containing the private root, seed, type-7 p50 vector,
+covariance, and standard-error vector has SHA-256
+`ad5e4e5f79d94ee9faaf6a94029372b0348c1c187503edf063a0bb03f98130c4`.
+These fixture-only private values may appear in tests but never in a numerical
+study input, checkpoint, generated artifact, or future real-source package.
 
 ### Stage 2: NUTS Concordance
 
@@ -631,6 +719,15 @@ lag_one_within_group_autocorrelation =
 A nonpositive lag denominator returns zero. One posterior-predictive replicate
 is generated per retained draw in stable chain-major/draw-major order with
 `ppc_seed = 2_106_000_000 + 1_000*cell_ordinal + 100*i + 10*lane_ordinal`.
+The PPC generator is `Generator(PCG64DXSM(ppc_seed))`. For each retained draw
+and panel group in order, it first draws one length-18 standard-normal vector
+for a fresh conditional smoothed AR(1) path from
+`r_c | y_c,beta,u_c,sigma_r,rho`, then one length-18 standard-normal vector for
+new known-SE observation error. The replicate is
+`alpha+X_c*beta+u_c+r_c_rep+se_c*z_c`, where `alpha` is the retained draw's
+intercept and `X_c*beta` is the encoded-time slope contribution only. It does
+not reuse the stored smoothed path and does not draw a new unconditional/prior
+AR path. Cholesky orientation and panel/time order match the numerical DGP.
 For each statistic the one-sided
 upper-tail p-value is exactly
 `count(T_rep >= T_observed) / 4000`, with ties included and no smoothing
@@ -1017,8 +1114,8 @@ slice for model admission.
 
 This contract does not authorize:
 
-- implementation or execution before the separate post-proposal implementation
-  decision;
+- implementation or execution outside the exact sequential queue items and
+  freeze/review gates approved on 2026-07-15;
 - real, customer, production, live, or respondent-level data;
 - customer-facing or broad internal output;
 - confidence or probability output;
@@ -1033,8 +1130,8 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Review and approve or reject the OpenSpec proposal
-`add-vbd-trajectory-calibration-contract`. Only a separate explicit approval
-may activate the future synthetic implementation tasks. Parent task `5.6`,
-real-data admission, runtime monitoring, readout language, pilot manifest,
-execution approval, persistence, and UI remain incomplete.
+Implement and verify OpenSpec tasks `2.2` through `2.5` without using any
+acceptance-plan seed or generating concordance, canary, or full-study evidence.
+Parent task `5.6`, real-data admission, runtime monitoring, readout language,
+pilot manifest, downstream three-lane outcome integration, persistence, and UI
+remain incomplete.
