@@ -15,6 +15,21 @@
   committed bytes. No real/customer/live data, outcome integration, routes,
   UI, persistence, connectors, exports, customer output, promotion, or task
   `5.6` completion is authorized by this activation.
+- OpenSpec task `2.2` completed on 2026-07-15. The implementation adds strict
+  three-lane aggregate records, canonical V2 source/schema/definition and
+  covariance bindings, a runtime-pinned integer bootstrap conformance oracle,
+  deterministic PCG64DXSM smoke generation with exact seed/DGP regeneration,
+  nonnumeric Depth canonicalization outside numerical eligibility, and
+  immutable pre-period-only preparation that must reconcile to its exact
+  source panel. Coordinated rehash, cross-seed copy, cohort alias, mutable or
+  subclassed records, malformed manifest, quantile/denominator drift, private
+  bootstrap material, composite inputs, and real/customer/live-data attempts
+  fail closed. Final CODE, BUG, and ADVERSARIAL reviews returned GO. Focused
+  VBD tests passed `103`; the full inference suite passed `668`; the inference
+  wheel built; and strict OpenSpec validation passed. No acceptance-plan seed,
+  state-space/NUTS fit, artifact, runner, evidence, parent task `5.6`, real
+  data, route, persistence, report, or UI was executed or authorized. Task
+  `2.3` is the next implementation slice.
 - Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
   evidence-breaking ambiguities in the merged plan: the existing outcome
   engine did not recover the latent AR(1) smoothing contrast, deterministic

@@ -227,6 +227,28 @@ Under `src/fluencytracr_inference/`:
   the full artifact, compact summary, and self-hashed independent acceptance
   record are committed under `inference/evidence/`. Parent task `5.5` is
   complete only for this internal synthetic measurement-calibration boundary.
+- `vbd_trajectory_types.py` — strict synthetic-only aggregate records for the
+  three primitive frequency, engagement, and Breadth lanes. It binds canonical
+  V2 event/schema identity, exact denominators and source definitions, joint
+  covariance, independently derived cohort and gate receipts, ordered
+  manifests, Python/NumPy/SciPy runtime identity, seed ancestry, and a separate
+  nonnumeric Depth-context root. Unknown, mutable, subclassed, real-data,
+  composite, person-level, malformed, or self-rehashed substitutions reject.
+- `vbd_trajectory_synthetic.py` — development-smoke PCG64DXSM generator for
+  the frozen 12-pre/6-post aggregate panel. Validation regenerates the DGP from
+  the declared seed and plan metadata, so changing seed/hash metadata cannot
+  legitimize copied observations. Truth and latent paths remain sidecars and
+  never enter the panel or prepared input.
+- `vbd_trajectory_bootstrap_conformance.py` — process-local integer fixture
+  proving synchronized type-7 source-bootstrap covariance behavior against the
+  frozen oracle. Fixture rows, private root, and bootstrap seed are absent from
+  the returned summary and cannot enter a numerical study input.
+- `vbd_trajectory_preparation.py` — deterministic pre-period-only lane
+  preparation with immutable arrays, exact time/zero-sum/contrast structures,
+  inherited `k` floors, and mandatory reconciliation to the validated source
+  panel. Depth status never enters numerical inputs or eligibility. This is
+  OpenSpec task `2.2` only; state-space/NUTS engines, artifacts, runner,
+  evidence execution, parent task `5.6`, real data, and UI remain incomplete.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

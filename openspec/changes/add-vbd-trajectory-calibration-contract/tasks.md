@@ -18,7 +18,7 @@
 
 - [x] 2.1 Obtain separate explicit implementation approval. Proposal or
   contract acceptance SHALL NOT satisfy this gate.
-- [ ] 2.2 Add strict aggregate-only VBD trajectory types, deterministic
+- [x] 2.2 Add strict aggregate-only VBD trajectory types, deterministic
   known-aggregate synthetic generation, integer-valid source-bootstrap
   conformance fixtures, and preparation under `inference/`.
 - [ ] 2.3 Implement deterministic Gaussian state-space integration as the

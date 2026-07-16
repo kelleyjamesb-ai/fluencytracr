@@ -219,7 +219,7 @@
       "bound": "Synthetic-only inference/, packages/confidence-engine internal bridge coverage, and required OpenSpec/docs/status: complete add-vbd-trajectory-calibration-contract tasks 2.1-2.5 with strict three-lane aggregate types, deterministic generator/preparer, bootstrap conformance fixtures, deterministic state-space and PyMC reference engines, diagnostics/PPC, summary-only artifact boundary, exact 2,000-case planner, resumable fresh recomputation, canary machinery, smoke, and controls; no acceptance-plan concordance/canary/full-evidence execution, real/customer/live data, public schemas, routes, UI, persistence, connectors, exports, customer output, confidence/probability output, ROI, causality, productivity, ranking, new events/reasons/thresholds, DiD, promotion, or task 5.6 completion",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "Authorized by James Kelley on 2026-07-15. Implement and verify tasks 2.1-2.5 only; commit and push each verified slice. Acceptance-plan seeds remain blocked until exact source review and freeze."
+      "last_note": "Task 2.2 verified 2026-07-15: strict aggregate types, runtime-pinned bootstrap oracle, deterministic seed-regenerated smoke DGP, Depth-isolated preparation, 103 focused and 668 full inference tests, wheel build, strict OpenSpec validation, and final CODE/BUG/ADVERSARIAL GO. Task 2.3 is next; acceptance-plan seeds remain blocked until exact source review and freeze."
     },
     {
       "id": "vbd-trajectory-engine-concordance",
