@@ -1,6 +1,7 @@
 import pytest
 
 import fluencytracr_inference.vbd_trajectory_validation_controls as controls
+import fluencytracr_inference.vbd_trajectory_validation_study as study
 from fluencytracr_inference.vbd_trajectory_synthetic import (
     VBD_TRAJECTORY_SMOKE_SEED_MIN,
     _VALIDATION_GENERATION_RUNNER_TOKEN,
@@ -23,6 +24,8 @@ from fluencytracr_inference.vbd_trajectory_validation_plan import (
     required_vbd_trajectory_validation_slots,
 )
 from fluencytracr_inference.vbd_trajectory_validation_study import (
+    build_vbd_trajectory_slot_result,
+    combine_vbd_trajectory_validation_phases,
     summarize_vbd_trajectory_validation_results,
 )
 
@@ -137,6 +140,48 @@ def test_partial_study_hits_the_production_fail_closed_combiner():
     assert summary["state"] == "HOLD"
     assert summary["exact_manifest_complete"] is False
     assert "exact_manifest_incomplete" in summary["failing_checks"]
+
+
+def test_expected_full_study_hold_control_forces_phase_and_combined_hold(
+    monkeypatch,
+):
+    slot = _slot("negative_control", "semantic_hash_drift")
+    result = build_vbd_trajectory_slot_result(
+        slot=slot,
+        row_state="EXPECTED_HOLD",
+        failure_stage=slot.expected_failure_stage,
+        failure_code="expected_subject_study_hold",
+        fit_attempted=False,
+        lane_results=(),
+        controlled_subject_study_hold=True,
+    )
+
+    assert result.expectation_matched is True
+    monkeypatch.setattr(
+        study,
+        "evaluate_vbd_trajectory_result_manifest",
+        lambda observed_ids: {
+            "canonical_ids": observed_ids,
+            "duplicate_ids": (),
+            "missing_ids": (),
+            "off_plan_ids": (),
+            "exact_manifest_complete": True,
+            "canonical_order_complete": True,
+        },
+    )
+    summary = summarize_vbd_trajectory_validation_results((result,))
+    assert summary["state"] == "HOLD"
+    assert summary["failing_checks"] == ["controlled_subject_study_hold"]
+    assert summary["coverage_cells"] == []
+    combined = combine_vbd_trajectory_validation_phases(
+        original_results=(result,),
+        recomputation_results=(result,),
+    )
+    assert combined["state"] == "HOLD"
+    assert combined["failing_checks"] == [
+        "original_study_hold",
+        "recomputation_study_hold",
+    ]
 
 
 def test_zero_variance_control_mutates_all_pre_lanes_and_hits_preparation(

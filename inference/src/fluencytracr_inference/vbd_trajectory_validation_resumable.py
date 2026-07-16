@@ -1563,6 +1563,14 @@ def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict]:
         combined = _validate_combined_value(
             read_strict_json(combined_path), record
         )
+        current_evidence_snapshot = _execution_evidence_snapshot(workspace)
+        if (
+            current_evidence_snapshot["snapshot_hash"]
+            != combined["execution_evidence_snapshot_hash"]
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "combined execution evidence snapshot is stale"
+            )
         if commit_path.exists():
             _validate_combined_commit(
                 read_strict_json(commit_path),

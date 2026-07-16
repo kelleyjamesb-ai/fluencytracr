@@ -640,12 +640,22 @@ def summarize_vbd_trajectory_validation_results(
     )
     if hard_failure_count:
         failing_checks.append("hard_or_runner_failure")
+    controlled_subject_study_hold_count = sum(
+        result.controlled_subject_study_hold for result in results
+    )
+    if controlled_subject_study_hold_count:
+        failing_checks.append("controlled_subject_study_hold")
 
     coverage_cells: list[dict] = []
     null_cells: list[dict] = []
     bias_cells: list[dict] = []
     understated_cells: list[dict] = []
-    if exact_manifest and expectation_failure_count == 0 and hard_failure_count == 0:
+    if (
+        exact_manifest
+        and expectation_failure_count == 0
+        and hard_failure_count == 0
+        and controlled_subject_study_hold_count == 0
+    ):
         by_cell: dict[tuple[str, str, int], list[VbdTrajectorySlotResult]] = {}
         for result in results:
             key = (

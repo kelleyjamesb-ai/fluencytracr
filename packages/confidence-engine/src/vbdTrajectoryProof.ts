@@ -17,6 +17,7 @@ const HASH_POSTURE =
 const PYTHON_REQUIRES = ">=3.13,<3.14";
 const REQUIREMENTS_LOCK_HASH =
   "2a7ef1c0266a89ba1c4bbb9d2b40ecfa804325e2f5705bcb3b7d976ca7e92801";
+const SMOKE_PLAN_REF = "plan:vbd-trajectory-development-smoke-v1";
 const LANES = ["frequency", "engagement", "breadth"] as const;
 const PROHIBITED_COMPOSITES = [
   "velocity_index",
@@ -595,6 +596,18 @@ export function vbdTrajectoryProofSelfHash(artifact: unknown): string {
 
 export const VbdTrajectoryProofArtifactSchema = ArtifactObjectSchema.superRefine(
   (artifact, ctx) => {
+    const expectedDirectionVectorRoot = sha256Json({
+      lane_order: [...LANES],
+      direction_vector: [...artifact.input_manifest.direction_vector],
+      plan_ref: SMOKE_PLAN_REF
+    });
+    if (artifact.input_manifest.direction_vector_root !== expectedDirectionVectorRoot) {
+      addIssue(
+        ctx,
+        ["input_manifest", "direction_vector_root"],
+        "direction vector root must bind the canonical lanes, vector, and smoke plan"
+      );
+    }
     const manifestRoot = sha256Json(artifact.input_manifest.model_manifest);
     if (artifact.input_manifest.model_manifest_root !== manifestRoot) {
       addIssue(ctx, ["input_manifest", "model_manifest_root"], "model manifest root mismatch");

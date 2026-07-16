@@ -344,6 +344,11 @@ def test_execution_evidence_snapshot_changes_with_any_bound_file(
         write_json_create_once(path, {"value": index})
     first = _execution_evidence_snapshot(tmp_path)
     assert first["file_count"] == 9
+    write_json_create_once(tmp_path / "combined.json", {"combined": 1})
+    write_json_create_once(
+        tmp_path / "combined_commit.json", {"commit": 1}
+    )
+    assert _execution_evidence_snapshot(tmp_path) == first
     paths[-1].unlink()
     write_json_create_once(paths[-1], {"value": 99})
     second = _execution_evidence_snapshot(tmp_path)
@@ -593,6 +598,52 @@ def test_workspace_load_rejects_tampered_plan_before_other_admission(tmp_path):
     write_json_create_once(tmp_path / "plan.json", {"off_plan": True})
     with pytest.raises(
         VbdTrajectoryValidationWorkspaceError, match="plan is malformed or off plan"
+    ):
+        _load_workspace(tmp_path)
+
+
+@pytest.mark.parametrize("commit_marker_present", [False, True])
+def test_workspace_load_rechecks_published_execution_evidence_snapshot(
+    tmp_path, monkeypatch, commit_marker_present
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    record = _fake_workspace_record(tmp_path)
+    combined = _fake_combined(record)
+    for name in (
+        "workspace.json",
+        "plan.json",
+        "freeze_manifest.json",
+        "concordance_receipt.json",
+        "combined.json",
+    ):
+        write_json_create_once(tmp_path / name, {})
+    if commit_marker_present:
+        write_json_create_once(tmp_path / "combined_commit.json", {})
+
+    monkeypatch.setattr(runner, "_validate_workspace_record", lambda *_a, **_k: record)
+    monkeypatch.setattr(
+        runner,
+        "vbd_trajectory_validation_plan_from_dict",
+        lambda _value: immutable_vbd_trajectory_validation_plan(),
+    )
+    monkeypatch.setattr(runner, "_validate_freeze_manifest", lambda _value: {})
+    monkeypatch.setattr(runner, "_verify_current_freeze", lambda _value: {})
+    monkeypatch.setattr(
+        runner,
+        "_validate_concordance_receipt",
+        lambda *_a, **_k: {"receipt_hash": record["concordance_receipt_hash"]},
+    )
+    monkeypatch.setattr(runner, "_validate_combined_value", lambda *_a: combined)
+    monkeypatch.setattr(
+        runner,
+        "_execution_evidence_snapshot",
+        lambda _workspace: {"snapshot_hash": "9" * 64},
+    )
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="execution evidence snapshot is stale",
     ):
         _load_workspace(tmp_path)
 

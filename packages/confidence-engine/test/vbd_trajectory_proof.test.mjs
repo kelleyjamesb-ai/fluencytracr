@@ -179,6 +179,21 @@ test("stale artifact and nested fit hashes reject", { skip: venvSkip }, () => {
   assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(staleFit).success, false);
 });
 
+test("direction vector root is derived from the canonical smoke commitment", { skip: venvSkip }, () => {
+  const artifact = bridgeValidArtifact();
+  assert.equal(
+    artifact.input_manifest.direction_vector_root,
+    sha256Json({
+      lane_order: ["frequency", "engagement", "breadth"],
+      direction_vector: [1, 1, 1],
+      plan_ref: "plan:vbd-trajectory-development-smoke-v1"
+    })
+  );
+  artifact.input_manifest.direction_vector_root = "9".repeat(64);
+  coordinatedRehash(artifact);
+  assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(artifact).success, false);
+});
+
 test("generated_at uses the same strict RFC3339 grammar as Python", { skip: venvSkip }, () => {
   for (const timestamp of [
     "2026-07-15 00:00:00+00:00",
