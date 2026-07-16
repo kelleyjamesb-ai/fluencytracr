@@ -539,18 +539,33 @@ working directory. Before any execution-module import, a standard-library-only
 bootstrap SHALL verify the complete reviewed package source set received over
 an inherited descriptor and SHALL install a deny-by-default in-memory loader.
 The source bytes SHALL come from the candidate Git objects and match every
-freeze-manifest file hash. Missing source, mutable-source fallback, package
+freeze-manifest file hash. The source bundle's manifest hash SHALL equal the
+already-admitted launch receipt before any candidate blob is read. Missing
+source, mutable-source fallback, package
 startup before verification, or source-hash drift SHALL fail before execution.
 
 While the external workspace lock is held, workspace JSON reads and
 create-once writes SHALL traverse no-follow directory descriptors rooted at the
 held workspace inode. Admitted intermediate directories SHALL remain
-inode-bound; root or subdirectory substitution SHALL fail and SHALL NOT
-redirect evidence I/O. A later validation workspace SHALL persist the
+inode-bound and their device/inode identities SHALL be persisted in the
+create-once workspace record. Root or subdirectory substitution SHALL fail and
+SHALL NOT redirect evidence I/O or silently roll back completed work. Exact-
+tree and evidence-snapshot enumeration SHALL use held descriptors rather than
+mutable workspace pathname traversal. A later validation workspace SHALL persist the
 canonical external concordance receipt path, path hash, device, and inode,
 rerun full external concordance verification on every load, and require the
 local receipt copy to equal that externally recomputed receipt. A local
 shape-only verification token SHALL NOT admit replicated validation.
+
+The runner SHALL name
+`trusted_frozen_host_crash_replay_and_workspace_tamper_detection_v1` as its
+compiled threat model. The parent process and reviewed frozen host SHALL be
+trusted prerequisites. This proof SHALL detect source/workspace drift, crash
+replay, substitution, rollback, malformed rows, and incomplete evidence inside
+that boundary, but SHALL NOT claim cryptographic attestation against an actor
+that already controls the parent process and can coordinate arbitrary code
+execution plus complete workspace forgery. Any external signing or hardware
+attestation authority requires a separate governed change.
 
 After concordance and before any full chunk, canaries SHALL run exact slots
 `primary/(0,6,0)`, `primary/(.5,12,199)`,

@@ -45,10 +45,12 @@ from .vbd_trajectory_statistics import TrajectoryPosteriorSummary
 from .vbd_trajectory_validation_resumable import (
     VBD_TRAJECTORY_CONCORDANCE_RECEIPT_SCHEMA_VERSION,
     VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH,
+    VBD_TRAJECTORY_RUNNER_THREAT_MODEL,
     VbdTrajectoryValidationWorkspaceError,
     _canonical_json_bytes,
     _child_environment,
     _cleanup_stale_atomic_temps,
+    _ensure_workspace_directories,
     _exclusive_lock,
     _file_sha256,
     _frozen_child_command,
@@ -59,18 +61,26 @@ from .vbd_trajectory_validation_resumable import (
     _strict_sha256,
     _strict_timestamp,
     _strict_token,
+    _terminate_started_child,
     _utc_now,
     _validate_freeze_manifest,
     _validate_tree_links,
     _verify_current_freeze,
     _workspace_from_user_path,
+    _workspace_directory_bindings,
+    _workspace_directory_entries,
+    _workspace_entry_stat,
+    _workspace_has_atomic_temps,
+    _workspace_path_exists,
+    _workspace_path_is_dir,
+    _workspace_tree_entries,
     read_strict_json,
     write_json_create_once,
 )
 
 
 VBD_TRAJECTORY_CONCORDANCE_WORKSPACE_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_WORKSPACE_2026_07_V1"
+    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_WORKSPACE_2026_07_V2"
 )
 VBD_TRAJECTORY_CONCORDANCE_PHASE_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_PHASE_2026_07_V1"
@@ -95,6 +105,16 @@ VBD_TRAJECTORY_CONCORDANCE_CHILD_TIMEOUT_SECONDS = 7_200
 _CHILD_STDOUT_LIMIT = 4 * 1024 * 1024
 _CHILD_STDERR_LIMIT = 1024 * 1024
 _VERIFIED_RECEIPT_TOKEN = object()
+_CONCORDANCE_WORKSPACE_DIRECTORIES = (
+    "primary",
+    "primary/failures",
+    "primary/launches",
+    "primary/results",
+    "recomputation",
+    "recomputation/failures",
+    "recomputation/launches",
+    "recomputation/results",
+)
 
 
 def _workspace_location(workspace: Path) -> dict:
@@ -113,6 +133,9 @@ def _workspace_body(workspace: Path, identity: dict) -> dict:
         **identity,
         "concordance_plan_hash": plan["plan_hash"],
         **_workspace_location(workspace),
+        "workspace_directory_bindings": _workspace_directory_bindings(
+            workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
+        ),
         "created_at": _utc_now(),
         "workspace_token": secrets.token_hex(32),
         "phase_order": list(VBD_TRAJECTORY_CONCORDANCE_PHASES),
@@ -120,6 +143,7 @@ def _workspace_body(workspace: Path, identity: dict) -> dict:
         "required_lane_fit_count_per_engine": (
             VBD_TRAJECTORY_CONCORDANCE_LANE_FIT_COUNT
         ),
+        "threat_model": VBD_TRAJECTORY_RUNNER_THREAT_MODEL,
         "internal_only": True,
         "synthetic_only": True,
         "aggregate_only": True,
@@ -146,11 +170,13 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
         "workspace_path_hash",
         "workspace_device",
         "workspace_inode",
+        "workspace_directory_bindings",
         "created_at",
         "workspace_token",
         "phase_order",
         "required_bundle_count",
         "required_lane_fit_count_per_engine",
+        "threat_model",
         "internal_only",
         "synthetic_only",
         "aggregate_only",
@@ -172,6 +198,7 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
         or value["phase_order"] != list(VBD_TRAJECTORY_CONCORDANCE_PHASES)
         or value["required_bundle_count"] != 30
         or value["required_lane_fit_count_per_engine"] != 90
+        or value["threat_model"] != VBD_TRAJECTORY_RUNNER_THREAT_MODEL
         or value["internal_only"] is not True
         or value["synthetic_only"] is not True
         or value["aggregate_only"] is not True
@@ -180,6 +207,10 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
         or value["task_5_6_complete"] is not False
         or value["workspace_hash"] != sha256_json(body)
         or any(value[key] != item for key, item in _workspace_location(workspace).items())
+        or value["workspace_directory_bindings"]
+        != _workspace_directory_bindings(
+            workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
+        )
     ):
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance workspace is invalid"
@@ -199,6 +230,17 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
     ):
         _strict_sha256(value[key], key)
     _strict_timestamp(value["created_at"], "workspace created_at")
+    if (
+        type(value["workspace_directory_bindings"]) is not list
+        or [
+            item.get("path") if type(item) is dict else None
+            for item in value["workspace_directory_bindings"]
+        ]
+        != list(_CONCORDANCE_WORKSPACE_DIRECTORIES)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance workspace directory bindings are invalid"
+        )
     return value
 
 
@@ -274,6 +316,9 @@ def initialize_vbd_trajectory_concordance_workspace(
         verify()
         _cleanup_stale_atomic_temps(workspace)
         _validate_tree_links(workspace)
+        _ensure_workspace_directories(
+            workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
+        )
         manifest_path = _repo_root() / VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH
         freeze = _validate_freeze_manifest(read_strict_json(manifest_path))
         identity = _verify_current_freeze(freeze)
@@ -284,14 +329,14 @@ def initialize_vbd_trajectory_concordance_workspace(
         )
         for filename, value in records:
             path = _safe_workspace_path(workspace, filename)
-            if path.exists() and read_strict_json(path) != value:
+            if _workspace_path_exists(path) and read_strict_json(path) != value:
                 raise VbdTrajectoryValidationWorkspaceError(
                     f"concordance {filename} differs from frozen inputs"
                 )
-            if not path.exists():
+            if not _workspace_path_exists(path):
                 write_json_create_once(path, value, lock_verifier=verify)
         workspace_path = _safe_workspace_path(workspace, "workspace.json")
-        if workspace_path.exists():
+        if _workspace_path_exists(workspace_path):
             existing = _validate_workspace(read_strict_json(workspace_path), workspace)
             for key, item in identity.items():
                 if existing[key] != item:
@@ -308,7 +353,7 @@ def initialize_vbd_trajectory_concordance_workspace(
         record = _validate_workspace(read_strict_json(workspace_path), workspace)
         for phase in VBD_TRAJECTORY_CONCORDANCE_PHASES:
             phase_path = _safe_workspace_path(workspace, phase, "phase.json")
-            if not phase_path.exists():
+            if not _workspace_path_exists(phase_path):
                 write_json_create_once(
                     phase_path,
                     _phase_record(phase, record),
@@ -378,6 +423,10 @@ def _expected_phase_stems(phase: str) -> set[str]:
 
 
 def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
+    if _workspace_has_atomic_temps(workspace):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance workspace contains a stale atomic temporary"
+        )
     allowed_root = {
         ".runner.lock",
         "workspace.json",
@@ -388,24 +437,22 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
         "concordance_summary.json",
         "combined_commit.json",
     }
-    for path in workspace.rglob("*"):
-        relative = path.relative_to(workspace)
-        parts = relative.parts
-        if path.is_dir():
-            if parts not in {
-                ("primary",),
-                ("primary", "launches"),
-                ("primary", "results"),
-                ("primary", "failures"),
-                ("recomputation",),
-                ("recomputation", "launches"),
-                ("recomputation", "results"),
-                ("recomputation", "failures"),
-            }:
+    allowed_directories = {
+        tuple(relative.split("/"))
+        for relative in _CONCORDANCE_WORKSPACE_DIRECTORIES
+    }
+    for kind, relative in sorted(_workspace_tree_entries(workspace)):
+        parts = tuple(relative.split("/"))
+        if kind == "dir":
+            if parts not in allowed_directories:
                 raise VbdTrajectoryValidationWorkspaceError(
                     "concordance workspace contains an off-plan directory"
                 )
             continue
+        if kind != "file":
+            raise VbdTrajectoryValidationWorkspaceError(
+                "concordance workspace contains a special entry"
+            )
         if len(parts) == 1:
             if parts[0] not in allowed_root:
                 raise VbdTrajectoryValidationWorkspaceError(
@@ -428,7 +475,7 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
                 "concordance workspace contains off-plan execution evidence"
             )
     publication = [
-        (workspace / name).exists()
+        _workspace_path_exists(workspace / name)
         for name in (
             "combined.json",
             "concordance_receipt.json",
@@ -447,15 +494,21 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
             "concordance publication order is invalid"
         )
     for phase in VBD_TRAJECTORY_CONCORDANCE_PHASES:
-        launches = {
-            path.name for path in (workspace / phase / "launches").glob("*.json")
-        }
-        results = {
-            path.name for path in (workspace / phase / "results").glob("*.json")
-        }
-        failures = {
-            path.name for path in (workspace / phase / "failures").glob("*.json")
-        }
+        phase_names = {}
+        for directory in ("launches", "results", "failures"):
+            names = set()
+            for name, kind in _workspace_directory_entries(
+                workspace / phase / directory
+            ):
+                if kind != "file":
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "concordance phase directory contains a special entry"
+                    )
+                names.add(name)
+            phase_names[directory] = names
+        launches = phase_names["launches"]
+        results = phase_names["results"]
+        failures = phase_names["failures"]
         if not results.issubset(launches) or not failures.issubset(launches):
             raise VbdTrajectoryValidationWorkspaceError(
                 "concordance result or failure lacks a launch"
@@ -487,8 +540,14 @@ def _execution_evidence_snapshot(workspace: Path) -> dict:
         "combined_commit.json",
     }
     files = []
-    for path in sorted(item for item in workspace.rglob("*") if item.is_file()):
-        relative = path.relative_to(workspace).as_posix()
+    for kind, relative in sorted(_workspace_tree_entries(workspace)):
+        if kind == "dir":
+            continue
+        if kind != "file":
+            raise VbdTrajectoryValidationWorkspaceError(
+                "concordance evidence contains a special entry"
+            )
+        path = workspace / relative
         if relative in excluded:
             continue
         files.append({"path": relative, "sha256": _file_sha256(path)})
@@ -654,7 +713,9 @@ def _launch_child(
 ) -> tuple[int, int, bytes, bytes]:
     verify_lock_identity()
     capability = _launch_capability(receipt, capability_token)
-    frozen_source = _frozen_source_bundle()
+    frozen_source = _frozen_source_bundle(
+        expected_freeze_manifest_hash=receipt["freeze_manifest_hash"]
+    )
     capability_read, capability_write = os.pipe()
     liveness_read, liveness_write = os.pipe()
     source_read, source_write = os.pipe()
@@ -704,6 +765,14 @@ def _launch_child(
             return process.pid, 124, stdout[:_CHILD_STDOUT_LIMIT], stderr[
                 :_CHILD_STDERR_LIMIT
             ]
+    except OSError as exc:
+        _terminate_started_child(process)
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance child process could not be launched"
+        ) from exc
+    except BaseException:
+        _terminate_started_child(process)
+        raise
     finally:
         for descriptor in (
             capability_read,
@@ -1601,8 +1670,8 @@ def _run_phase_bundle(
     launch_path = _safe_workspace_path(workspace, phase, "launches", stem)
     result_path = _safe_workspace_path(workspace, phase, "results", stem)
     failure_path = _safe_workspace_path(workspace, phase, "failures", stem)
-    if result_path.exists():
-        if not launch_path.exists():
+    if _workspace_path_exists(result_path):
+        if not _workspace_path_exists(launch_path):
             raise VbdTrajectoryValidationWorkspaceError(
                 "concordance result lacks its launch receipt"
             )
@@ -1617,8 +1686,8 @@ def _run_phase_bundle(
         return _validate_checkpoint(
             read_strict_json(result_path), receipt=launch
         )["child_output"]
-    if failure_path.exists():
-        if not launch_path.exists():
+    if _workspace_path_exists(failure_path):
+        if not _workspace_path_exists(launch_path):
             raise VbdTrajectoryValidationWorkspaceError(
                 "concordance failure lacks its launch receipt"
             )
@@ -1634,7 +1703,7 @@ def _run_phase_bundle(
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance phase contains a durable runner failure"
         )
-    if launch_path.exists():
+    if _workspace_path_exists(launch_path):
         launch = _validate_launch(
             read_strict_json(launch_path),
             phase=phase,
@@ -2289,15 +2358,15 @@ def combine_vbd_trajectory_concordance_workspace(
         summary_path = _safe_workspace_path(
             workspace, "concordance_summary.json"
         )
-        if combined_path.exists() and read_strict_json(combined_path) != combined:
+        if _workspace_path_exists(combined_path) and read_strict_json(combined_path) != combined:
             raise VbdTrajectoryValidationWorkspaceError(
                 "published concordance combined record drifted"
             )
-        if receipt_path.exists() and read_strict_json(receipt_path) != receipt:
+        if _workspace_path_exists(receipt_path) and read_strict_json(receipt_path) != receipt:
             raise VbdTrajectoryValidationWorkspaceError(
                 "published concordance receipt drifted"
             )
-        if summary_path.exists() and read_strict_json(summary_path) != summary:
+        if _workspace_path_exists(summary_path) and read_strict_json(summary_path) != summary:
             raise VbdTrajectoryValidationWorkspaceError(
                 "published concordance summary drifted"
             )

@@ -825,18 +825,35 @@ hash-checks every in-scope module against the freeze manifest, and transmits
 the complete source set over an inherited one-way descriptor. A minimal
 standard-library bootstrap verifies every source byte in memory before it
 installs a deny-by-default package loader or imports an execution module.
+The source bundle's manifest hash must equal the already-admitted launch
+receipt before any candidate Git blob is read.
 Missing, extra-fallback, mutable-working-tree, or pre-verification package code
 cannot execute the child.
 
 Once an external workspace lock is held, workspace JSON reads and create-once
 publications use no-follow, descriptor-relative traversal. Existing
-subdirectories are inode-bound when admitted; a root or intermediate-directory
-rename/substitution cannot redirect an evidence read or write and instead
-fails closed. The later full-study workspace additionally persists the
+subdirectories are inode-bound when admitted and their device/inode identities
+are persisted in the create-once workspace record; a root or intermediate-
+directory rename/substitution cannot redirect an evidence read or write or
+silently roll back completed work and instead fails closed. Exact-tree and
+evidence-snapshot enumeration also runs from held descriptors, never mutable
+workspace path traversal. The later full-study workspace additionally persists the
 canonical external concordance receipt path, path hash, device, and inode. It
 reruns complete external concordance workspace verification on every load and
 requires its copied receipt to equal the independently recomputed external
 receipt; an internally minted shape-only token is never sufficient.
+
+The compiled runner threat model is
+`trusted_frozen_host_crash_replay_and_workspace_tamper_detection_v1`. It
+requires the operator and parent process to be trusted and the reviewed freeze
+to be established before execution. Hashes, create-once records, process
+capabilities, and descriptor bindings detect source/workspace drift, crash
+replay, substitution, rollback, and malformed evidence inside that boundary;
+they are not a cryptographic attestation against an actor that already controls
+the parent process and can coordinate arbitrary code execution plus a complete
+workspace forgery. Defending that stronger actor would require a separately
+governed external signing or hardware-attestation authority and is not part of
+this synthetic internal proof queue item.
 
 ### Stage 3: Replicated Calibration
 

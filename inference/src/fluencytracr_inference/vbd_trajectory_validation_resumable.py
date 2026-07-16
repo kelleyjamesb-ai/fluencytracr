@@ -188,6 +188,20 @@ _COMBINED_GOVERNANCE_FIELDS = {
     "productivity_output_authorized",
 }
 _PHASE_STATIC_FILES = {"phase.json"}
+_VALIDATION_WORKSPACE_DIRECTORIES = (
+    "canaries",
+    "canaries/launches",
+    "canaries/outputs",
+    "canaries/receipts",
+    "original",
+    "original/chunks",
+    "original/launches",
+    "original/slots",
+    "recomputation",
+    "recomputation/chunks",
+    "recomputation/launches",
+    "recomputation/slots",
+)
 _CHILD_STDOUT_LIMIT = 2 * 1024 * 1024
 _CHILD_STDERR_LIMIT = 64 * 1024
 VBD_TRAJECTORY_CHILD_TIMEOUT_SECONDS = 600
@@ -469,6 +483,17 @@ class _WorkspaceDirectoryHandle:
     def open_parent(self, path: Path, *, create: bool) -> tuple[int, str]:
         parts = self.relative_parts(path)
         return self._open_directory(parts[:-1], create=create), parts[-1]
+
+    def open_directory(self, path: Path, *, create: bool) -> int:
+        if path == self.workspace:
+            return os.dup(self._directories[()])
+        try:
+            relative = path.relative_to(self.workspace)
+        except ValueError as exc:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "workspace directory escapes its held root"
+            ) from exc
+        return self._open_directory(tuple(relative.parts), create=create)
 
     def verify(self) -> None:
         try:
@@ -1022,29 +1047,42 @@ def _atomic_temp_destination_name(path: Path) -> str | None:
 
 
 def _cleanup_stale_atomic_temps(root: Path) -> None:
-    if not root.exists():
+    if not _workspace_path_is_dir(root):
         return
-    root_device = root.stat(follow_symlinks=False).st_dev
-    for path in root.rglob(".*.tmp"):
+    handle = _ACTIVE_WORKSPACE_DIRECTORY.get()
+    root_device = (
+        handle._root_device
+        if isinstance(handle, _WorkspaceDirectoryHandle)
+        and handle.workspace == root
+        else root.stat(follow_symlinks=False).st_dev
+    )
+    for kind, relative in sorted(
+        _workspace_tree_entries(root, include_atomic_temps=True)
+    ):
+        path = root / relative
         destination_name = _atomic_temp_destination_name(path)
         if destination_name is None:
             continue
-        if path.is_symlink() or not path.is_file():
+        if kind != "file":
             raise VbdTrajectoryValidationWorkspaceError(
                 "atomic temporary is linked or not regular"
             )
-        stat_result = path.stat(follow_symlinks=False)
+        stat_result = _workspace_entry_stat(path)
+        if stat_result is None:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "atomic temporary disappeared during cleanup"
+            )
         if stat_result.st_dev != root_device:
             raise VbdTrajectoryValidationWorkspaceError(
                 "atomic temporary crosses filesystem devices"
             )
         if stat_result.st_nlink == 2:
             destination = path.with_name(destination_name)
-            if (
-                destination.is_symlink()
-                or not destination.is_file()
-                or not _same_existing_path(path, destination)
-            ):
+            destination_stat = _workspace_entry_stat(destination)
+            if destination_stat is None or (
+                destination_stat.st_dev,
+                destination_stat.st_ino,
+            ) != (stat_result.st_dev, stat_result.st_ino):
                 raise VbdTrajectoryValidationWorkspaceError(
                     "linked atomic temporary has no matching destination"
                 )
@@ -1080,31 +1118,38 @@ def _validate_tree_links(root: Path) -> None:
             "active workspace directory handle is invalid"
         )
     seen_inodes: dict[tuple[int, int], str] = {}
-    root_device = root.stat(follow_symlinks=False).st_dev
-    for path in (root, *sorted(root.rglob("*"))):
-        if path.is_symlink():
+    handle = _ACTIVE_WORKSPACE_DIRECTORY.get()
+    root_device = (
+        handle._root_device
+        if isinstance(handle, _WorkspaceDirectoryHandle)
+        and handle.workspace == root
+        else root.stat(follow_symlinks=False).st_dev
+    )
+    for kind, relative in sorted(
+        _workspace_tree_entries(root, include_atomic_temps=True)
+    ):
+        path = root / relative
+        if kind == "symlink":
             raise VbdTrajectoryValidationWorkspaceError(
                 "validation workspace must not contain symlinks"
             )
-        if path.is_file():
-            if handle is not None and handle.workspace == root:
-                handle.bind_existing_parent(path)
-            stat = _validate_regular_file(path, label="workspace file")
-            if stat.st_dev != root_device:
+        if kind == "file":
+            opened = _workspace_entry_stat(path)
+            if opened is None or opened.st_nlink != 1:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "workspace file must be regular and not hard-linked"
+                )
+            if opened.st_dev != root_device:
                 raise VbdTrajectoryValidationWorkspaceError(
                     "validation workspace crosses filesystem devices"
                 )
-            identity = (stat.st_dev, stat.st_ino)
-            relative = path.relative_to(root).as_posix()
+            identity = (opened.st_dev, opened.st_ino)
             if identity in seen_inodes:
                 raise VbdTrajectoryValidationWorkspaceError(
                     "validation workspace contains cross-path hard links"
                 )
             seen_inodes[identity] = relative
-        elif path.is_dir():
-            if handle is not None and handle.workspace == root:
-                handle.bind_existing_directory(path)
-        else:
+        elif kind != "dir":
             raise VbdTrajectoryValidationWorkspaceError(
                 "validation workspace contains a special filesystem entry"
             )
@@ -1146,12 +1191,173 @@ def _safe_workspace_path(workspace: Path, *parts: str) -> Path:
                 "active workspace directory handle is invalid"
             )
         if handle.workspace != workspace:
-            raise VbdTrajectoryValidationWorkspaceError(
-                "checkpoint path uses a different active workspace"
-            )
+            return candidate
         handle.bind_existing_parent(candidate)
         handle.verify()
     return candidate
+
+
+def _workspace_entry_stat(path: Path) -> os.stat_result | None:
+    active = _ACTIVE_WORKSPACE_DIRECTORY.get()
+    if isinstance(active, _WorkspaceDirectoryHandle) and path == active.workspace:
+        return os.fstat(active._directories[()])
+    with _workspace_parent_descriptor(path, create=False) as target:
+        try:
+            if target is None:
+                return path.stat(follow_symlinks=False)
+            directory_descriptor, name = target
+            return os.stat(
+                name, dir_fd=directory_descriptor, follow_symlinks=False
+            )
+        except FileNotFoundError:
+            return None
+        except OSError as exc:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "workspace entry cannot be inspected safely"
+            ) from exc
+
+
+def _workspace_path_exists(path: Path) -> bool:
+    return _workspace_entry_stat(path) is not None
+
+
+def _workspace_path_is_file(path: Path) -> bool:
+    opened = _workspace_entry_stat(path)
+    return opened is not None and stat.S_ISREG(opened.st_mode)
+
+
+def _workspace_path_is_dir(path: Path) -> bool:
+    opened = _workspace_entry_stat(path)
+    return opened is not None and stat.S_ISDIR(opened.st_mode)
+
+
+def _workspace_directory_entries(directory: Path) -> tuple[tuple[str, str], ...]:
+    handle = _ACTIVE_WORKSPACE_DIRECTORY.get()
+    descriptor = -1
+    try:
+        if isinstance(handle, _WorkspaceDirectoryHandle):
+            try:
+                directory.relative_to(handle.workspace)
+            except ValueError:
+                handle = None
+        if isinstance(handle, _WorkspaceDirectoryHandle):
+            descriptor = handle.open_directory(directory, create=False)
+        else:
+            flags = os.O_RDONLY
+            if hasattr(os, "O_DIRECTORY"):
+                flags |= os.O_DIRECTORY
+            if hasattr(os, "O_NOFOLLOW"):
+                flags |= os.O_NOFOLLOW
+            descriptor = os.open(directory, flags)
+        entries = []
+        for name in sorted(os.listdir(descriptor)):
+            if name in {"", ".", ".."} or "/" in name:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "workspace directory contains an unsafe entry name"
+                )
+            opened = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+            if stat.S_ISDIR(opened.st_mode):
+                kind = "dir"
+            elif stat.S_ISREG(opened.st_mode):
+                kind = "file"
+            elif stat.S_ISLNK(opened.st_mode):
+                kind = "symlink"
+            else:
+                kind = "other"
+            entries.append((name, kind))
+        return tuple(entries)
+    except FileNotFoundError:
+        return ()
+    except VbdTrajectoryValidationWorkspaceError:
+        raise
+    except OSError as exc:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "workspace directory cannot be enumerated safely"
+        ) from exc
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
+def _workspace_tree_entries(
+    root: Path, *, include_atomic_temps: bool = False
+) -> set[tuple[str, str]]:
+    if not _workspace_path_is_dir(root):
+        return set()
+    entries: set[tuple[str, str]] = set()
+
+    def walk(directory: Path, prefix: str) -> None:
+        for name, kind in _workspace_directory_entries(directory):
+            relative = name if not prefix else f"{prefix}/{name}"
+            candidate = directory / name
+            if _is_atomic_temp(candidate) and not include_atomic_temps:
+                continue
+            entries.add((kind, relative))
+            if kind == "dir":
+                walk(candidate, relative)
+
+    walk(root, "")
+    return entries
+
+
+def _workspace_has_atomic_temps(root: Path) -> bool:
+    return any(
+        _is_atomic_temp(Path(relative))
+        for _kind, relative in _workspace_tree_entries(
+            root, include_atomic_temps=True
+        )
+    )
+
+
+def _ensure_workspace_directories(
+    workspace: Path, relative_directories: tuple[str, ...]
+) -> None:
+    handle = _ACTIVE_WORKSPACE_DIRECTORY.get()
+    if not isinstance(handle, _WorkspaceDirectoryHandle) or handle.workspace != workspace:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "workspace directories require the active held root"
+        )
+    for relative in sorted(
+        relative_directories, key=lambda value: (value.count("/"), value)
+    ):
+        descriptor = handle.open_directory(workspace / relative, create=True)
+        os.close(descriptor)
+    handle.verify()
+
+
+def _workspace_directory_bindings(
+    workspace: Path, relative_directories: tuple[str, ...]
+) -> list[dict]:
+    handle = _ACTIVE_WORKSPACE_DIRECTORY.get()
+    if handle is None:
+        bindings = []
+        for relative in relative_directories:
+            path = _safe_workspace_path(workspace, *relative.split("/"))
+            opened = path.stat(follow_symlinks=False)
+            if not stat.S_ISDIR(opened.st_mode):
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "workspace directory binding is not a directory"
+                )
+            bindings.append(
+                {"path": relative, "device": opened.st_dev, "inode": opened.st_ino}
+            )
+        return bindings
+    if not isinstance(handle, _WorkspaceDirectoryHandle) or handle.workspace != workspace:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "workspace directory bindings require the active held root"
+        )
+    bindings = []
+    for relative in relative_directories:
+        descriptor = handle.open_directory(workspace / relative, create=False)
+        try:
+            opened = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+        bindings.append(
+            {"path": relative, "device": opened.st_dev, "inode": opened.st_ino}
+        )
+    handle.verify()
+    return bindings
 
 
 def _workspace_from_user_path(workspace_dir: str | Path) -> Path:
@@ -1175,6 +1381,8 @@ def _exclusive_lock(path: Path):
     directory_flags = os.O_RDONLY
     if hasattr(os, "O_DIRECTORY"):
         directory_flags |= os.O_DIRECTORY
+    if hasattr(os, "O_NOFOLLOW"):
+        directory_flags |= os.O_NOFOLLOW
     try:
         directory_descriptor = os.open(path.parent, directory_flags)
     except OSError as exc:
@@ -1916,6 +2124,9 @@ def _workspace_record(
         "concordance_receipt_hash": concordance["receipt_hash"],
         **_concordance_receipt_location_binding(concordance_path),
         **_workspace_location_binding(workspace),
+        "workspace_directory_bindings": _workspace_directory_bindings(
+            workspace, _VALIDATION_WORKSPACE_DIRECTORIES
+        ),
         "created_at": _utc_now(),
         "workspace_token": secrets.token_hex(32),
         "phase_order": list(VBD_TRAJECTORY_VALIDATION_PHASES),
@@ -1969,6 +2180,9 @@ def initialize_vbd_trajectory_validation_workspace(
         _cleanup_stale_atomic_temps(workspace)
         verify_lock_identity()
         _validate_tree_links(workspace)
+        _ensure_workspace_directories(
+            workspace, _VALIDATION_WORKSPACE_DIRECTORIES
+        )
         freeze_value = read_strict_json(manifest_path)
         if type(freeze_value) is not dict:
             raise VbdTrajectoryValidationWorkspaceError(
@@ -1990,7 +2204,7 @@ def initialize_vbd_trajectory_validation_workspace(
         )
         for filename, value in records:
             path = _safe_workspace_path(workspace, filename)
-            if path.exists():
+            if _workspace_path_exists(path):
                 if _canonical_json_bytes(read_strict_json(path)) != _canonical_json_bytes(
                     value
                 ):
@@ -2002,7 +2216,7 @@ def initialize_vbd_trajectory_validation_workspace(
                     path, value, lock_verifier=verify_lock_identity
                 )
         workspace_path = _safe_workspace_path(workspace, "workspace.json")
-        if workspace_path.exists():
+        if _workspace_path_exists(workspace_path):
             existing_workspace = _validate_workspace_record(
                 read_strict_json(workspace_path), workspace=workspace
             )
@@ -2057,6 +2271,7 @@ def _validate_workspace_record(
         "workspace_path_hash",
         "workspace_device",
         "workspace_inode",
+        "workspace_directory_bindings",
         "created_at",
         "workspace_token",
         "phase_order",
@@ -2110,6 +2325,21 @@ def _validate_workspace_record(
         or value["workspace_device"] < 0
         or type(value["workspace_inode"]) is not int
         or value["workspace_inode"] <= 0
+        or type(value["workspace_directory_bindings"]) is not list
+        or [
+            item.get("path") if type(item) is dict else None
+            for item in value["workspace_directory_bindings"]
+        ]
+        != list(_VALIDATION_WORKSPACE_DIRECTORIES)
+        or any(
+            type(item) is not dict
+            or set(item) != {"path", "device", "inode"}
+            or type(item["device"]) is not int
+            or item["device"] < 0
+            or type(item["inode"]) is not int
+            or item["inode"] <= 0
+            for item in value["workspace_directory_bindings"]
+        )
         or any(
             type(value[key]) is not str
             or _COMMIT_RE.fullmatch(value[key]) is None
@@ -2142,6 +2372,12 @@ def _validate_workspace_record(
         if any(value[key] != item for key, item in expected_location.items()):
             raise VbdTrajectoryValidationWorkspaceError(
                 "workspace location differs from its create-once identity"
+            )
+        if value["workspace_directory_bindings"] != _workspace_directory_bindings(
+            workspace, _VALIDATION_WORKSPACE_DIRECTORIES
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "workspace directory bindings differ from create-once identities"
             )
     return value
 
@@ -2206,11 +2442,11 @@ def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict]:
         )
     combined_path = _safe_workspace_path(workspace, "combined.json")
     commit_path = _safe_workspace_path(workspace, "combined_commit.json")
-    if commit_path.exists() and not combined_path.exists():
+    if _workspace_path_exists(commit_path) and not _workspace_path_exists(combined_path):
         raise VbdTrajectoryValidationWorkspaceError(
             "combined commit marker exists without its output"
         )
-    if combined_path.exists():
+    if _workspace_path_exists(combined_path):
         combined = _validate_combined_value(
             read_strict_json(combined_path), record
         )
@@ -2222,7 +2458,7 @@ def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict]:
             raise VbdTrajectoryValidationWorkspaceError(
                 "combined execution evidence snapshot is stale"
             )
-        if commit_path.exists():
+        if _workspace_path_exists(commit_path):
             _validate_combined_commit(
                 read_strict_json(commit_path),
                 workspace_record=record,
@@ -2273,7 +2509,7 @@ def _create_or_load_phase_manifest(
     verify_lock_identity: Callable[[], None],
 ) -> dict:
     path = _phase_path(workspace, phase, "phase.json")
-    if path.exists():
+    if _workspace_path_exists(path):
         return _validate_phase_manifest(
             read_strict_json(path),
             phase=phase,
@@ -2510,12 +2746,19 @@ def _launch_capability(receipt: dict, capability_token: str) -> dict:
     return {**body, "capability_hash": sha256_json(body)}
 
 
-def _frozen_source_bundle() -> bytes:
+def _frozen_source_bundle(*, expected_freeze_manifest_hash: str) -> bytes:
+    _strict_sha256(
+        expected_freeze_manifest_hash, "expected freeze manifest hash"
+    )
     manifest = _validate_freeze_manifest(
         read_strict_json(
             _repo_root() / VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH
         )
     )
+    if manifest["manifest_hash"] != expected_freeze_manifest_hash:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "frozen child source manifest differs from launch admission"
+        )
     modules = []
     for item in manifest["in_scope_files"]:
         path = item["path"]
@@ -2654,7 +2897,7 @@ def _revalidate_launch_admission(workspace: Path, receipt: dict) -> None:
     slot = required_vbd_trajectory_validation_slots()[receipt["slot_index"]]
     if receipt["execution_kind"] == "canary":
         phase_path = _safe_workspace_path(workspace, "canaries", "phase.json")
-        if not phase_path.exists():
+        if not _workspace_path_exists(phase_path):
             raise VbdTrajectoryValidationWorkspaceError(
                 "canary launch lacks its create-once phase manifest"
             )
@@ -2734,7 +2977,9 @@ def _launch_child(
     verify_lock_identity()
     command = _child_command()
     capability = _launch_capability(receipt, capability_token)
-    frozen_source = _frozen_source_bundle()
+    frozen_source = _frozen_source_bundle(
+        expected_freeze_manifest_hash=receipt["freeze_manifest_hash"]
+    )
     capability_read, capability_write = os.pipe()
     liveness_read, liveness_write = os.pipe()
     source_read, source_write = os.pipe()
@@ -2787,9 +3032,13 @@ def _launch_child(
                 :_CHILD_STDERR_LIMIT
             ]
     except OSError as exc:
+        _terminate_started_child(process)
         raise VbdTrajectoryValidationWorkspaceError(
             "child process could not be launched"
         ) from exc
+    except BaseException:
+        _terminate_started_child(process)
+        raise
     finally:
         for descriptor in (
             capability_read,
@@ -2812,6 +3061,16 @@ def _launch_child(
     if len(stdout) > _CHILD_STDOUT_LIMIT or len(stderr) > _CHILD_STDERR_LIMIT:
         return process.pid, 125, b"", b""
     return process.pid, process.returncode, stdout, stderr
+
+
+def _terminate_started_child(process: subprocess.Popen | None) -> None:
+    if process is None:
+        return
+    try:
+        if process.poll() is None:
+            process.kill()
+    finally:
+        process.wait()
 
 
 def _validate_child_output(
@@ -3035,7 +3294,7 @@ def _run_one_study_slot(
     stem = _slot_file_stem(slot_index)
     launch_path = _phase_path(workspace, phase_manifest["phase"], "launches", f"{stem}.json")
     checkpoint_path = _phase_path(workspace, phase_manifest["phase"], "slots", f"{stem}.json")
-    if checkpoint_path.exists():
+    if _workspace_path_exists(checkpoint_path):
         return _load_checkpoint(
             checkpoint_path,
             workspace_record=workspace_record,
@@ -3044,7 +3303,7 @@ def _run_one_study_slot(
             slot_index=slot_index,
             original_result=original_result,
         )
-    if launch_path.exists():
+    if _workspace_path_exists(launch_path):
         receipt = _validate_launch_receipt(
             read_strict_json(launch_path),
             execution_kind="study",
@@ -3303,15 +3562,16 @@ def _chunk_record(
 
 def _completed_chunk_indexes(workspace: Path, phase: str) -> tuple[int, ...]:
     directory = _phase_path(workspace, phase, "chunks")
-    if not directory.exists():
+    if not _workspace_path_is_dir(directory):
         return ()
     indexes = []
-    for path in directory.iterdir():
+    for name, kind in _workspace_directory_entries(directory):
+        path = directory / name
         if _is_atomic_temp(path):
             continue
         match = re.fullmatch(r"chunk_(\d{2})\.json", path.name)
-        _validate_regular_file(path, label="chunk checkpoint")
-        if match is None:
+        opened = _workspace_entry_stat(path)
+        if match is None or kind != "file" or opened is None or opened.st_nlink != 1:
             raise VbdTrajectoryValidationWorkspaceError(
                 "chunk directory contains an unexpected file"
             )
@@ -3560,7 +3820,7 @@ def _canary_phase_manifest(
     verify_lock_identity: Callable[[], None] | None = None,
 ) -> dict:
     path = _safe_workspace_path(workspace, "canaries", "phase.json")
-    if path.exists():
+    if _workspace_path_exists(path):
         value = read_strict_json(path)
     else:
         body = {
@@ -3939,7 +4199,7 @@ def run_vbd_trajectory_validation_canary(
             "receipts",
             f"canary_{canary_index:02d}.json",
         )
-        if current_receipt_path.exists():
+        if _workspace_path_exists(current_receipt_path):
             current_launch = _load_canary_launch(
                 workspace=workspace,
                 workspace_record=workspace_record,
@@ -3961,14 +4221,19 @@ def run_vbd_trajectory_validation_canary(
                 launch=current_launch,
                 child_output=(
                     read_strict_json(current_output_path)
-                    if current_output_path.exists()
+                    if _workspace_path_exists(current_output_path)
                     else None
                 ),
             )
         if any(
-            _safe_workspace_path(
-                workspace, "canaries", "receipts", f"canary_{later:02d}.json"
-            ).exists()
+            _workspace_path_exists(
+                _safe_workspace_path(
+                    workspace,
+                    "canaries",
+                    "receipts",
+                    f"canary_{later:02d}.json",
+                )
+            )
             for later in range(canary_index + 1, 4)
         ):
             raise VbdTrajectoryValidationWorkspaceError(
@@ -3983,7 +4248,7 @@ def run_vbd_trajectory_validation_canary(
             workspace, "canaries", "outputs", f"canary_{canary_index:02d}.json"
         )
         child_output = None
-        if launch_path.exists():
+        if _workspace_path_exists(launch_path):
             launch = _validate_launch_receipt(
                 read_strict_json(launch_path),
                 execution_kind="canary",
@@ -3994,7 +4259,7 @@ def run_vbd_trajectory_validation_canary(
                 workspace_record=workspace_record,
                 canary=canary,
             )
-            if output_path.exists():
+            if _workspace_path_exists(output_path):
                 child_output = read_strict_json(output_path)
                 raw_attestation = (
                     child_output.get("execution_attestation")
@@ -4024,7 +4289,7 @@ def run_vbd_trajectory_validation_canary(
                 child_pid = None
                 return_class = "interrupted_before_receipt"
         else:
-            if output_path.exists():
+            if _workspace_path_exists(output_path):
                 raise VbdTrajectoryValidationWorkspaceError(
                     "canary output exists without its create-once launch"
                 )
@@ -4365,17 +4630,16 @@ def _validate_combined_commit(
 
 def _execution_evidence_snapshot(workspace: Path) -> dict:
     entries = []
-    for path in sorted(workspace.rglob("*")):
+    for kind, relative in sorted(_workspace_tree_entries(workspace)):
+        path = workspace / relative
         if (
-            path.is_dir()
-            or _is_atomic_temp(path)
+            kind == "dir"
             or path == workspace / ".runner.lock"
             or path == workspace / "combined.json"
             or path == workspace / "combined_commit.json"
         ):
             continue
-        relative = path.relative_to(workspace).as_posix()
-        if path.suffix != ".json":
+        if kind != "file" or path.suffix != ".json":
             raise VbdTrajectoryValidationWorkspaceError(
                 "execution evidence contains a non-JSON file"
             )
@@ -4428,7 +4692,7 @@ def combine_vbd_trajectory_validation_workspace(
         commit_path = _safe_workspace_path(
             workspace, "combined_commit.json"
         )
-        if commit_path.exists():
+        if _workspace_path_exists(commit_path):
             _validate_workspace_tree(workspace, complete=True)
         else:
             _validate_workspace_ready_for_combined(workspace)
@@ -4623,7 +4887,7 @@ def combine_vbd_trajectory_validation_workspace(
             raise VbdTrajectoryValidationWorkspaceError(
                 "execution evidence changed while it was being validated"
             )
-        if commit_path.exists():
+        if _workspace_path_exists(commit_path):
             _validate_workspace_tree(workspace, complete=True)
         else:
             _validate_workspace_ready_for_combined(workspace)
@@ -4649,7 +4913,7 @@ def combine_vbd_trajectory_validation_workspace(
             raise VbdTrajectoryValidationWorkspaceError(
                 "execution evidence changed during combined publication"
             )
-        if commit_path.exists():
+        if _workspace_path_exists(commit_path):
             _validate_combined_commit(
                 read_strict_json(commit_path),
                 workspace_record=workspace_record,
@@ -4787,25 +5051,22 @@ def _allowed_partial_phase_entries(phase: str) -> set[tuple[str, str]]:
 
 
 def _tree_entries(root: Path) -> set[tuple[str, str]]:
-    if not root.exists():
-        return set()
-    entries = set()
-    for path in root.rglob("*"):
-        if _is_atomic_temp(path):
-            continue
-        kind = "dir" if path.is_dir() else "file" if path.is_file() else "other"
-        entries.add((kind, path.relative_to(root).as_posix()))
-    return entries
+    return _workspace_tree_entries(root)
 
 
 def _indexed_files(directory: Path, pattern: str) -> tuple[int, ...]:
-    if not directory.exists():
+    if not _workspace_path_is_dir(directory):
         return ()
     indexes = []
-    for path in directory.iterdir():
+    for name, kind in _workspace_directory_entries(directory):
+        path = directory / name
         if _is_atomic_temp(path):
             continue
-        _validate_regular_file(path, label="indexed checkpoint")
+        opened = _workspace_entry_stat(path)
+        if kind != "file" or opened is None or opened.st_nlink != 1:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "indexed checkpoint is linked or not regular"
+            )
         match = re.fullmatch(pattern, path.name)
         if match is None:
             raise VbdTrajectoryValidationWorkspaceError(
@@ -4888,8 +5149,10 @@ def _validate_progress_state(workspace: Path) -> str:
         raise VbdTrajectoryValidationWorkspaceError(
             "recomputation progress exists before the original phase sealed"
         )
-    combined_exists = (workspace / "combined.json").exists()
-    combined_commit_exists = (workspace / "combined_commit.json").exists()
+    combined_exists = _workspace_path_exists(workspace / "combined.json")
+    combined_commit_exists = _workspace_path_exists(
+        workspace / "combined_commit.json"
+    )
     if combined_commit_exists and not combined_exists:
         raise VbdTrajectoryValidationWorkspaceError(
             "combined commit marker exists without its output"
@@ -4922,15 +5185,14 @@ def _validate_progress_state(workspace: Path) -> str:
 
 def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
     _validate_tree_links(workspace)
-    atomic_temps = tuple(path for path in workspace.rglob(".*.tmp") if _is_atomic_temp(path))
-    if complete and atomic_temps:
+    if complete and _workspace_has_atomic_temps(workspace):
         raise VbdTrajectoryValidationWorkspaceError(
             "complete workspace contains stale atomic temporaries"
         )
     root_entries = {
-        ("dir" if path.is_dir() else "file", path.name)
-        for path in workspace.iterdir()
-        if not _is_atomic_temp(path)
+        (kind, name)
+        for name, kind in _workspace_directory_entries(workspace)
+        if not _is_atomic_temp(workspace / name)
     }
     allowed_root = {("file", name) for name in _ROOT_STATIC_FILES}
     allowed_root.update(
@@ -4947,7 +5209,7 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
         raise VbdTrajectoryValidationWorkspaceError(
             "workspace root contains an unexpected entry"
         )
-    if workspace.joinpath("canaries").exists():
+    if _workspace_path_is_dir(workspace / "canaries"):
         allowed_canaries = {
             ("file", "phase.json"),
             ("dir", "launches"),
@@ -4980,7 +5242,7 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
             )
     for phase in VBD_TRAJECTORY_VALIDATION_PHASES:
         root = workspace / phase
-        if not root.exists():
+        if not _workspace_path_is_dir(root):
             continue
         actual = _tree_entries(root)
         allowed = _allowed_partial_phase_entries(phase)
@@ -5039,7 +5301,7 @@ def _validate_workspace_ready_for_combined(workspace: Path) -> None:
     """Validate the exact sealed tree before atomically publishing PASS/HOLD."""
 
     _validate_workspace_tree(workspace, complete=False)
-    if any(_is_atomic_temp(path) for path in workspace.rglob(".*.tmp")):
+    if _workspace_has_atomic_temps(workspace):
         raise VbdTrajectoryValidationWorkspaceError(
             "sealed workspace contains stale atomic temporaries"
         )
@@ -5052,17 +5314,17 @@ def _validate_workspace_ready_for_combined(workspace: Path) -> None:
             ("file", ".runner.lock"),
         }
     )
-    combined_exists = (workspace / "combined.json").exists()
-    if (workspace / "combined_commit.json").exists():
+    combined_exists = _workspace_path_exists(workspace / "combined.json")
+    if _workspace_path_exists(workspace / "combined_commit.json"):
         raise VbdTrajectoryValidationWorkspaceError(
             "prepublication workspace already has a commit marker"
         )
     if combined_exists:
         required_root.add(("file", "combined.json"))
     observed_root = {
-        ("dir" if path.is_dir() else "file", path.name)
-        for path in workspace.iterdir()
-        if not _is_atomic_temp(path)
+        (kind, name)
+        for name, kind in _workspace_directory_entries(workspace)
+        if not _is_atomic_temp(workspace / name)
     }
     if observed_root != required_root:
         raise VbdTrajectoryValidationWorkspaceError(

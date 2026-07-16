@@ -1126,3 +1126,38 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
     assert summary["diagnostic_summary"][
         "posterior_interval_endpoints_emitted"
     ] is False
+
+
+def test_concordance_workspace_rejects_completed_subtree_replacement(tmp_path):
+    from fluencytracr_inference import vbd_trajectory_concordance_resumable as runner
+
+    workspace = tmp_path / "concordance-workspace"
+    workspace.mkdir()
+    identity = {
+        "freeze_commit": "a" * 40,
+        "freeze_manifest_hash": "1" * 64,
+        "candidate_source_commit": "b" * 40,
+        "candidate_source_tree": "c" * 40,
+        "implementation_hash": "2" * 64,
+        "runtime_identity_hash": "3" * 64,
+        "executable_sha256": "4" * 64,
+        "native_library_identity_hash": "5" * 64,
+        "plan_hash": "6" * 64,
+        "seed_manifest_hash": "7" * 64,
+    }
+    with runner._exclusive_lock(workspace / ".runner.lock"):
+        runner._ensure_workspace_directories(
+            workspace, runner._CONCORDANCE_WORKSPACE_DIRECTORIES
+        )
+        body = runner._workspace_body(workspace, identity)
+        record = {**body, "workspace_hash": sha256_json(body)}
+        assert runner._validate_workspace(record, workspace) == record
+    displaced = workspace / "displaced-results"
+    (workspace / "primary" / "results").rename(displaced)
+    (workspace / "primary" / "results").mkdir()
+    with runner._exclusive_lock(workspace / ".runner.lock"):
+        with pytest.raises(
+            VbdTrajectoryValidationWorkspaceError,
+            match="concordance workspace is invalid",
+        ):
+            runner._validate_workspace(record, workspace)

@@ -24,6 +24,7 @@ from fluencytracr_inference.vbd_trajectory_validation_resumable import (
     VBD_TRAJECTORY_CONCORDANCE_RECEIPT_SCHEMA_VERSION,
     VBD_TRAJECTORY_RUNNER_WORKSPACE_SCHEMA_VERSION,
     VbdTrajectoryValidationWorkspaceError,
+    _VALIDATION_WORKSPACE_DIRECTORIES,
     _FROZEN_CHILD_BOOTSTRAP,
     _canary_chain_root,
     _canary_phase_manifest,
@@ -39,6 +40,7 @@ from fluencytracr_inference.vbd_trajectory_validation_resumable import (
     _phase_manifest_body,
     _revalidate_launch_admission,
     _run_one_study_slot,
+    _safe_workspace_path,
     _validate_canary_receipt,
     _validate_combined_commit,
     _validate_combined_value,
@@ -62,6 +64,23 @@ def _fake_workspace_record(
     workspace: Path | None = None,
     concordance_path: Path | None = None,
 ):
+    if workspace is not None:
+        workspace.mkdir(parents=True, exist_ok=True)
+        for relative in _VALIDATION_WORKSPACE_DIRECTORIES:
+            (workspace / relative).mkdir(parents=True, exist_ok=True)
+        directory_bindings = [
+            {
+                "path": relative,
+                "device": (workspace / relative).stat().st_dev,
+                "inode": (workspace / relative).stat().st_ino,
+            }
+            for relative in _VALIDATION_WORKSPACE_DIRECTORIES
+        ]
+    else:
+        directory_bindings = [
+            {"path": relative, "device": 1, "inode": index + 1}
+            for index, relative in enumerate(_VALIDATION_WORKSPACE_DIRECTORIES)
+        ]
     location = (
         {
             "workspace_path_hash": sha256_json(str(workspace)),
@@ -113,6 +132,7 @@ def _fake_workspace_record(
         "concordance_receipt_hash": "1" * 64,
         **concordance_location,
         **location,
+        "workspace_directory_bindings": directory_bindings,
         "created_at": "2026-07-15T12:00:00+00:00",
         "workspace_token": "2" * 64,
         "phase_order": ["original", "recomputation"],
@@ -418,6 +438,41 @@ def test_workspace_directory_lock_detects_replaced_workspace_inode(tmp_path):
             verify_lock()
 
 
+def test_nested_external_workspace_lock_preserves_outer_descriptor_context(tmp_path):
+    outer = tmp_path / "validation"
+    inner = tmp_path / "concordance"
+    outer.mkdir()
+    inner.mkdir()
+    with _exclusive_lock(outer / ".runner.lock") as verify_outer:
+        with _exclusive_lock(
+            _safe_workspace_path(inner, ".runner.lock")
+        ) as verify_inner:
+            write_json_create_once(
+                _safe_workspace_path(inner, "receipt.json"),
+                {"state": "PASS"},
+                lock_verifier=verify_inner,
+            )
+        verify_outer()
+        write_json_create_once(
+            _safe_workspace_path(outer, "record.json"),
+            {"state": "HOLD"},
+            lock_verifier=verify_outer,
+        )
+    assert read_strict_json(inner / "receipt.json") == {"state": "PASS"}
+    assert read_strict_json(outer / "record.json") == {"state": "HOLD"}
+
+
+def test_workspace_lock_rejects_symlink_root_before_lock_file_creation(tmp_path):
+    target = tmp_path / "target"
+    target.mkdir()
+    linked = tmp_path / "linked"
+    linked.symlink_to(target, target_is_directory=True)
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        with _exclusive_lock(linked / ".runner.lock"):
+            pytest.fail("symlink workspace root must not lock")
+    assert not (target / ".runner.lock").exists()
+
+
 def test_locked_publication_cannot_be_redirected_by_workspace_substitution(
     tmp_path, monkeypatch
 ):
@@ -506,6 +561,20 @@ def test_workspace_identity_rejects_copy_and_idle_rename(tmp_path):
         VbdTrajectoryValidationWorkspaceError, match="location differs"
     ):
         _validate_workspace_record(record, workspace=renamed)
+
+
+def test_workspace_directory_binding_rejects_completed_subtree_replacement(tmp_path):
+    workspace = tmp_path / "workspace"
+    record = _fake_workspace_record(workspace)
+    displaced = workspace / "displaced-slots"
+    (workspace / "original" / "slots").rename(displaced)
+    (workspace / "original" / "slots").mkdir()
+    with _exclusive_lock(workspace / ".runner.lock"):
+        with pytest.raises(
+            VbdTrajectoryValidationWorkspaceError,
+            match="directory bindings differ",
+        ):
+            _validate_workspace_record(record, workspace=workspace)
 
 
 def test_safe_stale_atomic_temp_is_removed_for_resume(tmp_path):
@@ -1251,7 +1320,9 @@ def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypat
 
     monkeypatch.setattr(runner.subprocess, "Popen", FakeProcess)
     monkeypatch.setattr(runner, "_revalidate_launch_admission", lambda *_args: None)
-    monkeypatch.setattr(runner, "_frozen_source_bundle", lambda: b"frozen-source")
+    monkeypatch.setattr(
+        runner, "_frozen_source_bundle", lambda **_kwargs: b"frozen-source"
+    )
     verifier_calls = []
 
     def verify_lock():
@@ -1278,6 +1349,64 @@ def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypat
     assert captured["capability"]["workspace_hash"] == record["workspace_hash"]
     assert receipt["capability_token_hash"] == sha256_json(_capability_token())
     assert len(verifier_calls) >= 4
+
+
+def test_failed_source_pipe_transfer_terminates_and_reaps_child(monkeypatch):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    record = _fake_workspace_record()
+    phase = _phase_manifest(record)
+    slot = required_vbd_trajectory_validation_slots()[0]
+    receipt = _launch_receipt(
+        execution_kind="study",
+        phase="original",
+        phase_hash=phase["phase_hash"],
+        phase_token=phase["phase_token"],
+        slot=slot,
+        slot_index=0,
+        workspace_record=record,
+        canary=None,
+        capability_token_hash=sha256_json(_capability_token()),
+    )
+    lifecycle = []
+
+    class FailedTransferProcess:
+        pid = 4242
+
+        def poll(self):
+            return None
+
+        def kill(self):
+            lifecycle.append("kill")
+
+        def wait(self):
+            lifecycle.append("wait")
+            return -9
+
+    monkeypatch.setattr(
+        runner.subprocess, "Popen", lambda *_args, **_kwargs: FailedTransferProcess()
+    )
+    monkeypatch.setattr(runner, "_revalidate_launch_admission", lambda *_args: None)
+    monkeypatch.setattr(
+        runner, "_frozen_source_bundle", lambda **_kwargs: b"frozen-source"
+    )
+    monkeypatch.setattr(
+        runner.os,
+        "write",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(BrokenPipeError()),
+    )
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="child process could not be launched",
+    ):
+        _launch_child(
+            receipt=receipt,
+            capability_token=_capability_token(),
+            workspace=Path("/unused/test/workspace"),
+            verify_lock_identity=lambda: None,
+        )
+    assert lifecycle == ["kill", "wait"]
 
 
 def test_frozen_bootstrap_executes_captured_bytes_not_mutable_package(tmp_path):
@@ -1347,6 +1476,27 @@ def test_frozen_bootstrap_executes_captured_bytes_not_mutable_package(tmp_path):
     stdout, stderr = process.communicate(timeout=10)
     assert process.returncode == 0, stderr.decode("utf-8", errors="replace")
     assert stdout == b"frozen:ok\n"
+
+
+def test_frozen_source_bundle_rejects_manifest_swap_before_git_read(monkeypatch):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    swapped = {"manifest_hash": "b" * 64}
+    monkeypatch.setattr(runner, "read_strict_json", lambda _path: swapped)
+    monkeypatch.setattr(runner, "_validate_freeze_manifest", lambda value: value)
+    monkeypatch.setattr(
+        runner,
+        "_git_bytes",
+        lambda *_args: pytest.fail("swapped manifest must reject before Git read"),
+    )
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="differs from launch admission",
+    ):
+        runner._frozen_source_bundle(
+            expected_freeze_manifest_hash="a" * 64
+        )
 
 
 @pytest.mark.parametrize(
@@ -1427,7 +1577,14 @@ def test_frozen_source_set_closes_both_child_import_graphs(target, argument):
     while written < len(bundle):
         written += os.write(source_write, bundle[written:])
     os.close(source_write)
-    stdout, stderr = process.communicate(_canonical_json_bytes({}), timeout=30)
+    try:
+        stdout, stderr = process.communicate(
+            _canonical_json_bytes({}), timeout=120
+        )
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.communicate()
+        raise
     assert process.returncode == 2, (
         stdout + b"\n" + stderr
     ).decode("utf-8", errors="replace")
