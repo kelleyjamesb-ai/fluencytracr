@@ -18,16 +18,16 @@
 
 - [x] 2.1 Obtain separate explicit implementation approval. Proposal or
   contract acceptance SHALL NOT satisfy this gate.
-- [ ] 2.2 Add strict aggregate-only VBD trajectory types, deterministic
+- [x] 2.2 Add strict aggregate-only VBD trajectory types, deterministic
   known-aggregate synthetic generation, integer-valid source-bootstrap
   conformance fixtures, and preparation under `inference/`.
-- [ ] 2.3 Implement deterministic Gaussian state-space integration as the
+- [x] 2.3 Implement deterministic Gaussian state-space integration as the
   primary engine, a matched PyMC NUTS reference, exact PPC, and fail-closed
   diagnostics.
-- [ ] 2.4 Add a summary-only internal artifact and strict confidence-engine
+- [x] 2.4 Add a summary-only internal artifact and strict confidence-engine
   bridge that reject unknown fields, composite inputs, unsafe claims, Depth
   promotion, stale hashes, incomplete evidence, and self-authorization.
-- [ ] 2.5 Implement the exact 2,000-case planner, resumable chunking, combiner,
+- [x] 2.5 Implement the exact 2,000-case planner, resumable chunking, combiner,
   four canary receipts, fresh-recomputation isolation, fast smoke, and the
   complete negative-control suite. Smoke, partial, malformed, missing,
   duplicate, off-plan, or mixed-provenance studies MUST HOLD; do not execute

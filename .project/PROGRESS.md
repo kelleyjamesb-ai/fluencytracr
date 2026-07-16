@@ -5,16 +5,97 @@
 - James Kelley explicitly authorized the sequential bounded VBD synthetic
   implementation, concordance, full-evidence, and exact-byte acceptance queue
   items on 2026-07-15. The first item,
-  `vbd-trajectory-synthetic-implementation-runner`, is active on
+  `vbd-trajectory-synthetic-implementation-runner`, completed on 2026-07-16 on
   `codex/vbd-trajectory-engine-calibration` from merged `origin/main` at
-  `2e3df0fd`. This item is limited to OpenSpec tasks `2.1-2.5`; acceptance-plan
-  concordance, canary, primary, targeted, drift, floor, and negative-control
-  seeds remain blocked until exact source review and the manifest-only freeze.
-  Future queue items are pending and must be activated sequentially. The final
+  `ca59defc`. No VBD queue item is active until this implementation merges;
+  `vbd-trajectory-engine-concordance` remains pending and must start from the
+  merged source commit. Acceptance-plan concordance, canary, primary, targeted,
+  drift, floor, and negative-control seeds were not executed. The final
   acceptance record still requires James's explicit approval of its exact
   committed bytes. No real/customer/live data, outcome integration, routes,
   UI, persistence, connectors, exports, customer output, promotion, or task
-  `5.6` completion is authorized by this activation.
+  `5.6` completion is authorized.
+- OpenSpec task `2.2` completed on 2026-07-15. The implementation adds strict
+  three-lane aggregate records, canonical V2 source/schema/definition and
+  covariance bindings, a runtime-pinned integer bootstrap conformance oracle,
+  deterministic PCG64DXSM smoke generation with exact seed/DGP regeneration,
+  nonnumeric Depth canonicalization outside numerical eligibility, and
+  immutable pre-period-only preparation that must reconcile to its exact
+  source panel. Coordinated rehash, cross-seed copy, cohort alias, mutable or
+  subclassed records, malformed manifest, quantile/denominator drift, private
+  bootstrap material, composite inputs, and real/customer/live-data attempts
+  fail closed. Final CODE, BUG, and ADVERSARIAL reviews returned GO. Focused
+  VBD tests passed `103`; the full inference suite passed `668`; the inference
+  wheel built; and strict OpenSpec validation passed. No acceptance-plan seed,
+  state-space/NUTS fit, artifact, runner, evidence, parent task `5.6`, real
+  data, route, persistence, report, or UI was executed or authorized.
+- OpenSpec task `2.3` completed on 2026-07-15. The primary engine now performs
+  deterministic Gaussian state-space integration over the exact 8,192-point
+  unscrambled Sobol proposal and recovers the fixed-interval smoothed latent
+  movement with the contract's conditional `q_mean` and `q_var`. Sixteen-point
+  Gauss-Hermite support beneath each retained original Sobol ordinal feeds the
+  strict shared `weighted_quantile_v1` 80%/99% summaries. The matched PyMC
+  reference samples the exact conditional movement, requires explicit disjoint
+  chain/PPC seeds, computes all five conditional-smoothed-path PPCs in fixed
+  PCG64DXSM order, and derives fail-closed R-hat, ESS, divergence, treedepth,
+  BFMI, MCSE, and PPC status. Returned fits retain no draws, latent paths, PPC
+  replicates, or support values. Development smoke is permanently
+  nonaccepting; direct full execution is blocked until task `2.5` supplies the
+  exact runner-owned slot binding. Final CODE, BUG, and ADVERSARIAL reviews
+  returned GO. VBD-focused tests passed `151`; full inference passed `717`;
+  TypeScript longitudinal bridges passed `76`, the DiD artifact bridge passed
+  `10`, AI Fluency snapshots passed `11`, and the Assurance Harness passed
+  `276` with `3` expected skips. Shared/confidence-engine builds, wheel build,
+  strict OpenSpec validation, docs sweep, semantic drift, V1 governance,
+  agentic guard, and diff checks passed. No acceptance-plan seed or evidence
+  was executed. Task `2.4` is next; tasks `2.5`, `3.1+`, parent `5.6`, real
+  data, outcome integration, persistence, reports, and UI remain incomplete.
+- OpenSpec task `2.4` completed on 2026-07-15. A runner-owned, summary-only
+  development-smoke artifact now emits exactly the three primitive VBD lanes
+  as permanent `HOLD`, with reference NUTS, concordance, canary, replicated,
+  floor, negative-control, and acceptance evidence explicitly absent or
+  `NOT_RUN`. Exact prepared/fit types, canonical unavailable Depth context,
+  strict RFC3339 timestamps, recursive finite-JSON checks, transform/source/
+  joint-uncertainty bindings, diagnostics, model/runtime identity, and false
+  output/authorization pins fail closed. The strict confidence-engine bridge
+  independently rederives the emitted binding graph and rejects unknown fields,
+  composite inputs, numerical Depth, source or lane splicing, impossible dates,
+  nonfinite values, stale hashes, incomplete evidence, and self-authorization.
+  Final CODE, BUG, and ADVERSARIAL reviews returned GO. VBD-focused tests passed
+  `171`; full inference passed `736`; TypeScript longitudinal, DiD, replicated,
+  and VBD artifact bridges passed `104`; AI Fluency snapshots passed `11`; and
+  the Assurance Harness passed `276` with `3` expected skips. Shared and
+  confidence-engine builds, the inference wheel, strict OpenSpec validation,
+  docs sweep, semantic drift, V1 governance, agentic guard, and diff checks
+  passed. No acceptance-plan seed or evidence was executed. Task `2.5` is next;
+  tasks `3.1+`, parent `5.6`, real data, outcome integration, persistence,
+  reports, and UI remain incomplete.
+- OpenSpec task `2.5` completed on 2026-07-16. The exact immutable planner now
+  defines 1,200 primary, 360 targeted, 360 drift, 12 floor, and 68 negative-
+  control slots, partitioned into 40 ordered chunks for both original and
+  separately regenerated recomputation phases. The runner adds four ordered
+  canaries, create-once launch/checkpoint/chunk records, inherited one-time
+  capabilities and parent-liveness pipes, workspace path/inode replay binding,
+  lock-verified load/write/launch boundaries, durable runner-error rows, exact
+  evidence snapshots, strict combined PASS/HOLD derivation, and a final commit
+  marker after descriptor-stable combined readback. The final hardening pass
+  binds unique GO review refs to exact candidate `S`, isolates Git from ambient
+  repository/loader/config redirects, removes the VBD schema from package-root
+  exports, generates constant pre-period observations in all three lanes before
+  production preparation, rejects coherently rewrapped copied checkpoints at
+  execution attestation, and tests successful checkpoint plus combined-marker
+  resume. Canonical concordance admission remains deliberately disabled until
+  task 3, so no acceptance canary, concordance fit, or evidence slot ran.
+  Verification: VBD `269 passed`; full inference `834 passed`; TypeScript
+  bridges `104 passed`; AI Fluency snapshots `11 passed`; Assurance Harness
+  `276 passed, 3 skipped`; shared and confidence-engine builds; inference wheel
+  build and isolated wheel import; strict OpenSpec; docs sweep; semantic drift;
+  V1 governance; agentic guard; compileall; and `git diff --check`. An extra
+  broad confidence-engine test command exposed pre-existing Bayesian DiD golden
+  parity drift in files unchanged from `origin/main`; the required inference
+  bridge set is green, and no out-of-scope DiD golden files were changed. Tasks
+  `3.1+`, parent task `5.6`, real data, three-lane outcome integration,
+  persistence, reports, and UI remain incomplete.
 - Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
   evidence-breaking ambiguities in the merged plan: the existing outcome
   engine did not recover the latent AR(1) smoothing contrast, deterministic
@@ -3483,3 +3564,5 @@
 - PR #399 inference proof harness review repair (2026-07-06, branch claude/inference-proof-harness-01): addressed the necessary Codex review blockers on the synthetic-only PyMC/ArviZ proof harness. The Python emitter now rejects marked real/customer/production/live datasets instead of masking flags, binds emitted artifacts to the fit's synthetic input hash, and fails closed when calibration/null study inputs are omitted; the full CLI path no longer injects fixture study inputs, so clean full runs HOLD until real study results are supplied. Synthetic input hashes now include gate-driving provenance (window evidence, comparison rubric/presence, declared floor, metric/cohort family, labels, and synthetic-only flags). Diagnostics now handle ArviZ BFMI arrays directly, derive max-treedepth saturation from `tree_depth` when the backend flag is absent, treat non-finite diagnostics as failing gates, sanitize non-finite serialized values into schema-valid HOLD artifacts, and convert insufficient pre-period checks into a `pre_trend` HOLD. The TypeScript proof boundary now accepts truthful fixed-horizon repeated-evaluation HOLD artifacts only when they name `peeking_control`, and rejects fixed-horizon evidence that carries observed/sidecar windows outside the planned look. CI now wakes the inference harness for confidence-engine bridge/source/fixture changes and runs the Python-to-TypeScript bridge after creating the pinned venv. No real data, persistence, UI/routes, exports, customer-facing confidence/probability, ROI, causality, productivity, new suppression reason, tunable threshold, or promotion decision was authorized. Verification: `python3.13 -m compileall inference/src/fluencytracr_inference`, `npm run build --workspace packages/confidence-engine && node --test packages/confidence-engine/test/confidence_model_contract.test.mjs packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs` (83 pass / 3 skipped local live-subprocess tests because `inference/.venv` is absent), and `git diff --check`. Local pinned Python test execution was blocked because installing `inference/requirements.lock` on this Mac requires `cmake` to build `llvmlite`; CI installs the pinned venv before running the harness.
 - PR #403 longitudinal model-family blocker repair (2026-07-10, branch codex/bayesian-model-family-decision-record): aligned the synthetic longitudinal smoke proof with the reviewed model-family boundary by removing Depth from the fitted design matrix and synthetic outcome equation, retaining Depth only as aggregate pathway context, renaming the internal contrast to `internal_in_sample_vbd_contrast`, binding the movement floor to a compiled synthetic-smoke constant instead of per-plan threshold context, and tightening Python/TypeScript artifact fields so stale Velocity/Breadth/Depth coefficient language no longer validates. No real/customer/live data, persistence, UI/routes, exports, customer-facing confidence/probability, ROI, causality, productivity, new suppression reason, tunable threshold, or promotion decision was authorized. Verification: `PYTHONPATH=src .venv/bin/python -m pytest tests/test_longitudinal_synthetic.py tests/test_longitudinal_hold_paths.py tests/test_longitudinal_artifact_shape.py -q` (36 passed), `npm run build --workspace packages/confidence-engine`, `npm run build --workspace shared`, `node --test packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs` (15 passed), `npm run test:ai-value-ai-fluency-instrument-snapshot` (11 passed), `npx openspec validate generalize-bayesian-confidence-to-model-family --strict`, `npx openspec validate add-ai-fluency-instrument-snapshot-longitudinal-proof --strict`, `npx openspec validate add-bayesian-inference-proof-harness --strict`, `git diff --check`, and `git diff --check origin/main`.
 - AI Fluency longitudinal ordinal measurement calibration runner (2026-07-14): froze the exact 24-item `ai_fluency_long_v1` manifest and same-form baseline/follow-up policy; kept the 14-item form pulse-only and six behavior questions separate; added strict aggregate-only 24-item/276-pair evidence, a locked source-side Google Sheets adapter, deterministic four-scenario synthetic generation, covariance-aware ordinal-probit composite fitting, diagnostics, a fixed 4x200 full plan, smoke mode, and a summary-only hash-bound artifact. Independent CODE, BUG, and ADVERSARIAL review found and resolved nonlinear-curvature, covariance, source-hash linkage, question/form/cohort binding, atomic publication, opaque-ref, canonical-date, exact synthetic-identity, and JavaScript safe-integer defects; final verdicts are GO. Verification: focused Python 50/50, full inference 539/539, adapter/snapshot Node 47/47, TypeScript bridges 86/86, Assurance Harness 276 passed/3 skipped, shared and confidence-engine builds, strict OpenSpec validation, docs sweep, semantic drift, V1 governance, and `git diff --check`. Only reduced smoke evidence ran and remains HOLD; the full 800-slot study, all section 5 tasks, and parent task `5.5` remain incomplete. No real/customer/live/production data, runtime admission, UI/routes, persistence, public export, customer output, confidence/probability, ROI, causality, productivity, new canonical event/reason, tunable threshold, or promotion decision was added.
+- PR #429 VBD trajectory portability hardening (2026-07-16): made aggregate evidence hashes portable across the pinned Linux/macOS runtime boundary by admitting only `.13g`-canonical exact Python floats, binding that complete representation policy into the Python model manifest, TypeScript mirror, and bootstrap oracle, and using those canonical values as preparation inputs without rounding downstream model calculations. Raw covariance now rejects every coercible alternate representation before conversion, canonical covariance and SEs revalidate independently, and covariance symmetry/diagonal/PSD gates operate on a finite positive relative scale including subnormal matrices. The regenerated smoke ordered-panel root is `fa5b815c8d50e8c6f617b57b0de6ca91111775e1611b6012d530cbb7455164ca`; bootstrap oracle v2 is `f32b94e2a15df01d6aa257995c2201dfef788fcd25a48ea64241a2fb78f14a5e`. Rehashed integer, Boolean, float-subclass, signed-zero, stateful-iterable, nonnative, complex, object, float32, malformed covariance, and policy-mutation attacks fail closed. Independent CODE, BUG, and ADVERSARIAL reviews all returned GO. Verification: focused Python 154/154, all VBD trajectory tests 293/293, full inference 858/858, VBD TypeScript bridge 18/18, AI Fluency snapshot 11/11, Assurance Harness 276 passed/3 skipped, shared and confidence-engine builds, compileall, strict OpenSpec validation, docs sweep, semantic drift guard, V1 governance gates, and `git diff --check`. Smoke evidence remains permanent HOLD; no NUTS concordance, acceptance seed, calibration evidence, real/customer/live data, public surface, customer output, confidence/probability, ROI, causality, productivity, new canonical event/reason, tunable threshold, or promotion decision was added. Next: push PR #429 and require green Linux CI/merge before activating `vbd-trajectory-engine-concordance` from the exact merged source commit.
+- PR #429 Codex review closeout (2026-07-16): resolved all three current-head review blockers. Any expectation-matched control whose compiled outcome holds the full study now places `controlled_subject_study_hold` in the study summary and propagates HOLD through both phase summaries and combination. The TypeScript smoke bridge now rederives `direction_vector_root` from canonical lane order, `[1,1,1]`, and the literal smoke plan ref, so coordinated envelope rehashing cannot launder a false commitment. Every load of a published or pending-combined workspace now recomputes the execution-evidence snapshot and rejects any checkpoint/chunk/tree drift; combined publication files remain intentionally excluded to avoid circular hashing and are protected by their own hashes/commit binding. Independent CODE, BUG, and ADVERSARIAL re-review returned GO. Verification: focused review tests 54/54, all VBD trajectory tests 296/296, full inference 861/861, VBD bridge 19/19, AI Fluency snapshot 11/11, Assurance Harness 276 passed/3 skipped, shared and confidence-engine builds, compileall, strict OpenSpec validation, docs sweep, semantic drift guard, V1 governance gates, and `git diff --check`. No numerical evidence, concordance, real/customer/live data, public surface, customer output, confidence/probability, ROI, causality, productivity, new canonical event/reason, tunable threshold, or promotion decision was added.

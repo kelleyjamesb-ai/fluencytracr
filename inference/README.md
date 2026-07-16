@@ -227,6 +227,80 @@ Under `src/fluencytracr_inference/`:
   the full artifact, compact summary, and self-hashed independent acceptance
   record are committed under `inference/evidence/`. Parent task `5.5` is
   complete only for this internal synthetic measurement-calibration boundary.
+- `vbd_trajectory_types.py` — strict synthetic-only aggregate records for the
+  three primitive frequency, engagement, and Breadth lanes. It binds canonical
+  V2 event/schema identity, exact denominators and source definitions, joint
+  covariance, independently derived cohort and gate receipts, ordered
+  manifests, Python/NumPy/SciPy runtime identity, seed ancestry, and a separate
+  nonnumeric Depth-context root. Unknown, mutable, subclassed, real-data,
+  composite, person-level, malformed, or self-rehashed substitutions reject.
+- `vbd_trajectory_synthetic.py` — development-smoke PCG64DXSM generator for
+  the frozen 12-pre/6-post aggregate panel. Validation regenerates the DGP from
+  the declared seed and plan metadata, so changing seed/hash metadata cannot
+  legitimize copied observations. Truth and latent paths remain sidecars and
+  never enter the panel or prepared input.
+- `vbd_trajectory_bootstrap_conformance.py` — process-local integer fixture
+  proving synchronized type-7 source-bootstrap covariance behavior against the
+  frozen oracle. Fixture rows, private root, and bootstrap seed are absent from
+  the returned summary and cannot enter a numerical study input.
+- `vbd_trajectory_preparation.py` — deterministic pre-period-only lane
+  preparation with immutable arrays, exact time/zero-sum/contrast structures,
+  inherited `k` floors, and mandatory reconciliation to the validated source
+  panel. Transform provenance is included in the prepared context commitment;
+  Depth status never enters numerical inputs or eligibility.
+- `vbd_trajectory_statistics.py` — exact `weighted_quantile_v1` midpoint
+  quantiles and pinned 16-point `normal_quadrature_v1` support. It rejects
+  nonfinite values, nonpositive total weight, negative weight, duplicate or
+  noncanonical support indexes, and malformed probabilities before summary.
+- `vbd_trajectory_state_space.py` — primary deterministic Gaussian
+  state-space integration over 8,192 unscrambled Sobol supports. It computes
+  the exact fixed-interval smoothed latent contrast, expands conditional
+  movement uncertainty beneath each retained original Sobol ordinal, and
+  emits only hash-bound 80%/99% movement summaries and diagnostics.
+- `vbd_trajectory_nuts.py` — matched PyMC marginalized state-space reference,
+  explicit chain/PPC seed boundary, exact conditional movement draw, strict
+  sampler diagnostics, and the five frozen conditional-smoothed-path PPCs.
+  Development smoke is permanently nonaccepting. Full settings are compiled,
+  but direct execution remains blocked until the candidate source is committed,
+  independently reviewed, frozen, and admitted by canonical concordance
+  evidence. No posterior draws, latent paths, or PPC replicates leave the fit
+  function. Concordance, evidence execution, parent task `5.6`, real data, and
+  UI remain incomplete.
+- `vbd_trajectory_artifact.py` — runner-owned, summary-only three-lane
+  development-smoke artifact. It binds prepared inputs, deterministic fit
+  summaries, diagnostics, transform/source roots, model/runtime identity, and
+  canonical nonnumeric Depth context while keeping NUTS, concordance, canary,
+  replicated, floor, negative-control, and acceptance evidence `NOT_RUN` or
+  zero. The strict confidence-engine bridge independently rederives the
+  emitted binding graph, rejects malformed or unsafe coordinated rewrites,
+  and permits only permanent `HOLD` smoke evidence. The VBD bridge remains an
+  internal module and is intentionally absent from the confidence-engine
+  package-root exports.
+- `vbd_trajectory_validation_plan.py`,
+  `vbd_trajectory_validation_controls.py`,
+  `vbd_trajectory_validation_execution.py`,
+  `vbd_trajectory_validation_study.py`,
+  `vbd_trajectory_validation_resumable.py`, and
+  `vbd_trajectory_validation_cli.py` implement the nonexecuted proof runner.
+  The immutable plan contains exactly 2,000 original slots and 2,000 separately
+  regenerated recomputation slots in 40 ordered chunks, plus four ordered
+  full-setting canaries. Every child launch uses a create-once receipt with an
+  inherited one-time capability and parent-liveness pipe. Workspace path and
+  inode identity, plan/freeze/concordance bytes, launch ordering, process
+  attestations, phase roots, exact evidence bytes, and final combined readback
+  fail closed. A copied or renamed workspace rejects, incomplete or malformed
+  evidence HOLDS, and `combined.json` is not committed until a separate marker
+  binds its hash and unchanged evidence snapshot. Review refs are unique GO
+  references bound to candidate commit `S`; Git identity queries use a fixed
+  system binary, a strict environment allowlist, explicit work-tree binding,
+  and disabled executable local helpers. The complete compiled control set
+  exercises production validation boundaries, including an explicit all-lane
+  common-availability shock, a generated all-lane zero-variance panel through
+  production preparation, and recomputation-shaped copied-checkpoint rejection
+  at execution attestation. Canonical
+  concordance admission remains intentionally disabled until OpenSpec task 3;
+  no acceptance canary, concordance fit, or 2,000-slot evidence row was run in
+  the task-2.5 implementation slice.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

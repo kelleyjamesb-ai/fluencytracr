@@ -1,6 +1,6 @@
 # VBD Trajectory-Model Calibration
 
-Contract status: `SYNTHETIC_IMPLEMENTATION_AUTHORIZED_INCOMPLETE`
+Contract status: `SYNTHETIC_IMPLEMENTATION_COMPLETE_CONCORDANCE_PENDING`
 
 Owning model-family component:
 `bayesian_vbd_behavioral_trajectory_model`
@@ -21,11 +21,12 @@ frequency, engagement, and breadth. Reusing that composite beside a separate
 Breadth term would count Breadth twice. The legacy 0-100 VBD intake also lacks
 admitted aggregate uncertainty. Neither representation is valid model input.
 
-This contract is documentation and proof planning plus bounded synthetic
-implementation authorization for tasks `2.2` through `2.5` only. No trajectory
-engine, artifact schema, bridge, study execution, real-data admission, or
-output is implemented. Concordance, evidence execution, independent
-acceptance, and parent closeout remain separately gated.
+This contract now governs the verified bounded synthetic implementation for
+tasks `2.2` through `2.5`. It does not authorize concordance or acceptance-plan
+execution before the reviewed source/freeze sequence, and it does not authorize
+real-data admission, customer output, or parent closeout. Concordance, full
+evidence execution, independent acceptance, and parent closeout remain
+separately gated.
 
 ## Current Decision
 
@@ -145,6 +146,33 @@ cohort/window/active-set commitments, observed/missing counts, algorithm and
 pinned-runtime ids, canonical lane order, covariance, and marginal SEs. It
 excludes the private root, receipt, and every descendant root.
 
+Every hash-bound numeric emitted by the synthetic generator or source-
+bootstrap conformance oracle uses the compiled
+`python_binary64_format_13_significant_digits_v1` boundary: Python binary64
+general formatting with `.13g`, parsed back to binary64, with negative zero
+normalized to `0.0`. This applies before evidence hashing and preparation to
+all four distribution percentiles,
+transformed p50 values, transformed marginal standard errors, covariance
+elements, and the bootstrap oracle covariance/standard errors. Generation and
+regeneration apply the same operation, and an otherwise rehashed value with
+more than 13 significant decimal digits rejects. The canonical transformed p50
+and standard error are the admitted model inputs. Preparation and model
+calculation apply no additional canonicalization. Prepared, fit, diagnostic,
+and result hashes retain full binary64 calculation values and remain bound to
+the exact platform/native runtime rather than claiming cross-platform numeric
+identity.
+
+Canonical evidence hashes commit the admitted values, not hidden raw floating-
+point intermediates. Values inside one canonical representation bin therefore
+have the same evidence hash by design. Raw source computation remains bound by
+the source-private prebootstrap root and audit record; raw synthetic computation
+remains bound by seed, generator, implementation, and runtime identities. The
+precision is compiled and non-configurable. It is not a product threshold,
+customer tolerance, or permission to repair invalid evidence.
+Admitted canonical numerics must retain the native float representation; integer,
+Boolean, float-subclass, and negative-zero alternatives reject even when their
+numeric values compare equal and all dependent hashes are recomputed.
+
 That derivation is source-owner-side and external to FluencyTracr. No future
 FluencyTracr input, implementation, checkpoint, storage, artifact, or output may
 receive a real or source-derived member key, digest, slot, or row; this contract authorizes no source
@@ -163,13 +191,20 @@ covariance, or derivation drift HOLDS. The numerical synthetic proof uses its
 separately labeled frozen known-aggregate-uncertainty DGP and cannot claim
 source-bootstrap or real-source clearance.
 
-Covariance validation uses no caller tolerance. With
-`s=max(1,max(abs(covariance)))`, require maximum symmetry error and maximum
-`abs(diag(covariance)-se^2)` each `<=1e-12*s`, and require the minimum
-eigenvalue from `numpy.linalg.eigvalsh(covariance)` to be `>=-1e-10*s` under
-the pinned runtime. Validate the supplied matrix before any symmetrization or
-repair. These are compiled internal numerical tolerances, not product
-thresholds.
+Covariance validation uses no caller tolerance. Validate raw generated
+covariance before canonicalization, then revalidate the canonical covariance
+and standard errors. Raw covariance must arrive as an exact native 3x3 NumPy
+binary64 array; Boolean, integer, string, object, complex, float32, nonnative,
+subclass, or otherwise coercible array representations reject before conversion.
+Set
+`s=max(max(abs(covariance)),max(abs(se^2)))` and require `s` to be finite and
+positive. Require maximum symmetry error and maximum
+`abs(diag(covariance)-se^2)`, each divided by `s`, to be `<=1e-12`. Require the
+minimum eigenvalue from `numpy.linalg.eigvalsh(covariance/s)` to be `>=-1e-10`
+under the pinned runtime. Each canonical standard error must also exactly equal the
+compiled canonicalization of the square root of its matching canonical
+covariance diagonal. Validate the supplied matrix before any symmetrization or
+repair. These are compiled internal numerical tolerances, not product thresholds.
 
 The following are forbidden model inputs:
 
@@ -517,6 +552,13 @@ an auditable two-commit freeze:
    runs from a clean checkout of exact commit `F` and binds `F` plus the freeze-
    manifest hash.
 
+Each implementation-review reference must be unique and use
+`review:<role>/go/<S>/<review-id>`, where `<role>` is exactly `code`, `bug`,
+`adversarial`, or `statistical-methodology` and `<S>` is the reviewed candidate
+commit. The manifest builder rejects duplicate, non-GO, malformed, or
+different-commit references. Independent reviewers still verify the referenced
+review evidence; the manifest cannot self-attest reviewer identity.
+
 The later evidence commit must descend from `F`; reviewers must verify the
 `S -> F` ancestry and allowed one-file diff. Amending, rebasing, replacing, or
 changing any frozen identity after a canary or result exists invalidates the
@@ -524,6 +566,12 @@ entire run and requires a new `S`, new `F`, and full restart. A timestamp or
 self-declared hash without this ancestry does not satisfy the freeze.
 The pre-execution implementation reviews do not satisfy or replace the later
 exact-byte evidence reviews.
+
+Git source queries use the fixed system Git path with a strict environment
+allowlist, an explicit work-tree binding, global/system configuration disabled,
+and command-line disabling of hooks, filesystem monitors, and untracked-cache
+helpers. Ambient `PATH`, `GIT_*`, `LD_*`, or `DYLD_*` values cannot redirect the
+source-identity checks.
 
 The runner accepts only a compiled slot key. It regenerates the complete
 synthetic observation bundle internally from the bound generator, scenario,
@@ -634,7 +682,9 @@ fixture result, so every drift slot rejects before fit. Conformance fixture
 rows remain process-local test inputs and never enter a numerical study slot,
 prepared model input, checkpoint, artifact, or committed evidence.
 
-The portable conformance oracle is frozen under the pinned NumPy runtime. Its
+The portable conformance oracle is versioned as
+`vbd_source_bootstrap_conformance_oracle_v2` and frozen under the pinned NumPy
+runtime. Its
 fixture-private body is canonical JSON over the arrays above plus
 `fixture_id=vbd_source_bootstrap_conformance_v1`, `cohort_size=16`, canonical
 lane order, denominators `60` and `12`, window `w00`, the fixture active-set
@@ -645,16 +695,17 @@ which yields bootstrap seed `3765976209925714`. The exact transformed
 covariance in canonical lane order is:
 
 ```text
-[[0.04044726358395627,  0.01440591242854434,  0.018974533403407882],
- [0.01440591242854434, 0.0051578092626584655, 0.006849798111473459],
- [0.018974533403407882,0.006849798111473459,  0.009585006951479746]]
+[[0.04044726358396, 0.01440591242854, 0.01897453340341],
+ [0.01440591242854, 0.005157809262658, 0.006849798111473],
+ [0.01897453340341, 0.006849798111473, 0.00958500695148]]
 ```
 
 The matching standard errors are
-`[0.20111505061520452,0.07181788957257422,0.09790304873434609]`.
-The canonical oracle body containing the private root, seed, type-7 p50 vector,
-covariance, and standard-error vector has SHA-256
-`ad5e4e5f79d94ee9faaf6a94029372b0348c1c187503edf063a0bb03f98130c4`.
+`[0.2011150506152,0.07181788957257,0.09790304873435]`.
+The canonical oracle body containing the oracle version, complete numeric-
+canonicalization policy, private root, seed, type-7 p50 vector, covariance, and
+standard-error vector has SHA-256
+`f32b94e2a15df01d6aa257995c2201dfef788fcd25a48ea64241a2fb78f14a5e`.
 These fixture-only private values may appear in tests but never in a numerical
 study input, checkpoint, generated artifact, or future real-source package.
 
@@ -1002,6 +1053,14 @@ The additional negative-control manifest is exactly this ordered list:
 | 32 | `covariance_diagonal_mismatch` | set frequency SE to `1.1*sqrt(C[0,0])` while keeping base covariance `C` unchanged | reject at diagonal-consistency gate before fit |
 | 33 | `non_psd_covariance` | set `C_bad=D @ [[1,.9,.9],[.9,1,-.9],[.9,-.9,1]] @ D`, where `D=diag(base_SE)`, preserving order and diagonal | reject at PSD gate before fit |
 
+Control 3 is generated as a canonical bound scenario whose pre-period
+frequency, Engagement, and Breadth observations are constant across every
+group/window. It reaches normal production lane preparation and HOLDS when
+that path computes zero pre-period scale. Control 22 additionally rewraps a
+successful original checkpoint with coherent recomputation outer metadata;
+the unchanged original execution attestation rejects before the copied result
+can enter recomputation.
+
 Controls 4, 5, and 30-33 mutate a fully valid generated aggregate bundle only
 after generation. They do not rerun inverse transforms or context-quantile
 generation. They recompute every changed semantic child and ancestor hash so a
@@ -1130,8 +1189,10 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Implement and verify OpenSpec tasks `2.2` through `2.5` without using any
-acceptance-plan seed or generating concordance, canary, or full-study evidence.
-Parent task `5.6`, real-data admission, runtime monitoring, readout language,
-pilot manifest, downstream three-lane outcome integration, persistence, and UI
-remain incomplete.
+Merge the verified task `2.2` through `2.5` implementation, then start task
+`3.1` from a fresh branch at that merged `origin/main`. Create and review the
+exact candidate source commit `S`, followed by its manifest-only freeze child
+`F`, before running concordance or any acceptance canary. Parent task `5.6`,
+full evidence, real-data admission, runtime monitoring, readout language, pilot
+manifest, downstream three-lane outcome integration, persistence, and UI remain
+incomplete.
