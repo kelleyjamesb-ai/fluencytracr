@@ -24,7 +24,7 @@
 - [x] 2.3 Implement deterministic Gaussian state-space integration as the
   primary engine, a matched PyMC NUTS reference, exact PPC, and fail-closed
   diagnostics.
-- [ ] 2.4 Add a summary-only internal artifact and strict confidence-engine
+- [x] 2.4 Add a summary-only internal artifact and strict confidence-engine
   bridge that reject unknown fields, composite inputs, unsafe claims, Depth
   promotion, stale hashes, incomplete evidence, and self-authorization.
 - [ ] 2.5 Implement the exact 2,000-case planner, resumable chunking, combiner,

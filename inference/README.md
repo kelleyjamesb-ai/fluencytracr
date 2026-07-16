@@ -246,7 +246,8 @@ Under `src/fluencytracr_inference/`:
 - `vbd_trajectory_preparation.py` — deterministic pre-period-only lane
   preparation with immutable arrays, exact time/zero-sum/contrast structures,
   inherited `k` floors, and mandatory reconciliation to the validated source
-  panel. Depth status never enters numerical inputs or eligibility.
+  panel. Transform provenance is included in the prepared context commitment;
+  Depth status never enters numerical inputs or eligibility.
 - `vbd_trajectory_statistics.py` — exact `weighted_quantile_v1` midpoint
   quantiles and pinned 16-point `normal_quadrature_v1` support. It rejects
   nonfinite values, nonpositive total weight, negative weight, duplicate or
@@ -262,8 +263,16 @@ Under `src/fluencytracr_inference/`:
   Development smoke is permanently nonaccepting. Full settings are compiled,
   but direct full execution remains blocked until the exact task-2.5 runner
   owns and verifies the planned slot binding. No posterior draws, latent paths,
-  or PPC replicates leave the fit function. OpenSpec tasks `2.4` and `2.5`,
-  evidence execution, parent task `5.6`, real data, and UI remain incomplete.
+  or PPC replicates leave the fit function. OpenSpec task `2.5`, evidence
+  execution, parent task `5.6`, real data, and UI remain incomplete.
+- `vbd_trajectory_artifact.py` — runner-owned, summary-only three-lane
+  development-smoke artifact. It binds prepared inputs, deterministic fit
+  summaries, diagnostics, transform/source roots, model/runtime identity, and
+  canonical nonnumeric Depth context while keeping NUTS, concordance, canary,
+  replicated, floor, negative-control, and acceptance evidence `NOT_RUN` or
+  zero. The strict confidence-engine bridge independently rederives the
+  emitted binding graph, rejects malformed or unsafe coordinated rewrites,
+  and permits only permanent `HOLD` smoke evidence.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /
   function / cohort / organization effects, estimand `delta` sampled as

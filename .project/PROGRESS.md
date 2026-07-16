@@ -50,6 +50,26 @@
   agentic guard, and diff checks passed. No acceptance-plan seed or evidence
   was executed. Task `2.4` is next; tasks `2.5`, `3.1+`, parent `5.6`, real
   data, outcome integration, persistence, reports, and UI remain incomplete.
+- OpenSpec task `2.4` completed on 2026-07-15. A runner-owned, summary-only
+  development-smoke artifact now emits exactly the three primitive VBD lanes
+  as permanent `HOLD`, with reference NUTS, concordance, canary, replicated,
+  floor, negative-control, and acceptance evidence explicitly absent or
+  `NOT_RUN`. Exact prepared/fit types, canonical unavailable Depth context,
+  strict RFC3339 timestamps, recursive finite-JSON checks, transform/source/
+  joint-uncertainty bindings, diagnostics, model/runtime identity, and false
+  output/authorization pins fail closed. The strict confidence-engine bridge
+  independently rederives the emitted binding graph and rejects unknown fields,
+  composite inputs, numerical Depth, source or lane splicing, impossible dates,
+  nonfinite values, stale hashes, incomplete evidence, and self-authorization.
+  Final CODE, BUG, and ADVERSARIAL reviews returned GO. VBD-focused tests passed
+  `171`; full inference passed `736`; TypeScript longitudinal, DiD, replicated,
+  and VBD artifact bridges passed `104`; AI Fluency snapshots passed `11`; and
+  the Assurance Harness passed `276` with `3` expected skips. Shared and
+  confidence-engine builds, the inference wheel, strict OpenSpec validation,
+  docs sweep, semantic drift, V1 governance, agentic guard, and diff checks
+  passed. No acceptance-plan seed or evidence was executed. Task `2.5` is next;
+  tasks `3.1+`, parent `5.6`, real data, outcome integration, persistence,
+  reports, and UI remain incomplete.
 - Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
   evidence-breaking ambiguities in the merged plan: the existing outcome
   engine did not recover the latent AR(1) smoothing contrast, deterministic

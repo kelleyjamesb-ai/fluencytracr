@@ -65,6 +65,18 @@ export {
 export type { LongitudinalReplicatedValidationArtifact } from "./longitudinalReplicatedValidation";
 
 export {
+  VBD_TRAJECTORY_PROOF_SCHEMA_VERSION,
+  VBD_TRAJECTORY_PROOF_ARTIFACT_CLASS,
+  VBD_TRAJECTORY_PROOF_MODEL_SLICE,
+  VbdTrajectoryProofArtifactSchema,
+  vbdTrajectoryProofPayloadHash,
+  vbdTrajectoryProofPayloadHashBody,
+  vbdTrajectoryProofSelfHash,
+  vbdTrajectoryProofSelfHashBody
+} from "./vbdTrajectoryProof";
+export type { VbdTrajectoryProofArtifact } from "./vbdTrajectoryProof";
+
+export {
   CONTRIBUTION_ALIGNMENT_FEATURE_STABILITY_REVIEW_SCHEMA_VERSION,
   CONTRIBUTION_ALIGNMENT_INTERNAL_RESEARCH_MATH_DATA_MODEL_SCHEMA_VERSION,
   buildContributionAlignmentFeatureStabilityReviewFromObject,

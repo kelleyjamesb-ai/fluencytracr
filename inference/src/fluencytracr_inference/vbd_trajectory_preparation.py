@@ -329,6 +329,7 @@ def prepare_vbd_trajectory_lane(
         "cohort_partition_root": panel.cohort_partition_root,
         "study_plan_root": panel.study_plan_root,
         "seed_manifest_root": panel.seed_manifest_root,
+        "transform_root": transform_root,
         "cross_lane_covariance_bound_not_used_as_zero": True,
         "depth_context_excluded": True,
     }
@@ -602,6 +603,7 @@ def _validate_prepared_structure_and_hashes(
         "cohort_partition_root": prepared.cohort_partition_root,
         "study_plan_root": prepared.study_plan_root,
         "seed_manifest_root": prepared.seed_manifest_root,
+        "transform_root": prepared.transform_root,
         "cross_lane_covariance_bound_not_used_as_zero": True,
         "depth_context_excluded": True,
     }
