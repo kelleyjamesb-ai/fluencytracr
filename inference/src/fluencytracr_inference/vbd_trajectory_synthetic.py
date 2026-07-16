@@ -155,6 +155,7 @@ class _VbdTrajectoryGenerationSpec:
     shock_kind: str | None
     reported_standard_error_ratio: float
     reported_covariance_ratio: float
+    zero_pre_period_variance: bool = False
 
 
 def _equicorrelation(value: float) -> np.ndarray:
@@ -1350,6 +1351,9 @@ def _validation_generation_spec(
             if understate
             else _COVARIANCE_RATIO
         ),
+        zero_pre_period_variance=(
+            slot.scenario_or_control_id == "zero_pre_period_variance"
+        ),
     )
 
 
@@ -1374,6 +1378,14 @@ def _generate_vbd_trajectory_case(
         raise ValueError("post pattern is not compiled")
     if spec.shock_kind not in (None, "common_availability"):
         raise ValueError("shock kind is not compiled")
+    if type(spec.zero_pre_period_variance) is not bool:
+        raise ValueError("pre-period variance control is not compiled")
+    if spec.zero_pre_period_variance and (
+        spec.plan_ref != VBD_TRAJECTORY_VALIDATION_PLAN_REF
+        or spec.scenario_id
+        != "negative_control_zero_pre_period_variance"
+    ):
+        raise ValueError("zero-variance generation is outside its compiled control")
     if spec.shock_kind == "common_availability" and (
         spec.post_pattern != VBD_TRAJECTORY_SUSTAINED_POST_PATTERN
         or truth_vector
@@ -1455,6 +1467,8 @@ def _generate_vbd_trajectory_case(
         @ working_covariance
         @ np.diag(1.0 / pre_sd)
     )
+    if spec.zero_pre_period_variance:
+        prepared_observed[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :] = 0.0
     base_terminal = (
         prepared_latent[:, 15:18, :].mean(axis=(0, 1))
         - prepared_latent[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :].mean(
@@ -1882,6 +1896,8 @@ def _validate_general_generated_panel(
         terminal_truth=spec.terminal_truth,
         post_pattern=spec.post_pattern,
     )[None, :, :]
+    if spec.zero_pre_period_variance:
+        expected[:, :VBD_TRAJECTORY_PRE_WINDOW_COUNT, :] = 0.0
     actual = np.empty_like(expected)
     for bundle in panel.bundles:
         for lane_index, observation in enumerate(bundle.observations):

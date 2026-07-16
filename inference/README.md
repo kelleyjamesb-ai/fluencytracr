@@ -273,7 +273,9 @@ Under `src/fluencytracr_inference/`:
   replicated, floor, negative-control, and acceptance evidence `NOT_RUN` or
   zero. The strict confidence-engine bridge independently rederives the
   emitted binding graph, rejects malformed or unsafe coordinated rewrites,
-  and permits only permanent `HOLD` smoke evidence.
+  and permits only permanent `HOLD` smoke evidence. The VBD bridge remains an
+  internal module and is intentionally absent from the confidence-engine
+  package-root exports.
 - `vbd_trajectory_validation_plan.py`,
   `vbd_trajectory_validation_controls.py`,
   `vbd_trajectory_validation_execution.py`,
@@ -288,9 +290,14 @@ Under `src/fluencytracr_inference/`:
   attestations, phase roots, exact evidence bytes, and final combined readback
   fail closed. A copied or renamed workspace rejects, incomplete or malformed
   evidence HOLDS, and `combined.json` is not committed until a separate marker
-  binds its hash and unchanged evidence snapshot. The complete compiled control
-  set exercises production validation boundaries, including an explicit
-  all-lane common-availability shock and pre-period scale rejection. Canonical
+  binds its hash and unchanged evidence snapshot. Review refs are unique GO
+  references bound to candidate commit `S`; Git identity queries use a fixed
+  system binary, a strict environment allowlist, explicit work-tree binding,
+  and disabled executable local helpers. The complete compiled control set
+  exercises production validation boundaries, including an explicit all-lane
+  common-availability shock, a generated all-lane zero-variance panel through
+  production preparation, and recomputation-shaped copied-checkpoint rejection
+  at execution attestation. Canonical
   concordance admission remains intentionally disabled until OpenSpec task 3;
   no acceptance canary, concordance fit, or 2,000-slot evidence row was run in
   the task-2.5 implementation slice.

@@ -544,8 +544,6 @@ def execute_vbd_trajectory_child(value: object) -> dict:
         "freeze_manifest_hash": receipt["freeze_manifest_hash"],
         "implementation_hash": receipt["implementation_hash"],
         "runtime_identity_hash": receipt["runtime_identity_hash"],
-        "executable_sha256": receipt["executable_sha256"],
-        "native_library_identity_hash": receipt["native_library_identity_hash"],
         "command_id": receipt["command_id"],
         "command_hash": receipt["command_hash"],
         "launch_receipt_hash": receipt["launch_receipt_hash"],

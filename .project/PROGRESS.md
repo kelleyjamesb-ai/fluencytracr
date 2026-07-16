@@ -7,7 +7,7 @@
   items on 2026-07-15. The first item,
   `vbd-trajectory-synthetic-implementation-runner`, completed on 2026-07-16 on
   `codex/vbd-trajectory-engine-calibration` from merged `origin/main` at
-  `2e3df0fd`. No VBD queue item is active until this implementation merges;
+  `ca59defc`. No VBD queue item is active until this implementation merges;
   `vbd-trajectory-engine-concordance` remains pending and must start from the
   merged source commit. Acceptance-plan concordance, canary, primary, targeted,
   drift, floor, and negative-control seeds were not executed. The final
@@ -78,18 +78,24 @@
   capabilities and parent-liveness pipes, workspace path/inode replay binding,
   lock-verified load/write/launch boundaries, durable runner-error rows, exact
   evidence snapshots, strict combined PASS/HOLD derivation, and a final commit
-  marker after descriptor-stable combined readback. Controls hit production
-  validators, including explicit common-availability shock mechanics and the
-  pre-period scale gate. Canonical concordance admission remains deliberately
-  disabled until task 3, so no acceptance canary, concordance fit, or evidence
-  slot ran. Final CODE, BUG, and ADVERSARIAL reviews returned GO. Verification:
-  VBD `265 passed`; full inference `830 passed`; TypeScript bridges `104
-  passed`; AI Fluency snapshots `11 passed`; Assurance Harness `276 passed, 3
-  skipped`; shared and confidence-engine builds; inference wheel build and
-  isolated wheel import; strict OpenSpec; docs sweep; semantic drift; V1
-  governance; agentic guard; and `git diff --check`. Tasks `3.1+`, parent task
-  `5.6`, real data, three-lane outcome integration, persistence, reports, and
-  UI remain incomplete.
+  marker after descriptor-stable combined readback. The final hardening pass
+  binds unique GO review refs to exact candidate `S`, isolates Git from ambient
+  repository/loader/config redirects, removes the VBD schema from package-root
+  exports, generates constant pre-period observations in all three lanes before
+  production preparation, rejects coherently rewrapped copied checkpoints at
+  execution attestation, and tests successful checkpoint plus combined-marker
+  resume. Canonical concordance admission remains deliberately disabled until
+  task 3, so no acceptance canary, concordance fit, or evidence slot ran.
+  Verification: VBD `269 passed`; full inference `834 passed`; TypeScript
+  bridges `104 passed`; AI Fluency snapshots `11 passed`; Assurance Harness
+  `276 passed, 3 skipped`; shared and confidence-engine builds; inference wheel
+  build and isolated wheel import; strict OpenSpec; docs sweep; semantic drift;
+  V1 governance; agentic guard; compileall; and `git diff --check`. An extra
+  broad confidence-engine test command exposed pre-existing Bayesian DiD golden
+  parity drift in files unchanged from `origin/main`; the required inference
+  bridge set is green, and no out-of-scope DiD golden files were changed. Tasks
+  `3.1+`, parent task `5.6`, real data, three-lane outcome integration,
+  persistence, reports, and UI remain incomplete.
 - Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
   evidence-breaking ambiguities in the merged plan: the existing outcome
   engine did not recover the latent AR(1) smoothing contrast, deterministic

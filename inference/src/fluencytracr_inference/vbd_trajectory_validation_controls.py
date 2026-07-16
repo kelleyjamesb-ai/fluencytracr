@@ -23,7 +23,6 @@ from .vbd_trajectory_preparation import (
     TrajectoryPreparationError,
     prepare_vbd_trajectory_lane,
     validate_prepared_vbd_trajectory,
-    validate_vbd_trajectory_pre_period_scale,
 )
 from .vbd_trajectory_state_space import fit_vbd_trajectory_state_space
 from .vbd_trajectory_synthetic import (
@@ -834,7 +833,7 @@ def _execute_negative_control(
             stage=specification.expected_stage,
             code=specification.control_code,
             operation=lambda: validate_vbd_trajectory_recomputation_source(
-                "primary_result"
+                "primary_checkpoint"
             ),
             exception_type=ValueError,
             message_fragment="cannot deserialize",
@@ -872,10 +871,15 @@ def _execute_negative_control(
             specification.expected_stage, specification.control_code
         )
     if control_id == "zero_pre_period_variance":
+        panel = _generate_control_base(slot).panel
+        validate_trajectory_panel(panel)
         _expect_rejection(
             stage=specification.expected_stage,
             code=specification.control_code,
-            operation=lambda: validate_vbd_trajectory_pre_period_scale(0.0),
+            operation=lambda: tuple(
+                prepare_vbd_trajectory_lane(panel, lane)
+                for lane in VBD_TRAJECTORY_LANES
+            ),
             exception_type=TrajectoryPreparationError,
             message_fragment="pre-period scale",
             exception_stage="pre_period_standardization",

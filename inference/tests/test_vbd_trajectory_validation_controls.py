@@ -3,6 +3,8 @@ import pytest
 import fluencytracr_inference.vbd_trajectory_validation_controls as controls
 from fluencytracr_inference.vbd_trajectory_synthetic import (
     VBD_TRAJECTORY_SMOKE_SEED_MIN,
+    _VALIDATION_GENERATION_RUNNER_TOKEN,
+    _validation_generation_context,
     generate_vbd_trajectory_smoke_case,
 )
 from fluencytracr_inference.vbd_trajectory_preparation import (
@@ -137,36 +139,46 @@ def test_partial_study_hits_the_production_fail_closed_combiner():
     assert "exact_manifest_incomplete" in summary["failing_checks"]
 
 
-def test_zero_variance_control_hits_production_scale_gate_without_generation(
+def test_zero_variance_control_mutates_all_pre_lanes_and_hits_preparation(
     monkeypatch,
 ):
-    generated = False
-    observed: list[object] = []
-    production_validator = controls.validate_vbd_trajectory_pre_period_scale
+    generated = []
+    prepared = []
+    production_generator = controls._generate_control_base
+    production_prepare = controls.prepare_vbd_trajectory_lane
 
-    def forbidden_generation(_slot):
-        nonlocal generated
-        generated = True
-        raise AssertionError("zero-variance control must not mutate a panel")
+    def recording_generator(slot):
+        case = production_generator(slot)
+        generated.append(case)
+        return case
 
-    def recording_validator(scale):
-        observed.append(scale)
-        return production_validator(scale)
+    def recording_prepare(panel, lane):
+        for lane_index in range(3):
+            pre_values = {
+                bundle.observations[lane_index].distribution.p50
+                for bundle in panel.bundles
+                if not bundle.post
+            }
+            assert len(pre_values) == 1
+        prepared.append(lane)
+        return production_prepare(panel, lane)
 
-    monkeypatch.setattr(controls, "_generate_control_base", forbidden_generation)
-    monkeypatch.setattr(
-        controls,
-        "validate_vbd_trajectory_pre_period_scale",
-        recording_validator,
-    )
+    monkeypatch.setattr(controls, "_generate_control_base", recording_generator)
+    monkeypatch.setattr(controls, "prepare_vbd_trajectory_lane", recording_prepare)
     slot = _slot("negative_control", "zero_pre_period_variance")
 
-    result = controls.execute_vbd_trajectory_control_slot(
-        slot, _token=controls._VBD_TRAJECTORY_CONTROL_RUNNER_TOKEN
-    )
+    with _validation_generation_context(
+        capability_hash="1" * 64,
+        capability_token_hash="2" * 64,
+        launch_receipt_hash="3" * 64,
+        _runner_token=_VALIDATION_GENERATION_RUNNER_TOKEN,
+    ):
+        result = controls.execute_vbd_trajectory_control_slot(
+            slot, _token=controls._VBD_TRAJECTORY_CONTROL_RUNNER_TOKEN
+        )
 
-    assert generated is False
-    assert observed == [0.0]
+    assert len(generated) == 1
+    assert prepared == ["frequency"]
     assert result.row_state == "EXPECTED_HOLD"
     assert result.failure_stage == "pre_period_scale_gate_before_fit"
     assert result.failure_code == "expected_control_state"

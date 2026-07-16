@@ -106,6 +106,58 @@ def _capability_token():
     return "9" * 64
 
 
+def _runtime_bound_workspace_record():
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    native_libraries = []
+    body = {
+        key: value
+        for key, value in _fake_workspace_record().items()
+        if key != "workspace_hash"
+    }
+    body["executable_sha256"] = runner._file_sha256(
+        Path(runner.sys.executable).resolve()
+    )
+    body["native_library_identity_hash"] = sha256_json(native_libraries)
+    return {**body, "workspace_hash": sha256_json(body)}
+
+
+def _patch_successful_in_process_child(monkeypatch):
+    from fluencytracr_inference import vbd_trajectory_validation_execution as execution
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    native_libraries = []
+    monkeypatch.setattr(
+        execution,
+        "_read_launch_capability",
+        lambda _receipt: {"capability_hash": "a" * 64},
+    )
+    monkeypatch.setattr(
+        execution,
+        "_verify_child_source_identity",
+        lambda _receipt: ({}, {}, {"native_libraries": native_libraries}),
+    )
+    monkeypatch.setattr(
+        execution, "_start_parent_liveness_watchdog", lambda _receipt: None
+    )
+    monkeypatch.setattr(execution, "_require_launch_parent", lambda _pid: None)
+    parent_process_id = os.getpid()
+    child_process_id = parent_process_id + 10_000
+
+    def execute_child(**kwargs):
+        with monkeypatch.context() as child_process:
+            child_process.setattr(
+                execution.os, "getpid", lambda: child_process_id
+            )
+            child_process.setattr(
+                execution.os, "getppid", lambda: parent_process_id
+            )
+            output = execution.execute_vbd_trajectory_child(kwargs["receipt"])
+        return child_process_id, 0, _canonical_json_bytes(output), b""
+
+    monkeypatch.setattr(runner, "_launch_child", execute_child)
+
+
 def _fake_combined(record):
     def execution_root(phase, phase_hash, fill):
         root_body = {
@@ -199,6 +251,46 @@ def test_checkpoint_reader_rejects_noncanonical_json_bytes(tmp_path):
         VbdTrajectoryValidationWorkspaceError, match="canonical byte form"
     ):
         read_strict_json(path)
+
+
+def test_git_source_queries_ignore_ambient_path_and_repository_redirects(
+    monkeypatch,
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    captured = {}
+
+    class Completed:
+        stdout = "source-commit\n"
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        captured.update(kwargs)
+        return Completed()
+
+    monkeypatch.setenv("PATH", "/tmp/untrusted-git")
+    monkeypatch.setenv("GIT_DIR", "/tmp/untrusted-repository")
+    monkeypatch.setenv("GIT_WORK_TREE", "/tmp/untrusted-worktree")
+    monkeypatch.setenv("LD_PRELOAD", "/tmp/untrusted-loader.so")
+    monkeypatch.setenv("DYLD_INSERT_LIBRARIES", "/tmp/untrusted-loader.dylib")
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+
+    assert runner._git_output("rev-parse", "HEAD") == "source-commit"
+    assert captured["command"][0] in {"/usr/bin/git", "/bin/git"}
+    assert ("-C", str(runner._repo_root())) == captured["command"][7:9]
+    assert f"--work-tree={runner._repo_root()}" in captured["command"]
+    assert "core.fsmonitor=false" in captured["command"]
+    assert "core.untrackedCache=false" in captured["command"]
+    assert f"core.hooksPath={os.devnull}" in captured["command"]
+    assert captured["env"]["PATH"] == "/usr/bin:/bin"
+    assert "GIT_DIR" not in captured["env"]
+    assert "GIT_WORK_TREE" not in captured["env"]
+    assert "LD_PRELOAD" not in captured["env"]
+    assert "DYLD_INSERT_LIBRARIES" not in captured["env"]
+    assert captured["env"]["GIT_CONFIG_GLOBAL"] == os.devnull
+    assert captured["env"]["GIT_CONFIG_NOSYSTEM"] == "1"
+    assert captured["env"]["GIT_OPTIONAL_LOCKS"] == "0"
+    assert captured["env"]["GIT_TERMINAL_PROMPT"] == "0"
 
 
 def test_create_once_bytes_cannot_be_replaced(tmp_path):
@@ -382,10 +474,14 @@ def test_freeze_manifest_requires_exact_source_set_and_self_hash():
         "in_scope_files": files,
         "in_scope_files_hash": sha256_json(files),
         "implementation_review_refs": {
-            "CODE": "review:code-go",
-            "BUG": "review:bug-go",
-            "ADVERSARIAL": "review:adversarial-go",
-            "STATISTICAL_METHODOLOGY": "review:statistical-go",
+            "CODE": f"review:code/go/{'a' * 40}/code-agent",
+            "BUG": f"review:bug/go/{'a' * 40}/bug-agent",
+            "ADVERSARIAL": (
+                f"review:adversarial/go/{'a' * 40}/adversarial-agent"
+            ),
+            "STATISTICAL_METHODOLOGY": (
+                f"review:statistical-methodology/go/{'a' * 40}/stats-agent"
+            ),
         },
         "runtime_identity_hash": "c" * 64,
         "implementation_hash": "d" * 64,
@@ -414,6 +510,43 @@ def test_freeze_manifest_requires_exact_source_set_and_self_hash():
     missing["manifest_hash"] = sha256_json(missing_body)
     with pytest.raises(VbdTrajectoryValidationWorkspaceError):
         _validate_freeze_manifest(missing)
+
+    duplicated_review = deepcopy(value)
+    duplicated_review["implementation_review_refs"]["BUG"] = (
+        duplicated_review["implementation_review_refs"]["CODE"]
+    )
+    duplicate_body = {
+        key: item
+        for key, item in duplicated_review.items()
+        if key != "manifest_hash"
+    }
+    duplicated_review["manifest_hash"] = sha256_json(duplicate_body)
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        _validate_freeze_manifest(duplicated_review)
+
+    wrong_commit = deepcopy(value)
+    wrong_commit["implementation_review_refs"]["CODE"] = (
+        f"review:code/go/{'f' * 40}/code-agent"
+    )
+    wrong_commit_body = {
+        key: item
+        for key, item in wrong_commit.items()
+        if key != "manifest_hash"
+    }
+    wrong_commit["manifest_hash"] = sha256_json(wrong_commit_body)
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        _validate_freeze_manifest(wrong_commit)
+
+    nonstring_review = deepcopy(value)
+    nonstring_review["implementation_review_refs"]["CODE"] = []
+    nonstring_body = {
+        key: item
+        for key, item in nonstring_review.items()
+        if key != "manifest_hash"
+    }
+    nonstring_review["manifest_hash"] = sha256_json(nonstring_body)
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        _validate_freeze_manifest(nonstring_review)
 
 
 def test_self_hashed_concordance_pass_cannot_initialize_replication():
@@ -548,6 +681,87 @@ def test_orphaned_launch_becomes_durable_runner_error_without_relaunch(
     assert same_checkpoint == checkpoint
 
 
+def test_copied_original_checkpoint_rejects_in_recomputation_loader(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    record = _runtime_bound_workspace_record()
+    original_phase = _phase_manifest(record, "original")
+    recomputation_phase = _phase_manifest(record, "recomputation")
+    slot_index = next(
+        index
+        for index, slot in enumerate(required_vbd_trajectory_validation_slots())
+        if slot.scenario_or_control_id == "copied_recompute"
+    )
+    slot = required_vbd_trajectory_validation_slots()[slot_index]
+    _patch_successful_in_process_child(monkeypatch)
+    original_result, checkpoint = _run_one_study_slot(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase_manifest=original_phase,
+        slot_index=slot_index,
+        original_result=None,
+        verify_lock_identity=lambda: None,
+    )
+    assert checkpoint["child_return_class"] == "success"
+
+    recomputation_launch = _launch_receipt(
+        execution_kind="study",
+        phase="recomputation",
+        phase_hash=recomputation_phase["phase_hash"],
+        phase_token=recomputation_phase["phase_token"],
+        slot=slot,
+        slot_index=slot_index,
+        workspace_record=record,
+        canary=None,
+        capability_token_hash=sha256_json(_capability_token()),
+    )
+    copied = deepcopy(checkpoint)
+    copied.update(
+        {
+            "phase": "recomputation",
+            "phase_hash": recomputation_phase["phase_hash"],
+            "phase_token": recomputation_phase["phase_token"],
+            "launch_receipt_hash": recomputation_launch[
+                "launch_receipt_hash"
+            ],
+            "original_semantic_result_hash": (
+                original_result.semantic_result_hash
+            ),
+            "semantic_result_matches_original": True,
+        }
+    )
+    copied_body = {
+        key: value for key, value in copied.items() if key != "checkpoint_hash"
+    }
+    copied["checkpoint_hash"] = sha256_json(copied_body)
+    stem = f"slot_{slot_index:04d}.json"
+    write_json_create_once(
+        tmp_path / "recomputation" / "launches" / stem,
+        recomputation_launch,
+    )
+    write_json_create_once(
+        tmp_path / "recomputation" / "slots" / stem,
+        copied,
+    )
+    monkeypatch.setattr(
+        runner,
+        "_launch_child",
+        lambda **kwargs: pytest.fail("copied checkpoint must never relaunch"),
+    )
+
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError, match="attestation"):
+        _run_one_study_slot(
+            workspace=tmp_path,
+            workspace_record=record,
+            phase_manifest=recomputation_phase,
+            slot_index=slot_index,
+            original_result=original_result,
+            verify_lock_identity=lambda: None,
+        )
+
+
 def test_child_failure_is_sanitized_and_create_once(tmp_path, monkeypatch):
     record = _fake_workspace_record()
     phase = _phase_manifest(record)
@@ -574,6 +788,46 @@ def test_child_failure_is_sanitized_and_create_once(tmp_path, monkeypatch):
     assert result.failure_code == "child_process_failure"
     assert "private exception text" not in repr(checkpoint)
     assert checkpoint["child_stderr_hash"] != sha256_json(None)
+
+
+def test_successful_checkpoint_resumes_without_relaunch(tmp_path, monkeypatch):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    record = _runtime_bound_workspace_record()
+    phase = _phase_manifest(record)
+    slot_index = next(
+        index
+        for index, slot in enumerate(required_vbd_trajectory_validation_slots())
+        if slot.scenario_or_control_id == "copied_recompute"
+    )
+
+    _patch_successful_in_process_child(monkeypatch)
+    result, checkpoint = _run_one_study_slot(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase_manifest=phase,
+        slot_index=slot_index,
+        original_result=None,
+        verify_lock_identity=lambda: None,
+    )
+    assert checkpoint["child_return_class"] == "success"
+    assert checkpoint["execution_attestation"] is not None
+
+    monkeypatch.setattr(
+        runner,
+        "_launch_child",
+        lambda **kwargs: pytest.fail("valid checkpoint must resume without relaunch"),
+    )
+    resumed_result, resumed_checkpoint = _run_one_study_slot(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase_manifest=phase,
+        slot_index=slot_index,
+        original_result=None,
+        verify_lock_identity=lambda: None,
+    )
+    assert resumed_result == result
+    assert resumed_checkpoint == checkpoint
 
 
 def test_child_launch_uses_inherited_capability_and_liveness_pipes(monkeypatch):
@@ -921,6 +1175,157 @@ def test_combined_commit_marker_binds_output_and_evidence_snapshot():
         _validate_combined_commit(
             marker, workspace_record=record, combined=replaced
         )
+
+
+def test_complete_combine_publication_is_idempotent_and_rederives_before_resume(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    record = _fake_workspace_record(tmp_path)
+    for phase in ("original", "recomputation"):
+        write_json_create_once(tmp_path / phase / "phase.json", {})
+
+    phase_records = {
+        "original": {
+            "phase_hash": sha256_json("original-phase"),
+            "phase_token": f"{7001:064x}",
+            "creator_process_token": f"{7002:064x}",
+        },
+        "recomputation": {
+            "phase_hash": sha256_json("recomputation-phase"),
+            "phase_token": f"{7003:064x}",
+            "creator_process_token": f"{7004:064x}",
+        },
+    }
+    canary_phase = {
+        "phase_hash": sha256_json("canary-phase"),
+        "phase_token": f"{7005:064x}",
+        "creator_process_token": f"{7006:064x}",
+    }
+    original_tokens = tuple(f"{index:064x}" for index in range(1, 2_001))
+    recomputation_tokens = tuple(
+        f"{index:064x}" for index in range(3_001, 5_001)
+    )
+    canary_tokens = tuple(f"{index:064x}" for index in range(6_001, 6_005))
+    canaries = tuple(
+        {
+            "execution_process_token_hash": sha256_json(token),
+            "execution_attestation": {"process_token": token},
+            "receipt_hash": sha256_json({"canary": index}),
+        }
+        for index, token in enumerate(canary_tokens)
+    )
+
+    def execution_root(phase, phase_hash, label):
+        body = {
+            "phase": phase,
+            "phase_hash": phase_hash,
+            "ordered_checkpoint_hashes_hash": sha256_json(
+                [label, "checkpoints"]
+            ),
+            "ordered_launch_receipt_hashes_hash": sha256_json(
+                [label, "launches"]
+            ),
+            "ordered_execution_attestation_hashes_hash": sha256_json(
+                [label, "attestations"]
+            ),
+            "ordered_chunk_result_hashes_hash": sha256_json(
+                [label, "chunks"]
+            ),
+        }
+        return {**body, "execution_root_hash": sha256_json(body)}
+
+    roots = (
+        execution_root(
+            "original", phase_records["original"]["phase_hash"], "original"
+        ),
+        execution_root(
+            "recomputation",
+            phase_records["recomputation"]["phase_hash"],
+            "recomputation",
+        ),
+    )
+    study_hashes = {
+        "original": sha256_json("original-study"),
+        "recomputation": sha256_json("recomputation-study"),
+    }
+    evidence_snapshot = {
+        "schema_version": "test-evidence-snapshot",
+        "snapshot_hash": sha256_json("execution-evidence"),
+    }
+
+    monkeypatch.setattr(runner, "_load_workspace", lambda _path: (tmp_path, record))
+    monkeypatch.setattr(runner, "_validate_workspace_tree", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        runner, "_validate_workspace_ready_for_combined", lambda _path: None
+    )
+    monkeypatch.setattr(
+        runner, "_execution_evidence_snapshot", lambda _path: evidence_snapshot
+    )
+    monkeypatch.setattr(
+        runner, "_require_canaries_complete", lambda *_a, **_k: canaries
+    )
+
+    def load_phase(*, phase, **_kwargs):
+        return (), {"study_hash": study_hashes[phase]}
+
+    monkeypatch.setattr(runner, "_load_complete_phase", load_phase)
+    monkeypatch.setattr(
+        runner,
+        "combine_vbd_trajectory_validation_phases",
+        lambda **_kwargs: {
+            "failing_checks": [],
+            "combined_study_hash": sha256_json("combined-study"),
+            "fresh_semantic_results_match": True,
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "_phase_process_tokens",
+        lambda **_kwargs: (
+            original_tokens,
+            recomputation_tokens,
+            roots[0],
+            roots[1],
+        ),
+    )
+    monkeypatch.setattr(
+        runner,
+        "_validate_phase_manifest",
+        lambda _value, *, phase, **_kwargs: phase_records[phase],
+    )
+    monkeypatch.setattr(
+        runner, "_canary_phase_manifest", lambda *_a, **_k: canary_phase
+    )
+
+    first = combine_vbd_trajectory_validation_workspace(tmp_path)
+    second = combine_vbd_trajectory_validation_workspace(tmp_path)
+    assert second == first
+    assert read_strict_json(tmp_path / "combined.json") == first
+    _validate_combined_commit(
+        read_strict_json(tmp_path / "combined_commit.json"),
+        workspace_record=record,
+        combined=first,
+    )
+
+    forged = deepcopy(first)
+    forged["semantic_combined_hash"] = sha256_json("forged-semantic-study")
+    forged_body = {
+        key: value for key, value in forged.items() if key != "combined_hash"
+    }
+    forged["combined_hash"] = sha256_json(forged_body)
+    (tmp_path / "combined.json").unlink()
+    (tmp_path / "combined_commit.json").unlink()
+    write_json_create_once(tmp_path / "combined.json", forged)
+    write_json_create_once(
+        tmp_path / "combined_commit.json",
+        _combined_commit_record(workspace_record=record, combined=forged),
+    )
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError, match="create-once"
+    ):
+        combine_vbd_trajectory_validation_workspace(tmp_path)
 
 
 def test_combined_readback_rejects_rehashed_authorization_and_unknown_fields():

@@ -99,7 +99,16 @@ VBD_TRAJECTORY_RUNNER_THREAT_MODEL = (
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 _TOKEN_RE = re.compile(r"^[0-9a-f]{64}$")
-_REVIEW_REF_RE = re.compile(r"^review:[a-z][a-z0-9._/-]{0,95}$")
+_REVIEW_REF_RE = re.compile(
+    r"^review:(?:code|bug|adversarial|statistical-methodology)/go/"
+    r"[0-9a-f]{40}/[a-z][a-z0-9._-]{0,63}$"
+)
+_REVIEW_ROLE_SLUGS = {
+    "CODE": "code",
+    "BUG": "bug",
+    "ADVERSARIAL": "adversarial",
+    "STATISTICAL_METHODOLOGY": "statistical-methodology",
+}
 _SAFE_TIMESTAMP_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?\+00:00$"
 )
@@ -691,11 +700,48 @@ def _exclusive_lock(path: Path):
         os.close(directory_descriptor)
 
 
+def _trusted_git_executable() -> Path:
+    for candidate in (Path("/usr/bin/git"), Path("/bin/git")):
+        if candidate.is_file():
+            return candidate
+    raise VbdTrajectoryValidationWorkspaceError(
+        "trusted Git executable is unavailable"
+    )
+
+
+def _git_environment() -> dict[str, str]:
+    return {
+        "PATH": "/usr/bin:/bin",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_OPTIONAL_LOCKS": "0",
+        "GIT_TERMINAL_PROMPT": "0",
+        "LC_ALL": "C",
+    }
+
+
+def _git_command(*args: str) -> tuple[str, ...]:
+    return (
+        str(_trusted_git_executable()),
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.untrackedCache=false",
+        "-c",
+        f"core.hooksPath={os.devnull}",
+        "-C",
+        str(_repo_root()),
+        f"--work-tree={_repo_root()}",
+        *args,
+    )
+
+
 def _git_output(*args: str) -> str:
     try:
         completed = subprocess.run(
-            ("git", *args),
-            cwd=_repo_root(),
+            _git_command(*args),
+            cwd="/",
+            env=_git_environment(),
             check=True,
             capture_output=True,
             text=True,
@@ -710,7 +756,11 @@ def _git_output(*args: str) -> str:
 def _git_bytes(*args: str) -> bytes:
     try:
         completed = subprocess.run(
-            ("git", *args), cwd=_repo_root(), check=True, capture_output=True
+            _git_command(*args),
+            cwd="/",
+            env=_git_environment(),
+            check=True,
+            capture_output=True,
         )
     except (OSError, subprocess.CalledProcessError) as exc:
         raise VbdTrajectoryValidationWorkspaceError(
@@ -896,12 +946,7 @@ def _validate_freeze_manifest(value: object) -> dict:
         or type(tree) is not str
         or _COMMIT_RE.fullmatch(tree) is None
         or type(files) is not list
-        or type(reviews) is not dict
-        or set(reviews) != {"CODE", "BUG", "ADVERSARIAL", "STATISTICAL_METHODOLOGY"}
-        or any(
-            type(reference) is not str or _REVIEW_REF_RE.fullmatch(reference) is None
-            for reference in reviews.values()
-        )
+        or not _implementation_review_refs_are_valid(reviews, commit)
         or value["allowed_command_ids"] != list(_ALLOWED_COMMAND_IDS)
         or value["execution_state"] != "NOT_RUN"
         or value["internal_only"] is not True
@@ -988,22 +1033,31 @@ def _pre_run_roots_hash(roots: dict) -> str:
     )
 
 
+def _implementation_review_refs_are_valid(
+    value: object, candidate_source_commit: str
+) -> bool:
+    if (
+        type(value) is not dict
+        or set(value) != set(_REVIEW_ROLE_SLUGS)
+        or any(type(reference) is not str for reference in value.values())
+        or len(set(value.values())) != len(_REVIEW_ROLE_SLUGS)
+    ):
+        return False
+    return all(
+        type(value[role]) is str
+        and _REVIEW_REF_RE.fullmatch(value[role]) is not None
+        and value[role].startswith(
+            f"review:{slug}/go/{candidate_source_commit}/"
+        )
+        for role, slug in _REVIEW_ROLE_SLUGS.items()
+    )
+
+
 def build_vbd_trajectory_freeze_manifest(
     *, implementation_review_refs: dict[str, str]
 ) -> dict:
     """Build, but never write, the create-once manifest for candidate commit S."""
 
-    if (
-        type(implementation_review_refs) is not dict
-        or set(implementation_review_refs)
-        != {"CODE", "BUG", "ADVERSARIAL", "STATISTICAL_METHODOLOGY"}
-        or any(
-            type(reference) is not str
-            or _REVIEW_REF_RE.fullmatch(reference) is None
-            for reference in implementation_review_refs.values()
-        )
-    ):
-        raise ValueError("all four exact implementation review refs are required")
     if _git_output("status", "--porcelain", "--untracked-files=all") != "":
         raise VbdTrajectoryValidationWorkspaceError(
             "freeze manifest generation requires clean candidate commit S"
@@ -1013,6 +1067,12 @@ def build_vbd_trajectory_freeze_manifest(
     if _COMMIT_RE.fullmatch(candidate) is None or _COMMIT_RE.fullmatch(candidate_tree) is None:
         raise VbdTrajectoryValidationWorkspaceError(
             "candidate commit or tree identity is invalid"
+        )
+    if not _implementation_review_refs_are_valid(
+        implementation_review_refs, candidate
+    ):
+        raise ValueError(
+            "all four unique GO review refs must bind candidate commit S"
         )
     files = []
     for relative in sorted(_RUNNER_SOURCE_PATHS):

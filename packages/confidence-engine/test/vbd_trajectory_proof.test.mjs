@@ -7,12 +7,14 @@ import { fileURLToPath } from "node:url";
 
 import {
   LongitudinalStateSpaceConcordanceArtifactSchema,
+  sha256Json
+} from "../dist/index.js";
+import {
   VBD_TRAJECTORY_PROOF_SCHEMA_VERSION,
   VbdTrajectoryProofArtifactSchema,
-  sha256Json,
   vbdTrajectoryProofPayloadHash,
   vbdTrajectoryProofSelfHash
-} from "../dist/index.js";
+} from "../dist/vbdTrajectoryProof.js";
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, "..", "..", "..");

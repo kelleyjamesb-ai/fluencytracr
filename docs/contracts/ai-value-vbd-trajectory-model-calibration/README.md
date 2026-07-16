@@ -517,6 +517,13 @@ an auditable two-commit freeze:
    runs from a clean checkout of exact commit `F` and binds `F` plus the freeze-
    manifest hash.
 
+Each implementation-review reference must be unique and use
+`review:<role>/go/<S>/<review-id>`, where `<role>` is exactly `code`, `bug`,
+`adversarial`, or `statistical-methodology` and `<S>` is the reviewed candidate
+commit. The manifest builder rejects duplicate, non-GO, malformed, or
+different-commit references. Independent reviewers still verify the referenced
+review evidence; the manifest cannot self-attest reviewer identity.
+
 The later evidence commit must descend from `F`; reviewers must verify the
 `S -> F` ancestry and allowed one-file diff. Amending, rebasing, replacing, or
 changing any frozen identity after a canary or result exists invalidates the
@@ -524,6 +531,12 @@ entire run and requires a new `S`, new `F`, and full restart. A timestamp or
 self-declared hash without this ancestry does not satisfy the freeze.
 The pre-execution implementation reviews do not satisfy or replace the later
 exact-byte evidence reviews.
+
+Git source queries use the fixed system Git path with a strict environment
+allowlist, an explicit work-tree binding, global/system configuration disabled,
+and command-line disabling of hooks, filesystem monitors, and untracked-cache
+helpers. Ambient `PATH`, `GIT_*`, `LD_*`, or `DYLD_*` values cannot redirect the
+source-identity checks.
 
 The runner accepts only a compiled slot key. It regenerates the complete
 synthetic observation bundle internally from the bound generator, scenario,
@@ -1001,6 +1014,14 @@ The additional negative-control manifest is exactly this ordered list:
 | 31 | `permuted_covariance_lane_order` | set `covariance_lane_order=(breadth,engagement,frequency)` while lane children remain canonical | reject at lane-order gate before fit |
 | 32 | `covariance_diagonal_mismatch` | set frequency SE to `1.1*sqrt(C[0,0])` while keeping base covariance `C` unchanged | reject at diagonal-consistency gate before fit |
 | 33 | `non_psd_covariance` | set `C_bad=D @ [[1,.9,.9],[.9,1,-.9],[.9,-.9,1]] @ D`, where `D=diag(base_SE)`, preserving order and diagonal | reject at PSD gate before fit |
+
+Control 3 is generated as a canonical bound scenario whose pre-period
+frequency, Engagement, and Breadth observations are constant across every
+group/window. It reaches normal production lane preparation and HOLDS when
+that path computes zero pre-period scale. Control 22 additionally rewraps a
+successful original checkpoint with coherent recomputation outer metadata;
+the unchanged original execution attestation rejects before the copied result
+can enter recomputation.
 
 Controls 4, 5, and 30-33 mutate a fully valid generated aggregate bundle only
 after generation. They do not rerun inverse transforms or context-quantile
