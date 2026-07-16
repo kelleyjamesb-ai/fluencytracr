@@ -246,8 +246,23 @@ Under `src/fluencytracr_inference/`:
 - `vbd_trajectory_preparation.py` — deterministic pre-period-only lane
   preparation with immutable arrays, exact time/zero-sum/contrast structures,
   inherited `k` floors, and mandatory reconciliation to the validated source
-  panel. Depth status never enters numerical inputs or eligibility. This is
-  OpenSpec task `2.2` only; state-space/NUTS engines, artifacts, runner,
+  panel. Depth status never enters numerical inputs or eligibility.
+- `vbd_trajectory_statistics.py` — exact `weighted_quantile_v1` midpoint
+  quantiles and pinned 16-point `normal_quadrature_v1` support. It rejects
+  nonfinite values, nonpositive total weight, negative weight, duplicate or
+  noncanonical support indexes, and malformed probabilities before summary.
+- `vbd_trajectory_state_space.py` — primary deterministic Gaussian
+  state-space integration over 8,192 unscrambled Sobol supports. It computes
+  the exact fixed-interval smoothed latent contrast, expands conditional
+  movement uncertainty beneath each retained original Sobol ordinal, and
+  emits only hash-bound 80%/99% movement summaries and diagnostics.
+- `vbd_trajectory_nuts.py` — matched PyMC marginalized state-space reference,
+  explicit chain/PPC seed boundary, exact conditional movement draw, strict
+  sampler diagnostics, and the five frozen conditional-smoothed-path PPCs.
+  Development smoke is permanently nonaccepting. Full settings are compiled,
+  but direct full execution remains blocked until the exact task-2.5 runner
+  owns and verifies the planned slot binding. No posterior draws, latent paths,
+  or PPC replicates leave the fit function. OpenSpec tasks `2.4` and `2.5`,
   evidence execution, parent task `5.6`, real data, and UI remain incomplete.
 - `model.py` — the contract's implementation-grade equation: hierarchical
   Bayesian DiD with mean-zero partially pooled expectation-path / workflow /

@@ -21,7 +21,7 @@
 - [x] 2.2 Add strict aggregate-only VBD trajectory types, deterministic
   known-aggregate synthetic generation, integer-valid source-bootstrap
   conformance fixtures, and preparation under `inference/`.
-- [ ] 2.3 Implement deterministic Gaussian state-space integration as the
+- [x] 2.3 Implement deterministic Gaussian state-space integration as the
   primary engine, a matched PyMC NUTS reference, exact PPC, and fail-closed
   diagnostics.
 - [ ] 2.4 Add a summary-only internal artifact and strict confidence-engine

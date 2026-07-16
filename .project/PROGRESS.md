@@ -28,8 +28,28 @@
   VBD tests passed `103`; the full inference suite passed `668`; the inference
   wheel built; and strict OpenSpec validation passed. No acceptance-plan seed,
   state-space/NUTS fit, artifact, runner, evidence, parent task `5.6`, real
-  data, route, persistence, report, or UI was executed or authorized. Task
-  `2.3` is the next implementation slice.
+  data, route, persistence, report, or UI was executed or authorized.
+- OpenSpec task `2.3` completed on 2026-07-15. The primary engine now performs
+  deterministic Gaussian state-space integration over the exact 8,192-point
+  unscrambled Sobol proposal and recovers the fixed-interval smoothed latent
+  movement with the contract's conditional `q_mean` and `q_var`. Sixteen-point
+  Gauss-Hermite support beneath each retained original Sobol ordinal feeds the
+  strict shared `weighted_quantile_v1` 80%/99% summaries. The matched PyMC
+  reference samples the exact conditional movement, requires explicit disjoint
+  chain/PPC seeds, computes all five conditional-smoothed-path PPCs in fixed
+  PCG64DXSM order, and derives fail-closed R-hat, ESS, divergence, treedepth,
+  BFMI, MCSE, and PPC status. Returned fits retain no draws, latent paths, PPC
+  replicates, or support values. Development smoke is permanently
+  nonaccepting; direct full execution is blocked until task `2.5` supplies the
+  exact runner-owned slot binding. Final CODE, BUG, and ADVERSARIAL reviews
+  returned GO. VBD-focused tests passed `151`; full inference passed `717`;
+  TypeScript longitudinal bridges passed `76`, the DiD artifact bridge passed
+  `10`, AI Fluency snapshots passed `11`, and the Assurance Harness passed
+  `276` with `3` expected skips. Shared/confidence-engine builds, wheel build,
+  strict OpenSpec validation, docs sweep, semantic drift, V1 governance,
+  agentic guard, and diff checks passed. No acceptance-plan seed or evidence
+  was executed. Task `2.4` is next; tasks `2.5`, `3.1+`, parent `5.6`, real
+  data, outcome integration, persistence, reports, and UI remain incomplete.
 - Pre-implementation CODE, BUG, and ADVERSARIAL review identified four
   evidence-breaking ambiguities in the merged plan: the existing outcome
   engine did not recover the latent AR(1) smoothing contrast, deterministic
