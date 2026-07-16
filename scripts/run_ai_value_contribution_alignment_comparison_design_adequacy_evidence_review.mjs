@@ -661,7 +661,10 @@ function runtimeEnvelopeContentGaps(value, path = []) {
     return gaps;
   }
   if (typeof value !== "string") return [];
-  return SENSITIVE_RUNTIME_ENVELOPE_VALUE_PATTERNS.some((pattern) => pattern.test(value))
+  return [
+    ...SENSITIVE_RUNTIME_ENVELOPE_VALUE_PATTERNS,
+    ...FORBIDDEN_VALUE_PATTERNS
+  ].some((pattern) => pattern.test(value))
     ? ["source runtime envelope contains unsafe source content"]
     : [];
 }

@@ -1004,7 +1004,6 @@ test("comparison-design evidence review rejects ungoverned nested windows and me
 
 test("comparison-design evidence review rejects unsafe nested runtime envelope sidecars", () => {
   const runtimeSource = sourceRuntimeSource();
-  const runtime = runtimeSource.source_runtime;
   const { collection } = reviewerOwnedCollection();
   const review =
     buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
@@ -1023,6 +1022,25 @@ test("comparison-design evidence review rejects unsafe nested runtime envelope s
   for (const unsafe of ["person@example.com", "SELECT user_id", "raw_rows", "query_text"]) {
     assert.equal(serialized.includes(unsafe), false, `${unsafe} must not echo`);
   }
+});
+
+test("comparison-design evidence review rejects identifier-shaped runtime envelope values", () => {
+  const runtimeSource = sourceRuntimeSource();
+  const { collection } = reviewerOwnedCollection();
+  runtimeSource.aggregate_measurement_cell_windows[0].window_ref =
+    "agg_window_user_id_123";
+
+  const review =
+    buildContributionAlignmentComparisonDesignAdequacyEvidenceReviewFromObject({
+      source_runtime: runtimeSource,
+      comparison_design_source_evidence: collection
+    });
+  const validation = validateContributionAlignmentComparisonDesignAdequacyEvidenceReview(review);
+  const serialized = `${JSON.stringify(review)} ${JSON.stringify(validation)}`;
+
+  assert.equal(review.review_state, REJECT_STATE);
+  assert.equal(validation.valid, false);
+  assert.equal(serialized.includes("agg_window_user_id_123"), false);
 });
 
 test("comparison-design evidence review rejects ignored outer fields beside a nested runtime envelope", () => {
