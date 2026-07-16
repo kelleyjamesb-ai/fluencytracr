@@ -6,7 +6,7 @@ Owning model-family component:
 `bayesian_vbd_behavioral_trajectory_model`
 
 Implementation approval:
-`APPROVED_BY_JAMES_KELLEY_2026_07_15_FOR_SYNTHETIC_TASKS_2_2_THROUGH_5_6`
+`APPROVED_BY_JAMES_KELLEY_2026_07_15_FOR_SYNTHETIC_TASKS_2_2_THROUGH_2_5`
 
 Parent OpenSpec task: `5.6` remains incomplete.
 
@@ -21,9 +21,11 @@ frequency, engagement, and breadth. Reusing that composite beside a separate
 Breadth term would count Breadth twice. The legacy 0-100 VBD intake also lacks
 admitted aggregate uncertainty. Neither representation is valid model input.
 
-This contract is documentation and proof planning only. No trajectory engine,
-artifact schema, bridge, study execution, real-data admission, or output is
-implemented or authorized.
+This contract is documentation and proof planning plus bounded synthetic
+implementation authorization for tasks `2.2` through `2.5` only. No trajectory
+engine, artifact schema, bridge, study execution, real-data admission, or
+output is implemented. Concordance, evidence execution, independent
+acceptance, and parent closeout remain separately gated.
 
 ## Current Decision
 
@@ -722,9 +724,10 @@ and panel group in order, it first draws one length-18 standard-normal vector
 for a fresh conditional smoothed AR(1) path from
 `r_c | y_c,beta,u_c,sigma_r,rho`, then one length-18 standard-normal vector for
 new known-SE observation error. The replicate is
-`X_c*beta+u_c+r_c_rep+se_c*z_c`. It does not reuse the stored smoothed path and
-does not draw a new unconditional/prior AR path. Cholesky orientation and
-panel/time order match the numerical DGP.
+`alpha+X_c*beta+u_c+r_c_rep+se_c*z_c`, where `alpha` is the retained draw's
+intercept and `X_c*beta` is the encoded-time slope contribution only. It does
+not reuse the stored smoothed path and does not draw a new unconditional/prior
+AR path. Cholesky orientation and panel/time order match the numerical DGP.
 For each statistic the one-sided
 upper-tail p-value is exactly
 `count(T_rep >= T_observed) / 4000`, with ties included and no smoothing
