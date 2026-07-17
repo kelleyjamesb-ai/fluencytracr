@@ -973,7 +973,8 @@ def test_workspace_load_recomputes_external_concordance_every_time(
     identity = _patch_workspace_load_prerequisites(monkeypatch, record)
     calls = []
 
-    def verify(path, *, freeze_identity):
+    def verify(path, *, freeze_identity, restore_launches):
+        assert restore_launches is True
         calls.append((path, freeze_identity))
         return verified
 
@@ -1020,7 +1021,8 @@ def test_rehashed_fabricated_workspace_receipt_cannot_bypass_external_recomputat
     _patch_workspace_load_prerequisites(monkeypatch, record)
     calls = []
 
-    def verify(path, *, freeze_identity):
+    def verify(path, *, freeze_identity, restore_launches):
+        assert restore_launches is True
         calls.append((path, freeze_identity))
         return externally_recomputed
 
@@ -1932,8 +1934,9 @@ def test_permit_rename_before_consumption_cannot_publish_claim(
     )["launch_receipt"] == launch
 
 
+@pytest.mark.parametrize("hard_linked", [False, True])
 def test_stale_claim_temp_is_discarded_before_fresh_permit_consumption(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, hard_linked
 ):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
@@ -1973,6 +1976,23 @@ def test_stale_claim_temp_is_discarded_before_fresh_permit_consumption(
     claim_temp = anchor_phase / f".{claim_name}.123.456.tmp"
     permit_path = anchor_phase / runner._attempt_permit_name(stem)
     claim_temp.write_bytes(_canonical_json_bytes(claim))
+    if hard_linked:
+        hidden_link = tmp_path / "hidden-claim-temp-link"
+        os.link(claim_temp, hidden_link)
+        with pytest.raises(
+            VbdTrajectoryValidationWorkspaceError,
+            match="attempt claim temporary is linked",
+        ):
+            runner._create_or_load_attempt_anchor(
+                workspace=workspace,
+                workspace_record=record,
+                phase="original",
+                stem=stem,
+                launch_receipt=launch,
+            )
+        assert permit_path.is_file()
+        assert hidden_link.read_bytes() == _canonical_json_bytes(claim)
+        return
     original_link = runner.os.link
 
     def link_only_after_permit_consumption(source, destination, *args, **kwargs):
@@ -2454,7 +2474,16 @@ def test_launch_admission_revalidates_the_persisted_create_once_receipt(
         stem="slot_0000.json",
         launch_receipt=receipt,
     )
-    monkeypatch.setattr(runner, "_load_workspace", lambda _path: (tmp_path, record))
+    def load_without_concordance_restore(
+        path, *, restore_concordance_evidence
+    ):
+        assert path == tmp_path
+        assert restore_concordance_evidence is False
+        return tmp_path, record
+
+    monkeypatch.setattr(
+        runner, "_load_workspace", load_without_concordance_restore
+    )
     monkeypatch.setattr(runner, "_validate_workspace_tree", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(runner, "_validate_progress_state", lambda _path: "PRIMARY")
     _revalidate_launch_admission(tmp_path, receipt)

@@ -2187,6 +2187,10 @@ def _reconcile_attempt_phase_temps_descriptor(
                 descriptor, phase=phase, stem=stem, binding=binding
             )
             if final is None:
+                if opened.st_nlink != 1:
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "attempt claim temporary is linked"
+                    )
                 if permit is None:
                     raise VbdTrajectoryValidationWorkspaceError(
                         "spent permit lacks its durable attempt claim"
@@ -3685,7 +3689,9 @@ def _validate_workspace_record(
     return value
 
 
-def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict]:
+def _load_workspace(
+    workspace_dir: str | Path, *, restore_concordance_evidence: bool = True
+) -> tuple[Path, dict]:
     workspace = _workspace_from_user_path(workspace_dir)
     if not workspace.is_dir():
         raise VbdTrajectoryValidationWorkspaceError("workspace does not exist")
@@ -3730,7 +3736,9 @@ def _load_workspace(workspace_dir: str | Path) -> tuple[Path, dict]:
     )
 
     concordance = verify_vbd_trajectory_concordance_receipt_path(
-        concordance_path, freeze_identity=identity
+        concordance_path,
+        freeze_identity=identity,
+        restore_launches=restore_concordance_evidence,
     )
     local_concordance = read_strict_json(
         _safe_workspace_path(workspace, "concordance_receipt.json")
@@ -4187,7 +4195,9 @@ def _child_command_hash() -> str:
 
 
 def _revalidate_launch_admission(workspace: Path, receipt: dict) -> None:
-    loaded_workspace, workspace_record = _load_workspace(workspace)
+    loaded_workspace, workspace_record = _load_workspace(
+        workspace, restore_concordance_evidence=False
+    )
     if (
         not _same_existing_path(loaded_workspace, workspace)
         or receipt["workspace_hash"] != workspace_record["workspace_hash"]

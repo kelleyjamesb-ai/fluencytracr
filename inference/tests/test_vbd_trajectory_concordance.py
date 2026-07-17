@@ -1148,16 +1148,31 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
         "posterior_interval_endpoints_emitted"
     ] is False
 
-    primary_launch = workspace / "primary" / "launches" / "bundle_00.json"
-    primary_result = workspace / "primary" / "results" / "bundle_00.json"
-    primary_launch.unlink()
-    primary_result.unlink()
-    (
+    primary_anchor = (
         workspace.parent
         / f".{workspace.name}.vbd-proof-anchor"
         / "primary"
         / "bundle_00.json"
-    ).unlink()
+    )
+    primary_anchor.unlink()
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="launch differs from its external attempt anchor",
+    ):
+        resumable._validate_workspace_tree(
+            workspace,
+            complete=True,
+            restore_missing_anchors=False,
+        )
+    assert not primary_anchor.exists()
+    resumable._validate_workspace_tree(workspace, complete=True)
+    assert primary_anchor.is_file()
+
+    primary_launch = workspace / "primary" / "launches" / "bundle_00.json"
+    primary_result = workspace / "primary" / "results" / "bundle_00.json"
+    primary_launch.unlink()
+    primary_result.unlink()
+    primary_anchor.unlink()
     monkeypatch.setattr(
         resumable,
         "_launch_child",

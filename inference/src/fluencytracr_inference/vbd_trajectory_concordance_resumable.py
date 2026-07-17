@@ -480,7 +480,11 @@ def _load_workspace(
             verify_lock_identity=verify_lock_identity,
         )
     _validate_tree_links(workspace)
-    _validate_workspace_tree(workspace, complete=False)
+    _validate_workspace_tree(
+        workspace,
+        complete=False,
+        restore_missing_anchors=restore_launches,
+    )
     return workspace, record, primary, recomputation
 
 
@@ -491,7 +495,9 @@ def _expected_phase_stems(phase: str) -> set[str]:
         raise ValueError("concordance phase is invalid") from exc
 
 
-def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
+def _validate_workspace_tree(
+    workspace: Path, *, complete: bool, restore_missing_anchors: bool = True
+) -> None:
     if _workspace_has_atomic_temps(workspace):
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance workspace contains a stale atomic temporary"
@@ -591,6 +597,8 @@ def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
                     workspace_record=workspace_record,
                     phase=phase,
                     stem=name,
+                    reconcile_temps=restore_missing_anchors,
+                    restore_missing=restore_missing_anchors,
                 )
                 launch_value = read_strict_json(
                     _safe_workspace_path(workspace, phase, "launches", name)
@@ -2663,7 +2671,8 @@ def _validate_receipt_shape(
 
 
 def verify_vbd_trajectory_concordance_receipt_path(
-    receipt_path: str | Path, *, freeze_identity: dict
+    receipt_path: str | Path, *, freeze_identity: dict,
+    restore_launches: bool = True,
 ) -> dict:
     path = Path(receipt_path).expanduser().resolve()
     if path.name != "concordance_receipt.json":
@@ -2673,7 +2682,9 @@ def verify_vbd_trajectory_concordance_receipt_path(
     workspace = _workspace_from_user_path(path.parent)
     with _exclusive_lock(_safe_workspace_path(workspace, ".runner.lock")) as verify:
         workspace, record, primary, recomputation = _load_workspace(
-            workspace, verify_lock_identity=verify
+            workspace,
+            verify_lock_identity=verify,
+            restore_launches=restore_launches,
         )
         if any(record[key] != item for key, item in freeze_identity.items()):
             raise VbdTrajectoryValidationWorkspaceError(
@@ -2706,7 +2717,11 @@ def verify_vbd_trajectory_concordance_receipt_path(
             receipt=observed,
             summary=observed_summary,
         )
-        _validate_workspace_tree(workspace, complete=True)
+        _validate_workspace_tree(
+            workspace,
+            complete=True,
+            restore_missing_anchors=restore_launches,
+        )
         return _validate_receipt_shape(
             observed, freeze_identity, token=_VERIFIED_RECEIPT_TOKEN
         )
