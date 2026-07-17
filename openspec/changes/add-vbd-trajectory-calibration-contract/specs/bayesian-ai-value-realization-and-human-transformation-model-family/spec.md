@@ -510,12 +510,134 @@ cross-engine checks before candidate `S`. Failure SHALL block `S` and SHALL NOT
 trigger a retry, setting change, seed change, or adaptive extension under this
 amendment.
 
+The validated ordinal-`0` precision canary run from source commit
+`c7014906918b3be4e40e0c312421383c66f2960a` SHALL remain permanent HOLD because
+its only reported otherwise-applicable failing category was `mcse`. Failure-
+record commit `afda2e6f2ce2645e35cb3b315a7c4c249b245993` SHALL remain the
+immutable status anchor. No later path may retry, resume, extend,
+reconstruct, relabel, or clear that canary, and ordinal `1`, task `2.6`,
+replacement candidate `S`, concordance, and evidence SHALL remain blocked.
+
+One separate `vbd_precision_design_diagnostic_v1` MAY be specified only for a
+later separately authorized implementation and execution. It SHALL use effect
+`0`, six groups, `k=16`, generator seed `2_055_900_400`, and chain seeds
+`2_055_900_500+4*lane_ordinal+chain_index` for the existing lane and chain
+ordinals. Those thirteen seeds SHALL be reserved exclusively for this
+diagnostic identity, and every other smoke, canary, concordance, or study plan
+SHALL reject them. It SHALL use the unchanged generator, likelihood, priors, estimand,
+centered parameterization, four chains, 20,000 retained draws, 5,000 tuning
+draws, `target_accept=.999`, `max_treedepth=15`, `jitter+adapt_full`,
+`cores=1`, `blas_cores=1`, and 7,200-second bundle-child timeout. It SHALL run
+all three lanes in canonical order, SHALL NOT run PPC or deterministic
+concordance, and SHALL record those checks as `NOT_RUN`, never passing.
+
+For every required parameter in canonical order, the diagnostic SHALL retain
+the five separately named MCSE/posterior-SD ratios at exact retained-draw
+prefixes 5,000, 10,000, and 20,000 per chain; R-hat and bulk/tail ESS at each
+prefix; 0.5% and 99.5% quantile ESS at each prefix; and four chain-indexed 0.5%
+and 99.5% endpoint offsets from the pooled endpoint, each divided by the pooled
+posterior SD at that prefix. Each prefix SHALL use the first exact retained
+draws from every chain without thinning, reordering, chain dropping, tuning
+draws, or offset selection; every ratio SHALL use that prefix's independently
+recomputed pooled posterior SD. For this six-group case, exact parameter order
+SHALL be `alpha`, `beta`, `sigma_u`, `u[0]`, `u[1]`, `u[2]`, `u[3]`, `u[4]`,
+`u[5]`, `sigma_r`, `rho`, `trajectory_movement`, yielding exactly 12 parameter
+rows per lane/prefix and 108 total. The complete matrix SHALL be emitted whether a
+coordinate passes or fails. The record SHALL derive the complete full-prefix
+set of ratios strictly greater than `0.10` and the unique worst coordinate by
+stable lane, parameter, and endpoint order. It SHALL retain lane-level
+divergence and treedepth-saturation counts, BFMI values, exact non-MCSE sampler
+failure-category names, and every immutable source/runtime/lockfile/model/
+input/seed/attempt/result binding required by the contract.
+
+The diagnostic SHALL retain no absolute MCSE, posterior SD, posterior mean,
+interval endpoint, latent state, draw, PPC value, deterministic result,
+synthetic panel array, path, acceptance slot, or evidence count. It SHALL be
+create-once and permanently `HOLD(mcse_design_diagnostic_nonacceptance)` with
+exact `state=HOLD`,
+`hold_reasons=["mcse_design_diagnostic_nonacceptance"]`, zero evidence
+eligibility, and zero acceptance-count effect. Its no-extra-key `record_hash`
+SHALL equal `sha256_json` over the exact validated record with only
+`record_hash` removed. A launch anchor
+SHALL be created before the child starts; timeout, crash, malformed output,
+binding failure, or write failure SHALL consume the authorization and SHALL NOT
+permit retry, continuation, or replacement under the same amendment.
+
+Before future execution, a reviewed clean implementation commit `D` SHALL
+receive exact CODE, BUG, ADVERSARIAL, and statistical-methodology GO. A sole-
+child authorization commit `A` SHALL differ only by one sanitized manifest
+binding `D`, its tree, those four unique GO references, runtime, lockfile,
+model, plan, exclusive seeds, standalone bootstrap, exact command, and one
+absolute canonical workspace plus external attempt-claim root. Four-role
+review SHALL verify the one-file `D..A` diff, and a human SHALL separately
+authorize execution against exact `A`. Workspace and claim-root identities
+SHALL be fixed absolute paths predeclared in the `A` manifest, SHALL NOT depend
+on the future `A` commit hash, SHALL NOT be caller inputs, and SHALL be
+identical from every checkout. The later human record and external claim SHALL
+bind both paths to exact `A`. The bootstrap SHALL atomically create the workspace-independent
+claim before sampling and bind the human execution-authorization hash. Any
+second invocation for `A`, including from another empty workspace, SHALL reject
+before sampling. The sanitized result SHALL bind `A`, its manifest, the human
+authorization hash, all four review references, the canonical workspace, and
+the external claim.
+
+The human execution decision SHALL be a create-once, no-extra-key record at
+the exact path bound by the `A` manifest. Its exact keys SHALL bind schema,
+exact `A`, manifest, scope, decision reference/text hash/timestamp, integer
+one-launch maximum, workspace, external claim root, command, and authorization
+hash. Its hash SHALL be derived from the exact record with only its hash field
+removed. Mutation, replacement, a second record, or another path SHALL reject
+before sampling.
+
+The public command SHALL execute a manifest-hash-bound standalone standard-
+library bootstrap directly under isolated `-I -S -B`; `-m`, repository
+`PYTHONPATH`, checkout imports, and unverified site-package imports SHALL be
+forbidden. The bootstrap SHALL verify its own bytes, `A`, and reviewed `D` Git
+blobs before installing the existing deny-by-default frozen-source loader.
+Freeze,
+concordance, study, recomputation, artifact, and acceptance validators SHALL
+reject this schema categorically even when it is internally valid and rehashed.
+Its result MAY inform only a later separately reviewed prospective precision-
+design amendment and SHALL NOT satisfy task `2.6` or authorize a sampler
+change. `mcse_design_diagnostic_nonacceptance` SHALL remain an internal
+inference-development state and SHALL NOT become a canonical suppression
+reason or customer-facing output.
+
 #### Scenario: A precision canary is offered as evidence
 
 - **GIVEN** a complete passing diagnostic record from either precision canary
 - **WHEN** freeze, concordance, combination, or acceptance validates it
 - **THEN** it remains HOLD and is excluded from every count and denominator
 - **AND** rehashing cannot remove `precision_canary_nonacceptance`
+
+#### Scenario: The MCSE diagnostic is used to clear the failed canary
+
+- **GIVEN** a complete, hash-valid `vbd_precision_design_diagnostic_v1` record
+- **WHEN** any canary, freeze, concordance, study, artifact, or acceptance path
+  validates it
+- **THEN** the record remains `HOLD(mcse_design_diagnostic_nonacceptance)` and
+  is rejected from every proof count, denominator, and gate
+- **AND** neither a passing coordinate nor a self-consistent rehash can clear
+  canary ordinal `0`, run ordinal `1`, or complete task `2.6`
+
+#### Scenario: The one-shot diagnostic is repeated after a failed launch
+
+- **GIVEN** the diagnostic launch anchor exists, including after timeout,
+  crash, malformed output, binding failure, or write failure
+- **WHEN** a caller retries, resumes, extends, replaces, or reuses any seed or
+  checkpoint under this amendment
+- **THEN** validation rejects before sampling
+- **AND** a later diagnostic or precision design requires a new docs/OpenSpec
+  amendment and separate authorization
+
+#### Scenario: A second workspace is used to bypass the diagnostic claim
+
+- **GIVEN** exact authorization commit `A` has an external attempt claim
+- **WHEN** the command is invoked from another checkout, directory, workspace,
+  authorization record, or output path
+- **THEN** the `A` manifest supplies the same canonical workspace and external
+  claim root
+- **AND** validation rejects before any generator or sampler work
 
 Before any acceptance canary result, a clean source commit `S` SHALL contain the
 implementation, contract, lockfile, plan, seeds, and runtime builder without

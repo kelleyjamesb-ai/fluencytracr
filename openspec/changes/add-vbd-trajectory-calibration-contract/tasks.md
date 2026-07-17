@@ -24,6 +24,13 @@
   original-ordinal commitments; obtain CODE, BUG, ADVERSARIAL, and statistical-
   methodology GO for the amended docs bytes without implementation or
   execution.
+- [x] 1.8 Amend the failed precision design with one create-once,
+  permanently non-evidentiary MCSE diagnostic over a newly reserved synthetic
+  six-group null case; freeze complete sanitized MCSE-ratio, ESS,
+  prefix-scaling, and normalized chain-tail diagnostics while preserving the
+  failed canary, model, priors, estimand, existing seeds, thresholds, and all
+  evidence gates; obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO
+  for the amended docs bytes without implementation or execution.
 
 ## 2. Future Synthetic Implementation
 

@@ -665,6 +665,197 @@ source `S`. Timeout, resource failure, or a numerical/statistical failure
 blocks `S`; it cannot trigger a retry, setting change, seed change, or adaptive
 extension under this amendment.
 
+### MCSE Design Diagnostic Amendment
+
+The full-setting precision canary at ordinal `0` run from source commit
+`c7014906918b3be4e40e0c312421383c66f2960a` produced a strictly validated
+permanent HOLD whose only reported otherwise-applicable failure category was
+`mcse`. Commit `afda2e6f2ce2645e35cb3b315a7c4c249b245993` is the immutable
+failure-status anchor. The validated parent did not retain the lane,
+parameter, endpoint, or failure magnitude. That information loss does not
+invalidate the HOLD and does not permit the canary to be retried, resumed,
+extended, reconstructed, relabeled, or cleared. Canary ordinal `1`, task
+`2.6`, replacement candidate `S`, concordance, and every later evidence stage
+remain blocked.
+
+One different, permanently non-evidentiary precision-design diagnostic is
+reserved inside the existing smoke namespace. Its identity is exactly
+`vbd_precision_design_diagnostic_v1`. It is not canary ordinal `0` or `1`, has
+no acceptance slot key, and cannot enter any canary, concordance, study,
+recomputation, artifact, or acceptance count. A future implementation and a
+future execution each require separate explicit authorization after this
+docs/OpenSpec amendment receives exact-byte CODE, BUG, ADVERSARIAL, and
+statistical-methodology GO.
+
+This case is not a reproduction of the exact failed canary coordinates. A
+passing or failing result from one different synthetic case cannot establish
+the adequacy of any current or future precision design; it can only expose the
+predeclared diagnostics needed to draft a later prospective methodology
+decision.
+
+The diagnostic case uses effect `0`, six panel groups, and aggregate
+Measurement Cell `k=16`. Its generator seed is exactly `2_055_900_400`. For
+lane ordinals `frequency=0`, `engagement=1`, and `breadth=2`, and chain indexes
+`0..3`, its chain seed is exactly
+`2_055_900_500 + 4*lane_ordinal + chain_index`. These seeds are disjoint from
+both precision canaries and every acceptance seed; they do not alter or replace
+any existing seed. The generator seed and all twelve chain seeds are reserved
+exclusively for this diagnostic identity; every generic smoke, precision
+canary, concordance, study, or other plan must reject their use. All three
+lanes run in canonical order with the unchanged
+generator, likelihood, priors, estimand, named sampled parameters, centered
+zero-sum group effects, four chains, 20,000 retained draws, 5,000 tuning draws,
+`target_accept=.999`, `max_treedepth=15`, `jitter+adapt_full`, `cores=1`,
+`blas_cores=1`, and the compiled 7,200-second bundle-child timeout. PPC and
+deterministic concordance are outside this diagnostic and must be recorded as
+`NOT_RUN`, never as passing.
+
+For each lane and every required parameter in canonical order, the diagnostic
+record contains a complete matrix for exact per-chain retained-draw prefixes
+`5000`, `10000`, and `20000`. Each prefix contains:
+
+- five separately named, dimensionless MCSE/posterior-SD ratios for posterior
+  mean, 80%-lower, 80%-upper, 99%-lower, and 99%-upper;
+- R-hat, bulk ESS, and tail ESS;
+- quantile ESS at probabilities `0.005` and `0.995`; and
+- four chain-indexed endpoint offsets at each of probabilities `0.005` and
+  `0.995`, where each value is
+  `(chain_quantile - pooled_quantile) / pooled_posterior_sd` for the same
+  prefix and parameter.
+
+For this six-group case the exact parameter order is `alpha`, `beta`,
+`sigma_u`, `u[0]`, `u[1]`, `u[2]`, `u[3]`, `u[4]`, `u[5]`, `sigma_r`, `rho`,
+`trajectory_movement`. The record therefore has exactly 12 parameter rows per
+lane/prefix, 36 per prefix, and 108 total. It contains exactly 540 named MCSE
+ratios, 108 values each for R-hat/bulk ESS/tail ESS, 216 endpoint-quantile ESS
+values, 864 chain endpoint offsets, 12 BFMI values, and three each of
+divergence and treedepth-saturation counts. Full-prefix failing coordinates are
+derived from exactly 180 MCSE ratios.
+
+The same pinned ArviZ runtime and exact parameter-dimension, coordinate-label,
+and cardinality checks used by the full NUTS diagnostics apply independently
+to every prefix. A prefix is exactly the first `prefix_count` retained draws
+from each of all four chains in original chain/draw order; tuning draws are
+excluded, and thinning, reordering, chain dropping, or offset selection is
+forbidden. R-hat uses the pinned `az.rhat` default rank method. ESS uses
+`az.ess` with methods `bulk`, `tail`, and `quantile`; quantile ESS uses exact
+probabilities `0.005` and `0.995`. MCSE uses `az.mcse(method="mean")` and
+`az.mcse(method="quantile", prob=...)` at probabilities `0.10`, `0.90`,
+`0.005`, and `0.995`.
+
+Pooled posterior SD is recomputed independently for each prefix with the
+existing chain-major binary64 flattening and `ddof=1` rule; every MCSE ratio
+uses the SD from that same prefix. Pooled and per-chain endpoint quantiles use
+`weighted_quantile_v1` with equal binary64 weights and stable original draw
+indexes. Ratios must be finite and nonnegative; R-hat, all ESS values, pooled
+SD, and BFMI must be finite and strictly positive; chain endpoint offsets must
+be finite signed values; and divergence/treedepth counts must be exact
+nonnegative integers. Failure-category names must be unique and in compiled
+canonical order. A missing, duplicate, reordered, mislabeled, nonfinite,
+out-of-domain, or extra row makes the diagnostic malformed. The complete
+matrix is required even when only one coordinate fails. From the full `20000`
+prefix, the record derives all exact
+lane/parameter/endpoint coordinates whose ratio is strictly greater than the
+unchanged `0.10` gate and one worst coordinate. Ties for the worst coordinate
+resolve by canonical lane order, then canonical parameter order, then endpoint
+order `mean`, `interval_80_lower`, `interval_80_upper`,
+`interval_99_lower`, `interval_99_upper`. The record also includes lane-level
+divergence and treedepth-saturation counts, all four BFMI values, and exact
+non-MCSE sampler failure-category names.
+
+The sanitized record includes only the diagnostic identity and version; the
+immutable canary failure anchor; diagnostic-authorization commit and manifest
+hash; human execution-authorization hash; exact CODE, BUG, ADVERSARIAL, and
+statistical-methodology implementation-review references; clean source commit
+and tree; canonical workspace-identity and external-attempt-claim hashes;
+runtime, lockfile, implementation, native-library, model-manifest, diagnostic-
+plan, seed-manifest, synthetic-input, prepared-input, fit-summary, lane-result,
+attempt-anchor, and result hashes; the complete dimensionless matrix above;
+derived failing coordinates; the unique worst coordinate and ratio; sampler
+counts/categories; `ppc_state=NOT_RUN`; `cross_engine_state=NOT_RUN`;
+`state=HOLD`; `hold_reasons=["mcse_design_diagnostic_nonacceptance"]`;
+`evidence_eligible=false`; `acceptance_count_effect=0`; and `record_hash`. The
+record permits no extra key at any level. `record_hash` equals `sha256_json` of
+the exact fully validated record with only `record_hash` removed; no nested
+hash field is omitted from that preimage. It must not retain absolute MCSE,
+posterior SD,
+posterior mean, interval endpoint, latent state, posterior draw, PPC value,
+deterministic result, synthetic panel array, raw path, acceptance slot, or
+customer/real/live data.
+
+Future implementation must first create a clean diagnostic source commit `D`
+with no output, then obtain exact-commit CODE, BUG, ADVERSARIAL, and
+statistical-methodology GO. Each unique reference uses
+`review:<role>/go/<D>/<review-id>`. A sole-child diagnostic-authorization
+commit `A` must then differ from `D` only by one sanitized manifest. That
+manifest binds `D` and its tree, all four GO references, runtime, lockfile,
+implementation, native-library, model, diagnostic plan, exclusive seed
+manifest, exact command, bootstrap source/hash, one absolute canonical
+workspace identity, and one absolute external attempt-claim root outside that
+workspace. CODE, BUG, ADVERSARIAL, and statistical-methodology reviewers must
+verify the exact one-file `D..A` diff and bindings before a human separately
+authorizes execution against exact `A`. Neither `D` nor `A` contains a result.
+
+The human decision is serialized as one immutable, create-once execution-
+authorization record at the exact absolute path bound by `A`. Its exact key
+set is `schema_version`, `authorization_commit`,
+`authorization_manifest_hash`, `scope`, `authorizing_decision_ref`,
+`decision_text_hash`, `authorized_at_utc`, `maximum_launch_count`,
+`canonical_workspace_identity`, `external_claim_root_identity`,
+`command_hash`, and `execution_authorization_hash`. `schema_version` is
+`FT_AI_VALUE_VBD_PRECISION_DIAGNOSTIC_EXECUTION_AUTHORIZATION_2026_07_V1`;
+`scope` is `vbd_precision_design_diagnostic_v1_nonacceptance_one_launch`;
+`maximum_launch_count` is integer `1`; and `execution_authorization_hash`
+equals `sha256_json` over the exact record with only that hash field removed.
+Mutation, replacement, an extra key, a second record, a different path, or any
+scope other than this one non-evidentiary launch rejects before sampling.
+
+The canonical workspace and external claim root are fixed absolute identities
+predeclared in the one-file `A` manifest and are not command-line inputs; they
+do not depend on the not-yet-created `A` commit hash. The later execution-
+authorization record and external claim bind both identities back to exact
+`A`. A second checkout, current directory, output path, or caller-selected
+workspace cannot change either identity. Before any
+child starts, the standalone bootstrap atomically creates one immutable claim
+under the external root. That claim binds `A`, its manifest, the exact human
+execution-authorization hash, all four implementation-review references, the
+command, bootstrap, working-tree cleanliness, runtime, lockfile, model,
+diagnostic plan, canonical workspace, input, generator seed, all twelve chain
+seeds, and output identity. Existence of the claim consumes the one launch even
+if the child times out, crashes, returns malformed output, fails a binding, or
+cannot write the final record. Every later invocation for `A`, including from
+a new empty directory or checkout, must find the same external claim and
+reject before sampling. No retry, resume, extension, checkpoint reuse,
+additional draw, replacement seed, adaptive stopping, partial-lane run, or
+result-conditioned setting is allowed under this amendment.
+
+The only allowed future public command shape is:
+
+```text
+<pinned-python> -I -S -B <manifest-bound-absolute-standalone-bootstrap> run --execution-authorization <manifest-bound-absolute-authorization-record>
+```
+
+The standard-library-only bootstrap must verify its own bytes and the exact
+`A` manifest before extending `sys.path`. It then uses the existing frozen-
+source-bundle architecture: hash-check reviewed `D` blobs from trusted Git,
+admit only manifest-pinned site-package paths, install the deny-by-default
+package loader, and import the private diagnostic execution module. This
+direct-script command remains startable under `-I -S -B`; `-m`, checkout
+imports, repository `PYTHONPATH`, and unverified site-package imports are
+forbidden. Any private child argv must also be hash-bound in the external claim
+and inaccessible through the public parser.
+
+Every internally valid record remains permanently
+`HOLD(mcse_design_diagnostic_nonacceptance)`. Freeze, concordance, study,
+recomputation, artifact, bridge, and acceptance validators must reject the
+diagnostic schema categorically, including a self-consistently rehashed copy.
+This label is an inference-development diagnostic state, not a canonical
+product suppression reason and not a customer-facing output.
+The record can support only a later docs/OpenSpec decision to retain, replace,
+or reject the prospective precision design. It cannot itself select a draw
+count or geometry, clear canary ordinal `0`, run canary ordinal `1`, satisfy
+task `2.6`, create candidate `S/F`, or authorize concordance or evidence.
+
 The held lineage is permanently tombstoned as diagnostic-only HOLD:
 
 ```text

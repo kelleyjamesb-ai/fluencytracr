@@ -256,6 +256,39 @@ primary bundle-child timeout and clear the otherwise applicable diagnostics
 before candidate `S`, but they cannot enter evidence. A failure requires HOLD
 or a new docs amendment, never tuning under the same contract.
 
+Canary ordinal `0` subsequently returned a fully validated result whose only
+otherwise-applicable failing category was `mcse`. That result is a permanent
+HOLD and cannot be resumed, repeated, extended, or reconstructed from a new
+run. Because the validated parent retained only the category and not the
+parameter/endpoint coordinates, a prospective precision design cannot be
+chosen from the observed failure magnitude.
+
+The diagnostic amendment therefore reserves one different synthetic
+six-group null case inside the existing smoke namespace. It uses the unchanged
+generator, model target, parameterization, NUTS settings, and statistical
+thresholds, but it does not run deterministic concordance or PPC. Its only
+purpose is to retain a complete, sanitized diagnostic matrix for every lane
+and required parameter at the first 25%, 50%, and 100% of retained draws.
+Dimensionless MCSE/posterior-SD ratios, bulk/tail and endpoint-quantile ESS,
+R-hat, lane sampler failure categories, and chain endpoint offsets normalized
+by pooled posterior SD distinguish an isolated extreme-tail precision problem
+from broad mixing failure without retaining posterior estimates or draws.
+
+The diagnostic has its own identity, exclusively reserved seeds, immutable
+workspace-independent attempt claim, strict validator, and create-once result.
+The claim root and canonical workspace are fixed absolute identities in a
+separately reviewed sole-child authorization manifest rather than caller
+inputs, so another
+checkout or empty directory cannot mint a second attempt. A hash-bound
+standalone standard-library bootstrap starts under isolated Python and admits
+only the reviewed source bundle and pinned site packages. The diagnostic is
+permanently HOLD, cannot satisfy any
+canary or acceptance condition, and is categorically rejected by freeze,
+concordance, study, recomputation, artifact, and acceptance validators. A
+crash, timeout, malformed record, or write failure consumes the one launch.
+The result may inform only a later docs/OpenSpec methodology decision; it
+cannot select, implement, or execute that design by itself.
+
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.
 Diagnostic outputs are joined only after exact parameter-dimension,

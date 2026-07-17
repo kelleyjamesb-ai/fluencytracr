@@ -61,6 +61,14 @@ trajectory contract before implementation or real-data admission can proceed.
   count, ESS, and maximum-weight gate. Commit generated/finite/retained counts
   and retained/excluded ordinal sets without adding a floor, tolerance, point,
   seed, model, threshold, or evidence-universe change.
+- Record the post-canary MCSE diagnostic amendment: preserve the failed
+  six-group precision canary as permanent HOLD, reserve one different
+  synthetic six-group null case inside the smoke namespace, and define a
+  create-once, non-evidentiary diagnostic that retains complete dimensionless
+  parameter-level MCSE, ESS, prefix-scaling, and chain-tail disagreement
+  information. The diagnostic cannot retry the canary, clear task `2.6`, select
+  a replacement precision design, enter evidence, or authorize implementation
+  or execution.
 
 ## Impact
 

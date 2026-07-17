@@ -276,6 +276,14 @@
       "status": "pending",
       "risk": "high",
       "last_note": "Human-authorized future queue item. Explicit human acceptance of the final exact committed record remains nondelegable."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-reproduction-amendment",
+      "title": "VBD MCSE diagnostic-reproduction contract amendment",
+      "bound": "Docs/OpenSpec/status only: define one separately authorized, create-once, permanently non-evidentiary VBD precision-design diagnostic using a newly reserved synthetic six-group null case and disjoint smoke seeds; retain complete sanitized lane/parameter/five-coordinate MCSE-ratio and effective-sample-size diagnostics needed for a prospective methodology decision; preserve canary 0 as permanent HOLD and preserve every model, prior, estimand, existing seed, <=0.10 MCSE threshold, statistical/evidence gate, and fail-closed rule; no failed-canary retry/resume/extension, implementation, sampler execution, canary 1, replacement S/F, concordance, evidence, task 2.6 completion, real/customer/live data, public surface, customer output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-17: froze one globally one-shot, disjoint, permanently held MCSE diagnostic with exclusive seeds, full sanitized prefix/ESS evidence, D/A/review/human authorization binding, and standalone isolated bootstrap. Four-role GO; no implementation or execution."
     }
   ]
 }
