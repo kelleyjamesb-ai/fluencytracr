@@ -241,8 +241,9 @@ def test_hard_process_exit_uses_only_the_last_valid_compiled_phase():
         VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
         for phase in phases
     )
-    assert _last_child_phase(trace) == "nuts_fit"
-    launch = {"launch_receipt_hash": "a" * 64}
+    assert _last_child_phase(trace, "primary") == "nuts_fit"
+    assert _last_child_phase(trace, "recomputation") is None
+    launch = {"launch_receipt_hash": "a" * 64, "phase": "primary"}
     failure = _failure_record(
         launch=launch,
         failure_code="child_process_failure",
@@ -259,7 +260,7 @@ def test_hard_process_exit_uses_only_the_last_valid_compiled_phase():
     assert failure["raw_child_phase_trace_committed"] is False
 
     off_plan = trace + b"\xff"
-    assert _last_child_phase(off_plan) is None
+    assert _last_child_phase(off_plan, "primary") is None
     invalid = _failure_record(
         launch=launch,
         failure_code="child_process_failure",
@@ -271,6 +272,43 @@ def test_hard_process_exit_uses_only_the_last_valid_compiled_phase():
         phase_trace=off_plan,
     )
     assert invalid["child_diagnostic_valid"] is False
+
+    full_three_lanes = trace + bytes(
+        (
+            VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["nuts_binding"],
+            VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["nuts_fit"],
+            VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["nuts_binding"],
+            VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["nuts_fit"],
+        )
+    )
+    assert _last_child_phase(full_three_lanes, "primary") == "nuts_fit"
+    fourth_lane = full_three_lanes + bytes(
+        (
+            VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["nuts_binding"],
+            VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["nuts_fit"],
+        )
+    )
+    assert _last_child_phase(fourth_lane, "primary") is None
+
+    recomputation_trace = bytes(
+        VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
+        for phase in (
+            "child_entrypoint",
+            "stdin_decode",
+            "launch_receipt_validation",
+            "launch_capability_validation",
+            "source_identity_validation",
+            "parent_watchdog_start",
+            "synthetic_generation",
+            "synthetic_regeneration_check",
+            "lane_preparation",
+            "deterministic_fit",
+            "result_assembly",
+        )
+    )
+    assert _last_child_phase(recomputation_trace, "recomputation") == (
+        "result_assembly"
+    )
 
 
 def test_child_failure_diagnostic_reader_discards_oversize_payload():

@@ -1049,8 +1049,12 @@ def _read_child_phase_trace(descriptor: int) -> bytes:
     return bytes(encoded)
 
 
-def _last_child_phase(encoded: bytes) -> str | None:
-    if not encoded or len(encoded) > _CHILD_PHASE_TRACE_LIMIT:
+def _last_child_phase(encoded: bytes, execution_phase: str) -> str | None:
+    if (
+        not encoded
+        or len(encoded) > _CHILD_PHASE_TRACE_LIMIT
+        or execution_phase not in VBD_TRAJECTORY_CONCORDANCE_PHASES
+    ):
         return None
     by_code = {
         code: phase
@@ -1060,27 +1064,35 @@ def _last_child_phase(encoded: bytes) -> str | None:
         phases = [by_code[code] for code in encoded]
     except KeyError:
         return None
-    transitions = {
-        "child_entrypoint": {"stdin_decode"},
-        "stdin_decode": {"launch_receipt_validation"},
-        "launch_receipt_validation": {"launch_capability_validation"},
-        "launch_capability_validation": {"source_identity_validation"},
-        "source_identity_validation": {"parent_watchdog_start"},
-        "parent_watchdog_start": {"synthetic_generation"},
-        "synthetic_generation": {"synthetic_regeneration_check"},
-        "synthetic_regeneration_check": {"lane_preparation"},
-        "lane_preparation": {"deterministic_fit"},
-        "deterministic_fit": {"nuts_binding", "result_assembly"},
-        "nuts_binding": {"nuts_fit"},
-        "nuts_fit": {"nuts_binding", "concordance_evaluation"},
-        "concordance_evaluation": {"result_assembly"},
-        "result_assembly": {"result_emit"},
-        "result_emit": set(),
-    }
-    if phases[0] != "child_entrypoint" or any(
-        right not in transitions[left]
-        for left, right in zip(phases, phases[1:])
-    ):
+    common = (
+        "child_entrypoint",
+        "stdin_decode",
+        "launch_receipt_validation",
+        "launch_capability_validation",
+        "source_identity_validation",
+        "parent_watchdog_start",
+        "synthetic_generation",
+        "synthetic_regeneration_check",
+        "lane_preparation",
+        "deterministic_fit",
+    )
+    expected = (
+        (*common, "result_assembly", "result_emit")
+        if execution_phase == "recomputation"
+        else (
+            *common,
+            "nuts_binding",
+            "nuts_fit",
+            "nuts_binding",
+            "nuts_fit",
+            "nuts_binding",
+            "nuts_fit",
+            "concordance_evaluation",
+            "result_assembly",
+            "result_emit",
+        )
+    )
+    if tuple(phases) != expected[: len(phases)]:
         return None
     return phases[-1]
 
@@ -1895,7 +1907,7 @@ def _failure_record(
         if child_diagnostic is None and diagnostic == b"":
             child_diagnostic = _decode_child_failure_diagnostic(stderr)
         if child_diagnostic is None and diagnostic == b"" and stderr == b"":
-            last_phase = _last_child_phase(phase_trace)
+            last_phase = _last_child_phase(phase_trace, launch["phase"])
             if last_phase is not None:
                 child_diagnostic = (
                     build_vbd_trajectory_concordance_process_exit_failure(
