@@ -13,7 +13,7 @@
   requirements.
 - [x] 1.5 Validate the proposal strictly and obtain CODE, BUG, and ADVERSARIAL
   acceptance for the contract bytes.
-- [ ] 1.6 Amend the held proof contract with direct conditional-Normal mixture
+- [x] 1.6 Amend the held proof contract with direct conditional-Normal mixture
   tail quantiles, fixed higher-precision NUTS settings, unchanged acceptance
   seeds and thresholds, five-field parameter MCSE evidence, a fixed 4,000-state
   PPC selector, and disjoint full-setting precision canaries; obtain CODE, BUG,

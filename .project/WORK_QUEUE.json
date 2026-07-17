@@ -225,9 +225,9 @@
       "id": "vbd-numerical-precision-contract-amendment",
       "title": "VBD deterministic-tail and NUTS precision contract amendment",
       "bound": "Docs/OpenSpec/status only: amend the synthetic VBD proof contract to predeclare a higher-accuracy deterministic conditional-Normal tail method, a credible fixed NUTS precision and geometry design, and endpoint-specific MCSE evidence while preserving the three-lane model, priors, estimand, six cells, existing generator/chain/PPC seeds, every statistical threshold, 30-bundle evidence universe, fail-closed HOLD behavior, trusted-host boundary, and old F/evidence as permanent HOLD; no implementation, sampler execution, replacement S/F, concordance, canary, replicated study, real/customer/live data, public schema, route, UI, persistence, export, customer output, confidence/probability, ROI, causality, productivity, ranking, new event/reason, promotion, or task 5.6 completion",
-      "status": "in_progress",
+      "status": "done",
       "risk": "high",
-      "last_note": "Human-authorized one-time queue exception 2026-07-17. Select the smallest scientifically credible precision amendment without lowering thresholds or rotating existing seeds; obtain CODE/BUG/ADVERSARIAL/statistical-methodology GO before completion."
+      "last_note": "Done 2026-07-17: direct conditional-Normal mixture CDF, centered 4x20k/5k/.999/adapt_full NUTS, five-field MCSE, fixed 4,000-state PPC selector, two non-admissible precision canaries, 7,200s primary bundle-child timeout, and old-lineage tombstone are frozen. Thresholds, acceptance seeds, model target, and 30-bundle universe unchanged. Exact CODE/BUG/ADVERSARIAL/statistical GO after repair. No implementation or evidence ran."
     },
     {
       "id": "vbd-reference-engine-hardening",
@@ -243,7 +243,7 @@
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
       "status": "pending",
       "risk": "high",
-      "last_note": "Actual statistical HOLD at accepted F=0287713d bundle 0 after all 3 recomputations passed. Failures: MCSE in all lanes, 1 frequency divergence, engagement 99% lower difference .253>.20, Breadth 99% upper .215>.20. All PPC/R-hat/ESS/BFMI/treedepth and primary integration passed. Bundle 1 not started; model-hardening decision required."
+      "last_note": "Old F=0287713d is permanent HOLD and must never resume. Numerical-precision contract amendment is complete; concordance remains pending behind separate task 2.6 implementation approval, both non-admissible precision canaries, replacement task 3.1 source/reviews, and a new sole-child freeze. No bundle beyond old bundle 0 may start."
     },
     {
       "id": "vbd-trajectory-full-evidence",
