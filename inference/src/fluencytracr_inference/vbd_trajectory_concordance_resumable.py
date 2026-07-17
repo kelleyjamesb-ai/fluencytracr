@@ -23,9 +23,13 @@ from .vbd_trajectory_concordance import (
 )
 from .vbd_trajectory_concordance_execution import (
     VBD_TRAJECTORY_CONCORDANCE_ATTESTATION_VERSION,
+    VBD_TRAJECTORY_CONCORDANCE_CHILD_EXCEPTION_TYPES,
+    VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_SCHEMA_VERSION,
+    VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES,
     VBD_TRAJECTORY_CONCORDANCE_CHILD_OUTPUT_SCHEMA_VERSION,
     VBD_TRAJECTORY_CONCORDANCE_LAUNCH_SCHEMA_VERSION,
     _truth_receipt_hash,
+    validate_vbd_trajectory_concordance_child_failure,
 )
 from .vbd_trajectory_nuts import (
     TrajectoryNutsError,
@@ -103,7 +107,7 @@ VBD_TRAJECTORY_CONCORDANCE_CHECKPOINT_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_CHECKPOINT_2026_07_V1"
 )
 VBD_TRAJECTORY_CONCORDANCE_FAILURE_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_FAILURE_2026_07_V1"
+    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_FAILURE_2026_07_V2"
 )
 VBD_TRAJECTORY_CONCORDANCE_COMMIT_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_COMMIT_2026_07_V1"
@@ -115,6 +119,7 @@ VBD_TRAJECTORY_CONCORDANCE_PHASES = ("primary", "recomputation")
 VBD_TRAJECTORY_CONCORDANCE_CHILD_TIMEOUT_SECONDS = 7_200
 _CHILD_STDOUT_LIMIT = 4 * 1024 * 1024
 _CHILD_STDERR_LIMIT = 1024 * 1024
+_CHILD_DIAGNOSTIC_LIMIT = 512
 _VERIFIED_RECEIPT_TOKEN = object()
 _CONCORDANCE_WORKSPACE_DIRECTORIES = (
     "primary",
@@ -878,7 +883,7 @@ def _launch_child(
     capability_token: str,
     workspace: Path,
     verify_lock_identity: Callable[[], None],
-) -> tuple[int, int, bytes, bytes]:
+) -> tuple[int, int, bytes, bytes, bytes]:
     verify_lock_identity()
     command = _child_command()
     capability = _launch_capability(receipt, capability_token)
@@ -888,12 +893,15 @@ def _launch_child(
     capability_read, capability_write = os.pipe()
     liveness_read, liveness_write = os.pipe()
     source_read, source_write = os.pipe()
+    diagnostic_read, diagnostic_write = os.pipe()
     environment = _child_environment(
         capability_fd=capability_read,
         parent_liveness_fd=liveness_read,
         frozen_source_fd=source_read,
+        diagnostic_fd=diagnostic_write,
     )
     process = None
+    diagnostic = b""
     try:
         verify_lock_identity()
         _revalidate_concordance_launch_admission(workspace, receipt)
@@ -905,7 +913,12 @@ def _launch_child(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             close_fds=True,
-            pass_fds=(capability_read, liveness_read, source_read),
+            pass_fds=(
+                capability_read,
+                liveness_read,
+                source_read,
+                diagnostic_write,
+            ),
         )
         os.close(capability_read)
         capability_read = -1
@@ -913,6 +926,8 @@ def _launch_child(
         liveness_read = -1
         os.close(source_read)
         source_read = -1
+        os.close(diagnostic_write)
+        diagnostic_write = -1
         source_written = 0
         while source_written < len(frozen_source):
             source_written += os.write(
@@ -934,9 +949,19 @@ def _launch_child(
         except subprocess.TimeoutExpired:
             process.kill()
             stdout, stderr = process.communicate()
-            return process.pid, 124, stdout[:_CHILD_STDOUT_LIMIT], stderr[
-                :_CHILD_STDERR_LIMIT
-            ]
+            diagnostic = _read_child_diagnostic(diagnostic_read)
+            os.close(diagnostic_read)
+            diagnostic_read = -1
+            return (
+                process.pid,
+                124,
+                stdout[:_CHILD_STDOUT_LIMIT],
+                stderr[:_CHILD_STDERR_LIMIT],
+                diagnostic,
+            )
+        diagnostic = _read_child_diagnostic(diagnostic_read)
+        os.close(diagnostic_read)
+        diagnostic_read = -1
     except OSError as exc:
         _terminate_started_child(process)
         raise VbdTrajectoryValidationWorkspaceError(
@@ -953,6 +978,8 @@ def _launch_child(
             liveness_write,
             source_read,
             source_write,
+            diagnostic_read,
+            diagnostic_write,
         ):
             if descriptor >= 0:
                 try:
@@ -965,8 +992,22 @@ def _launch_child(
         )
     verify_lock_identity()
     if len(stdout) > _CHILD_STDOUT_LIMIT or len(stderr) > _CHILD_STDERR_LIMIT:
-        return process.pid, 125, b"", b""
-    return process.pid, process.returncode, stdout, stderr
+        return process.pid, 125, b"", b"", b""
+    return process.pid, process.returncode, stdout, stderr, diagnostic
+
+
+def _read_child_diagnostic(descriptor: int) -> bytes:
+    encoded = bytearray()
+    while len(encoded) <= _CHILD_DIAGNOSTIC_LIMIT:
+        chunk = os.read(
+            descriptor, _CHILD_DIAGNOSTIC_LIMIT + 1 - len(encoded)
+        )
+        if not chunk:
+            break
+        encoded.extend(chunk)
+    if len(encoded) > _CHILD_DIAGNOSTIC_LIMIT:
+        return b""
+    return bytes(encoded)
 
 
 def _strict_float(value: object, name: str) -> float:
@@ -1766,7 +1807,15 @@ def _failure_record(
     return_code: int | None,
     stdout: bytes,
     stderr: bytes,
+    diagnostic: bytes,
 ) -> dict:
+    child_diagnostic = (
+        _decode_child_failure_diagnostic(diagnostic)
+        if failure_code == "child_process_failure"
+        and return_code == 2
+        and stdout == b""
+        else None
+    )
     body = {
         "schema_version": VBD_TRAJECTORY_CONCORDANCE_FAILURE_SCHEMA_VERSION,
         "launch_receipt_hash": launch["launch_receipt_hash"],
@@ -1775,13 +1824,51 @@ def _failure_record(
         "child_return_code": return_code,
         "child_stdout_sha256": hashlib.sha256(stdout).hexdigest(),
         "child_stderr_sha256": hashlib.sha256(stderr).hexdigest(),
+        "child_diagnostic_valid": child_diagnostic is not None,
+        "child_failure_phase": (
+            child_diagnostic["failure_phase"]
+            if child_diagnostic is not None
+            else None
+        ),
+        "child_exception_type": (
+            child_diagnostic["exception_type"]
+            if child_diagnostic is not None
+            else None
+        ),
+        "child_diagnostic_hash": (
+            child_diagnostic["diagnostic_hash"]
+            if child_diagnostic is not None
+            else None
+        ),
         "raw_stdout_committed": False,
         "raw_stderr_committed": False,
+        "raw_child_diagnostic_committed": False,
         "internal_only": True,
         "synthetic_only": True,
         "customer_output_authorized": False,
     }
     return {**body, "failure_hash": sha256_json(body)}
+
+
+def _decode_child_failure_diagnostic(encoded: bytes) -> dict | None:
+    if (
+        not encoded
+        or len(encoded) > _CHILD_DIAGNOSTIC_LIMIT
+        or not encoded.endswith(b"\n")
+    ):
+        return None
+    canonical = encoded[:-1]
+    try:
+        from .vbd_trajectory_validation_resumable import _decode_json_bytes
+
+        decoded = _decode_json_bytes(
+            canonical, "concordance child failure diagnostic"
+        )
+        if canonical != _canonical_json_bytes(decoded):
+            return None
+        return validate_vbd_trajectory_concordance_child_failure(decoded)
+    except Exception:
+        return None
 
 
 def _validate_failure(value: object, *, receipt: dict | None) -> dict:
@@ -1793,8 +1880,13 @@ def _validate_failure(value: object, *, receipt: dict | None) -> dict:
         "child_return_code",
         "child_stdout_sha256",
         "child_stderr_sha256",
+        "child_diagnostic_valid",
+        "child_failure_phase",
+        "child_exception_type",
+        "child_diagnostic_hash",
         "raw_stdout_committed",
         "raw_stderr_committed",
+        "raw_child_diagnostic_committed",
         "internal_only",
         "synthetic_only",
         "customer_output_authorized",
@@ -1813,6 +1905,7 @@ def _validate_failure(value: object, *, receipt: dict | None) -> dict:
         or (receipt is not None and value["launch_receipt_hash"] != receipt["launch_receipt_hash"])
         or value["raw_stdout_committed"] is not False
         or value["raw_stderr_committed"] is not False
+        or value["raw_child_diagnostic_committed"] is not False
         or value["internal_only"] is not True
         or value["synthetic_only"] is not True
         or value["customer_output_authorized"] is not False
@@ -1824,6 +1917,41 @@ def _validate_failure(value: object, *, receipt: dict | None) -> dict:
     _strict_sha256(value["launch_receipt_hash"], "failure launch hash")
     _strict_sha256(value["child_stdout_sha256"], "failure stdout hash")
     _strict_sha256(value["child_stderr_sha256"], "failure stderr hash")
+    diagnostic_fields = (
+        value["child_failure_phase"],
+        value["child_exception_type"],
+        value["child_diagnostic_hash"],
+    )
+    if value["child_diagnostic_valid"] is True:
+        if (
+            value["child_failure_phase"]
+            not in VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES
+            or value["child_exception_type"]
+            not in VBD_TRAJECTORY_CONCORDANCE_CHILD_EXCEPTION_TYPES
+            or any(type(item) is not str for item in diagnostic_fields)
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "concordance failure checkpoint diagnostic is invalid"
+            )
+        validate_vbd_trajectory_concordance_child_failure(
+            {
+                "schema_version": (
+                    VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_SCHEMA_VERSION
+                ),
+                "failure_phase": value["child_failure_phase"],
+                "exception_type": value["child_exception_type"],
+                "diagnostic_hash": value["child_diagnostic_hash"],
+            }
+        )
+    elif value["child_diagnostic_valid"] is False:
+        if any(item is not None for item in diagnostic_fields):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "concordance failure checkpoint diagnostic is invalid"
+            )
+    else:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance failure checkpoint diagnostic is invalid"
+        )
     return value
 
 
@@ -1920,6 +2048,7 @@ def _run_phase_bundle(
             return_code=None,
             stdout=b"",
             stderr=b"",
+            diagnostic=b"",
         )
         write_json_create_once(
             failure_path, failure, lock_verifier=verify_lock_identity
@@ -1944,7 +2073,7 @@ def _run_phase_bundle(
         launch_receipt=launch,
     )
     write_json_create_once(launch_path, launch, lock_verifier=verify_lock_identity)
-    child_pid, return_code, stdout, stderr = _launch_child(
+    child_pid, return_code, stdout, stderr, diagnostic = _launch_child(
         receipt=launch,
         capability_token=capability_token,
         workspace=workspace,
@@ -1960,6 +2089,7 @@ def _run_phase_bundle(
                 return_code=return_code,
                 stdout=stdout,
                 stderr=stderr,
+                diagnostic=diagnostic,
             ),
             lock_verifier=verify_lock_identity,
         )

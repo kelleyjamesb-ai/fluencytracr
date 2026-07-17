@@ -4151,6 +4151,7 @@ def _child_environment(
     capability_fd: int,
     parent_liveness_fd: int,
     frozen_source_fd: int,
+    diagnostic_fd: int | None = None,
 ) -> dict[str, str]:
     allowed = ("HOME", "LANG", "LC_ALL", "PATH", "TMPDIR")
     environment = {
@@ -4167,6 +4168,8 @@ def _child_environment(
     environment["FT_VBD_TRAJECTORY_FROZEN_SOURCE_FD"] = str(
         frozen_source_fd
     )
+    if diagnostic_fd is not None:
+        environment["FT_VBD_TRAJECTORY_DIAGNOSTIC_FD"] = str(diagnostic_fd)
     return environment
 
 

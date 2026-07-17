@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from .vbd_trajectory_concordance import vbd_trajectory_concordance_plan
 from .vbd_trajectory_concordance_execution import (
+    _tag_child_failure_phase,
+    build_vbd_trajectory_concordance_child_failure,
     execute_vbd_trajectory_concordance_child,
 )
 from .vbd_trajectory_concordance_resumable import (
@@ -21,6 +24,35 @@ from .vbd_trajectory_validation_resumable import _decode_json_bytes
 
 def _print_json(value: object) -> None:
     print(json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False))
+
+
+def _take_diagnostic_fd() -> int:
+    value = os.environ.pop("FT_VBD_TRAJECTORY_DIAGNOSTIC_FD", None)
+    if value is None or not value.isascii() or not value.isdigit():
+        return -1
+    return int(value)
+
+
+def _write_child_failure(diagnostic_fd: int, exc: Exception) -> None:
+    if diagnostic_fd < 0:
+        return
+    try:
+        encoded = (
+            json.dumps(
+                build_vbd_trajectory_concordance_child_failure(exc),
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("ascii")
+            + b"\n"
+        )
+        if len(encoded) > 512:
+            return
+        written = 0
+        while written < len(encoded):
+            written += os.write(diagnostic_fd, encoded[written:])
+    except Exception:
+        pass
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -51,14 +83,31 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "_execute-bundle":
+        diagnostic_fd = _take_diagnostic_fd()
+        decoded = False
         try:
             value = _decode_json_bytes(
                 sys.stdin.buffer.read(), "concordance child stdin"
             )
-            _print_json(execute_vbd_trajectory_concordance_child(value))
+            decoded = True
+            result = execute_vbd_trajectory_concordance_child(value)
+            try:
+                _print_json(result)
+            except Exception as exc:
+                _tag_child_failure_phase(exc, "result_emit")
+                raise
             return 0
-        except Exception:
+        except Exception as exc:
+            if not decoded:
+                _tag_child_failure_phase(exc, "stdin_decode")
+            _write_child_failure(diagnostic_fd, exc)
             return 2
+        finally:
+            if diagnostic_fd >= 0:
+                try:
+                    os.close(diagnostic_fd)
+                except OSError:
+                    pass
     if args.command == "plan":
         _print_json(vbd_trajectory_concordance_plan())
         return 0

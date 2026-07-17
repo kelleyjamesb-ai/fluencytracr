@@ -19,16 +19,21 @@ from fluencytracr_inference.vbd_trajectory_concordance import (
     vbd_trajectory_concordance_seed_manifest_hash,
 )
 from fluencytracr_inference.vbd_trajectory_concordance_execution import (
+    build_vbd_trajectory_concordance_child_failure,
     execute_vbd_trajectory_concordance_child,
+    validate_vbd_trajectory_concordance_child_failure,
 )
 from fluencytracr_inference.vbd_trajectory_concordance_resumable import (
     _canonical_json_bytes,
     _combined_value,
     _combined_commit_record,
     _file_sha256,
+    _failure_record,
     _launch_receipt,
+    _read_child_diagnostic,
     _validate_child_output,
     _validate_combined_commit,
+    _validate_failure,
     _validate_receipt_shape,
     _validate_workspace_tree,
     combine_vbd_trajectory_concordance_workspace,
@@ -84,6 +89,102 @@ def _summary(
         interval_99_lower=lower_99,
         interval_99_upper=upper_99,
     )
+
+
+def test_child_failure_diagnostic_is_phase_bound_message_free_and_strict(
+    monkeypatch,
+):
+    secret = "secret-posterior-value=123.456"
+    monkeypatch.setattr(
+        "fluencytracr_inference.vbd_trajectory_concordance_execution._validate_launch_receipt",
+        lambda _value: (_ for _ in ()).throw(RuntimeError(secret)),
+    )
+
+    with pytest.raises(RuntimeError) as captured:
+        execute_vbd_trajectory_concordance_child({})
+    diagnostic = build_vbd_trajectory_concordance_child_failure(captured.value)
+
+    assert validate_vbd_trajectory_concordance_child_failure(diagnostic) == diagnostic
+    assert diagnostic["failure_phase"] == "launch_receipt_validation"
+    assert diagnostic["exception_type"] == "RuntimeError"
+    assert secret not in _canonical_json_bytes(diagnostic).decode("ascii")
+    assert build_vbd_trajectory_concordance_child_failure(
+        RuntimeError(secret)
+    ) == build_vbd_trajectory_concordance_child_failure(
+        RuntimeError("different secret")
+    )
+
+    forged = deepcopy(diagnostic)
+    forged["failure_phase"] = "nuts_fit"
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        validate_vbd_trajectory_concordance_child_failure(forged)
+
+
+def test_child_failure_unknown_named_type_is_unclassified():
+    disguised = type("ValueError", (Exception,), {})
+    diagnostic = build_vbd_trajectory_concordance_child_failure(
+        disguised("hidden")
+    )
+    assert diagnostic["exception_type"] == "UNCLASSIFIED_EXCEPTION"
+
+
+def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
+    diagnostic = build_vbd_trajectory_concordance_child_failure(
+        ValueError("never persist this exception message")
+    )
+    encoded = _canonical_json_bytes(diagnostic) + b"\n"
+    launch = {"launch_receipt_hash": "a" * 64}
+
+    failure = _failure_record(
+        launch=launch,
+        failure_code="child_process_failure",
+        child_pid=123,
+        return_code=2,
+        stdout=b"",
+        stderr=b"",
+        diagnostic=encoded,
+    )
+
+    assert _validate_failure(failure, receipt=launch) == failure
+    assert failure["child_diagnostic_valid"] is True
+    assert failure["child_failure_phase"] == "child_entrypoint"
+    assert failure["child_exception_type"] == "ValueError"
+    assert failure["raw_child_diagnostic_committed"] is False
+    assert "never persist" not in _canonical_json_bytes(failure).decode("ascii")
+
+    forged = deepcopy(failure)
+    forged["child_failure_phase"] = "nuts_fit"
+    forged_body = {key: value for key, value in forged.items() if key != "failure_hash"}
+    forged["failure_hash"] = sha256_json(forged_body)
+    with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+        _validate_failure(forged, receipt=launch)
+
+    malformed = _failure_record(
+        launch=launch,
+        failure_code="child_process_failure",
+        child_pid=124,
+        return_code=2,
+        stdout=b"",
+        stderr=b"",
+        diagnostic=b'{"failure_phase":"nuts_fit","failure_phase":"nuts_fit"}\n',
+    )
+    assert _validate_failure(malformed, receipt=launch) == malformed
+    assert malformed["child_diagnostic_valid"] is False
+    assert malformed["child_failure_phase"] is None
+    assert malformed["child_exception_type"] is None
+
+
+def test_child_failure_diagnostic_reader_discards_oversize_payload():
+    read_descriptor, write_descriptor = os.pipe()
+    try:
+        os.write(write_descriptor, b"x" * 513)
+        os.close(write_descriptor)
+        write_descriptor = -1
+        assert _read_child_diagnostic(read_descriptor) == b""
+    finally:
+        if write_descriptor >= 0:
+            os.close(write_descriptor)
+        os.close(read_descriptor)
 
 
 def test_concordance_plan_is_exact_six_cells_by_five_seeds_by_three_lanes():
@@ -1121,7 +1222,7 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
                 lambda: receipt["parent_process_id"],
             )
             value = execute_vbd_trajectory_concordance_child(receipt)
-        return child_pid, 0, _canonical_json_bytes(value), b""
+        return child_pid, 0, _canonical_json_bytes(value), b"", b""
 
     monkeypatch.setattr(resumable, "_launch_child", fake_launch_child)
     workspace = tmp_path / "concordance-workspace"
@@ -1232,7 +1333,9 @@ def test_concordance_launch_revalidates_immediately_before_popen(monkeypatch):
 
         def __init__(self, _command, **kwargs):
             lifecycle.append("popen")
-            capability_fd, liveness_fd, source_fd = kwargs["pass_fds"]
+            capability_fd, liveness_fd, source_fd, _diagnostic_fd = kwargs[
+                "pass_fds"
+            ]
             self.capability_fd = os.dup(capability_fd)
             self.liveness_fd = os.dup(liveness_fd)
             self.source_fd = os.dup(source_fd)
@@ -1265,7 +1368,7 @@ def test_concordance_launch_revalidates_immediately_before_popen(monkeypatch):
         capability_token="capability",
         workspace=SimpleNamespace(),
         verify_lock_identity=verify_lock,
-    ) == (4242, 0, b"", b"")
+    ) == (4242, 0, b"", b"", b"")
     admission_index = lifecycle.index("admission")
     assert lifecycle[admission_index - 1 : admission_index + 2] == [
         "lock",
