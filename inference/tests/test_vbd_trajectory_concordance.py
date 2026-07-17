@@ -147,7 +147,7 @@ def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
     diagnostic = build_vbd_trajectory_concordance_child_failure(
         ValueError("never persist this exception message")
     )
-    encoded = _canonical_json_bytes(diagnostic) + b"\n"
+    encoded = _canonical_json_bytes(diagnostic)
     launch = {"launch_receipt_hash": "a" * 64}
 
     failure = _failure_record(
@@ -203,6 +203,18 @@ def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
     assert _validate_failure(fallback, receipt=launch) == fallback
     assert fallback["child_diagnostic_valid"] is True
     assert fallback["child_diagnostic_hash"] == diagnostic["diagnostic_hash"]
+
+    duplicate_newline = _failure_record(
+        launch=launch,
+        failure_code="child_process_failure",
+        child_pid=125,
+        return_code=2,
+        stdout=b"",
+        stderr=b"",
+        diagnostic=encoded + b"\n",
+        phase_trace=b"",
+    )
+    assert duplicate_newline["child_diagnostic_valid"] is False
 
     ambiguous = _failure_record(
         launch=launch,

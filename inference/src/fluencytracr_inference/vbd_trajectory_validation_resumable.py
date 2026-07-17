@@ -4207,6 +4207,7 @@ def _frozen_child_command(target_module: str, *target_args: str) -> tuple[str, .
         sys.executable,
         "-I",
         "-S",
+        "-B",
         "-c",
         _FROZEN_CHILD_BOOTSTRAP,
         target_module,

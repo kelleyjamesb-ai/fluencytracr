@@ -823,7 +823,7 @@ and full-NUTS entry points verify the exact clean manifest-only freeze before
 any replacement acceptance seed or sampler can execute.
 
 Every concordance and later validation child starts with isolated Python
-(`-I -S`), no repository `PYTHONPATH`, and `/` as its working directory. The
+(`-I -S -B`), no repository `PYTHONPATH`, and `/` as its working directory. The
 parent reads the exact reviewed candidate blobs from trusted Git objects,
 hash-checks every in-scope module against the freeze manifest, and transmits
 the complete source set over an inherited one-way descriptor. A minimal

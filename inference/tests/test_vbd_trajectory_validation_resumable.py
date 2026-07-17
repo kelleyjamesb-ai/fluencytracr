@@ -2156,7 +2156,7 @@ def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypat
     )
     assert (child_pid, return_code, stdout, stderr) == (4242, 0, b"", b"")
     assert len(captured["pass_fds"]) == 3
-    assert captured["command"][1:3] == ("-I", "-S")
+    assert captured["command"][1:4] == ("-I", "-S", "-B")
     assert "-m" not in captured["command"]
     assert "PYTHONPATH" not in captured["env"]
     assert captured["env"]["FT_VBD_TRAJECTORY_CAPABILITY_FD"]

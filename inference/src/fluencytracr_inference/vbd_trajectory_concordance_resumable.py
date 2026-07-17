@@ -1967,7 +1967,7 @@ def _decode_child_failure_diagnostic(encoded: bytes) -> dict | None:
         decoded = _decode_json_bytes(
             canonical, "concordance child failure diagnostic"
         )
-        if canonical != _canonical_json_bytes(decoded):
+        if encoded != _canonical_json_bytes(decoded):
             return None
         return validate_vbd_trajectory_concordance_child_failure(decoded)
     except Exception:
