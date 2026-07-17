@@ -93,13 +93,19 @@ def test_model_manifest_binds_exact_engines_statistics_ppc_and_gates():
         "proposal": "student_t_df_5_v1",
         "proposal_scale": 1.5,
         "minimum_finite_point_count": 4096,
+        "minimum_retained_weight_count": 4096,
         "minimum_effective_sample_size": 256.0,
         "maximum_normalized_weight": 0.05,
+        "weight_retention_algorithm": (
+            "binary64_representable_normalized_weight_retention_v1"
+        ),
+        "ordinal_commitment_algorithm": "vbd_outer_weight_ordinals_v1",
         "conditional_mixture_quantile": "conditional_normal_mixture_quantile_v2",
         "conditional_mixture_bisection_iterations": 64,
         "normal_cdf": "scipy.special.ndtr",
         "normal_quantile": "scipy.special.ndtri",
         "original_sobol_ordinal_retained": True,
+        "original_sobol_ordinal_identity_preserved": True,
         "random_numbers_used": False,
     }
     assert manifest["reference_engine"]["engine_id"] == (

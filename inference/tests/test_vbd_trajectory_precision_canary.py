@@ -37,6 +37,7 @@ from fluencytracr_inference.vbd_trajectory_precision_canary import (
 from fluencytracr_inference.vbd_trajectory_state_space import (
     TrajectoryDeterministicFit,
     TrajectoryIntegrationDiagnostics,
+    _build_outer_weight_retention_record,
 )
 from fluencytracr_inference.vbd_trajectory_statistics import (
     TrajectoryPosteriorSummary,
@@ -74,8 +75,10 @@ def _result(canary_ordinal=0):
             model_input_hash=prepared.model_input_hash,
             movement_summary=summary,
             integration_diagnostics=TrajectoryIntegrationDiagnostics(
-                point_count=8192,
-                finite_point_count=8192,
+                **_build_outer_weight_retention_record(
+                    finite_log_weight_count=8192,
+                    retained_ordinals=tuple(range(8192)),
+                ),
                 effective_sample_size=1000.0,
                 max_normalized_weight=0.001,
                 mode_transformed=(0.0, 0.0, 0.0),
@@ -258,6 +261,63 @@ def test_precision_canary_result_cannot_be_rehashed_into_acceptance():
     forged["result_hash"] = sha256_json(body)
     with pytest.raises(VbdTrajectoryPrecisionCanaryError):
         validate_vbd_trajectory_precision_canary_result(forged)
+
+
+def test_precision_canary_rejects_missing_retention_evidence_after_rehash():
+    retention_fields = (
+        "generated_point_count",
+        "finite_log_weight_count",
+        "retained_weight_count",
+        "retained_sobol_ordinal_commitment",
+        "excluded_sobol_ordinal_commitment",
+        "outer_weight_retention_hash",
+    )
+    for field in retention_fields:
+        forged = deepcopy(_result())
+        fit = forged["lane_records"][0]["primary_fit"]
+        fit["integration_diagnostics"].pop(field)
+        fit_body = {
+            key: item for key, item in fit.items() if key != "fit_summary_hash"
+        }
+        fit["fit_summary_hash"] = sha256_json(fit_body)
+        result_body = {
+            key: item for key, item in forged.items() if key != "result_hash"
+        }
+        forged["result_hash"] = sha256_json(result_body)
+        with pytest.raises(VbdTrajectoryPrecisionCanaryError, match="fit record"):
+            validate_vbd_trajectory_precision_canary_result(forged)
+
+
+def test_precision_canary_rejects_coordinated_off_plan_panel_and_fit_hashes():
+    panel_forged = deepcopy(_result())
+    panel_forged["panel_manifest_root"] = "0" * 64
+    body = {
+        key: item for key, item in panel_forged.items() if key != "result_hash"
+    }
+    panel_forged["result_hash"] = sha256_json(body)
+    with pytest.raises(VbdTrajectoryPrecisionCanaryError, match="panel binding"):
+        validate_vbd_trajectory_precision_canary_result(panel_forged)
+
+    fit_forged = deepcopy(_result())
+    for lane_ordinal, lane_record in enumerate(fit_forged["lane_records"]):
+        prepared_hash = sha256_json(["forged-prepared", lane_ordinal])
+        model_hash = sha256_json(["forged-model", lane_ordinal])
+        for fit_name in ("primary_fit", "reference_fit"):
+            fit = lane_record[fit_name]
+            fit["prepared_input_hash"] = prepared_hash
+            fit["model_input_hash"] = model_hash
+            fit_body = {
+                key: item
+                for key, item in fit.items()
+                if key != "fit_summary_hash"
+            }
+            fit["fit_summary_hash"] = sha256_json(fit_body)
+    body = {
+        key: item for key, item in fit_forged.items() if key != "result_hash"
+    }
+    fit_forged["result_hash"] = sha256_json(body)
+    with pytest.raises(VbdTrajectoryPrecisionCanaryError, match="inconsistent"):
+        validate_vbd_trajectory_precision_canary_result(fit_forged)
 
 
 def test_precision_canary_parent_uses_one_exact_timeout_and_no_retry(monkeypatch):

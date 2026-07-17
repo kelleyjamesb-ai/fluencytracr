@@ -155,6 +155,7 @@ def _validate_precision_canary_lane_record(
     canary: dict,
     study_plan_root: str,
     lane_ordinal: int,
+    expected_prepared,
 ) -> list[str]:
     if type(value) is not dict or set(value) != {
         "lane",
@@ -205,6 +206,8 @@ def _validate_precision_canary_lane_record(
         or reference.lane != lane
         or primary.prepared_input_hash != reference.prepared_input_hash
         or primary.model_input_hash != reference.model_input_hash
+        or primary.prepared_input_hash != expected_prepared.prepared_input_hash
+        or primary.model_input_hash != expected_prepared.model_input_hash
         or reference.concordance_binding_hash != binding.binding_hash
         or reference.settings.full_settings is not True
         or reference.chain_seeds != binding.chain_seeds
@@ -274,6 +277,14 @@ def validate_vbd_trajectory_precision_canary_result(value: object) -> dict:
             "precision canary ordinal is malformed"
         )
     canary = vbd_trajectory_precision_canary_case_body(ordinal)
+    expected_case = generate_vbd_trajectory_precision_canary_case(
+        ordinal,
+        _runner_token=_PRECISION_CANARY_GENERATION_RUNNER_TOKEN,
+    )
+    expected_prepared = tuple(
+        prepare_vbd_trajectory_lane(expected_case.panel, lane)
+        for lane in VBD_TRAJECTORY_LANES
+    )
     study_plan_root = value.get("study_plan_root")
     panel_manifest_root = value.get("panel_manifest_root")
     if (
@@ -281,12 +292,15 @@ def validate_vbd_trajectory_precision_canary_result(value: object) -> dict:
         or len(study_plan_root) != 64
         or any(character not in "0123456789abcdef" for character in study_plan_root)
         or study_plan_root != sha256_json(canary)
+        or study_plan_root != expected_case.panel.study_plan_root
         or type(panel_manifest_root) is not str
         or len(panel_manifest_root) != 64
         or any(
             character not in "0123456789abcdef"
             for character in panel_manifest_root
         )
+        or panel_manifest_root
+        != expected_case.panel.ordered_panel_manifest_root
     ):
         raise VbdTrajectoryPrecisionCanaryError(
             "precision canary panel binding is malformed"
@@ -306,6 +320,7 @@ def validate_vbd_trajectory_precision_canary_result(value: object) -> dict:
                 canary=canary,
                 study_plan_root=study_plan_root,
                 lane_ordinal=lane_ordinal,
+                expected_prepared=expected_prepared[lane_ordinal],
             )
         )
     derived_failures = list(dict.fromkeys(derived_failures))

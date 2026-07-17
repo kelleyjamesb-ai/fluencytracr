@@ -170,7 +170,7 @@ def normal_quadrature_v1() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return support, normalized_weights, stable_indices
 
 
-def _validated_conditional_normal_mixture(
+def _validated_conditional_normal_components(
     weights: object,
     means: object,
     standard_deviations: object,
@@ -204,6 +204,17 @@ def _validated_conditional_normal_mixture(
         raise TrajectoryStatisticsError(
             "conditional Normal mixture requires finite positive weights and scales"
         )
+    return weight_array, mean_array, sd_array
+
+
+def _validated_conditional_normal_mixture(
+    weights: object,
+    means: object,
+    standard_deviations: object,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    weight_array, mean_array, sd_array = _validated_conditional_normal_components(
+        weights, means, standard_deviations
+    )
     total = float(np.sum(weight_array))
     if not math.isfinite(total) or total <= 0.0:
         raise TrajectoryStatisticsError(
@@ -217,13 +228,13 @@ def _validated_conditional_normal_mixture(
     return normalized, mean_array, sd_array
 
 
-def conditional_normal_mixture_quantile_v2(
-    weights: object,
-    means: object,
-    standard_deviations: object,
+def _conditional_normal_mixture_quantile_from_components(
+    normalized: np.ndarray,
+    mean_array: np.ndarray,
+    sd_array: np.ndarray,
     probability: float,
 ) -> float:
-    """Return one pinned direct conditional-Normal mixture quantile."""
+    """Evaluate one quantile from already validated final binary64 weights."""
 
     if (
         type(probability) not in (int, float)
@@ -234,9 +245,6 @@ def conditional_normal_mixture_quantile_v2(
             "conditional Normal mixture probability is off plan"
         )
     probability = float(probability)
-    normalized, mean_array, sd_array = _validated_conditional_normal_mixture(
-        weights, means, standard_deviations
-    )
     z_probability = float(ndtri(probability))
     if not math.isfinite(z_probability):
         raise TrajectoryStatisticsError(
@@ -271,14 +279,23 @@ def conditional_normal_mixture_quantile_v2(
     return upper
 
 
-def summarize_conditional_normal_mixture_v2(
-    quantity_name: str,
+def conditional_normal_mixture_quantile_v2(
     weights: object,
     means: object,
-    variances: object,
-) -> TrajectoryPosteriorSummary:
-    """Summarize exact conditional Normals without discretizing their support."""
+    standard_deviations: object,
+    probability: float,
+) -> float:
+    """Return one pinned direct conditional-Normal mixture quantile."""
 
+    normalized, mean_array, sd_array = _validated_conditional_normal_mixture(
+        weights, means, standard_deviations
+    )
+    return _conditional_normal_mixture_quantile_from_components(
+        normalized, mean_array, sd_array, probability
+    )
+
+
+def _validated_conditional_standard_deviations(variances: object) -> np.ndarray:
     variance_array = np.asarray(variances)
     if variance_array.ndim != 1 or variance_array.dtype.kind not in "fiu":
         raise TrajectoryStatisticsError(
@@ -289,12 +306,15 @@ def summarize_conditional_normal_mixture_v2(
         raise TrajectoryStatisticsError(
             "conditional Normal mixture variances must be finite and positive"
         )
-    standard_deviations = np.sqrt(variance_array)
-    normalized, mean_array, standard_deviations = (
-        _validated_conditional_normal_mixture(
-            weights, means, standard_deviations
-        )
-    )
+    return np.sqrt(variance_array)
+
+
+def _summarize_conditional_normal_components(
+    quantity_name: str,
+    normalized: np.ndarray,
+    mean_array: np.ndarray,
+    standard_deviations: np.ndarray,
+) -> TrajectoryPosteriorSummary:
     posterior_mean = float(np.sum(normalized * mean_array))
     posterior_variance = float(
         np.sum(
@@ -311,7 +331,7 @@ def summarize_conditional_normal_mixture_v2(
             "conditional Normal mixture moments are invalid"
         )
     quantiles = {
-        probability: conditional_normal_mixture_quantile_v2(
+        probability: _conditional_normal_mixture_quantile_from_components(
             normalized, mean_array, standard_deviations, probability
         )
         for probability in VBD_TRAJECTORY_MIXTURE_QUANTILE_PROBABILITIES
@@ -324,6 +344,44 @@ def summarize_conditional_normal_mixture_v2(
         interval_80_upper=quantiles[VBD_TRAJECTORY_INTERVAL_80[1]],
         interval_99_lower=quantiles[VBD_TRAJECTORY_INTERVAL_99[0]],
         interval_99_upper=quantiles[VBD_TRAJECTORY_INTERVAL_99[1]],
+    )
+
+
+def summarize_conditional_normal_mixture_v2(
+    quantity_name: str,
+    weights: object,
+    means: object,
+    variances: object,
+) -> TrajectoryPosteriorSummary:
+    """Summarize caller-provided conditional Normals after one normalization."""
+
+    standard_deviations = _validated_conditional_standard_deviations(variances)
+    normalized, mean_array, standard_deviations = (
+        _validated_conditional_normal_mixture(
+            weights, means, standard_deviations
+        )
+    )
+    return _summarize_conditional_normal_components(
+        quantity_name, normalized, mean_array, standard_deviations
+    )
+
+
+def _summarize_pre_normalized_conditional_normal_mixture_v2(
+    quantity_name: str,
+    weights: object,
+    means: object,
+    variances: object,
+) -> TrajectoryPosteriorSummary:
+    """Summarize engine-produced final weights without another normalization."""
+
+    standard_deviations = _validated_conditional_standard_deviations(variances)
+    normalized, mean_array, standard_deviations = (
+        _validated_conditional_normal_components(
+            weights, means, standard_deviations
+        )
+    )
+    return _summarize_conditional_normal_components(
+        quantity_name, normalized, mean_array, standard_deviations
     )
 
 

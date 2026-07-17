@@ -57,6 +57,7 @@ from fluencytracr_inference.vbd_trajectory_nuts import (
 from fluencytracr_inference.vbd_trajectory_state_space import (
     TrajectoryDeterministicFit,
     TrajectoryIntegrationDiagnostics,
+    _build_outer_weight_retention_record,
 )
 from fluencytracr_inference.vbd_trajectory_statistics import (
     TrajectoryPosteriorSummary,
@@ -600,8 +601,10 @@ def _cached_concordance_smoke_case():
 
 def _fake_deterministic_fit(prepared):
     diagnostics = TrajectoryIntegrationDiagnostics(
-        point_count=8192,
-        finite_point_count=8192,
+        **_build_outer_weight_retention_record(
+            finite_log_weight_count=8192,
+            retained_ordinals=tuple(range(8192)),
+        ),
         effective_sample_size=1000.0,
         max_normalized_weight=0.001,
         mode_transformed=(0.0, 0.0, 0.0),

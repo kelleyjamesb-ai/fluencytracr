@@ -126,7 +126,12 @@ def test_each_lane_fit_hash_is_summary_only_and_source_bound(artifact_a):
         assert fit["model_input_hash"] == record["model_input_hash"]
         assert fit["movement_summary"]["quantity_name"] == "trajectory_movement"
         assert fit["integration_diagnostics"]["status"] == "PASS"
-        assert fit["integration_diagnostics"]["point_count"] == 8192
+        assert fit["integration_diagnostics"]["generated_point_count"] == 8192
+        assert (
+            fit["integration_diagnostics"]["retained_weight_count"]
+            <= fit["integration_diagnostics"]["finite_log_weight_count"]
+            <= 8192
+        )
         assert fit["latent_paths_emitted"] is False
         assert fit["posterior_support_emitted"] is False
         assert record["reference_fit_state"] == "NOT_RUN"
@@ -148,6 +153,14 @@ def test_artifact_emits_no_draw_path_support_truth_or_input_array_payload(artifa
         "posterior_draws",
         "latent_path_values",
         "posterior_support_values",
+        "posterior_support_weights",
+        "retained_sobol_ordinals",
+        "excluded_sobol_ordinals",
+        "log_weights",
+        "normalized_weights",
+        "outer_weights",
+        "conditional_movement_means",
+        "conditional_movement_variances",
         "posterior_predictive_replicates",
         "y",
         "known_se",

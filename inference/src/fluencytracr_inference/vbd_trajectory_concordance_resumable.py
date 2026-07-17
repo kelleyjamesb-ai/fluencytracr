@@ -1181,8 +1181,18 @@ def _deterministic_fit_from_dict(value: object) -> TrajectoryDeterministicFit:
         )
     try:
         reconstructed_diagnostics = TrajectoryIntegrationDiagnostics(
-            point_count=diagnostics["point_count"],
-            finite_point_count=diagnostics["finite_point_count"],
+            generated_point_count=diagnostics["generated_point_count"],
+            finite_log_weight_count=diagnostics["finite_log_weight_count"],
+            retained_weight_count=diagnostics["retained_weight_count"],
+            retained_sobol_ordinal_commitment=diagnostics[
+                "retained_sobol_ordinal_commitment"
+            ],
+            excluded_sobol_ordinal_commitment=diagnostics[
+                "excluded_sobol_ordinal_commitment"
+            ],
+            outer_weight_retention_hash=diagnostics[
+                "outer_weight_retention_hash"
+            ],
             effective_sample_size=_strict_float(
                 diagnostics["effective_sample_size"], "integration ESS"
             ),
