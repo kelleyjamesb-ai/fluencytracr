@@ -225,9 +225,9 @@
       "id": "vbd-trajectory-engine-concordance",
       "title": "VBD trajectory source freeze and NUTS concordance",
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
-      "status": "in_progress",
+      "status": "pending",
       "risk": "high",
-      "last_note": "Verified replacement repair: F=5331fcee localized source_identity_validation; exact probe proved -I ignored bytecode env and -B restores every frozen runtime hash. Canonical one-newline diagnostics now persist. Focused 9/9, affected 106/106, VBD bridge 19/19 and required gates pass; replacement S/F reviews remain pending."
+      "last_note": "Actual statistical HOLD at accepted F=0287713d bundle 0 after all 3 recomputations passed. Failures: MCSE in all lanes, 1 frequency divergence, engagement 99% lower difference .253>.20, Breadth 99% upper .215>.20. All PPC/R-hat/ESS/BFMI/treedepth and primary integration passed. Bundle 1 not started; model-hardening decision required."
     },
     {
       "id": "vbd-trajectory-full-evidence",
