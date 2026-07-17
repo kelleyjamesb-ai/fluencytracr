@@ -276,6 +276,81 @@ import json
 import os
 import sys
 
+BOOTSTRAP_FAILURE_SCHEMA = (
+    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_2026_07_V1"
+)
+BOOTSTRAP_PHASE_CODES = {
+    "bootstrap_entrypoint": 16,
+    "frozen_source_admission": 17,
+    "target_module_import": 18,
+    "target_module_execution": 19,
+}
+BOOTSTRAP_EXCEPTION_TYPES = {
+    AssertionError: "AssertionError",
+    AttributeError: "AttributeError",
+    FileNotFoundError: "FileNotFoundError",
+    ImportError: "ImportError",
+    IndexError: "IndexError",
+    KeyError: "KeyError",
+    MemoryError: "MemoryError",
+    ModuleNotFoundError: "ModuleNotFoundError",
+    OSError: "OSError",
+    RuntimeError: "RuntimeError",
+    SystemExit: "SystemExit",
+    TypeError: "TypeError",
+    ValueError: "ValueError",
+}
+
+def emit_bootstrap_phase(phase):
+    descriptor_text = os.environ.get("FT_VBD_TRAJECTORY_PHASE_FD")
+    if (
+        phase not in BOOTSTRAP_PHASE_CODES
+        or descriptor_text is None
+        or not descriptor_text.isascii()
+        or not descriptor_text.isdigit()
+    ):
+        return
+    try:
+        os.write(int(descriptor_text), bytes((BOOTSTRAP_PHASE_CODES[phase],)))
+    except OSError:
+        pass
+
+def write_bootstrap_failure(phase, exc):
+    try:
+        body = {
+            "schema_version": BOOTSTRAP_FAILURE_SCHEMA,
+            "failure_phase": phase,
+            "exception_type": BOOTSTRAP_EXCEPTION_TYPES.get(
+                type(exc), "UNCLASSIFIED_EXCEPTION"
+            ),
+        }
+        canonical = json.dumps(
+            body, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        encoded = json.dumps(
+            {**body, "diagnostic_hash": hashlib.sha256(canonical).hexdigest()},
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("ascii") + b"\n"
+        descriptor_text = os.environ.get("FT_VBD_TRAJECTORY_DIAGNOSTIC_FD")
+        if (
+            descriptor_text is not None
+            and descriptor_text.isascii()
+            and descriptor_text.isdigit()
+        ):
+            try:
+                if os.write(int(descriptor_text), encoded) == len(encoded):
+                    return
+            except OSError:
+                pass
+        sys.stderr.buffer.write(encoded)
+        sys.stderr.buffer.flush()
+    except BaseException:
+        pass
+
+emit_bootstrap_phase("bootstrap_entrypoint")
+emit_bootstrap_phase("frozen_source_admission")
 fd_text = os.environ.pop("FT_VBD_TRAJECTORY_FROZEN_SOURCE_FD", None)
 if fd_text is None or not fd_text.isascii() or not fd_text.isdigit():
     raise SystemExit(97)
@@ -366,10 +441,21 @@ class FrozenFinder(importlib.abc.MetaPathFinder):
         return None
 
 sys.meta_path.insert(0, FrozenFinder())
-target_module = sys.argv[1]
-target_args = sys.argv[2:]
-module = __import__(target_module, fromlist=["main"])
-raise SystemExit(module.main(target_args))
+emit_bootstrap_phase("target_module_import")
+try:
+    target_module = sys.argv[1]
+    target_args = sys.argv[2:]
+    module = __import__(target_module, fromlist=["main"])
+except BaseException as exc:
+    write_bootstrap_failure("target_module_import", exc)
+    raise SystemExit(2)
+emit_bootstrap_phase("target_module_execution")
+try:
+    result = module.main(target_args)
+except BaseException as exc:
+    write_bootstrap_failure("target_module_execution", exc)
+    raise SystemExit(2)
+raise SystemExit(result)
 '''.strip()
 
 

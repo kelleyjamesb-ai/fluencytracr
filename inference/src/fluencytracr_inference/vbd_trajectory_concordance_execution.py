@@ -85,6 +85,10 @@ VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES = (
     "concordance_evaluation",
     "result_assembly",
     "result_emit",
+    "bootstrap_entrypoint",
+    "frozen_source_admission",
+    "target_module_import",
+    "target_module_execution",
 )
 VBD_TRAJECTORY_CONCORDANCE_CHILD_EXCEPTION_TYPES = (
     "AssertionError",

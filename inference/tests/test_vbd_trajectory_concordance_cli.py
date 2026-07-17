@@ -105,3 +105,25 @@ def test_private_child_cli_sanitizes_system_exit(monkeypatch, capsys):
     diagnostic = json.loads(encoded)
     assert diagnostic["failure_phase"] == "child_entrypoint"
     assert diagnostic["exception_type"] == "SystemExit"
+
+
+def test_private_child_cli_rejects_extra_arguments_before_parser(monkeypatch, capsys):
+    read_descriptor, write_descriptor = os.pipe()
+    monkeypatch.setenv(
+        "FT_VBD_TRAJECTORY_DIAGNOSTIC_FD", str(write_descriptor)
+    )
+
+    try:
+        assert cli.main(["_execute-bundle", "unexpected"]) == 2
+        write_descriptor = -1
+        encoded = os.read(read_descriptor, 513)
+    finally:
+        if write_descriptor >= 0:
+            os.close(write_descriptor)
+        os.close(read_descriptor)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
+    diagnostic = json.loads(encoded)
+    assert diagnostic["failure_phase"] == "child_entrypoint"
+    assert diagnostic["exception_type"] == "ValueError"

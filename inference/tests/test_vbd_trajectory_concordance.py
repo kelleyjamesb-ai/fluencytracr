@@ -223,7 +223,15 @@ def test_hard_process_exit_uses_only_the_last_valid_compiled_phase():
         VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES,
     )
 
+    assert VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["child_entrypoint"] == 1
+    assert VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["result_emit"] == 15
+    assert VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["bootstrap_entrypoint"] == 16
+    assert VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES["target_module_execution"] == 19
     phases = (
+        "bootstrap_entrypoint",
+        "frozen_source_admission",
+        "target_module_import",
+        "target_module_execution",
         "child_entrypoint",
         "stdin_decode",
         "launch_receipt_validation",
@@ -258,6 +266,9 @@ def test_hard_process_exit_uses_only_the_last_valid_compiled_phase():
     assert failure["child_failure_phase"] == "nuts_fit"
     assert failure["child_exception_type"] == "PROCESS_EXIT_WITHOUT_EXCEPTION"
     assert failure["raw_child_phase_trace_committed"] is False
+    assert _last_child_phase(trace[1:], "primary") is None
+    assert _last_child_phase(trace[:1] + trace, "primary") is None
+    assert _last_child_phase(trace[:4][::-1] + trace[4:], "primary") is None
 
     off_plan = trace + b"\xff"
     assert _last_child_phase(off_plan, "primary") is None
@@ -293,6 +304,10 @@ def test_hard_process_exit_uses_only_the_last_valid_compiled_phase():
     recomputation_trace = bytes(
         VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
         for phase in (
+            "bootstrap_entrypoint",
+            "frozen_source_admission",
+            "target_module_import",
+            "target_module_execution",
             "child_entrypoint",
             "stdin_decode",
             "launch_receipt_validation",

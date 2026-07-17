@@ -85,13 +85,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    if args.command == "_execute-bundle":
+    raw_args = list(sys.argv[1:] if argv is None else argv)
+    if raw_args and raw_args[0] == "_execute-bundle":
         diagnostic_fd = _take_diagnostic_fd()
         decoded = False
+        active_phase = "child_entrypoint"
         try:
-            emit_vbd_trajectory_concordance_child_phase("child_entrypoint")
-            emit_vbd_trajectory_concordance_child_phase("stdin_decode")
+            emit_vbd_trajectory_concordance_child_phase(active_phase)
+            if raw_args != ["_execute-bundle"]:
+                raise ValueError("private child command arguments are invalid")
+            active_phase = "stdin_decode"
+            emit_vbd_trajectory_concordance_child_phase(active_phase)
             value = _decode_json_bytes(
                 sys.stdin.buffer.read(), "concordance child stdin"
             )
@@ -106,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         except BaseException as exc:
             if not decoded:
-                _tag_child_failure_phase(exc, "stdin_decode")
+                _tag_child_failure_phase(exc, active_phase)
             _write_child_failure(diagnostic_fd, exc)
             return 2
         finally:
@@ -115,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
                     os.close(diagnostic_fd)
                 except OSError:
                     pass
+    args = build_parser().parse_args(raw_args)
     if args.command == "plan":
         _print_json(vbd_trajectory_concordance_plan())
         return 0

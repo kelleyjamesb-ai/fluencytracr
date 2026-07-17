@@ -19,6 +19,10 @@ from fluencytracr_inference.vbd_trajectory_concordance import (
     vbd_trajectory_concordance_plan,
     vbd_trajectory_concordance_seed_manifest_hash,
 )
+from fluencytracr_inference.vbd_trajectory_concordance_execution import (
+    VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES,
+    validate_vbd_trajectory_concordance_child_failure,
+)
 from fluencytracr_inference.vbd_trajectory_validation_resumable import (
     VBD_TRAJECTORY_FREEZE_MANIFEST_SCHEMA_VERSION,
     VBD_TRAJECTORY_CONCORDANCE_RECEIPT_SCHEMA_VERSION,
@@ -1752,8 +1756,9 @@ def test_attempt_permit_manifest_and_permit_replacement_fail_closed(tmp_path):
     anchor_root = workspace.parent / f".{workspace.name}.vbd-proof-anchor"
     manifest_path = anchor_root / runner._ATTEMPT_PERMIT_MANIFEST_NAME
     manifest_bytes = manifest_path.read_bytes()
-    manifest_path.unlink()
-    manifest_path.write_bytes(manifest_bytes)
+    replacement_manifest = manifest_path.with_name("replacement-manifest.json")
+    replacement_manifest.write_bytes(manifest_bytes)
+    os.replace(replacement_manifest, manifest_path)
     with pytest.raises(
         VbdTrajectoryValidationWorkspaceError,
         match="permit manifest differs",
@@ -1769,8 +1774,9 @@ def test_attempt_permit_manifest_and_permit_replacement_fail_closed(tmp_path):
         / runner._attempt_permit_name("slot_0000.json")
     )
     permit_bytes = permit_path.read_bytes()
-    permit_path.unlink()
-    permit_path.write_bytes(permit_bytes)
+    replacement_permit = permit_path.with_name("replacement-permit.json")
+    replacement_permit.write_bytes(permit_bytes)
+    os.replace(replacement_permit, permit_path)
     with pytest.raises(
         VbdTrajectoryValidationWorkspaceError,
         match="permit identity is stale",
@@ -2365,8 +2371,12 @@ def test_frozen_source_set_closes_both_child_import_graphs(target, argument):
     }
     bundle = _canonical_json_bytes({**body, "bundle_hash": sha256_json(body)})
     source_read, source_write = os.pipe()
+    diagnostic_read, diagnostic_write = os.pipe()
+    phase_read, phase_write = os.pipe()
     environment = {
         "FT_VBD_TRAJECTORY_FROZEN_SOURCE_FD": str(source_read),
+        "FT_VBD_TRAJECTORY_DIAGNOSTIC_FD": str(diagnostic_write),
+        "FT_VBD_TRAJECTORY_PHASE_FD": str(phase_write),
         "PYTHONDONTWRITEBYTECODE": "1",
         "PYTHONHASHSEED": "0",
         "PATH": os.environ.get("PATH", ""),
@@ -2390,9 +2400,11 @@ def test_frozen_source_set_closes_both_child_import_graphs(target, argument):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        pass_fds=(source_read,),
+        pass_fds=(source_read, diagnostic_write, phase_write),
     )
     os.close(source_read)
+    os.close(diagnostic_write)
+    os.close(phase_write)
     written = 0
     while written < len(bundle):
         written += os.write(source_write, bundle[written:])
@@ -2408,6 +2420,149 @@ def test_frozen_source_set_closes_both_child_import_graphs(target, argument):
     assert process.returncode == 2, (
         stdout + b"\n" + stderr
     ).decode("utf-8", errors="replace")
+    diagnostic_bytes = os.read(diagnostic_read, 513)
+    phase_bytes = os.read(phase_read, 65)
+    os.close(diagnostic_read)
+    os.close(phase_read)
+    bootstrap_phases = (
+        "bootstrap_entrypoint",
+        "frozen_source_admission",
+        "target_module_import",
+        "target_module_execution",
+    )
+    if target.endswith("vbd_trajectory_validation_cli"):
+        assert diagnostic_bytes == b""
+        assert phase_bytes == bytes(
+            VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
+            for phase in bootstrap_phases
+        )
+        return
+    diagnostic = validate_vbd_trajectory_concordance_child_failure(
+        _decode_json_bytes(
+            diagnostic_bytes.removesuffix(b"\n"),
+            "test child failure diagnostic",
+        )
+    )
+    assert diagnostic["failure_phase"] == "launch_receipt_validation"
+    assert phase_bytes == bytes(
+        VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
+        for phase in (
+            *bootstrap_phases,
+            "child_entrypoint",
+            "stdin_decode",
+            "launch_receipt_validation",
+        )
+    )
+
+
+def test_frozen_bootstrap_sanitizes_target_module_import_failure(tmp_path):
+    package_source = b""
+    body = {
+        "schema_version": "FT_AI_VALUE_VBD_FROZEN_CHILD_SOURCE_2026_07_V1",
+        "candidate_source_commit": "a" * 40,
+        "freeze_manifest_hash": "b" * 64,
+        "repository_root": str(tmp_path),
+        "site_package_paths": [str(tmp_path / "unused-site-packages")],
+        "modules": [
+            {
+                "module": "fluencytracr_inference",
+                "path": "inference/src/fluencytracr_inference/__init__.py",
+                "sha256": hashlib.sha256(package_source).hexdigest(),
+                "source_base64": base64.b64encode(package_source).decode("ascii"),
+                "is_package": True,
+            }
+        ],
+    }
+    bundle = _canonical_json_bytes({**body, "bundle_hash": sha256_json(body)})
+    source_read, source_write = os.pipe()
+    diagnostic_read, diagnostic_write = os.pipe()
+    phase_read, phase_write = os.pipe()
+    process = subprocess.Popen(
+        (
+            sys.executable,
+            "-I",
+            "-S",
+            "-c",
+            _FROZEN_CHILD_BOOTSTRAP,
+            "fluencytracr_inference.missing_cli",
+        ),
+        cwd=tmp_path,
+        env={
+            "FT_VBD_TRAJECTORY_FROZEN_SOURCE_FD": str(source_read),
+            "FT_VBD_TRAJECTORY_DIAGNOSTIC_FD": str(diagnostic_write),
+            "FT_VBD_TRAJECTORY_PHASE_FD": str(phase_write),
+            "PATH": os.environ.get("PATH", ""),
+        },
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        pass_fds=(source_read, diagnostic_write, phase_write),
+    )
+    os.close(source_read)
+    os.close(diagnostic_write)
+    os.close(phase_write)
+    written = 0
+    while written < len(bundle):
+        written += os.write(source_write, bundle[written:])
+    os.close(source_write)
+    stdout, stderr = process.communicate(timeout=10)
+    diagnostic_bytes = os.read(diagnostic_read, 513)
+    phase_bytes = os.read(phase_read, 65)
+    os.close(diagnostic_read)
+    os.close(phase_read)
+
+    assert process.returncode == 2
+    assert stdout == b""
+    assert stderr == b""
+    diagnostic = validate_vbd_trajectory_concordance_child_failure(
+        _decode_json_bytes(
+            diagnostic_bytes.removesuffix(b"\n"),
+            "test bootstrap import diagnostic",
+        )
+    )
+    assert diagnostic["failure_phase"] == "target_module_import"
+    assert diagnostic["exception_type"] == "ImportError"
+    assert phase_bytes == bytes(
+        VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
+        for phase in (
+            "bootstrap_entrypoint",
+            "frozen_source_admission",
+            "target_module_import",
+        )
+    )
+
+
+def test_frozen_bootstrap_preserves_source_admission_exit_97(tmp_path):
+    phase_read, phase_write = os.pipe()
+    process = subprocess.Popen(
+        (
+            sys.executable,
+            "-I",
+            "-S",
+            "-c",
+            _FROZEN_CHILD_BOOTSTRAP,
+            "fluencytracr_inference.missing_cli",
+        ),
+        cwd=tmp_path,
+        env={
+            "FT_VBD_TRAJECTORY_PHASE_FD": str(phase_write),
+            "PATH": os.environ.get("PATH", ""),
+        },
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        pass_fds=(phase_write,),
+    )
+    os.close(phase_write)
+    stdout, stderr = process.communicate(timeout=10)
+    phase_bytes = os.read(phase_read, 65)
+    os.close(phase_read)
+
+    assert process.returncode == 97
+    assert stdout == b""
+    assert stderr == b""
+    assert phase_bytes == bytes(
+        VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
+        for phase in ("bootstrap_entrypoint", "frozen_source_admission")
+    )
 
 
 def test_child_launch_rejects_capability_not_committed_by_receipt(monkeypatch):

@@ -1065,6 +1065,10 @@ def _last_child_phase(encoded: bytes, execution_phase: str) -> str | None:
     except KeyError:
         return None
     common = (
+        "bootstrap_entrypoint",
+        "frozen_source_admission",
+        "target_module_import",
+        "target_module_execution",
         "child_entrypoint",
         "stdin_decode",
         "launch_receipt_validation",
