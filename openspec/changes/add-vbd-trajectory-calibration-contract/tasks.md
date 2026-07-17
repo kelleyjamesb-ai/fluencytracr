@@ -45,8 +45,10 @@
 
 ## 3. Future Engine Concordance
 
-- [x] 3.1 Verify the complete implementation and runner without acceptance-
-  plan execution, then create clean candidate source commit `S`.
+- [ ] 3.1 After task `2.6` and both precision canaries pass, verify the complete
+  repaired implementation and runner without acceptance-plan execution, then
+  create a clean replacement candidate source commit `S`. The tombstoned
+  pre-amendment `S` does not satisfy this task.
 - [ ] 3.2 Obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO against
   exact commit `S`; then, before concordance or any acceptance canary, create
   freeze commit `F` with sole parent `S` and only the sanitized manifest binding

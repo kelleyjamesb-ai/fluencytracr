@@ -225,9 +225,9 @@ Pre-freeze development smoke uses only the disjoint
 gate, and always HOLDS. In addition to fast smoke, the repair runs two exact
 full-setting non-admissible precision bundles at six and twelve groups with the
 fixed smoke seeds in the normative spec. They must finish inside the compiled
-bundle timeout and clear the otherwise applicable diagnostics before candidate
-`S`, but they cannot enter evidence. A failure requires HOLD or a new docs
-amendment, never tuning under the same contract.
+primary bundle-child timeout and clear the otherwise applicable diagnostics
+before candidate `S`, but they cannot enter evidence. A failure requires HOLD
+or a new docs amendment, never tuning under the same contract.
 
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.

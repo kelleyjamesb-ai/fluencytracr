@@ -591,8 +591,8 @@ existing smoke namespace and distinct from every acceptance seed. They run the
 exact repaired full settings for all three lanes in ordinal/lane order, always
 HOLD with `precision_canary_nonacceptance`, emit no evidence artifact, and stay
 outside every acceptance count and denominator. Each bundle must complete
-within the amended compiled 7,200-second bundle timeout (replacing the held
-implementation's 600-second child timeout) and clear all
+within the amended compiled 7,200-second primary bundle-child timeout
+(replacing the held implementation's 600-second child timeout) and clear all
 otherwise applicable sampler, PPC, and cross-engine checks before candidate
 source `S`. Timeout, resource failure, or a numerical/statistical failure
 blocks `S`; it cannot trigger a retry, setting change, seed change, or adaptive

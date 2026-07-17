@@ -429,10 +429,11 @@ be `2_055_900_300+10*ordinal+lane_ordinal`. Every lane SHALL run the repaired
 full settings in ordinal/lane order, remain
 `HOLD(precision_canary_nonacceptance)`, emit no evidence, and stay outside all
 acceptance counts. Each bundle SHALL finish inside the amended compiled
-7,200-second child timeout, replacing the held implementation's 600-second
-timeout, and clear all otherwise applicable sampler, PPC, and cross-engine
-checks before candidate `S`. Failure SHALL block `S` and SHALL NOT trigger a
-retry, setting change, seed change, or adaptive extension under this amendment.
+7,200-second primary bundle-child timeout, replacing the held implementation's
+600-second child timeout, and clear all otherwise applicable sampler, PPC, and
+cross-engine checks before candidate `S`. Failure SHALL block `S` and SHALL NOT
+trigger a retry, setting change, seed change, or adaptive extension under this
+amendment.
 
 #### Scenario: A precision canary is offered as evidence
 
