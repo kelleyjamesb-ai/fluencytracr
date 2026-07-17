@@ -1,12 +1,15 @@
 # VBD Trajectory-Model Calibration
 
-Contract status: `SYNTHETIC_IMPLEMENTATION_COMPLETE_CONCORDANCE_PENDING`
+Contract status: `SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR`
 
 Owning model-family component:
 `bayesian_vbd_behavioral_trajectory_model`
 
 Implementation approval:
 `APPROVED_BY_JAMES_KELLEY_2026_07_15_FOR_SYNTHETIC_TASKS_2_2_THROUGH_2_5`
+
+Numerical-precision amendment approval:
+`APPROVED_BY_JAMES_KELLEY_2026_07_17_FOR_DOCS_ONLY`
 
 Parent OpenSpec task: `5.6` remains incomplete.
 
@@ -21,10 +24,12 @@ frequency, engagement, and breadth. Reusing that composite beside a separate
 Breadth term would count Breadth twice. The legacy 0-100 VBD intake also lacks
 admitted aggregate uncertainty. Neither representation is valid model input.
 
-This contract now governs the verified bounded synthetic implementation for
-tasks `2.2` through `2.5`. It does not authorize concordance or acceptance-plan
-execution before the reviewed source/freeze sequence, and it does not authorize
-real-data admission, customer output, or parent closeout. Concordance, full
+This contract governs the verified bounded synthetic implementation for tasks
+`2.2` through `2.5` and the docs-only numerical-precision amendment recorded
+after accepted bundle 0 correctly returned HOLD. The amendment does not
+authorize implementation, a replacement source/freeze pair, concordance, or
+acceptance-plan execution. It also does not authorize real-data admission,
+customer output, or parent closeout. Repair implementation, concordance, full
 evidence execution, independent acceptance, and parent closeout remain
 separately gated.
 
@@ -404,28 +409,70 @@ nonpositive `q_var_h`, failed factorization, or an unbound contrast HOLDS. This
 is the exact conditional Gaussian distribution of the latent-level contrast at
 that hyperparameter support; no latent path is emitted.
 
-The deterministic engine reuses the accepted outer integration constants:
-8,192 unscrambled Sobol points, transformed through the same three-dimensional
-Student-t proposal plus chi-square coordinate, with the existing finite-point,
-effective-sample-size, and maximum-normalized-weight gates. Conditional
-Gaussian contrast uncertainty is expanded with
-`normal_quadrature_v1`: the 16 nodes and weights returned by
-`numpy.polynomial.hermite.hermgauss(16)` under the pinned runtime, transformed
-to standard-normal support as `z_j=sqrt(2)*node_j` and
-`w_j=weight_j/sqrt(pi)`. For retained outer node ordinal `i`, movement support
-is `q_mean_i + z_j*sqrt(q_var_i)`, combined weight is the normalized outer
-weight times `w_j`, and stable support index is `16*i+j`; `i` is the original
-Sobol ordinal, not a compacted finite-node index. Posterior mean/SD and every
-80% or 99% endpoint are computed from this support with
-`weighted_quantile_v1`. No mixture-CDF inversion, random draw, or caller-
-selected quadrature is permitted.
+The repaired deterministic engine reuses the accepted outer integration
+constants: 8,192 unscrambled Sobol points, transformed through the same three-
+dimensional Student-t proposal plus chi-square coordinate, with the existing
+finite-point, effective-sample-size, maximum-normalized-weight, and original-
+ordinal gates. It does not discretize the exact conditional Normal. Given
+retained outer weights `a_i`, conditional means `m_i=q_mean_i`, and conditional
+standard deviations `s_i=sqrt(q_var_i)`, it computes normalized weights
+`w_i=a_i/sum_j(a_j)` in original Sobol-ordinal order and applies
+`conditional_normal_mixture_quantile_v2`:
 
-The NUTS reference uses the same marginalized Gaussian likelihood. At each
-retained draw it samples one scalar `trajectory_movement` from the exact
-conditional Normal latent-contrast distribution above, conditional on that
-draw's coefficients, zero-sum group effects, and hyperparameters. Those 4,000
-chain-major/draw-major movement draws have equal weight and use
-`weighted_quantile_v1`; they are not emitted in an artifact.
+```text
+posterior_mean = sum_i w_i*m_i
+posterior_variance = sum_i w_i*(s_i^2 + (m_i-posterior_mean)^2)
+F(x) = sum_i w_i * Phi((x-m_i)/s_i)
+```
+
+For each fixed `p in {0.005,0.10,0.90,0.995}`, let `z_p=ndtri(p)`. The initial
+lower bound is `nextafter(min_i(m_i+s_i*z_p), -inf)` and the initial upper
+bound is `nextafter(max_i(m_i+s_i*z_p), +inf)`. The engine requires
+`F(lower)<=p<=F(upper)`, performs exactly 64 binary64 bisection iterations with
+`mid=lower+(upper-lower)/2`, moves `upper` when `F(mid)>=p` and `lower`
+otherwise, and returns the final upper bound. `Phi` is pinned
+`scipy.special.ndtr`; `z_p` is pinned `scipy.special.ndtri`. Missing or empty
+support, nonfinite values, nonpositive conditional variance, nonpositive or
+nonfinite weight, nonfinite/nonpositive total weight, failed bracketing, or a
+nonfinite result HOLDS. There is no fallback, caller tolerance, adaptive
+iteration count, method switch, or support reordering.
+
+The pinned standard-Normal endpoint oracle is exactly:
+
+```text
+p=.005 -> -0x1.49b4c64d69160p+1
+p=.10  -> -0x1.4813c36e26d32p+0
+p=.90  ->  0x1.4813c36e26d33p+0
+p=.995 ->  0x1.49b4c64d69160p+1
+```
+
+The pinned unequal-mixture oracle uses weights `(0.35,0.65)`, means
+`(-0.4,0.7)`, and standard deviations `(0.6,1.1)`. Its exact binary64 mean is
+`0x1.428f5c28f5c28p-2`, SD is `0x1.17007814169ffp+0`, and endpoints are:
+
+```text
+p=.005 -> -0x1.070d647d89159p+1
+p=.10  -> -0x1.f4c4b60ce6076p-1
+p=.90  ->  0x1.d2857797c387dp+0
+p=.995 ->  0x1.aec938ed2fe2fp+1
+```
+
+Every value must match exactly under the pinned runtime. These are conformance
+oracles, not configurable product thresholds. The retired 16-point
+`normal_quadrature_v1` support must not enter a repaired VBD fit.
+
+The NUTS reference keeps the same marginalized-AR-state Gaussian likelihood,
+priors, named sampled parameters, and centered zero-sum group-effect
+parameterization. At each retained draw it samples one scalar
+`trajectory_movement` from the exact conditional Normal latent-contrast
+distribution, conditional on that draw's coefficients, group effects, and
+hyperparameters. The repaired reference uses four chains with 20,000 retained
+draws per chain, yielding 80,000 stable chain-major/draw-major movement draws
+with equal weight. All empirical NUTS parameter and movement summaries continue
+to use `weighted_quantile_v1`; no draw is emitted in an artifact. No collapsed
+model, noncentering, post-hoc coefficient draw, conditional-mean substitution,
+antithetic draw, endpoint correction, lane-specific setting, retry, extension,
+or result-conditioned parameterization switch is permitted.
 
 It is an internal observed-path smoothing contrast. It is not:
 
@@ -533,6 +580,40 @@ or aggregate gate calculation. Every smoke artifact is permanently
 as evidence. Seeing a smoke result may repair mechanics but cannot change the
 contract's model, DGP, priors, cells, thresholds, or acceptance seeds. Any pre-
 freeze use of an acceptance slot/seed invalidates the later full study.
+
+The precision repair must additionally run two predeclared, permanently
+non-admissible full-setting development bundles before candidate `S`: ordinal
+`0` is effect `0`, six groups, bundle seed `2_055_900_100`; ordinal `1` is
+effect `0.5`, twelve groups, bundle seed `2_055_900_101`. Their chain seeds are
+`2_055_900_200 + 20*ordinal + 4*lane_ordinal + chain_index`, and their PPC
+seeds are `2_055_900_300 + 10*ordinal + lane_ordinal`. All are inside the
+existing smoke namespace and distinct from every acceptance seed. They run the
+exact repaired full settings for all three lanes in ordinal/lane order, always
+HOLD with `precision_canary_nonacceptance`, emit no evidence artifact, and stay
+outside every acceptance count and denominator. Each bundle must complete
+within the amended compiled 7,200-second bundle timeout (replacing the held
+implementation's 600-second child timeout) and clear all
+otherwise applicable sampler, PPC, and cross-engine checks before candidate
+source `S`. Timeout, resource failure, or a numerical/statistical failure
+blocks `S`; it cannot trigger a retry, setting change, seed change, or adaptive
+extension under this amendment.
+
+The held lineage is permanently tombstoned as diagnostic-only HOLD:
+
+```text
+source S = e59181b56bcccde4872b84f6dc78370215c0197a
+freeze F = 0287713dfba10bcaafc781f01218e931c70195e8
+manifest = fea230dd1eca0192140b309c02b55574133ab0519d2293ec7245b200eb565d0f
+workspace = c82292eba08a350a289f0b19602b2b243456cb63805c636c201025a63aec1eba
+bundle-0 result = ab640359fb1de8362e745c8bf3da08f588974b03c0d34c0e7da2707ed931817f
+```
+
+No repaired path may resume, relabel, rehash, reinterpret, copy, or combine any
+old launch, permit, checkpoint, receipt, deterministic sub-result, NUTS
+sub-result, or bundle result. The old bundle remains HOLD for MCSE, divergence,
+and concordance failures under every later schema. Only a new reviewed `S`, new
+sole-child `F`, fresh permits, fresh workspace, and complete restart from
+bundle 0 can contribute to the unchanged 30-bundle evidence universe.
 
 Before any acceptance canary reveals truth or a fit result, the future runner must create
 an auditable two-commit freeze:
@@ -753,9 +834,12 @@ nuts_chain_seed = 2_056_520_000
 `chain_index={0,1,2,3}`. No engine may silently spawn or reuse another bundle,
 lane, or chain seed stream.
 
-The reference engine uses four chains, 1,000 retained draws per chain, 2,000
-tuning draws per chain, `target_accept=0.99`, and `max_treedepth=15`. All three
-active lanes are evaluated separately. Cross-engine mean differences
+The repaired reference engine uses four chains, 20,000 retained draws per
+chain, 5,000 tuning draws per chain, `target_accept=0.999`,
+`max_treedepth=15`, PyMC initialization `jitter+adapt_full`, `cores=1`, and
+`blas_cores=1` under the pinned runtime. Existing bundle, lane, chain, and PPC
+seed formulas remain byte-for-byte unchanged. All three active lanes are
+evaluated separately. Cross-engine mean differences
 must be at most `0.15` reference posterior SD. The lower and upper endpoints of
 both the 80% and 99% movement intervals are independently rederived and each
 must differ by at most `0.20` reference posterior SD. SD ratios must remain
@@ -770,6 +854,14 @@ divergences, zero treedepth saturation, BFMI `>=0.3`, MCSE/posterior-SD ratio
 endpoints, and every PPC p-value within `[0.05,0.95]`. ArviZ diagnostic arrays
 must have identical parameter dimensions, coordinate labels, and cardinality
 before values are joined; positional truncation or an unlabeled join HOLDS.
+Every required parameter must retain five separately named MCSE values:
+`posterior_mean_mcse`, `interval_80_lower_endpoint_mcse`,
+`interval_80_upper_endpoint_mcse`, `interval_99_lower_endpoint_mcse`, and
+`interval_99_upper_endpoint_mcse`. A pairwise or global maximum may appear only
+as an additional derived compact summary; it cannot replace any labeled
+endpoint. Each of the five ratios independently uses that parameter's
+posterior SD and must remain `<=0.1`. Missing, merged, duplicated, reordered,
+swapped, coordinate-misaligned, or ambiguously labeled MCSE evidence HOLDS.
 Any lane or hard failure
 blocks replication.
 
@@ -787,11 +879,18 @@ lag_one_within_group_autocorrelation =
   / sum_c sum_t=0..16 z[c,t]^2
 ```
 
-A nonpositive lag denominator returns zero. One posterior-predictive replicate
-is generated per retained draw in stable chain-major/draw-major order with
+A nonpositive lag denominator returns zero. Posterior summaries, posterior SD,
+R-hat, bulk/tail ESS, and all five MCSE diagnostics use all 80,000 retained
+draws. PPC uses exactly 4,000 predeclared posterior states: for each chain
+ordinal `c in {0,1,2,3}`, select the 1,000 zero-based draw indexes `20*j+10`
+for `j in {0,...,999}`. States are processed in stable chain-major order and
+increasing selected-draw order within chain. Exactly one posterior-predictive
+replicate is generated per selected state with
 `ppc_seed = 2_106_500_000 + 1_000*cell_ordinal + 100*i + 10*lane_ordinal`.
-The PPC generator is `Generator(PCG64DXSM(ppc_seed))`. For each retained draw
-and panel group in order, it first draws one length-18 standard-normal vector
+The PPC generator is initialized exactly once as
+`Generator(PCG64DXSM(ppc_seed))`; it is never reseeded, skipped, or
+supplemented. For each selected state and panel group in order, it first draws
+one length-18 standard-normal vector
 for a fresh conditional smoothed AR(1) path from
 `r_c | y_c,beta,u_c,sigma_r,rho`, then one length-18 standard-normal vector for
 new known-SE observation error. The replicate is
@@ -805,6 +904,11 @@ upper-tail p-value is exactly
 constant. Predictive 80% endpoints use `weighted_quantile_v1` with equal
 weights. Missing statistics, a different formula/order/seed/sidedness, or any
 p-value outside the inclusive `[0.05,0.95]` range HOLDS the lane.
+Missing, duplicated, off-grid, reordered, or unequally allocated selected draw
+indexes; use of an unselected state; selected-state cardinality other than
+4,000; denominator drift; seed drift; reseeding; or random-number-consumption
+drift also HOLDS the lane. The fixed selector preserves the original PPC
+resolution; it is not an autocorrelation correction or an acceptance gate.
 
 The concordance universe is 30 bundle executions (`6 cells * 5 seeds`). Each
 bundle contains three primary deterministic lane fits, three matched NUTS lane
@@ -1004,18 +1108,21 @@ execution attestations plus byte-equal semantic results. Tokens and byte
 equality detect accidental copying but do not claim cryptographic remote
 attestation.
 
-All posterior interval gates use `weighted_quantile_v1`. Values and weights
-must be finite, stable support indices must be unique, weights must be
-nonnegative, and their finite total must be strictly positive. Remove every
-zero-weight support before sorting; reject if none remains. Sort positive-weight
-support by `(movement_value, stable_support_index)`, normalize weights to one,
-and assign each retained support value midpoint probability
+Deterministic trajectory intervals use
+`conditional_normal_mixture_quantile_v2` exactly as specified above. Empirical
+NUTS parameter/movement intervals and PPC predictive intervals use
+`weighted_quantile_v1`. For that empirical method, values and weights must be
+finite, stable support indices must be unique, weights must be nonnegative, and
+their finite total must be strictly positive. Remove every zero-weight support
+before sorting; reject if none remains. Sort positive-weight support by
+`(value,stable_support_index)`, normalize weights to one, and assign each
+retained value midpoint probability
 `m_i=cumulative_weight_before_i + weight_i/2`. `Q(p)` is the endpoint support
 value outside `[m_0,m_last]` and linear interpolation between adjacent
-`(m_i,value_i)` inside that range. Deterministic integration uses its normalized
-support weights; NUTS draws use equal weights in stable chain-major/draw-major
-order. The 80% equal-tail interval is `[Q(0.10),Q(0.90)]`; the 99% equal-tail
-interval is `[Q(0.005),Q(0.995)]`.
+`(m_i,value_i)` inside that range. NUTS draws use equal weights in stable chain-
+major/draw-major order; PPC uses equal weights over its 4,000 selected states.
+Both methods define the 80% equal-tail interval at probabilities `(0.10,0.90)`
+and the 99% equal-tail interval at `(0.005,0.995)`.
 
 Coverage includes endpoints: `lower <= truth <= upper`. Intervals and truth are
 on the direction-adjusted movement scale. A null false-movement flag is true
@@ -1269,10 +1376,14 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Complete task `3.1` verification and commit the exact candidate source as `S`.
-Obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO against those
-exact bytes, then create the manifest-only sole-child freeze `F` before running
-concordance or any acceptance canary. Parent task `5.6`, full evidence,
-real-data admission, runtime monitoring, readout language, pilot manifest,
-downstream three-lane outcome integration, persistence, and UI remain
-incomplete.
+Obtain separate human authorization for one bounded numerical-precision repair
+implementation item. That item must implement this amendment, add both
+disjoint full-setting precision canaries, verify the complete repaired runner,
+and only then propose a replacement candidate source `S`. Exact CODE, BUG,
+ADVERSARIAL, and statistical-methodology GO plus a new manifest-only sole-child
+freeze `F` are still required before restarting concordance from bundle 0 in a
+fresh workspace. The tombstoned lineage above must remain permanent HOLD and
+cannot contribute even a previously passing sub-result. Parent task `5.6`,
+full evidence, real-data admission, runtime monitoring, readout language, pilot
+manifest, downstream three-lane outcome integration, persistence, and UI
+remain incomplete.

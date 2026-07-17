@@ -152,10 +152,27 @@ Time encoding uses the twelve unique pre-period indexes once, then broadcasts
 the result to panel groups. The latent-level contrast is recovered by exact
 conditional Gaussian fixed-interval smoothing at every hyperparameter support;
 it is not the existing fixed-coefficient movement contrast. Deterministic
-intervals use the frozen 8,192-point outer integration and a 16-point
-Gauss-Hermite conditional-Normal support, followed by `weighted_quantile_v1`.
-The NUTS reference samples the matching scalar conditional latent contrast at
-each retained draw.
+intervals retain the frozen 8,192-point outer integration but evaluate its
+conditional-Normal mixture CDF directly. `conditional_normal_mixture_quantile_v2`
+uses exact mixture moments, pinned `ndtr`/`ndtri`, outward-adjacent component-
+quantile bounds, exactly 64 binary64 bisection iterations, and the final upper
+bound. Exact binary64 standard-Normal and unequal-mixture oracles replace a
+caller tolerance. The retired 16-point Gauss-Hermite expansion is not accurate
+enough for the 99% concordance gate and cannot enter a repaired fit. The NUTS
+reference samples the matching scalar conditional latent contrast at each
+retained draw.
+
+The repaired reference keeps the same likelihood, priors, named parameters,
+centered zero-sum parameterization, existing generator/chain/PPC seeds, four
+chains, and `max_treedepth=15`, but uses 20,000 retained draws and 5,000 tuning
+draws per chain, `target_accept=.999`, PyMC `jitter+adapt_full`, `cores=1`,
+and `blas_cores=1`. All diagnostic thresholds remain unchanged. Mean,
+80%-lower, 80%-upper, 99%-lower, and 99%-upper MCSE values remain separately
+labeled for every required parameter. All 80,000 draws feed summaries and
+diagnostics. PPC remains exactly 4,000 replicates through the fixed chain-
+balanced draw selector in the normative spec. No collapsed target,
+noncentering, post-hoc coefficient reconstruction, seed rotation, adaptive
+extension, antithetic sampling, or endpoint correction is allowed.
 
 The lane estimand is the direction-adjusted difference between the mean latent
 level over the final three predeclared evaluation windows and the mean latent
@@ -205,12 +222,17 @@ separately reviewable stages:
 
 Pre-freeze development smoke uses only the disjoint
 `2_055_900_000..2_055_900_999` namespace, computes no aggregate acceptance
-gate, and always HOLDS. It may expose mechanical defects only; it cannot change
-the frozen statistical contract or enter later evidence.
+gate, and always HOLDS. In addition to fast smoke, the repair runs two exact
+full-setting non-admissible precision bundles at six and twelve groups with the
+fixed smoke seeds in the normative spec. They must finish inside the compiled
+bundle timeout and clear the otherwise applicable diagnostics before candidate
+`S`, but they cannot enter evidence. A failure requires HOLD or a new docs
+amendment, never tuning under the same contract.
 
-Sampler MCSE is evaluated independently for the posterior mean and the 80%
-and 99% interval endpoint pairs. Diagnostic outputs are joined only after exact
-parameter-dimension, coordinate-label, and cardinality equality. The resumable
+Sampler MCSE is evaluated independently and stored separately for the
+posterior mean and each lower and upper 80% and 99% interval endpoint.
+Diagnostic outputs are joined only after exact parameter-dimension,
+coordinate-label, and cardinality equality. The resumable
 runner writes each admitted launch to a private sibling attempt-anchor before
 execution; deletion of workspace launch/result suffixes can therefore restore
 the admitted launch and fail durably without re-executing a seed.

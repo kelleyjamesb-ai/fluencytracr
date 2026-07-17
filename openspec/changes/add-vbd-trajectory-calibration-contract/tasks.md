@@ -13,6 +13,11 @@
   requirements.
 - [x] 1.5 Validate the proposal strictly and obtain CODE, BUG, and ADVERSARIAL
   acceptance for the contract bytes.
+- [ ] 1.6 Amend the held proof contract with direct conditional-Normal mixture
+  tail quantiles, fixed higher-precision NUTS settings, unchanged acceptance
+  seeds and thresholds, five-field parameter MCSE evidence, a fixed 4,000-state
+  PPC selector, and disjoint full-setting precision canaries; obtain CODE, BUG,
+  ADVERSARIAL, and statistical-methodology GO for the amended docs bytes.
 
 ## 2. Future Synthetic Implementation
 
@@ -32,6 +37,11 @@
   complete negative-control suite. Smoke, partial, malformed, missing,
   duplicate, off-plan, or mixed-provenance studies MUST HOLD; do not execute
   concordance or evidence.
+- [ ] 2.6 Obtain separate implementation approval, then implement the numerical-
+  precision amendment, five-field MCSE records, fixed PPC selector, old-
+  lineage rejection, and both permanently non-admissible full-setting
+  precision canaries. Do not create replacement candidate `S` until both
+  canaries clear every otherwise applicable gate.
 
 ## 3. Future Engine Concordance
 

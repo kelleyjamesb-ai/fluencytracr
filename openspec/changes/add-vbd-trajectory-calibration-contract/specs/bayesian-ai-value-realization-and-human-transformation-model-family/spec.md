@@ -274,11 +274,33 @@ At every deterministic hyperparameter support, the proof SHALL analytically
 condition the Gaussian coefficient/group vector and AR(1) states and compute
 the exact conditional Normal mean and variance of that latent-level contrast
 using the `K`, `R`, `B=K+R`, `H`, and contrast-vector equations frozen in the
-contract. The deterministic engine SHALL expand that conditional Normal with
-the frozen 16-point Gauss-Hermite `normal_quadrature_v1` beneath the accepted
-8,192-point outer integration and SHALL compute 80% and 99% endpoints with
-`weighted_quantile_v1`. The NUTS engine SHALL sample the matching conditional
-scalar at every retained draw. Neither engine SHALL emit a latent path.
+contract. Beneath the unchanged accepted 8,192-point outer integration, the
+repaired deterministic engine SHALL evaluate the conditional-Normal mixture
+directly under `conditional_normal_mixture_quantile_v2`. In original retained
+Sobol-ordinal order it SHALL normalize accepted outer weights, compute exact
+mixture moments, and evaluate
+`F(x)=sum_i w_i*Phi((x-m_i)/s_i)`. For each
+`p in {.005,.10,.90,.995}`, initial bounds SHALL be the outward `nextafter`
+values around the minimum and maximum component quantiles
+`m_i+s_i*ndtri(p)`. The bracket SHALL satisfy `F(lower)<=p<=F(upper)`. Exactly
+64 binary64 bisection iterations SHALL move `upper` when `F(mid)>=p` and
+`lower` otherwise; the returned endpoint SHALL be the final upper bound.
+Pinned SciPy `ndtr` and `ndtri` SHALL be used. Empty support, nonfinite input,
+nonpositive variance/weight/total weight, failed bracketing, or a nonfinite
+result SHALL HOLD. No fallback, caller tolerance, adaptive iteration count,
+method switch, or support reordering is permitted.
+
+The standard-Normal endpoint oracle SHALL exactly equal binary64 hex values
+`(-0x1.49b4c64d69160p+1,-0x1.4813c36e26d32p+0,
+0x1.4813c36e26d33p+0,0x1.49b4c64d69160p+1)` in probability order. The
+unequal-mixture oracle with weights `(0.35,0.65)`, means `(-0.4,0.7)`, and SDs
+`(0.6,1.1)` SHALL exactly equal mean `0x1.428f5c28f5c28p-2`, SD
+`0x1.17007814169ffp+0`, and endpoint hex values
+`(-0x1.070d647d89159p+1,-0x1.f4c4b60ce6076p-1,
+0x1.d2857797c387dp+0,0x1.aec938ed2fe2fp+1)`. The retired 16-point
+Gauss-Hermite support SHALL NOT enter a repaired VBD fit. The NUTS engine SHALL
+sample the matching conditional scalar at every retained draw. Neither engine
+SHALL emit a latent path.
 
 Each plan SHALL freeze one ordered three-lane direction vector with components
 in `{+1,-1}` before generated truth or post-period evidence is inspected. With
@@ -288,6 +310,13 @@ window weights, then multiply by the matching direction-vector component. The po
 fixed-interval smoothing conditional on exactly `w00..w17`, no later window,
 and no forecast. The trajectory model SHALL select no lag. Downstream lags
 belong to a separate predeclared integration plan.
+
+#### Scenario: Conditional-Normal tails are recovered without discretization
+
+- **GIVEN** the standard-Normal and unequal-mixture conformance oracles
+- **WHEN** the repaired deterministic engine computes all 80% and 99% endpoints
+- **THEN** every binary64 moment and endpoint matches exactly
+- **AND** selecting `normal_quadrature_v1` or any caller-provided method HOLDS
 
 #### Scenario: Separate trajectories are estimated
 
@@ -391,6 +420,27 @@ compute no aggregate acceptance gate, and SHALL remain permanently
 the model, DGP, priors, cells, thresholds, or acceptance seeds. Any pre-freeze
 acceptance-plan seed, truth, canary, or result SHALL invalidate the full study.
 
+Before replacement candidate `S`, the precision repair SHALL run two
+permanently non-admissible full-setting development bundles. Ordinal `0` SHALL
+use effect `0`, six groups, and bundle seed `2_055_900_100`; ordinal `1` SHALL
+use effect `0.5`, twelve groups, and bundle seed `2_055_900_101`. Chain seeds
+SHALL be `2_055_900_200+20*ordinal+4*lane_ordinal+chain_index`; PPC seeds SHALL
+be `2_055_900_300+10*ordinal+lane_ordinal`. Every lane SHALL run the repaired
+full settings in ordinal/lane order, remain
+`HOLD(precision_canary_nonacceptance)`, emit no evidence, and stay outside all
+acceptance counts. Each bundle SHALL finish inside the amended compiled
+7,200-second child timeout, replacing the held implementation's 600-second
+timeout, and clear all otherwise applicable sampler, PPC, and cross-engine
+checks before candidate `S`. Failure SHALL block `S` and SHALL NOT trigger a
+retry, setting change, seed change, or adaptive extension under this amendment.
+
+#### Scenario: A precision canary is offered as evidence
+
+- **GIVEN** a complete passing diagnostic record from either precision canary
+- **WHEN** freeze, concordance, combination, or acceptance validates it
+- **THEN** it remains HOLD and is excluded from every count and denominator
+- **AND** rehashing cannot remove `precision_canary_nonacceptance`
+
 Before any acceptance canary result, a clean source commit `S` SHALL contain the
 implementation, contract, lockfile, plan, seeds, and runtime builder without
 execution output. CODE, BUG, and ADVERSARIAL reviewers SHALL return GO against
@@ -405,6 +455,29 @@ one-file diff. Any post-canary amend, rebase, replacement, or frozen-identity
 change SHALL invalidate all results and require a new full freeze and rerun.
 Pre-execution implementation review SHALL NOT satisfy later exact-byte evidence
 review.
+
+The held lineage is permanently diagnostic-only HOLD: source
+`e59181b56bcccde4872b84f6dc78370215c0197a`, freeze
+`0287713dfba10bcaafc781f01218e931c70195e8`, manifest
+`fea230dd1eca0192140b309c02b55574133ab0519d2293ec7245b200eb565d0f`,
+workspace hash
+`c82292eba08a350a289f0b19602b2b243456cb63805c636c201025a63aec1eba`,
+and bundle-0 result hash
+`ab640359fb1de8362e745c8bf3da08f588974b03c0d34c0e7da2707ed931817f`.
+No repaired path may resume, relabel, rehash, reinterpret, copy, or combine any
+old permit, launch, checkpoint, receipt, deterministic/NUTS sub-result, or
+bundle result. The old bundle SHALL remain HOLD for MCSE, divergence, and
+concordance failures under every later schema. Only a fresh reviewed `S`, new
+sole-child `F`, fresh permits/workspace, and complete restart at bundle 0 MAY
+contribute to the unchanged 30-bundle universe.
+
+#### Scenario: Held pre-amendment evidence is offered to the repair
+
+- **GIVEN** any identity or record from the held pre-amendment lineage
+- **WHEN** a repaired development, concordance, or combination path validates
+  its inputs
+- **THEN** it rejects before sampling or combination
+- **AND** self-consistent rehashing cannot rescue a passing old sub-result
 
 The runner SHALL accept only a compiled slot key, regenerate the complete
 synthetic observation bundle internally from the bound generator/scenario/
@@ -488,8 +561,15 @@ That bundle seed SHALL generate correlated data. For lane ordinals
 `2_056_520_000+1_000*cell_ordinal+100*seed_index+10*lane_ordinal+
 chain_index` for chain indexes `0..3`; implicit or cross-bundle/lane/chain seed
 reuse SHALL reject.
-NUTS SHALL use four chains, 1,000 retained draws and 2,000 tuning draws per
-chain, `target_accept=.99`, and `max_treedepth=15`.
+The repaired NUTS reference SHALL preserve the existing likelihood, priors,
+named sampled parameters, centered zero-sum group-effect parameterization, and
+all four existing chain-seed formulas. It SHALL use four chains, 20,000
+retained draws and 5,000 tuning draws per chain, `target_accept=.999`,
+`max_treedepth=15`, PyMC `jitter+adapt_full`, `cores=1`, and `blas_cores=1`
+under the pinned runtime. It SHALL NOT use a collapsed target, noncentering,
+post-hoc coefficient reconstruction, conditional-mean substitution,
+antithetic draws, endpoint correction, lane-specific settings, retry,
+extension, seed rotation, or result-conditioned parameterization.
 Mean differences SHALL be `<=0.15` reference SD. The lower and upper endpoints
 of both the 80% and 99% movement intervals SHALL be independently rederived,
 and each endpoint difference SHALL be `<=0.20` reference SD. This SHALL include
@@ -498,20 +578,52 @@ SHALL remain within `[0.85,1.15]`. R-hat SHALL be
 `<=1.01`, bulk/tail ESS `>=400`, divergences and treedepth saturation zero,
 BFMI `>=0.3`, MCSE/SD `<=0.1`, and PPC p-values within `[0.05,0.95]`.
 MCSE/SD SHALL be computed separately for the posterior mean, both 80%
-endpoints, and both 99% endpoints. Every ArviZ diagnostic array SHALL match the
-posterior parameter dimensions, coordinate labels, and cardinality exactly
-before joining; positional truncation, reordered labels, or missing rows SHALL
-HOLD.
+endpoints, and both 99% endpoints. Every required parameter SHALL retain five
+separately named MCSE values for mean, 80%-lower, 80%-upper, 99%-lower, and
+99%-upper. A derived maximum SHALL NOT replace them. Every ArviZ diagnostic
+array SHALL match the posterior parameter dimensions, coordinate labels, and
+cardinality exactly before joining; positional truncation, reordered labels,
+merged/duplicated/swapped endpoints, coordinate drift, or missing rows SHALL
+HOLD. Each of the five MCSE/posterior-SD ratios SHALL independently remain
+`<=0.1`.
 Each hashed lane record SHALL name all four normalized endpoint differences,
 and the compact diagnostic summary SHALL report separate worst-case 80% and
 99% endpoint differences. Missing, merged, or ambiguously labeled endpoint
 evidence SHALL HOLD.
 
+#### Scenario: A geometry change alters the posterior target
+
+- **GIVEN** a candidate collapses, noncenters, reconstructs, or substitutes any
+  named sampled parameter or selects settings by lane/result
+- **WHEN** the repaired reference manifest is validated
+- **THEN** it rejects before sampling
+- **AND** higher draw count cannot legitimize the changed target
+
+#### Scenario: Endpoint MCSE evidence is incomplete
+
+- **GIVEN** a parameter row merges, omits, duplicates, swaps, or reorders any
+  of the five required mean/endpoint MCSE values
+- **WHEN** diagnostics or combination validates the row
+- **THEN** the lane HOLDS
+- **AND** a derived maximum cannot replace endpoint-specific evidence
+
+#### Scenario: An acceptance seed is changed by the repair
+
+- **GIVEN** any generator, chain, or PPC seed differs from the frozen
+  acceptance formulas
+- **WHEN** the repaired plan or launch is validated
+- **THEN** it rejects before generation or sampling
+- **AND** disjoint precision-smoke seeds cannot be substituted into evidence
+
 Every lane SHALL use the five exact `vbd_trajectory_ppc_v1` statistics defined
 in the contract: pre/post mean movement, `ddof=1` between-group variance, mean
 `ddof=1` within-group variance, maximum absolute global-mean deviation, and the
-specified pooled lag-one centered ratio. One replicate per retained draw SHALL
-use stable chain-major/draw-major order and
+specified pooled lag-one centered ratio. All 80,000 retained draws SHALL feed
+posterior summaries and diagnostics. PPC SHALL use exactly 4,000 fixed,
+chain-balanced posterior states: for each chain, zero-based draw indexes SHALL
+equal `20*j+10` for `j in {0,...,999}`, processed in stable chain-major and
+increasing selected-draw order. Exactly one replicate per selected state SHALL
+use
 `ppc_seed=2_106_500_000+1_000*cell_ordinal+100*seed_index+
 10*lane_ordinal`. Each one-sided upper-tail p-value SHALL
 equal `count(T_rep>=T_observed)/4000`, ties included with no smoothing. Its
@@ -522,7 +634,11 @@ Each replicate SHALL draw a fresh conditional smoothed AR(1) path followed by
 new known-SE observation error under `Generator(PCG64DXSM(ppc_seed))`; it SHALL
 NOT reuse a stored path or draw a new unconditional AR path. Predictive 80%
 endpoints SHALL use `weighted_quantile_v1` with equal chain-major/draw-major
-weights.
+weights over the same selected states. The PPC generator SHALL initialize
+exactly once. Missing, duplicated, off-grid, reordered, or unequally allocated
+indexes; use of an unselected state; selected cardinality other than 4,000;
+denominator drift; reseeding; or random-number-consumption drift SHALL HOLD.
+The selector SHALL NOT be described or used as an autocorrelation correction.
 
 The concordance universe SHALL be 30 bundle executions, each with three nested
 primary deterministic, three nested NUTS, and three separately regenerated
@@ -537,6 +653,14 @@ regenerate each compiled bundle and require exact ordered-panel,
 lane-observation, and truth-receipt roots across its primary and all three fresh
 deterministic processes. A child HOLD SHALL remain HOLD after combination, and
 sampler and PPC failure counts SHALL remain disjoint.
+
+#### Scenario: Replacement concordance is not a complete fresh universe
+
+- **GIVEN** fewer than all 30 newly frozen bundle executions, any old-lineage
+  record, or any missing fresh deterministic recomputation
+- **WHEN** concordance combination evaluates completeness
+- **THEN** the study HOLDS
+- **AND** no old passing lane or sub-result can rescue the replacement universe
 
 Every concordance and later validation child SHALL start under isolated Python
 with site startup disabled, no repository `PYTHONPATH`, and no repository
@@ -667,18 +791,20 @@ semantic-result hash, executable/runtime roots, and freeze commit. Publication
 SHALL recompute those hashes and require distinct fresh-execution attestations
 and byte-equal semantic results.
 
-All interval gates SHALL use `weighted_quantile_v1`: require finite values and
-weights, unique stable support indices, nonnegative weights, and finite strictly
-positive total weight; remove zero-weight supports and reject if none remains;
-sort retained supports by movement value and stable support index; normalize
+Deterministic trajectory interval gates SHALL use
+`conditional_normal_mixture_quantile_v2`. Empirical NUTS parameter/movement
+and PPC interval gates SHALL use `weighted_quantile_v1`: require finite values
+and weights, unique stable support indices, nonnegative weights, and finite
+strictly positive total weight; remove zero-weight supports and reject if none
+remains; sort retained supports by value and stable support index; normalize
 weights; place support `i` at midpoint CDF
 `cumulative_weight_before_i+weight_i/2`; use endpoint values outside the
-midpoint range and linear interpolation inside. Deterministic supports use
-their weights and NUTS draws use equal weights in chain-major/draw-major order.
-The 80% equal-tail interval SHALL be `[Q(.10),Q(.90)]` and the 99% equal-tail
-interval `[Q(.005),Q(.995)]`. Coverage SHALL include endpoints. On the
-direction-adjusted scale, null false movement SHALL require 99% lower endpoint
-strictly greater than zero.
+midpoint range and linear interpolation inside. NUTS draws use equal weights in
+chain-major/draw-major order and PPC uses equal weights over its selected 4,000
+states. Both methods use 80% probabilities `(.10,.90)` and 99% probabilities
+`(.005,.995)`. Coverage SHALL include endpoints. On the direction-adjusted
+scale, null false movement SHALL require 99% lower endpoint strictly greater
+than zero.
 
 Every primary lane/cell observed 80% coverage rate SHALL remain in the compiled
 `74-86%` band. Each of the 36 targeted cells with `N=30` SHALL report its point

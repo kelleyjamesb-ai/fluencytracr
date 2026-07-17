@@ -47,6 +47,13 @@ trajectory contract before implementation or real-data admission can proceed.
   explicitly approved, while execution, evidence generation, independent
   acceptance, and parent task `5.6` remain incomplete until their exact gates
   pass.
+- Record the post-bundle-0 numerical-precision amendment: replace the retired
+  16-point conditional-Normal tail discretization with direct mixture-CDF
+  inversion, increase fixed NUTS retained/tuning draws and target acceptance
+  without rotating existing seeds or lowering any gate, preserve all five
+  parameter MCSE values, retain the 4,000-replicate PPC through a fixed draw
+  selector, and keep implementation plus replacement evidence unauthorized
+  until a later bounded decision.
 
 ## Impact
 
