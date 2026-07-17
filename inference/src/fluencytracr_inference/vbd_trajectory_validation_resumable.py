@@ -2191,31 +2191,9 @@ def _reconcile_attempt_phase_temps_descriptor(
                     raise VbdTrajectoryValidationWorkspaceError(
                         "spent permit lacks its durable attempt claim"
                     )
-                encoded = _read_descriptor_bytes(descriptor, name)
-                try:
-                    candidate = _decode_json_bytes(encoded, name)
-                    claim = _validate_attempt_claim_value(
-                        candidate,
-                        workspace_record=workspace_record,
-                        phase=phase,
-                        stem=stem,
-                        binding=binding,
-                    )
-                except VbdTrajectoryValidationWorkspaceError:
-                    os.unlink(name, dir_fd=descriptor)
-                    os.fsync(descriptor)
-                    continue
-                if encoded != _canonical_json_bytes(claim):
-                    raise VbdTrajectoryValidationWorkspaceError(
-                        "attempt claim temporary is not canonical"
-                    )
-                os.link(
-                    name,
-                    destination,
-                    src_dir_fd=descriptor,
-                    dst_dir_fd=descriptor,
-                    follow_symlinks=False,
-                )
+                os.unlink(name, dir_fd=descriptor)
+                os.fsync(descriptor)
+                continue
             else:
                 _load_attempt_claim_descriptor(
                     descriptor,
@@ -2340,14 +2318,12 @@ def _create_or_load_attempt_anchor(
                 binding=binding,
             )
         else:
-            _consume_attempt_permit_descriptor(
-                descriptor,
-                phase=phase,
-                stem=stem,
-                binding=binding,
-                claim=claim,
-                allow_missing=True,
-            )
+            if _validate_attempt_permit_descriptor(
+                descriptor, phase=phase, stem=stem, binding=binding
+            ) is not None:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "durable attempt claim precedes permit consumption"
+                )
         if claim is None or claim["launch_receipt"] != launch_receipt:
             raise VbdTrajectoryValidationWorkspaceError(
                 "attempt claim differs from the planned launch"
@@ -2376,7 +2352,8 @@ def _create_or_load_attempt_anchor(
 
 def _load_attempt_anchor(
     *, workspace: Path, workspace_record: dict, phase: str, stem: str,
-    permit_manifest: dict | None = None, reconcile_temps: bool = True
+    permit_manifest: dict | None = None, reconcile_temps: bool = True,
+    restore_missing: bool = True,
 ) -> dict | None:
     _attempt_anchor_path(workspace, phase, stem)
     manifest = (
@@ -2428,14 +2405,12 @@ def _load_attempt_anchor(
                     "spent or missing attempt permit lacks a durable claim"
                 )
             return None
-        _consume_attempt_permit_descriptor(
-            descriptor,
-            phase=phase,
-            stem=stem,
-            binding=binding,
-            claim=claim,
-            allow_missing=True,
-        )
+        if _validate_attempt_permit_descriptor(
+            descriptor, phase=phase, stem=stem, binding=binding
+        ) is not None:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "durable attempt claim precedes permit consumption"
+            )
         expected = _expected_attempt_anchor(
             workspace_record=workspace_record,
             phase=phase,
@@ -2443,6 +2418,8 @@ def _load_attempt_anchor(
             claim=claim,
         )
         if _descriptor_stat_or_none(descriptor, stem) is None:
+            if not restore_missing:
+                return None
             _write_json_create_once_descriptor(
                 descriptor, stem, expected, lock_verifier=None
             )
@@ -4294,6 +4271,8 @@ def _revalidate_launch_admission(workspace: Path, receipt: dict) -> None:
         workspace_record=workspace_record,
         phase=anchor_phase,
         stem=anchor_stem,
+        reconcile_temps=False,
+        restore_missing=False,
     )
     if (
         persisted != receipt
@@ -4322,19 +4301,19 @@ def _launch_child(
     capability_read, capability_write = os.pipe()
     liveness_read, liveness_write = os.pipe()
     source_read, source_write = os.pipe()
+    environment = _child_environment(
+        capability_fd=capability_read,
+        parent_liveness_fd=liveness_read,
+        frozen_source_fd=source_read,
+    )
     process = None
     try:
         verify_lock_identity()
         _revalidate_launch_admission(workspace, receipt)
-        verify_lock_identity()
         process = subprocess.Popen(
             command,
             cwd="/",
-            env=_child_environment(
-                capability_fd=capability_read,
-                parent_liveness_fd=liveness_read,
-                frozen_source_fd=source_read,
-            ),
+            env=environment,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

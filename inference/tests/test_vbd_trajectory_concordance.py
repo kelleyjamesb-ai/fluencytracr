@@ -1,4 +1,5 @@
 from copy import deepcopy
+import os
 from types import SimpleNamespace
 
 import pytest
@@ -1170,6 +1171,109 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
     assert launches["count"] == 120
     assert primary_launch.is_file()
     assert (workspace / "primary" / "failures" / "bundle_00.json").is_file()
+
+
+def test_concordance_launch_revalidates_immediately_before_popen(monkeypatch):
+    from fluencytracr_inference import vbd_trajectory_concordance_resumable as runner
+
+    lifecycle = []
+    receipt = {"freeze_manifest_hash": "a" * 64}
+
+    class FakeProcess:
+        pid = 4242
+        returncode = 0
+
+        def __init__(self, _command, **kwargs):
+            lifecycle.append("popen")
+            capability_fd, liveness_fd, source_fd = kwargs["pass_fds"]
+            self.capability_fd = os.dup(capability_fd)
+            self.liveness_fd = os.dup(liveness_fd)
+            self.source_fd = os.dup(source_fd)
+
+        def communicate(self, _stdin, timeout):
+            assert timeout == runner.VBD_TRAJECTORY_CONCORDANCE_CHILD_TIMEOUT_SECONDS
+            os.read(self.capability_fd, 4096)
+            os.close(self.capability_fd)
+            os.close(self.liveness_fd)
+            os.read(self.source_fd, 4096)
+            os.close(self.source_fd)
+            return b"", b""
+
+    monkeypatch.setattr(runner.subprocess, "Popen", FakeProcess)
+    monkeypatch.setattr(runner, "_launch_capability", lambda *_args: {})
+    monkeypatch.setattr(runner, "_frozen_source_bundle", lambda **_kwargs: b"source")
+    monkeypatch.setattr(runner, "_child_command", lambda: ("python",))
+    monkeypatch.setattr(runner, "_child_environment", lambda **_kwargs: {})
+    monkeypatch.setattr(
+        runner,
+        "_revalidate_concordance_launch_admission",
+        lambda *_args: lifecycle.append("admission"),
+    )
+
+    def verify_lock():
+        lifecycle.append("lock")
+
+    assert runner._launch_child(
+        receipt=receipt,
+        capability_token="capability",
+        workspace=SimpleNamespace(),
+        verify_lock_identity=verify_lock,
+    ) == (4242, 0, b"", b"")
+    admission_index = lifecycle.index("admission")
+    assert lifecycle[admission_index - 1 : admission_index + 2] == [
+        "lock",
+        "admission",
+        "popen",
+    ]
+
+
+def test_concordance_prelaunch_does_not_restore_a_missing_launch(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_concordance_resumable as runner
+
+    workspace = tmp_path / "concordance"
+    receipt = {
+        "freeze_manifest_hash": "a" * 64,
+        "workspace_hash": "b" * 64,
+        "parent_process_id": os.getpid(),
+        "phase": "primary",
+        "bundle_index": 0,
+        "lane_ordinal": None,
+    }
+
+    def load_without_restore(path, *, verify_lock_identity, restore_launches):
+        assert path == workspace
+        assert restore_launches is False
+        verify_lock_identity()
+        return workspace, {"workspace_hash": receipt["workspace_hash"]}, {}, {}
+
+    monkeypatch.setattr(runner, "_load_workspace", load_without_restore)
+    monkeypatch.setattr(
+        runner,
+        "read_strict_json",
+        lambda _path: (_ for _ in ()).throw(FileNotFoundError("deleted launch")),
+    )
+    monkeypatch.setattr(runner, "_launch_capability", lambda *_args: {})
+    monkeypatch.setattr(runner, "_frozen_source_bundle", lambda **_kwargs: b"source")
+    monkeypatch.setattr(runner, "_child_command", lambda: ("python",))
+    monkeypatch.setattr(runner, "_child_environment", lambda **_kwargs: {})
+    monkeypatch.setattr(
+        runner.subprocess,
+        "Popen",
+        lambda *_args, **_kwargs: pytest.fail("a missing launch must not execute"),
+    )
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="child process could not be launched",
+    ):
+        runner._launch_child(
+            receipt=receipt,
+            capability_token="capability",
+            workspace=workspace,
+            verify_lock_identity=lambda: None,
+        )
 
 
 def test_concordance_workspace_rejects_completed_subtree_replacement(tmp_path):

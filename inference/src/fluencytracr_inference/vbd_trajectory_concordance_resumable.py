@@ -424,6 +424,7 @@ def _load_workspace(
     workspace_dir: str | Path,
     *,
     verify_lock_identity,
+    restore_launches: bool = True,
 ) -> tuple[Path, dict, dict, dict]:
     workspace = _workspace_from_user_path(workspace_dir)
     if not workspace.is_dir():
@@ -464,19 +465,20 @@ def _load_workspace(
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance phase tokens must be disjoint"
         )
-    _restore_attempt_anchored_launches(
-        workspace=workspace,
-        workspace_record=record,
-        phase_launch_directories={
-            "primary": workspace / "primary" / "launches",
-            "recomputation": workspace / "recomputation" / "launches",
-        },
-        expected_stems={
-            "primary": _expected_phase_stems("primary"),
-            "recomputation": _expected_phase_stems("recomputation"),
-        },
-        verify_lock_identity=verify_lock_identity,
-    )
+    if restore_launches:
+        _restore_attempt_anchored_launches(
+            workspace=workspace,
+            workspace_record=record,
+            phase_launch_directories={
+                "primary": workspace / "primary" / "launches",
+                "recomputation": workspace / "recomputation" / "launches",
+            },
+            expected_stems={
+                "primary": _expected_phase_stems("primary"),
+                "recomputation": _expected_phase_stems("recomputation"),
+            },
+            verify_lock_identity=verify_lock_identity,
+        )
     _validate_tree_links(workspace)
     _validate_workspace_tree(workspace, complete=False)
     return workspace, record, primary, recomputation
@@ -797,7 +799,7 @@ def _revalidate_concordance_launch_admission(
     workspace: Path, receipt: dict
 ) -> None:
     loaded, record, primary, recomputation = _load_workspace(
-        workspace, verify_lock_identity=lambda: None
+        workspace, verify_lock_identity=lambda: None, restore_launches=False
     )
     if (
         loaded != workspace
@@ -833,6 +835,8 @@ def _revalidate_concordance_launch_admission(
         workspace_record=record,
         phase=receipt["phase"],
         stem=stem,
+        reconcile_temps=False,
+        restore_missing=False,
     )
     if (
         persisted != receipt
@@ -852,6 +856,7 @@ def _launch_child(
     verify_lock_identity: Callable[[], None],
 ) -> tuple[int, int, bytes, bytes]:
     verify_lock_identity()
+    command = _child_command()
     capability = _launch_capability(receipt, capability_token)
     frozen_source = _frozen_source_bundle(
         expected_freeze_manifest_hash=receipt["freeze_manifest_hash"]
@@ -859,19 +864,19 @@ def _launch_child(
     capability_read, capability_write = os.pipe()
     liveness_read, liveness_write = os.pipe()
     source_read, source_write = os.pipe()
+    environment = _child_environment(
+        capability_fd=capability_read,
+        parent_liveness_fd=liveness_read,
+        frozen_source_fd=source_read,
+    )
     process = None
     try:
         verify_lock_identity()
         _revalidate_concordance_launch_admission(workspace, receipt)
-        verify_lock_identity()
         process = subprocess.Popen(
-            _child_command(),
+            command,
             cwd="/",
-            env=_child_environment(
-                capability_fd=capability_read,
-                parent_liveness_fd=liveness_read,
-                frozen_source_fd=source_read,
-            ),
+            env=environment,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

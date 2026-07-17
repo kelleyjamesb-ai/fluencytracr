@@ -1559,6 +1559,12 @@ def test_claim_only_crash_is_consumed_as_interrupted_without_relaunch(
         launch_receipt=launch,
     )
     anchor_phase = tmp_path.parent / f".{tmp_path.name}.vbd-proof-anchor" / "original"
+    permit_path = anchor_phase / runner._attempt_permit_name(stem)
+    with permit_path.open("r+b") as permit_file:
+        permit_file.truncate(0)
+        permit_file.flush()
+        os.fsync(permit_file.fileno())
+    permit_path.unlink()
     write_json_create_once(anchor_phase / runner._attempt_claim_name(stem), claim)
     monkeypatch.setattr(
         runner,
@@ -1578,6 +1584,58 @@ def test_claim_only_crash_is_consumed_as_interrupted_without_relaunch(
     assert result.failure_code == "interrupted_launch"
     assert checkpoint["child_return_class"] == "interrupted_before_checkpoint"
     assert not (anchor_phase / runner._attempt_permit_name(stem)).exists()
+
+
+def test_durable_claim_with_live_permit_rejects_without_consuming(tmp_path):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    workspace = tmp_path / "workspace"
+    record = _fake_workspace_record(workspace)
+    phase = _phase_manifest(record)
+    slot = required_vbd_trajectory_validation_slots()[0]
+    stem = "slot_0000.json"
+    launch = _launch_receipt(
+        execution_kind="study",
+        phase="original",
+        phase_hash=phase["phase_hash"],
+        phase_token=phase["phase_token"],
+        slot=slot,
+        slot_index=0,
+        workspace_record=record,
+        canary=None,
+        capability_token_hash=sha256_json(_capability_token()),
+    )
+    binding = runner._attempt_permit_binding(
+        workspace=workspace,
+        workspace_record=record,
+        phase="original",
+        stem=stem,
+    )
+    claim = runner._expected_attempt_claim(
+        workspace_record=record,
+        phase="original",
+        stem=stem,
+        binding=binding,
+        launch_receipt=launch,
+    )
+    anchor_phase = (
+        workspace.parent / f".{workspace.name}.vbd-proof-anchor" / "original"
+    )
+    permit_path = anchor_phase / runner._attempt_permit_name(stem)
+    write_json_create_once(anchor_phase / runner._attempt_claim_name(stem), claim)
+
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="claim precedes permit consumption",
+    ):
+        runner._load_attempt_anchor(
+            workspace=workspace,
+            workspace_record=record,
+            phase="original",
+            stem=stem,
+        )
+    assert permit_path.is_file()
+    assert permit_path.stat().st_size > 0
 
 
 @pytest.mark.parametrize("publication_state", ["pre_link", "post_link"])
@@ -1747,7 +1805,7 @@ def test_hard_linked_attempt_permit_fails_before_admission(tmp_path):
         )
 
 
-def test_hard_link_race_destroys_permit_before_replay(tmp_path, monkeypatch):
+def test_claim_with_hard_linked_permit_rejects_without_consuming(tmp_path, monkeypatch):
     from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
 
     workspace = tmp_path / "workspace"
@@ -1788,7 +1846,7 @@ def test_hard_link_race_destroys_permit_before_replay(tmp_path, monkeypatch):
 
     with pytest.raises(
         VbdTrajectoryValidationWorkspaceError,
-        match="surviving hard link",
+        match="permit identity is stale or unsafe",
     ):
         runner._load_attempt_anchor(
             workspace=workspace,
@@ -1796,13 +1854,12 @@ def test_hard_link_race_destroys_permit_before_replay(tmp_path, monkeypatch):
             phase="original",
             stem=stem,
         )
-    assert hidden_link.read_bytes() == b""
-    os.link(hidden_link, permit_path)
-    claim_path.unlink()
+    assert hidden_link.read_bytes()
+    assert permit_path.read_bytes() == hidden_link.read_bytes()
     monkeypatch.setattr(
         runner,
         "_launch_child",
-        lambda **_kwargs: pytest.fail("destroyed permit bytes must never relaunch"),
+        lambda **_kwargs: pytest.fail("invalid claim and permit must never launch"),
     )
     with pytest.raises(VbdTrajectoryValidationWorkspaceError):
         _run_one_study_slot(
@@ -1873,6 +1930,68 @@ def test_permit_rename_before_consumption_cannot_publish_claim(
         stem=stem,
         launch_receipt=launch,
     )["launch_receipt"] == launch
+
+
+def test_stale_claim_temp_is_discarded_before_fresh_permit_consumption(
+    tmp_path, monkeypatch
+):
+    from fluencytracr_inference import vbd_trajectory_validation_resumable as runner
+
+    workspace = tmp_path / "workspace"
+    record = _fake_workspace_record(workspace)
+    phase = _phase_manifest(record)
+    slot = required_vbd_trajectory_validation_slots()[0]
+    stem = "slot_0000.json"
+    launch = _launch_receipt(
+        execution_kind="study",
+        phase="original",
+        phase_hash=phase["phase_hash"],
+        phase_token=phase["phase_token"],
+        slot=slot,
+        slot_index=0,
+        workspace_record=record,
+        canary=None,
+        capability_token_hash=sha256_json(_capability_token()),
+    )
+    binding = runner._attempt_permit_binding(
+        workspace=workspace,
+        workspace_record=record,
+        phase="original",
+        stem=stem,
+    )
+    claim = runner._expected_attempt_claim(
+        workspace_record=record,
+        phase="original",
+        stem=stem,
+        binding=binding,
+        launch_receipt=launch,
+    )
+    anchor_phase = (
+        workspace.parent / f".{workspace.name}.vbd-proof-anchor" / "original"
+    )
+    claim_name = runner._attempt_claim_name(stem)
+    claim_temp = anchor_phase / f".{claim_name}.123.456.tmp"
+    permit_path = anchor_phase / runner._attempt_permit_name(stem)
+    claim_temp.write_bytes(_canonical_json_bytes(claim))
+    original_link = runner.os.link
+
+    def link_only_after_permit_consumption(source, destination, *args, **kwargs):
+        if destination == claim_name:
+            assert not permit_path.exists()
+        return original_link(source, destination, *args, **kwargs)
+
+    monkeypatch.setattr(runner.os, "link", link_only_after_permit_consumption)
+    anchor = runner._create_or_load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=record,
+        phase="original",
+        stem=stem,
+        launch_receipt=launch,
+    )
+    assert anchor["launch_receipt"] == launch
+    assert not permit_path.exists()
+    assert not claim_temp.exists()
+    assert (anchor_phase / claim_name).is_file()
 
 
 def test_crash_after_permit_consumption_before_claim_fails_closed(
@@ -1956,12 +2075,14 @@ def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypat
         capability_token_hash=sha256_json(_capability_token()),
     )
     captured = {}
+    lifecycle = []
 
     class FakeProcess:
         pid = 4242
         returncode = 0
 
         def __init__(self, command, **kwargs):
+            lifecycle.append("popen")
             captured["command"] = command
             captured.update(kwargs)
             capability_fd, liveness_fd, source_fd = kwargs["pass_fds"]
@@ -1987,13 +2108,18 @@ def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypat
             return b"", b""
 
     monkeypatch.setattr(runner.subprocess, "Popen", FakeProcess)
-    monkeypatch.setattr(runner, "_revalidate_launch_admission", lambda *_args: None)
+    monkeypatch.setattr(
+        runner,
+        "_revalidate_launch_admission",
+        lambda *_args: lifecycle.append("admission"),
+    )
     monkeypatch.setattr(
         runner, "_frozen_source_bundle", lambda **_kwargs: b"frozen-source"
     )
     verifier_calls = []
 
     def verify_lock():
+        lifecycle.append("lock")
         verifier_calls.append(True)
 
     child_pid, return_code, stdout, stderr = _launch_child(
@@ -2016,7 +2142,13 @@ def test_child_launch_uses_frozen_source_capability_and_liveness_pipes(monkeypat
     ]
     assert captured["capability"]["workspace_hash"] == record["workspace_hash"]
     assert receipt["capability_token_hash"] == sha256_json(_capability_token())
-    assert len(verifier_calls) >= 4
+    assert len(verifier_calls) >= 3
+    admission_index = lifecycle.index("admission")
+    assert lifecycle[admission_index - 1 : admission_index + 2] == [
+        "lock",
+        "admission",
+        "popen",
+    ]
 
 
 def test_failed_source_pipe_transfer_terminates_and_reaps_child(monkeypatch):
@@ -2326,6 +2458,26 @@ def test_launch_admission_revalidates_the_persisted_create_once_receipt(
     monkeypatch.setattr(runner, "_validate_workspace_tree", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(runner, "_validate_progress_state", lambda _path: "PRIMARY")
     _revalidate_launch_admission(tmp_path, receipt)
+
+    anchor_path = (
+        tmp_path.parent
+        / f".{tmp_path.name}.vbd-proof-anchor"
+        / "original"
+        / "slot_0000.json"
+    )
+    anchor_path.unlink()
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError, match="current create-once"
+    ):
+        _revalidate_launch_admission(tmp_path, receipt)
+    assert not anchor_path.exists()
+    runner._create_or_load_attempt_anchor(
+        workspace=tmp_path,
+        workspace_record=record,
+        phase="original",
+        stem="slot_0000.json",
+        launch_receipt=receipt,
+    )
 
     launch_path.unlink()
     replaced = deepcopy(receipt)
