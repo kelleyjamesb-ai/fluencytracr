@@ -100,6 +100,7 @@ VBD_TRAJECTORY_CONCORDANCE_CHILD_EXCEPTION_TYPES = (
     "OSError",
     "OverflowError",
     "RuntimeError",
+    "SystemExit",
     "TrajectoryCovarianceError",
     "TrajectoryIntegrationError",
     "TrajectoryNutsError",
@@ -128,6 +129,7 @@ _CHILD_EXCEPTION_TYPE_LABELS = {
     OSError: "OSError",
     OverflowError: "OverflowError",
     RuntimeError: "RuntimeError",
+    SystemExit: "SystemExit",
     TrajectoryCovarianceError: "TrajectoryCovarianceError",
     TrajectoryIntegrationError: "TrajectoryIntegrationError",
     TrajectoryNutsError: "TrajectoryNutsError",
@@ -156,16 +158,16 @@ def _strict_hash(value: object, name: str) -> str:
     return value
 
 
-def _tag_child_failure_phase(exc: Exception, phase: str) -> None:
+def _tag_child_failure_phase(exc: BaseException, phase: str) -> None:
     if phase not in VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES:
         phase = "child_entrypoint"
     try:
         setattr(exc, _CHILD_FAILURE_PHASE_ATTRIBUTE, phase)
-    except Exception:
+    except BaseException:
         pass
 
 
-def build_vbd_trajectory_concordance_child_failure(exc: Exception) -> dict:
+def build_vbd_trajectory_concordance_child_failure(exc: BaseException) -> dict:
     """Build a fixed, message-free diagnostic for the private child."""
 
     phase = getattr(exc, _CHILD_FAILURE_PHASE_ATTRIBUTE, "child_entrypoint")
@@ -648,6 +650,6 @@ def execute_vbd_trajectory_concordance_child(receipt_value: object) -> dict:
         return _execute_vbd_trajectory_concordance_child(
             receipt_value, phase_tracker
         )
-    except Exception as exc:
+    except BaseException as exc:
         _tag_child_failure_phase(exc, phase_tracker[0])
         raise

@@ -128,6 +128,19 @@ def test_child_failure_unknown_named_type_is_unclassified():
     assert diagnostic["exception_type"] == "UNCLASSIFIED_EXCEPTION"
 
 
+def test_child_failure_tags_system_exit_at_the_active_phase(monkeypatch):
+    monkeypatch.setattr(
+        "fluencytracr_inference.vbd_trajectory_concordance_execution._validate_launch_receipt",
+        lambda _value: (_ for _ in ()).throw(SystemExit(2)),
+    )
+
+    with pytest.raises(SystemExit) as captured:
+        execute_vbd_trajectory_concordance_child({})
+    diagnostic = build_vbd_trajectory_concordance_child_failure(captured.value)
+    assert diagnostic["failure_phase"] == "launch_receipt_validation"
+    assert diagnostic["exception_type"] == "SystemExit"
+
+
 def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
     diagnostic = build_vbd_trajectory_concordance_child_failure(
         ValueError("never persist this exception message")

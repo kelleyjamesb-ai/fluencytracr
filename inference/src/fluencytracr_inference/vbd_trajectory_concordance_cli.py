@@ -33,7 +33,7 @@ def _take_diagnostic_fd() -> int:
     return int(value)
 
 
-def _write_child_failure(diagnostic_fd: int, exc: Exception) -> None:
+def _write_child_failure(diagnostic_fd: int, exc: BaseException) -> None:
     try:
         encoded = (
             json.dumps(
@@ -54,7 +54,7 @@ def _write_child_failure(diagnostic_fd: int, exc: Exception) -> None:
                 pass
         sys.stderr.buffer.write(encoded)
         sys.stderr.buffer.flush()
-    except Exception:
+    except BaseException:
         pass
 
 
@@ -96,11 +96,11 @@ def main(argv: list[str] | None = None) -> int:
             result = execute_vbd_trajectory_concordance_child(value)
             try:
                 _print_json(result)
-            except Exception as exc:
+            except BaseException as exc:
                 _tag_child_failure_phase(exc, "result_emit")
                 raise
             return 0
-        except Exception as exc:
+        except BaseException as exc:
             if not decoded:
                 _tag_child_failure_phase(exc, "stdin_decode")
             _write_child_failure(diagnostic_fd, exc)

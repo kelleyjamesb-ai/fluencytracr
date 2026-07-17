@@ -74,3 +74,34 @@ def test_private_child_cli_falls_back_to_canonical_stderr(monkeypatch, capsys):
     diagnostic = json.loads(captured.err)
     assert diagnostic["failure_phase"] == "child_entrypoint"
     assert diagnostic["exception_type"] == "ValueError"
+
+
+def test_private_child_cli_sanitizes_system_exit(monkeypatch, capsys):
+    read_descriptor, write_descriptor = os.pipe()
+    monkeypatch.setenv(
+        "FT_VBD_TRAJECTORY_DIAGNOSTIC_FD", str(write_descriptor)
+    )
+    monkeypatch.setattr(
+        cli.sys, "stdin", SimpleNamespace(buffer=io.BytesIO(b"{}"))
+    )
+    monkeypatch.setattr(cli, "_decode_json_bytes", lambda *_args: {})
+    monkeypatch.setattr(
+        cli,
+        "execute_vbd_trajectory_concordance_child",
+        lambda _value: (_ for _ in ()).throw(SystemExit(2)),
+    )
+
+    try:
+        assert cli.main(["_execute-bundle"]) == 2
+        write_descriptor = -1
+        encoded = os.read(read_descriptor, 513)
+    finally:
+        if write_descriptor >= 0:
+            os.close(write_descriptor)
+        os.close(read_descriptor)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
+    diagnostic = json.loads(encoded)
+    assert diagnostic["failure_phase"] == "child_entrypoint"
+    assert diagnostic["exception_type"] == "SystemExit"
