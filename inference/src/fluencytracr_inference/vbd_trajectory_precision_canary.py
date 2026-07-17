@@ -381,7 +381,7 @@ def run_vbd_trajectory_precision_canary(canary_ordinal: int) -> dict:
         raise VbdTrajectoryPrecisionCanaryError(
             "precision canary exceeded the compiled bundle-child timeout"
         ) from exc
-    if completed.returncode != 0:
+    if completed.returncode not in (0, 2):
         raise VbdTrajectoryPrecisionCanaryError(
             "precision canary child failed"
         )
@@ -392,9 +392,19 @@ def run_vbd_trajectory_precision_canary(canary_ordinal: int) -> dict:
             "precision canary child output is invalid"
         ) from exc
     result = validate_vbd_trajectory_precision_canary_result(value)
-    if result["otherwise_applicable_gates_passed"] is not True:
+    expected_returncode = (
+        0 if result["otherwise_applicable_gates_passed"] else 2
+    )
+    if completed.returncode != expected_returncode:
         raise VbdTrajectoryPrecisionCanaryError(
-            "precision canary failed an otherwise applicable gate"
+            "precision canary child status is inconsistent"
+        )
+    if result["otherwise_applicable_gates_passed"] is not True:
+        failures = ",".join(
+            result["otherwise_applicable_failing_checks"]
+        )
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary failed otherwise applicable gates: " + failures
         )
     return result
 

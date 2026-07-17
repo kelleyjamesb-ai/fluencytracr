@@ -340,6 +340,23 @@ def test_precision_canary_parent_uses_one_exact_timeout_and_no_retry(monkeypatch
     assert len(calls) == 1
     assert calls[0][1]["timeout"] == VBD_TRAJECTORY_PRECISION_CANARY_TIMEOUT_SECONDS
 
+    held = deepcopy(value)
+    held["otherwise_applicable_gates_passed"] = False
+    held["otherwise_applicable_failing_checks"] = ["mcse"]
+    held_body = {
+        key: item for key, item in held.items() if key != "result_hash"
+    }
+    held["result_hash"] = sha256_json(held_body)
+
+    def statistical_hold(command, **kwargs):
+        return subprocess.CompletedProcess(
+            command, 2, stdout=json.dumps(held).encode(), stderr=b""
+        )
+
+    monkeypatch.setattr(subprocess, "run", statistical_hold)
+    with pytest.raises(VbdTrajectoryPrecisionCanaryError, match="mcse"):
+        run_vbd_trajectory_precision_canary(0)
+
     def timeout(*args, **kwargs):
         raise subprocess.TimeoutExpired(args[0], kwargs["timeout"])
 
