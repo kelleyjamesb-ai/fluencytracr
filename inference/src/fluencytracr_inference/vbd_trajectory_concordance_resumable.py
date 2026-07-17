@@ -1809,13 +1809,15 @@ def _failure_record(
     stderr: bytes,
     diagnostic: bytes,
 ) -> dict:
-    child_diagnostic = (
-        _decode_child_failure_diagnostic(diagnostic)
-        if failure_code == "child_process_failure"
+    child_diagnostic = None
+    if (
+        failure_code == "child_process_failure"
         and return_code == 2
         and stdout == b""
-        else None
-    )
+    ):
+        child_diagnostic = _decode_child_failure_diagnostic(diagnostic)
+        if child_diagnostic is None and diagnostic == b"":
+            child_diagnostic = _decode_child_failure_diagnostic(stderr)
     body = {
         "schema_version": VBD_TRAJECTORY_CONCORDANCE_FAILURE_SCHEMA_VERSION,
         "launch_receipt_hash": launch["launch_receipt_hash"],

@@ -52,3 +52,25 @@ def test_private_child_cli_uses_bounded_diagnostic_fd_without_raw_text(
     diagnostic = json.loads(encoded)
     assert diagnostic["failure_phase"] == "child_entrypoint"
     assert diagnostic["exception_type"] == "RuntimeError"
+
+
+def test_private_child_cli_falls_back_to_canonical_stderr(monkeypatch, capsys):
+    secret = "fallback must not expose this message"
+    monkeypatch.setenv("FT_VBD_TRAJECTORY_DIAGNOSTIC_FD", "999999")
+    monkeypatch.setattr(
+        cli.sys, "stdin", SimpleNamespace(buffer=io.BytesIO(b"{}"))
+    )
+    monkeypatch.setattr(cli, "_decode_json_bytes", lambda *_args: {})
+    monkeypatch.setattr(
+        cli,
+        "execute_vbd_trajectory_concordance_child",
+        lambda _value: (_ for _ in ()).throw(ValueError(secret)),
+    )
+
+    assert cli.main(["_execute-bundle"]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert secret not in captured.err
+    diagnostic = json.loads(captured.err)
+    assert diagnostic["failure_phase"] == "child_entrypoint"
+    assert diagnostic["exception_type"] == "ValueError"

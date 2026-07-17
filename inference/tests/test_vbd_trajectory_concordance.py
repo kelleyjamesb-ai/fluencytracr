@@ -173,6 +173,31 @@ def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
     assert malformed["child_failure_phase"] is None
     assert malformed["child_exception_type"] is None
 
+    fallback = _failure_record(
+        launch=launch,
+        failure_code="child_process_failure",
+        child_pid=125,
+        return_code=2,
+        stdout=b"",
+        stderr=encoded,
+        diagnostic=b"",
+    )
+    assert _validate_failure(fallback, receipt=launch) == fallback
+    assert fallback["child_diagnostic_valid"] is True
+    assert fallback["child_diagnostic_hash"] == diagnostic["diagnostic_hash"]
+
+    ambiguous = _failure_record(
+        launch=launch,
+        failure_code="child_process_failure",
+        child_pid=126,
+        return_code=2,
+        stdout=b"",
+        stderr=encoded,
+        diagnostic=b"partial",
+    )
+    assert _validate_failure(ambiguous, receipt=launch) == ambiguous
+    assert ambiguous["child_diagnostic_valid"] is False
+
 
 def test_child_failure_diagnostic_reader_discards_oversize_payload():
     read_descriptor, write_descriptor = os.pipe()

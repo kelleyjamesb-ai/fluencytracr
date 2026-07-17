@@ -34,8 +34,6 @@ def _take_diagnostic_fd() -> int:
 
 
 def _write_child_failure(diagnostic_fd: int, exc: Exception) -> None:
-    if diagnostic_fd < 0:
-        return
     try:
         encoded = (
             json.dumps(
@@ -48,9 +46,14 @@ def _write_child_failure(diagnostic_fd: int, exc: Exception) -> None:
         )
         if len(encoded) > 512:
             return
-        written = 0
-        while written < len(encoded):
-            written += os.write(diagnostic_fd, encoded[written:])
+        if diagnostic_fd >= 0:
+            try:
+                if os.write(diagnostic_fd, encoded) == len(encoded):
+                    return
+            except OSError:
+                pass
+        sys.stderr.buffer.write(encoded)
+        sys.stderr.buffer.flush()
     except Exception:
         pass
 
