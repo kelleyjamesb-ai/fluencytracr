@@ -222,6 +222,14 @@
       "last_note": "Done 2026-07-16: tasks 2.1-2.5 include the exact 2,000-slot planner, 40-chunk original/recomputation runner, four canaries, production-bound controls, replay/tamper checks, evidence snapshots, and committed combined readback. Final hardening adds exact-S unique GO review refs, trusted Git isolation, generated all-lane zero-variance preparation, attestation-level copied-checkpoint rejection, successful checkpoint resume, idempotent combined recovery, and an internal-only VBD bridge export. VBD 269, inference 834, bridges 104, snapshots 11, harness 276/3 skipped, builds, wheel/import, OpenSpec, and governance passed. No acceptance seed or evidence ran; concordance remains pending until merge."
     },
     {
+      "id": "vbd-reference-engine-hardening",
+      "title": "VBD reference-engine geometry hardening after bundle-0 statistical HOLD",
+      "bound": "Synthetic-only inference/ plus required OpenSpec/docs/status: diagnose and make the smallest PyMC reference-engine parameterization or sampler-geometry repair needed for the accepted bundle-0 divergence and MCSE failures, then reassess 99% tail concordance; preserve the frozen longitudinal model, priors, estimands, six cells, seeds, draws/tuning/chains, target_accept, max_treedepth, every statistical threshold, deterministic engine, exact evidence plan, fail-closed HOLD behavior, and trusted-host threat model; focused diagnostic/development runs only, no accepted concordance continuation, canaries, replicated calibration, real/customer/live data, public schemas, routes, UI, persistence, exports, customer outputs, confidence/probability, ROI, causality, productivity, ranking, new events/reasons/thresholds, promotion, or task 5.6 completion",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Blocked 2026-07-17: reference-only repair is not credible. Frozen 16-point GH plus midpoint quantiles has 0.160 SD intrinsic 99% tail error against the 0.20 concordance gate; all-parameter 99% MCSE at 4,000 draws is not reliably <=0.10 SD. Tested noncentering worsened worst development MCSE 0.241->0.385. Needs a separate numerical-precision contract decision; old F/evidence remain HOLD and must never resume."
+    },
+    {
       "id": "vbd-trajectory-engine-concordance",
       "title": "VBD trajectory source freeze and NUTS concordance",
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
