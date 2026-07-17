@@ -2440,7 +2440,8 @@ def _load_attempt_anchor(
 
 
 def _attempt_anchor_names(
-    *, workspace: Path, workspace_record: dict, phase: str
+    *, workspace: Path, workspace_record: dict, phase: str,
+    reconcile_temps: bool = True, restore_missing: bool = True,
 ) -> tuple[str, ...]:
     manifest = _load_attempt_permit_manifest(workspace, workspace_record)
     stems = tuple(
@@ -2456,12 +2457,13 @@ def _attempt_anchor_names(
             raise VbdTrajectoryValidationWorkspaceError(
                 "attempt anchor phase is missing"
             )
-        _reconcile_attempt_phase_temps_descriptor(
-            descriptor,
-            workspace_record=workspace_record,
-            phase=phase,
-            manifest=manifest,
-        )
+        if reconcile_temps:
+            _reconcile_attempt_phase_temps_descriptor(
+                descriptor,
+                workspace_record=workspace_record,
+                phase=phase,
+                manifest=manifest,
+            )
     admitted = []
     for stem in stems:
         anchor = _load_attempt_anchor(
@@ -2471,6 +2473,7 @@ def _attempt_anchor_names(
             stem=stem,
             permit_manifest=manifest,
             reconcile_temps=False,
+            restore_missing=restore_missing,
         )
         if anchor is not None:
             admitted.append(stem)

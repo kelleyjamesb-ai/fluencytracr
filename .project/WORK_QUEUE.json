@@ -227,7 +227,7 @@
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "Exact review rejected 703d4905 before freeze. Final admission now threads non-restoring mode through concordance tree/upstream receipt verification; missing anchors/launches fail without repair, hard-linked claim temps reject, and normal resume restoration remains intact. Python 922/922, focused 114/114, bridge 19/19, harness 276/3 skipped, OpenSpec/governance/compile/lockfile/diff pass. No evidence ran; final replacement commit/push and four exact repair reviews are next."
+      "last_note": "Exact review rejected d5e7a64e before freeze: read-only admission skipped anchor-sibling temporary inspection. The existing phase allowlist now runs nonmutating in final admission and rejects temporary, off-plan, special, or multiply linked entries; resume restoration remains unchanged. Prior full inference 922/922 plus final focused 114/114, bridge 19/19, harness 276/3 skipped, OpenSpec/governance/compile/lockfile/diff pass. No evidence ran; commit/push and exact repair reviews are next."
     },
     {
       "id": "vbd-trajectory-full-evidence",

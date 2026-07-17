@@ -1148,11 +1148,29 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
         "posterior_interval_endpoints_emitted"
     ] is False
 
+    primary_anchor_phase = (
+        workspace.parent / f".{workspace.name}.vbd-proof-anchor" / "primary"
+    )
+    claim_temp = primary_anchor_phase / ".bundle_00.claim.json.123.456.tmp"
+    hidden_claim_temp = tmp_path / "hidden-claim-temp"
+    claim_temp.write_text("{}\n", encoding="utf-8")
+    os.link(claim_temp, hidden_claim_temp)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="attempt anchor phase contains an unsafe or off-plan entry",
+    ):
+        resumable._validate_workspace_tree(
+            workspace,
+            complete=True,
+            restore_missing_anchors=False,
+        )
+    assert claim_temp.is_file()
+    assert hidden_claim_temp.is_file()
+    claim_temp.unlink()
+    hidden_claim_temp.unlink()
+
     primary_anchor = (
-        workspace.parent
-        / f".{workspace.name}.vbd-proof-anchor"
-        / "primary"
-        / "bundle_00.json"
+        primary_anchor_phase / "bundle_00.json"
     )
     primary_anchor.unlink()
     with pytest.raises(

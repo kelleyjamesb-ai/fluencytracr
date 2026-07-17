@@ -59,6 +59,7 @@ from .vbd_trajectory_validation_resumable import (
     _frozen_source_bundle,
     _launch_capability,
     _load_attempt_anchor,
+    _attempt_anchor_names,
     _repo_root,
     _restore_attempt_anchored_launches,
     _safe_workspace_path,
@@ -568,6 +569,20 @@ def _validate_workspace_tree(
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance publication order is invalid"
         )
+    workspace_record = None
+    if not restore_missing_anchors:
+        workspace_record = _validate_workspace(
+            read_strict_json(_safe_workspace_path(workspace, "workspace.json")),
+            workspace,
+        )
+        for phase in VBD_TRAJECTORY_CONCORDANCE_PHASES:
+            _attempt_anchor_names(
+                workspace=workspace,
+                workspace_record=workspace_record,
+                phase=phase,
+                reconcile_temps=False,
+                restore_missing=False,
+            )
     for phase in VBD_TRAJECTORY_CONCORDANCE_PHASES:
         phase_names = {}
         for directory in ("launches", "results", "failures"):
@@ -585,12 +600,13 @@ def _validate_workspace_tree(
         results = phase_names["results"]
         failures = phase_names["failures"]
         if launches:
-            workspace_record = _validate_workspace(
-                read_strict_json(
-                    _safe_workspace_path(workspace, "workspace.json")
-                ),
-                workspace,
-            )
+            if workspace_record is None:
+                workspace_record = _validate_workspace(
+                    read_strict_json(
+                        _safe_workspace_path(workspace, "workspace.json")
+                    ),
+                    workspace,
+                )
             for name in launches:
                 anchor = _load_attempt_anchor(
                     workspace=workspace,
