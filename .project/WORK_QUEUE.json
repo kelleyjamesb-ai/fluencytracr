@@ -227,7 +227,7 @@
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "Replacement S is verified: sibling create-once attempt anchors prevent deleted launch/result replay; 80%/99% MCSE and exact ArviZ label/cardinality gates close statistical review. Python 905/905, bridges 95/95, builds/harness/OpenSpec/governance pass. No evidence ran. Commit/push and four exact reviews remain next."
+      "last_note": "Final review of f49e4ca4 found qualifying permit-order and pre-launch admission blockers. The bounded replacement consumes inode/hash-bound permits before claim publication, revalidates immediately before launch, and fails closed on crash/replay/tamper paths. Python 917/917, bridges 95/95, snapshots 11/11, harness 276/3 skipped, builds, OpenSpec, docs/governance, compile, lockfile, and diff checks pass. No evidence ran; commit/push and four exact reviews are next."
     },
     {
       "id": "vbd-trajectory-full-evidence",

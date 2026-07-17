@@ -1015,6 +1015,14 @@ def _compute_sampler_diagnostics(
                     raise TrajectoryNutsError(
                         "sampler diagnostic labels do not match exactly"
                     )
+                if any(
+                    not math.isfinite(value) or value < 0.0
+                    for key in ("mean", "q10", "q90", "q005", "q995")
+                    for _label, value in rows[key]
+                ):
+                    raise TrajectoryNutsError(
+                        "sampler MCSE rows must be finite and nonnegative"
+                    )
                 draws = np.asarray(posterior_variable, dtype=float)
                 flattened_draws = draws.reshape(
                     draws.shape[0] * draws.shape[1], -1

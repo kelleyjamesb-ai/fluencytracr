@@ -65,7 +65,7 @@ VBD_TRAJECTORY_FREEZE_MANIFEST_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_FREEZE_MANIFEST_2026_07_V1"
 )
 VBD_TRAJECTORY_RUNNER_WORKSPACE_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_TRAJECTORY_RUNNER_WORKSPACE_2026_07_V2"
+    "FT_AI_VALUE_VBD_TRAJECTORY_RUNNER_WORKSPACE_2026_07_V3"
 )
 VBD_TRAJECTORY_PHASE_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_PHASE_2026_07_V1"
@@ -206,8 +206,19 @@ _CHILD_STDOUT_LIMIT = 2 * 1024 * 1024
 _CHILD_STDERR_LIMIT = 64 * 1024
 VBD_TRAJECTORY_CHILD_TIMEOUT_SECONDS = 600
 VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_TRAJECTORY_ATTEMPT_ANCHOR_2026_07_V1"
+    "FT_AI_VALUE_VBD_TRAJECTORY_ATTEMPT_ANCHOR_2026_07_V2"
 )
+VBD_TRAJECTORY_ATTEMPT_CLAIM_SCHEMA_VERSION = (
+    "FT_AI_VALUE_VBD_TRAJECTORY_ATTEMPT_CLAIM_2026_07_V1"
+)
+VBD_TRAJECTORY_ATTEMPT_PERMIT_SCHEMA_VERSION = (
+    "FT_AI_VALUE_VBD_TRAJECTORY_ATTEMPT_PERMIT_2026_07_V1"
+)
+VBD_TRAJECTORY_ATTEMPT_PERMIT_MANIFEST_SCHEMA_VERSION = (
+    "FT_AI_VALUE_VBD_TRAJECTORY_ATTEMPT_PERMIT_MANIFEST_2026_07_V1"
+)
+VBD_TRAJECTORY_ATTEMPT_PERMIT_MODE = "preallocated_expendable_per_slot_v1"
+_ATTEMPT_PERMIT_INDEX_CACHE: dict[str, dict[tuple[str, str], dict]] = {}
 VBD_TRAJECTORY_ATTEMPT_ANCHOR_PHASES = (
     "canaries",
     "original",
@@ -1478,6 +1489,306 @@ def _attempt_anchor_path(workspace: Path, phase: str, stem: str) -> Path:
     return _attempt_anchor_root(workspace) / phase / stem
 
 
+_ATTEMPT_PERMIT_MANIFEST_NAME = "permit_manifest.json"
+
+
+def _attempt_permit_name(stem: str) -> str:
+    if re.fullmatch(r"[a-z0-9_]+\.json", stem) is None:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit stem is invalid"
+        )
+    return f"{stem[:-5]}.permit.json"
+
+
+def _attempt_claim_name(stem: str) -> str:
+    if re.fullmatch(r"[a-z0-9_]+\.json", stem) is None:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt claim stem is invalid"
+        )
+    return f"{stem[:-5]}.claim.json"
+
+
+def _validation_attempt_stems() -> dict[str, set[str]]:
+    return {
+        "canaries": {f"canary_{index:02d}.json" for index in range(4)},
+        "original": {f"slot_{index:04d}.json" for index in range(2_000)},
+        "recomputation": {
+            f"slot_{index:04d}.json" for index in range(2_000)
+        },
+    }
+
+
+def _attempt_permit_plan_hash(
+    expected_stems: dict[str, set[str]],
+) -> str:
+    if not expected_stems or any(
+        phase not in VBD_TRAJECTORY_ATTEMPT_ANCHOR_PHASES
+        or re.fullmatch(r"[a-z][a-z0-9_]*", phase) is None
+        or not stems
+        or any(re.fullmatch(r"[a-z0-9_]+\.json", stem) is None for stem in stems)
+        for phase, stems in expected_stems.items()
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit plan is invalid"
+        )
+    return sha256_json(
+        {
+            phase: sorted(stems)
+            for phase, stems in sorted(expected_stems.items())
+        }
+    )
+
+
+def _initial_attempt_permit(phase: str, stem: str) -> dict:
+    body = {
+        "schema_version": VBD_TRAJECTORY_ATTEMPT_PERMIT_SCHEMA_VERSION,
+        "phase": phase,
+        "stem": stem,
+        "permit_token": secrets.token_hex(32),
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+    return {**body, "permit_hash": sha256_json(body)}
+
+
+def _validate_initial_attempt_permit(
+    value: object, *, phase: str, stem: str
+) -> dict:
+    expected_keys = {
+        "schema_version",
+        "phase",
+        "stem",
+        "permit_token",
+        "internal_only",
+        "synthetic_only",
+        "customer_output_authorized",
+        "permit_hash",
+    }
+    if type(value) is not dict or set(value) != expected_keys:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit shape is invalid"
+        )
+    body = {key: item for key, item in value.items() if key != "permit_hash"}
+    if (
+        value["schema_version"] != VBD_TRAJECTORY_ATTEMPT_PERMIT_SCHEMA_VERSION
+        or value["phase"] != phase
+        or value["stem"] != stem
+        or type(value["permit_token"]) is not str
+        or _TOKEN_RE.fullmatch(value["permit_token"]) is None
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit identity is invalid"
+        )
+    if (
+        value["internal_only"] is not True
+        or value["synthetic_only"] is not True
+        or value["customer_output_authorized"] is not False
+        or value["permit_hash"] != sha256_json(body)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit posture or hash is invalid"
+        )
+    return value
+
+
+def _validate_attempt_permit_manifest(
+    value: object,
+    *,
+    expected_stems: dict[str, set[str]] | None = None,
+) -> dict:
+    expected_keys = {
+        "schema_version",
+        "permit_mode",
+        "permit_plan_hash",
+        "permit_count",
+        "permits",
+        "internal_only",
+        "synthetic_only",
+        "customer_output_authorized",
+        "manifest_hash",
+    }
+    if type(value) is not dict or set(value) != expected_keys:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest shape is invalid"
+        )
+    body = {key: item for key, item in value.items() if key != "manifest_hash"}
+    permits = value["permits"]
+    if (
+        value["schema_version"]
+        != VBD_TRAJECTORY_ATTEMPT_PERMIT_MANIFEST_SCHEMA_VERSION
+        or value["permit_mode"] != VBD_TRAJECTORY_ATTEMPT_PERMIT_MODE
+        or type(permits) is not list
+        or value["permit_count"] != len(permits)
+        or value["internal_only"] is not True
+        or value["synthetic_only"] is not True
+        or value["customer_output_authorized"] is not False
+        or value["manifest_hash"] != sha256_json(body)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest is invalid"
+        )
+    expected_entry_keys = {"phase", "stem", "device", "inode", "permit_hash"}
+    coordinates = []
+    identities = []
+    for item in permits:
+        if (
+            type(item) is not dict
+            or set(item) != expected_entry_keys
+            or item["phase"] not in VBD_TRAJECTORY_ATTEMPT_ANCHOR_PHASES
+            or re.fullmatch(r"[a-z0-9_]+\.json", item["stem"]) is None
+            or type(item["device"]) is not int
+            or item["device"] < 0
+            or type(item["inode"]) is not int
+            or item["inode"] <= 0
+        ):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt permit manifest entry is invalid"
+            )
+        _strict_sha256(item["permit_hash"], "attempt permit hash")
+        coordinates.append((item["phase"], item["stem"]))
+        identities.append((item["device"], item["inode"]))
+    if (
+        coordinates != sorted(coordinates)
+        or len(set(coordinates)) != len(coordinates)
+        or len(set(identities)) != len(identities)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest coordinates are invalid"
+        )
+    represented = {
+        phase: {stem for item_phase, stem in coordinates if item_phase == phase}
+        for phase in sorted({phase for phase, _stem in coordinates})
+    }
+    if value["permit_plan_hash"] != _attempt_permit_plan_hash(represented):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest plan hash is invalid"
+        )
+    if expected_stems is not None and (
+        represented != expected_stems
+        or value["permit_plan_hash"] != _attempt_permit_plan_hash(expected_stems)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest differs from the immutable execution plan"
+        )
+    return value
+
+
+def _initialize_attempt_permit_manifest(
+    workspace: Path, expected_stems: dict[str, set[str]]
+) -> dict:
+    root = _attempt_anchor_root(workspace)
+    manifest_path = root / _ATTEMPT_PERMIT_MANIFEST_NAME
+    if manifest_path.exists():
+        return _validate_attempt_permit_manifest(
+            read_strict_json(manifest_path), expected_stems=expected_stems
+        )
+    entries = []
+    for phase, stems in sorted(expected_stems.items()):
+        for stem in sorted(stems):
+            path = root / phase / _attempt_permit_name(stem)
+            if not path.exists():
+                write_json_create_once(path, _initial_attempt_permit(phase, stem))
+            permit = _validate_initial_attempt_permit(
+                read_strict_json(path), phase=phase, stem=stem
+            )
+            opened = _validate_regular_file(path, label="attempt permit")
+            entries.append(
+                {
+                    "phase": phase,
+                    "stem": stem,
+                    "device": opened.st_dev,
+                    "inode": opened.st_ino,
+                    "permit_hash": permit["permit_hash"],
+                }
+            )
+    body = {
+        "schema_version": VBD_TRAJECTORY_ATTEMPT_PERMIT_MANIFEST_SCHEMA_VERSION,
+        "permit_mode": VBD_TRAJECTORY_ATTEMPT_PERMIT_MODE,
+        "permit_plan_hash": _attempt_permit_plan_hash(expected_stems),
+        "permit_count": len(entries),
+        "permits": entries,
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+    manifest = {**body, "manifest_hash": sha256_json(body)}
+    write_json_create_once(manifest_path, manifest)
+    return _validate_attempt_permit_manifest(
+        read_strict_json(manifest_path), expected_stems=expected_stems
+    )
+
+
+def _attempt_permit_manifest_binding(
+    workspace: Path, *, expected_stems: dict[str, set[str]] | None = None
+) -> dict:
+    path = _attempt_anchor_root(workspace) / _ATTEMPT_PERMIT_MANIFEST_NAME
+    opened = _validate_regular_file(path, label="attempt permit manifest")
+    manifest = _cached_attempt_permit_manifest(
+        str(path),
+        opened.st_dev,
+        opened.st_ino,
+        opened.st_size,
+        _file_sha256(path),
+    )
+    if expected_stems is not None and (
+        manifest["permit_plan_hash"] != _attempt_permit_plan_hash(expected_stems)
+        or manifest["permit_count"] != sum(map(len, expected_stems.values()))
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest differs from the immutable execution plan"
+        )
+    return {
+        "attempt_permit_mode": VBD_TRAJECTORY_ATTEMPT_PERMIT_MODE,
+        "attempt_permit_manifest_device": opened.st_dev,
+        "attempt_permit_manifest_inode": opened.st_ino,
+        "attempt_permit_manifest_hash": manifest["manifest_hash"],
+        "attempt_permit_plan_hash": manifest["permit_plan_hash"],
+        "attempt_permit_count": manifest["permit_count"],
+    }
+
+
+@lru_cache(maxsize=32)
+def _cached_attempt_permit_manifest(
+    path_text: str, device: int, inode: int, size: int, encoded_sha256: str
+) -> dict:
+    path = Path(path_text)
+    opened = _validate_regular_file(path, label="attempt permit manifest")
+    if (opened.st_dev, opened.st_ino, opened.st_size) != (device, inode, size):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest identity changed during read"
+        )
+    if _file_sha256(path) != encoded_sha256:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest bytes changed during read"
+        )
+    return _validate_attempt_permit_manifest(read_strict_json(path))
+
+
+def _load_attempt_permit_manifest(
+    workspace: Path,
+    workspace_record: dict,
+    *,
+    expected_stems: dict[str, set[str]] | None = None,
+) -> dict:
+    binding = _attempt_permit_manifest_binding(
+        workspace, expected_stems=expected_stems
+    )
+    if any(workspace_record.get(key) != item for key, item in binding.items()):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit manifest differs from its create-once identity"
+        )
+    path = _attempt_anchor_root(workspace) / _ATTEMPT_PERMIT_MANIFEST_NAME
+    opened = _validate_regular_file(path, label="attempt permit manifest")
+    return _cached_attempt_permit_manifest(
+        str(path),
+        opened.st_dev,
+        opened.st_ino,
+        opened.st_size,
+        _file_sha256(path),
+    )
+
+
 @contextmanager
 def _attempt_anchor_phase_descriptor(
     *, workspace: Path, workspace_record: dict, phase: str, create: bool
@@ -1569,6 +1880,390 @@ def _attempt_anchor_phase_descriptor(
             os.close(root_descriptor)
 
 
+def _attempt_permit_binding(
+    *, workspace: Path, workspace_record: dict, phase: str, stem: str,
+    permit_manifest: dict | None = None
+) -> dict:
+    manifest = (
+        _load_attempt_permit_manifest(workspace, workspace_record)
+        if permit_manifest is None
+        else permit_manifest
+    )
+    manifest_hash = manifest["manifest_hash"]
+    index = _ATTEMPT_PERMIT_INDEX_CACHE.get(manifest_hash)
+    if index is None:
+        index = {
+            (item["phase"], item["stem"]): item
+            for item in manifest["permits"]
+        }
+        if len(index) != manifest["permit_count"]:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt permit index is incomplete"
+            )
+        if len(_ATTEMPT_PERMIT_INDEX_CACHE) >= 32:
+            _ATTEMPT_PERMIT_INDEX_CACHE.clear()
+        _ATTEMPT_PERMIT_INDEX_CACHE[manifest_hash] = index
+    binding = index.get((phase, stem))
+    if binding is None:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt coordinate lacks one immutable launch permit"
+        )
+    return binding
+
+
+def _descriptor_stat_or_none(descriptor: int, name: str):
+    try:
+        return os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+    except FileNotFoundError:
+        return None
+
+
+def _validate_attempt_permit_descriptor(
+    descriptor: int, *, phase: str, stem: str, binding: dict
+) -> dict | None:
+    name = _attempt_permit_name(stem)
+    opened = _descriptor_stat_or_none(descriptor, name)
+    if opened is None:
+        return None
+    if (
+        not stat.S_ISREG(opened.st_mode)
+        or opened.st_nlink != 1
+        or opened.st_dev != binding["device"]
+        or opened.st_ino != binding["inode"]
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit identity is stale or unsafe"
+        )
+    encoded = _read_descriptor_bytes(descriptor, name)
+    value = _decode_json_bytes(encoded, name)
+    if encoded != _canonical_json_bytes(value):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit JSON is not canonical"
+        )
+    permit = _validate_initial_attempt_permit(value, phase=phase, stem=stem)
+    if permit["permit_hash"] != binding["permit_hash"]:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit differs from its frozen manifest"
+        )
+    return permit
+
+
+def _expected_attempt_claim(
+    *, workspace_record: dict, phase: str, stem: str, binding: dict,
+    launch_receipt: dict
+) -> dict:
+    body = {
+        "schema_version": VBD_TRAJECTORY_ATTEMPT_CLAIM_SCHEMA_VERSION,
+        "workspace_hash": workspace_record["workspace_hash"],
+        "phase": phase,
+        "stem": stem,
+        "permit_binding": binding,
+        "launch_receipt": launch_receipt,
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+    return {**body, "claim_hash": sha256_json(body)}
+
+
+def _validate_attempt_claim_value(
+    value: object, *, workspace_record: dict, phase: str, stem: str,
+    binding: dict
+) -> dict:
+    expected_keys = {
+        "schema_version",
+        "workspace_hash",
+        "phase",
+        "stem",
+        "permit_binding",
+        "launch_receipt",
+        "internal_only",
+        "synthetic_only",
+        "customer_output_authorized",
+        "claim_hash",
+    }
+    if type(value) is not dict or set(value) != expected_keys:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt claim shape is invalid"
+        )
+    body = {key: item for key, item in value.items() if key != "claim_hash"}
+    if (
+        value["schema_version"] != VBD_TRAJECTORY_ATTEMPT_CLAIM_SCHEMA_VERSION
+        or value["workspace_hash"] != workspace_record["workspace_hash"]
+        or value["phase"] != phase
+        or value["stem"] != stem
+        or value["permit_binding"] != binding
+        or type(value["launch_receipt"]) is not dict
+        or value["internal_only"] is not True
+        or value["synthetic_only"] is not True
+        or value["customer_output_authorized"] is not False
+        or value["claim_hash"] != sha256_json(body)
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt claim is invalid"
+        )
+    return value
+
+
+def _load_attempt_claim_descriptor(
+    descriptor: int, *, workspace_record: dict, phase: str, stem: str,
+    binding: dict
+) -> dict | None:
+    name = _attempt_claim_name(stem)
+    try:
+        encoded = _read_descriptor_bytes(descriptor, name)
+    except FileNotFoundError:
+        return None
+    value = _decode_json_bytes(encoded, name)
+    if encoded != _canonical_json_bytes(value):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt claim JSON is not canonical"
+        )
+    return _validate_attempt_claim_value(
+        value,
+        workspace_record=workspace_record,
+        phase=phase,
+        stem=stem,
+        binding=binding,
+    )
+
+
+def _expected_attempt_anchor(
+    *, workspace_record: dict, phase: str, stem: str, claim: dict
+) -> dict:
+    body = {
+        "schema_version": VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION,
+        "workspace_hash": workspace_record["workspace_hash"],
+        "phase": phase,
+        "stem": stem,
+        "claim_hash": claim["claim_hash"],
+        "launch_receipt": claim["launch_receipt"],
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+    return {**body, "anchor_hash": sha256_json(body)}
+
+
+def _validate_attempt_anchor_value(
+    value: object, *, workspace_record: dict, phase: str, stem: str,
+    claim: dict
+) -> dict:
+    expected = _expected_attempt_anchor(
+        workspace_record=workspace_record, phase=phase, stem=stem, claim=claim
+    )
+    if value != expected:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt anchor differs from its durable claim"
+        )
+    return expected
+
+
+def _consume_attempt_permit_descriptor(
+    descriptor: int,
+    *,
+    phase: str,
+    stem: str,
+    binding: dict,
+    claim: dict,
+    allow_missing: bool,
+) -> None:
+    if (
+        claim["permit_binding"] != binding
+        or claim["phase"] != phase
+        or claim["stem"] != stem
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit consumption lacks its durable claim"
+        )
+    name = _attempt_permit_name(stem)
+    before = _descriptor_stat_or_none(descriptor, name)
+    if before is None:
+        if allow_missing:
+            return
+        raise VbdTrajectoryValidationWorkspaceError(
+            "fresh attempt permit disappeared before consumption"
+        )
+    flags = os.O_RDWR
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        permit_descriptor = os.open(name, flags, dir_fd=descriptor)
+    except FileNotFoundError as exc:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "fresh attempt permit disappeared during consumption"
+        ) from exc
+    linked = False
+    identity_valid = False
+    try:
+        opened = os.fstat(permit_descriptor)
+        after_open = _descriptor_stat_or_none(descriptor, name)
+        identity_valid = (
+            after_open is not None
+            and stat.S_ISREG(opened.st_mode)
+            and opened.st_dev == binding["device"]
+            and opened.st_ino == binding["inode"]
+            and (before.st_dev, before.st_ino) == (opened.st_dev, opened.st_ino)
+            and (after_open.st_dev, after_open.st_ino)
+            == (opened.st_dev, opened.st_ino)
+        )
+        linked = opened.st_nlink != 1
+        os.ftruncate(permit_descriptor, 0)
+        os.fsync(permit_descriptor)
+        current = _descriptor_stat_or_none(descriptor, name)
+        if current is not None and (current.st_dev, current.st_ino) == (
+            opened.st_dev,
+            opened.st_ino,
+        ):
+            os.unlink(name, dir_fd=descriptor)
+        else:
+            linked = True
+        os.fsync(descriptor)
+        consumed = os.fstat(permit_descriptor)
+        if consumed.st_nlink != 0:
+            linked = True
+        if _descriptor_stat_or_none(descriptor, name) is not None:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt permit pathname survived consumption"
+            )
+    finally:
+        os.close(permit_descriptor)
+    if not identity_valid:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit changed identity during consumption"
+        )
+    if linked:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "attempt permit had a surviving hard link during consumption"
+        )
+
+
+def _reconcile_attempt_phase_temps_descriptor(
+    descriptor: int, *, workspace_record: dict, phase: str,
+    manifest: dict
+) -> None:
+    bindings = {
+        item["stem"]: item
+        for item in manifest["permits"]
+        if item["phase"] == phase
+    }
+    for name in sorted(os.listdir(descriptor)):
+        destination = _atomic_temp_destination_name(Path(name))
+        if destination is None:
+            continue
+        opened = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+        if not stat.S_ISREG(opened.st_mode) or opened.st_nlink not in (1, 2):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt temporary is linked or not regular"
+            )
+        stem = next(
+            (
+                item_stem
+                for item_stem in bindings
+                if destination in (item_stem, _attempt_claim_name(item_stem))
+            ),
+            None,
+        )
+        if stem is None:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt temporary is outside the immutable plan"
+            )
+        binding = bindings[stem]
+        final = _descriptor_stat_or_none(descriptor, destination)
+        temporary_removed = False
+        if final is not None and opened.st_nlink == 2 and (
+            opened.st_dev,
+            opened.st_ino,
+        ) != (final.st_dev, final.st_ino):
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt temporary link identity is inconsistent"
+            )
+        if final is not None and opened.st_nlink == 2:
+            os.unlink(name, dir_fd=descriptor)
+            os.fsync(descriptor)
+            temporary_removed = True
+        if destination == _attempt_claim_name(stem):
+            permit = _validate_attempt_permit_descriptor(
+                descriptor, phase=phase, stem=stem, binding=binding
+            )
+            if final is None:
+                if permit is None:
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "spent permit lacks its durable attempt claim"
+                    )
+                encoded = _read_descriptor_bytes(descriptor, name)
+                try:
+                    candidate = _decode_json_bytes(encoded, name)
+                    claim = _validate_attempt_claim_value(
+                        candidate,
+                        workspace_record=workspace_record,
+                        phase=phase,
+                        stem=stem,
+                        binding=binding,
+                    )
+                except VbdTrajectoryValidationWorkspaceError:
+                    os.unlink(name, dir_fd=descriptor)
+                    os.fsync(descriptor)
+                    continue
+                if encoded != _canonical_json_bytes(claim):
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "attempt claim temporary is not canonical"
+                    )
+                os.link(
+                    name,
+                    destination,
+                    src_dir_fd=descriptor,
+                    dst_dir_fd=descriptor,
+                    follow_symlinks=False,
+                )
+            else:
+                _load_attempt_claim_descriptor(
+                    descriptor,
+                    workspace_record=workspace_record,
+                    phase=phase,
+                    stem=stem,
+                    binding=binding,
+                )
+        else:
+            claim = _load_attempt_claim_descriptor(
+                descriptor,
+                workspace_record=workspace_record,
+                phase=phase,
+                stem=stem,
+                binding=binding,
+            )
+            if claim is None:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "attempt anchor temporary lacks a durable claim"
+                )
+            expected = _expected_attempt_anchor(
+                workspace_record=workspace_record,
+                phase=phase,
+                stem=stem,
+                claim=claim,
+            )
+            if final is not None:
+                value = _decode_json_bytes(
+                    _read_descriptor_bytes(descriptor, destination), destination
+                )
+                _validate_attempt_anchor_value(
+                    value,
+                    workspace_record=workspace_record,
+                    phase=phase,
+                    stem=stem,
+                    claim=claim,
+                )
+            else:
+                encoded = _read_descriptor_bytes(descriptor, name)
+                if not _canonical_json_bytes(expected).startswith(encoded):
+                    raise VbdTrajectoryValidationWorkspaceError(
+                        "attempt anchor temporary differs from its claim"
+                    )
+        if not temporary_removed:
+            os.unlink(name, dir_fd=descriptor)
+            os.fsync(descriptor)
+
+
 def _create_or_load_attempt_anchor(
     *,
     workspace: Path,
@@ -1578,18 +2273,14 @@ def _create_or_load_attempt_anchor(
     launch_receipt: dict,
 ) -> dict:
     _validate_attempt_anchor_root(workspace, workspace_record)
-    body = {
-        "schema_version": VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION,
-        "workspace_hash": workspace_record["workspace_hash"],
-        "phase": phase,
-        "stem": stem,
-        "launch_receipt": launch_receipt,
-        "internal_only": True,
-        "synthetic_only": True,
-        "customer_output_authorized": False,
-    }
-    expected = {**body, "anchor_hash": sha256_json(body)}
-    _attempt_anchor_path(workspace, phase, stem)
+    manifest = _load_attempt_permit_manifest(workspace, workspace_record)
+    binding = _attempt_permit_binding(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        stem=stem,
+        permit_manifest=manifest,
+    )
     with _attempt_anchor_phase_descriptor(
         workspace=workspace,
         workspace_record=workspace_record,
@@ -1600,25 +2291,106 @@ def _create_or_load_attempt_anchor(
             raise VbdTrajectoryValidationWorkspaceError(
                 "attempt anchor phase was not created"
             )
-        try:
-            encoded = _read_descriptor_bytes(descriptor, stem)
-        except FileNotFoundError:
+        _reconcile_attempt_phase_temps_descriptor(
+            descriptor,
+            workspace_record=workspace_record,
+            phase=phase,
+            manifest=manifest,
+        )
+        claim = _load_attempt_claim_descriptor(
+            descriptor,
+            workspace_record=workspace_record,
+            phase=phase,
+            stem=stem,
+            binding=binding,
+        )
+        if claim is None:
+            if _validate_attempt_permit_descriptor(
+                descriptor, phase=phase, stem=stem, binding=binding
+            ) is None:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "missing attempt permit cannot authorize a fresh launch"
+                )
+            claim = _expected_attempt_claim(
+                workspace_record=workspace_record,
+                phase=phase,
+                stem=stem,
+                binding=binding,
+                launch_receipt=launch_receipt,
+            )
+            _consume_attempt_permit_descriptor(
+                descriptor,
+                phase=phase,
+                stem=stem,
+                binding=binding,
+                claim=claim,
+                allow_missing=False,
+            )
+            _write_json_create_once_descriptor(
+                descriptor,
+                _attempt_claim_name(stem),
+                claim,
+                lock_verifier=None,
+            )
+            claim = _load_attempt_claim_descriptor(
+                descriptor,
+                workspace_record=workspace_record,
+                phase=phase,
+                stem=stem,
+                binding=binding,
+            )
+        else:
+            _consume_attempt_permit_descriptor(
+                descriptor,
+                phase=phase,
+                stem=stem,
+                binding=binding,
+                claim=claim,
+                allow_missing=True,
+            )
+        if claim is None or claim["launch_receipt"] != launch_receipt:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt claim differs from the planned launch"
+            )
+        expected = _expected_attempt_anchor(
+            workspace_record=workspace_record,
+            phase=phase,
+            stem=stem,
+            claim=claim,
+        )
+        if _descriptor_stat_or_none(descriptor, stem) is None:
             _write_json_create_once_descriptor(
                 descriptor, stem, expected, lock_verifier=None
             )
-            encoded = _read_descriptor_bytes(descriptor, stem)
-        existing = _decode_json_bytes(encoded, stem)
-        if encoded != _canonical_json_bytes(existing) or existing != expected:
-            raise VbdTrajectoryValidationWorkspaceError(
-                "attempt anchor differs from the planned launch"
-            )
-    return expected
+        value = _decode_json_bytes(
+            _read_descriptor_bytes(descriptor, stem), stem
+        )
+        return _validate_attempt_anchor_value(
+            value,
+            workspace_record=workspace_record,
+            phase=phase,
+            stem=stem,
+            claim=claim,
+        )
 
 
 def _load_attempt_anchor(
-    *, workspace: Path, workspace_record: dict, phase: str, stem: str
+    *, workspace: Path, workspace_record: dict, phase: str, stem: str,
+    permit_manifest: dict | None = None, reconcile_temps: bool = True
 ) -> dict | None:
     _attempt_anchor_path(workspace, phase, stem)
+    manifest = (
+        _load_attempt_permit_manifest(workspace, workspace_record)
+        if permit_manifest is None
+        else permit_manifest
+    )
+    binding = _attempt_permit_binding(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        stem=stem,
+        permit_manifest=manifest,
+    )
     with _attempt_anchor_phase_descriptor(
         workspace=workspace,
         workspace_record=workspace_record,
@@ -1626,56 +2398,73 @@ def _load_attempt_anchor(
         create=False,
     ) as descriptor:
         if descriptor is None:
-            return None
-        try:
-            encoded = _read_descriptor_bytes(descriptor, stem)
-        except FileNotFoundError:
-            return None
-        value = _decode_json_bytes(encoded, stem)
-        if encoded != _canonical_json_bytes(value):
             raise VbdTrajectoryValidationWorkspaceError(
-                "attempt anchor JSON is not canonical"
+                "attempt anchor phase is missing"
             )
-    if (
-        type(value) is not dict
-        or set(value)
-        != {
-            "schema_version",
-            "workspace_hash",
-            "phase",
-            "stem",
-            "launch_receipt",
-            "internal_only",
-            "synthetic_only",
-            "customer_output_authorized",
-            "anchor_hash",
-        }
-    ):
-        raise VbdTrajectoryValidationWorkspaceError(
-            "attempt anchor shape is invalid"
+        if reconcile_temps:
+            _reconcile_attempt_phase_temps_descriptor(
+                descriptor,
+                workspace_record=workspace_record,
+                phase=phase,
+                manifest=manifest,
+            )
+        claim = _load_attempt_claim_descriptor(
+            descriptor,
+            workspace_record=workspace_record,
+            phase=phase,
+            stem=stem,
+            binding=binding,
         )
-    body = {key: item for key, item in value.items() if key != "anchor_hash"}
-    if (
-        value["schema_version"]
-        != VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION
-        or value["workspace_hash"] != workspace_record["workspace_hash"]
-        or value["phase"] != phase
-        or value["stem"] != stem
-        or type(value["launch_receipt"]) is not dict
-        or value["internal_only"] is not True
-        or value["synthetic_only"] is not True
-        or value["customer_output_authorized"] is not False
-        or value["anchor_hash"] != sha256_json(body)
-    ):
-        raise VbdTrajectoryValidationWorkspaceError(
-            "attempt anchor is invalid"
+        if claim is None:
+            permit = _validate_attempt_permit_descriptor(
+                descriptor, phase=phase, stem=stem, binding=binding
+            )
+            if _descriptor_stat_or_none(descriptor, stem) is not None:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "attempt anchor exists without a durable claim"
+                )
+            if permit is None:
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "spent or missing attempt permit lacks a durable claim"
+                )
+            return None
+        _consume_attempt_permit_descriptor(
+            descriptor,
+            phase=phase,
+            stem=stem,
+            binding=binding,
+            claim=claim,
+            allow_missing=True,
         )
-    return value
+        expected = _expected_attempt_anchor(
+            workspace_record=workspace_record,
+            phase=phase,
+            stem=stem,
+            claim=claim,
+        )
+        if _descriptor_stat_or_none(descriptor, stem) is None:
+            _write_json_create_once_descriptor(
+                descriptor, stem, expected, lock_verifier=None
+            )
+        value = _decode_json_bytes(
+            _read_descriptor_bytes(descriptor, stem), stem
+        )
+        return _validate_attempt_anchor_value(
+            value,
+            workspace_record=workspace_record,
+            phase=phase,
+            stem=stem,
+            claim=claim,
+        )
 
 
 def _attempt_anchor_names(
     *, workspace: Path, workspace_record: dict, phase: str
 ) -> tuple[str, ...]:
+    manifest = _load_attempt_permit_manifest(workspace, workspace_record)
+    stems = tuple(
+        item["stem"] for item in manifest["permits"] if item["phase"] == phase
+    )
     with _attempt_anchor_phase_descriptor(
         workspace=workspace,
         workspace_record=workspace_record,
@@ -1683,28 +2472,53 @@ def _attempt_anchor_names(
         create=False,
     ) as descriptor:
         if descriptor is None:
-            return ()
-        names = []
-        try:
-            listed = sorted(os.listdir(descriptor))
-            for name in listed:
-                opened = os.stat(
-                    name, dir_fd=descriptor, follow_symlinks=False
-                )
-                if (
-                    not stat.S_ISREG(opened.st_mode)
-                    or opened.st_nlink != 1
-                    or re.fullmatch(r"[a-z0-9_]+\.json", name) is None
-                ):
-                    raise VbdTrajectoryValidationWorkspaceError(
-                        "attempt anchor phase contains an unsafe entry"
-                    )
-                names.append(name)
-        except FileNotFoundError as exc:
             raise VbdTrajectoryValidationWorkspaceError(
-                "attempt anchor entry disappeared during enumeration"
-            ) from exc
-        return tuple(names)
+                "attempt anchor phase is missing"
+            )
+        _reconcile_attempt_phase_temps_descriptor(
+            descriptor,
+            workspace_record=workspace_record,
+            phase=phase,
+            manifest=manifest,
+        )
+    admitted = []
+    for stem in stems:
+        anchor = _load_attempt_anchor(
+            workspace=workspace,
+            workspace_record=workspace_record,
+            phase=phase,
+            stem=stem,
+            permit_manifest=manifest,
+            reconcile_temps=False,
+        )
+        if anchor is not None:
+            admitted.append(stem)
+    with _attempt_anchor_phase_descriptor(
+        workspace=workspace,
+        workspace_record=workspace_record,
+        phase=phase,
+        create=False,
+    ) as descriptor:
+        if descriptor is None:
+            raise VbdTrajectoryValidationWorkspaceError(
+                "attempt anchor phase is missing"
+            )
+        allowed = {
+            name
+            for stem in stems
+            for name in (_attempt_permit_name(stem), _attempt_claim_name(stem), stem)
+        }
+        for name in sorted(os.listdir(descriptor)):
+            opened = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+            if (
+                name not in allowed
+                or not stat.S_ISREG(opened.st_mode)
+                or opened.st_nlink != 1
+            ):
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "attempt anchor phase contains an unsafe or off-plan entry"
+                )
+    return tuple(admitted)
 
 
 def _restore_attempt_anchored_launches(
@@ -2577,6 +3391,9 @@ def _workspace_record(
         **_concordance_receipt_location_binding(concordance_path),
         **_workspace_location_binding(workspace),
         **_attempt_anchor_root_binding(workspace, create=False),
+        **_attempt_permit_manifest_binding(
+            workspace, expected_stems=_validation_attempt_stems()
+        ),
         "workspace_directory_bindings": _workspace_directory_bindings(
             workspace, _VALIDATION_WORKSPACE_DIRECTORIES
         ),
@@ -2637,6 +3454,9 @@ def initialize_vbd_trajectory_validation_workspace(
             workspace, _VALIDATION_WORKSPACE_DIRECTORIES
         )
         _attempt_anchor_root_binding(workspace, create=True)
+        _initialize_attempt_permit_manifest(
+            workspace, _validation_attempt_stems()
+        )
         freeze_value = read_strict_json(manifest_path)
         if type(freeze_value) is not dict:
             raise VbdTrajectoryValidationWorkspaceError(
@@ -2729,6 +3549,12 @@ def _validate_workspace_record(
         "attempt_anchor_root_device",
         "attempt_anchor_root_inode",
         "attempt_anchor_directory_bindings",
+        "attempt_permit_mode",
+        "attempt_permit_manifest_device",
+        "attempt_permit_manifest_inode",
+        "attempt_permit_manifest_hash",
+        "attempt_permit_plan_hash",
+        "attempt_permit_count",
         "workspace_directory_bindings",
         "created_at",
         "workspace_token",
@@ -2806,6 +3632,19 @@ def _validate_workspace_record(
             or item["inode"] <= 0
             for item in value["attempt_anchor_directory_bindings"]
         )
+        or value["attempt_permit_mode"] != VBD_TRAJECTORY_ATTEMPT_PERMIT_MODE
+        or type(value["attempt_permit_manifest_device"]) is not int
+        or value["attempt_permit_manifest_device"] < 0
+        or type(value["attempt_permit_manifest_inode"]) is not int
+        or value["attempt_permit_manifest_inode"] <= 0
+        or _strict_sha256(
+            value["attempt_permit_manifest_hash"],
+            "attempt permit manifest hash",
+        )
+        != value["attempt_permit_manifest_hash"]
+        or value["attempt_permit_plan_hash"]
+        != _attempt_permit_plan_hash(_validation_attempt_stems())
+        or value["attempt_permit_count"] != 4_004
         or type(value["workspace_directory_bindings"]) is not list
         or [
             item.get("path") if type(item) is dict else None
@@ -2861,6 +3700,11 @@ def _validate_workspace_record(
                 "workspace directory bindings differ from create-once identities"
             )
         _validate_attempt_anchor_root(workspace, value)
+        _load_attempt_permit_manifest(
+            workspace,
+            value,
+            expected_stems=_validation_attempt_stems(),
+        )
     return value
 
 
@@ -3470,8 +4314,6 @@ def _launch_child(
     verify_lock_identity: Callable[[], None],
 ) -> tuple[int, int, bytes, bytes]:
     verify_lock_identity()
-    _revalidate_launch_admission(workspace, receipt)
-    verify_lock_identity()
     command = _child_command()
     capability = _launch_capability(receipt, capability_token)
     frozen_source = _frozen_source_bundle(
@@ -3482,6 +4324,8 @@ def _launch_child(
     source_read, source_write = os.pipe()
     process = None
     try:
+        verify_lock_identity()
+        _revalidate_launch_admission(workspace, receipt)
         verify_lock_identity()
         process = subprocess.Popen(
             command,

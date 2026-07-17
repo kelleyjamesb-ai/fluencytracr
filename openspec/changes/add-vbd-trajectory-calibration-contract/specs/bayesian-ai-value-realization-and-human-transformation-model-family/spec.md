@@ -562,16 +562,24 @@ rerun full external concordance verification on every load, and require the
 local receipt copy to equal that externally recomputed receipt. A local
 shape-only verification token SHALL NOT admit replicated validation.
 
-Before each child launch, the runner SHALL write a create-once sibling
-attempt-anchor outside the deletable evidence workspace and bind it to the
-workspace identity, sibling-root path/device/inode, all four phase-directory
-inodes, phase, immutable slot/bundle stem, and complete launch receipt. Resume
-SHALL restore a missing workspace launch from that anchor. If
-the corresponding result/checkpoint is missing, the attempt SHALL become a
-durable runner failure and SHALL NOT execute again. Missing, replaced,
-malformed, or off-plan anchors and directory-entry disappearance during locked
-enumeration SHALL fail closed. Attempt anchors SHALL remain internal
-crash/replay state and SHALL NOT be evidence artifacts or committed outputs.
+Workspace initialization SHALL preallocate one sibling expendable launch
+permit for every exact canary, slot, bundle, and lane process and SHALL bind
+each permit's phase/stem, hash, device, and inode in a create-once manifest
+outside the deletable evidence workspace. Before a child launch, the runner
+SHALL construct the complete launch receipt in memory, destroy and sync the
+exact open permit inode, unlink it, sync its directory, require zero surviving
+links, and only then persist the permit-bound claim. A crash after consumption
+but before claim publication SHALL fail closed and SHALL NOT recreate the
+permit. Only that same locked execution may publish the
+claim-bound anchor and reach `Popen`, after immediately revalidating permit
+consumption, claim, anchor, workspace launch, lock, and frozen source. Resume
+MAY reconstruct a missing anchor and workspace launch from a valid claim, but
+a recovered claim without a result/checkpoint SHALL become a durable runner
+failure and SHALL NOT execute. A missing permit without its claim, a deleted
+claim after permit consumption, a stale or hard-linked permit, a malformed or
+off-plan record, or directory-entry disappearance SHALL fail closed. Permits,
+claims, and anchors SHALL remain internal crash/replay state and SHALL NOT be
+evidence artifacts or committed outputs.
 
 The runner SHALL name
 `trusted_frozen_host_crash_replay_and_workspace_tamper_detection_v1` as its

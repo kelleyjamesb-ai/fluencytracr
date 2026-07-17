@@ -847,15 +847,22 @@ reruns complete external concordance workspace verification on every load and
 requires its copied receipt to equal the independently recomputed external
 receipt; an internally minted shape-only token is never sufficient.
 
-Before a child starts, its create-once launch receipt is also written to a
-private sibling attempt-anchor rooted outside the deletable evidence workspace
-and bound by root path hash/device/inode, all four phase-directory inodes,
-workspace hash, phase, and slot/bundle stem. Resume restores a missing
-workspace launch from that anchor. A launch
-whose result/checkpoint is also missing becomes a durable runner failure and
-is never sampled or integrated again. Missing, replaced, malformed, or
-off-plan anchors fail closed; directory-entry disappearance during a locked
-scan is an error, never an empty-directory result. Attempt anchors are internal
+Workspace initialization preallocates one private expendable launch permit for
+every exact canary, slot, bundle, and lane process. A create-once sibling
+manifest binds every permit's phase/stem, hash, device, and inode outside the
+deletable evidence workspace. Before a child can start, the complete launch
+receipt is constructed in memory, then the exact open permit inode is
+destroyed, synced, unlinked, and required to have zero surviving links before
+the permit-bound claim is persisted. A crash after consumption but before the
+claim fails closed and cannot recreate the permit. Only that same locked
+execution may publish the claim-bound anchor and reach
+`Popen`, after an immediate revalidation of the permit, claim, anchor,
+workspace launch, lock, and frozen source. A recovered claim may reconstruct a
+missing anchor and workspace launch, but it becomes a durable interrupted
+failure when no result exists and can never launch a child. Missing permits
+without claims, deleted claims after permit consumption, stale identities,
+hard links, malformed records, off-plan entries, and directory-entry
+disappearance all fail closed. Permits, claims, and anchors are internal
 crash/replay state and are not evidence artifacts or committed outputs.
 
 The compiled runner threat model is

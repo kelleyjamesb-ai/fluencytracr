@@ -320,8 +320,10 @@ def test_malformed_sample_stats_fail_shape_and_type_validation():
     ) == (-1, False)
 
 
-@pytest.mark.parametrize("mutation", ["labels", "cardinality"])
-def test_sampler_diagnostics_reject_misaligned_arviz_rows(
+@pytest.mark.parametrize(
+    "mutation", ["labels", "cardinality", "q90_negative", "q995_nonfinite"]
+)
+def test_sampler_diagnostics_reject_misaligned_or_malformed_arviz_rows(
     monkeypatch, prepared, mutation
 ):
     settings = vbd_nuts_execution_settings("smoke")
@@ -358,11 +360,20 @@ def test_sampler_diagnostics_reject_misaligned_arviz_rows(
             kwargs.get("method") == "quantile"
             and kwargs.get("prob") == nuts.VBD_TRAJECTORY_INTERVAL_99[1]
         ):
-            result = result.to_dataset()
+            if mutation == "q995_nonfinite":
+                result = result * math.nan
+            else:
+                result = result.to_dataset()
             if mutation == "labels":
                 result = result.assign_coords(u_dim_0=[1, 0, 2, 3, 4, 5])
-            else:
+            elif mutation == "cardinality":
                 result = result.isel(u_dim_0=slice(0, 5))
+        if (
+            mutation == "q90_negative"
+            and kwargs.get("method") == "quantile"
+            and kwargs.get("prob") == nuts.VBD_TRAJECTORY_INTERVAL_80[1]
+        ):
+            result = -abs(result)
         return result
 
     monkeypatch.setattr(nuts.az, "mcse", misaligned_mcse)

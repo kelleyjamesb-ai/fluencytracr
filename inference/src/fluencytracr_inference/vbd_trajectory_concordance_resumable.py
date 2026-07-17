@@ -45,6 +45,7 @@ from .vbd_trajectory_statistics import TrajectoryPosteriorSummary
 from .vbd_trajectory_validation_resumable import (
     VBD_TRAJECTORY_CONCORDANCE_RECEIPT_SCHEMA_VERSION,
     VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH,
+    VBD_TRAJECTORY_ATTEMPT_PERMIT_MODE,
     VBD_TRAJECTORY_RUNNER_THREAT_MODEL,
     VbdTrajectoryValidationWorkspaceError,
     _canonical_json_bytes,
@@ -71,6 +72,10 @@ from .vbd_trajectory_validation_resumable import (
     _verify_current_freeze,
     _workspace_from_user_path,
     _attempt_anchor_root_binding,
+    _attempt_permit_manifest_binding,
+    _attempt_permit_plan_hash,
+    _initialize_attempt_permit_manifest,
+    _load_attempt_permit_manifest,
     _validate_attempt_anchor_root,
     _workspace_directory_bindings,
     _workspace_directory_entries,
@@ -85,7 +90,7 @@ from .vbd_trajectory_validation_resumable import (
 
 
 VBD_TRAJECTORY_CONCORDANCE_WORKSPACE_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_WORKSPACE_2026_07_V2"
+    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_WORKSPACE_2026_07_V3"
 )
 VBD_TRAJECTORY_CONCORDANCE_PHASE_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_PHASE_2026_07_V1"
@@ -122,6 +127,17 @@ _CONCORDANCE_WORKSPACE_DIRECTORIES = (
 )
 
 
+def _concordance_attempt_stems() -> dict[str, set[str]]:
+    return {
+        "primary": {f"bundle_{index:02d}.json" for index in range(30)},
+        "recomputation": {
+            f"bundle_{index:02d}_lane_{lane_ordinal}.json"
+            for index in range(30)
+            for lane_ordinal in range(3)
+        },
+    }
+
+
 def _workspace_location(workspace: Path) -> dict:
     opened = workspace.stat(follow_symlinks=False)
     return {
@@ -139,6 +155,9 @@ def _workspace_body(workspace: Path, identity: dict) -> dict:
         "concordance_plan_hash": plan["plan_hash"],
         **_workspace_location(workspace),
         **_attempt_anchor_root_binding(workspace, create=False),
+        **_attempt_permit_manifest_binding(
+            workspace, expected_stems=_concordance_attempt_stems()
+        ),
         "workspace_directory_bindings": _workspace_directory_bindings(
             workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
         ),
@@ -180,6 +199,12 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
         "attempt_anchor_root_device",
         "attempt_anchor_root_inode",
         "attempt_anchor_directory_bindings",
+        "attempt_permit_mode",
+        "attempt_permit_manifest_device",
+        "attempt_permit_manifest_inode",
+        "attempt_permit_manifest_hash",
+        "attempt_permit_plan_hash",
+        "attempt_permit_count",
         "workspace_directory_bindings",
         "created_at",
         "workspace_token",
@@ -221,6 +246,19 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
         != _workspace_directory_bindings(
             workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
         )
+        or value["attempt_permit_mode"] != VBD_TRAJECTORY_ATTEMPT_PERMIT_MODE
+        or type(value["attempt_permit_manifest_device"]) is not int
+        or value["attempt_permit_manifest_device"] < 0
+        or type(value["attempt_permit_manifest_inode"]) is not int
+        or value["attempt_permit_manifest_inode"] <= 0
+        or value["attempt_permit_manifest_hash"] != _load_attempt_permit_manifest(
+            workspace,
+            value,
+            expected_stems=_concordance_attempt_stems(),
+        )["manifest_hash"]
+        or value["attempt_permit_plan_hash"]
+        != _attempt_permit_plan_hash(_concordance_attempt_stems())
+        or value["attempt_permit_count"] != 120
     ):
         raise VbdTrajectoryValidationWorkspaceError(
             "concordance workspace is invalid"
@@ -235,6 +273,8 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
         "seed_manifest_hash",
         "concordance_plan_hash",
         "workspace_path_hash",
+        "attempt_permit_manifest_hash",
+        "attempt_permit_plan_hash",
         "workspace_token",
         "workspace_hash",
     ):
@@ -331,6 +371,9 @@ def initialize_vbd_trajectory_concordance_workspace(
             workspace, _CONCORDANCE_WORKSPACE_DIRECTORIES
         )
         _attempt_anchor_root_binding(workspace, create=True)
+        _initialize_attempt_permit_manifest(
+            workspace, _concordance_attempt_stems()
+        )
         manifest_path = _repo_root() / VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH
         freeze = _validate_freeze_manifest(read_strict_json(manifest_path))
         identity = _verify_current_freeze(freeze)
@@ -440,15 +483,10 @@ def _load_workspace(
 
 
 def _expected_phase_stems(phase: str) -> set[str]:
-    if phase == "primary":
-        return {f"bundle_{index:02d}.json" for index in range(30)}
-    if phase == "recomputation":
-        return {
-            f"bundle_{index:02d}_lane_{lane_ordinal}.json"
-            for index in range(30)
-            for lane_ordinal in range(3)
-        }
-    raise ValueError("concordance phase is invalid")
+    try:
+        return _concordance_attempt_stems()[phase]
+    except KeyError as exc:
+        raise ValueError("concordance phase is invalid") from exc
 
 
 def _validate_workspace_tree(workspace: Path, *, complete: bool) -> None:
@@ -755,10 +793,62 @@ def _validate_launch(
     return value
 
 
+def _revalidate_concordance_launch_admission(
+    workspace: Path, receipt: dict
+) -> None:
+    loaded, record, primary, recomputation = _load_workspace(
+        workspace, verify_lock_identity=lambda: None
+    )
+    if (
+        loaded != workspace
+        or receipt["workspace_hash"] != record["workspace_hash"]
+        or receipt["parent_process_id"] != os.getpid()
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance child launch is detached from its admitted workspace"
+        )
+    phase_record = primary if receipt["phase"] == "primary" else recomputation
+    stem = (
+        f"bundle_{receipt['bundle_index']:02d}.json"
+        if receipt["lane_ordinal"] is None
+        else (
+            f"bundle_{receipt['bundle_index']:02d}_lane_"
+            f"{receipt['lane_ordinal']}.json"
+        )
+    )
+    persisted = _validate_launch(
+        read_strict_json(
+            _safe_workspace_path(
+                workspace, receipt["phase"], "launches", stem
+            )
+        ),
+        phase=receipt["phase"],
+        phase_record=phase_record,
+        bundle_index=receipt["bundle_index"],
+        lane_ordinal=receipt["lane_ordinal"],
+        workspace_record=record,
+    )
+    anchor = _load_attempt_anchor(
+        workspace=workspace,
+        workspace_record=record,
+        phase=receipt["phase"],
+        stem=stem,
+    )
+    if (
+        persisted != receipt
+        or anchor is None
+        or anchor["launch_receipt"] != receipt
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance child launch is not the current create-once action"
+        )
+
+
 def _launch_child(
     *,
     receipt: dict,
     capability_token: str,
+    workspace: Path,
     verify_lock_identity: Callable[[], None],
 ) -> tuple[int, int, bytes, bytes]:
     verify_lock_identity()
@@ -771,6 +861,9 @@ def _launch_child(
     source_read, source_write = os.pipe()
     process = None
     try:
+        verify_lock_identity()
+        _revalidate_concordance_launch_admission(workspace, receipt)
+        verify_lock_identity()
         process = subprocess.Popen(
             _child_command(),
             cwd="/",
@@ -1825,6 +1918,7 @@ def _run_phase_bundle(
     child_pid, return_code, stdout, stderr = _launch_child(
         receipt=launch,
         capability_token=capability_token,
+        workspace=workspace,
         verify_lock_identity=verify_lock_identity,
     )
     if return_code != 0:

@@ -302,11 +302,15 @@ Under `src/fluencytracr_inference/`:
   regenerated recomputation slots in 40 ordered chunks, plus four ordered
   full-setting canaries. Every child launch uses a create-once receipt with an
   inherited frozen-source, one-time capability, and parent-liveness pipes.
-  The admitted receipt is first written to a private create-once sibling
-  attempt-anchor outside the deletable evidence workspace. Resume restores a
-  missing launch from that binding; if its result is also missing, the attempt
-  becomes a durable runner failure and never executes again. Anchor drift and
-  disappearing directory entries fail closed.
+  Workspace initialization preallocates one inode-bound expendable sibling
+  permit per exact child. Admission constructs the receipt, destroys and
+  unlinks the exact permit with no surviving links, then persists the claim and
+  recoverable claim-bound anchor. A crash between consumption and claim
+  publication fails closed. Only the same locked admission may reach
+  `Popen` after immediate revalidation. Resume may restore a missing launch
+  from a claim, but a recovered claim without a result becomes a durable
+  failure and never executes. Missing claims after permit consumption, linked
+  or replaced permits, anchor drift, and disappearing entries fail closed.
   Locked JSON I/O is descriptor-relative with root and admitted-subdirectory
   inode binding. Workspace path and
   inode identity, plan/freeze/concordance bytes, launch ordering, process

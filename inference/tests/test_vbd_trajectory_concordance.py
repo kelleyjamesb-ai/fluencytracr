@@ -1104,8 +1104,11 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
     )
     launches = {"count": 0}
 
-    def fake_launch_child(*, receipt, capability_token, verify_lock_identity):
+    def fake_launch_child(
+        *, receipt, capability_token, workspace, verify_lock_identity
+    ):
         assert type(capability_token) is str
+        assert workspace == tmp_path / "concordance-workspace"
         verify_lock_identity()
         launches["count"] += 1
         child_pid = 50_000 + launches["count"]
@@ -1148,6 +1151,12 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
     primary_result = workspace / "primary" / "results" / "bundle_00.json"
     primary_launch.unlink()
     primary_result.unlink()
+    (
+        workspace.parent
+        / f".{workspace.name}.vbd-proof-anchor"
+        / "primary"
+        / "bundle_00.json"
+    ).unlink()
     monkeypatch.setattr(
         resumable,
         "_launch_child",
@@ -1185,6 +1194,9 @@ def test_concordance_workspace_rejects_completed_subtree_replacement(tmp_path):
             workspace, runner._CONCORDANCE_WORKSPACE_DIRECTORIES
         )
         runner._attempt_anchor_root_binding(workspace, create=True)
+        runner._initialize_attempt_permit_manifest(
+            workspace, runner._concordance_attempt_stems()
+        )
         body = runner._workspace_body(workspace, identity)
         record = {**body, "workspace_hash": sha256_json(body)}
         assert runner._validate_workspace(record, workspace) == record
