@@ -225,9 +225,9 @@
       "id": "vbd-trajectory-engine-concordance",
       "title": "VBD trajectory source freeze and NUTS concordance",
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
-      "status": "in_progress",
+      "status": "pending",
       "risk": "high",
-      "last_note": "Exact review blocked generic phase-loop validation before freeze. It is now launch-specific: primary accepts only prefixes of exactly three NUTS lane pairs; recomputation accepts none; fourth/duplicate/off-plan cycles reject. Direct hard-exit 1/1 and concordance/CLI 37/37 pass atop affected 125/125. Commit and four exact re-reviews are next, then a new freeze/fresh bundle 0. No successful evidence exists."
+      "last_note": "Paused per human after fifth failed attempt. Reviewed S=250d3762 and freeze F=07e6e7e3 passed bindings, but fresh bundle 0 exited 2 before any CLI phase heartbeat or terminal diagnostic; failure hash 46017a06, 0/30 complete. This localizes the blocker to frozen bootstrap/target-module import before main. Workspace is preserved and must not resume. Next session needs a bounded pre-import diagnostic decision and new S/F; no successful evidence or 1,200-case run exists."
     },
     {
       "id": "vbd-trajectory-full-evidence",
