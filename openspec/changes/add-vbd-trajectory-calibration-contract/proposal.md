@@ -54,6 +54,13 @@ trajectory contract before implementation or real-data admission can proceed.
   parameter MCSE values, retain the 4,000-replicate PPC through a fixed draw
   selector, and keep implementation plus replacement evidence unauthorized
   until a later bounded decision.
+- Record the binary64 representable-retention amendment: generate every
+  planned Sobol node, normalize every finite log weight in original ordinal
+  order, retain and renormalize only normalized weights represented as finite
+  and strictly positive binary64 values, then apply every unchanged retained-
+  count, ESS, and maximum-weight gate. Commit generated/finite/retained counts
+  and retained/excluded ordinal sets without adding a floor, tolerance, point,
+  seed, model, threshold, or evidence-universe change.
 
 ## Impact
 

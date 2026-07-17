@@ -276,9 +276,59 @@ the exact conditional Normal mean and variance of that latent-level contrast
 using the `K`, `R`, `B=K+R`, `H`, and contrast-vector equations frozen in the
 contract. Beneath the unchanged accepted 8,192-point outer integration, the
 repaired deterministic engine SHALL evaluate the conditional-Normal mixture
-directly under `conditional_normal_mixture_quantile_v2`. In original retained
-Sobol-ordinal order it SHALL normalize accepted outer weights, compute exact
-mixture moments, and evaluate
+directly under `conditional_normal_mixture_quantile_v2`. It SHALL generate all
+8,192 Sobol nodes, preserve their zero-based original ordinals, evaluate every
+node, and keep each finite binary64 log weight with its matching conditional
+moments. In original ordinal order it SHALL apply pinned
+`scipy.special.logsumexp` to every finite log weight and `numpy.exp` to each
+log-normalized candidate. It SHALL retain exactly candidates whose normalized
+binary64 weights are finite and strictly greater than zero, preserve their
+relative original ordinal order in a native `numpy.float64` vector, compute
+`retained_sum` with exactly
+`float(numpy.sum(retained_candidates,dtype=numpy.float64))`, require a finite
+strictly positive sum, and compute final weights with exactly
+`numpy.asarray(retained_candidates/retained_sum,dtype=numpy.float64)`. It SHALL
+compute ESS as
+`float(1.0/numpy.sum(final_weights**2,dtype=numpy.float64))` and maximum weight
+as `float(numpy.max(final_weights))`, then apply the unchanged retained-count
+`>=4096`, ESS `>=256`, and maximum-normalized-weight `<=.05` gates. It SHALL NOT
+apply a floor, epsilon, tolerance, clipping, replacement, merged component,
+alternate point, different reduction/reordering, or exclusion of a represented
+positive weight.
+
+The integration diagnostics, fit semantic hash, and fresh recomputation SHALL
+bind `generated_point_count=8192`, `finite_log_weight_count`,
+`retained_weight_count`, commitments to the retained and excluded ascending
+zero-based original ordinal lists, and one retention-record hash over those
+fields. Each ordinal commitment SHALL be `sha256_json` of
+`{"algorithm":"vbd_outer_weight_ordinals_v1","ordinals":[...]}`. The retained
+and excluded lists SHALL be disjoint, duplicate-free, in range, and an exact
+partition of `0..8191`. It SHALL require
+`len(retained_ordinals)==retained_weight_count`,
+`len(excluded_ordinals)==generated_point_count-retained_weight_count`, and
+`retained_weight_count<=finite_log_weight_count<=generated_point_count`. The
+retention-record hash SHALL be `sha256_json` of exactly this object with no
+additional keys and with placeholders replaced by the fit's exact integer and
+lowercase-SHA-256 values:
+
+```json
+{
+  "algorithm": "binary64_representable_normalized_weight_retention_v1",
+  "excluded_sobol_ordinal_commitment": "<lowercase-sha256>",
+  "finite_log_weight_count": 0,
+  "generated_point_count": 8192,
+  "retained_sobol_ordinal_commitment": "<lowercase-sha256>",
+  "retained_weight_count": 0
+}
+```
+
+`outer_weight_retention_hash` itself SHALL NOT enter that preimage. Neither
+ordinal list nor any weight/support value SHALL be emitted. Missing, stale,
+malformed, forged, inconsistent, or recomputation-mismatched retention evidence
+SHALL HOLD.
+
+With the resulting retained positive weights it SHALL compute exact mixture
+moments and evaluate
 `F(x)=sum_i w_i*Phi((x-m_i)/s_i)`. For each
 `p in {.005,.10,.90,.995}`, initial bounds SHALL be the outward `nextafter`
 values around the minimum and maximum component quantiles
@@ -286,9 +336,12 @@ values around the minimum and maximum component quantiles
 64 binary64 bisection iterations SHALL move `upper` when `F(mid)>=p` and
 `lower` otherwise; the returned endpoint SHALL be the final upper bound.
 Pinned SciPy `ndtr` and `ndtri` SHALL be used. Empty support, nonfinite input,
-nonpositive variance/weight/total weight, failed bracketing, or a nonfinite
-result SHALL HOLD. No fallback, caller tolerance, adaptive iteration count,
-method switch, or support reordering is permitted.
+nonpositive variance, a caller-supplied nonpositive/nonfinite weight,
+nonpositive/nonfinite retained total weight, failed bracketing, or a nonfinite
+result SHALL HOLD. The outer integrator SHALL remove its own unrepresented
+binary64 zeros before calling the mixture helper. No fallback, caller
+tolerance, adaptive iteration count, method switch, or support reordering is
+permitted.
 
 The standard-Normal endpoint oracle SHALL exactly equal binary64 hex values
 `(-0x1.49b4c64d69160p+1,-0x1.4813c36e26d32p+0,
@@ -317,6 +370,28 @@ belong to a separate predeclared integration plan.
 - **WHEN** the repaired deterministic engine computes all 80% and 99% endpoints
 - **THEN** every binary64 moment and endpoint matches exactly
 - **AND** selecting `normal_quadrature_v1` or any caller-provided method HOLDS
+
+#### Scenario: Binary64 underflow is handled without a numerical floor
+
+- **GIVEN** all 8,192 planned Sobol nodes are generated and every finite log
+  weight is normalized in original ordinal order
+- **AND** binary64 represents one or more mathematically positive normalized
+  tail weights as positive zero
+- **WHEN** the deterministic engine constructs its mixture
+- **THEN** it retains and renormalizes exactly the finite strictly positive
+  represented weights in their original relative order
+- **AND** it applies the unchanged retained-count, ESS, and maximum-weight gates
+- **AND** it binds all required counts and ordinal commitments without a floor,
+  tolerance, point substitution, seed change, or support reordering
+
+#### Scenario: Representability evidence is incomplete or forged
+
+- **GIVEN** a deterministic fit omits or alters a count, ordinal commitment, or
+  retention-record hash, or a fresh recomputation derives different values
+- **WHEN** the fit or study is validated
+- **THEN** it HOLDS even when its posterior summaries otherwise match
+- **AND** caller-supplied zero, negative, or nonfinite mixture weights still
+  HOLD at the generic helper boundary
 
 #### Scenario: Separate trajectories are estimated
 

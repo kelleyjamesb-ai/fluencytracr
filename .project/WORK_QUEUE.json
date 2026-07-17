@@ -230,6 +230,14 @@
       "last_note": "Done 2026-07-17: direct conditional-Normal mixture CDF, centered 4x20k/5k/.999/adapt_full NUTS, five-field MCSE, fixed 4,000-state PPC selector, two non-admissible precision canaries, 7,200s primary bundle-child timeout, and old-lineage tombstone are frozen. Thresholds, acceptance seeds, model target, and 30-bundle universe unchanged. Exact CODE/BUG/ADVERSARIAL/statistical GO after repair. No implementation or evidence ran."
     },
     {
+      "id": "vbd-binary64-representable-retention-amendment",
+      "title": "VBD binary64 representable-retention contract amendment",
+      "bound": "Docs/OpenSpec/status only: define deterministic outer-weight retention after all 8,192 Sobol nodes are generated and finite log weights are identified and normalized in original ordinal order; retain only finite strictly positive binary64-normalized weights, renormalize retained weights, then apply unchanged >=4096, ESS, and max-weight gates; hash-bind generated/finite/retained counts and retained/excluded ordinal commitments; caller-supplied nonpositive weights still HOLD; preserve every model, prior, estimand, seed, threshold, canary, evidence-universe, and fail-closed requirement; no implementation, sampler/canary/evidence execution, replacement S/F, real/customer/live data, public surface, output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-17: frozen exact binary64 representable retention, pinned NumPy reductions, unchanged post-retention count/ESS/max-weight gates, and exact count/ordinal/hash bindings. Final CODE/BUG/ADVERSARIAL/statistical reviews returned GO. No floor, seed, model, gate, implementation, canary, or evidence change; task 2.6 remains unchecked."
+    },
+    {
       "id": "vbd-reference-engine-hardening",
       "title": "VBD reference-engine geometry hardening after bundle-0 statistical HOLD",
       "bound": "Synthetic-only inference/ plus required OpenSpec/docs/status: diagnose and make the smallest PyMC reference-engine parameterization or sampler-geometry repair needed for the accepted bundle-0 divergence and MCSE failures, then reassess 99% tail concordance; preserve the frozen longitudinal model, priors, estimands, six cells, seeds, draws/tuning/chains, target_accept, max_treedepth, every statistical threshold, deterministic engine, exact evidence plan, fail-closed HOLD behavior, and trusted-host threat model; focused diagnostic/development runs only, no accepted concordance continuation, canaries, replicated calibration, real/customer/live data, public schemas, routes, UI, persistence, exports, customer outputs, confidence/probability, ROI, causality, productivity, ranking, new events/reasons/thresholds, promotion, or task 5.6 completion",

@@ -411,13 +411,77 @@ that hyperparameter support; no latent path is emitted.
 
 The repaired deterministic engine reuses the accepted outer integration
 constants: 8,192 unscrambled Sobol points, transformed through the same three-
-dimensional Student-t proposal plus chi-square coordinate, with the existing
-finite-point, effective-sample-size, maximum-normalized-weight, and original-
-ordinal gates. It does not discretize the exact conditional Normal. Given
-retained outer weights `a_i`, conditional means `m_i=q_mean_i`, and conditional
-standard deviations `s_i=sqrt(q_var_i)`, it computes normalized weights
-`w_i=a_i/sum_j(a_j)` in original Sobol-ordinal order and applies
-`conditional_normal_mixture_quantile_v2`:
+dimensional Student-t proposal plus chi-square coordinate. It generates every
+one of the 8,192 planned nodes and preserves each original zero-based Sobol
+ordinal. After evaluating every node, it retains each finite binary64 log
+weight with the matching conditional mean and variance. It computes
+`scipy.special.logsumexp` over the finite log-weight array in original ordinal
+order, then computes each normalized binary64 candidate with `numpy.exp`.
+
+A candidate enters the deterministic mixture only when its normalized weight
+is represented by binary64 as finite and strictly greater than zero. The engine
+keeps retained candidates in original ordinal order as a native
+`numpy.float64` vector. It computes `retained_sum` with exactly
+`float(numpy.sum(retained_candidates,dtype=numpy.float64))`, requires that sum
+to be finite and strictly positive, and computes the final vector with exactly
+`numpy.asarray(retained_candidates/retained_sum,dtype=numpy.float64)`. It
+computes ESS as exactly
+`float(1.0/numpy.sum(final_weights**2,dtype=numpy.float64))` and maximum weight
+as exactly `float(numpy.max(final_weights))`. It then applies the unchanged
+`retained_weight_count>=4096`, `effective_sample_size>=256`, and
+`max_normalized_weight<=0.05` gates. It may not apply a floor, epsilon,
+tolerance, clipping, replacement value, merged component, alternate point, or
+different reduction/reordering to rescue an unrepresented weight. This is an
+exact binary64 representability rule, not a tunable threshold and not
+permission to drop a represented positive weight.
+
+The deterministic integration diagnostics and every fit-semantic/fresh-
+recomputation binding must include:
+
+- `generated_point_count=8192`;
+- `finite_log_weight_count`;
+- `retained_weight_count`;
+- `retained_sobol_ordinal_commitment`, equal to `sha256_json` of
+  `{"algorithm":"vbd_outer_weight_ordinals_v1","ordinals":[...]}` with the
+  retained zero-based ordinals in ascending original order;
+- `excluded_sobol_ordinal_commitment`, computed from the same tagged shape over
+  the ascending complement in `0..8191`; and
+- `outer_weight_retention_hash`, equal to `sha256_json` over the algorithm id
+  `binary64_representable_normalized_weight_retention_v1`, all three counts,
+  and both ordinal commitments.
+
+The exact `outer_weight_retention_hash` preimage has no additional keys and is:
+
+```json
+{
+  "algorithm": "binary64_representable_normalized_weight_retention_v1",
+  "excluded_sobol_ordinal_commitment": "<lowercase-sha256>",
+  "finite_log_weight_count": 0,
+  "generated_point_count": 8192,
+  "retained_sobol_ordinal_commitment": "<lowercase-sha256>",
+  "retained_weight_count": 0
+}
+```
+
+The two zero placeholders are replaced by the exact nonnegative integer counts
+for that fit; the hash placeholders are replaced by the exact commitment
+strings. `outer_weight_retention_hash` itself is not part of its preimage.
+
+The two ordinal sets must be disjoint, duplicate-free, in range, and an exact
+partition of `0..8191`. Exactly
+`len(retained_ordinals)==retained_weight_count` and
+`len(excluded_ordinals)==generated_point_count-retained_weight_count`; therefore
+their lengths sum to `generated_point_count=8192`. The finite-log-weight count
+must satisfy
+`retained_weight_count<=finite_log_weight_count<=generated_point_count`.
+The raw lists, log weights, normalized weights, conditional support, and
+posterior support remain private and are never emitted. Missing, malformed,
+forged, inconsistent, stale, or recomputation-mismatched retention evidence
+HOLDS.
+
+Given the retained normalized weights `w_i`, conditional means
+`m_i=q_mean_i`, and conditional standard deviations `s_i=sqrt(q_var_i)`, the
+engine applies `conditional_normal_mixture_quantile_v2`:
 
 ```text
 posterior_mean = sum_i w_i*m_i
@@ -432,10 +496,13 @@ bound is `nextafter(max_i(m_i+s_i*z_p), +inf)`. The engine requires
 `mid=lower+(upper-lower)/2`, moves `upper` when `F(mid)>=p` and `lower`
 otherwise, and returns the final upper bound. `Phi` is pinned
 `scipy.special.ndtr`; `z_p` is pinned `scipy.special.ndtri`. Missing or empty
-support, nonfinite values, nonpositive conditional variance, nonpositive or
-nonfinite weight, nonfinite/nonpositive total weight, failed bracketing, or a
-nonfinite result HOLDS. There is no fallback, caller tolerance, adaptive
-iteration count, method switch, or support reordering.
+support, nonfinite values, nonpositive conditional variance, a caller-supplied
+nonpositive or nonfinite weight, nonfinite/nonpositive retained total weight,
+failed bracketing, or a nonfinite result HOLDS. The outer integrator must never
+pass its unrepresented binary64 zeros into this helper. There is no fallback,
+caller tolerance, adaptive iteration count, method switch, or support
+reordering; filtering by original ordinal under the rule above does not change
+the relative order of surviving support.
 
 The pinned standard-Normal endpoint oracle is exactly:
 

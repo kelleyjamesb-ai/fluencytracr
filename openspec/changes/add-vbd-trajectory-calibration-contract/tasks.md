@@ -18,6 +18,12 @@
   seeds and thresholds, five-field parameter MCSE evidence, a fixed 4,000-state
   PPC selector, and disjoint full-setting precision canaries; obtain CODE, BUG,
   ADVERSARIAL, and statistical-methodology GO for the amended docs bytes.
+- [x] 1.7 Amend the deterministic outer-weight contract with exact binary64
+  representable retention, unchanged post-retention count/ESS/maximum-weight
+  gates, and hash-bound generated/finite/retained counts plus retained/excluded
+  original-ordinal commitments; obtain CODE, BUG, ADVERSARIAL, and statistical-
+  methodology GO for the amended docs bytes without implementation or
+  execution.
 
 ## 2. Future Synthetic Implementation
 
@@ -37,11 +43,12 @@
   complete negative-control suite. Smoke, partial, malformed, missing,
   duplicate, off-plan, or mixed-provenance studies MUST HOLD; do not execute
   concordance or evidence.
-- [ ] 2.6 Obtain separate implementation approval, then implement the numerical-
-  precision amendment, five-field MCSE records, fixed PPC selector, old-
-  lineage rejection, and both permanently non-admissible full-setting
-  precision canaries. Do not create replacement candidate `S` until both
-  canaries clear every otherwise applicable gate.
+- [ ] 2.6 After task `1.7` and separate implementation reactivation, implement
+  the numerical-precision and binary64 representable-retention amendments,
+  five-field MCSE records, fixed PPC selector, old-lineage rejection, and both
+  permanently non-admissible full-setting precision canaries. Do not create
+  replacement candidate `S` until both canaries clear every otherwise
+  applicable gate.
 
 ## 3. Future Engine Concordance
 

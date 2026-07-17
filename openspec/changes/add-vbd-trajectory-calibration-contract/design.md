@@ -162,6 +162,33 @@ enough for the 99% concordance gate and cannot enter a repaired fit. The NUTS
 reference samples the matching scalar conditional latent contrast at each
 retained draw.
 
+The unchanged outer integration generates all 8,192 Sobol nodes and preserves
+their original zero-based ordinals. It evaluates all nodes, keeps each finite
+binary64 log weight with its matching conditional moments, and computes the
+finite-log-weight `scipy.special.logsumexp` in original ordinal order. It
+computes candidates with `numpy.exp`, selects the represented positive
+candidates without changing their relative order, then renormalizes through
+exactly one `numpy.sum(...,dtype=numpy.float64)` reduction and binary64 vector
+division. Binary64 normalization can map a mathematically positive tail weight
+to positive zero. The engine applies the unchanged `>=4096` retained-count,
+`ESS>=256`, and maximum-normalized-weight `<=.05` gates after retention. This
+exact representability predicate is not a floor or tolerance. The engine
+cannot clamp, round up, replace, merge, reorder, or otherwise rescue an
+unrepresented weight.
+
+Integration diagnostics and their existing semantic/hash bindings must include
+the generated-point, finite-log-weight, and retained-weight counts; SHA-256
+canonical-JSON commitments to the ascending retained and excluded original
+ordinal lists; and one retention-record hash over the exact no-extra-key object
+defined in the contract and normative spec. Retained-list length equals the
+retained count; excluded-list length equals generated minus retained count; and
+their union is exactly every generated ordinal. The lists and weights remain
+private support and are not emitted. Fresh recomputation must rederive the same
+fields. The generic conditional-mixture boundary still requires every caller-
+supplied weight to be finite and strictly positive; the outer integrator must
+filter its own binary64 zeros before calling it. Missing, forged, inconsistent,
+duplicate, or off-range ordinal commitments HOLD.
+
 The repaired reference keeps the same likelihood, priors, named parameters,
 centered zero-sum parameterization, existing generator/chain/PPC seeds, four
 chains, and `max_treedepth=15`, but uses 20,000 retained draws and 5,000 tuning
