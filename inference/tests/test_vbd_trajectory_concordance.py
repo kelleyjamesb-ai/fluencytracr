@@ -1169,6 +1169,20 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
     claim_temp.unlink()
     hidden_claim_temp.unlink()
 
+    allowed_fifo = primary_anchor_phase / "bundle_00.permit.json"
+    os.mkfifo(allowed_fifo)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError,
+        match="attempt anchor phase contains an unsafe or off-plan entry",
+    ):
+        resumable._validate_workspace_tree(
+            workspace,
+            complete=True,
+            restore_missing_anchors=False,
+        )
+    assert allowed_fifo.exists()
+    allowed_fifo.unlink()
+
     primary_anchor = (
         primary_anchor_phase / "bundle_00.json"
     )

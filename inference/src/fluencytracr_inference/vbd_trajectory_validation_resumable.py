@@ -2447,6 +2447,11 @@ def _attempt_anchor_names(
     stems = tuple(
         item["stem"] for item in manifest["permits"] if item["phase"] == phase
     )
+    allowed = {
+        name
+        for stem in stems
+        for name in (_attempt_permit_name(stem), _attempt_claim_name(stem), stem)
+    }
     with _attempt_anchor_phase_descriptor(
         workspace=workspace,
         workspace_record=workspace_record,
@@ -2464,6 +2469,16 @@ def _attempt_anchor_names(
                 phase=phase,
                 manifest=manifest,
             )
+        for name in sorted(os.listdir(descriptor)):
+            opened = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+            if (
+                name not in allowed
+                or not stat.S_ISREG(opened.st_mode)
+                or opened.st_nlink != 1
+            ):
+                raise VbdTrajectoryValidationWorkspaceError(
+                    "attempt anchor phase contains an unsafe or off-plan entry"
+                )
     admitted = []
     for stem in stems:
         anchor = _load_attempt_anchor(
@@ -2477,31 +2492,6 @@ def _attempt_anchor_names(
         )
         if anchor is not None:
             admitted.append(stem)
-    with _attempt_anchor_phase_descriptor(
-        workspace=workspace,
-        workspace_record=workspace_record,
-        phase=phase,
-        create=False,
-    ) as descriptor:
-        if descriptor is None:
-            raise VbdTrajectoryValidationWorkspaceError(
-                "attempt anchor phase is missing"
-            )
-        allowed = {
-            name
-            for stem in stems
-            for name in (_attempt_permit_name(stem), _attempt_claim_name(stem), stem)
-        }
-        for name in sorted(os.listdir(descriptor)):
-            opened = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
-            if (
-                name not in allowed
-                or not stat.S_ISREG(opened.st_mode)
-                or opened.st_nlink != 1
-            ):
-                raise VbdTrajectoryValidationWorkspaceError(
-                    "attempt anchor phase contains an unsafe or off-plan entry"
-                )
     return tuple(admitted)
 
 
