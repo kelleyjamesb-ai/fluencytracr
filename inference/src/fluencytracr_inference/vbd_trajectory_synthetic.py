@@ -2052,18 +2052,26 @@ def _spec_for_panel(panel: TrajectoryObservationPanel) -> _VbdTrajectoryGenerati
             reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
             reported_covariance_ratio=_COVARIANCE_RATIO,
         )
-    if panel.seed_namespace == VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE and panel.seed in (
-        2_055_900_100,
-        2_055_900_101,
+    precision_identity = next(
+        (
+            ordinal
+            for ordinal in (0, 1)
+            if panel.seed == 2_055_900_100 + ordinal
+            and panel.scenario_id
+            == f"{_DEVELOPMENT_SCENARIO_PREFIX}precision_canary_{ordinal}"
+        ),
+        None,
+    )
+    if (
+        panel.seed_namespace == VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE
+        and precision_identity is not None
     ):
-        ordinal = panel.seed - 2_055_900_100
+        ordinal = precision_identity
         body = vbd_trajectory_precision_canary_case_body(ordinal)
         expected_scenario = (
             f"{_DEVELOPMENT_SCENARIO_PREFIX}precision_canary_{ordinal}"
         )
         effect = float(body["effect_size_sd"])
-        if panel.scenario_id != expected_scenario:
-            raise TrajectoryStructureError("precision canary scenario is off plan")
         return _VbdTrajectoryGenerationSpec(
             scenario_id=expected_scenario,
             seed=body["bundle_seed"],

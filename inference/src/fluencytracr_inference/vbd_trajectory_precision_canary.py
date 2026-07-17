@@ -111,16 +111,12 @@ def execute_vbd_trajectory_precision_canary(canary_ordinal: int) -> dict:
             {
                 "lane": lane,
                 "lane_ordinal": lane_ordinal,
-                "binding_hash": binding.binding_hash,
-                "chain_seeds": list(binding.chain_seeds),
-                "ppc_seed": binding.ppc_seed,
-                "primary_fit_summary_hash": primary.fit_summary_hash(),
-                "reference_fit_summary_hash": reference.fit_summary_hash(),
-                "sampler_diagnostics": reference.sampler_diagnostics.to_dict(),
-                "posterior_predictive_checks": [
-                    check.to_dict()
-                    for check in reference.posterior_predictive_checks
-                ],
+                "binding": {
+                    **binding.body_without_hash(),
+                    "binding_hash": binding.binding_hash,
+                },
+                "primary_fit": primary.to_dict(),
+                "reference_fit": reference.to_dict(),
                 "cross_engine_concordance": concordance,
                 "otherwise_applicable_failing_checks": lane_failures,
             }
@@ -131,6 +127,7 @@ def execute_vbd_trajectory_precision_canary(canary_ordinal: int) -> dict:
         "plan_hash": vbd_trajectory_precision_canary_plan()["plan_hash"],
         "canary": canary,
         "panel_manifest_root": case.panel.ordered_panel_manifest_root,
+        "study_plan_root": case.panel.study_plan_root,
         "lane_records": lane_records,
         "otherwise_applicable_gates_passed": not failures,
         "otherwise_applicable_failing_checks": failures,
@@ -152,6 +149,90 @@ def execute_vbd_trajectory_precision_canary(canary_ordinal: int) -> dict:
     return {**body, "result_hash": sha256_json(body)}
 
 
+def _validate_precision_canary_lane_record(
+    value: object,
+    *,
+    canary: dict,
+    study_plan_root: str,
+    lane_ordinal: int,
+) -> list[str]:
+    if type(value) is not dict or set(value) != {
+        "lane",
+        "lane_ordinal",
+        "binding",
+        "primary_fit",
+        "reference_fit",
+        "cross_engine_concordance",
+        "otherwise_applicable_failing_checks",
+    }:
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary lane record shape is invalid"
+        )
+    lane = VBD_TRAJECTORY_LANES[lane_ordinal]
+    if value["lane"] != lane or value["lane_ordinal"] != lane_ordinal:
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary lane order is invalid"
+        )
+    binding = build_vbd_trajectory_nuts_precision_canary_binding(
+        canary_ordinal=canary["canary_ordinal"],
+        bundle_seed=canary["bundle_seed"],
+        lane=lane,
+        lane_ordinal=lane_ordinal,
+        plan_hash=study_plan_root,
+    )
+    expected_binding = {
+        **binding.body_without_hash(),
+        "binding_hash": binding.binding_hash,
+    }
+    if value["binding"] != expected_binding:
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary lane binding is invalid"
+        )
+    try:
+        from .vbd_trajectory_concordance_resumable import (
+            _deterministic_fit_from_dict,
+            _nuts_fit_from_dict,
+        )
+
+        primary = _deterministic_fit_from_dict(value["primary_fit"])
+        reference = _nuts_fit_from_dict(value["reference_fit"])
+    except Exception as exc:
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary fit record is invalid"
+        ) from exc
+    if (
+        primary.lane != lane
+        or reference.lane != lane
+        or primary.prepared_input_hash != reference.prepared_input_hash
+        or primary.model_input_hash != reference.model_input_hash
+        or reference.concordance_binding_hash != binding.binding_hash
+        or reference.settings.full_settings is not True
+        or reference.chain_seeds != binding.chain_seeds
+        or reference.ppc_seed != binding.ppc_seed
+    ):
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary fit bindings are inconsistent"
+        )
+    concordance = evaluate_vbd_trajectory_quantity_concordance(
+        primary.movement_summary, reference.movement_summary
+    )
+    if value["cross_engine_concordance"] != concordance:
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary concordance was not independently rederived"
+        )
+    failures = list(reference.sampler_diagnostics.failing_diagnostics)
+    if not all(check.passed for check in reference.posterior_predictive_checks):
+        failures.append("posterior_predictive_check")
+    if not concordance["passed"]:
+        failures.append("cross_engine_concordance")
+    failures = list(dict.fromkeys(failures))
+    if value["otherwise_applicable_failing_checks"] != failures:
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary lane failures were not independently rederived"
+        )
+    return failures
+
+
 def validate_vbd_trajectory_precision_canary_result(value: object) -> dict:
     if type(value) is not dict:
         raise VbdTrajectoryPrecisionCanaryError(
@@ -162,6 +243,7 @@ def validate_vbd_trajectory_precision_canary_result(value: object) -> dict:
         "plan_hash",
         "canary",
         "panel_manifest_root",
+        "study_plan_root",
         "lane_records",
         "otherwise_applicable_gates_passed",
         "otherwise_applicable_failing_checks",
@@ -191,17 +273,53 @@ def validate_vbd_trajectory_precision_canary_result(value: object) -> dict:
         raise VbdTrajectoryPrecisionCanaryError(
             "precision canary ordinal is malformed"
         )
+    canary = vbd_trajectory_precision_canary_case_body(ordinal)
+    study_plan_root = value.get("study_plan_root")
+    panel_manifest_root = value.get("panel_manifest_root")
+    if (
+        type(study_plan_root) is not str
+        or len(study_plan_root) != 64
+        or any(character not in "0123456789abcdef" for character in study_plan_root)
+        or study_plan_root != sha256_json(canary)
+        or type(panel_manifest_root) is not str
+        or len(panel_manifest_root) != 64
+        or any(
+            character not in "0123456789abcdef"
+            for character in panel_manifest_root
+        )
+    ):
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary panel binding is malformed"
+        )
+    lane_records = value.get("lane_records")
+    if type(lane_records) is not list or len(lane_records) != len(
+        VBD_TRAJECTORY_LANES
+    ):
+        raise VbdTrajectoryPrecisionCanaryError(
+            "precision canary lane records are incomplete"
+        )
+    derived_failures: list[str] = []
+    for lane_ordinal, lane_record in enumerate(lane_records):
+        derived_failures.extend(
+            _validate_precision_canary_lane_record(
+                lane_record,
+                canary=canary,
+                study_plan_root=study_plan_root,
+                lane_ordinal=lane_ordinal,
+            )
+        )
+    derived_failures = list(dict.fromkeys(derived_failures))
     if (
         set(value) != expected_keys
         or value.get("schema_version")
         != VBD_TRAJECTORY_PRECISION_CANARY_SCHEMA_VERSION
         or value.get("plan_hash")
         != vbd_trajectory_precision_canary_plan()["plan_hash"]
-        or value.get("canary")
-        != vbd_trajectory_precision_canary_case_body(ordinal)
-        or type(value.get("lane_records")) is not list
-        or [item.get("lane") for item in value.get("lane_records", [])]
-        != list(VBD_TRAJECTORY_LANES)
+        or value.get("canary") != canary
+        or value.get("otherwise_applicable_failing_checks")
+        != derived_failures
+        or value.get("otherwise_applicable_gates_passed")
+        is not (not derived_failures)
         or value.get("state") != "HOLD"
         or value.get("hold_reasons")
         != [VBD_TRAJECTORY_PRECISION_CANARY_HOLD_REASON]
