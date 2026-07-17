@@ -796,6 +796,24 @@ def test_freeze_manifest_requires_exact_source_set_and_self_hash():
     }
     value = {**body, "manifest_hash": sha256_json(body)}
     assert _validate_freeze_manifest(value) == value
+    tombstoned = deepcopy(value)
+    tombstoned["candidate_source_commit"] = (
+        runner.VBD_TRAJECTORY_TOMBSTONED_SOURCE_COMMIT
+    )
+    tombstoned["implementation_review_refs"] = {
+        role: reference.replace(
+            "a" * 40, runner.VBD_TRAJECTORY_TOMBSTONED_SOURCE_COMMIT
+        )
+        for role, reference in tombstoned["implementation_review_refs"].items()
+    }
+    tombstoned_body = {
+        key: item for key, item in tombstoned.items() if key != "manifest_hash"
+    }
+    tombstoned["manifest_hash"] = sha256_json(tombstoned_body)
+    with pytest.raises(
+        VbdTrajectoryValidationWorkspaceError, match="tombstoned"
+    ):
+        _validate_freeze_manifest(tombstoned)
     missing = deepcopy(value)
     missing["in_scope_files"].pop()
     missing["in_scope_files_hash"] = sha256_json(missing["in_scope_files"])

@@ -6,13 +6,24 @@ from dataclasses import dataclass
 import math
 
 import numpy as np
+from scipy.special import ndtr, ndtri
 
 
 VBD_TRAJECTORY_WEIGHTED_QUANTILE_ID = "weighted_quantile_v1"
 VBD_TRAJECTORY_NORMAL_QUADRATURE_ID = "normal_quadrature_v1"
 VBD_TRAJECTORY_NORMAL_QUADRATURE_POINTS = 16
+VBD_TRAJECTORY_CONDITIONAL_NORMAL_MIXTURE_QUANTILE_ID = (
+    "conditional_normal_mixture_quantile_v2"
+)
+VBD_TRAJECTORY_CONDITIONAL_NORMAL_MIXTURE_BISECTIONS = 64
 VBD_TRAJECTORY_INTERVAL_80 = (0.10, 0.90)
 VBD_TRAJECTORY_INTERVAL_99 = (0.005, 0.995)
+VBD_TRAJECTORY_MIXTURE_QUANTILE_PROBABILITIES = (
+    VBD_TRAJECTORY_INTERVAL_99[0],
+    VBD_TRAJECTORY_INTERVAL_80[0],
+    VBD_TRAJECTORY_INTERVAL_80[1],
+    VBD_TRAJECTORY_INTERVAL_99[1],
+)
 
 
 class TrajectoryStatisticsError(ValueError):
@@ -157,6 +168,163 @@ def normal_quadrature_v1() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     for value in (support, normalized_weights, stable_indices):
         value.setflags(write=False)
     return support, normalized_weights, stable_indices
+
+
+def _validated_conditional_normal_mixture(
+    weights: object,
+    means: object,
+    standard_deviations: object,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    weight_array = np.asarray(weights)
+    mean_array = np.asarray(means)
+    sd_array = np.asarray(standard_deviations)
+    if (
+        weight_array.ndim != 1
+        or mean_array.ndim != 1
+        or sd_array.ndim != 1
+        or len(weight_array) == 0
+        or not (len(weight_array) == len(mean_array) == len(sd_array))
+        or weight_array.dtype.kind not in "fiu"
+        or mean_array.dtype.kind not in "fiu"
+        or sd_array.dtype.kind not in "fiu"
+    ):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture arrays are malformed"
+        )
+    weight_array = np.asarray(weight_array, dtype=np.float64)
+    mean_array = np.asarray(mean_array, dtype=np.float64)
+    sd_array = np.asarray(sd_array, dtype=np.float64)
+    if (
+        not np.all(np.isfinite(weight_array))
+        or not np.all(np.isfinite(mean_array))
+        or not np.all(np.isfinite(sd_array))
+        or np.any(weight_array <= 0.0)
+        or np.any(sd_array <= 0.0)
+    ):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture requires finite positive weights and scales"
+        )
+    total = float(np.sum(weight_array))
+    if not math.isfinite(total) or total <= 0.0:
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture weight total is invalid"
+        )
+    normalized = np.asarray(weight_array / total, dtype=np.float64)
+    if not np.all(np.isfinite(normalized)) or np.any(normalized <= 0.0):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture normalized weights are invalid"
+        )
+    return normalized, mean_array, sd_array
+
+
+def conditional_normal_mixture_quantile_v2(
+    weights: object,
+    means: object,
+    standard_deviations: object,
+    probability: float,
+) -> float:
+    """Return one pinned direct conditional-Normal mixture quantile."""
+
+    if (
+        type(probability) not in (int, float)
+        or not math.isfinite(float(probability))
+        or float(probability) not in VBD_TRAJECTORY_MIXTURE_QUANTILE_PROBABILITIES
+    ):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture probability is off plan"
+        )
+    probability = float(probability)
+    normalized, mean_array, sd_array = _validated_conditional_normal_mixture(
+        weights, means, standard_deviations
+    )
+    z_probability = float(ndtri(probability))
+    if not math.isfinite(z_probability):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture Normal oracle is invalid"
+        )
+    component_quantiles = mean_array + sd_array * z_probability
+    lower = float(np.nextafter(np.min(component_quantiles), -math.inf))
+    upper = float(np.nextafter(np.max(component_quantiles), math.inf))
+
+    def cdf(value: float) -> float:
+        result = float(np.sum(normalized * ndtr((value - mean_array) / sd_array)))
+        if not math.isfinite(result):
+            raise TrajectoryStatisticsError(
+                "conditional Normal mixture CDF is nonfinite"
+            )
+        return result
+
+    if cdf(lower) > probability or cdf(upper) < probability:
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture quantile is not bracketed"
+        )
+    for _ in range(VBD_TRAJECTORY_CONDITIONAL_NORMAL_MIXTURE_BISECTIONS):
+        midpoint = lower + (upper - lower) / 2.0
+        if cdf(midpoint) >= probability:
+            upper = midpoint
+        else:
+            lower = midpoint
+    if not math.isfinite(upper):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture quantile is nonfinite"
+        )
+    return upper
+
+
+def summarize_conditional_normal_mixture_v2(
+    quantity_name: str,
+    weights: object,
+    means: object,
+    variances: object,
+) -> TrajectoryPosteriorSummary:
+    """Summarize exact conditional Normals without discretizing their support."""
+
+    variance_array = np.asarray(variances)
+    if variance_array.ndim != 1 or variance_array.dtype.kind not in "fiu":
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture variances are malformed"
+        )
+    variance_array = np.asarray(variance_array, dtype=np.float64)
+    if not np.all(np.isfinite(variance_array)) or np.any(variance_array <= 0.0):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture variances must be finite and positive"
+        )
+    standard_deviations = np.sqrt(variance_array)
+    normalized, mean_array, standard_deviations = (
+        _validated_conditional_normal_mixture(
+            weights, means, standard_deviations
+        )
+    )
+    posterior_mean = float(np.sum(normalized * mean_array))
+    posterior_variance = float(
+        np.sum(
+            normalized
+            * (standard_deviations**2 + (mean_array - posterior_mean) ** 2)
+        )
+    )
+    if (
+        not math.isfinite(posterior_mean)
+        or not math.isfinite(posterior_variance)
+        or posterior_variance <= 0.0
+    ):
+        raise TrajectoryStatisticsError(
+            "conditional Normal mixture moments are invalid"
+        )
+    quantiles = {
+        probability: conditional_normal_mixture_quantile_v2(
+            normalized, mean_array, standard_deviations, probability
+        )
+        for probability in VBD_TRAJECTORY_MIXTURE_QUANTILE_PROBABILITIES
+    }
+    return TrajectoryPosteriorSummary(
+        quantity_name=quantity_name,
+        posterior_mean=posterior_mean,
+        posterior_sd=math.sqrt(posterior_variance),
+        interval_80_lower=quantiles[VBD_TRAJECTORY_INTERVAL_80[0]],
+        interval_80_upper=quantiles[VBD_TRAJECTORY_INTERVAL_80[1]],
+        interval_99_lower=quantiles[VBD_TRAJECTORY_INTERVAL_99[0]],
+        interval_99_upper=quantiles[VBD_TRAJECTORY_INTERVAL_99[1]],
+    )
 
 
 def summarize_weighted_support(

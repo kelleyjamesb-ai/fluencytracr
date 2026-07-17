@@ -158,6 +158,7 @@ _RUNNER_SOURCE_PATHS = (
     "inference/src/fluencytracr_inference/vbd_trajectory_concordance_resumable.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_concordance_cli.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_nuts.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_precision_canary.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_types.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_synthetic.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_preparation.py",
@@ -205,6 +206,30 @@ _VALIDATION_WORKSPACE_DIRECTORIES = (
 _CHILD_STDOUT_LIMIT = 2 * 1024 * 1024
 _CHILD_STDERR_LIMIT = 64 * 1024
 VBD_TRAJECTORY_CHILD_TIMEOUT_SECONDS = 600
+VBD_TRAJECTORY_TOMBSTONED_SOURCE_COMMIT = (
+    "e59181b56bcccde4872b84f6dc78370215c0197a"
+)
+VBD_TRAJECTORY_TOMBSTONED_FREEZE_COMMIT = (
+    "0287713dfba10bcaafc781f01218e931c70195e8"
+)
+VBD_TRAJECTORY_TOMBSTONED_MANIFEST_HASH = (
+    "fea230dd1eca0192140b309c02b55574133ab0519d2293ec7245b200eb565d0f"
+)
+VBD_TRAJECTORY_TOMBSTONED_WORKSPACE_HASH = (
+    "c82292eba08a350a289f0b19602b2b243456cb63805c636c201025a63aec1eba"
+)
+VBD_TRAJECTORY_TOMBSTONED_BUNDLE_RESULT_HASH = (
+    "ab640359fb1de8362e745c8bf3da08f588974b03c0d34c0e7da2707ed931817f"
+)
+_VBD_TRAJECTORY_TOMBSTONED_IDENTITIES = frozenset(
+    {
+        VBD_TRAJECTORY_TOMBSTONED_SOURCE_COMMIT,
+        VBD_TRAJECTORY_TOMBSTONED_FREEZE_COMMIT,
+        VBD_TRAJECTORY_TOMBSTONED_MANIFEST_HASH,
+        VBD_TRAJECTORY_TOMBSTONED_WORKSPACE_HASH,
+        VBD_TRAJECTORY_TOMBSTONED_BUNDLE_RESULT_HASH,
+    }
+)
 VBD_TRAJECTORY_ATTEMPT_ANCHOR_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_ATTEMPT_ANCHOR_2026_07_V2"
 )
@@ -461,6 +486,17 @@ raise SystemExit(result)
 
 class VbdTrajectoryValidationWorkspaceError(RuntimeError):
     """The proof workspace or execution provenance is unsafe or incomplete."""
+
+
+def _reject_tombstoned_vbd_lineage(*identities: object) -> None:
+    if any(
+        type(identity) is str
+        and identity in _VBD_TRAJECTORY_TOMBSTONED_IDENTITIES
+        for identity in identities
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "tombstoned VBD lineage is permanently non-admissible"
+        )
 
 
 class _WorkspaceDirectoryHandle:
@@ -3080,6 +3116,7 @@ def _validate_freeze_manifest(value: object) -> dict:
     tree = value["candidate_source_tree"]
     reviews = value["implementation_review_refs"]
     files = value["in_scope_files"]
+    _reject_tombstoned_vbd_lineage(commit, value["manifest_hash"])
     if (
         value["schema_version"] != VBD_TRAJECTORY_FREEZE_MANIFEST_SCHEMA_VERSION
         or type(commit) is not str
@@ -3634,6 +3671,12 @@ def _validate_workspace_record(
     if type(value) is not dict or set(value) != expected:
         raise VbdTrajectoryValidationWorkspaceError("workspace record shape is invalid")
     body = {key: item for key, item in value.items() if key != "workspace_hash"}
+    _reject_tombstoned_vbd_lineage(
+        value["freeze_commit"],
+        value["freeze_manifest_hash"],
+        value["candidate_source_commit"],
+        value["workspace_hash"],
+    )
     if (
         value["schema_version"] != VBD_TRAJECTORY_RUNNER_WORKSPACE_SCHEMA_VERSION
         or any(

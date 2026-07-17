@@ -41,15 +41,17 @@ from .vbd_trajectory_types import (
 
 VBD_TRAJECTORY_NUTS_REFERENCE_ENGINE = "pymc_nuts_state_space_reference"
 VBD_TRAJECTORY_NUTS_FULL_CHAINS = 4
-VBD_TRAJECTORY_NUTS_FULL_DRAWS = 1_000
-VBD_TRAJECTORY_NUTS_FULL_TUNE = 2_000
-VBD_TRAJECTORY_NUTS_FULL_TARGET_ACCEPT = 0.99
+VBD_TRAJECTORY_NUTS_FULL_DRAWS = 20_000
+VBD_TRAJECTORY_NUTS_FULL_TUNE = 5_000
+VBD_TRAJECTORY_NUTS_FULL_TARGET_ACCEPT = 0.999
 VBD_TRAJECTORY_NUTS_FULL_MAX_TREEDEPTH = 15
+VBD_TRAJECTORY_NUTS_FULL_INIT = "jitter+adapt_full"
 VBD_TRAJECTORY_NUTS_SMOKE_CHAINS = 2
 VBD_TRAJECTORY_NUTS_SMOKE_DRAWS = 40
 VBD_TRAJECTORY_NUTS_SMOKE_TUNE = 60
 VBD_TRAJECTORY_NUTS_SMOKE_TARGET_ACCEPT = 0.90
 VBD_TRAJECTORY_NUTS_SMOKE_MAX_TREEDEPTH = 10
+VBD_TRAJECTORY_NUTS_SMOKE_INIT = "jitter+adapt_diag"
 
 VBD_TRAJECTORY_NUTS_RHAT_MAX = 1.01
 VBD_TRAJECTORY_NUTS_ESS_MIN = 400.0
@@ -57,6 +59,10 @@ VBD_TRAJECTORY_NUTS_BFMI_MIN = 0.3
 VBD_TRAJECTORY_NUTS_MCSE_RATIO_MAX = 0.1
 VBD_TRAJECTORY_NUTS_PPC_VALUE_MIN = 0.05
 VBD_TRAJECTORY_NUTS_PPC_VALUE_MAX = 0.95
+VBD_TRAJECTORY_PPC_REPLICATE_COUNT = 4_000
+VBD_TRAJECTORY_PPC_DRAWS_PER_CHAIN = 1_000
+VBD_TRAJECTORY_PPC_DRAW_STRIDE = 20
+VBD_TRAJECTORY_PPC_DRAW_OFFSET = 10
 VBD_TRAJECTORY_PPC_MANIFEST_ID = "vbd_trajectory_ppc_v1"
 VBD_TRAJECTORY_PPC_STATISTIC_NAMES = (
     "pre_post_mean_movement",
@@ -81,6 +87,7 @@ class TrajectoryNutsError(RuntimeError):
 
 
 _VBD_TRAJECTORY_CONCORDANCE_RUNNER_TOKEN = object()
+_VBD_TRAJECTORY_PRECISION_CANARY_RUNNER_TOKEN = object()
 
 
 @dataclass(frozen=True)
@@ -188,6 +195,95 @@ def build_vbd_trajectory_nuts_concordance_binding(
 
 
 @dataclass(frozen=True)
+class TrajectoryNutsPrecisionCanaryBinding:
+    canary_ordinal: int
+    bundle_seed: int
+    lane: str
+    lane_ordinal: int
+    plan_hash: str
+    chain_seeds: tuple[int, int, int, int]
+    ppc_seed: int
+    binding_hash: str
+
+    def body_without_hash(self) -> dict:
+        return {
+            "binding_kind": "precision_canary_nonacceptance",
+            "canary_ordinal": self.canary_ordinal,
+            "bundle_seed": self.bundle_seed,
+            "lane": self.lane,
+            "lane_ordinal": self.lane_ordinal,
+            "plan_hash": self.plan_hash,
+            "chain_seeds": list(self.chain_seeds),
+            "ppc_seed": self.ppc_seed,
+            "acceptance_slot_key": None,
+            "acceptance_evidence_eligible": False,
+        }
+
+    def __post_init__(self) -> None:
+        expected_bundle_seed = 2_055_900_100 + self.canary_ordinal
+        expected_chain_base = (
+            2_055_900_200
+            + 20 * self.canary_ordinal
+            + 4 * self.lane_ordinal
+        )
+        expected_ppc_seed = (
+            2_055_900_300 + 10 * self.canary_ordinal + self.lane_ordinal
+        )
+        if (
+            type(self.canary_ordinal) is not int
+            or self.canary_ordinal not in (0, 1)
+            or self.lane not in VBD_TRAJECTORY_LANES
+            or type(self.lane_ordinal) is not int
+            or not 0 <= self.lane_ordinal < len(VBD_TRAJECTORY_LANES)
+            or VBD_TRAJECTORY_LANES[self.lane_ordinal] != self.lane
+            or type(self.plan_hash) is not str
+            or len(self.plan_hash) != 64
+            or any(character not in "0123456789abcdef" for character in self.plan_hash)
+            or self.bundle_seed != expected_bundle_seed
+            or self.chain_seeds
+            != tuple(expected_chain_base + index for index in range(4))
+            or self.ppc_seed != expected_ppc_seed
+            or self.binding_hash != sha256_json(self.body_without_hash())
+        ):
+            raise TrajectoryNutsError("full NUTS precision-canary binding is invalid")
+
+
+def build_vbd_trajectory_nuts_precision_canary_binding(
+    *,
+    canary_ordinal: int,
+    bundle_seed: int,
+    lane: str,
+    lane_ordinal: int,
+    plan_hash: str,
+) -> TrajectoryNutsPrecisionCanaryBinding:
+    chain_base = 2_055_900_200 + 20 * canary_ordinal + 4 * lane_ordinal
+    body = {
+        "binding_kind": "precision_canary_nonacceptance",
+        "canary_ordinal": canary_ordinal,
+        "bundle_seed": bundle_seed,
+        "lane": lane,
+        "lane_ordinal": lane_ordinal,
+        "plan_hash": plan_hash,
+        "chain_seeds": [chain_base + index for index in range(4)],
+        "ppc_seed": 2_055_900_300 + 10 * canary_ordinal + lane_ordinal,
+        "acceptance_slot_key": None,
+        "acceptance_evidence_eligible": False,
+    }
+    return TrajectoryNutsPrecisionCanaryBinding(
+        **{
+            "canary_ordinal": canary_ordinal,
+            "bundle_seed": bundle_seed,
+            "lane": lane,
+            "lane_ordinal": lane_ordinal,
+            "plan_hash": plan_hash,
+            "chain_seeds": tuple(body["chain_seeds"]),
+            "ppc_seed": body["ppc_seed"],
+            "binding_hash": sha256_json(body),
+        }
+    )
+
+
+@dataclass(frozen=True)
 class TrajectoryNutsSettings:
     mode: Literal["full", "smoke"]
     chains: int
@@ -195,6 +291,7 @@ class TrajectoryNutsSettings:
     tune: int
     target_accept: float
     max_treedepth: int
+    init: str
     sampler: str = "pymc"
     cores: int = 1
     blas_cores: int = 1
@@ -214,6 +311,7 @@ class TrajectoryNutsSettings:
             and self.tune == VBD_TRAJECTORY_NUTS_FULL_TUNE
             and self.target_accept == VBD_TRAJECTORY_NUTS_FULL_TARGET_ACCEPT
             and self.max_treedepth == VBD_TRAJECTORY_NUTS_FULL_MAX_TREEDEPTH
+            and self.init == VBD_TRAJECTORY_NUTS_FULL_INIT
         )
         smoke = (
             self.mode == "smoke"
@@ -222,6 +320,7 @@ class TrajectoryNutsSettings:
             and self.tune == VBD_TRAJECTORY_NUTS_SMOKE_TUNE
             and self.target_accept == VBD_TRAJECTORY_NUTS_SMOKE_TARGET_ACCEPT
             and self.max_treedepth == VBD_TRAJECTORY_NUTS_SMOKE_MAX_TREEDEPTH
+            and self.init == VBD_TRAJECTORY_NUTS_SMOKE_INIT
         )
         if not common or not (full or smoke):
             raise TrajectoryNutsError("NUTS settings are not a compiled mode")
@@ -235,6 +334,7 @@ class TrajectoryNutsSettings:
             and self.tune == VBD_TRAJECTORY_NUTS_FULL_TUNE
             and self.target_accept == VBD_TRAJECTORY_NUTS_FULL_TARGET_ACCEPT
             and self.max_treedepth == VBD_TRAJECTORY_NUTS_FULL_MAX_TREEDEPTH
+            and self.init == VBD_TRAJECTORY_NUTS_FULL_INIT
             and self.sampler == "pymc"
             and self.cores == 1
             and self.blas_cores == 1
@@ -249,6 +349,7 @@ class TrajectoryNutsSettings:
             "tune": self.tune,
             "target_accept": float(self.target_accept),
             "max_treedepth": self.max_treedepth,
+            "init": self.init,
             "sampler": self.sampler,
             "cores": self.cores,
             "blas_cores": self.blas_cores,
@@ -264,8 +365,10 @@ class TrajectorySamplerParameterDiagnostic:
     bulk_ess: float
     tail_ess: float
     posterior_mean_mcse: float
-    interval_80_endpoint_mcse: float
-    interval_99_endpoint_mcse: float
+    interval_80_lower_endpoint_mcse: float
+    interval_80_upper_endpoint_mcse: float
+    interval_99_lower_endpoint_mcse: float
+    interval_99_upper_endpoint_mcse: float
     posterior_sd: float
 
     def __post_init__(self) -> None:
@@ -276,8 +379,10 @@ class TrajectorySamplerParameterDiagnostic:
             self.bulk_ess,
             self.tail_ess,
             self.posterior_mean_mcse,
-            self.interval_80_endpoint_mcse,
-            self.interval_99_endpoint_mcse,
+            self.interval_80_lower_endpoint_mcse,
+            self.interval_80_upper_endpoint_mcse,
+            self.interval_99_lower_endpoint_mcse,
+            self.interval_99_upper_endpoint_mcse,
             self.posterior_sd,
         ):
             if isinstance(value, (bool, np.bool_)) or not isinstance(
@@ -291,8 +396,10 @@ class TrajectorySamplerParameterDiagnostic:
             return math.inf
         return max(
             self.posterior_mean_mcse,
-            self.interval_80_endpoint_mcse,
-            self.interval_99_endpoint_mcse,
+            self.interval_80_lower_endpoint_mcse,
+            self.interval_80_upper_endpoint_mcse,
+            self.interval_99_lower_endpoint_mcse,
+            self.interval_99_upper_endpoint_mcse,
         ) / self.posterior_sd
 
     def to_dict(self) -> dict:
@@ -302,8 +409,18 @@ class TrajectorySamplerParameterDiagnostic:
             "bulk_ess": float(self.bulk_ess),
             "tail_ess": float(self.tail_ess),
             "posterior_mean_mcse": float(self.posterior_mean_mcse),
-            "interval_80_endpoint_mcse": float(self.interval_80_endpoint_mcse),
-            "interval_99_endpoint_mcse": float(self.interval_99_endpoint_mcse),
+            "interval_80_lower_endpoint_mcse": float(
+                self.interval_80_lower_endpoint_mcse
+            ),
+            "interval_80_upper_endpoint_mcse": float(
+                self.interval_80_upper_endpoint_mcse
+            ),
+            "interval_99_lower_endpoint_mcse": float(
+                self.interval_99_lower_endpoint_mcse
+            ),
+            "interval_99_upper_endpoint_mcse": float(
+                self.interval_99_upper_endpoint_mcse
+            ),
             "posterior_sd": float(self.posterior_sd),
             "max_mcse_to_posterior_sd_ratio": float(self.max_mcse_ratio),
         }
@@ -402,10 +519,14 @@ class TrajectorySamplerDiagnostics:
         if any(
             not math.isfinite(parameter.posterior_mean_mcse)
             or parameter.posterior_mean_mcse < 0.0
-            or not math.isfinite(parameter.interval_80_endpoint_mcse)
-            or parameter.interval_80_endpoint_mcse < 0.0
-            or not math.isfinite(parameter.interval_99_endpoint_mcse)
-            or parameter.interval_99_endpoint_mcse < 0.0
+            or not math.isfinite(parameter.interval_80_lower_endpoint_mcse)
+            or parameter.interval_80_lower_endpoint_mcse < 0.0
+            or not math.isfinite(parameter.interval_80_upper_endpoint_mcse)
+            or parameter.interval_80_upper_endpoint_mcse < 0.0
+            or not math.isfinite(parameter.interval_99_lower_endpoint_mcse)
+            or parameter.interval_99_lower_endpoint_mcse < 0.0
+            or not math.isfinite(parameter.interval_99_upper_endpoint_mcse)
+            or parameter.interval_99_upper_endpoint_mcse < 0.0
             or not math.isfinite(parameter.max_mcse_ratio)
             or parameter.max_mcse_ratio > VBD_TRAJECTORY_NUTS_MCSE_RATIO_MAX
             for parameter in self.parameters
@@ -559,7 +680,7 @@ class TrajectoryNutsFit:
                 )
             ):
                 raise TrajectoryNutsError(
-                    "full NUTS fits require the runner-owned concordance binding"
+                    "full NUTS fits require a runner-owned execution binding"
                 )
         elif self.concordance_binding_hash is not None:
             raise TrajectoryNutsError(
@@ -625,6 +746,7 @@ def vbd_nuts_execution_settings(
             tune=VBD_TRAJECTORY_NUTS_FULL_TUNE,
             target_accept=VBD_TRAJECTORY_NUTS_FULL_TARGET_ACCEPT,
             max_treedepth=VBD_TRAJECTORY_NUTS_FULL_MAX_TREEDEPTH,
+            init=VBD_TRAJECTORY_NUTS_FULL_INIT,
         )
     if mode == "smoke":
         return TrajectoryNutsSettings(
@@ -634,6 +756,7 @@ def vbd_nuts_execution_settings(
             tune=VBD_TRAJECTORY_NUTS_SMOKE_TUNE,
             target_accept=VBD_TRAJECTORY_NUTS_SMOKE_TARGET_ACCEPT,
             max_treedepth=VBD_TRAJECTORY_NUTS_SMOKE_MAX_TREEDEPTH,
+            init=VBD_TRAJECTORY_NUTS_SMOKE_INIT,
         )
     raise ValueError("NUTS execution mode must be full or smoke")
 
@@ -654,15 +777,27 @@ def _validate_reference_seeds(
     ppc_seed: object,
     *,
     concordance_binding: TrajectoryNutsConcordanceBinding | None = None,
+    precision_canary_binding: TrajectoryNutsPrecisionCanaryBinding | None = None,
     runner_token: object | None = None,
 ) -> tuple[tuple[int, ...], int]:
-    if settings.mode == "full" and (
-        runner_token is not _VBD_TRAJECTORY_CONCORDANCE_RUNNER_TOKEN
-        or type(concordance_binding) is not TrajectoryNutsConcordanceBinding
+    concordance_execution = (
+        runner_token is _VBD_TRAJECTORY_CONCORDANCE_RUNNER_TOKEN
+        and type(concordance_binding) is TrajectoryNutsConcordanceBinding
+        and precision_canary_binding is None
+    )
+    precision_canary_execution = (
+        runner_token is _VBD_TRAJECTORY_PRECISION_CANARY_RUNNER_TOKEN
+        and type(precision_canary_binding) is TrajectoryNutsPrecisionCanaryBinding
+        and concordance_binding is None
+    )
+    if settings.mode == "full" and not (
+        concordance_execution or precision_canary_execution
     ):
         raise ValueError("full NUTS seeds require the runner-owned slot binding")
     if settings.mode == "smoke" and (
-        concordance_binding is not None or runner_token is not None
+        concordance_binding is not None
+        or precision_canary_binding is not None
+        or runner_token is not None
     ):
         raise ValueError("smoke NUTS cannot use the concordance runner binding")
     if type(chain_seeds) is not tuple or len(chain_seeds) != settings.chains:
@@ -676,9 +811,10 @@ def _validate_reference_seeds(
         raise ValueError("NUTS chain seeds must be unique")
     if validated_ppc in validated_chains:
         raise ValueError("PPC seed must be distinct from every chain seed")
+    execution_binding = concordance_binding or precision_canary_binding
     if settings.mode == "full" and (
-        validated_chains != concordance_binding.chain_seeds
-        or validated_ppc != concordance_binding.ppc_seed
+        validated_chains != execution_binding.chain_seeds
+        or validated_ppc != execution_binding.ppc_seed
     ):
         raise ValueError("full NUTS seeds differ from the concordance binding")
     if settings.mode == "smoke" and any(
@@ -1050,12 +1186,10 @@ def _compute_sampler_diagnostics(
                         bulk_ess=rows["bulk"][index][1],
                         tail_ess=rows["tail"][index][1],
                         posterior_mean_mcse=rows["mean"][index][1],
-                        interval_80_endpoint_mcse=max(
-                            rows["q10"][index][1], rows["q90"][index][1]
-                        ),
-                        interval_99_endpoint_mcse=max(
-                            rows["q005"][index][1], rows["q995"][index][1]
-                        ),
+                        interval_80_lower_endpoint_mcse=rows["q10"][index][1],
+                        interval_80_upper_endpoint_mcse=rows["q90"][index][1],
+                        interval_99_lower_endpoint_mcse=rows["q005"][index][1],
+                        interval_99_upper_endpoint_mcse=rows["q995"][index][1],
                         posterior_sd=float(posterior_sd[index]),
                     )
                 )
@@ -1226,6 +1360,47 @@ def _posterior_draws(idata, name: str) -> np.ndarray:
     return values
 
 
+def _ppc_flat_draw_selection(
+    idata, settings: TrajectoryNutsSettings
+) -> np.ndarray:
+    full_sample_count = settings.chains * settings.draws
+    if settings.mode != "full":
+        return np.arange(full_sample_count, dtype=np.int64)
+    try:
+        chain_coordinates = np.asarray(idata.posterior.coords["chain"])
+        draw_coordinates = np.asarray(idata.posterior.coords["draw"])
+    except (AttributeError, KeyError, TypeError) as exc:
+        raise TrajectoryNutsError(
+            "PPC chain or draw coordinates are missing"
+        ) from exc
+    if (
+        not np.array_equal(chain_coordinates, np.arange(settings.chains))
+        or not np.array_equal(draw_coordinates, np.arange(settings.draws))
+    ):
+        raise TrajectoryNutsError("PPC chain or draw coordinates are off grid")
+    per_chain = (
+        VBD_TRAJECTORY_PPC_DRAW_STRIDE
+        * np.arange(VBD_TRAJECTORY_PPC_DRAWS_PER_CHAIN, dtype=np.int64)
+        + VBD_TRAJECTORY_PPC_DRAW_OFFSET
+    )
+    if (
+        len(per_chain) != VBD_TRAJECTORY_PPC_DRAWS_PER_CHAIN
+        or len(np.unique(per_chain)) != len(per_chain)
+        or not np.array_equal(per_chain, np.sort(per_chain))
+        or int(per_chain[-1]) >= settings.draws
+    ):
+        raise TrajectoryNutsError("PPC draw selector is malformed")
+    flat_selection = np.concatenate(
+        [chain * settings.draws + per_chain for chain in range(settings.chains)]
+    )
+    if (
+        len(flat_selection) != VBD_TRAJECTORY_PPC_REPLICATE_COUNT
+        or len(np.unique(flat_selection)) != len(flat_selection)
+    ):
+        raise TrajectoryNutsError("PPC selection is incomplete or duplicated")
+    return flat_selection
+
+
 def _compute_posterior_predictive_checks(
     idata,
     prepared: TrajectoryPreparedInput,
@@ -1233,14 +1408,26 @@ def _compute_posterior_predictive_checks(
     settings: TrajectoryNutsSettings,
     ppc_seed: int,
 ) -> tuple[TrajectoryPpcResult, ...]:
-    alpha = _posterior_draws(idata, "alpha").reshape(-1)
-    beta = _posterior_draws(idata, "beta").reshape(-1)
-    sigma_r = _posterior_draws(idata, "sigma_r").reshape(-1)
-    rho = _posterior_draws(idata, "rho").reshape(-1)
-    u = _posterior_draws(idata, "u").reshape(-1, prepared.panel_group_count)
-    sample_count = settings.chains * settings.draws
-    if any(len(values) != sample_count for values in (alpha, beta, sigma_r, rho, u)):
+    full_sample_count = settings.chains * settings.draws
+    posterior = {
+        name: _posterior_draws(idata, name)
+        for name in ("alpha", "beta", "sigma_r", "rho", "u")
+    }
+    if any(
+        values.shape[:2] != (settings.chains, settings.draws)
+        for values in posterior.values()
+    ):
         raise TrajectoryNutsError("posterior trace shape does not match settings")
+    flat_selection = _ppc_flat_draw_selection(idata, settings)
+
+    alpha = posterior["alpha"].reshape(-1)[flat_selection]
+    beta = posterior["beta"].reshape(-1)[flat_selection]
+    sigma_r = posterior["sigma_r"].reshape(-1)[flat_selection]
+    rho = posterior["rho"].reshape(-1)[flat_selection]
+    u = posterior["u"].reshape(
+        full_sample_count, prepared.panel_group_count
+    )[flat_selection]
+    sample_count = len(flat_selection)
     rng = np.random.Generator(np.random.PCG64DXSM(ppc_seed))
     observed_matrix = prepared.y.reshape(
         prepared.panel_group_count, VBD_TRAJECTORY_TOTAL_WINDOW_COUNT
@@ -1351,6 +1538,7 @@ def fit_vbd_trajectory_nuts_reference(
     ppc_seed: int,
     mode: Literal["full", "smoke"] = "smoke",
     concordance_binding: TrajectoryNutsConcordanceBinding | None = None,
+    precision_canary_binding: TrajectoryNutsPrecisionCanaryBinding | None = None,
     _runner_token: object | None = None,
 ) -> TrajectoryNutsFit:
     """Run the matched sampler and return summaries without retaining draws."""
@@ -1361,7 +1549,12 @@ def fit_vbd_trajectory_nuts_reference(
         raise TypeError("NUTS reference requires an exact source panel")
     validate_prepared_vbd_trajectory(prepared, source_panel)
     settings = vbd_nuts_execution_settings(mode)
-    if settings.mode == "full":
+    precision_canary_execution = (
+        type(precision_canary_binding) is TrajectoryNutsPrecisionCanaryBinding
+        and _runner_token is _VBD_TRAJECTORY_PRECISION_CANARY_RUNNER_TOKEN
+        and concordance_binding is None
+    )
+    if settings.mode == "full" and not precision_canary_execution:
         from .vbd_trajectory_validation_resumable import (
             VBD_TRAJECTORY_FREEZE_MANIFEST_RELATIVE_PATH,
             _repo_root,
@@ -1379,13 +1572,15 @@ def fit_vbd_trajectory_nuts_reference(
         chain_seeds,
         ppc_seed,
         concordance_binding=concordance_binding,
+        precision_canary_binding=precision_canary_binding,
         runner_token=_runner_token,
     )
+    execution_binding = concordance_binding or precision_canary_binding
     if settings.mode == "full" and (
-        concordance_binding is None
-        or concordance_binding.bundle_seed != source_panel.seed
-        or concordance_binding.lane != prepared.lane
-        or concordance_binding.plan_hash != source_panel.study_plan_root
+        execution_binding is None
+        or execution_binding.bundle_seed != source_panel.seed
+        or execution_binding.lane != prepared.lane
+        or execution_binding.plan_hash != source_panel.study_plan_root
     ):
         raise ValueError("full NUTS binding differs from its prepared source panel")
     if source_panel.seed in (*validated_chain_seeds, validated_ppc_seed):
@@ -1400,6 +1595,7 @@ def fit_vbd_trajectory_nuts_reference(
             random_seed=list(validated_chain_seeds),
             target_accept=settings.target_accept,
             max_treedepth=settings.max_treedepth,
+            init=settings.init,
             nuts_sampler=settings.sampler,
             blas_cores=settings.blas_cores,
             progressbar=False,
@@ -1435,8 +1631,8 @@ def fit_vbd_trajectory_nuts_reference(
         sampler_diagnostics=diagnostics,
         posterior_predictive_checks=ppc,
         concordance_binding_hash=(
-            concordance_binding.binding_hash
-            if concordance_binding is not None
+            execution_binding.binding_hash
+            if execution_binding is not None
             else None
         ),
     )

@@ -58,19 +58,24 @@ const MODEL_MANIFEST = {
     minimum_finite_point_count: 4096,
     minimum_effective_sample_size: 256,
     maximum_normalized_weight: 0.05,
-    conditional_quadrature: "normal_quadrature_v1",
-    conditional_quadrature_point_count: 16,
-    stable_support_index: "16*original_sobol_ordinal+quadrature_index",
+    conditional_mixture_quantile: "conditional_normal_mixture_quantile_v2",
+    conditional_mixture_bisection_iterations: 64,
+    normal_cdf: "scipy.special.ndtr",
+    normal_quantile: "scipy.special.ndtri",
+    original_sobol_ordinal_retained: true,
     random_numbers_used: false
   },
   reference_engine: {
     engine_id: "pymc_nuts_state_space_reference",
     sampler: "pymc",
     chains: 4,
-    draws: 1000,
-    tune: 2000,
-    target_accept: 0.99,
+    draws: 20000,
+    tune: 5000,
+    target_accept: 0.999,
     max_treedepth: 15,
+    init: "jitter+adapt_full",
+    cores: 1,
+    blas_cores: 1,
     trajectory_movement: "conditional_normal_smoothed_contrast_v1",
     explicit_chain_seeds: true
   },
@@ -101,6 +106,9 @@ const MODEL_MANIFEST = {
     manifest_id: "vbd_trajectory_ppc_v1",
     rng: "numpy.random.PCG64DXSM",
     state_generation: "conditional_smoothed_ar1_path_v1",
+    replicate_count: 4000,
+    draw_selector: "per_chain_zero_based_20*j+10_for_j_0_through_999",
+    selection_order: "chain_major_then_increasing_draw_index",
     tail: "upper_inclusive",
     statistics: [
       "pre_post_mean_movement",
@@ -346,11 +354,13 @@ const IntegrationDiagnosticsSchema = z
         original_sobol_ordinal_retained: z.literal(true)
       })
       .strict(),
-    conditional_movement_quadrature: z
+    conditional_movement_mixture: z
       .object({
-        algorithm: z.literal("normal_quadrature_v1"),
-        point_count: z.literal(16),
-        movement_support_count: z.number().int().positive()
+        algorithm: z.literal("conditional_normal_mixture_quantile_v2"),
+        component_count: z.number().int().positive(),
+        bisection_iterations: z.literal(64),
+        normal_cdf: z.literal("scipy.special.ndtr"),
+        normal_quantile: z.literal("scipy.special.ndtri")
       })
       .strict(),
     random_numbers_used: z.literal(false),
@@ -369,10 +379,10 @@ const IntegrationDiagnosticsSchema = z
       addIssue(ctx, ["maximum_conditional_movement_variance"], "movement variance bounds reversed");
     }
     if (
-      value.conditional_movement_quadrature.movement_support_count !==
-      16 * value.finite_point_count
+      value.conditional_movement_mixture.component_count !==
+      value.finite_point_count
     ) {
-      addIssue(ctx, ["conditional_movement_quadrature", "movement_support_count"], "support count must be derived");
+      addIssue(ctx, ["conditional_movement_mixture", "component_count"], "component count must be derived");
     }
   });
 

@@ -609,7 +609,7 @@ def _fake_deterministic_fit(prepared):
         hessian_condition_number=2.0,
         minimum_conditional_movement_variance=0.1,
         maximum_conditional_movement_variance=0.2,
-        movement_support_count=16 * 8192,
+        movement_component_count=8192,
     )
     return TrajectoryDeterministicFit(
         lane=prepared.lane,
@@ -637,8 +637,10 @@ def _fake_nuts_fit(prepared, binding):
             bulk_ess=500.0,
             tail_ess=500.0,
             posterior_mean_mcse=0.01,
-            interval_80_endpoint_mcse=0.01,
-            interval_99_endpoint_mcse=0.01,
+            interval_80_lower_endpoint_mcse=0.01,
+            interval_80_upper_endpoint_mcse=0.01,
+            interval_99_lower_endpoint_mcse=0.01,
+            interval_99_upper_endpoint_mcse=0.01,
             posterior_sd=0.5,
         )
         for name in names
@@ -961,7 +963,7 @@ def test_child_output_requires_separate_80_and_99_endpoint_mcse(monkeypatch):
     parameter = forged["nuts_records"][0]["fit"]["sampler_diagnostics"][
         "parameters"
     ][0]
-    parameter.pop("interval_99_endpoint_mcse")
+    parameter.pop("interval_99_upper_endpoint_mcse")
     parameter["interval_endpoint_mcse"] = 0.01
     _coordinated_rehash_child_output(forged)
 

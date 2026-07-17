@@ -495,7 +495,7 @@ test("movement and integration diagnostics remain internally coherent", { skip: 
     },
     (artifact) => {
       artifact.lane_records[0].deterministic_fit.integration_diagnostics
-        .conditional_movement_quadrature.movement_support_count = 16;
+        .conditional_movement_mixture.component_count = 16;
     }
   ];
   for (const mutate of mutations) {

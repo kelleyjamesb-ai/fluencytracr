@@ -99,6 +99,7 @@ _CONCORDANCE_CAPABILITY_HASH: ContextVar[str | None] = ContextVar(
     "vbd_trajectory_concordance_capability_hash", default=None
 )
 _CONCORDANCE_GENERATION_RUNNER_TOKEN = object()
+_PRECISION_CANARY_GENERATION_RUNNER_TOKEN = object()
 _STANDARD_ERROR_RATIO = 1.0
 _COVARIANCE_RATIO = 1.0
 _UNDERSTATED_STANDARD_ERROR_RATIO = 0.5
@@ -1898,6 +1899,71 @@ def generate_vbd_trajectory_concordance_case(bundle) -> VbdTrajectorySyntheticCa
     )
 
 
+def vbd_trajectory_precision_canary_case_body(canary_ordinal: int) -> dict:
+    if type(canary_ordinal) is not int or canary_ordinal not in (0, 1):
+        raise ValueError("precision canary ordinal must be 0 or 1")
+    effect_size_sd, panel_group_count = (
+        (0.0, 6) if canary_ordinal == 0 else (0.5, 12)
+    )
+    return {
+        "canary_ordinal": canary_ordinal,
+        "effect_size_sd": effect_size_sd,
+        "panel_group_count": panel_group_count,
+        "aggregate_k": 16,
+        "bundle_seed": 2_055_900_100 + canary_ordinal,
+        "direction_vector": [1, 1, 1],
+        "seed_namespace": VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+        "acceptance_slot_key": None,
+        "hold_reason": "precision_canary_nonacceptance",
+        "acceptance_evidence_eligible": False,
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+
+
+def generate_vbd_trajectory_precision_canary_case(
+    canary_ordinal: int,
+    *,
+    _runner_token: object,
+) -> VbdTrajectorySyntheticCase:
+    """Generate one exact, permanently non-admissible precision canary."""
+
+    if _runner_token is not _PRECISION_CANARY_GENERATION_RUNNER_TOKEN:
+        raise VbdSyntheticRunnerError(
+            "precision canary generation requires its runner token"
+        )
+    body = vbd_trajectory_precision_canary_case_body(canary_ordinal)
+    effect = float(body["effect_size_sd"])
+    plan_hash = sha256_json(body)
+    return _generate_vbd_trajectory_case(
+        _VbdTrajectoryGenerationSpec(
+            scenario_id=(
+                f"{_DEVELOPMENT_SCENARIO_PREFIX}precision_canary_{canary_ordinal}"
+            ),
+            seed=body["bundle_seed"],
+            panel_group_count=body["panel_group_count"],
+            aggregate_k=body["aggregate_k"],
+            terminal_truth=(effect, effect, effect),
+            direction_vector=(1, 1, 1),
+            post_pattern=VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
+            correlations=(
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+            ),
+            plan_ref=VBD_TRAJECTORY_SMOKE_PLAN_REF,
+            plan_hash=plan_hash,
+            seed_namespace=VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+            acceptance_slot_key=None,
+            depth_context_ref="depth-context:a",
+            shock_kind=None,
+            reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
+            reported_covariance_ratio=_COVARIANCE_RATIO,
+        )
+    )
+
+
 def _generate_vbd_trajectory_depth_validation_pair(
     slot: VbdTrajectoryValidationSlot,
 ) -> tuple[VbdTrajectorySyntheticCase, VbdTrajectorySyntheticCase]:
@@ -1981,6 +2047,40 @@ def _spec_for_panel(panel: TrajectoryObservationPanel) -> _VbdTrajectoryGenerati
             plan_hash=vbd_trajectory_concordance_plan()["plan_hash"],
             seed_namespace=VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE,
             acceptance_slot_key=bundle.bundle_id,
+            depth_context_ref="depth-context:a",
+            shock_kind=None,
+            reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
+            reported_covariance_ratio=_COVARIANCE_RATIO,
+        )
+    if panel.seed_namespace == VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE and panel.seed in (
+        2_055_900_100,
+        2_055_900_101,
+    ):
+        ordinal = panel.seed - 2_055_900_100
+        body = vbd_trajectory_precision_canary_case_body(ordinal)
+        expected_scenario = (
+            f"{_DEVELOPMENT_SCENARIO_PREFIX}precision_canary_{ordinal}"
+        )
+        effect = float(body["effect_size_sd"])
+        if panel.scenario_id != expected_scenario:
+            raise TrajectoryStructureError("precision canary scenario is off plan")
+        return _VbdTrajectoryGenerationSpec(
+            scenario_id=expected_scenario,
+            seed=body["bundle_seed"],
+            panel_group_count=body["panel_group_count"],
+            aggregate_k=body["aggregate_k"],
+            terminal_truth=(effect, effect, effect),
+            direction_vector=(1, 1, 1),
+            post_pattern=VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
+            correlations=(
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+            ),
+            plan_ref=VBD_TRAJECTORY_SMOKE_PLAN_REF,
+            plan_hash=sha256_json(body),
+            seed_namespace=VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+            acceptance_slot_key=None,
             depth_context_ref="depth-context:a",
             shock_kind=None,
             reported_standard_error_ratio=_STANDARD_ERROR_RATIO,

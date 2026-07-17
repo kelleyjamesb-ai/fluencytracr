@@ -15,7 +15,6 @@ from fluencytracr_inference.vbd_trajectory_state_space import (
     TrajectoryIntegrationError,
     TrajectoryIntegrationDiagnostics,
     _conditional_gaussian,
-    _expand_movement_support,
     _stationary_ar1_covariance,
     fit_vbd_trajectory_state_space,
 )
@@ -133,20 +132,6 @@ def test_zero_contrast_post_windows_still_condition_smoothed_movement(
     assert math.isclose(reflected.movement_variance, baseline.movement_variance)
 
 
-def test_gauss_hermite_support_retains_original_sobol_ordinal():
-    values, weights, indexes = _expand_movement_support(
-        np.asarray([0.0, 1.0]),
-        np.asarray([1.0, 1.0]),
-        np.asarray([0.25, 0.75]),
-        np.asarray([0, 2]),
-    )
-
-    assert values.shape == weights.shape == indexes.shape == (32,)
-    assert np.array_equal(indexes[:16], np.arange(16))
-    assert np.array_equal(indexes[16:], np.arange(32, 48))
-    assert math.isclose(float(weights.sum()), 1.0, abs_tol=1e-15)
-
-
 def test_conditional_gaussian_failure_is_not_silently_dropped(
     monkeypatch, prepared_by_lane
 ):
@@ -172,7 +157,7 @@ def test_deterministic_diagnostics_cannot_self_declare_pass():
             hessian_condition_number=math.nan,
             minimum_conditional_movement_variance=math.nan,
             maximum_conditional_movement_variance=math.nan,
-            movement_support_count=0,
+            movement_component_count=0,
         )
 
 
@@ -204,11 +189,15 @@ def test_primary_engine_fits_each_lane_with_exact_full_support(
     assert fit.engine_kind == "deterministic_gaussian_state_space_integration"
     assert diagnostics["status"] == "PASS"
     assert diagnostics["point_count"] == VBD_TRAJECTORY_OUTER_POINT_COUNT
-    assert diagnostics["finite_point_count"] == VBD_TRAJECTORY_OUTER_POINT_COUNT
-    assert diagnostics["conditional_movement_quadrature"] == {
-        "algorithm": "normal_quadrature_v1",
-        "point_count": 16,
-        "movement_support_count": VBD_TRAJECTORY_OUTER_POINT_COUNT * 16,
+    assert 4096 <= diagnostics["finite_point_count"] <= (
+        VBD_TRAJECTORY_OUTER_POINT_COUNT
+    )
+    assert diagnostics["conditional_movement_mixture"] == {
+        "algorithm": "conditional_normal_mixture_quantile_v2",
+        "component_count": diagnostics["finite_point_count"],
+        "bisection_iterations": 64,
+        "normal_cdf": "scipy.special.ndtr",
+        "normal_quantile": "scipy.special.ndtri",
     }
     assert diagnostics["minimum_conditional_movement_variance"] > 0.0
     assert (

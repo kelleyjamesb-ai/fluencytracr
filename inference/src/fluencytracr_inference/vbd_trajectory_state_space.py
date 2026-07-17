@@ -23,8 +23,7 @@ from .vbd_trajectory_preparation import (
 from .vbd_trajectory_statistics import (
     TrajectoryPosteriorSummary,
     TrajectoryStatisticsError,
-    normal_quadrature_v1,
-    summarize_weighted_support,
+    summarize_conditional_normal_mixture_v2,
 )
 from .vbd_trajectory_types import (
     TrajectoryObservationPanel,
@@ -60,7 +59,7 @@ class TrajectoryIntegrationDiagnostics:
     hessian_condition_number: float
     minimum_conditional_movement_variance: float
     maximum_conditional_movement_variance: float
-    movement_support_count: int
+    movement_component_count: int
 
     def __post_init__(self) -> None:
         if type(self.point_count) is not int or self.point_count != (
@@ -122,10 +121,10 @@ class TrajectoryIntegrationDiagnostics:
         ):
             raise TrajectoryIntegrationError("conditional movement variance failed")
         if (
-            type(self.movement_support_count) is not int
-            or self.movement_support_count != 16 * self.finite_point_count
+            type(self.movement_component_count) is not int
+            or self.movement_component_count != self.finite_point_count
         ):
-            raise TrajectoryIntegrationError("movement support count drifted")
+            raise TrajectoryIntegrationError("movement component count drifted")
 
     def to_dict(self) -> dict:
         return {
@@ -155,10 +154,12 @@ class TrajectoryIntegrationDiagnostics:
                 "proposal": "student_t_df_5_v1",
                 "original_sobol_ordinal_retained": True,
             },
-            "conditional_movement_quadrature": {
-                "algorithm": "normal_quadrature_v1",
-                "point_count": 16,
-                "movement_support_count": self.movement_support_count,
+            "conditional_movement_mixture": {
+                "algorithm": "conditional_normal_mixture_quantile_v2",
+                "component_count": self.movement_component_count,
+                "bisection_iterations": 64,
+                "normal_cdf": "scipy.special.ndtr",
+                "normal_quantile": "scipy.special.ndtri",
             },
             "random_numbers_used": False,
             "latent_paths_emitted": False,
@@ -435,32 +436,6 @@ def _finite_difference_hessian(function, point: np.ndarray) -> np.ndarray:
     return result
 
 
-def _expand_movement_support(
-    movement_means: np.ndarray,
-    movement_variances: np.ndarray,
-    outer_weights: np.ndarray,
-    sobol_ordinals: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    if (
-        movement_means.ndim != 1
-        or movement_variances.shape != movement_means.shape
-        or outer_weights.shape != movement_means.shape
-        or sobol_ordinals.shape != movement_means.shape
-        or np.any(movement_variances <= 0.0)
-    ):
-        raise TrajectoryIntegrationError("conditional movement support is malformed")
-    normal_support, normal_weights, normal_indices = normal_quadrature_v1()
-    values = (
-        movement_means[:, None]
-        + np.sqrt(movement_variances)[:, None] * normal_support[None, :]
-    ).reshape(-1)
-    weights = (outer_weights[:, None] * normal_weights[None, :]).reshape(-1)
-    stable_indices = (
-        16 * sobol_ordinals[:, None] + normal_indices[None, :]
-    ).reshape(-1)
-    return values, weights, stable_indices
-
-
 def fit_vbd_trajectory_state_space(
     prepared: TrajectoryPreparedInput,
     source_panel: TrajectoryObservationPanel,
@@ -553,8 +528,7 @@ def fit_vbd_trajectory_state_space(
     log_weights: list[float] = []
     movement_means: list[float] = []
     movement_variances: list[float] = []
-    sobol_ordinals: list[int] = []
-    for ordinal, node in enumerate(nodes):
+    for node in nodes:
         target, conditional, _ = _evaluate_target(prepared, node)
         if not math.isfinite(target) or conditional is None:
             continue
@@ -569,11 +543,15 @@ def fit_vbd_trajectory_state_space(
         log_weights.append(log_weight)
         movement_means.append(conditional.movement_mean)
         movement_variances.append(conditional.movement_variance)
-        sobol_ordinals.append(ordinal)
     if len(log_weights) < VBD_TRAJECTORY_MIN_FINITE_POINT_COUNT:
         raise TrajectoryIntegrationError("too few finite cubature nodes")
     log_weight_array = np.asarray(log_weights, dtype=np.float64)
     outer_weights = np.exp(log_weight_array - logsumexp(log_weight_array))
+    retained = np.isfinite(outer_weights) & (outer_weights > 0.0)
+    if np.count_nonzero(retained) < VBD_TRAJECTORY_MIN_FINITE_POINT_COUNT:
+        raise TrajectoryIntegrationError("too few positive cubature weights")
+    outer_weights = np.asarray(outer_weights[retained], dtype=np.float64)
+    outer_weights /= float(np.sum(outer_weights))
     if not np.all(np.isfinite(outer_weights)) or not math.isclose(
         float(outer_weights.sum()), 1.0, rel_tol=0.0, abs_tol=1e-12
     ):
@@ -585,24 +563,22 @@ def fit_vbd_trajectory_state_space(
     if max_weight > VBD_TRAJECTORY_MAX_NORMALIZED_WEIGHT:
         raise TrajectoryIntegrationError("cubature maximum weight is too large")
 
-    movement_mean_array = np.asarray(movement_means, dtype=np.float64)
-    movement_variance_array = np.asarray(movement_variances, dtype=np.float64)
-    sobol_ordinal_array = np.asarray(sobol_ordinals, dtype=np.int64)
-    support, support_weights, support_indices = _expand_movement_support(
-        movement_mean_array,
-        movement_variance_array,
-        outer_weights,
-        sobol_ordinal_array,
-    )
+    movement_mean_array = np.asarray(movement_means, dtype=np.float64)[retained]
+    movement_variance_array = np.asarray(movement_variances, dtype=np.float64)[
+        retained
+    ]
     try:
-        movement_summary = summarize_weighted_support(
-            "trajectory_movement", support, support_weights, support_indices
+        movement_summary = summarize_conditional_normal_mixture_v2(
+            "trajectory_movement",
+            outer_weights,
+            movement_mean_array,
+            movement_variance_array,
         )
     except TrajectoryStatisticsError as exc:
         raise TrajectoryIntegrationError("movement summary is invalid") from exc
     diagnostics = TrajectoryIntegrationDiagnostics(
         point_count=VBD_TRAJECTORY_OUTER_POINT_COUNT,
-        finite_point_count=len(log_weights),
+        finite_point_count=len(outer_weights),
         effective_sample_size=effective_sample_size,
         max_normalized_weight=max_weight,
         mode_transformed=tuple(float(value) for value in mode),
@@ -616,7 +592,7 @@ def fit_vbd_trajectory_state_space(
         maximum_conditional_movement_variance=float(
             movement_variance_array.max()
         ),
-        movement_support_count=len(support),
+        movement_component_count=len(movement_mean_array),
     )
     return TrajectoryDeterministicFit(
         lane=prepared.lane,

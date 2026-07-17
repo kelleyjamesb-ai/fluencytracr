@@ -67,6 +67,7 @@ from .vbd_trajectory_validation_resumable import (
     _load_attempt_anchor,
     _attempt_anchor_names,
     _repo_root,
+    _reject_tombstoned_vbd_lineage,
     _restore_attempt_anchored_launches,
     _safe_workspace_path,
     _strict_sha256,
@@ -234,6 +235,12 @@ def _validate_workspace(value: object, workspace: Path) -> dict:
             "concordance workspace shape is invalid"
         )
     body = {key: item for key, item in value.items() if key != "workspace_hash"}
+    _reject_tombstoned_vbd_lineage(
+        value["freeze_commit"],
+        value["freeze_manifest_hash"],
+        value["candidate_source_commit"],
+        value["workspace_hash"],
+    )
     if (
         value["schema_version"]
         != VBD_TRAJECTORY_CONCORDANCE_WORKSPACE_SCHEMA_VERSION
@@ -1201,8 +1208,8 @@ def _deterministic_fit_from_dict(value: object) -> TrajectoryDeterministicFit:
                 diagnostics["maximum_conditional_movement_variance"],
                 "maximum movement variance",
             ),
-            movement_support_count=diagnostics["conditional_movement_quadrature"][
-                "movement_support_count"
+            movement_component_count=diagnostics["conditional_movement_mixture"][
+                "component_count"
             ],
         )
     except (KeyError, TypeError, ValueError, TrajectoryIntegrationError) as exc:
@@ -1269,6 +1276,7 @@ def _nuts_fit_from_dict(value: object) -> TrajectoryNutsFit:
                 settings_value["target_accept"], "target_accept"
             ),
             max_treedepth=settings_value["max_treedepth"],
+            init=settings_value["init"],
             sampler=settings_value["sampler"],
             cores=settings_value["cores"],
             blas_cores=settings_value["blas_cores"],
@@ -1299,13 +1307,21 @@ def _nuts_fit_from_dict(value: object) -> TrajectoryNutsFit:
                 posterior_mean_mcse=_strict_float(
                     item["posterior_mean_mcse"], "posterior mean MCSE"
                 ),
-                interval_80_endpoint_mcse=_strict_float(
-                    item["interval_80_endpoint_mcse"],
-                    "80 percent interval endpoint MCSE",
+                interval_80_lower_endpoint_mcse=_strict_float(
+                    item["interval_80_lower_endpoint_mcse"],
+                    "80 percent interval lower endpoint MCSE",
                 ),
-                interval_99_endpoint_mcse=_strict_float(
-                    item["interval_99_endpoint_mcse"],
-                    "99 percent interval endpoint MCSE",
+                interval_80_upper_endpoint_mcse=_strict_float(
+                    item["interval_80_upper_endpoint_mcse"],
+                    "80 percent interval upper endpoint MCSE",
+                ),
+                interval_99_lower_endpoint_mcse=_strict_float(
+                    item["interval_99_lower_endpoint_mcse"],
+                    "99 percent interval lower endpoint MCSE",
+                ),
+                interval_99_upper_endpoint_mcse=_strict_float(
+                    item["interval_99_upper_endpoint_mcse"],
+                    "99 percent interval upper endpoint MCSE",
                 ),
                 posterior_sd=_strict_float(item["posterior_sd"], "posterior SD"),
             )
@@ -1532,6 +1548,12 @@ def _validate_child_output(
             "concordance child output shape is invalid"
         )
     body = {key: item for key, item in value.items() if key != "child_output_hash"}
+    _reject_tombstoned_vbd_lineage(
+        value["freeze_commit"],
+        value["freeze_manifest_hash"],
+        value["semantic_result_hash"],
+        value["child_output_hash"],
+    )
     if (
         value.get("schema_version")
         != VBD_TRAJECTORY_CONCORDANCE_CHILD_OUTPUT_SCHEMA_VERSION
