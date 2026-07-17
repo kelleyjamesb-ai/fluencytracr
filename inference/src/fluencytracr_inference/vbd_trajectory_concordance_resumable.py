@@ -26,9 +26,11 @@ from .vbd_trajectory_concordance_execution import (
     VBD_TRAJECTORY_CONCORDANCE_CHILD_EXCEPTION_TYPES,
     VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_SCHEMA_VERSION,
     VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES,
+    VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES,
     VBD_TRAJECTORY_CONCORDANCE_CHILD_OUTPUT_SCHEMA_VERSION,
     VBD_TRAJECTORY_CONCORDANCE_LAUNCH_SCHEMA_VERSION,
     _truth_receipt_hash,
+    build_vbd_trajectory_concordance_process_exit_failure,
     validate_vbd_trajectory_concordance_child_failure,
 )
 from .vbd_trajectory_nuts import (
@@ -107,7 +109,7 @@ VBD_TRAJECTORY_CONCORDANCE_CHECKPOINT_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_CHECKPOINT_2026_07_V1"
 )
 VBD_TRAJECTORY_CONCORDANCE_FAILURE_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_FAILURE_2026_07_V2"
+    "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_FAILURE_2026_07_V3"
 )
 VBD_TRAJECTORY_CONCORDANCE_COMMIT_SCHEMA_VERSION = (
     "FT_AI_VALUE_VBD_TRAJECTORY_CONCORDANCE_COMMIT_2026_07_V1"
@@ -120,6 +122,7 @@ VBD_TRAJECTORY_CONCORDANCE_CHILD_TIMEOUT_SECONDS = 7_200
 _CHILD_STDOUT_LIMIT = 4 * 1024 * 1024
 _CHILD_STDERR_LIMIT = 1024 * 1024
 _CHILD_DIAGNOSTIC_LIMIT = 512
+_CHILD_PHASE_TRACE_LIMIT = 64
 _VERIFIED_RECEIPT_TOKEN = object()
 _CONCORDANCE_WORKSPACE_DIRECTORIES = (
     "primary",
@@ -883,7 +886,7 @@ def _launch_child(
     capability_token: str,
     workspace: Path,
     verify_lock_identity: Callable[[], None],
-) -> tuple[int, int, bytes, bytes, bytes]:
+) -> tuple[int, int, bytes, bytes, bytes, bytes]:
     verify_lock_identity()
     command = _child_command()
     capability = _launch_capability(receipt, capability_token)
@@ -894,14 +897,17 @@ def _launch_child(
     liveness_read, liveness_write = os.pipe()
     source_read, source_write = os.pipe()
     diagnostic_read, diagnostic_write = os.pipe()
+    phase_read, phase_write = os.pipe()
     environment = _child_environment(
         capability_fd=capability_read,
         parent_liveness_fd=liveness_read,
         frozen_source_fd=source_read,
         diagnostic_fd=diagnostic_write,
+        phase_fd=phase_write,
     )
     process = None
     diagnostic = b""
+    phase_trace = b""
     try:
         verify_lock_identity()
         _revalidate_concordance_launch_admission(workspace, receipt)
@@ -918,6 +924,7 @@ def _launch_child(
                 liveness_read,
                 source_read,
                 diagnostic_write,
+                phase_write,
             ),
         )
         os.close(capability_read)
@@ -928,6 +935,8 @@ def _launch_child(
         source_read = -1
         os.close(diagnostic_write)
         diagnostic_write = -1
+        os.close(phase_write)
+        phase_write = -1
         source_written = 0
         while source_written < len(frozen_source):
             source_written += os.write(
@@ -952,16 +961,23 @@ def _launch_child(
             diagnostic = _read_child_diagnostic(diagnostic_read)
             os.close(diagnostic_read)
             diagnostic_read = -1
+            phase_trace = _read_child_phase_trace(phase_read)
+            os.close(phase_read)
+            phase_read = -1
             return (
                 process.pid,
                 124,
                 stdout[:_CHILD_STDOUT_LIMIT],
                 stderr[:_CHILD_STDERR_LIMIT],
                 diagnostic,
+                phase_trace,
             )
         diagnostic = _read_child_diagnostic(diagnostic_read)
         os.close(diagnostic_read)
         diagnostic_read = -1
+        phase_trace = _read_child_phase_trace(phase_read)
+        os.close(phase_read)
+        phase_read = -1
     except OSError as exc:
         _terminate_started_child(process)
         raise VbdTrajectoryValidationWorkspaceError(
@@ -980,6 +996,8 @@ def _launch_child(
             source_write,
             diagnostic_read,
             diagnostic_write,
+            phase_read,
+            phase_write,
         ):
             if descriptor >= 0:
                 try:
@@ -992,8 +1010,15 @@ def _launch_child(
         )
     verify_lock_identity()
     if len(stdout) > _CHILD_STDOUT_LIMIT or len(stderr) > _CHILD_STDERR_LIMIT:
-        return process.pid, 125, b"", b"", b""
-    return process.pid, process.returncode, stdout, stderr, diagnostic
+        return process.pid, 125, b"", b"", b"", b""
+    return (
+        process.pid,
+        process.returncode,
+        stdout,
+        stderr,
+        diagnostic,
+        phase_trace,
+    )
 
 
 def _read_child_diagnostic(descriptor: int) -> bytes:
@@ -1008,6 +1033,56 @@ def _read_child_diagnostic(descriptor: int) -> bytes:
     if len(encoded) > _CHILD_DIAGNOSTIC_LIMIT:
         return b""
     return bytes(encoded)
+
+
+def _read_child_phase_trace(descriptor: int) -> bytes:
+    encoded = bytearray()
+    while len(encoded) <= _CHILD_PHASE_TRACE_LIMIT:
+        chunk = os.read(
+            descriptor, _CHILD_PHASE_TRACE_LIMIT + 1 - len(encoded)
+        )
+        if not chunk:
+            break
+        encoded.extend(chunk)
+    if len(encoded) > _CHILD_PHASE_TRACE_LIMIT:
+        return b""
+    return bytes(encoded)
+
+
+def _last_child_phase(encoded: bytes) -> str | None:
+    if not encoded or len(encoded) > _CHILD_PHASE_TRACE_LIMIT:
+        return None
+    by_code = {
+        code: phase
+        for phase, code in VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES.items()
+    }
+    try:
+        phases = [by_code[code] for code in encoded]
+    except KeyError:
+        return None
+    transitions = {
+        "child_entrypoint": {"stdin_decode"},
+        "stdin_decode": {"launch_receipt_validation"},
+        "launch_receipt_validation": {"launch_capability_validation"},
+        "launch_capability_validation": {"source_identity_validation"},
+        "source_identity_validation": {"parent_watchdog_start"},
+        "parent_watchdog_start": {"synthetic_generation"},
+        "synthetic_generation": {"synthetic_regeneration_check"},
+        "synthetic_regeneration_check": {"lane_preparation"},
+        "lane_preparation": {"deterministic_fit"},
+        "deterministic_fit": {"nuts_binding", "result_assembly"},
+        "nuts_binding": {"nuts_fit"},
+        "nuts_fit": {"nuts_binding", "concordance_evaluation"},
+        "concordance_evaluation": {"result_assembly"},
+        "result_assembly": {"result_emit"},
+        "result_emit": set(),
+    }
+    if phases[0] != "child_entrypoint" or any(
+        right not in transitions[left]
+        for left, right in zip(phases, phases[1:])
+    ):
+        return None
+    return phases[-1]
 
 
 def _strict_float(value: object, name: str) -> float:
@@ -1808,6 +1883,7 @@ def _failure_record(
     stdout: bytes,
     stderr: bytes,
     diagnostic: bytes,
+    phase_trace: bytes,
 ) -> dict:
     child_diagnostic = None
     if (
@@ -1818,6 +1894,14 @@ def _failure_record(
         child_diagnostic = _decode_child_failure_diagnostic(diagnostic)
         if child_diagnostic is None and diagnostic == b"":
             child_diagnostic = _decode_child_failure_diagnostic(stderr)
+        if child_diagnostic is None and diagnostic == b"" and stderr == b"":
+            last_phase = _last_child_phase(phase_trace)
+            if last_phase is not None:
+                child_diagnostic = (
+                    build_vbd_trajectory_concordance_process_exit_failure(
+                        last_phase
+                    )
+                )
     body = {
         "schema_version": VBD_TRAJECTORY_CONCORDANCE_FAILURE_SCHEMA_VERSION,
         "launch_receipt_hash": launch["launch_receipt_hash"],
@@ -1845,6 +1929,7 @@ def _failure_record(
         "raw_stdout_committed": False,
         "raw_stderr_committed": False,
         "raw_child_diagnostic_committed": False,
+        "raw_child_phase_trace_committed": False,
         "internal_only": True,
         "synthetic_only": True,
         "customer_output_authorized": False,
@@ -1889,6 +1974,7 @@ def _validate_failure(value: object, *, receipt: dict | None) -> dict:
         "raw_stdout_committed",
         "raw_stderr_committed",
         "raw_child_diagnostic_committed",
+        "raw_child_phase_trace_committed",
         "internal_only",
         "synthetic_only",
         "customer_output_authorized",
@@ -1908,6 +1994,7 @@ def _validate_failure(value: object, *, receipt: dict | None) -> dict:
         or value["raw_stdout_committed"] is not False
         or value["raw_stderr_committed"] is not False
         or value["raw_child_diagnostic_committed"] is not False
+        or value["raw_child_phase_trace_committed"] is not False
         or value["internal_only"] is not True
         or value["synthetic_only"] is not True
         or value["customer_output_authorized"] is not False
@@ -2051,6 +2138,7 @@ def _run_phase_bundle(
             stdout=b"",
             stderr=b"",
             diagnostic=b"",
+            phase_trace=b"",
         )
         write_json_create_once(
             failure_path, failure, lock_verifier=verify_lock_identity
@@ -2075,7 +2163,14 @@ def _run_phase_bundle(
         launch_receipt=launch,
     )
     write_json_create_once(launch_path, launch, lock_verifier=verify_lock_identity)
-    child_pid, return_code, stdout, stderr, diagnostic = _launch_child(
+    (
+        child_pid,
+        return_code,
+        stdout,
+        stderr,
+        diagnostic,
+        phase_trace,
+    ) = _launch_child(
         receipt=launch,
         capability_token=capability_token,
         workspace=workspace,
@@ -2092,6 +2187,7 @@ def _run_phase_bundle(
                 stdout=stdout,
                 stderr=stderr,
                 diagnostic=diagnostic,
+                phase_trace=phase_trace,
             ),
             lock_verifier=verify_lock_identity,
         )

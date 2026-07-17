@@ -99,6 +99,7 @@ VBD_TRAJECTORY_CONCORDANCE_CHILD_EXCEPTION_TYPES = (
     "NotImplementedError",
     "OSError",
     "OverflowError",
+    "PROCESS_EXIT_WITHOUT_EXCEPTION",
     "RuntimeError",
     "SystemExit",
     "TrajectoryCovarianceError",
@@ -115,6 +116,13 @@ VBD_TRAJECTORY_CONCORDANCE_CHILD_EXCEPTION_TYPES = (
     "VbdTrajectoryValidationWorkspaceError",
 )
 _CHILD_FAILURE_PHASE_ATTRIBUTE = "_ft_vbd_concordance_failure_phase"
+_CHILD_PHASE_FD_ENVIRONMENT_KEY = "FT_VBD_TRAJECTORY_PHASE_FD"
+VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES = {
+    phase: index + 1
+    for index, phase in enumerate(
+        VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES
+    )
+}
 _CHILD_EXCEPTION_TYPE_LABELS = {
     AssertionError: "AssertionError",
     AttributeError: "AttributeError",
@@ -167,6 +175,31 @@ def _tag_child_failure_phase(exc: BaseException, phase: str) -> None:
         pass
 
 
+def emit_vbd_trajectory_concordance_child_phase(phase: str) -> None:
+    code = VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES.get(phase)
+    descriptor_text = os.environ.get(_CHILD_PHASE_FD_ENVIRONMENT_KEY)
+    if (
+        code is None
+        or descriptor_text is None
+        or not descriptor_text.isascii()
+        or not descriptor_text.isdigit()
+    ):
+        return
+    try:
+        os.write(int(descriptor_text), bytes((code,)))
+    except OSError:
+        pass
+
+
+def _enter_child_phase(phase_tracker: list[str], phase: str) -> None:
+    if phase not in VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance child phase is not compiled"
+        )
+    phase_tracker[0] = phase
+    emit_vbd_trajectory_concordance_child_phase(phase)
+
+
 def build_vbd_trajectory_concordance_child_failure(exc: BaseException) -> dict:
     """Build a fixed, message-free diagnostic for the private child."""
 
@@ -179,6 +212,19 @@ def build_vbd_trajectory_concordance_child_failure(exc: BaseException) -> dict:
         "exception_type": _CHILD_EXCEPTION_TYPE_LABELS.get(
             type(exc), "UNCLASSIFIED_EXCEPTION"
         ),
+    }
+    return {**body, "diagnostic_hash": sha256_json(body)}
+
+
+def build_vbd_trajectory_concordance_process_exit_failure(phase: str) -> dict:
+    if phase not in VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_PHASES:
+        raise VbdTrajectoryValidationWorkspaceError(
+            "concordance process-exit phase is not compiled"
+        )
+    body = {
+        "schema_version": VBD_TRAJECTORY_CONCORDANCE_CHILD_FAILURE_SCHEMA_VERSION,
+        "failure_phase": phase,
+        "exception_type": "PROCESS_EXIT_WITHOUT_EXCEPTION",
     }
     return {**body, "diagnostic_hash": sha256_json(body)}
 
@@ -414,15 +460,15 @@ def _nuts_record(prepared, fit, process_phase_binding_hash: str) -> dict:
 def _execute_vbd_trajectory_concordance_child(
     receipt_value: object, phase_tracker: list[str]
 ) -> dict:
-    phase_tracker[0] = "launch_receipt_validation"
+    _enter_child_phase(phase_tracker, "launch_receipt_validation")
     receipt, bundle = _validate_launch_receipt(receipt_value)
-    phase_tracker[0] = "launch_capability_validation"
+    _enter_child_phase(phase_tracker, "launch_capability_validation")
     capability = _read_launch_capability(receipt)
-    phase_tracker[0] = "source_identity_validation"
+    _enter_child_phase(phase_tracker, "source_identity_validation")
     identity, _implementation, runtime = _verify_concordance_child_source_identity(
         receipt
     )
-    phase_tracker[0] = "parent_watchdog_start"
+    _enter_child_phase(phase_tracker, "parent_watchdog_start")
     _start_parent_liveness_watchdog(receipt)
     started_at = _now()
     process_token = secrets.token_hex(32)
@@ -441,7 +487,7 @@ def _execute_vbd_trajectory_concordance_child(
         "process_started_at": started_at,
     }
     process_phase_binding_hash = sha256_json(process_phase_binding_body)
-    phase_tracker[0] = "synthetic_generation"
+    _enter_child_phase(phase_tracker, "synthetic_generation")
     with _concordance_generation_context(
         capability_hash=capability["capability_hash"],
         capability_token_hash=receipt["capability_token_hash"],
@@ -450,7 +496,7 @@ def _execute_vbd_trajectory_concordance_child(
     ):
         case = generate_vbd_trajectory_concordance_case(bundle)
         regenerated = generate_vbd_trajectory_concordance_case(bundle)
-    phase_tracker[0] = "synthetic_regeneration_check"
+    _enter_child_phase(phase_tracker, "synthetic_regeneration_check")
     if (
         case.panel.ordered_panel_manifest_root
         != regenerated.panel.ordered_panel_manifest_root
@@ -463,7 +509,7 @@ def _execute_vbd_trajectory_concordance_child(
             "concordance generator failed exact pre-fit regeneration"
         )
     _require_parent(parent_process_id)
-    phase_tracker[0] = "lane_preparation"
+    _enter_child_phase(phase_tracker, "lane_preparation")
     prepared = tuple(
         prepare_vbd_trajectory_lane(case.panel, lane)
         for lane in VBD_TRAJECTORY_LANES
@@ -473,7 +519,7 @@ def _execute_vbd_trajectory_concordance_child(
         if receipt["phase"] == "primary"
         else (receipt["lane_ordinal"],)
     )
-    phase_tracker[0] = "deterministic_fit"
+    _enter_child_phase(phase_tracker, "deterministic_fit")
     deterministic_fits = {}
     for lane_ordinal in selected_ordinals:
         item = prepared[lane_ordinal]
@@ -512,7 +558,7 @@ def _execute_vbd_trajectory_concordance_child(
         plan_hash = vbd_trajectory_concordance_plan()["plan_hash"]
         for lane_ordinal, item in enumerate(prepared):
             _require_parent(parent_process_id)
-            phase_tracker[0] = "nuts_binding"
+            _enter_child_phase(phase_tracker, "nuts_binding")
             binding = build_vbd_trajectory_nuts_concordance_binding(
                 bundle_id=bundle.bundle_id,
                 bundle_seed=bundle.bundle_seed,
@@ -522,7 +568,7 @@ def _execute_vbd_trajectory_concordance_child(
                 lane_ordinal=lane_ordinal,
                 plan_hash=plan_hash,
             )
-            phase_tracker[0] = "nuts_fit"
+            _enter_child_phase(phase_tracker, "nuts_fit")
             reference_fits.append(
                 fit_vbd_trajectory_nuts_reference(
                     item,
@@ -542,7 +588,7 @@ def _execute_vbd_trajectory_concordance_child(
             )
             for index in range(3)
         )
-        phase_tracker[0] = "concordance_evaluation"
+        _enter_child_phase(phase_tracker, "concordance_evaluation")
         concordance_records = tuple(
             {
                 "lane": VBD_TRAJECTORY_LANES[index],
@@ -559,7 +605,7 @@ def _execute_vbd_trajectory_concordance_child(
                 failures.append("posterior_predictive_check")
         if not all(record["passed"] for record in concordance_records):
             failures.append("cross_engine_concordance")
-    phase_tracker[0] = "result_assembly"
+    _enter_child_phase(phase_tracker, "result_assembly")
     failures = list(dict.fromkeys(failures))
     result_body = {
         "schema_version": VBD_TRAJECTORY_CONCORDANCE_CHILD_OUTPUT_SCHEMA_VERSION,

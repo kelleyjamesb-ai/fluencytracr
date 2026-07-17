@@ -30,7 +30,9 @@ from fluencytracr_inference.vbd_trajectory_concordance_resumable import (
     _file_sha256,
     _failure_record,
     _launch_receipt,
+    _last_child_phase,
     _read_child_diagnostic,
+    _read_child_phase_trace,
     _validate_child_output,
     _validate_combined_commit,
     _validate_failure,
@@ -156,6 +158,7 @@ def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
         stdout=b"",
         stderr=b"",
         diagnostic=encoded,
+        phase_trace=b"",
     )
 
     assert _validate_failure(failure, receipt=launch) == failure
@@ -180,6 +183,7 @@ def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
         stdout=b"",
         stderr=b"",
         diagnostic=b'{"failure_phase":"nuts_fit","failure_phase":"nuts_fit"}\n',
+        phase_trace=b"",
     )
     assert _validate_failure(malformed, receipt=launch) == malformed
     assert malformed["child_diagnostic_valid"] is False
@@ -194,6 +198,7 @@ def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
         stdout=b"",
         stderr=encoded,
         diagnostic=b"",
+        phase_trace=b"",
     )
     assert _validate_failure(fallback, receipt=launch) == fallback
     assert fallback["child_diagnostic_valid"] is True
@@ -207,9 +212,65 @@ def test_failure_checkpoint_persists_only_valid_sanitized_diagnostic_fields():
         stdout=b"",
         stderr=encoded,
         diagnostic=b"partial",
+        phase_trace=b"",
     )
     assert _validate_failure(ambiguous, receipt=launch) == ambiguous
     assert ambiguous["child_diagnostic_valid"] is False
+
+
+def test_hard_process_exit_uses_only_the_last_valid_compiled_phase():
+    from fluencytracr_inference.vbd_trajectory_concordance_execution import (
+        VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES,
+    )
+
+    phases = (
+        "child_entrypoint",
+        "stdin_decode",
+        "launch_receipt_validation",
+        "launch_capability_validation",
+        "source_identity_validation",
+        "parent_watchdog_start",
+        "synthetic_generation",
+        "synthetic_regeneration_check",
+        "lane_preparation",
+        "deterministic_fit",
+        "nuts_binding",
+        "nuts_fit",
+    )
+    trace = bytes(
+        VBD_TRAJECTORY_CONCORDANCE_CHILD_PHASE_CODES[phase]
+        for phase in phases
+    )
+    assert _last_child_phase(trace) == "nuts_fit"
+    launch = {"launch_receipt_hash": "a" * 64}
+    failure = _failure_record(
+        launch=launch,
+        failure_code="child_process_failure",
+        child_pid=127,
+        return_code=2,
+        stdout=b"",
+        stderr=b"",
+        diagnostic=b"",
+        phase_trace=trace,
+    )
+    assert _validate_failure(failure, receipt=launch) == failure
+    assert failure["child_failure_phase"] == "nuts_fit"
+    assert failure["child_exception_type"] == "PROCESS_EXIT_WITHOUT_EXCEPTION"
+    assert failure["raw_child_phase_trace_committed"] is False
+
+    off_plan = trace + b"\xff"
+    assert _last_child_phase(off_plan) is None
+    invalid = _failure_record(
+        launch=launch,
+        failure_code="child_process_failure",
+        child_pid=128,
+        return_code=2,
+        stdout=b"",
+        stderr=b"",
+        diagnostic=b"",
+        phase_trace=off_plan,
+    )
+    assert invalid["child_diagnostic_valid"] is False
 
 
 def test_child_failure_diagnostic_reader_discards_oversize_payload():
@@ -219,6 +280,19 @@ def test_child_failure_diagnostic_reader_discards_oversize_payload():
         os.close(write_descriptor)
         write_descriptor = -1
         assert _read_child_diagnostic(read_descriptor) == b""
+    finally:
+        if write_descriptor >= 0:
+            os.close(write_descriptor)
+        os.close(read_descriptor)
+
+
+def test_child_phase_trace_reader_discards_oversize_payload():
+    read_descriptor, write_descriptor = os.pipe()
+    try:
+        os.write(write_descriptor, b"x" * 65)
+        os.close(write_descriptor)
+        write_descriptor = -1
+        assert _read_child_phase_trace(read_descriptor) == b""
     finally:
         if write_descriptor >= 0:
             os.close(write_descriptor)
@@ -1260,7 +1334,7 @@ def test_public_workspace_lifecycle_is_create_once_resumable_and_reverified(
                 lambda: receipt["parent_process_id"],
             )
             value = execute_vbd_trajectory_concordance_child(receipt)
-        return child_pid, 0, _canonical_json_bytes(value), b"", b""
+        return child_pid, 0, _canonical_json_bytes(value), b"", b"", b""
 
     monkeypatch.setattr(resumable, "_launch_child", fake_launch_child)
     workspace = tmp_path / "concordance-workspace"
@@ -1371,9 +1445,13 @@ def test_concordance_launch_revalidates_immediately_before_popen(monkeypatch):
 
         def __init__(self, _command, **kwargs):
             lifecycle.append("popen")
-            capability_fd, liveness_fd, source_fd, _diagnostic_fd = kwargs[
-                "pass_fds"
-            ]
+            (
+                capability_fd,
+                liveness_fd,
+                source_fd,
+                _diagnostic_fd,
+                _phase_fd,
+            ) = kwargs["pass_fds"]
             self.capability_fd = os.dup(capability_fd)
             self.liveness_fd = os.dup(liveness_fd)
             self.source_fd = os.dup(source_fd)
@@ -1406,7 +1484,7 @@ def test_concordance_launch_revalidates_immediately_before_popen(monkeypatch):
         capability_token="capability",
         workspace=SimpleNamespace(),
         verify_lock_identity=verify_lock,
-    ) == (4242, 0, b"", b"", b"")
+    ) == (4242, 0, b"", b"", b"", b"")
     admission_index = lifecycle.index("admission")
     assert lifecycle[admission_index - 1 : admission_index + 2] == [
         "lock",

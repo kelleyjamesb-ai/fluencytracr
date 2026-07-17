@@ -11,6 +11,7 @@ from .vbd_trajectory_concordance import vbd_trajectory_concordance_plan
 from .vbd_trajectory_concordance_execution import (
     _tag_child_failure_phase,
     build_vbd_trajectory_concordance_child_failure,
+    emit_vbd_trajectory_concordance_child_phase,
     execute_vbd_trajectory_concordance_child,
 )
 from .vbd_trajectory_concordance_resumable import (
@@ -89,12 +90,15 @@ def main(argv: list[str] | None = None) -> int:
         diagnostic_fd = _take_diagnostic_fd()
         decoded = False
         try:
+            emit_vbd_trajectory_concordance_child_phase("child_entrypoint")
+            emit_vbd_trajectory_concordance_child_phase("stdin_decode")
             value = _decode_json_bytes(
                 sys.stdin.buffer.read(), "concordance child stdin"
             )
             decoded = True
             result = execute_vbd_trajectory_concordance_child(value)
             try:
+                emit_vbd_trajectory_concordance_child_phase("result_emit")
                 _print_json(result)
             except BaseException as exc:
                 _tag_child_failure_phase(exc, "result_emit")
