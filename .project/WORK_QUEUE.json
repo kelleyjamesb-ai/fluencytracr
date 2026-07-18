@@ -292,6 +292,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-17: implemented and verified the exclusive seeds/case, complete sanitized prefix projection, strict plan/review/claim/hash reconstruction, canary tombstone, categorical proof rejection, and claim-before-import isolated child with compiled timeout. Full inference 985 passed; no diagnostic generation, sampling, authorization commit A, human execution record, or real claim occurred."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-execution",
+      "title": "VBD MCSE diagnostic one-shot execution",
+      "bound": "Synthetic-only exact-A execution/status: create the exact external human authorization record, consume the one permitted fixed claim, and run only the frozen non-evidentiary diagnostic; preserve all models, seeds, thresholds, gates, permanent HOLD, no-retry behavior, and proof-path exclusion; no retry, replacement case, code/docs amendment, canary 1, task 2.6 completion, replacement S/F, concordance, evidence, real/customer/live data, public surface, customer output, or promotion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done/consumed 2026-07-17: exact A 7e4f5f00 and the human record passed four-role preflight; claim and all three input bindings were created, then the first lane completed 5,000 tune plus 20,000 draws across four chains in 356 seconds. Projection failed before any MCSE rows or output because PyMC's valid posterior storage order differed from the projector's required emitted order. No staged/final artifact or statistical evidence exists; fail-closed HOLD and no-retry remain intact."
     }
   ]
 }
