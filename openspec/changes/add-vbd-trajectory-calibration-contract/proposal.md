@@ -69,6 +69,16 @@ trajectory contract before implementation or real-data admission can proceed.
   information. The diagnostic cannot retry the canary, clear task `2.6`, select
   a replacement precision design, enter evidence, or authorize implementation
   or execution.
+- Record that the consumed `vbd_precision_design_diagnostic_v1` launch is a
+  permanent uninterpretable HOLD, not a statistical result and not a retryable
+  attempt. Define a separate `vbd_precision_design_diagnostic_v2` identity with
+  disjoint reserved smoke seeds, exact posterior-variable-set validation plus
+  canonical name-based projection, a full-shape sampler-free conformance
+  fixture using PyMC's natural storage order, and create-once hash-chained
+  postmortem checkpoints that cannot enable resume or retry. The replacement
+  still requires a reviewed implementation `D2`, manifest-only authorization
+  `A2`, separate human authorization, and one new launch; this amendment does
+  not implement or execute it.
 
 ## Impact
 

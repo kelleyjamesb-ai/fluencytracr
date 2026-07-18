@@ -289,6 +289,59 @@ crash, timeout, malformed record, or write failure consumes the one launch.
 The result may inform only a later docs/OpenSpec methodology decision; it
 cannot select, implement, or execute that design by itself.
 
+The authorized V1 launch is now consumed. Exact implementation
+`50636e6721bf6b8e8e9269106a218527a159a94e`, authorization
+`7e4f5f00f6d826ccd771b2553350608bedb0f0e0`, human-authorization hash
+`1c8d781a6835a338b7e69a0d8d4de7d8d61b57f28db7364adee6d475d9d17c64`,
+claim hash `f9a512969703833b73e27f902bc79f78d5dfd50504f49ea1d431e335006a89fc`,
+and input-binding hash
+`3726b313662d6de51fe1252f9212664bda664e628343d0ac5d747f5763eb7a43`
+remain a permanent uninterpretable HOLD. The frequency sampler completed, but
+projection rejected before any sanitized row, staged workspace, or final
+record because valid PyMC storage order differed from the projector's emitted-
+row order. That launch contains no MCSE, ESS, R-hat, BFMI, mixing, or tail-
+precision result and cannot be retried, resumed, reconstructed, or interpreted
+statistically.
+
+A replacement is a new diagnostic identity, not a V1 retry. It reserves
+generator seed `2_055_900_600` and chain seed
+`2_055_900_700+4*lane_ordinal+chain_index`, yielding exactly
+`2_055_900_700..711`, all disjoint from every canary, consumed diagnostic,
+concordance, and study formula.
+The projector first requires exact order-insensitive equality between the
+posterior variable names and
+`{alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho}`. It rejects missing or
+extra, non-string, coerced, or malformed variables, then reads each posterior
+and ArviZ diagnostic variable by exact name and emits the unchanged canonical
+flattened parameter order. PyMC storage order has no semantic role.
+A sampler-free full-shape fixture must traverse the production PyMC model,
+DataTree, ArviZ, and projection identity boundary with PyMC's natural storage
+order `alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho`; a manually
+reordered fake trace is insufficient. Its emitted rows and hashes must equal
+those from identical values stored in canonical order.
+
+The replacement writes postmortem observability checkpoints to a new fixed
+external root bound by its authorization manifest. Checkpoints are create-once,
+predecessor-hash-chained records over one exact phase/lane sequence. Their only
+dynamic content is identity and input-binding hashes, ordinal, allowlisted
+phase, allowlisted lane, predecessor hash, and creation timestamp. Exact
+ordinal/phase/lane filenames and strict whole-root enumeration prevent unknown
+or duplicate files from hiding beside the chain. Checkpoints contain no draws,
+estimates, messages, exception text, tracebacks, paths, panel values, unsafe
+data, or caller-supplied detail. The terminal ready-for-publication checkpoint
+precedes atomic result publication. Execution never reads a checkpoint to skip,
+resume, continue, retry, or reuse work. Missing, extra, malformed, duplicated,
+or reordered checkpoints leave the consumed replacement uninterpretable HOLD;
+they never restore launch authority or supply any statistical result field.
+
+Future implementation requires a new clean reviewed commit `D2`. Its sole-child
+manifest-only authorization commit `A2` binds separate V2 workspace, claim,
+checkpoint, and result roots, the replacement seeds and identity, exact command,
+runtime, lockfile, fixture, and four unique GO references. A separate human
+record against exact `A2` is required before one new launch. No V1 commit,
+manifest, authorization, claim, binding, workspace, seed, checkpoint, or output
+can satisfy any V2 gate.
+
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.
 Diagnostic outputs are joined only after exact parameter-dimension,

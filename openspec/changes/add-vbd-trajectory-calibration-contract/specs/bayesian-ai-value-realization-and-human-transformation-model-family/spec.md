@@ -639,6 +639,173 @@ reason or customer-facing output.
   claim root
 - **AND** validation rejects before any generator or sampler work
 
+The authorized `vbd_precision_design_diagnostic_v1` launch SHALL remain a
+consumed permanent uninterpretable HOLD. Its exact implementation commit SHALL
+be `50636e6721bf6b8e8e9269106a218527a159a94e`; authorization commit SHALL be
+`7e4f5f00f6d826ccd771b2553350608bedb0f0e0`; human execution-authorization hash
+SHALL be
+`1c8d781a6835a338b7e69a0d8d4de7d8d61b57f28db7364adee6d475d9d17c64`;
+external claim hash SHALL be
+`f9a512969703833b73e27f902bc79f78d5dfd50504f49ea1d431e335006a89fc`;
+and input-binding hash SHALL be
+`3726b313662d6de51fe1252f9212664bda664e628343d0ac5d747f5763eb7a43`.
+The launch SHALL NOT be described as a failed MCSE result because no sanitized
+parameter row, staged output, or final diagnostic record survived projection.
+It supports no conclusion about MCSE, ESS, R-hat, BFMI, mixing, or tail
+precision.
+No later implementation may retry, resume, continue, reconstruct, reinterpret,
+delete, replace, or reuse its commit, authorization, claim, binding, workspace,
+seed, or output identity.
+
+One separate `vbd_precision_design_diagnostic_v2` MAY be specified only after a
+later separately authorized implementation and execution. It SHALL use the same
+effect `0`, six groups, `k=16`, generator, likelihood, priors, estimand,
+centered parameterization, three canonical lanes, required parameters, prefix
+definitions, sanitized matrix, NUTS settings, 7,200-second timeout, permanent
+HOLD state, proof-path exclusion, and `<=0.10` MCSE gate defined for V1. It
+SHALL NOT run PPC or deterministic concordance. It SHALL use newly reserved
+generator seed `2_055_900_600` and chain seeds
+`2_055_900_700+4*lane_ordinal+chain_index`, yielding exactly
+`2_055_900_700..711`. These thirteen seeds SHALL be exclusive to the V2
+identity; every generic smoke, precision canary, V1 diagnostic, concordance,
+study, recomputation, artifact, and acceptance path SHALL reject them.
+
+Before any V2 projection, the projector SHALL require order-insensitive exact
+string-key-set equality between posterior data-variable names and
+`{alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho}`. Missing or extra
+variables, non-string or coerced keys, and malformed variables SHALL reject.
+After exact-set validation, the projector SHALL access every posterior and
+ArviZ diagnostic variable by its canonical name and SHALL emit the unchanged
+flattened parameter order `alpha`, `beta`, `sigma_u`, `u[0]`, `u[1]`, `u[2]`,
+`u[3]`, `u[4]`, `u[5]`, `sigma_r`, `rho`, `trajectory_movement`. PyMC storage
+order, mapping insertion order, and DataTree traversal order SHALL NOT affect
+emitted row identity or order. All existing dimension, coordinate-label,
+cardinality, finite-value, and no-extra-key checks SHALL remain conjunctive.
+
+Before implementation `D2` is reviewable, a sampler-free full-shape conformance
+fixture SHALL construct the production PyMC model and route deterministic test
+arrays through the production PyMC/DataTree/ArviZ identity and projector entry
+point. It SHALL use PyMC's natural posterior storage order
+`alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho`, exactly four chains,
+exactly 20,000 retained-draw positions, and exactly six ordered `u` coordinates.
+It SHALL exercise every 5,000/10,000/20,000 prefix and prove that canonical
+output rows and hashes equal those from identical values presented in canonical
+storage order, without invoking a sampler. A manually reordered fake trace,
+reduced chain/draw shape, omitted variable, or bypass of the production
+conversion boundary SHALL NOT satisfy the fixture. No fixture array or derived
+estimate may enter a diagnostic result or committed evidence.
+
+V2 SHALL write an observational checkpoint chain under a new fixed external
+checkpoint root bound by authorization `A2`. The exact phase/lane sequence SHALL
+be:
+
+1. ordinal `0`, `claim_created`, lane `null`;
+2. ordinal `1`, `input_bound`, lane `null`;
+3. ordinals `2..4`, `lane_sampling_started`, `lane_sampling_completed`, and
+   `lane_projection_completed` for lane `frequency`;
+4. ordinals `5..7`, the same three phases for lane `engagement`;
+5. ordinals `8..10`, the same three phases for lane `breadth`; and
+6. ordinal `11`, `result_ready_for_publication`, lane `null`.
+
+The exact checkpoint filename allowlist SHALL be:
+
+1. `checkpoint-00-claim_created-global.json`;
+2. `checkpoint-01-input_bound-global.json`;
+3. `checkpoint-02-lane_sampling_started-frequency.json`;
+4. `checkpoint-03-lane_sampling_completed-frequency.json`;
+5. `checkpoint-04-lane_projection_completed-frequency.json`;
+6. `checkpoint-05-lane_sampling_started-engagement.json`;
+7. `checkpoint-06-lane_sampling_completed-engagement.json`;
+8. `checkpoint-07-lane_projection_completed-engagement.json`;
+9. `checkpoint-08-lane_sampling_started-breadth.json`;
+10. `checkpoint-09-lane_sampling_completed-breadth.json`;
+11. `checkpoint-10-lane_projection_completed-breadth.json`; and
+12. `checkpoint-11-result_ready_for_publication-global.json`.
+
+Each no-extra-key checkpoint SHALL contain exactly `schema`,
+`diagnostic_identity`, `implementation_commit`, `authorization_commit`,
+`authorization_manifest_hash`, `human_execution_authorization_hash`,
+`attempt_claim_hash`, `input_binding_hash`, `ordinal`, `phase`, `lane`,
+`predecessor_checkpoint_hash`, `created_at_utc`, and `checkpoint_hash`.
+`schema` SHALL equal `vbd_precision_design_diagnostic_checkpoint_v2`;
+`diagnostic_identity` SHALL equal `vbd_precision_design_diagnostic_v2`;
+identity hashes SHALL match `D2`, `A2`, and their admitted records;
+`input_binding_hash` SHALL be `null` only at ordinal `0` and SHALL equal the
+exact admitted V2 input-binding hash at ordinals `1..11`;
+`predecessor_checkpoint_hash` SHALL be `null` only at ordinal `0` and otherwise
+equal the preceding checkpoint hash; and `checkpoint_hash` SHALL equal
+`sha256_json` over the exact validated record with only `checkpoint_hash`
+removed. Every checkpoint SHALL be atomically create-once and immutable.
+
+Before each create-once write, strict whole-root enumeration SHALL equal exactly
+the already-written allowlist prefix and no other directory entry. After
+ordinal `11`, strict whole-root enumeration SHALL equal all twelve allowlisted
+filenames exactly; unknown, missing, duplicate, aliased, non-regular, or off-
+plan entries SHALL reject. The checkpoint writer SHALL accept only the exact
+filename and phase/lane pair at the next ordinal. Checkpoints SHALL contain no draws, absolute or relative estimates,
+diagnostic values, messages, exception text, tracebacks, filesystem paths,
+panel values, source rows, unsafe data, or caller-defined fields. The bootstrap,
+runner, and child SHALL NOT read any checkpoint to select work, skip a phase,
+resume, retry, continue, reconstruct, or reuse a seed. Checkpoint presence SHALL
+never create launch authority. Missing, extra, malformed, duplicated, replaced,
+or reordered checkpoints SHALL leave the already consumed launch
+uninterpretable HOLD; deletion or repair SHALL NOT permit another launch. A V2
+result SHALL be published atomically only after
+`result_ready_for_publication` is durably created and SHALL bind that complete
+ordinal-`0..11` terminal checkpoint hash as provenance only. Both the final
+result and complete checkpoint root SHALL be required for internal diagnostic
+validity. A checkpoint SHALL NOT supply, reconstruct, or alter a statistical
+result field, and neither that binding nor a complete checkpoint chain can
+satisfy a canary, proof, acceptance, or task-`2.6` gate.
+
+Future V2 implementation SHALL require a clean commit `D2` with exact CODE,
+BUG, ADVERSARIAL, and statistical-methodology GO. A sole-child manifest-only
+authorization commit `A2` SHALL bind `D2`, its tree, four unique GO references,
+the replacement identity and seeds, runtime, lockfile, production-path fixture,
+standalone bootstrap, exact command, and new fixed workspace, claim,
+checkpoint, human-authorization, and result paths. Four-role review SHALL
+verify the one-file `D2..A2` diff. A separate create-once human execution record
+against exact `A2` SHALL precede one new launch. V1's `D`, `A`, reviews, human
+authorization, claim, bindings, paths, and consumed seeds SHALL satisfy no V2
+gate. V2 SHALL remain permanently
+`HOLD(mcse_design_diagnostic_nonacceptance)`, SHALL contribute zero evidence,
+and SHALL NOT complete task `2.6`, authorize canary ordinal `1`, or alter any
+model, prior, estimand, NUTS setting, statistical threshold, acceptance seed,
+or evidence gate.
+
+#### Scenario: Natural PyMC storage order reaches canonical projection
+
+- **GIVEN** a full-shape sampler-free production-path fixture with the exact
+  posterior variable set in PyMC's natural storage order
+- **WHEN** the V2 identity and projection boundary validate it
+- **THEN** variables are read by canonical name and rows are emitted in the
+  frozen flattened parameter order
+- **AND** storage order alone cannot cause rejection or alter row identity
+
+#### Scenario: A posterior variable is missing or added
+
+- **GIVEN** a rehashed posterior container with one required variable missing or
+  one unrecognized variable added
+- **WHEN** V2 projection validates the variable set
+- **THEN** it rejects before diagnostic projection
+- **AND** canonical name lookup cannot excuse an incomplete or expanded set
+
+#### Scenario: The consumed V1 launch is offered as V2 authority
+
+- **GIVEN** any V1 commit, authorization, claim, input binding, workspace, seed,
+  checkpoint substitute, or output identity
+- **WHEN** V2 implementation, authorization, launch, or result validation runs
+- **THEN** it rejects before generation or sampling
+- **AND** the V1 launch remains permanent uninterpretable HOLD
+
+#### Scenario: A checkpoint is used to resume a consumed launch
+
+- **GIVEN** any valid, partial, copied, repaired, or rehashed checkpoint chain
+- **WHEN** a caller requests resume, retry, continuation, reconstruction, phase
+  skipping, or seed reuse
+- **THEN** the existing attempt claim rejects before generation or sampling
+- **AND** checkpoints remain postmortem observations with no launch authority
+
 Before any acceptance canary result, a clean source commit `S` SHALL contain the
 implementation, contract, lockfile, plan, seeds, and runtime builder without
 execution output. CODE, BUG, and ADVERSARIAL reviewers SHALL return GO against

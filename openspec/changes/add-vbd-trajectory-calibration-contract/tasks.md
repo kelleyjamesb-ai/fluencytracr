@@ -31,6 +31,12 @@
   failed canary, model, priors, estimand, existing seeds, thresholds, and all
   evidence gates; obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO
   for the amended docs bytes without implementation or execution.
+- [x] 1.9 Record the consumed V1 diagnostic as permanent uninterpretable HOLD
+  and define a separate replacement identity with disjoint reserved seeds,
+  exact-set/canonical-name projection, a full-shape natural-order sampler-free
+  conformance fixture, and non-resumable hash-chained postmortem checkpoints;
+  obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO for the amended
+  docs bytes without implementation or execution.
 
 ## 2. Future Synthetic Implementation
 
@@ -66,7 +72,19 @@
   GO for implementation commit `D`, create and review sole-child manifest-only
   authorization commit `A`, then obtain a separate exact human execution record
   before the one permitted diagnostic launch. The result remains permanent
-  HOLD and cannot complete task `2.6` or enter any proof count.
+  HOLD and cannot complete task `2.6` or enter any proof count. The consumed V1
+  launch produced no valid diagnostic result and does not satisfy this task.
+- [ ] 2.9 After task `1.9` and separate implementation authorization, implement
+  replacement diagnostic `vbd_precision_design_diagnostic_v2`, reserve its
+  seeds from every other path, validate the exact posterior variable set before
+  canonical name-based projection, add the production-path full-shape
+  sampler-free conformance fixture, and add the exact create-once checkpoint
+  chain without creating `A2`, a claim, or running a generator or sampler.
+- [ ] 2.10 After exact-commit CODE, BUG, ADVERSARIAL, and statistical-methodology
+  GO for clean implementation `D2`, create and review sole-child manifest-only
+  authorization `A2`, then obtain a separate exact human execution record before
+  the one permitted V2 launch. V2 remains permanent HOLD, cannot complete task
+  `2.6`, and cannot enter any proof count.
 
 ## 3. Future Engine Concordance
 
