@@ -54,6 +54,9 @@ VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_AUTHORIZATION_SCOPE = (
 VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CLAIM_FILENAME = "attempt_claim.json"
 VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_INPUT_BINDING_FILENAME = "input_binding.json"
 VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_OUTPUT_FILENAME = "diagnostic.json"
+VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_STAGED_OUTPUT_FILENAME = (
+    "diagnostic.staged.json"
+)
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 _UTC_RE = re.compile(r"^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")
 _DECISION_REF_RE = re.compile(r"^human-authorization:vbd-mcse-diagnostic/[A-Za-z0-9._-]+$")
@@ -621,7 +624,7 @@ def bind_vbd_precision_diagnostic_input(
     return binding
 
 
-def write_vbd_precision_diagnostic_output(
+def write_vbd_precision_diagnostic_staged_output(
     *, manifest: dict, record: dict
 ) -> None:
     manifest = validate_vbd_precision_diagnostic_authorization_manifest(manifest)
@@ -641,9 +644,9 @@ def write_vbd_precision_diagnostic_output(
     try:
         _write_exclusive_json_at(
             root_fd=workspace_fd,
-            filename=VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_OUTPUT_FILENAME,
+            filename=VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_STAGED_OUTPUT_FILENAME,
             value=record,
-            label="diagnostic output",
+            label="diagnostic staged output",
         )
     finally:
         os.close(workspace_fd)
@@ -769,5 +772,7 @@ def bootstrap_claimed_vbd_precision_diagnostic(
         claim=claim,
         _execution_token=_VBD_PRECISION_DIAGNOSTIC_EXECUTION_TOKEN,
     )
-    write_vbd_precision_diagnostic_output(manifest=manifest, record=record)
+    write_vbd_precision_diagnostic_staged_output(
+        manifest=manifest, record=record
+    )
     return record

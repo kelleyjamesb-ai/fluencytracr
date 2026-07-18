@@ -36,6 +36,7 @@ EXECUTION_AUTHORIZATION_SCHEMA = (
 CLAIM_SCHEMA = "FT_AI_VALUE_VBD_PRECISION_DIAGNOSTIC_ATTEMPT_CLAIM_2026_07_V1"
 AUTHORIZATION_SCOPE = "vbd_precision_design_diagnostic_v1_nonacceptance_one_launch"
 CLAIM_FILENAME = "attempt_claim.json"
+STAGED_OUTPUT_FILENAME = "diagnostic.staged.json"
 TIMEOUT_SECONDS = 7_200
 THREAD_ENV_KEYS = (
     "MKL_NUM_THREADS",
@@ -524,6 +525,127 @@ def _wait_for_claimed_child(child_pid: int) -> None:
         time.sleep(0.25)
 
 
+def _open_output_workspace(manifest: dict) -> tuple[int, Path]:
+    workspace = Path(manifest["canonical_workspace_path"])
+    output = Path(manifest["output_path"])
+    if (
+        not workspace.is_absolute()
+        or workspace != Path(os.path.normpath(str(workspace)))
+        or output.parent != workspace
+        or output.name != "diagnostic.json"
+    ):
+        raise BootstrapError("diagnostic output path is off-plan")
+    try:
+        opened = workspace.lstat()
+        if workspace.is_symlink() or not stat.S_ISDIR(opened.st_mode):
+            raise BootstrapError("diagnostic output workspace is unsafe")
+        return (
+            os.open(workspace, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW),
+            output,
+        )
+    except OSError as exc:
+        raise BootstrapError("diagnostic output workspace is unavailable") from exc
+
+
+def _remove_staged_output(manifest: dict) -> None:
+    workspace = Path(manifest["canonical_workspace_path"])
+    if not workspace.exists() or workspace.is_symlink() or not workspace.is_dir():
+        return
+    workspace_fd = os.open(
+        workspace, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    )
+    try:
+        try:
+            os.unlink(STAGED_OUTPUT_FILENAME, dir_fd=workspace_fd)
+        except FileNotFoundError:
+            return
+        os.fsync(workspace_fd)
+    finally:
+        os.close(workspace_fd)
+
+
+def _read_canonical_staged_output(workspace_fd: int) -> object:
+    try:
+        info = os.stat(
+            STAGED_OUTPUT_FILENAME,
+            dir_fd=workspace_fd,
+            follow_symlinks=False,
+        )
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 4 * 1024 * 1024:
+            raise BootstrapError("diagnostic staged output is unsafe")
+        descriptor = os.open(
+            STAGED_OUTPUT_FILENAME,
+            os.O_RDONLY | os.O_NOFOLLOW,
+            dir_fd=workspace_fd,
+        )
+    except OSError as exc:
+        raise BootstrapError("diagnostic staged output is unavailable") from exc
+    try:
+        chunks = []
+        remaining = info.st_size + 1
+        while remaining > 0:
+            chunk = os.read(descriptor, min(remaining, 64 * 1024))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        encoded = b"".join(chunks)
+    finally:
+        os.close(descriptor)
+    try:
+        value = json.loads(
+            encoded.decode("utf-8"), object_pairs_hook=_strict_object
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise BootstrapError("diagnostic staged output is invalid") from exc
+    if encoded != _canonical_bytes(value) + b"\n":
+        raise BootstrapError("diagnostic staged output is noncanonical")
+    return value
+
+
+def _publish_staged_output(manifest: dict) -> object:
+    workspace_fd, output = _open_output_workspace(manifest)
+    try:
+        value = _read_canonical_staged_output(workspace_fd)
+        try:
+            os.link(
+                STAGED_OUTPUT_FILENAME,
+                output.name,
+                src_dir_fd=workspace_fd,
+                dst_dir_fd=workspace_fd,
+                follow_symlinks=False,
+            )
+            os.fsync(workspace_fd)
+        except OSError as exc:
+            try:
+                os.unlink(output.name, dir_fd=workspace_fd)
+                os.fsync(workspace_fd)
+            except OSError:
+                pass
+            raise BootstrapError("diagnostic final output could not be published") from exc
+        try:
+            os.unlink(STAGED_OUTPUT_FILENAME, dir_fd=workspace_fd)
+            os.fsync(workspace_fd)
+        except OSError:
+            pass
+        return value
+    finally:
+        os.close(workspace_fd)
+
+
+def _supervise_and_publish(child_pid: int, manifest: dict) -> object:
+    try:
+        _wait_for_claimed_child(child_pid)
+    except BaseException:
+        _remove_staged_output(manifest)
+        raise
+    try:
+        return _publish_staged_output(manifest)
+    except BaseException:
+        _remove_staged_output(manifest)
+        raise
+
+
 def _run(authorization_path: Path) -> int:
     if (
         sys.flags.isolated != 1
@@ -574,8 +696,7 @@ def _run(authorization_path: Path) -> int:
             authorization_commit=authorization_commit,
             command_argv=actual_command,
         )
-    _wait_for_claimed_child(child_pid)
-    record = _read_json(Path(manifest["output_path"]))
+    record = _supervise_and_publish(child_pid, manifest)
     sys.stdout.buffer.write(_canonical_bytes(record) + b"\n")
     sys.stdout.buffer.flush()
     return 0

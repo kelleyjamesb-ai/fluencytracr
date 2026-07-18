@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -296,17 +297,47 @@ def test_bootstrap_sets_compiled_thread_limits_before_numerical_import(monkeypat
     assert {os.environ[key] for key in bootstrap.THREAD_ENV_KEYS} == {"1"}
 
 
-def test_bootstrap_supervisor_enforces_timeout_and_reaps_child(monkeypatch):
+def test_bootstrap_supervisor_enforces_timeout_and_removes_staging(
+    tmp_path, monkeypatch
+):
     bootstrap = _load_bootstrap_module()
     monkeypatch.setattr(bootstrap, "TIMEOUT_SECONDS", 0.01)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    staged.write_bytes(bootstrap._canonical_bytes({"state": "HOLD"}) + b"\n")
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
     child_pid = os.fork()
     if child_pid == 0:
-        os.pause()
+        time.sleep(60)
         os._exit(0)
     with pytest.raises(bootstrap.BootstrapError, match="compiled timeout"):
-        bootstrap._wait_for_claimed_child(child_pid)
+        bootstrap._supervise_and_publish(child_pid, manifest)
     with pytest.raises(ChildProcessError):
         os.waitpid(child_pid, os.WNOHANG)
+    assert not staged.exists()
+    assert not output.exists()
+
+
+def test_bootstrap_publishes_only_canonical_staged_output(tmp_path):
+    bootstrap = _load_bootstrap_module()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    value = {"state": "HOLD", "evidence_eligible": False}
+    staged.write_bytes(bootstrap._canonical_bytes(value) + b"\n")
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
+    assert bootstrap._publish_staged_output(manifest) == value
+    assert not staged.exists()
+    assert output.read_bytes() == bootstrap._canonical_bytes(value) + b"\n"
 
 
 def test_human_authorization_has_no_creator_api():
