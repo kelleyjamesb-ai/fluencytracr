@@ -2271,8 +2271,9 @@ def _spec_for_panel(panel: TrajectoryObservationPanel) -> _VbdTrajectoryGenerati
             aggregate_k=body["aggregate_k"],
             terminal_truth=(effect, effect, effect),
             direction_vector=tuple(body["direction_vector"]),
-            post_pattern="sustained",
+            post_pattern=VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
             correlations=(
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
                 VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
                 VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
             ),

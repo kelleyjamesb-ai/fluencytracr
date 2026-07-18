@@ -384,6 +384,34 @@ def test_bootstrap_publishes_only_canonical_staged_output(tmp_path):
     assert output.read_bytes() == bootstrap._canonical_bytes(value) + b"\n"
 
 
+def test_bootstrap_fails_closed_when_staged_output_cannot_be_removed(
+    tmp_path, monkeypatch
+):
+    bootstrap = _load_bootstrap_module()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    value = {"state": "HOLD", "evidence_eligible": False}
+    staged.write_bytes(bootstrap._canonical_bytes(value) + b"\n")
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
+    real_unlink = bootstrap.os.unlink
+
+    def fail_staged_unlink(path, *args, **kwargs):
+        if path == bootstrap.STAGED_OUTPUT_FILENAME:
+            raise OSError("injected staged cleanup failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(bootstrap.os, "unlink", fail_staged_unlink)
+    with pytest.raises(bootstrap.BootstrapError, match="could not be removed"):
+        bootstrap._publish_staged_output(manifest)
+    assert staged.exists()
+    assert not output.exists()
+
+
 def test_human_authorization_has_no_creator_api():
     assert not hasattr(
         authorization_module,

@@ -1,4 +1,5 @@
 from copy import deepcopy
+import os
 
 import numpy as np
 import pymc as pm
@@ -43,6 +44,7 @@ from fluencytracr_inference.vbd_trajectory_preparation import (
     prepare_vbd_trajectory_lane,
 )
 from fluencytracr_inference.vbd_trajectory_synthetic import (
+    _PRECISION_DIAGNOSTIC_V2_GENERATION_RUNNER_TOKEN,
     VbdSyntheticRunnerError,
     generate_vbd_trajectory_precision_diagnostic_v2_case,
     generate_vbd_trajectory_scenario_smoke_case,
@@ -167,17 +169,19 @@ def _full_shape_idata(values: dict, order: tuple[str, ...]):
 
 def _pymc_routed_full_shape_idata(values: dict, order: tuple[str, ...], model):
     routed = pm.to_inference_data(
-        prior={name: values[name] for name in order},
+        posterior_predictive={name: values[name] for name in order},
         model=model,
+        sample_dims=["chain", "draw"],
     )
-    assert tuple(routed.prior.data_vars) == order
-    routed_values = {}
+    assert tuple(routed.posterior_predictive.data_vars) == order
     for name in order:
-        array = np.asarray(routed.prior[name])
-        assert array.shape[0] == 1
-        routed_values[name] = array[0]
-        assert np.array_equal(routed_values[name], values[name])
-    return _full_shape_idata(routed_values, order)
+        assert np.array_equal(
+            np.asarray(routed.posterior_predictive[name]), values[name]
+        )
+    routed["posterior"] = routed["posterior_predictive"].copy()
+    del routed["posterior_predictive"]
+    routed["sample_stats"] = _full_shape_idata(values, order)["sample_stats"].copy()
+    return routed
 
 
 def _provenance():
@@ -211,9 +215,14 @@ def _provenance():
     }
 
 
-def _projected_lanes(idata, monkeypatch):
-    monkeypatch.setattr(diagnostic_module, "_diagnostic_metric_trees", _metric_trees)
-    monkeypatch.setattr(diagnostic_module, "_bfmi_values", lambda _idata: np.ones(4))
+def _projected_lanes(idata, monkeypatch=None):
+    if monkeypatch is not None:
+        monkeypatch.setattr(
+            diagnostic_module, "_diagnostic_metric_trees", _metric_trees
+        )
+        monkeypatch.setattr(
+            diagnostic_module, "_bfmi_values", lambda _idata: np.ones(4)
+        )
     case_hash = sha256_json(vbd_trajectory_precision_diagnostic_v2_case_body())
     values = []
     for lane_ordinal, lane in enumerate(VBD_TRAJECTORY_LANES):
@@ -251,6 +260,17 @@ def test_v2_plan_and_reserved_seeds_are_exact_and_disjoint():
     assert plan["evidence_eligible"] is False
     with pytest.raises(VbdSyntheticRunnerError):
         generate_vbd_trajectory_precision_diagnostic_v2_case(_runner_token=object())
+
+
+def test_v2_authorized_case_generates_and_prepares_without_sampling():
+    case = generate_vbd_trajectory_precision_diagnostic_v2_case(
+        _runner_token=_PRECISION_DIAGNOSTIC_V2_GENERATION_RUNNER_TOKEN
+    )
+    assert case.panel.seed == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_GENERATOR_SEED
+    assert tuple(
+        prepare_vbd_trajectory_lane(case.panel, lane).lane
+        for lane in VBD_TRAJECTORY_LANES
+    ) == VBD_TRAJECTORY_LANES
 
 
 def test_v2_reserved_seeds_are_rejected_by_generic_smoke():
@@ -300,8 +320,8 @@ def test_full_shape_natural_order_projects_identically_to_canonical_order(
     canonical = _pymc_routed_full_shape_idata(
         full_shape_values, CANONICAL_STORAGE_ORDER, model
     )
-    natural_lanes = _projected_lanes(natural, monkeypatch)
-    canonical_lanes = _projected_lanes(canonical, monkeypatch)
+    natural_lanes = _projected_lanes(natural)
+    canonical_lanes = _projected_lanes(canonical)
     assert natural_lanes == canonical_lanes
     assert tuple(
         row["parameter_name"]
@@ -434,6 +454,17 @@ def test_checkpoint_chain_is_exact_create_once_and_nonresumable(tmp_path):
     )
     assert validated == tuple(values)
     assert validated[-1]["phase"] == "result_ready_for_publication"
+
+    alias = tmp_path / "checkpoint-alias.json"
+    os.link(
+        root / VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CHECKPOINT_SEQUENCE[0][0],
+        alias,
+    )
+    with pytest.raises(VbdTrajectoryPrecisionDiagnosticV2CheckpointError):
+        validate_vbd_precision_diagnostic_v2_checkpoint_root(
+            root=root.resolve(), identity=identity
+        )
+    alias.unlink()
 
     with pytest.raises(
         VbdTrajectoryPrecisionDiagnosticV2CheckpointError,

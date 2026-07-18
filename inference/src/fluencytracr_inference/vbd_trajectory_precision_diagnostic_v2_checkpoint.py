@@ -176,8 +176,8 @@ def _enumerate_regular_names(root_fd: int) -> tuple[str, ...]:
         names = tuple(sorted(os.listdir(root_fd)))
         for name in names:
             info = os.stat(name, dir_fd=root_fd, follow_symlinks=False)
-            if not stat.S_ISREG(info.st_mode):
-                raise OSError("checkpoint entry is not a regular file")
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise OSError("checkpoint entry is not a unique regular file")
         return names
     except OSError as exc:
         raise VbdTrajectoryPrecisionDiagnosticV2CheckpointError(

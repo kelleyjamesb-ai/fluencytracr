@@ -663,8 +663,17 @@ def _publish_staged_output(manifest: dict) -> object:
         try:
             os.unlink(STAGED_OUTPUT_FILENAME, dir_fd=workspace_fd)
             os.fsync(workspace_fd)
-        except OSError:
-            pass
+        except OSError as exc:
+            try:
+                os.unlink(output.name, dir_fd=workspace_fd)
+                os.fsync(workspace_fd)
+            except OSError as rollback_exc:
+                raise BootstrapError(
+                    "diagnostic staged cleanup and final rollback failed"
+                ) from rollback_exc
+            raise BootstrapError(
+                "diagnostic staged output could not be removed"
+            ) from exc
         return value
     finally:
         os.close(workspace_fd)
