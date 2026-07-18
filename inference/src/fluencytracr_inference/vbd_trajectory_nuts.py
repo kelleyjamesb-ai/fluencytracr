@@ -14,6 +14,11 @@ from scipy.linalg import cho_factor, cho_solve
 
 from .hashing import sha256_json
 from .longitudinal_types import MAX_JAVASCRIPT_SAFE_INTEGER
+from .vbd_trajectory_precision_diagnostic_constants import (
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CHAIN_SEEDS,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_GENERATOR_SEED,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_RESERVED_SEEDS,
+)
 from .vbd_trajectory_preparation import (
     TrajectoryPreparedInput,
     VBD_TRAJECTORY_FIXED_EFFECT_PRIOR_SD,
@@ -88,6 +93,8 @@ class TrajectoryNutsError(RuntimeError):
 
 _VBD_TRAJECTORY_CONCORDANCE_RUNNER_TOKEN = object()
 _VBD_TRAJECTORY_PRECISION_CANARY_RUNNER_TOKEN = object()
+_VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SAMPLING_TOKEN = object()
+_VBD_TRAJECTORY_REFERENCE_FIT_SAMPLING_TOKEN = object()
 
 
 @dataclass(frozen=True)
@@ -280,6 +287,90 @@ def build_vbd_trajectory_nuts_precision_canary_binding(
             "ppc_seed": body["ppc_seed"],
             "binding_hash": sha256_json(body),
         }
+    )
+
+
+@dataclass(frozen=True)
+class TrajectoryNutsPrecisionDiagnosticBinding:
+    generator_seed: int
+    lane: str
+    lane_ordinal: int
+    plan_hash: str
+    chain_seeds: tuple[int, int, int, int]
+    binding_hash: str
+
+    def body_without_hash(self) -> dict:
+        return {
+            "binding_kind": "precision_design_diagnostic_nonacceptance",
+            "generator_seed": self.generator_seed,
+            "lane": self.lane,
+            "lane_ordinal": self.lane_ordinal,
+            "plan_hash": self.plan_hash,
+            "chain_seeds": list(self.chain_seeds),
+            "ppc_state": "NOT_RUN",
+            "cross_engine_state": "NOT_RUN",
+            "acceptance_slot_key": None,
+            "acceptance_evidence_eligible": False,
+        }
+
+    def __post_init__(self) -> None:
+        expected_start = 4 * self.lane_ordinal
+        expected_chain_seeds = tuple(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CHAIN_SEEDS[
+                expected_start : expected_start + 4
+            ]
+        )
+        if (
+            self.generator_seed
+            != VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_GENERATOR_SEED
+            or self.lane not in VBD_TRAJECTORY_LANES
+            or type(self.lane_ordinal) is not int
+            or not 0 <= self.lane_ordinal < len(VBD_TRAJECTORY_LANES)
+            or VBD_TRAJECTORY_LANES[self.lane_ordinal] != self.lane
+            or type(self.plan_hash) is not str
+            or len(self.plan_hash) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.plan_hash
+            )
+            or self.chain_seeds != expected_chain_seeds
+            or self.binding_hash != sha256_json(self.body_without_hash())
+        ):
+            raise TrajectoryNutsError(
+                "full NUTS precision-diagnostic binding is invalid"
+            )
+
+
+def build_vbd_trajectory_nuts_precision_diagnostic_binding(
+    *,
+    generator_seed: int,
+    lane: str,
+    lane_ordinal: int,
+    plan_hash: str,
+) -> TrajectoryNutsPrecisionDiagnosticBinding:
+    start = 4 * lane_ordinal
+    chain_seeds = tuple(
+        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CHAIN_SEEDS[start : start + 4]
+    )
+    body = {
+        "binding_kind": "precision_design_diagnostic_nonacceptance",
+        "generator_seed": generator_seed,
+        "lane": lane,
+        "lane_ordinal": lane_ordinal,
+        "plan_hash": plan_hash,
+        "chain_seeds": list(chain_seeds),
+        "ppc_state": "NOT_RUN",
+        "cross_engine_state": "NOT_RUN",
+        "acceptance_slot_key": None,
+        "acceptance_evidence_eligible": False,
+    }
+    return TrajectoryNutsPrecisionDiagnosticBinding(
+        generator_seed=generator_seed,
+        lane=lane,
+        lane_ordinal=lane_ordinal,
+        plan_hash=plan_hash,
+        chain_seeds=chain_seeds,
+        binding_hash=sha256_json(body),
     )
 
 
@@ -824,6 +915,11 @@ def _validate_reference_seeds(
         for seed in (*validated_chains, validated_ppc)
     ):
         raise ValueError("smoke NUTS seeds must remain in the smoke namespace")
+    if settings.mode == "smoke" and any(
+        seed in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_RESERVED_SEEDS
+        for seed in (*validated_chains, validated_ppc)
+    ):
+        raise ValueError("smoke NUTS cannot use a reserved diagnostic seed")
     return validated_chains, validated_ppc
 
 
@@ -1530,6 +1626,84 @@ def _movement_summary(idata) -> TrajectoryPosteriorSummary:
     )
 
 
+def _sample_vbd_trajectory_nuts_idata(
+    prepared: TrajectoryPreparedInput,
+    *,
+    settings: TrajectoryNutsSettings,
+    chain_seeds: tuple[int, ...],
+    _sampling_token: object,
+):
+    if _sampling_token not in (
+        _VBD_TRAJECTORY_REFERENCE_FIT_SAMPLING_TOKEN,
+        _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SAMPLING_TOKEN,
+    ):
+        raise TrajectoryNutsError("NUTS sampling requires a runner-owned token")
+    model = _build_reference_model(prepared)
+    with model:
+        return pm.sample(
+            draws=settings.draws,
+            tune=settings.tune,
+            chains=settings.chains,
+            cores=settings.cores,
+            random_seed=list(chain_seeds),
+            target_accept=settings.target_accept,
+            max_treedepth=settings.max_treedepth,
+            init=settings.init,
+            nuts_sampler=settings.sampler,
+            blas_cores=settings.blas_cores,
+            progressbar=False,
+            compute_convergence_checks=settings.compute_convergence_checks,
+        )
+
+
+def _sample_vbd_trajectory_precision_diagnostic(
+    prepared: TrajectoryPreparedInput,
+    source_panel: TrajectoryObservationPanel,
+    *,
+    binding: TrajectoryNutsPrecisionDiagnosticBinding,
+    _runner_token: object,
+):
+    """Run only the full NUTS trace required by the private diagnostic."""
+
+    if (
+        _runner_token is not _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SAMPLING_TOKEN
+        or type(binding) is not TrajectoryNutsPrecisionDiagnosticBinding
+    ):
+        raise TrajectoryNutsError(
+            "precision diagnostic sampling requires its exact runner binding"
+        )
+    if type(prepared) is not TrajectoryPreparedInput:
+        raise TypeError(
+            "precision diagnostic requires an exact TrajectoryPreparedInput"
+        )
+    if type(source_panel) is not TrajectoryObservationPanel:
+        raise TypeError("precision diagnostic requires an exact source panel")
+    validate_prepared_vbd_trajectory(prepared, source_panel)
+    if (
+        source_panel.seed
+        != VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_GENERATOR_SEED
+        or binding.generator_seed != source_panel.seed
+        or binding.lane != prepared.lane
+        or binding.plan_hash != source_panel.study_plan_root
+        or tuple(binding.chain_seeds)
+        != tuple(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CHAIN_SEEDS[
+                4 * binding.lane_ordinal : 4 * binding.lane_ordinal + 4
+            ]
+        )
+    ):
+        raise TrajectoryNutsError(
+            "precision diagnostic binding differs from its source panel"
+        )
+    settings = vbd_nuts_execution_settings("full")
+    return _sample_vbd_trajectory_nuts_idata(
+        prepared,
+        settings=settings,
+        chain_seeds=binding.chain_seeds,
+        _sampling_token=_VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SAMPLING_TOKEN,
+    )
+
+
 def fit_vbd_trajectory_nuts_reference(
     prepared: TrajectoryPreparedInput,
     source_panel: TrajectoryObservationPanel,
@@ -1585,22 +1759,12 @@ def fit_vbd_trajectory_nuts_reference(
         raise ValueError("full NUTS binding differs from its prepared source panel")
     if source_panel.seed in (*validated_chain_seeds, validated_ppc_seed):
         raise ValueError("generator, NUTS chain, and PPC seeds must be distinct")
-    model = _build_reference_model(prepared)
-    with model:
-        idata = pm.sample(
-            draws=settings.draws,
-            tune=settings.tune,
-            chains=settings.chains,
-            cores=settings.cores,
-            random_seed=list(validated_chain_seeds),
-            target_accept=settings.target_accept,
-            max_treedepth=settings.max_treedepth,
-            init=settings.init,
-            nuts_sampler=settings.sampler,
-            blas_cores=settings.blas_cores,
-            progressbar=False,
-            compute_convergence_checks=settings.compute_convergence_checks,
-        )
+    idata = _sample_vbd_trajectory_nuts_idata(
+        prepared,
+        settings=settings,
+        chain_seeds=validated_chain_seeds,
+        _sampling_token=_VBD_TRAJECTORY_REFERENCE_FIT_SAMPLING_TOKEN,
+    )
     movement_summary = _movement_summary(idata)
     diagnostics = _compute_sampler_diagnostics(
         idata, prepared=prepared, settings=settings

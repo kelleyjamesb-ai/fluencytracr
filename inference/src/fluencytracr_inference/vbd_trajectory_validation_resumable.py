@@ -147,6 +147,7 @@ _ALLOWED_COMMAND_IDS = (
 _RUNNER_SOURCE_PATHS = (
     "inference/pyproject.toml",
     "inference/requirements.lock",
+    "inference/scripts/vbd_trajectory_precision_diagnostic_bootstrap.py",
     "inference/src/fluencytracr_inference/__init__.py",
     "inference/src/fluencytracr_inference/design_router.py",
     "inference/src/fluencytracr_inference/hashing.py",
@@ -159,6 +160,10 @@ _RUNNER_SOURCE_PATHS = (
     "inference/src/fluencytracr_inference/vbd_trajectory_concordance_cli.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_nuts.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_precision_canary.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_authorization.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_constants.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_execution.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_types.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_synthetic.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_preparation.py",
@@ -4195,7 +4200,7 @@ def _frozen_source_bundle(*, expected_freeze_manifest_hash: str) -> bytes:
     modules = []
     for item in manifest["in_scope_files"]:
         path = item["path"]
-        if not path.endswith(".py"):
+        if not path.startswith("inference/src/") or not path.endswith(".py"):
             continue
         source = _git_bytes(
             "show", f"{manifest['candidate_source_commit']}:{path}"

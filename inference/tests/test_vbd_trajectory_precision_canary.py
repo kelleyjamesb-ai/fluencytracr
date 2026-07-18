@@ -1,10 +1,7 @@
 from copy import deepcopy
-import json
-import subprocess
 
 import pytest
 
-import fluencytracr_inference.vbd_trajectory_precision_canary as canary_module
 from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.vbd_trajectory_concordance import (
     evaluate_vbd_trajectory_quantity_concordance,
@@ -28,7 +25,6 @@ from fluencytracr_inference.vbd_trajectory_preparation import (
 from fluencytracr_inference.vbd_trajectory_precision_canary import (
     VBD_TRAJECTORY_PRECISION_CANARY_HOLD_REASON,
     VBD_TRAJECTORY_PRECISION_CANARY_SCHEMA_VERSION,
-    VBD_TRAJECTORY_PRECISION_CANARY_TIMEOUT_SECONDS,
     VbdTrajectoryPrecisionCanaryError,
     run_vbd_trajectory_precision_canary,
     validate_vbd_trajectory_precision_canary_result,
@@ -320,46 +316,7 @@ def test_precision_canary_rejects_coordinated_off_plan_panel_and_fit_hashes():
         validate_vbd_trajectory_precision_canary_result(fit_forged)
 
 
-def test_precision_canary_parent_uses_one_exact_timeout_and_no_retry(monkeypatch):
-    calls = []
-    value = _result()
-
-    def run(command, **kwargs):
-        calls.append((command, kwargs))
-        return subprocess.CompletedProcess(
-            command, 0, stdout=json.dumps(value).encode(), stderr=b""
-        )
-
-    monkeypatch.setattr(subprocess, "run", run)
-    monkeypatch.setattr(
-        canary_module,
-        "validate_vbd_trajectory_precision_canary_result",
-        lambda candidate: candidate,
-    )
-    assert run_vbd_trajectory_precision_canary(0) == value
-    assert len(calls) == 1
-    assert calls[0][1]["timeout"] == VBD_TRAJECTORY_PRECISION_CANARY_TIMEOUT_SECONDS
-
-    held = deepcopy(value)
-    held["otherwise_applicable_gates_passed"] = False
-    held["otherwise_applicable_failing_checks"] = ["mcse"]
-    held_body = {
-        key: item for key, item in held.items() if key != "result_hash"
-    }
-    held["result_hash"] = sha256_json(held_body)
-
-    def statistical_hold(command, **kwargs):
-        return subprocess.CompletedProcess(
-            command, 2, stdout=json.dumps(held).encode(), stderr=b""
-        )
-
-    monkeypatch.setattr(subprocess, "run", statistical_hold)
-    with pytest.raises(VbdTrajectoryPrecisionCanaryError, match="mcse"):
-        run_vbd_trajectory_precision_canary(0)
-
-    def timeout(*args, **kwargs):
-        raise subprocess.TimeoutExpired(args[0], kwargs["timeout"])
-
-    monkeypatch.setattr(subprocess, "run", timeout)
-    with pytest.raises(VbdTrajectoryPrecisionCanaryError, match="timeout"):
-        run_vbd_trajectory_precision_canary(0)
+@pytest.mark.parametrize("canary_ordinal", [0, 1])
+def test_precision_canary_execution_is_permanently_tombstoned(canary_ordinal):
+    with pytest.raises(VbdTrajectoryPrecisionCanaryError, match="tombstoned"):
+        run_vbd_trajectory_precision_canary(canary_ordinal)

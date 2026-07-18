@@ -56,6 +56,17 @@
   permanently non-admissible full-setting precision canaries. Do not create
   replacement candidate `S` until both canaries clear every otherwise
   applicable gate.
+- [x] 2.7 After the separate task-`1.8` implementation authorization, implement
+  the exclusive diagnostic seeds and case, complete 5k/10k/20k sanitized
+  projection, exact record/hash reconstruction, claim-before-import one-shot
+  bootstrap with compiled timeout, D/A and human-authorization validation,
+  canary tombstone, and categorical proof-path rejection without executing the
+  diagnostic or creating authorization commit `A`.
+- [ ] 2.8 After exact-commit CODE, BUG, ADVERSARIAL, and statistical-methodology
+  GO for implementation commit `D`, create and review sole-child manifest-only
+  authorization commit `A`, then obtain a separate exact human execution record
+  before the one permitted diagnostic launch. The result remains permanent
+  HOLD and cannot complete task `2.6` or enter any proof count.
 
 ## 3. Future Engine Concordance
 

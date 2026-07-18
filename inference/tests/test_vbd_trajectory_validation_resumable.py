@@ -2361,7 +2361,7 @@ def test_frozen_source_set_closes_both_child_import_graphs(target, argument):
 
     modules = []
     for relative in runner._RUNNER_SOURCE_PATHS:
-        if not relative.endswith(".py"):
+        if not relative.startswith("inference/src/") or not relative.endswith(".py"):
             continue
         source = (runner._repo_root() / relative).read_bytes()
         module = relative.removeprefix("inference/src/").removesuffix(

@@ -284,6 +284,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-17: froze one globally one-shot, disjoint, permanently held MCSE diagnostic with exclusive seeds, full sanitized prefix/ESS evidence, D/A/review/human authorization binding, and standalone isolated bootstrap. Four-role GO; no implementation or execution."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-implementation",
+      "title": "VBD MCSE diagnostic implementation without execution",
+      "bound": "Synthetic-only inference/, focused tests, and verified OpenSpec/docs/status: implement the task-1.8 diagnostic plan and exclusive seed manifest, complete sanitized 5k/10k/20k prefix projection, strict no-extra-key records and hashes, D/A manifest and human-authorization validators, workspace-independent one-shot claim mechanics, categorical proof-path rejection, and startable isolated standalone bootstrap; preserve the failed canary, model, priors, estimand, all existing seeds, <=0.10 MCSE threshold, every statistical/evidence gate, and fail-closed HOLD; no diagnostic generator or sampler execution, authorization commit A, human execution record, claim consumption, canary 1, replacement S/F, concordance, evidence, task 2.6 completion, real/customer/live data, route, UI, persistence, export, customer output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-17: implemented and verified the exclusive seeds/case, complete sanitized prefix projection, strict plan/review/claim/hash reconstruction, canary tombstone, categorical proof rejection, and claim-before-import isolated child with compiled timeout. Full inference 985 passed; no diagnostic generation, sampling, authorization commit A, human execution record, or real claim occurred."
     }
   ]
 }
