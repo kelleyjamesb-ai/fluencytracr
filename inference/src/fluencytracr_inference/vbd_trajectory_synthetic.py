@@ -13,13 +13,16 @@ import numpy as np
 from .hashing import sha256_json
 from .longitudinal_types import validate_longitudinal_seed
 from .vbd_trajectory_precision_diagnostic_constants import (
+    VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_AGGREGATE_K,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_EFFECT_SIZE_SD,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_GENERATOR_SEED,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_HOLD_REASON,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_PANEL_GROUP_COUNT,
-    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_RESERVED_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SCENARIO_ID,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_GENERATOR_SEED,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_ID,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SCENARIO_ID,
 )
 from .vbd_trajectory_types import (
     PrimitiveDistribution,
@@ -110,6 +113,7 @@ _CONCORDANCE_CAPABILITY_HASH: ContextVar[str | None] = ContextVar(
 _CONCORDANCE_GENERATION_RUNNER_TOKEN = object()
 _PRECISION_CANARY_GENERATION_RUNNER_TOKEN = object()
 _PRECISION_DIAGNOSTIC_GENERATION_RUNNER_TOKEN = object()
+_PRECISION_DIAGNOSTIC_V2_GENERATION_RUNNER_TOKEN = object()
 _STANDARD_ERROR_RATIO = 1.0
 _COVARIANCE_RATIO = 1.0
 _UNDERSTATED_STANDARD_ERROR_RATIO = 0.5
@@ -1117,7 +1121,7 @@ def _generate_vbd_trajectory_smoke_case_legacy(
     validated_seed = validate_longitudinal_seed(seed, name="VBD smoke seed")
     if not VBD_TRAJECTORY_SMOKE_SEED_MIN <= validated_seed <= VBD_TRAJECTORY_SMOKE_SEED_MAX:
         raise ValueError("development smoke must use its disjoint seed namespace")
-    if validated_seed in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_RESERVED_SEEDS:
+    if validated_seed in VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS:
         raise ValueError("development smoke cannot use a reserved diagnostic seed")
     if type(panel_group_count) is not int or panel_group_count not in (6, 12):
         raise ValueError("panel group count must be 6 or 12")
@@ -1713,7 +1717,7 @@ def generate_vbd_trajectory_scenario_smoke_case(
     )
     if not VBD_TRAJECTORY_SMOKE_SEED_MIN <= validated_seed <= VBD_TRAJECTORY_SMOKE_SEED_MAX:
         raise ValueError("scenario smoke must use its disjoint seed namespace")
-    if validated_seed in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_RESERVED_SEEDS:
+    if validated_seed in VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS:
         raise ValueError("scenario smoke cannot use a reserved diagnostic seed")
     semantics = _development_scenario_semantics(
         scenario_key, depth_context_ref=depth_context_ref
@@ -2036,6 +2040,64 @@ def generate_vbd_trajectory_precision_diagnostic_case(
     )
 
 
+def vbd_trajectory_precision_diagnostic_v2_case_body() -> dict:
+    """Return the replacement null case reserved for the V2 diagnostic."""
+
+    return {
+        "diagnostic_id": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_ID,
+        "effect_size_sd": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_EFFECT_SIZE_SD,
+        "panel_group_count": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_PANEL_GROUP_COUNT,
+        "aggregate_k": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_AGGREGATE_K,
+        "generator_seed": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_GENERATOR_SEED,
+        "direction_vector": [1, 1, 1],
+        "seed_namespace": VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+        "acceptance_slot_key": None,
+        "hold_reason": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_HOLD_REASON,
+        "acceptance_evidence_eligible": False,
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+
+
+def generate_vbd_trajectory_precision_diagnostic_v2_case(
+    *,
+    _runner_token: object,
+) -> VbdTrajectorySyntheticCase:
+    """Generate the V2 case only for the later authorized private runner."""
+
+    if _runner_token is not _PRECISION_DIAGNOSTIC_V2_GENERATION_RUNNER_TOKEN:
+        raise VbdSyntheticRunnerError(
+            "precision diagnostic V2 generation requires its runner token"
+        )
+    body = vbd_trajectory_precision_diagnostic_v2_case_body()
+    effect = float(body["effect_size_sd"])
+    return _generate_vbd_trajectory_case(
+        _VbdTrajectoryGenerationSpec(
+            scenario_id=VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SCENARIO_ID,
+            seed=body["generator_seed"],
+            panel_group_count=body["panel_group_count"],
+            aggregate_k=body["aggregate_k"],
+            terminal_truth=(effect, effect, effect),
+            direction_vector=tuple(body["direction_vector"]),
+            post_pattern=VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
+            correlations=(
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+            ),
+            plan_ref=VBD_TRAJECTORY_SMOKE_PLAN_REF,
+            plan_hash=sha256_json(body),
+            seed_namespace=VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+            acceptance_slot_key=None,
+            depth_context_ref="depth-context:a",
+            shock_kind=None,
+            reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
+            reported_covariance_ratio=_COVARIANCE_RATIO,
+        )
+    )
+
+
 def _generate_vbd_trajectory_depth_validation_pair(
     slot: VbdTrajectoryValidationSlot,
 ) -> tuple[VbdTrajectorySyntheticCase, VbdTrajectorySyntheticCase]:
@@ -2195,7 +2257,35 @@ def _spec_for_panel(panel: TrajectoryObservationPanel) -> _VbdTrajectoryGenerati
             reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
             reported_covariance_ratio=_COVARIANCE_RATIO,
         )
-    if panel.seed in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_RESERVED_SEEDS:
+    if (
+        panel.seed_namespace == VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE
+        and panel.seed == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_GENERATOR_SEED
+        and panel.scenario_id == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SCENARIO_ID
+    ):
+        body = vbd_trajectory_precision_diagnostic_v2_case_body()
+        effect = float(body["effect_size_sd"])
+        return _VbdTrajectoryGenerationSpec(
+            scenario_id=VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SCENARIO_ID,
+            seed=body["generator_seed"],
+            panel_group_count=body["panel_group_count"],
+            aggregate_k=body["aggregate_k"],
+            terminal_truth=(effect, effect, effect),
+            direction_vector=tuple(body["direction_vector"]),
+            post_pattern="sustained",
+            correlations=(
+                VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+                VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+            ),
+            plan_ref=VBD_TRAJECTORY_SMOKE_PLAN_REF,
+            plan_hash=sha256_json(body),
+            seed_namespace=VBD_TRAJECTORY_SMOKE_SEED_NAMESPACE,
+            acceptance_slot_key=None,
+            depth_context_ref="depth-context:a",
+            shock_kind=None,
+            reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
+            reported_covariance_ratio=_COVARIANCE_RATIO,
+        )
+    if panel.seed in VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS:
         raise TrajectoryStructureError(
             "reserved diagnostic seed has an off-plan synthetic identity"
         )

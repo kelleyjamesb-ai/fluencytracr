@@ -308,6 +308,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-18: V1 remains permanent uninterpretable HOLD. V2 freezes disjoint seeds, exact-set/name-based projection, natural-order full-shape conformance, and exact non-resumable checkpoint chaining. Four-role GO and governance checks passed. Task 1.9 complete; no implementation, claim, sampler, canary, concordance, or evidence ran."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-v2-implementation",
+      "title": "VBD MCSE replacement diagnostic implementation without execution",
+      "bound": "Synthetic-only inference/, focused tests, and verified OpenSpec/docs/status: complete task 2.9 by implementing vbd_precision_design_diagnostic_v2 with exclusive generator seed 2_055_900_600 and chain seeds 2_055_900_700..711, exact posterior-variable-set validation followed by canonical name-based projection, the full-shape sampler-free production PyMC/DataTree/ArviZ natural-order conformance fixture, exact twelve-record create-once hash-chained postmortem checkpoints, and categorical V1/proof-path rejection; preserve every model, prior, estimand, 20k/5k setting, <=0.10 gate, existing seed, evidence gate, permanent HOLD, and no-retry rule; no generator or sampler execution, A2, human execution record, external claim/checkpoint creation, canary 1, task 2.6, replacement S/F, concordance, evidence, real/customer/live data, public surface, customer output, or promotion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-18: V2 exclusive seeds/case/bindings, exact-set name-based projection, full-shape PyMC-routed natural-order fixture, V1 tombstones, strict permanent-HOLD records, manifest/human/claim validators, isolated bootstrap, and non-resumable 12-record checkpoint execution path are implemented. Full inference 1003, bridge 22, builds, harness 276/3 skipped, OpenSpec, and governance passed. No V2 generator/sampler, A2, claim, external root, or evidence ran."
     }
   ]
 }

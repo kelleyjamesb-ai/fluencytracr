@@ -18,12 +18,14 @@ from .vbd_trajectory_nuts import (
     VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES,
     VBD_TRAJECTORY_NUTS_RHAT_MAX,
     TrajectoryNutsPrecisionDiagnosticBinding,
+    TrajectoryNutsPrecisionDiagnosticV2Binding,
     _bfmi_values,
     _expected_parameter_names,
     _labeled_diagnostic_rows,
     _parameter_labels_and_coordinates,
     _sample_stat_count,
     build_vbd_trajectory_nuts_precision_diagnostic_binding,
+    build_vbd_trajectory_nuts_precision_diagnostic_v2_binding,
     vbd_nuts_execution_settings,
 )
 from .vbd_trajectory_precision_diagnostic_constants import (
@@ -38,6 +40,17 @@ from .vbd_trajectory_precision_diagnostic_constants import (
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SEED_SCHEMA_VERSION,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_TAIL_PROBABILITIES,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_TIMEOUT_SECONDS,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CHAIN_SEEDS,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_GENERATOR_SEED,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_ID,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_PLAN_SCHEMA_VERSION,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SCHEMA_VERSION,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SEED_SCHEMA_VERSION,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_CLAIM_HASH,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_EXECUTION_AUTHORIZATION_HASH,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_INPUT_BINDING_HASH,
 )
 from .vbd_trajectory_statistics import (
     VBD_TRAJECTORY_INTERVAL_80,
@@ -46,6 +59,7 @@ from .vbd_trajectory_statistics import (
 )
 from .vbd_trajectory_synthetic import (
     vbd_trajectory_precision_diagnostic_case_body,
+    vbd_trajectory_precision_diagnostic_v2_case_body,
 )
 from .vbd_trajectory_types import VBD_TRAJECTORY_LANES
 
@@ -189,6 +203,71 @@ def vbd_trajectory_precision_diagnostic_plan() -> dict:
     return {**body, "diagnostic_plan_hash": sha256_json(body)}
 
 
+def vbd_trajectory_precision_diagnostic_v2_seed_manifest() -> dict:
+    lanes = []
+    for lane_ordinal, lane in enumerate(VBD_TRAJECTORY_LANES):
+        start = 4 * lane_ordinal
+        lanes.append(
+            {
+                "lane": lane,
+                "lane_ordinal": lane_ordinal,
+                "chain_seeds": list(
+                    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CHAIN_SEEDS[
+                        start : start + 4
+                    ]
+                ),
+            }
+        )
+    body = {
+        "schema_version": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SEED_SCHEMA_VERSION,
+        "diagnostic_id": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_ID,
+        "generator_seed": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_GENERATOR_SEED,
+        "lanes": lanes,
+        "reserved_seeds": [
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_GENERATOR_SEED,
+            *VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CHAIN_SEEDS,
+        ],
+        "exclusive_to_diagnostic": True,
+        "acceptance_seed_count": 0,
+    }
+    return {**body, "seed_manifest_hash": sha256_json(body)}
+
+
+def vbd_trajectory_precision_diagnostic_v2_plan() -> dict:
+    body = {
+        "schema_version": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_PLAN_SCHEMA_VERSION,
+        "diagnostic_id": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_ID,
+        "case": vbd_trajectory_precision_diagnostic_v2_case_body(),
+        "lane_order": list(VBD_TRAJECTORY_LANES),
+        "parameter_order": list(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_EXPECTED_PARAMETER_NAMES
+        ),
+        "prefix_draws_per_chain": list(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_PREFIX_DRAWS
+        ),
+        "mcse_endpoint_order": list(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_MCSE_ENDPOINTS
+        ),
+        "tail_probabilities": list(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_TAIL_PROBABILITIES
+        ),
+        "sampler_settings": vbd_nuts_execution_settings("full").to_dict(),
+        "bundle_child_timeout_seconds": (
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_TIMEOUT_SECONDS
+        ),
+        "ppc_state": "NOT_RUN",
+        "cross_engine_state": "NOT_RUN",
+        "state": "HOLD",
+        "hold_reasons": [VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_HOLD_REASON],
+        "evidence_eligible": False,
+        "acceptance_count_effect": 0,
+        "seed_manifest_hash": vbd_trajectory_precision_diagnostic_v2_seed_manifest()[
+            "seed_manifest_hash"
+        ],
+    }
+    return {**body, "diagnostic_plan_hash": sha256_json(body)}
+
+
 def _diagnostic_metric_trees(prefix_idata) -> tuple[tuple[str, object], ...]:
     variables = list(VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES)
     return (
@@ -252,15 +331,26 @@ def _weighted_endpoint(values: np.ndarray, stable_indexes: np.ndarray, prob: flo
     )
 
 
-def _prefix_parameter_rows(idata, prefix_draws: int) -> list[dict]:
+def _prefix_parameter_rows(
+    idata, prefix_draws: int, *, require_canonical_storage_order: bool = True
+) -> list[dict]:
     prefix = idata.isel(draw=slice(0, prefix_draws))
     posterior = prefix.posterior
     trees = _diagnostic_metric_trees(prefix)
     rows: list[dict] = []
-    actual_variables = tuple(str(name) for name in posterior.data_vars)
-    if actual_variables != VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES:
+    actual_variables = tuple(posterior.data_vars)
+    variable_identity_valid = (
+        actual_variables == VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES
+        if require_canonical_storage_order
+        else (
+            all(type(name) is str for name in actual_variables)
+            and len(actual_variables) == len(VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES)
+            and set(actual_variables) == set(VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES)
+        )
+    )
+    if not variable_identity_valid:
         raise VbdTrajectoryPrecisionDiagnosticError(
-            "diagnostic posterior variables are missing, extra, or reordered"
+            "diagnostic posterior variables are missing, extra, malformed, or reordered"
         )
     for variable_name in VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES:
         posterior_variable = posterior[variable_name]
@@ -419,6 +509,43 @@ def _validate_trace_identity(idata) -> None:
             )
 
 
+def _validate_trace_identity_v2(idata) -> None:
+    try:
+        posterior = idata.posterior
+        sample_stats = idata.sample_stats
+    except AttributeError as exc:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 requires posterior and sample_stats groups"
+        ) from exc
+    variables = tuple(posterior.data_vars)
+    if (
+        not all(type(name) is str for name in variables)
+        or len(variables) != len(VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES)
+        or set(variables) != set(VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES)
+    ):
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 posterior variable set is not exact"
+        )
+    for group, label in ((posterior, "posterior"), (sample_stats, "sample_stats")):
+        if "chain" not in group.dims or "draw" not in group.dims:
+            raise VbdTrajectoryPrecisionDiagnosticError(
+                f"diagnostic V2 {label} lacks chain/draw dimensions"
+            )
+        chain = np.asarray(group.coords["chain"])
+        draw = np.asarray(group.coords["draw"])
+        if (
+            chain.dtype.kind not in "iu"
+            or draw.dtype.kind not in "iu"
+            or not np.array_equal(
+                chain, np.arange(VBD_TRAJECTORY_NUTS_FULL_CHAINS)
+            )
+            or not np.array_equal(draw, np.arange(VBD_TRAJECTORY_NUTS_FULL_DRAWS))
+        ):
+            raise VbdTrajectoryPrecisionDiagnosticError(
+                f"diagnostic V2 {label} coordinates are reordered or incomplete"
+            )
+
+
 def _full_sampler_summary(idata) -> tuple[int, int, list[float]]:
     settings = vbd_nuts_execution_settings("full")
     sample_stats = idata.sample_stats
@@ -533,6 +660,83 @@ def project_vbd_trajectory_precision_diagnostic_lane(
     if len(rows) != 36:
         raise VbdTrajectoryPrecisionDiagnosticError(
             "diagnostic lane row cardinality is invalid"
+        )
+    divergences, treedepth, bfmi = _full_sampler_summary(idata)
+    full_rows = [
+        row
+        for row in rows
+        if row["prefix_draws_per_chain"] == VBD_TRAJECTORY_NUTS_FULL_DRAWS
+    ]
+    failures = _non_mcse_failures(full_rows, divergences, treedepth, bfmi)
+    binding_value = {
+        **binding.body_without_hash(),
+        "binding_hash": binding.binding_hash,
+    }
+    lane_fit = {
+        "prepared_input_hash": prepared_input_hash,
+        "model_input_hash": model_input_hash,
+        "parameter_rows": rows,
+        "post_warmup_divergences": divergences,
+        "max_treedepth_saturation_count": treedepth,
+        "energy_bfmi_by_chain": bfmi,
+        "non_mcse_sampler_failures": failures,
+        "ppc_state": "NOT_RUN",
+        "cross_engine_state": "NOT_RUN",
+    }
+    fit_body = {**lane_fit, "binding_hash": binding.binding_hash}
+    body = {
+        "lane": lane,
+        "lane_ordinal": lane_ordinal,
+        "binding": binding_value,
+        **lane_fit,
+        "fit_summary_hash": sha256_json(fit_body),
+    }
+    return {**body, "lane_result_hash": sha256_json(body)}
+
+
+def project_vbd_trajectory_precision_diagnostic_v2_lane(
+    idata,
+    *,
+    lane: str,
+    lane_ordinal: int,
+    binding: TrajectoryNutsPrecisionDiagnosticV2Binding,
+    prepared_input_hash: str,
+    model_input_hash: str,
+) -> dict:
+    """Project V2 by exact variable set and canonical name lookup."""
+
+    if (
+        lane not in VBD_TRAJECTORY_LANES
+        or type(lane_ordinal) is not int
+        or not 0 <= lane_ordinal < len(VBD_TRAJECTORY_LANES)
+        or VBD_TRAJECTORY_LANES[lane_ordinal] != lane
+        or type(binding) is not TrajectoryNutsPrecisionDiagnosticV2Binding
+        or binding.lane != lane
+        or binding.lane_ordinal != lane_ordinal
+    ):
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 lane binding is invalid"
+        )
+    _strict_sha256(prepared_input_hash, "prepared input hash")
+    _strict_sha256(model_input_hash, "model input hash")
+    _validate_trace_identity_v2(idata)
+    rows = []
+    for prefix_draws in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_PREFIX_DRAWS:
+        prefix_rows = _prefix_parameter_rows(
+            idata,
+            prefix_draws,
+            require_canonical_storage_order=False,
+        )
+        if tuple(row["parameter_name"] for row in prefix_rows) != (
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_EXPECTED_PARAMETER_NAMES
+        ):
+            raise VbdTrajectoryPrecisionDiagnosticError(
+                "diagnostic V2 parameter row order is invalid"
+            )
+        rows.extend(prefix_rows)
+    if len(rows) != 36:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 lane row cardinality is invalid"
         )
     divergences, treedepth, bfmi = _full_sampler_summary(idata)
     full_rows = [
@@ -742,6 +946,131 @@ def validate_vbd_trajectory_precision_diagnostic_lane(value: object) -> dict:
     return value
 
 
+def validate_vbd_trajectory_precision_diagnostic_v2_lane(value: object) -> dict:
+    expected_keys = {
+        "lane",
+        "lane_ordinal",
+        "binding",
+        "prepared_input_hash",
+        "model_input_hash",
+        "parameter_rows",
+        "post_warmup_divergences",
+        "max_treedepth_saturation_count",
+        "energy_bfmi_by_chain",
+        "non_mcse_sampler_failures",
+        "ppc_state",
+        "cross_engine_state",
+        "fit_summary_hash",
+        "lane_result_hash",
+    }
+    if type(value) is not dict or set(value) != expected_keys:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 lane result shape is invalid"
+        )
+    lane = value["lane"]
+    lane_ordinal = value["lane_ordinal"]
+    if (
+        lane not in VBD_TRAJECTORY_LANES
+        or type(lane_ordinal) is not int
+        or not 0 <= lane_ordinal < len(VBD_TRAJECTORY_LANES)
+        or VBD_TRAJECTORY_LANES[lane_ordinal] != lane
+    ):
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 lane identity is invalid"
+        )
+    binding_value = value["binding"]
+    if type(binding_value) is not dict:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 binding is invalid"
+        )
+    expected_plan_hash = sha256_json(
+        vbd_trajectory_precision_diagnostic_v2_case_body()
+    )
+    if binding_value.get("plan_hash") != expected_plan_hash:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 binding differs from its compiled case plan"
+        )
+    binding = build_vbd_trajectory_nuts_precision_diagnostic_v2_binding(
+        generator_seed=binding_value.get("generator_seed"),
+        lane=lane,
+        lane_ordinal=lane_ordinal,
+        plan_hash=binding_value.get("plan_hash"),
+    )
+    expected_binding = {
+        **binding.body_without_hash(),
+        "binding_hash": binding.binding_hash,
+    }
+    if binding_value != expected_binding:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 binding differs from its compiled identity"
+        )
+    _strict_sha256(value["prepared_input_hash"], "prepared input hash")
+    _strict_sha256(value["model_input_hash"], "model input hash")
+    rows = value["parameter_rows"]
+    if type(rows) is not list or len(rows) != 36:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 lane rows are incomplete"
+        )
+    expected_coordinates = [
+        (prefix, parameter)
+        for prefix in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_PREFIX_DRAWS
+        for parameter in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_EXPECTED_PARAMETER_NAMES
+    ]
+    for row, (prefix, parameter) in zip(rows, expected_coordinates, strict=True):
+        _validate_parameter_row(row, prefix=prefix, parameter=parameter)
+    for key in ("post_warmup_divergences", "max_treedepth_saturation_count"):
+        if type(value[key]) is not int or value[key] < 0:
+            raise VbdTrajectoryPrecisionDiagnosticError(
+                "diagnostic V2 sampler count is invalid"
+            )
+    bfmi = value["energy_bfmi_by_chain"]
+    if type(bfmi) is not list or len(bfmi) != 4:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 BFMI is incomplete"
+        )
+    for item in bfmi:
+        _finite(item, "diagnostic V2 BFMI", positive=True)
+    full_rows = [row for row in rows if row["prefix_draws_per_chain"] == 20_000]
+    failures = _non_mcse_failures(
+        full_rows,
+        value["post_warmup_divergences"],
+        value["max_treedepth_saturation_count"],
+        bfmi,
+    )
+    if (
+        value["non_mcse_sampler_failures"] != failures
+        or value["ppc_state"] != "NOT_RUN"
+        or value["cross_engine_state"] != "NOT_RUN"
+    ):
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 failure or NOT_RUN state is invalid"
+        )
+    fit_body = {
+        key: value[key]
+        for key in (
+            "prepared_input_hash",
+            "model_input_hash",
+            "parameter_rows",
+            "post_warmup_divergences",
+            "max_treedepth_saturation_count",
+            "energy_bfmi_by_chain",
+            "non_mcse_sampler_failures",
+            "ppc_state",
+            "cross_engine_state",
+        )
+    }
+    fit_body["binding_hash"] = binding.binding_hash
+    body = {key: item for key, item in value.items() if key != "lane_result_hash"}
+    if (
+        value["fit_summary_hash"] != sha256_json(fit_body)
+        or value["lane_result_hash"] != sha256_json(body)
+    ):
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 lane hash hierarchy is invalid"
+        )
+    return value
+
+
 def _canary_failure_anchor() -> dict:
     body = {
         "canary_ordinal": 0,
@@ -927,3 +1256,221 @@ def validate_vbd_trajectory_precision_diagnostic_record(value: object) -> dict:
             "diagnostic record differs from independent reconstruction"
         )
     return value
+
+
+def _consumed_v1_execution_anchor() -> dict:
+    body = {
+        "diagnostic_id": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_ID,
+        "implementation_commit": (
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT
+        ),
+        "authorization_commit": (
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT
+        ),
+        "execution_authorization_hash": (
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_EXECUTION_AUTHORIZATION_HASH
+        ),
+        "claim_hash": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_CLAIM_HASH,
+        "input_binding_hash": (
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_INPUT_BINDING_HASH
+        ),
+        "state": "HOLD",
+        "statistical_result_available": False,
+        "retry_authorized": False,
+    }
+    return {**body, "anchor_hash": sha256_json(body)}
+
+
+def build_vbd_trajectory_precision_diagnostic_v2_record(
+    *,
+    provenance: dict,
+    lane_records: list[dict],
+    terminal_checkpoint_hash: str,
+) -> dict:
+    validated_lanes = [
+        validate_vbd_trajectory_precision_diagnostic_v2_lane(value)
+        for value in lane_records
+    ]
+    if [value["lane"] for value in validated_lanes] != list(VBD_TRAJECTORY_LANES):
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 result lane order is incomplete"
+        )
+    expected_provenance_keys = {
+        "authorization_commit",
+        "authorization_manifest_hash",
+        "execution_authorization_hash",
+        "implementation_commit",
+        "implementation_tree",
+        "implementation_review_refs",
+        "canonical_workspace_identity_hash",
+        "external_claim_hash",
+        "input_binding_hash",
+        "runtime_identity_hash",
+        "requirements_lock_hash",
+        "implementation_hash",
+        "native_library_manifest_hash",
+        "model_manifest_hash",
+        "synthetic_input_hash",
+        "panel_manifest_root",
+    }
+    if type(provenance) is not dict or set(provenance) != expected_provenance_keys:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 provenance shape is invalid"
+        )
+    if (
+        provenance["implementation_commit"]
+        == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT
+        or provenance["authorization_commit"]
+        == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT
+        or provenance["execution_authorization_hash"]
+        == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_EXECUTION_AUTHORIZATION_HASH
+        or provenance["external_claim_hash"]
+        == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_CLAIM_HASH
+        or provenance["input_binding_hash"]
+        == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_INPUT_BINDING_HASH
+    ):
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "consumed V1 provenance cannot satisfy diagnostic V2"
+        )
+    for key, value in provenance.items():
+        if key == "implementation_review_refs":
+            from .vbd_trajectory_validation_resumable import (
+                _implementation_review_refs_are_valid,
+            )
+
+            if not _implementation_review_refs_are_valid(
+                value, provenance["implementation_commit"]
+            ):
+                raise VbdTrajectoryPrecisionDiagnosticError(
+                    "diagnostic V2 implementation review references are invalid"
+                )
+        elif key in {
+            "authorization_commit",
+            "implementation_commit",
+            "implementation_tree",
+        }:
+            _strict_git_object_id(value, key)
+        else:
+            _strict_sha256(value, key)
+    _strict_sha256(terminal_checkpoint_hash, "terminal checkpoint hash")
+    failures = _derived_mcse_failures(validated_lanes)
+    all_coordinates = []
+    for lane_record in validated_lanes:
+        for row in lane_record["parameter_rows"]:
+            if row["prefix_draws_per_chain"] != 20_000:
+                continue
+            for endpoint in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_MCSE_ENDPOINTS:
+                all_coordinates.append(
+                    {
+                        "lane": lane_record["lane"],
+                        "lane_ordinal": lane_record["lane_ordinal"],
+                        "parameter_name": row["parameter_name"],
+                        "endpoint": endpoint,
+                        "mcse_to_posterior_sd_ratio": row[
+                            "mcse_to_posterior_sd_ratios"
+                        ][endpoint],
+                    }
+                )
+    worst = max(
+        all_coordinates,
+        key=lambda item: item["mcse_to_posterior_sd_ratio"],
+    )
+    body = {
+        "schema_version": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SCHEMA_VERSION,
+        "diagnostic_id": VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_ID,
+        "consumed_v1_execution_anchor": _consumed_v1_execution_anchor(),
+        "canary_failure_anchor": _canary_failure_anchor(),
+        "provenance": provenance,
+        "diagnostic_plan_hash": vbd_trajectory_precision_diagnostic_v2_plan()[
+            "diagnostic_plan_hash"
+        ],
+        "seed_manifest_hash": vbd_trajectory_precision_diagnostic_v2_seed_manifest()[
+            "seed_manifest_hash"
+        ],
+        "terminal_checkpoint_hash": terminal_checkpoint_hash,
+        "lane_records": validated_lanes,
+        "full_prefix_failing_coordinates": failures,
+        "worst_coordinate": worst,
+        "ppc_state": "NOT_RUN",
+        "cross_engine_state": "NOT_RUN",
+        "state": "HOLD",
+        "hold_reasons": [VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_HOLD_REASON],
+        "evidence_eligible": False,
+        "acceptance_count_effect": 0,
+        "acceptance_complete": False,
+        "task_2_6_complete": False,
+        "task_5_6_complete": False,
+        "customer_output_authorized": False,
+        "internal_only": True,
+        "synthetic_only": True,
+        "aggregate_only": True,
+    }
+    return {**body, "record_hash": sha256_json(body)}
+
+
+def validate_vbd_trajectory_precision_diagnostic_v2_record(value: object) -> dict:
+    expected_keys = {
+        "schema_version",
+        "diagnostic_id",
+        "consumed_v1_execution_anchor",
+        "canary_failure_anchor",
+        "provenance",
+        "diagnostic_plan_hash",
+        "seed_manifest_hash",
+        "terminal_checkpoint_hash",
+        "lane_records",
+        "full_prefix_failing_coordinates",
+        "worst_coordinate",
+        "ppc_state",
+        "cross_engine_state",
+        "state",
+        "hold_reasons",
+        "evidence_eligible",
+        "acceptance_count_effect",
+        "acceptance_complete",
+        "task_2_6_complete",
+        "task_5_6_complete",
+        "customer_output_authorized",
+        "internal_only",
+        "synthetic_only",
+        "aggregate_only",
+        "record_hash",
+    }
+    if type(value) is not dict or set(value) != expected_keys:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 record shape is invalid"
+        )
+    rebuilt = build_vbd_trajectory_precision_diagnostic_v2_record(
+        provenance=value["provenance"],
+        lane_records=value["lane_records"],
+        terminal_checkpoint_hash=value["terminal_checkpoint_hash"],
+    )
+    if value != rebuilt:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 record differs from independent reconstruction"
+        )
+    return value
+
+
+def validate_vbd_trajectory_precision_diagnostic_v2_record_with_checkpoints(
+    value: object,
+    *,
+    checkpoint_root,
+    checkpoint_identity,
+) -> dict:
+    """Require the complete external checkpoint chain for internal validity."""
+
+    from .vbd_trajectory_precision_diagnostic_v2_checkpoint import (
+        validate_vbd_precision_diagnostic_v2_checkpoint_root,
+    )
+
+    record = validate_vbd_trajectory_precision_diagnostic_v2_record(value)
+    checkpoints = validate_vbd_precision_diagnostic_v2_checkpoint_root(
+        root=checkpoint_root,
+        identity=checkpoint_identity,
+    )
+    if record["terminal_checkpoint_hash"] != checkpoints[-1]["checkpoint_hash"]:
+        raise VbdTrajectoryPrecisionDiagnosticError(
+            "diagnostic V2 terminal checkpoint binding is invalid"
+        )
+    return record

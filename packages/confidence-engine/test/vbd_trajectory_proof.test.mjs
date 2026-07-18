@@ -182,23 +182,28 @@ test("VBD artifact cannot be relabeled as longitudinal concordance", { skip: ven
 });
 
 test("VBD MCSE diagnostic cannot enter the proof artifact bridge", () => {
-  const diagnostic = {
-    schema_version: "FT_AI_VALUE_VBD_PRECISION_DESIGN_DIAGNOSTIC_2026_07_V1",
-    diagnostic_id: "vbd_precision_design_diagnostic_v1",
-    state: "HOLD",
-    hold_reasons: ["mcse_design_diagnostic_nonacceptance"],
-    evidence_eligible: false,
-    acceptance_count_effect: 0,
-    customer_output_authorized: false,
-    internal_only: true,
-    synthetic_only: true,
-    aggregate_only: true
-  };
-  assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(diagnostic).success, false);
-  assert.equal(
-    LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(diagnostic).success,
-    false
-  );
+  for (const [version, diagnosticId] of [
+    ["V1", "vbd_precision_design_diagnostic_v1"],
+    ["V2", "vbd_precision_design_diagnostic_v2"]
+  ]) {
+    const diagnostic = {
+      schema_version: `FT_AI_VALUE_VBD_PRECISION_DESIGN_DIAGNOSTIC_2026_07_${version}`,
+      diagnostic_id: diagnosticId,
+      state: "HOLD",
+      hold_reasons: ["mcse_design_diagnostic_nonacceptance"],
+      evidence_eligible: false,
+      acceptance_count_effect: 0,
+      customer_output_authorized: false,
+      internal_only: true,
+      synthetic_only: true,
+      aggregate_only: true
+    };
+    assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(diagnostic).success, false);
+    assert.equal(
+      LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(diagnostic).success,
+      false
+    );
+  }
 });
 
 test("stale artifact and nested fit hashes reject", { skip: venvSkip }, () => {

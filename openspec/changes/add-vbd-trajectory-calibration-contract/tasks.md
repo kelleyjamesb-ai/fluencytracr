@@ -74,7 +74,7 @@
   before the one permitted diagnostic launch. The result remains permanent
   HOLD and cannot complete task `2.6` or enter any proof count. The consumed V1
   launch produced no valid diagnostic result and does not satisfy this task.
-- [ ] 2.9 After task `1.9` and separate implementation authorization, implement
+- [x] 2.9 After task `1.9` and separate implementation authorization, implement
   replacement diagnostic `vbd_precision_design_diagnostic_v2`, reserve its
   seeds from every other path, validate the exact posterior variable set before
   canonical name-based projection, add the production-path full-shape
