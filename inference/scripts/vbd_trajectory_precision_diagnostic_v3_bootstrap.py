@@ -1040,6 +1040,59 @@ def _rollback_new_final_output(workspace_fd: int, output_name: str) -> None:
     )
 
 
+def _preserve_or_restore_staged_alias(workspace_fd: int, output_name: str) -> None:
+    try:
+        output_info = os.stat(
+            output_name, dir_fd=workspace_fd, follow_symlinks=False
+        )
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic final rollback state cannot be inspected"
+        ) from exc
+    try:
+        staged_info = os.stat(
+            STAGED_OUTPUT_FILENAME,
+            dir_fd=workspace_fd,
+            follow_symlinks=False,
+        )
+    except FileNotFoundError:
+        try:
+            os.link(
+                output_name,
+                STAGED_OUTPUT_FILENAME,
+                src_dir_fd=workspace_fd,
+                dst_dir_fd=workspace_fd,
+                follow_symlinks=False,
+            )
+            staged_info = os.stat(
+                STAGED_OUTPUT_FILENAME,
+                dir_fd=workspace_fd,
+                follow_symlinks=False,
+            )
+            output_info = os.stat(
+                output_name, dir_fd=workspace_fd, follow_symlinks=False
+            )
+        except OSError as exc:
+            raise BootstrapRollbackUnconfirmedError(
+                "diagnostic staged alias could not be restored"
+            ) from exc
+    except OSError as exc:
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic staged alias cannot be inspected"
+        ) from exc
+    if (
+        (staged_info.st_dev, staged_info.st_ino)
+        != (output_info.st_dev, output_info.st_ino)
+        or staged_info.st_nlink < 2
+        or output_info.st_nlink < 2
+    ):
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic failed publication is not alias-invalid"
+        )
+
+
 def _publish_staged_output(
     manifest: dict, *, expected_staged_bytes: bytes | None = None
 ) -> object:
@@ -1075,10 +1128,10 @@ def _publish_staged_output(
             os.fsync(workspace_fd)
         except OSError as exc:
             try:
-                os.unlink(output.name, dir_fd=workspace_fd)
-                os.fsync(workspace_fd)
-            except OSError as rollback_exc:
-                raise BootstrapError(
+                _rollback_new_final_output(workspace_fd, output.name)
+            except BootstrapRollbackUnconfirmedError as rollback_exc:
+                _preserve_or_restore_staged_alias(workspace_fd, output.name)
+                raise BootstrapRollbackUnconfirmedError(
                     "diagnostic staged cleanup and final rollback failed"
                 ) from rollback_exc
             raise BootstrapError(

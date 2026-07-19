@@ -719,6 +719,72 @@ def test_bootstrap_preserves_alias_when_post_link_rollback_is_unconfirmed(
     assert staged_info.st_nlink == output_info.st_nlink == 2
 
 
+@pytest.mark.parametrize("cleanup_failure", ["staged_unlink", "second_fsync"])
+def test_bootstrap_preserves_alias_when_staged_cleanup_rollback_is_unconfirmed(
+    tmp_path, monkeypatch, cleanup_failure
+):
+    bootstrap = _load_bootstrap_module()
+    workspace = tmp_path / f"workspace-{cleanup_failure}"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    staged.write_bytes(bootstrap._canonical_bytes({"state": "HOLD"}) + b"\n")
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
+    real_unlink = bootstrap.os.unlink
+    real_fsync = bootstrap.os.fsync
+    fsync_calls = 0
+
+    def inject_fsync(descriptor):
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if cleanup_failure == "second_fsync" and fsync_calls == 2:
+            raise OSError("injected staged-cleanup fsync failure")
+        return real_fsync(descriptor)
+
+    staged_unlink_failed = False
+
+    def inject_unlink(path, *args, **kwargs):
+        nonlocal staged_unlink_failed
+        if (
+            cleanup_failure == "staged_unlink"
+            and path == bootstrap.STAGED_OUTPUT_FILENAME
+            and not staged_unlink_failed
+        ):
+            staged_unlink_failed = True
+            raise OSError("injected staged unlink failure")
+        if path == output.name:
+            raise OSError("injected final rollback failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(bootstrap.os, "fsync", inject_fsync)
+    monkeypatch.setattr(bootstrap.os, "unlink", inject_unlink)
+    monkeypatch.setattr(
+        bootstrap, "_validate_persisted_in_child", lambda **_kwargs: None
+    )
+    with pytest.raises(
+        bootstrap.BootstrapRollbackUnconfirmedError,
+        match="staged cleanup and final rollback failed",
+    ):
+        bootstrap._supervise_and_publish(
+            _successful_child_pid(),
+            manifest,
+            modules={},
+            execution_authorization={},
+            claim={},
+            authorization_commit="8" * 40,
+        )
+    staged_info = staged.stat()
+    output_info = output.stat()
+    assert (staged_info.st_dev, staged_info.st_ino) == (
+        output_info.st_dev,
+        output_info.st_ino,
+    )
+    assert staged_info.st_nlink == output_info.st_nlink == 2
+
+
 def test_bootstrap_requires_exact_final_bytes_not_python_value_equality(
     tmp_path, monkeypatch
 ):
