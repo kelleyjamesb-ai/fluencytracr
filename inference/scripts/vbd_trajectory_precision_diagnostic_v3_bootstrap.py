@@ -944,19 +944,13 @@ def _read_canonical_staged_output(
 
 
 def _remove_final_output(manifest: dict) -> None:
-    workspace = Path(manifest["canonical_workspace_path"])
-    output = Path(manifest["output_path"])
-    if not workspace.exists() or workspace.is_symlink() or not workspace.is_dir():
-        return
-    workspace_fd = os.open(
-        workspace, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-    )
+    workspace_fd, output = _open_output_workspace(manifest)
     try:
         try:
-            os.unlink(output.name, dir_fd=workspace_fd)
-        except FileNotFoundError:
-            return
-        os.fsync(workspace_fd)
+            _rollback_new_final_output(workspace_fd, output.name)
+        except BootstrapRollbackUnconfirmedError:
+            _preserve_or_restore_staged_alias(workspace_fd, output.name)
+            raise
     finally:
         os.close(workspace_fd)
 

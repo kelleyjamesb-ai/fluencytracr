@@ -785,6 +785,53 @@ def test_bootstrap_preserves_alias_when_staged_cleanup_rollback_is_unconfirmed(
     assert staged_info.st_nlink == output_info.st_nlink == 2
 
 
+def test_bootstrap_preserves_alias_when_rejected_final_rollback_is_unconfirmed(
+    tmp_path, monkeypatch
+):
+    bootstrap = _load_bootstrap_module()
+    workspace = tmp_path / "workspace-rejected-final"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    staged.write_bytes(bootstrap._canonical_bytes({"state": "HOLD"}) + b"\n")
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
+    real_unlink = bootstrap.os.unlink
+
+    def fail_final_unlink(path, *args, **kwargs):
+        if path == output.name:
+            raise OSError("injected rejected-final rollback failure")
+        return real_unlink(path, *args, **kwargs)
+
+    def reject_final(*, final: bool, **_kwargs):
+        if final:
+            raise bootstrap.BootstrapError("injected final semantic failure")
+
+    monkeypatch.setattr(bootstrap.os, "unlink", fail_final_unlink)
+    monkeypatch.setattr(bootstrap, "_validate_persisted_in_child", reject_final)
+    with pytest.raises(
+        bootstrap.BootstrapRollbackUnconfirmedError,
+        match="output rollback failed",
+    ):
+        bootstrap._supervise_and_publish(
+            _successful_child_pid(),
+            manifest,
+            modules={},
+            execution_authorization={},
+            claim={},
+            authorization_commit="8" * 40,
+        )
+    staged_info = staged.stat()
+    output_info = output.stat()
+    assert (staged_info.st_dev, staged_info.st_ino) == (
+        output_info.st_dev,
+        output_info.st_ino,
+    )
+    assert staged_info.st_nlink == output_info.st_nlink == 2
+
+
 def test_bootstrap_requires_exact_final_bytes_not_python_value_equality(
     tmp_path, monkeypatch
 ):
