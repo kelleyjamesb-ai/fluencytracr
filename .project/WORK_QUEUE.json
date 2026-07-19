@@ -329,9 +329,9 @@
       "id": "vbd-mcse-diagnostic-v3-implementation",
       "title": "VBD MCSE diagnostic V3 persisted semantic-validation implementation without execution",
       "bound": "Synthetic-only inference/, focused tests, and verified OpenSpec/docs/status after accepted V3 amendment: implement the prospective V3 identity, disjoint reserved seeds/roots, explicit V1/V2 tombstones, exact-key-set and canonical-name record validation, and complete staged/final strict semantic readback with checkpoint validation before successful publication; add full-record sampler-free serialize/read/revalidate and malformed-publication regressions; preserve every model, prior, estimand, sampler setting, threshold, evidence gate, no-retry rule, and trusted-host boundary; no generator/sampler execution, A3, human execution record, external claim/checkpoint creation, canary 1, task 2.6, S/F, concordance, evidence, real/customer/live data, public surface, customer output, promotion, or parent 5.6 completion",
-      "status": "pending",
+      "status": "in_progress",
       "risk": "high",
-      "last_note": "Human-authorized future item. Activate only after exact-byte four-role GO on the V3 docs/OpenSpec amendment."
+      "last_note": "Activated 2026-07-18 after task 1.10 four-role GO. Repeatable sampler-free engineering rehearsals remain permanently non-evidentiary; no-retry begins only with a future frozen A3 human-authorized claim. No generator, sampler, A3, claim, or execution is authorized."
     }
   ]
 }

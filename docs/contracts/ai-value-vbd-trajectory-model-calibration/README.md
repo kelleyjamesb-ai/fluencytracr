@@ -909,6 +909,13 @@ only V3 identity and binding values change. Partial, extra, copied, aliased,
 reordered, malformed, or V1/V2 checkpoint roots fail both staged and final
 validation and never create launch authority.
 
+Full-record sampler-free rehearsals are repeatable development verification.
+They use deterministic fixtures and temporary roots, create no claim, invoke no
+generator or sampler, retain no posterior result, and can never enter evidence.
+No-retry begins only after reviewed `D3`, manifest-only `A3`, separate human
+authorization, and creation of the fixed external V3 claim. Acceptance runs
+remain strictly frozen and non-repeatable under their declared identities.
+
 The held lineage is permanently tombstoned as diagnostic-only HOLD:
 
 ```text

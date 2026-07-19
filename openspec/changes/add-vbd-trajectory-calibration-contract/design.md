@@ -403,6 +403,15 @@ record sampler-free fixture must exercise canonical serialization, alternate
 valid mapping insertion orders, missing/extra/duplicate keys, persisted
 mutation, and staged/final validation without generator or sampler execution.
 
+These sampler-free full-record rehearsals are repeatable engineering checks,
+not diagnostic launches. They use deterministic fixture values and temporary
+roots only, create no external claim, retain no posterior result, and are
+permanently ineligible for canary, proof, evidence, or acceptance use. They may
+be rerun until the reviewed implementation is mechanically sound. The
+one-shot/no-retry rule begins only after a future exact `A3`, separate human
+authorization, and irreversible manifest-bound external claim; it continues to
+apply unchanged to every acceptance-plan execution.
+
 V3 inherits V2's exact twelve checkpoint ordinals, phase/lane sequence,
 filenames, field set, predecessor hash chain, input-binding rules, create-once
 writes, whole-root enumeration, regular-file/no-alias checks, terminal binding,

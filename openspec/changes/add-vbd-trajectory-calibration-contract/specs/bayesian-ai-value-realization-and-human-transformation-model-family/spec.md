@@ -870,6 +870,25 @@ Tests SHALL also reject every partial/extra/aliased checkpoint root and every
 equal, ancestral, symlinked, alternate, or V1/V2 root identity. No test
 generator, posterior draw, or statistical value may enter evidence.
 
+Sampler-free V3 full-record rehearsals SHALL be repeatable before `D3` review.
+They SHALL use deterministic fixture values and temporary roots, SHALL create
+no external claim or execution authorization, SHALL invoke no generator or
+sampler, SHALL retain no posterior result, and SHALL remain permanently
+ineligible for canary, proof, evidence, acceptance, or methodology conclusions.
+The one-shot/no-retry rule SHALL begin only after exact `D3` review,
+manifest-only `A3`, separate human authorization, and irreversible creation of
+the manifest-bound external V3 claim. It SHALL continue to apply unchanged to
+all later acceptance-plan executions.
+
+#### Scenario: A sampler-free engineering rehearsal is repeated
+
+- **GIVEN** a deterministic full-record V3 fixture with no generator, sampler,
+  posterior result, external claim, or acceptance identity
+- **WHEN** an engineer repeats serialization, readback, publication, or tamper
+  checks before `D3` review
+- **THEN** the rehearsal may run again and remains permanently non-evidentiary
+- **AND** it cannot consume or satisfy the future one-shot V3 authorization
+
 Future V3 implementation SHALL require a clean commit `D3` with exact CODE,
 BUG, ADVERSARIAL, and statistical-methodology GO. A sole-child manifest-only
 authorization commit `A3`, separately reviewed and separately authorized by a
