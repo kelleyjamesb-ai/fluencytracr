@@ -92,7 +92,7 @@
   authorization `A2`, then obtain a separate exact human execution record before
   the one permitted V2 launch. V2 remains permanent HOLD, cannot complete task
   `2.6`, and cannot enter any proof count.
-- [ ] 2.11 After task `1.10` and the separate implementation authorization,
+- [x] 2.11 After task `1.10` and the separate implementation authorization,
   implement `vbd_precision_design_diagnostic_v3`, reserve its new seeds and
   roots from every other path, tombstone all V1/V2 identities, validate JSON
   objects by exact key set with canonical name traversal, and require full
