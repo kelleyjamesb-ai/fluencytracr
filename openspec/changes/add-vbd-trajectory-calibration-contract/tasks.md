@@ -37,6 +37,13 @@
   conformance fixture, and non-resumable hash-chained postmortem checkpoints;
   obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO for the amended
   docs bytes without implementation or execution.
+- [x] 1.10 Record the consumed V2 diagnostic as permanent uninterpretable HOLD
+  and define a separate V3 identity with disjoint reserved seeds and roots,
+  order-insensitive exact object-key validation, canonical name-based
+  traversal, and mandatory staged/final strict semantic and checkpoint
+  readback before publication success; obtain CODE, BUG, ADVERSARIAL, and
+  statistical-methodology GO for the amended docs bytes without implementation
+  or execution.
 
 ## 2. Future Synthetic Implementation
 
@@ -85,6 +92,13 @@
   authorization `A2`, then obtain a separate exact human execution record before
   the one permitted V2 launch. V2 remains permanent HOLD, cannot complete task
   `2.6`, and cannot enter any proof count.
+- [ ] 2.11 After task `1.10` and the separate implementation authorization,
+  implement `vbd_precision_design_diagnostic_v3`, reserve its new seeds and
+  roots from every other path, tombstone all V1/V2 identities, validate JSON
+  objects by exact key set with canonical name traversal, and require full
+  sampler-free staged/final write-read-semantic-checkpoint revalidation before
+  a publication can succeed; do not create `A3`, a claim, or run a generator or
+  sampler.
 
 ## 3. Future Engine Concordance
 

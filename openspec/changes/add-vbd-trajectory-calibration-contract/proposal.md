@@ -79,6 +79,18 @@ trajectory contract before implementation or real-data admission can proceed.
   still requires a reviewed implementation `D2`, manifest-only authorization
   `A2`, separate human authorization, and one new launch; this amendment does
   not implement or execute it.
+- Record that the consumed `vbd_precision_design_diagnostic_v2` launch is also
+  a permanent uninterpretable HOLD. Its samplers and in-memory projection
+  completed, but canonical JSON serialization reordered a nested endpoint map
+  that the strict validator incorrectly treated as insertion-ordered, and the
+  bootstrap published without semantic readback. Define a separate
+  `vbd_precision_design_diagnostic_v3` identity with disjoint reserved seeds
+  and roots, exact order-insensitive object-key validation followed by
+  canonical name-based traversal, and mandatory strict semantic/checkpoint
+  revalidation of staged and final persisted bytes before success. V3 still
+  requires a separately reviewed implementation `D3`, manifest-only
+  authorization `A3`, separate human authorization, and one new launch; this
+  amendment does not implement or execute it.
 
 ## Impact
 

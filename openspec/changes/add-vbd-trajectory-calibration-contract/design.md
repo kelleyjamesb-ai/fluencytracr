@@ -342,6 +342,82 @@ record against exact `A2` is required before one new launch. No V1 commit,
 manifest, authorization, claim, binding, workspace, seed, checkpoint, or output
 can satisfy any V2 gate.
 
+The authorized V2 launch is also consumed and permanent uninterpretable HOLD.
+Exact implementation `051a919ffb7d581838e321a52676ba06bf233d71`, authorization
+`3646e08b5b07d2b82aef510688133273a857d795`, human-authorization hash
+`52752fe99da24c77991d10d403185d9a9bdaf0610722eb7a52cf4beac27dc789`,
+claim hash `b1f3ed124be6a51328df5e4c38499a6742e585086f47613667c6be33e0a5d272`,
+input-binding hash
+`6036f595c5c0c48f440c8193a817ff871394d7d5f9402ef9bbf93105c6d60504`,
+and persisted output SHA-256
+`3bd984074aa43ea7fa8453766a974379e34b6418eb04782fdb00d0df86d860bf`
+are tombstoned. All three samplers and in-memory projections completed and all
+twelve checkpoints exist, but canonical `sort_keys` serialization changed the
+nested MCSE-ratio object order while strict readback incorrectly treated object
+insertion order as semantic. The parent checked canonical bytes but did not run
+the full semantic validator after deserialization. The resulting bytes cannot
+support any MCSE, ESS, R-hat, BFMI, divergence, mixing, or tail-precision
+conclusion and cannot be retried, rewritten, reordered, or reinterpreted.
+
+A prospective V3 is a new diagnostic identity, not a V2 repair or retry. It
+reserves generator seed `2_055_900_800` and chain seed
+`2_055_900_900+4*lane_ordinal+chain_index`, yielding exactly
+`2_055_900_900..911`, with new fixed workspace, claim, checkpoint, human-
+authorization, and output roots. V3 preserves the complete V2 model, priors,
+estimand, data-generating process, three lanes, parameter coordinates,
+20,000/5,000 draw settings, sampler geometry, timeout, `<=0.10` MCSE gate,
+permanent HOLD state, and proof-path exclusion.
+
+The fixed V3 roots are
+`/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v3-workspace`,
+`/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v3-claim`, and
+`/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v3-checkpoints`; the
+final output is exactly `diagnostic.json` inside the workspace. After lexical
+normalization, the three top-level roots must be absolute, pairwise distinct,
+pairwise non-ancestral, non-symlink directories, and unequal to or outside the
+ancestry of every V1/V2 workspace, claim, or checkpoint root. The output must
+be the direct workspace child and no root may resolve through a symlink or
+alternate path identity to any consumed or V3 root.
+
+JSON objects have no semantic member order. Every V3 mapping first requires
+exact equality to its compiled string-key set after duplicate-key-rejecting
+parse, then accesses values only through compiled canonical name sequences.
+The five MCSE-ratio names and two endpoint-offset names are not inferred from
+insertion order. Ordered lists remain order-sensitive, including lanes,
+prefix/parameter rows, coordinates, chain-indexed values, failure categories,
+and checkpoints. Canonical hashes continue to use sorted object keys.
+
+Publication becomes a semantic protocol rather than a byte-format check. The
+reviewed child must validate the in-memory record, write canonical create-once
+staged bytes, strictly reread those bytes with duplicate-key rejection, rerun
+the complete V3 record and checkpoint validators, and require exact semantic
+and canonical-byte equality before it may exit successfully. The reviewed
+bootstrap must independently validate the staged persisted record and complete
+checkpoint root through manifest-bound V3 validation before linking it to the
+final path; it must then reopen the final path, require byte identity with the
+validated staged bytes, and rerun the same semantic/checkpoint validation
+before returning zero or emitting a record. Any malformed, missing, extra,
+duplicate, off-plan, hash-invalid, semantically invalid, changed, or unreadable
+staged/final value leaves no successful publication and remains HOLD. A full-
+record sampler-free fixture must exercise canonical serialization, alternate
+valid mapping insertion orders, missing/extra/duplicate keys, persisted
+mutation, and staged/final validation without generator or sampler execution.
+
+V3 inherits V2's exact twelve checkpoint ordinals, phase/lane sequence,
+filenames, field set, predecessor hash chain, input-binding rules, create-once
+writes, whole-root enumeration, regular-file/no-alias checks, terminal binding,
+and absolute prohibition on checkpoint-based resume, retry, skip,
+reconstruction, or launch authority. Only schema/diagnostic identity and the
+bound `D3`/`A3`/human/claim/input/root hashes change to V3. A partial, extra,
+duplicated, replaced, aliased, reordered, malformed, or V1/V2 checkpoint root
+cannot satisfy staged or final validation.
+
+Future implementation requires clean reviewed commit `D3`; a later sole-child
+manifest-only `A3` binds the new identity, roots, seeds, runtime, lockfile,
+bootstrap, validation entry points, exact command, and four unique GO
+references. V1 and V2 commits, authorizations, reviews, claims, bindings, paths,
+seeds, checkpoints, and outputs satisfy no V3 gate.
+
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.
 Diagnostic outputs are joined only after exact parameter-dimension,

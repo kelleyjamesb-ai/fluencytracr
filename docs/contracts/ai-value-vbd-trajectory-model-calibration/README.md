@@ -856,6 +856,59 @@ or reject the prospective precision design. It cannot itself select a draw
 count or geometry, clear canary ordinal `0`, run canary ordinal `1`, satisfy
 task `2.6`, create candidate `S/F`, or authorize concordance or evidence.
 
+### Persisted Diagnostic V3 Amendment
+
+The authorized V2 diagnostic is consumed and permanent uninterpretable HOLD.
+All three samplers and in-memory projections completed, but canonical JSON
+sorting reordered the nested MCSE-ratio map while strict readback incorrectly
+treated insertion order as semantic. The bootstrap checked canonical bytes but
+did not run full semantic validation after deserialization. The persisted V2
+output therefore supports no MCSE, ESS, R-hat, BFMI, divergence, mixing, or
+tail-precision conclusion and cannot be retried, rewritten, reordered, or
+reinterpreted.
+
+The prospective `vbd_precision_design_diagnostic_v3` is a distinct identity.
+It reserves generator seed `2_055_900_800` and chain seeds
+`2_055_900_900..911`, plus new fixed workspace, claim, checkpoint,
+authorization, and output roots. V1 and V2 identities, roots, seeds, claims,
+checkpoints, and outputs cannot satisfy any V3 gate. V3 changes no model,
+prior, estimand, synthetic-case design or DGP, sampler setting, timeout,
+threshold, evidence gate, permanent HOLD state, or proof-path exclusion; its
+new generator seed produces a fresh realization of that frozen design.
+
+The V3 workspace, claim, and checkpoint roots are exactly the three absolute
+`/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v3-*` paths named by the
+normative spec, and the output is the workspace's direct `diagnostic.json`
+child. The top-level roots must be normalized, pairwise distinct and
+non-ancestral, non-symlink directories, and disjoint from every V1/V2 root.
+Equality, ancestry, symlink aliases, alternate identities, or an off-workspace
+output reject before generation or sampling.
+
+V3 treats JSON objects according to JSON semantics: member order is irrelevant.
+Every mapping must have the exact compiled string-key set after strict
+duplicate-key rejection, then values are traversed only by canonical names.
+The five MCSE-ratio fields and two endpoint-offset fields cannot be missing,
+added, duplicated, coerced, or mislabeled. Ordered lists remain ordered,
+including lanes, parameter rows, coordinates, chains, failure categories, and
+checkpoints. Hashing remains canonical and sorts mapping keys.
+
+A V3 publication is successful only after the complete record and checkpoint
+root pass four persisted checks: child staged write/read semantic validation,
+bootstrap staged semantic validation before linking, exact staged/final byte
+identity, and final reopened semantic validation after publication. Canonical
+JSON alone is insufficient. A sampler-free full-record fixture must cover
+valid alternate mapping order, canonical round-trip, incomplete/duplicate
+keys, semantic corruption, persisted mutation, and final mismatch. No V3
+implementation, `A3`, execution, claim, generator, sampler, canary,
+concordance, or evidence is authorized by this docs amendment.
+
+V3 inherits the complete V2 twelve-record checkpoint sequence, filename and
+field allowlists, hash chain, input binding, create-once writes, root
+enumeration, regular-file/no-alias checks, terminal binding, and no-resume rule;
+only V3 identity and binding values change. Partial, extra, copied, aliased,
+reordered, malformed, or V1/V2 checkpoint roots fail both staged and final
+validation and never create launch authority.
+
 The held lineage is permanently tombstoned as diagnostic-only HOLD:
 
 ```text

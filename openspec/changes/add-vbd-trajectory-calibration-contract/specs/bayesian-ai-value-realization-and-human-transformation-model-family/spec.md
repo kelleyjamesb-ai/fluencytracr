@@ -773,6 +773,172 @@ and SHALL NOT complete task `2.6`, authorize canary ordinal `1`, or alter any
 model, prior, estimand, NUTS setting, statistical threshold, acceptance seed,
 or evidence gate.
 
+The authorized `vbd_precision_design_diagnostic_v2` launch SHALL remain a
+consumed permanent uninterpretable HOLD. Its exact implementation commit SHALL
+be `051a919ffb7d581838e321a52676ba06bf233d71`; authorization commit SHALL be
+`3646e08b5b07d2b82aef510688133273a857d795`; human execution-authorization hash
+SHALL be
+`52752fe99da24c77991d10d403185d9a9bdaf0610722eb7a52cf4beac27dc789`;
+external claim hash SHALL be
+`b1f3ed124be6a51328df5e4c38499a6742e585086f47613667c6be33e0a5d272`;
+input-binding hash SHALL be
+`6036f595c5c0c48f440c8193a817ff871394d7d5f9402ef9bbf93105c6d60504`;
+and persisted output SHA-256 SHALL be
+`3bd984074aa43ea7fa8453766a974379e34b6418eb04782fdb00d0df86d860bf`.
+All three samplers, in-memory projections, and twelve checkpoints completed,
+but the persisted output SHALL remain invalid because canonical JSON object
+sorting conflicted with insertion-order-dependent nested-map validation and
+the bootstrap did not semantically revalidate the deserialized record before
+success. The launch SHALL support no MCSE, ESS, R-hat, BFMI, divergence,
+mixing, or tail-precision conclusion. No later implementation may retry,
+resume, continue, rewrite, reorder, reconstruct, reinterpret, delete, replace,
+or reuse any V2 commit, authorization, review, claim, binding, workspace, seed,
+checkpoint, output, or statistical value.
+
+One separate `vbd_precision_design_diagnostic_v3` MAY be implemented and
+executed only through later distinct gates. It SHALL preserve the complete V2
+synthetic-case design and DGP, model, priors, estimand, centered
+parameterization, lane and parameter definitions, prefix matrix, NUTS settings,
+7,200-second timeout, permanent HOLD state, proof-path exclusion, and `<=0.10`
+MCSE gate while generating a fresh V3-seeded realization. It SHALL reserve
+generator seed `2_055_900_800` and chain seeds
+`2_055_900_900+4*lane_ordinal+chain_index`, yielding exactly
+`2_055_900_900..911`, exclusively for V3. Every V1/V2 diagnostic, generic
+smoke, precision canary, concordance, study, recomputation, artifact, and
+acceptance path SHALL reject those seeds, and V3 SHALL reject every V1/V2 seed
+and identity. Its reviewed `A3` manifest SHALL bind new fixed workspace, claim,
+checkpoint, human-authorization, and output roots that share no identity with
+V1 or V2.
+
+Those V3 paths SHALL be exactly
+`/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v3-workspace`,
+`/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v3-claim`,
+`/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v3-checkpoints`, and
+the direct workspace child `diagnostic.json`. After lexical normalization, the
+three top-level roots SHALL be absolute, pairwise distinct, pairwise
+non-ancestral, non-symlink directories, and unequal to or outside the ancestry
+of every V1/V2 workspace, claim, or checkpoint root. A symlink, alternate path
+identity, equality, parent/child overlap, or output outside the direct V3
+workspace child SHALL reject before generation or sampling.
+
+Every V3 JSON object SHALL be parsed with duplicate-key rejection and validated
+by order-insensitive exact equality to its compiled string-key set. After
+exact-set validation, values SHALL be accessed only through compiled canonical
+name sequences. In particular, `mcse_to_posterior_sd_ratios` SHALL contain
+exactly `mean`, `interval_80_lower`, `interval_80_upper`,
+`interval_99_lower`, and `interval_99_upper`, while
+`chain_endpoint_offsets` SHALL contain exactly `q005` and `q995`; insertion
+order and canonical JSON sorting SHALL have no semantic role. Ordered lists
+SHALL remain order-sensitive, including lanes, prefix/parameter rows,
+coordinates, chain-indexed values, failure-category names, and checkpoints.
+Missing, extra, duplicate, non-string, coerced, or mislabeled keys SHALL reject
+even after a self-consistent rehash.
+
+Before a V3 child may report success, it SHALL validate the complete in-memory
+record and checkpoint root, write canonical create-once staged bytes, strictly
+reread the staged bytes, rerun complete record reconstruction and checkpoint
+validation, and require exact semantic and canonical-byte equality with the
+validated in-memory record. Before publication, the manifest-bound reviewed
+bootstrap SHALL independently apply complete V3 semantic and checkpoint
+validation to those persisted staged bytes. After atomic publication, it SHALL
+reopen the final path, require exact byte identity with the validated staged
+bytes, rerun complete semantic and checkpoint validation, and only then return
+zero or emit the result. Any failure SHALL produce no successful publication,
+no usable diagnostic result, and no launch authority; the consumed attempt
+SHALL remain permanent HOLD and SHALL NOT be retried.
+
+V3 SHALL inherit V2's exact twelve checkpoint ordinals, phase/lane sequence,
+filename allowlist, no-extra-key field set, predecessor hash chain,
+input-binding rules, atomic create-once writes, strict whole-root enumeration,
+regular-file/no-alias requirements, terminal-result binding, and prohibition on
+checkpoint-based resume, retry, continuation, phase skipping, reconstruction,
+seed reuse, or launch authority. Only the checkpoint schema and diagnostic
+identity plus the bound `D3`, `A3`, human-authorization, claim, input-binding,
+and V3 root hashes SHALL change to V3. Missing, extra, duplicated, replaced,
+aliased, reordered, malformed, or V1/V2 checkpoint content SHALL reject both
+staged and final semantic validation.
+
+Before implementation `D3` is reviewable, sampler-free tests SHALL construct a
+complete valid V3 record and checkpoint root, serialize with canonical sorted
+object keys, strictly reread it, and prove identical validated semantics and
+hashes for every valid nested-map insertion order. They SHALL prove rejection
+for missing, extra, duplicated, or mislabeled endpoint keys, canonical but
+semantically invalid staged bytes, mutation between validation and publication,
+and a final value that differs from the validated staged bytes. A two-field or
+otherwise partial placeholder record SHALL NOT satisfy publication coverage.
+Tests SHALL also reject every partial/extra/aliased checkpoint root and every
+equal, ancestral, symlinked, alternate, or V1/V2 root identity. No test
+generator, posterior draw, or statistical value may enter evidence.
+
+Future V3 implementation SHALL require a clean commit `D3` with exact CODE,
+BUG, ADVERSARIAL, and statistical-methodology GO. A sole-child manifest-only
+authorization commit `A3`, separately reviewed and separately authorized by a
+human, SHALL be required before one V3 launch. V1/V2 review references,
+authorizations, claims, roots, checkpoints, and outputs SHALL satisfy no V3
+gate. V3 SHALL remain permanently
+`HOLD(mcse_design_diagnostic_nonacceptance)`, SHALL contribute zero evidence,
+and SHALL NOT complete task `2.6`, authorize canary ordinal `1`, create
+candidate `S/F`, or alter any model, prior, estimand, sampler setting,
+statistical threshold, acceptance seed, or evidence gate.
+
+#### Scenario: Canonical JSON reorders a valid endpoint object
+
+- **GIVEN** a complete V3 record whose nested endpoint objects have exact keys
+  in any insertion order
+- **WHEN** canonical serialization sorts those object members and strict
+  semantic readback runs
+- **THEN** validation reads values by canonical name and preserves identical
+  row, lane, and record hashes
+- **AND** ordered lists remain in their frozen semantic order
+
+#### Scenario: Persisted endpoint evidence is incomplete or duplicated
+
+- **GIVEN** canonical staged bytes with a missing, extra, duplicated, coerced,
+  or mislabeled endpoint key
+- **WHEN** strict JSON and V3 semantic validation run
+- **THEN** validation rejects even when all remaining hashes were recomputed
+- **AND** no final artifact is published
+
+#### Scenario: Canonical staged bytes are semantically invalid
+
+- **GIVEN** staged bytes that are valid canonical JSON but fail full record or
+  checkpoint reconstruction
+- **WHEN** the bootstrap prepares publication
+- **THEN** it rejects before linking the final output and returns no success
+- **AND** canonical byte shape cannot substitute for semantic validity
+
+#### Scenario: Final persisted bytes differ after publication
+
+- **GIVEN** staged bytes passed strict semantic and checkpoint validation
+- **WHEN** the final path is reopened after atomic publication
+- **THEN** exact byte equality and complete semantic/checkpoint validation are
+  required again before success
+- **AND** any difference, unreadable value, or validation failure remains HOLD
+
+#### Scenario: Consumed V2 identity is offered to V3
+
+- **GIVEN** any V2 commit, authorization, review, claim, input binding, root,
+  seed, checkpoint, output, or rehashed statistical value
+- **WHEN** V3 implementation, authorization, launch, or result validation runs
+- **THEN** it rejects before generation or sampling
+- **AND** V2 remains permanent uninterpretable HOLD
+
+#### Scenario: A V3 root aliases or overlaps another root
+
+- **GIVEN** a V3 workspace, claim, or checkpoint root that equals, contains,
+  descends from, or resolves through a symlink to another V3 or V1/V2 root
+- **WHEN** V3 authorization or launch validation runs
+- **THEN** it rejects before generation or sampling
+- **AND** path aliasing cannot create or reuse launch authority
+
+#### Scenario: The V3 checkpoint root is incomplete or off-plan
+
+- **GIVEN** a partial, extra, duplicated, replaced, aliased, reordered,
+  malformed, or V1/V2 checkpoint entry
+- **WHEN** staged or final V3 semantic validation runs
+- **THEN** the exact inherited twelve-record protocol rejects
+- **AND** no checkpoint can resume a launch or supply a statistical result
+
 #### Scenario: Natural PyMC storage order reaches canonical projection
 
 - **GIVEN** a full-shape sampler-free production-path fixture with the exact
