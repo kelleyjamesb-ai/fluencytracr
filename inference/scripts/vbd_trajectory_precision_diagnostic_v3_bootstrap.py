@@ -946,11 +946,7 @@ def _read_canonical_staged_output(
 def _remove_final_output(manifest: dict) -> None:
     workspace_fd, output = _open_output_workspace(manifest)
     try:
-        try:
-            _rollback_new_final_output(workspace_fd, output.name)
-        except BootstrapRollbackUnconfirmedError:
-            _preserve_or_restore_staged_alias(workspace_fd, output.name)
-            raise
+        _rollback_new_final_output(workspace_fd, output.name)
     finally:
         os.close(workspace_fd)
 
@@ -1006,41 +1002,13 @@ def _preflight_and_consume_claim(
     )
 
 
-def _rollback_new_final_output(workspace_fd: int, output_name: str) -> None:
-    try:
-        os.unlink(output_name, dir_fd=workspace_fd)
-    except FileNotFoundError:
-        pass
-    except OSError as exc:
-        raise BootstrapRollbackUnconfirmedError(
-            "diagnostic final output rollback failed"
-        ) from exc
-    try:
-        os.fsync(workspace_fd)
-    except OSError as exc:
-        raise BootstrapRollbackUnconfirmedError(
-            "diagnostic final output rollback failed"
-        ) from exc
-    try:
-        os.stat(output_name, dir_fd=workspace_fd, follow_symlinks=False)
-    except FileNotFoundError:
-        return
-    except OSError as exc:
-        raise BootstrapRollbackUnconfirmedError(
-            "diagnostic final output rollback failed"
-        ) from exc
-    raise BootstrapRollbackUnconfirmedError(
-        "diagnostic final output remained after rollback"
-    )
-
-
-def _preserve_or_restore_staged_alias(workspace_fd: int, output_name: str) -> None:
+def _durably_preserve_staged_alias(workspace_fd: int, output_name: str) -> bool:
     try:
         output_info = os.stat(
             output_name, dir_fd=workspace_fd, follow_symlinks=False
         )
     except FileNotFoundError:
-        return
+        return False
     except OSError as exc:
         raise BootstrapRollbackUnconfirmedError(
             "diagnostic final rollback state cannot be inspected"
@@ -1085,6 +1053,60 @@ def _preserve_or_restore_staged_alias(workspace_fd: int, output_name: str) -> No
         raise BootstrapRollbackUnconfirmedError(
             "diagnostic failed publication is not alias-invalid"
         )
+    try:
+        os.fsync(workspace_fd)
+        staged_after = os.stat(
+            STAGED_OUTPUT_FILENAME,
+            dir_fd=workspace_fd,
+            follow_symlinks=False,
+        )
+        output_after = os.stat(
+            output_name, dir_fd=workspace_fd, follow_symlinks=False
+        )
+    except OSError as exc:
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic staged alias could not be made durable"
+        ) from exc
+    if (
+        (staged_after.st_dev, staged_after.st_ino)
+        != (output_after.st_dev, output_after.st_ino)
+        or staged_after.st_nlink < 2
+        or output_after.st_nlink < 2
+    ):
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic durable staged alias is invalid"
+        )
+    return True
+
+
+def _rollback_new_final_output(workspace_fd: int, output_name: str) -> None:
+    if not _durably_preserve_staged_alias(workspace_fd, output_name):
+        return
+    try:
+        os.unlink(output_name, dir_fd=workspace_fd)
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic final output rollback failed"
+        ) from exc
+    try:
+        os.fsync(workspace_fd)
+    except OSError as exc:
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic final output rollback failed"
+        ) from exc
+    try:
+        os.stat(output_name, dir_fd=workspace_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic final output rollback failed"
+        ) from exc
+    raise BootstrapRollbackUnconfirmedError(
+        "diagnostic final output remained after rollback"
+    )
 
 
 def _publish_staged_output(
@@ -1124,7 +1146,6 @@ def _publish_staged_output(
             try:
                 _rollback_new_final_output(workspace_fd, output.name)
             except BootstrapRollbackUnconfirmedError as rollback_exc:
-                _preserve_or_restore_staged_alias(workspace_fd, output.name)
                 raise BootstrapRollbackUnconfirmedError(
                     "diagnostic staged cleanup and final rollback failed"
                 ) from rollback_exc
@@ -1192,10 +1213,11 @@ def _supervise_and_publish(
             raise BootstrapError("diagnostic final output differs from staging")
         return final_value
     except BaseException as exc:
-        if not isinstance(exc, BootstrapRollbackUnconfirmedError):
-            _remove_staged_output(manifest)
         if published:
             _remove_final_output(manifest)
+            _remove_staged_output(manifest)
+        elif not isinstance(exc, BootstrapRollbackUnconfirmedError):
+            _remove_staged_output(manifest)
         raise
 
 
