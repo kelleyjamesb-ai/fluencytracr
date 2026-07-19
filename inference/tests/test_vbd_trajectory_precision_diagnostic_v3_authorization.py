@@ -631,6 +631,41 @@ def test_bootstrap_rolls_back_new_final_when_post_link_fsync_fails(
     assert staged.exists()
 
 
+def test_bootstrap_propagates_post_link_rollback_failure(tmp_path, monkeypatch):
+    bootstrap = _load_bootstrap_module()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    staged.write_bytes(bootstrap._canonical_bytes({"state": "HOLD"}) + b"\n")
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
+    real_fsync = bootstrap.os.fsync
+    real_unlink = bootstrap.os.unlink
+    fsync_calls = 0
+
+    def fail_first_fsync(descriptor):
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if fsync_calls == 1:
+            raise OSError("injected post-link fsync failure")
+        return real_fsync(descriptor)
+
+    def fail_final_unlink(path, *, dir_fd=None):
+        if path == output.name:
+            raise OSError("injected rollback failure")
+        return real_unlink(path, dir_fd=dir_fd)
+
+    monkeypatch.setattr(bootstrap.os, "fsync", fail_first_fsync)
+    monkeypatch.setattr(bootstrap.os, "unlink", fail_final_unlink)
+    with pytest.raises(bootstrap.BootstrapError, match="output rollback failed"):
+        bootstrap._publish_staged_output(manifest)
+    assert output.exists()
+    assert staged.exists()
+
+
 def test_bootstrap_requires_exact_final_bytes_not_python_value_equality(
     tmp_path, monkeypatch
 ):

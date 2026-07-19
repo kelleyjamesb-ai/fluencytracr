@@ -1008,6 +1008,26 @@ def _preflight_and_consume_claim(
     )
 
 
+def _rollback_new_final_output(workspace_fd: int, output_name: str) -> None:
+    try:
+        os.unlink(output_name, dir_fd=workspace_fd)
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        raise BootstrapError("diagnostic final output rollback failed") from exc
+    try:
+        os.fsync(workspace_fd)
+    except OSError as exc:
+        raise BootstrapError("diagnostic final output rollback failed") from exc
+    try:
+        os.stat(output_name, dir_fd=workspace_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        raise BootstrapError("diagnostic final output rollback failed") from exc
+    raise BootstrapError("diagnostic final output remained after rollback")
+
+
 def _publish_staged_output(
     manifest: dict, *, expected_staged_bytes: bytes | None = None
 ) -> object:
@@ -1034,11 +1054,10 @@ def _publish_staged_output(
             os.fsync(workspace_fd)
         except OSError as exc:
             if linked:
-                try:
-                    os.unlink(output.name, dir_fd=workspace_fd)
-                except OSError:
-                    pass
-            raise BootstrapError("diagnostic final output could not be published") from exc
+                _rollback_new_final_output(workspace_fd, output.name)
+            raise BootstrapError(
+                "diagnostic final output could not be published"
+            ) from exc
         try:
             os.unlink(STAGED_OUTPUT_FILENAME, dir_fd=workspace_fd)
             os.fsync(workspace_fd)
