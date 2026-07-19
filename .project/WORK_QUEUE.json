@@ -332,6 +332,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-18: V3 adds disjoint identities/seeds/roots, complete V1/V2 tombstones, exact-key canonical-name validation, provenance/input/checkpoint cross-binding, pre-claim/pre-generation root checks, and exact staged/final semantic plus byte readback. Full inference 1040, VBD bridge 22, snapshots 11, Harness 276/3 skipped, builds, OpenSpec, and governance passed. No generator, sampler, A3, claim, fixed root, canary, concordance, or evidence ran."
+    },
+    {
+      "id": "vbd-noncentered-geometry-methodology-decision",
+      "title": "VBD centered-versus-noncentered geometry methodology decision",
+      "bound": "Docs/OpenSpec/status only: bind the valid V3 diagnostic artifact and its 21/2/0 divergence result as permanent non-evidentiary HOLD; define one prospective paired synthetic geometry diagnostic over fresh six-group null and twelve-group 0.5-SD cases comparing the frozen centered reference with a mathematically equivalent non-centered zero-sum group-effect parameterization; predeclare disjoint smoke seeds, exact arm/case/lane order, unchanged likelihood/priors/estimand/full NUTS settings/statistical thresholds, deterministic-reference equivalence checks, zero-divergence and all existing hard sampler gates, sanitized outputs, one-shot execution governance, and supported/inconclusive/reject decision rules; no implementation, generator/sampler execution, claim/root creation, V3 retry, canary, task 2.6 completion, S/F, concordance, evidence, real/customer/live data, public surface, customer output, threshold change, seed rotation, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-19: bound the valid V3 21/2/0 divergence result as permanent non-evidentiary HOLD and predeclared the paired centered/non-centered geometry diagnostic with fresh seeds, unchanged posterior target and gates, exhaustive fail-closed classifications, and permit-before-claim one-shot governance. Exact repair diff bbf3dbef59a90a029ebcad02b9b56fbf8ff207e57283a87110c1678cceba359e received CODE, BUG, ADVERSARIAL, and statistical-methodology GO. Strict OpenSpec, docs sweep, semantic drift, V1 governance, queue guard, JSON, and diff checks passed. No implementation, claim, generator, sampler, canary, concordance, or evidence ran; task 2.6 remains open."
     }
   ]
 }

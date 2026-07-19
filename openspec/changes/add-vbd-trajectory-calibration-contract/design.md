@@ -427,6 +427,56 @@ bootstrap, validation entry points, exact command, and four unique GO
 references. V1 and V2 commits, authorizations, reviews, claims, bindings, paths,
 seeds, checkpoints, and outputs satisfy no V3 gate.
 
+The valid V3 artifact is permanently non-evidentiary. All 180 retained-draw
+full-prefix MCSE ratios pass `<=0.10`, while the centered reference records
+divergences `21/2/0` across the three lanes, leaving target-faithful exploration
+unestablished. The prospective decision is therefore to hold the current
+centered geometry and test one mathematically equivalent reparameterization.
+Exact V3 artifact
+SHA-256 is
+`e043fc2f03b5c9a993db351c37f4b4acb6f2a3cbfb09f5a0165c62b6dd4f0b6b`;
+record hash is
+`44f2080f78eed19c21611a4f3f832b79072caadbb222d6068435a6fe89240461`.
+Neither value enters evidence or clears task `2.6`.
+
+The prospective `vbd_group_effect_geometry_diagnostic_v1` pairs the frozen
+centered `u ~ ZeroSumNormal(0,sigma_u)` target with
+`u_std ~ ZeroSumNormal(0,1); u=sigma_u*u_std`. Only the group-effect
+parameterization changes. The induced prior, exact zero-sum constraint,
+marginalized AR covariance, likelihood, all other priors, estimand, and common
+posterior quantities remain identical.
+
+Two fresh `k=16` cases are fixed: ordinal 0 is effect 0 with six groups and
+generator seed `2_055_900_920`; ordinal 1 is effect 0.5 with twelve groups and
+generator seed `2_055_900_921`. Centered chain seeds are
+`2_055_900_930+12*i+4*d+c`; non-centered chain seeds are
+`2_055_900_960+12*i+4*d+c`. The exact order is case, lane, then centered arm
+before non-centered arm. All settings and hard thresholds remain frozen.
+
+Each arm is compared to one freshly recomputed deterministic reference per
+case/lane under the existing mean, 80%/99% endpoint, and SD-ratio gates. The
+non-centered arm must also clear all existing hard sampler gates, including
+zero divergences. A supported result additionally requires every centered
+reference and non-divergence sampler gate to pass, at least one paired centered
+divergence to become zero, and no non-centered pair to worsen. All-centered-
+zero results are inconclusive only when both arms pass every gate. Complete
+non-centered sampler/reference failures reject the candidate; malformed,
+incomplete, identity-invalid, or otherwise unclassified output is invalid HOLD.
+
+This diagnostic is a bounded hypothesis test, not permission to implement the
+candidate. It retains only sanitized hashes, counts, normalized diagnostics,
+and result classification; it emits no draws or panel values. Its result is
+permanent non-evidence HOLD. Separate implementation, exact review,
+manifest-only authorization, human execution authorization, and one-shot claim
+gates apply. The manifest-bound external one-launch permit must first be
+atomically consumed and durably synced; only then may the fixed external claim
+be atomically created, durably synced, and revalidated before any child,
+generator import, data generation, or sampler invocation. Failure after permit
+consumption, including claim-establishment failure, leaves the launch consumed,
+and every second invocation rejects before numerical work. A passing diagnostic
+can support only a later contract amendment and new replacement-canary
+identities.
+
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.
 Diagnostic outputs are joined only after exact parameter-dimension,

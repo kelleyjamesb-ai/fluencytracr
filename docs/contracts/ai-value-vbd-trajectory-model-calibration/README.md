@@ -916,6 +916,147 @@ No-retry begins only after reviewed `D3`, manifest-only `A3`, separate human
 authorization, and creation of the fixed external V3 claim. Acceptance runs
 remain strictly frozen and non-repeatable under their declared identities.
 
+### V3 Result And Prospective Group-Effect Geometry Diagnostic
+
+The exact V3 launch completed successfully as an internal diagnostic. Its
+immutable anchors are:
+
+- implementation `D3=ba33f9dec9051a90ae8b7d211a6010c44be8464b`;
+- authorization `A3=590a768eb620d6385017ae585fb422083436fb20`;
+- execution authorization
+  `b662ec996264796af7efe897081e2f8bc1398eba1b344f01a21cddfa122e55c5`;
+- claim `478b2d085663b57e1c4fb11400cc07c3ff61c1c331a3a6e10b10a4d7dfb93437`;
+- input binding
+  `b404254b82381c82da76ae5f5749303f145b6bacd6e8def0d2bd603584d23a03`;
+- artifact SHA-256
+  `e043fc2f03b5c9a993db351c37f4b4acb6f2a3cbfb09f5a0165c62b6dd4f0b6b`;
+- record `44f2080f78eed19c21611a4f3f832b79072caadbb222d6068435a6fe89240461`;
+  and
+- terminal checkpoint
+  `e2a4721f25c5fc72490fefd9aee0f42ba3b9ebdae484fad1c484ebe5aa6d2076`.
+
+Strict reconstruction passed the exact twelve-checkpoint chain, canonical
+publication, source/runtime/lockfile/model bindings, and V1/V2 tombstones. All
+180 full-prefix MCSE ratios were `<=0.10`; the worst was
+`0.06254455102442738` for engagement `sigma_u` at the 99% upper endpoint.
+R-hat, bulk/tail ESS, BFMI, and treedepth gates passed. Post-warmup divergences
+were `21`, `2`, and `0` for frequency, engagement, and Breadth. The valid
+record therefore remains permanent
+`HOLD(mcse_design_diagnostic_nonacceptance)`: its retained-draw MCSE-ratio
+criterion passed for this fresh case, while the divergences leave
+target-faithful exploration unestablished. It supplies no evidence, clears no
+canary, and cannot complete task `2.6`.
+
+The next prospective diagnostic is exactly
+`vbd_group_effect_geometry_diagnostic_v1`. It tests one hypothesis only:
+whether replacing the centered zero-sum group effect with its mathematically
+equivalent non-centered representation removes the observed funnel behavior
+without changing the posterior target. It does not alter the marginalized AR
+covariance, likelihood, priors, estimand, lane definitions, synthetic DGP,
+thresholds, or acceptance universe.
+
+The two representations are:
+
+```text
+centered:
+  sigma_u ~ HalfNormal(group_scale_prior_sd)
+  u ~ ZeroSumNormal(sigma=sigma_u, shape=C)
+
+noncentered:
+  sigma_u ~ HalfNormal(group_scale_prior_sd)
+  u_std ~ ZeroSumNormal(sigma=1, shape=C)
+  u = sigma_u * u_std
+```
+
+The non-centered arm stores `u_std` only as a sampler-geometry diagnostic and
+reconstructs `u` deterministically for every common posterior summary. The
+induced prior on `u`, exact zero-sum constraint, likelihood, and all common
+posterior quantities remain unchanged. No result-conditioned choice between
+arms is allowed.
+
+The paired grid has exactly two cases at aggregate `k=16`:
+
+| Ordinal | Effect SD | Panel groups | Generator seed |
+| --- | ---: | ---: | ---: |
+| 0 | 0 | 6 | `2_055_900_920` |
+| 1 | 0.5 | 12 | `2_055_900_921` |
+
+For case ordinal `i`, lane ordinal `d`, and chain index `c`, centered
+chain seed is `2_055_900_930 + 12*i + 4*d + c`; non-centered chain seed is
+`2_055_900_960 + 12*i + 4*d + c`. These formulas reserve centered seeds
+`2_055_900_930..953` and non-centered seeds `2_055_900_960..983`. All 50
+new seeds are exclusive to this diagnostic, disjoint from V1/V2/V3,
+precision-canary, concordance, and acceptance seeds, and rejected by every
+generic smoke path.
+
+Execution order is case-major, then lane-major in
+`frequency,engagement,breadth`, then arm order
+`centered,noncentered`. Both arms use four chains, 20,000 retained draws,
+5,000 tuning draws, `target_accept=.999`, `max_treedepth=15`,
+`jitter+adapt_full`, `cores=1`, and `blas_cores=1`. One deterministic
+state-space fit and fresh deterministic recomputation are bound once per
+case/lane. PPC remains `NOT_RUN`; this is a geometry diagnostic, not a
+precision canary or concordance result.
+
+Every non-centered fit must pass the existing hard gates without modification:
+R-hat `<=1.01`, bulk/tail ESS `>=400`, zero divergences, zero treedepth
+saturation, BFMI `>=0.3`, and each of the five MCSE/posterior-SD ratios
+`<=0.10`. For common quantities `alpha`, `beta`, `sigma_u`,
+`u[0..C-1]`, `sigma_r`, `rho`, and `trajectory_movement`, each arm must
+also satisfy the existing deterministic-reference concordance gates: mean
+difference `<=0.15` reference posterior SD, each 80% and 99% endpoint
+difference `<=0.20` reference posterior SD, and SD ratio in
+`[0.85,1.15]`. The standardized `u_std` coordinates independently require
+the hard sampler gates but have no deterministic-reference counterpart.
+
+The prospective result classification is fixed before implementation and uses
+the following precedence. Exact identity, schema, provenance, source/reference
+bindings, complete case/lane/arm matrix, and runner completion validate first.
+Any failure at that boundary is exclusively `INVALID_HOLD`; no other
+classification is evaluated. For a complete structurally valid result:
+
+- `REJECT_NONCENTERED_CANDIDATE` applies when any non-centered hard sampler gate
+  or deterministic-reference comparison fails.
+- `SUPPORTED_FOR_LATER_CONTRACT_AMENDMENT` requires every non-centered hard
+  sampler gate and deterministic-reference comparison to pass; every centered
+  model-identity and deterministic-reference comparison and every centered
+  non-divergence hard sampler gate to pass; no non-centered lane to have more
+  divergences than its centered pair; and at least one centered lane with
+  positive divergences to have zero in its non-centered pair.
+- `INCONCLUSIVE_CENTERED_GEOMETRY_NOT_REPRODUCED` applies only when both arms
+  pass every hard sampler and deterministic-reference gate and all centered
+  fits have zero divergences.
+- Every remaining complete state, including a centered non-divergence or
+  deterministic-reference failure, is `INVALID_HOLD` and supports no
+  methodology decision.
+
+Every classification remains permanently
+`HOLD(parameterization_geometry_diagnostic_nonacceptance)`, contributes zero
+evidence, and is rejected by canary, freeze, concordance, study, artifact,
+bridge, and acceptance validators. The label is internal development
+vocabulary, not a canonical product suppression reason. A supported result may
+authorize only a later docs/OpenSpec amendment proposing the equivalent
+parameterization and fresh replacement precision-canary identities. It cannot
+change runtime code, reuse V3 or failed-canary seeds, complete task `2.6`, or
+start `S/F`, concordance, or evidence.
+
+Implementation requires a separate human authorization after exact-byte CODE,
+BUG, ADVERSARIAL, and statistical-methodology GO for this amendment. Repeatable
+sampler-free model-shape, variable-set, canonical-projection, and posterior-
+identity fixtures are allowed before implementation review. A future full
+diagnostic requires a clean implementation commit, four exact-commit reviews,
+a sole-child manifest-only authorization commit, a separate exact human
+execution record, one fixed external launch permit and claim, and one complete
+launch. No retry, adaptive extension, seed substitution, arm omission, or
+result-conditioned model change is allowed after that claim. The reviewed
+bootstrap must first atomically consume and durably sync the manifest-bound
+one-launch permit, then atomically create, durably sync, and strictly revalidate
+the fixed external claim before starting any child, importing candidate
+generator code, generating data, or invoking a sampler. A crash or failure
+after permit consumption, including claim-establishment failure, leaves the
+launch permanently consumed; every second invocation rejects before numerical
+work. Output produced without the valid claim is unclassifiable `INVALID_HOLD`.
+
 The held lineage is permanently tombstoned as diagnostic-only HOLD:
 
 ```text

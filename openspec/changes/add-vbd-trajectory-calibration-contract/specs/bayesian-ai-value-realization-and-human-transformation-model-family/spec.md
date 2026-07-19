@@ -958,6 +958,176 @@ statistical threshold, acceptance seed, or evidence gate.
 - **THEN** the exact inherited twelve-record protocol rejects
 - **AND** no checkpoint can resume a launch or supply a statistical result
 
+The completed V3 launch SHALL remain a valid, permanent, non-evidentiary
+diagnostic HOLD. Its exact implementation commit SHALL be
+`ba33f9dec9051a90ae8b7d211a6010c44be8464b`; authorization commit SHALL be
+`590a768eb620d6385017ae585fb422083436fb20`; execution-authorization hash
+SHALL be
+`b662ec996264796af7efe897081e2f8bc1398eba1b344f01a21cddfa122e55c5`;
+claim hash SHALL be
+`478b2d085663b57e1c4fb11400cc07c3ff61c1c331a3a6e10b10a4d7dfb93437`;
+input-binding hash SHALL be
+`b404254b82381c82da76ae5f5749303f145b6bacd6e8def0d2bd603584d23a03`;
+artifact SHA-256 SHALL be
+`e043fc2f03b5c9a993db351c37f4b4acb6f2a3cbfb09f5a0165c62b6dd4f0b6b`;
+record hash SHALL be
+`44f2080f78eed19c21611a4f3f832b79072caadbb222d6068435a6fe89240461`;
+and terminal checkpoint hash SHALL be
+`e2a4721f25c5fc72490fefd9aee0f42ba3b9ebdae484fad1c484ebe5aa6d2076`.
+
+The exact record SHALL continue to report no full-prefix MCSE ratio above
+`0.10`, worst ratio `0.06254455102442738`, and post-warmup divergence
+counts `21`, `2`, and `0` in frequency, engagement, and Breadth order.
+R-hat, bulk/tail ESS, BFMI, and treedepth SHALL remain passing context only.
+The divergence counts SHALL prevent any interpretation that the centered
+geometry is gate-clear. Neither passing MCSE nor a rehash SHALL clear the V3
+HOLD, the consumed precision canary, task `2.6`, or any proof stage.
+
+One prospective `vbd_group_effect_geometry_diagnostic_v1` MAY be specified
+only for later separately authorized implementation and execution. It SHALL
+compare exactly two parameterization arms on the same fresh synthetic panel
+within each case/lane. The centered arm SHALL retain
+`u ~ ZeroSumNormal(sigma=sigma_u, shape=C)`. The non-centered arm SHALL use
+`u_std ~ ZeroSumNormal(sigma=1, shape=C)` and deterministic
+`u=sigma_u*u_std`. The non-centered representation SHALL preserve the induced
+prior on `u`, its exact zero-sum constraint, every other prior, the
+marginalized AR covariance, likelihood, estimand, and common posterior target.
+It SHALL NOT change `sigma_r`, `rho`, `trajectory_movement`, the DGP,
+lane definitions, or any statistical threshold.
+
+The paired diagnostic SHALL contain exactly these aggregate-`k=16` cases:
+
+- ordinal `0`: effect `0`, six panel groups, generator seed
+  `2_055_900_920`;
+- ordinal `1`: effect `0.5`, twelve panel groups, generator seed
+  `2_055_900_921`.
+
+For case ordinal `i`, lane ordinal `d`, and chain index `c`, centered
+chain seed SHALL be `2_055_900_930+12*i+4*d+c`; non-centered chain seed SHALL
+be `2_055_900_960+12*i+4*d+c`. The centered range SHALL therefore be
+`2_055_900_930..953`, and the non-centered range SHALL be
+`2_055_900_960..983`. All 50 generator and chain seeds SHALL be reserved
+exclusively for this diagnostic and rejected by every V1/V2/V3, precision
+canary, generic smoke, concordance, study, recomputation, and acceptance path.
+No seed may be substituted, reused, or rotated.
+
+Execution order SHALL be case ordinal, canonical lane ordinal, then exact arm
+order `centered,noncentered`. Both arms SHALL use four chains, 20,000 retained
+draws, 5,000 tuning draws, `target_accept=.999`,
+`max_treedepth=15`, `jitter+adapt_full`, `cores=1`, and
+`blas_cores=1`. One deterministic state-space reference and one fresh
+deterministic recomputation SHALL be bound per case/lane before either arm is
+interpreted. PPC and acceptance concordance SHALL be `NOT_RUN`, never
+passing.
+
+For each arm, the exact common posterior quantities SHALL be `alpha`, `beta`,
+`sigma_u`, `u[0..C-1]`, `sigma_r`, `rho`, and
+`trajectory_movement`. The non-centered arm SHALL additionally retain
+sanitized sampler diagnostics for every `u_std[0..C-1]` coordinate, but
+`u_std` SHALL have no deterministic-reference or product interpretation.
+Both arms SHALL reconstruct common summaries in the existing canonical order
+and compare independently to the same deterministic reference. Mean
+differences SHALL remain `<=0.15` reference posterior SD; each lower and upper
+80% and 99% endpoint difference SHALL remain `<=0.20` reference posterior SD;
+and SD ratios SHALL remain within `[0.85,1.15]`.
+
+Every non-centered parameter and common quantity SHALL pass the existing hard
+sampler gates without modification: R-hat `<=1.01`, bulk/tail ESS `>=400`,
+zero divergences, zero treedepth saturation, BFMI `>=0.3`, and each separately
+named mean/80%-endpoint/99%-endpoint MCSE-to-posterior-SD ratio `<=0.10`.
+Centered-arm diagnostics SHALL be retained as paired context and SHALL NOT be
+used to weaken any non-centered gate.
+
+The no-extra-key result classification SHALL be derived mechanically with exact
+precedence. Identity, schema, provenance, source/reference bindings, complete
+case/lane/arm matrix, and runner completion SHALL validate first. Any failure
+at that boundary SHALL be exclusively `INVALID_HOLD`, and no other
+classification SHALL be evaluated. For a complete structurally valid result:
+
+- `REJECT_NONCENTERED_CANDIDATE` SHALL apply when any non-centered hard sampler
+  gate or deterministic-reference comparison fails.
+- `SUPPORTED_FOR_LATER_CONTRACT_AMENDMENT` SHALL require every non-centered hard
+  sampler gate and deterministic-reference comparison to pass; every centered
+  model-identity and deterministic-reference comparison and every centered
+  non-divergence hard sampler gate to pass; no non-centered lane to have more
+  divergences than its centered pair; and at least one centered lane with
+  positive divergences to have zero in its non-centered pair.
+- `INCONCLUSIVE_CENTERED_GEOMETRY_NOT_REPRODUCED` SHALL require both arms to
+  pass every hard sampler and deterministic-reference gate and every centered
+  fit to have zero divergences.
+- Every remaining complete state, including a centered non-divergence or
+  deterministic-reference failure, SHALL be `INVALID_HOLD` and support no
+  methodology decision.
+
+Every result SHALL remain permanently
+`HOLD(parameterization_geometry_diagnostic_nonacceptance)`, SHALL have zero
+evidence eligibility and acceptance-count effect, and SHALL be rejected by
+canary, freeze, concordance, study, artifact, bridge, and acceptance
+validators. This internal diagnostic label SHALL NOT become a canonical
+product suppression reason. A supported result MAY authorize only a later
+docs/OpenSpec proposal for the mathematically equivalent parameterization and
+fresh replacement precision-canary identities. It SHALL NOT itself change
+runtime code, complete task `2.6`, create `S/F`, or start concordance or
+evidence.
+
+Implementation SHALL require separate explicit human authorization after
+exact-byte CODE, BUG, ADVERSARIAL, and statistical-methodology GO for this
+amendment. Repeatable sampler-free model-shape, variable-set,
+canonical-projection, posterior-identity, and malformed-record fixtures MAY
+run before exact implementation review and SHALL remain non-evidentiary. A
+future full diagnostic SHALL require a clean implementation commit, four exact
+GO reviews, a sole-child manifest-only authorization commit, a separate exact
+human execution record, one fixed external launch permit and claim, and one
+complete launch. The reviewed bootstrap SHALL first atomically consume and
+durably sync the manifest-bound one-launch permit, then atomically create,
+durably sync, and strictly revalidate the fixed external claim before it starts
+any child, imports candidate generator code, generates data, or invokes a
+sampler. A crash or failure after permit consumption, including claim-
+establishment failure, SHALL leave the launch permanently consumed; every
+second invocation SHALL reject before numerical work, and output produced
+without the valid claim SHALL be unclassifiable `INVALID_HOLD`. After claim
+creation, retry, resume, adaptive extension, arm omission, seed substitution,
+and result-conditioned model change SHALL be forbidden.
+
+#### Scenario: V3 MCSE passes while centered sampling diverges
+
+- **GIVEN** the exact valid V3 artifact with all 180 full-prefix MCSE ratios at
+  or below `0.10` and divergence counts `21/2/0`
+- **WHEN** methodology readiness is evaluated
+- **THEN** the passing retained-draw MCSE-ratio criterion SHALL NOT offset the
+  zero-divergence failure or establish target-faithful exploration
+- **AND** V3 and task `2.6` SHALL remain HOLD
+
+#### Scenario: The non-centered arm removes a reproduced divergence
+
+- **GIVEN** every paired record, deterministic reference, source binding, and
+  gate result is complete and structurally valid, every centered
+  non-divergence gate passes, and every non-centered gate passes
+- **WHEN** at least one centered lane diverges and its non-centered pair has
+  zero divergences without another non-centered failure
+- **THEN** the result MAY be
+  `SUPPORTED_FOR_LATER_CONTRACT_AMENDMENT`
+- **AND** it SHALL remain non-evidentiary and shall not change runtime behavior
+
+#### Scenario: Fresh centered cases do not reproduce the geometry
+
+- **GIVEN** both arms pass every gate and every centered fit has zero
+  divergences
+- **WHEN** the paired diagnostic is classified
+- **THEN** it SHALL be
+  `INCONCLUSIVE_CENTERED_GEOMETRY_NOT_REPRODUCED`
+- **AND** absence of a reproduced failure SHALL NOT prove noncentering is
+  necessary
+
+#### Scenario: The non-centered target or sampler gate differs
+
+- **GIVEN** any common posterior comparison fails, any non-centered hard gate
+  fails, or any arm/case/lane is missing or off-plan
+- **WHEN** result classification runs
+- **THEN** the candidate SHALL be rejected or invalid HOLD as predeclared
+- **AND** no threshold, seed, draw count, or model component may be changed in
+  response
+
 #### Scenario: Natural PyMC storage order reaches canonical projection
 
 - **GIVEN** a full-shape sampler-free production-path fixture with the exact

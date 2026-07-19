@@ -44,6 +44,13 @@
   readback before publication success; obtain CODE, BUG, ADVERSARIAL, and
   statistical-methodology GO for the amended docs bytes without implementation
   or execution.
+- [x] 1.11 Record the valid V3 diagnostic as permanent non-evidentiary HOLD and
+  predeclare one paired centered-versus-noncentered group-effect geometry
+  diagnostic over two fresh synthetic stress cases, with disjoint seeds,
+  unchanged model distribution and hard gates, deterministic-reference
+  equivalence checks, and supported/inconclusive/reject rules; obtain CODE,
+  BUG, ADVERSARIAL, and statistical-methodology GO for the amended docs bytes
+  without implementation or execution.
 
 ## 2. Future Synthetic Implementation
 
