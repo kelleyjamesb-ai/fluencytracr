@@ -882,7 +882,10 @@ def _remove_staged_output(manifest: dict) -> None:
 
 
 def _read_canonical_staged_output_bytes(
-    workspace_fd: int, filename: str = STAGED_OUTPUT_FILENAME
+    workspace_fd: int,
+    filename: str = STAGED_OUTPUT_FILENAME,
+    *,
+    expected_link_count: int = 1,
 ) -> tuple[object, bytes]:
     try:
         info = os.stat(
@@ -890,7 +893,11 @@ def _read_canonical_staged_output_bytes(
             dir_fd=workspace_fd,
             follow_symlinks=False,
         )
-        if not stat.S_ISREG(info.st_mode) or info.st_size > 4 * 1024 * 1024:
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != expected_link_count
+            or info.st_size > 4 * 1024 * 1024
+        ):
             raise BootstrapError("diagnostic staged output is unsafe")
         descriptor = os.open(
             filename,
@@ -903,7 +910,7 @@ def _read_canonical_staged_output_bytes(
         opened = os.fstat(descriptor)
         if (
             not stat.S_ISREG(opened.st_mode)
-            or opened.st_nlink != 1
+            or opened.st_nlink != expected_link_count
             or (info.st_dev, info.st_ino) != (opened.st_dev, opened.st_ino)
         ):
             raise BootstrapError("diagnostic staged output changed identity")
@@ -924,7 +931,7 @@ def _read_canonical_staged_output_bytes(
         (item.st_dev, item.st_ino, item.st_size, item.st_mtime_ns, item.st_ctime_ns)
         for item in (info, opened, after_open, after_name)
     }
-    if len(identities) != 1 or after_name.st_nlink != 1:
+    if len(identities) != 1 or after_name.st_nlink != expected_link_count:
         raise BootstrapError("diagnostic staged output changed identity")
     try:
         value = json.loads(
@@ -1139,6 +1146,18 @@ def _publish_staged_output(
             raise BootstrapError(
                 "diagnostic final output could not be published"
             ) from exc
+        if not _durably_preserve_staged_alias(workspace_fd, output.name):
+            raise BootstrapError("diagnostic pending publication alias is missing")
+        return value
+    finally:
+        os.close(workspace_fd)
+
+
+def _finalize_published_output(manifest: dict) -> None:
+    workspace_fd, output = _open_output_workspace(manifest)
+    try:
+        if not _durably_preserve_staged_alias(workspace_fd, output.name):
+            raise BootstrapError("diagnostic pending publication alias is missing")
         try:
             os.unlink(STAGED_OUTPUT_FILENAME, dir_fd=workspace_fd)
             os.fsync(workspace_fd)
@@ -1152,7 +1171,6 @@ def _publish_staged_output(
             raise BootstrapError(
                 "diagnostic staged output could not be removed"
             ) from exc
-        return value
     finally:
         os.close(workspace_fd)
 
@@ -1204,6 +1222,18 @@ def _supervise_and_publish(
         )
         workspace_fd, output = _open_output_workspace(manifest)
         try:
+            pending_value, pending_bytes = _read_canonical_staged_output_bytes(
+                workspace_fd,
+                output.name,
+                expected_link_count=2,
+            )
+        finally:
+            os.close(workspace_fd)
+        if pending_bytes != staged_bytes or pending_value != staged_value:
+            raise BootstrapError("diagnostic pending final differs from staging")
+        _finalize_published_output(manifest)
+        workspace_fd, output = _open_output_workspace(manifest)
+        try:
             final_value, final_bytes = _read_canonical_staged_output_bytes(
                 workspace_fd, output.name
             )
@@ -1214,6 +1244,8 @@ def _supervise_and_publish(
         return final_value
     except BaseException as exc:
         if published:
+            if isinstance(exc, BootstrapRollbackUnconfirmedError):
+                raise
             _remove_final_output(manifest)
             _remove_staged_output(manifest)
         elif not isinstance(exc, BootstrapRollbackUnconfirmedError):

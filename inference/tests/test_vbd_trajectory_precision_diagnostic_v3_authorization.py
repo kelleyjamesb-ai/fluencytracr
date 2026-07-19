@@ -369,6 +369,32 @@ def test_bootstrap_and_python_validator_share_exact_v3_manifest(tmp_path):
         bootstrap._validate_manifest_shape(forged)
 
 
+def test_python_pending_final_reader_requires_exact_two_link_alias(tmp_path):
+    bootstrap = _load_bootstrap_module()
+    workspace = tmp_path / "pending-final"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    value = {"state": "HOLD", "evidence_eligible": False}
+    staged.write_bytes(bootstrap._canonical_bytes(value) + b"\n")
+    os.link(staged, output)
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
+    assert (
+        authorization_module._read_vbd_precision_diagnostic_v3_pending_final(
+            manifest
+        )
+        == value
+    )
+    staged.unlink()
+    with pytest.raises(VbdTrajectoryPrecisionDiagnosticV3AuthorizationError):
+        authorization_module._read_vbd_precision_diagnostic_v3_pending_final(
+            manifest
+        )
+
+
 def test_complete_manifest_validation_precedes_irreversible_claim(
     tmp_path, monkeypatch
 ):
@@ -440,7 +466,7 @@ def test_bootstrap_supervisor_enforces_timeout_and_removes_staging(
     assert not output.exists()
 
 
-def test_bootstrap_publishes_only_canonical_staged_output(tmp_path):
+def test_bootstrap_pending_publication_is_alias_invalid_until_finalized(tmp_path):
     bootstrap = _load_bootstrap_module()
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -453,6 +479,27 @@ def test_bootstrap_publishes_only_canonical_staged_output(tmp_path):
         "output_path": str(output),
     }
     assert bootstrap._publish_staged_output(manifest) == value
+    staged_info = staged.stat()
+    output_info = output.stat()
+    assert (staged_info.st_dev, staged_info.st_ino) == (
+        output_info.st_dev,
+        output_info.st_ino,
+    )
+    assert staged_info.st_nlink == output_info.st_nlink == 2
+    workspace_fd = os.open(
+        workspace, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    )
+    try:
+        with pytest.raises(bootstrap.BootstrapError):
+            bootstrap._read_canonical_staged_output_bytes(
+                workspace_fd, output.name
+            )
+        assert bootstrap._read_canonical_staged_output_bytes(
+            workspace_fd, output.name, expected_link_count=2
+        )[0] == value
+    finally:
+        os.close(workspace_fd)
+    bootstrap._finalize_published_output(manifest)
     assert not staged.exists()
     assert output.read_bytes() == bootstrap._canonical_bytes(value) + b"\n"
 
@@ -471,6 +518,7 @@ def test_bootstrap_fails_closed_when_staged_output_cannot_be_removed(
         "canonical_workspace_path": str(workspace),
         "output_path": str(output),
     }
+    assert bootstrap._publish_staged_output(manifest) == value
     real_unlink = bootstrap.os.unlink
 
     def fail_staged_unlink(path, *args, **kwargs):
@@ -480,7 +528,7 @@ def test_bootstrap_fails_closed_when_staged_output_cannot_be_removed(
 
     monkeypatch.setattr(bootstrap.os, "unlink", fail_staged_unlink)
     with pytest.raises(bootstrap.BootstrapError, match="could not be removed"):
-        bootstrap._publish_staged_output(manifest)
+        bootstrap._finalize_published_output(manifest)
     assert staged.exists()
     assert not output.exists()
 
@@ -740,7 +788,7 @@ def test_bootstrap_preserves_alias_when_staged_cleanup_rollback_is_unconfirmed(
     def inject_fsync(descriptor):
         nonlocal fsync_calls
         fsync_calls += 1
-        if cleanup_failure == "second_fsync" and fsync_calls == 2:
+        if cleanup_failure == "second_fsync" and fsync_calls == 4:
             raise OSError("injected staged-cleanup fsync failure")
         return real_fsync(descriptor)
 
@@ -849,7 +897,7 @@ def test_bootstrap_durably_stages_before_rollback_fsync_failure(
     real_unlink = bootstrap.os.unlink
     real_fsync = bootstrap.os.fsync
     fsync_calls = 0
-    fail_on_fsync = 3 if rollback_context == "staged_cleanup" else 4
+    fail_on_fsync = 5 if rollback_context == "staged_cleanup" else 4
 
     def inject_fsync(descriptor):
         nonlocal fsync_calls

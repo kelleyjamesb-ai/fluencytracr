@@ -646,8 +646,20 @@ def _bootstrap_full_record_bundle(
     }
 
     def validate_persisted(*, final: bool, **_kwargs):
-        path = output_path if final else staged
-        value = read_strict_json(path)
+        if final:
+            workspace_fd = os.open(
+                workspace, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+            )
+            try:
+                value, _encoded = bootstrap._read_canonical_staged_output_bytes(
+                    workspace_fd,
+                    output_path.name,
+                    expected_link_count=2,
+                )
+            finally:
+                os.close(workspace_fd)
+        else:
+            value = read_strict_json(staged)
         validate_vbd_trajectory_precision_diagnostic_v3_record_with_checkpoints(
             value,
             checkpoint_root=checkpoint_root,

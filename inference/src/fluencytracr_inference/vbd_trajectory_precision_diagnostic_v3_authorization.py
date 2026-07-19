@@ -908,6 +908,108 @@ def write_vbd_precision_diagnostic_v3_staged_output(
     return persisted
 
 
+def _strict_json_object(pairs: list[tuple[str, object]]) -> dict:
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            _authorization_error("diagnostic persisted JSON contains duplicate keys")
+        value[key] = item
+    return value
+
+
+def _read_vbd_precision_diagnostic_v3_pending_final(manifest: dict) -> dict:
+    workspace = Path(manifest["canonical_workspace_path"])
+    output = Path(manifest["output_path"])
+    workspace_fd = -1
+    output_fd = -1
+    try:
+        workspace_fd = os.open(
+            workspace, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        )
+        staged_info = os.stat(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_STAGED_OUTPUT_FILENAME,
+            dir_fd=workspace_fd,
+            follow_symlinks=False,
+        )
+        output_info = os.stat(
+            output.name, dir_fd=workspace_fd, follow_symlinks=False
+        )
+        if (
+            not stat.S_ISREG(staged_info.st_mode)
+            or not stat.S_ISREG(output_info.st_mode)
+            or staged_info.st_nlink != 2
+            or output_info.st_nlink != 2
+            or (staged_info.st_dev, staged_info.st_ino)
+            != (output_info.st_dev, output_info.st_ino)
+            or output_info.st_size > 4 * 1024 * 1024
+        ):
+            _authorization_error("diagnostic pending final alias is invalid")
+        output_fd = os.open(
+            output.name,
+            os.O_RDONLY | os.O_NOFOLLOW,
+            dir_fd=workspace_fd,
+        )
+        opened = os.fstat(output_fd)
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or opened.st_nlink != 2
+            or (opened.st_dev, opened.st_ino)
+            != (output_info.st_dev, output_info.st_ino)
+        ):
+            _authorization_error("diagnostic pending final changed identity")
+        chunks = []
+        remaining = opened.st_size + 1
+        while remaining > 0:
+            chunk = os.read(output_fd, min(remaining, 64 * 1024))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        encoded = b"".join(chunks)
+        after_open = os.fstat(output_fd)
+        staged_after = os.stat(
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_STAGED_OUTPUT_FILENAME,
+            dir_fd=workspace_fd,
+            follow_symlinks=False,
+        )
+        output_after = os.stat(
+            output.name, dir_fd=workspace_fd, follow_symlinks=False
+        )
+    except OSError as exc:
+        _authorization_error("diagnostic pending final cannot be read", exc)
+    finally:
+        if output_fd >= 0:
+            os.close(output_fd)
+        if workspace_fd >= 0:
+            os.close(workspace_fd)
+    identities = {
+        (item.st_dev, item.st_ino, item.st_size, item.st_mtime_ns, item.st_ctime_ns)
+        for item in (
+            staged_info,
+            output_info,
+            opened,
+            after_open,
+            staged_after,
+            output_after,
+        )
+    }
+    if len(identities) != 1 or staged_after.st_nlink != 2 or output_after.st_nlink != 2:
+        _authorization_error("diagnostic pending final changed identity")
+    try:
+        value = json.loads(
+            encoded.decode("utf-8"),
+            object_pairs_hook=_strict_json_object,
+            parse_constant=lambda item: (_ for _ in ()).throw(
+                ValueError(f"non-finite JSON constant: {item}")
+            ),
+        )
+    except (UnicodeError, ValueError, json.JSONDecodeError) as exc:
+        _authorization_error("diagnostic pending final is not strict JSON", exc)
+    if encoded != _canonical_json_bytes(value) + b"\n":
+        _authorization_error("diagnostic pending final is noncanonical")
+    return value
+
+
 def validate_vbd_precision_diagnostic_v3_persisted_output(
     *,
     manifest: dict,
@@ -949,7 +1051,11 @@ def validate_vbd_precision_diagnostic_v3_persisted_output(
         else Path(manifest["canonical_workspace_path"])
         / VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_STAGED_OUTPUT_FILENAME
     )
-    value = read_strict_json(path)
+    value = (
+        _read_vbd_precision_diagnostic_v3_pending_final(manifest)
+        if final
+        else read_strict_json(path)
+    )
     record = validate_vbd_trajectory_precision_diagnostic_v3_record_with_checkpoints(
         value,
         checkpoint_root=Path(manifest["checkpoint_root_path"]),
