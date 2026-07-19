@@ -208,11 +208,15 @@ _RUNNER_SOURCE_PATHS_V1 = tuple(
         "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v2_execution.py",
     }
 )
-_RUNNER_SOURCE_PATHS = (
+_RUNNER_SOURCE_PATHS = tuple(sorted((
     *_RUNNER_SOURCE_PATHS_V3,
+    "inference/scripts/vbd_trajectory_group_effect_geometry_bootstrap.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_authorization.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_constants.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_diagnostic.py",
-)
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_execution.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_projection.py",
+)))
 _ROOT_STATIC_FILES = {
     "workspace.json",
     "plan.json",
@@ -2952,10 +2956,22 @@ def _git_bytes(*args: str) -> bytes:
     return completed.stdout
 
 
-@lru_cache(maxsize=1)
-def vbd_trajectory_runner_implementation_manifest() -> dict:
+@lru_cache(maxsize=4)
+def vbd_trajectory_runner_implementation_manifest(
+    *,
+    source_paths: tuple[str, ...] = _RUNNER_SOURCE_PATHS,
+) -> dict:
+    if source_paths not in (
+        _RUNNER_SOURCE_PATHS_V1,
+        _RUNNER_SOURCE_PATHS_V2,
+        _RUNNER_SOURCE_PATHS_V3,
+        _RUNNER_SOURCE_PATHS,
+    ):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "runner source manifest version is invalid"
+        )
     files = []
-    for relative in _RUNNER_SOURCE_PATHS:
+    for relative in source_paths:
         path = _repo_root() / relative
         _validate_regular_file(path, label=f"runner source {relative}")
         files.append({"path": relative, "sha256": _file_sha256(path)})

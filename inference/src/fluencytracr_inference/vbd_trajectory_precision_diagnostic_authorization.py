@@ -308,7 +308,9 @@ def build_vbd_precision_diagnostic_authorization_manifest(
         implementation_review_refs, implementation_commit
     ):
         _authorization_error("diagnostic implementation review refs are invalid")
-    implementation_manifest = vbd_trajectory_runner_implementation_manifest()
+    implementation_manifest = vbd_trajectory_runner_implementation_manifest(
+        source_paths=_RUNNER_SOURCE_PATHS
+    )
     files = sorted(
         implementation_manifest["files"], key=lambda item: item["path"]
     )

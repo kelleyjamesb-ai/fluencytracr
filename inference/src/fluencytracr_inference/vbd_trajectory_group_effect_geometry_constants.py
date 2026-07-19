@@ -146,6 +146,13 @@ VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS = frozenset(
 )
 
 
+VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_TIMEOUT_SECONDS = 43_200
+VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_WORKSPACE_PATH = (
+    "/Users/jameskelley/.codex/evidence/vbd-geometry-diagnostic-v1-workspace"
+)
+VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_LIFECYCLE_ROOT_PATH = (
+    "/Users/jameskelley/.codex/evidence/vbd-geometry-diagnostic-v1-lifecycle"
+)
 if (
     VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_CENTERED_CHAIN_SEEDS
     != tuple(range(2_055_900_930, 2_055_900_954))

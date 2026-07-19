@@ -126,6 +126,7 @@ def _build_arm_matrix(
             )
         )
         panel_hash = sha256_json(["panel", case.case_ordinal])
+        panel_root = sha256_json(["panel-root", case.case_ordinal])
         for lane_ordinal, lane in enumerate(
             ("frequency", "engagement", "breadth")
         ):
@@ -170,6 +171,7 @@ def _build_arm_matrix(
                     build_vbd_trajectory_group_effect_geometry_arm_record(
                         binding=binding,
                         panel_hash=panel_hash,
+                        ordered_panel_manifest_root=panel_root,
                         prepared_input_hash=prepared_hash,
                         model_input_hash=model_hash,
                         deterministic_reference_hash=reference_hash,
@@ -559,6 +561,7 @@ def test_structural_mutations_take_invalid_precedence_and_cannot_validate():
     "mismatched_field",
     [
         "panel_hash",
+        "ordered_panel_manifest_root",
         "prepared_input_hash",
         "model_input_hash",
         "deterministic_reference_hash",
@@ -611,6 +614,9 @@ def test_valid_arm_pair_with_mismatched_source_binding_is_structural_invalid(
     )
     build_values = {
         "panel_hash": original["panel_hash"],
+        "ordered_panel_manifest_root": original[
+            "ordered_panel_manifest_root"
+        ],
         "prepared_input_hash": original["prepared_input_hash"],
         "model_input_hash": original["model_input_hash"],
         "deterministic_reference_hash": original[

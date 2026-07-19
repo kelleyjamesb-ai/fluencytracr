@@ -112,6 +112,23 @@
   classification, proof-path rejection, and sampler-free target-equivalence
   fixtures; do not create an authorization commit, permit, claim, external root,
   or run a generator or sampler.
+- [x] 2.13 After task `2.12` and separate sequential authorization, implement
+  the geometry-specific exact-source authorization manifest, execution-record
+  validator, fixed-root preflight, permit-before-import claim lifecycle,
+  isolated one-shot bootstrap, completed-run projection, and permanent-HOLD
+  publication without creating authorization commit `A`, a permit, claim, or
+  running a generator or sampler.
+- [ ] 2.14 After exact-commit CODE, BUG, ADVERSARIAL, and
+  statistical-methodology GO for clean geometry authorization implementation
+  `D`, create and verify sole-child commit `A` whose only diff is the
+  geometry authorization manifest; do not create the external execution record
+  or run the diagnostic.
+- [ ] 2.15 After exact `A` and a separately bound human execution record,
+  consume the one permitted fixed launch, run the frozen two-case twelve-arm
+  diagnostic once, validate the sanitized result, and preserve permanent HOLD
+  and proof-count exclusion. No retry, resume, seed rotation, adaptive
+  extension, model/threshold change, canary, concordance, or calibration may
+  occur in this task.
 
 ## 3. Future Engine Concordance
 

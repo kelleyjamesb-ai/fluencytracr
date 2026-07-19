@@ -348,6 +348,30 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-19: implemented the frozen two-case/50-seed centered-versus-noncentered geometry diagnostic, exact target/reference fixtures, strict permanent-HOLD records, proof-path rejection, and future source-manifest binding. Public sampler-free records are NOT_RUN with no runner-completion binding and exclusively INVALID_HOLD; the generic sampler cannot accept the geometry capability. Exact diff 729bfba4a591d463db80c18d699f851a0012f278993b3e2e50729e519a3e3382 received CODE, BUG, ADVERSARIAL, and statistical-methodology GO. VBD 548, full inference 1113, bridge 22, snapshots 11, Harness 276/3 skipped, shared/confidence-engine builds, strict OpenSpec, docs sweep, semantic drift, V1 governance, compile, and diff checks passed. No generator, sampler, permit, claim, external root, authorization commit, canary, concordance, or evidence ran; task 2.6 remains open."
+    },
+    {
+      "id": "vbd-noncentered-geometry-authorization-implementation",
+      "title": "VBD geometry diagnostic authorization and one-shot runner implementation",
+      "bound": "Synthetic-only inference/, focused tests, and verified docs/status: implement geometry-specific exact-source/runtime/model/plan/seed authorization manifest construction and validation, execution-authorization validation, private fixed-root preflight, permit-before-import claim lifecycle, isolated bootstrap, exact completed-run projection, permanent-HOLD result publication, and proof-path rejection; preserve the frozen two cases, 50 seeds, centered/noncentered models, priors, estimands, full sampler settings, thresholds, no-retry rule, evidence exclusion, and trusted-host boundary; no generator or sampler execution, authorization manifest commit A, external authorization record, permit or claim consumption, task 2.6 completion, S/F, concordance, calibration, real/customer/live data, public surface, customer output, or promotion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-19: implemented exact source/runtime/model/plan/seed authorization, consume-before-import permit/claim lifecycle, immutable input and panel-root bindings, supervised child termination/reaping, exact terminal-root validation, two-link pending publication validation, and permanent-HOLD completed projection. Guarded CODE, BUG, and ADVERSARIAL repair reviews returned GO. Verification passed: geometry/precision 187, full inference 1147, VBD bridge 22, AI Fluency snapshots 11, Harness 276/3 skipped, shared and confidence-engine builds, strict OpenSpec, docs sweep, semantic drift, V1 governance, agentic guard, compileall, JSON, and diff checks. No authorization manifest, permit, claim, external root, generator, sampler, task 2.6 completion, concordance, or evidence execution."
+    },
+    {
+      "id": "vbd-noncentered-geometry-manifest-authorization",
+      "title": "VBD geometry diagnostic sole-child manifest authorization",
+      "bound": "Synthetic-only exact-D authorization milestone: after clean exact-commit CODE, BUG, ADVERSARIAL, and statistical-methodology GO, create and verify sole-child commit A whose only diff is the geometry authorization manifest binding exact implementation, runtime, lockfile, model, plan, seeds, command, fixed roots, and review refs; no external execution authorization record, permit or claim consumption, generator, sampler, result, task 2.6 completion, S/F, concordance, calibration, real/customer/live data, public surface, customer output, or promotion",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Pending completion and exact review of the authorization implementation commit D."
+    },
+    {
+      "id": "vbd-noncentered-geometry-one-shot-execution",
+      "title": "VBD geometry diagnostic one-shot execution",
+      "bound": "Synthetic-only exact-A execution and status: create the exact external human execution-authorization record, consume the one permitted fixed launch permit and claim, run only the frozen two-case twelve-arm geometry diagnostic, validate the complete sanitized result, and preserve permanent HOLD and proof-count exclusion; no retry, resume, adaptive extension, seed substitution, model or threshold change, task 2.6 completion without a supported valid result and later amendment, S/F, concordance, calibration, real/customer/live data, public surface, customer output, or promotion",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Pending exact sole-child authorization commit A and a record that binds its final SHA."
     }
   ]
 }

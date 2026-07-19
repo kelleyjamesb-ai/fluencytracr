@@ -32,6 +32,7 @@ from .vbd_trajectory_types import (
     vbd_trajectory_model_manifest_body,
 )
 from .vbd_trajectory_validation_resumable import (
+    _RUNNER_SOURCE_PATHS_V1 as _RUNNER_SOURCE_PATHS,
     build_vbd_trajectory_runtime_identity,
     vbd_trajectory_runner_implementation_manifest,
 )
@@ -65,7 +66,9 @@ def execute_authorized_vbd_precision_diagnostic(
     except Exception as exc:
         raise PermissionError("precision diagnostic claim is invalid") from exc
     runtime = build_vbd_trajectory_runtime_identity()
-    implementation = vbd_trajectory_runner_implementation_manifest()
+    implementation = vbd_trajectory_runner_implementation_manifest(
+        source_paths=_RUNNER_SOURCE_PATHS
+    )
     if (
         runtime["runtime_identity_hash"] != manifest["runtime_identity_hash"]
         or implementation["implementation_hash"] != manifest["implementation_hash"]

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 
 from .hashing import sha256_json
 from .vbd_trajectory_concordance import (
@@ -57,6 +58,47 @@ VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_CLASSIFICATIONS = (
     "INVALID_HOLD",
 )
 
+VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_COMPLETION_SCHEMA_VERSION = (
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_GEOMETRY_RUNNER_COMPLETION_2026_07_V1"
+)
+_VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_COMPLETION_TOKEN = object()
+_REVIEW_ROLE_SLUGS = {
+    "CODE": "code",
+    "BUG": "bug",
+    "ADVERSARIAL": "adversarial",
+    "STATISTICAL_METHODOLOGY": "statistical-methodology",
+}
+_REVIEW_REF_RE = re.compile(
+    r"^review:(code|bug|adversarial|statistical-methodology)/go/"
+    r"[0-9a-f]{40}/[A-Za-z0-9._-]+$"
+)
+_COMPLETION_PROVENANCE_KEYS = {
+    "authorization_commit",
+    "authorization_manifest_hash",
+    "execution_authorization_hash",
+    "implementation_commit",
+    "implementation_tree",
+    "implementation_review_refs",
+    "launch_permit_hash",
+    "consumed_permit_file_hash",
+    "external_claim_hash",
+    "input_binding_hash",
+    "runtime_identity_hash",
+    "requirements_lock_hash",
+    "implementation_hash",
+    "native_library_manifest_hash",
+    "model_manifest_hash",
+    "diagnostic_plan_hash",
+    "seed_manifest_hash",
+    "command_hash",
+}
+_COMPLETION_KEYS = _COMPLETION_PROVENANCE_KEYS | {
+    "schema_version",
+    "terminal_completion_receipt_hash",
+    "ordered_arm_record_hashes_hash",
+    "completion_hash",
+}
+
 _SAMPLER_INPUT_KEYS = {
     "parameter_name",
     "r_hat",
@@ -109,6 +151,7 @@ _ARM_KEYS = {
     "diagnostic_id",
     "binding",
     "panel_hash",
+    "ordered_panel_manifest_root",
     "prepared_input_hash",
     "model_input_hash",
     "deterministic_reference_hash",
@@ -587,6 +630,7 @@ def build_vbd_trajectory_group_effect_geometry_arm_record(
     *,
     binding: TrajectoryNutsGroupEffectGeometryBinding,
     panel_hash: str,
+    ordered_panel_manifest_root: str,
     prepared_input_hash: str,
     model_input_hash: str,
     deterministic_reference_hash: str,
@@ -616,6 +660,10 @@ def build_vbd_trajectory_group_effect_geometry_arm_record(
         )
     hashes = {
         "panel_hash": _strict_sha256(panel_hash, "panel hash"),
+        "ordered_panel_manifest_root": _strict_sha256(
+            ordered_panel_manifest_root,
+            "ordered panel manifest root",
+        ),
         "prepared_input_hash": _strict_sha256(
             prepared_input_hash, "prepared input hash"
         ),
@@ -782,6 +830,9 @@ def validate_vbd_trajectory_group_effect_geometry_arm_record(
     rebuilt = build_vbd_trajectory_group_effect_geometry_arm_record(
         binding=binding,
         panel_hash=record["panel_hash"],
+        ordered_panel_manifest_root=record[
+            "ordered_panel_manifest_root"
+        ],
         prepared_input_hash=record["prepared_input_hash"],
         model_input_hash=record["model_input_hash"],
         deterministic_reference_hash=record[
@@ -844,12 +895,14 @@ def _validate_arm_matrix(value: object) -> list[dict]:
         )
     pair_hash_fields = (
         "panel_hash",
+        "ordered_panel_manifest_root",
         "prepared_input_hash",
         "model_input_hash",
         "deterministic_reference_hash",
         "deterministic_recomputation_hash",
     )
     case_panel_hashes: dict[int, str] = {}
+    case_panel_roots: dict[int, str] = {}
     for pair_start in range(0, len(arms), 2):
         centered = arms[pair_start]
         noncentered = arms[pair_start + 1]
@@ -882,6 +935,14 @@ def _validate_arm_matrix(value: object) -> list[dict]:
         if previous_panel_hash != centered["panel_hash"]:
             raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
                 "geometry case lanes do not share one synthetic panel"
+            )
+        previous_panel_root = case_panel_roots.setdefault(
+            centered_binding.case_ordinal,
+            centered["ordered_panel_manifest_root"],
+        )
+        if previous_panel_root != centered["ordered_panel_manifest_root"]:
+            raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+                "geometry case lanes do not share one ordered panel root"
             )
     return arms
 
@@ -932,17 +993,139 @@ def _derive_classification(arms: list[dict]) -> str:
     return "INVALID_HOLD"
 
 
-def _record_body(arm_records: list[dict]) -> dict:
+def _validate_runner_completion_binding(
+    value: object,
+    *,
+    arm_records: list[dict],
+) -> dict:
+    binding = _require_exact_keys(
+        value,
+        _COMPLETION_KEYS,
+        "geometry runner completion binding",
+    )
+    for key in ("authorization_commit", "implementation_commit", "implementation_tree"):
+        commit = binding[key]
+        if (
+            type(commit) is not str
+            or len(commit) != 40
+            or any(character not in "0123456789abcdef" for character in commit)
+        ):
+            raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+                "geometry completion commit identity is invalid"
+            )
+    for key in (
+        _COMPLETION_PROVENANCE_KEYS
+        - {
+            "authorization_commit",
+            "implementation_commit",
+            "implementation_tree",
+            "implementation_review_refs",
+        }
+    ) | {
+        "terminal_completion_receipt_hash",
+        "ordered_arm_record_hashes_hash",
+        "completion_hash",
+    }:
+        _strict_sha256(binding[key], f"geometry completion {key}")
+    refs = binding["implementation_review_refs"]
+    implementation_commit = binding["implementation_commit"]
+    if (
+        type(refs) is not dict
+        or set(refs) != set(_REVIEW_ROLE_SLUGS)
+        or len(set(refs.values())) != len(_REVIEW_ROLE_SLUGS)
+        or any(
+            type(refs[role]) is not str
+            or _REVIEW_REF_RE.fullmatch(refs[role]) is None
+            or not refs[role].startswith(
+                f"review:{slug}/go/{implementation_commit}/"
+            )
+            for role, slug in _REVIEW_ROLE_SLUGS.items()
+        )
+    ):
+        raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+            "geometry completion review references are invalid"
+        )
+    expected_arm_hash = sha256_json(
+        [record["arm_record_hash"] for record in arm_records]
+    )
+    body = {
+        key: item for key, item in binding.items() if key != "completion_hash"
+    }
+    if (
+        binding["schema_version"]
+        != VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_COMPLETION_SCHEMA_VERSION
+        or binding["diagnostic_plan_hash"]
+        != vbd_trajectory_group_effect_geometry_plan()["plan_hash"]
+        or binding["seed_manifest_hash"]
+        != vbd_trajectory_group_effect_geometry_seed_manifest()[
+            "seed_manifest_hash"
+        ]
+        or binding["ordered_arm_record_hashes_hash"] != expected_arm_hash
+        or binding["completion_hash"] != sha256_json(body)
+    ):
+        raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+            "geometry runner completion binding is invalid"
+        )
+    return binding
+
+
+def build_vbd_trajectory_group_effect_geometry_completion_binding(
+    *,
+    provenance: dict,
+    arm_records: list[dict],
+    terminal_completion_receipt_hash: str,
+) -> dict:
+    """Build a sanitized completion binding after all twelve arms finish."""
+
+    arms = _validate_arm_matrix(arm_records)
+    if type(provenance) is not dict or set(provenance) != _COMPLETION_PROVENANCE_KEYS:
+        raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+            "geometry completion provenance is incomplete"
+        )
+    body = {
+        "schema_version": (
+            VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_COMPLETION_SCHEMA_VERSION
+        ),
+        **provenance,
+        "terminal_completion_receipt_hash": terminal_completion_receipt_hash,
+        "ordered_arm_record_hashes_hash": sha256_json(
+            [record["arm_record_hash"] for record in arms]
+        ),
+    }
+    return _validate_runner_completion_binding(
+        {**body, "completion_hash": sha256_json(body)},
+        arm_records=arms,
+    )
+
+
+def _record_body(
+    arm_records: list[dict],
+    *,
+    execution_state: str = "NOT_RUN",
+    runner_completion_binding: dict | None = None,
+) -> dict:
     plan = vbd_trajectory_group_effect_geometry_plan()
     seed_manifest = vbd_trajectory_group_effect_geometry_seed_manifest()
+    if execution_state == "NOT_RUN" and runner_completion_binding is None:
+        classification = "INVALID_HOLD"
+    elif execution_state == "COMPLETE":
+        _validate_runner_completion_binding(
+            runner_completion_binding,
+            arm_records=arm_records,
+        )
+        classification = _derive_classification(arm_records)
+    else:
+        raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+            "geometry execution state is invalid"
+        )
     return {
         "schema_version": VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_SCHEMA_VERSION,
         "diagnostic_id": VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_DIAGNOSTIC_ID,
         "plan_hash": plan["plan_hash"],
         "seed_manifest_hash": seed_manifest["seed_manifest_hash"],
-        "execution_state": "NOT_RUN",
-        "runner_completion_binding": None,
-        "classification": "INVALID_HOLD",
+        "execution_state": execution_state,
+        "runner_completion_binding": runner_completion_binding,
+        "classification": classification,
         "state": VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_STATE,
         "hold_reasons": [
             VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_HOLD_REASON
@@ -966,7 +1149,7 @@ def _validate_record_structure(
     value: object,
     *,
     verify_record_hash: bool,
-) -> list[dict]:
+) -> tuple[list[dict], dict | None]:
     record = _require_exact_keys(value, _RECORD_KEYS, "geometry record")
     if (
         record["schema_version"]
@@ -979,9 +1162,8 @@ def _validate_record_structure(
         != vbd_trajectory_group_effect_geometry_seed_manifest()[
             "seed_manifest_hash"
         ]
-        or record["execution_state"] != "NOT_RUN"
-        or record["runner_completion_binding"] is not None
-        or record["classification"] != "INVALID_HOLD"
+        or record["classification"]
+        not in VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_CLASSIFICATIONS
         or record["state"]
         != VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_STATE
         or record["hold_reasons"]
@@ -1003,6 +1185,25 @@ def _validate_record_structure(
             "geometry record identity or permanent HOLD posture is invalid"
         )
     arms = _validate_arm_matrix(record["arm_records"])
+    completion = record["runner_completion_binding"]
+    if record["execution_state"] == "NOT_RUN":
+        if completion is not None or record["classification"] != "INVALID_HOLD":
+            raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+                "unexecuted geometry record posture is invalid"
+            )
+    elif record["execution_state"] == "COMPLETE":
+        completion = _validate_runner_completion_binding(
+            completion,
+            arm_records=arms,
+        )
+        if record["classification"] != _derive_classification(arms):
+            raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+                "completed geometry classification differs"
+            )
+    else:
+        raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
+            "geometry execution state is invalid"
+        )
     _strict_sha256(record["record_hash"], "geometry record hash")
     if verify_record_hash:
         body = {
@@ -1014,7 +1215,7 @@ def _validate_record_structure(
             raise VbdTrajectoryGroupEffectGeometryDiagnosticError(
                 "geometry record hash differs from its reconstruction"
             )
-    return arms
+    return arms, completion
 
 
 def classify_vbd_trajectory_group_effect_geometry_result(
@@ -1023,7 +1224,7 @@ def classify_vbd_trajectory_group_effect_geometry_result(
     """Derive the decision, with every malformed result taking INVALID precedence."""
 
     try:
-        arms = _validate_record_structure(
+        arms, _completion = _validate_record_structure(
             value,
             verify_record_hash=True,
         )
@@ -1050,13 +1251,49 @@ def build_vbd_trajectory_group_effect_geometry_record(
     )
 
 
+
+def build_completed_vbd_trajectory_group_effect_geometry_record(
+    *,
+    arm_records: list[dict],
+    runner_completion_binding: dict,
+    _completion_token: object,
+) -> dict:
+    """Build one executed result only from the private runner."""
+
+    if (
+        _completion_token
+        is not _VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_COMPLETION_TOKEN
+    ):
+        raise PermissionError(
+            "completed geometry record requires its runner token"
+        )
+    arms = _validate_arm_matrix(arm_records)
+    completion = _validate_runner_completion_binding(
+        runner_completion_binding,
+        arm_records=arms,
+    )
+    body = _record_body(
+        arms,
+        execution_state="COMPLETE",
+        runner_completion_binding=completion,
+    )
+    return validate_vbd_trajectory_group_effect_geometry_record(
+        {**body, "record_hash": sha256_json(body)}
+    )
+
 def validate_vbd_trajectory_group_effect_geometry_record(
     value: object,
 ) -> dict:
     """Validate exact structure, hashes, derived gates, and classification."""
 
-    arms = _validate_record_structure(value, verify_record_hash=True)
-    expected_body = _record_body(arms)
+    arms, completion = _validate_record_structure(
+        value, verify_record_hash=True
+    )
+    expected_body = _record_body(
+        arms,
+        execution_state=value["execution_state"],
+        runner_completion_binding=completion,
+    )
     expected = {
         **expected_body,
         "record_hash": sha256_json(expected_body),
