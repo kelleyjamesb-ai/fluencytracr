@@ -33,8 +33,10 @@ from fluencytracr_inference.vbd_trajectory_precision_diagnostic_constants import
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_GENERATOR_SEED,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_RESERVED_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_IMPLEMENTATION_COMMIT,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_OUTPUT_SHA256,
 )
 from fluencytracr_inference.vbd_trajectory_precision_diagnostic_v3_checkpoint import (
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE,
@@ -401,16 +403,21 @@ def test_v3_record_is_permanent_hold_and_rejected_by_every_proof_path(
     with pytest.raises(VbdTrajectoryValidationWorkspaceError):
         _validate_combined_value(record, {})
 
-    consumed = _provenance()
-    consumed["authorization_manifest_hash"] = (
-        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_MANIFEST_HASH
-    )
-    with pytest.raises(VbdTrajectoryPrecisionDiagnosticError, match="consumed V1/V2"):
-        build_vbd_trajectory_precision_diagnostic_v3_record(
-            provenance=consumed,
-            lane_records=record["lane_records"],
-            terminal_checkpoint_hash="0" * 64,
-        )
+    for tombstone in (
+        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
+        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
+        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_OUTPUT_SHA256,
+    ):
+        consumed = _provenance()
+        consumed["authorization_manifest_hash"] = tombstone
+        with pytest.raises(
+            VbdTrajectoryPrecisionDiagnosticError, match="consumed V1/V2"
+        ):
+            build_vbd_trajectory_precision_diagnostic_v3_record(
+                provenance=consumed,
+                lane_records=record["lane_records"],
+                terminal_checkpoint_hash="0" * 64,
+            )
 
     off_plan = _provenance()
     off_plan["input_binding_hash"] = "8" * 64
@@ -1013,6 +1020,32 @@ def test_checkpoint_root_rejects_unknown_tampered_or_partial_state(tmp_path):
             authorization_commit="2" * 40,
             authorization_manifest_hash="3" * 64,
             human_execution_authorization_hash="4" * 64,
+            attempt_claim_hash="5" * 64,
+        )
+    with pytest.raises(
+        VbdTrajectoryPrecisionDiagnosticV3CheckpointError,
+        match="consumed V1/V2",
+    ):
+        VbdTrajectoryPrecisionDiagnosticV3CheckpointIdentity(
+            implementation_commit="1" * 40,
+            authorization_commit="2" * 40,
+            authorization_manifest_hash=(
+                VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_MANIFEST_HASH
+            ),
+            human_execution_authorization_hash="4" * 64,
+            attempt_claim_hash="5" * 64,
+        )
+    with pytest.raises(
+        VbdTrajectoryPrecisionDiagnosticV3CheckpointError,
+        match="consumed V1/V2",
+    ):
+        VbdTrajectoryPrecisionDiagnosticV3CheckpointIdentity(
+            implementation_commit="1" * 40,
+            authorization_commit="2" * 40,
+            authorization_manifest_hash="3" * 64,
+            human_execution_authorization_hash=(
+                VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_OUTPUT_SHA256
+            ),
             attempt_claim_hash="5" * 64,
         )
     with pytest.raises(

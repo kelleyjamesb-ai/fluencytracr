@@ -41,6 +41,9 @@ CLAIM_SCHEMA = "FT_AI_VALUE_VBD_PRECISION_DIAGNOSTIC_ATTEMPT_CLAIM_2026_07_V3"
 AUTHORIZATION_SCOPE = "vbd_precision_design_diagnostic_v3_nonacceptance_one_launch"
 CONSUMED_V1_IMPLEMENTATION_COMMIT = "50636e6721bf6b8e8e9269106a218527a159a94e"
 CONSUMED_V1_AUTHORIZATION_COMMIT = "7e4f5f00f6d826ccd771b2553350608bedb0f0e0"
+CONSUMED_V1_AUTHORIZATION_MANIFEST_HASH = (
+    "6e3ad52e14126b8ea10e6b922ccbce327c5b28692b721169ad98e11f172e95ab"
+)
 CONSUMED_V1_EXECUTION_AUTHORIZATION_HASH = (
     "1c8d781a6835a338b7e69a0d8d4de7d8d61b57f28db7364adee6d475d9d17c64"
 )
@@ -63,6 +66,9 @@ CONSUMED_V2_EXECUTION_AUTHORIZATION_HASH = (
 )
 CONSUMED_V2_CLAIM_HASH = (
     "b1f3ed124be6a51328df5e4c38499a6742e585086f47613667c6be33e0a5d272"
+)
+CONSUMED_V2_OUTPUT_SHA256 = (
+    "3bd984074aa43ea7fa8453766a974379e34b6418eb04782fdb00d0df86d860bf"
 )
 CONSUMED_V2_WORKSPACE_PATH = (
     "/Users/jameskelley/.codex/evidence/vbd-mcse-diagnostic-v2-workspace"
@@ -333,7 +339,12 @@ def _validate_manifest_shape(manifest: object) -> dict:
         or manifest["seed_manifest_hash"] != V3_SEED_MANIFEST_HASH
         or manifest["implementation_commit"]
         in {CONSUMED_V1_IMPLEMENTATION_COMMIT, CONSUMED_V2_IMPLEMENTATION_COMMIT}
-        or manifest["manifest_hash"] == CONSUMED_V2_AUTHORIZATION_MANIFEST_HASH
+        or manifest["manifest_hash"]
+        in {
+            CONSUMED_V1_AUTHORIZATION_MANIFEST_HASH,
+            CONSUMED_V2_AUTHORIZATION_MANIFEST_HASH,
+            CONSUMED_V2_OUTPUT_SHA256,
+        }
         or any(
             not path.is_absolute()
             or path != Path(os.path.normpath(str(path)))
@@ -1010,6 +1021,7 @@ def _publish_staged_output(
             raise BootstrapError(
                 "diagnostic staged output changed after semantic validation"
             )
+        linked = False
         try:
             os.link(
                 STAGED_OUTPUT_FILENAME,
@@ -1018,8 +1030,14 @@ def _publish_staged_output(
                 dst_dir_fd=workspace_fd,
                 follow_symlinks=False,
             )
+            linked = True
             os.fsync(workspace_fd)
         except OSError as exc:
+            if linked:
+                try:
+                    os.unlink(output.name, dir_fd=workspace_fd)
+                except OSError:
+                    pass
             raise BootstrapError("diagnostic final output could not be published") from exc
         try:
             os.unlink(STAGED_OUTPUT_FILENAME, dir_fd=workspace_fd)

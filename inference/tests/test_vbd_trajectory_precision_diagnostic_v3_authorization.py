@@ -17,9 +17,11 @@ from fluencytracr_inference.vbd_trajectory_precision_diagnostic import (
 )
 from fluencytracr_inference.vbd_trajectory_precision_diagnostic_constants import (
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_COMMIT,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_IMPLEMENTATION_COMMIT,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_OUTPUT_SHA256,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_ROOT_PATH,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CLAIM_ROOT_PATH,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_WORKSPACE_PATH,
@@ -599,6 +601,36 @@ def test_bootstrap_preserves_preexisting_final_when_link_fails(tmp_path):
     assert staged.exists()
 
 
+def test_bootstrap_rolls_back_new_final_when_post_link_fsync_fails(
+    tmp_path, monkeypatch
+):
+    bootstrap = _load_bootstrap_module()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    staged = workspace / bootstrap.STAGED_OUTPUT_FILENAME
+    output = workspace / "diagnostic.json"
+    staged.write_bytes(bootstrap._canonical_bytes({"state": "HOLD"}) + b"\n")
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(output),
+    }
+    real_fsync = bootstrap.os.fsync
+    calls = 0
+
+    def fail_first_fsync(descriptor):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("injected post-link fsync failure")
+        return real_fsync(descriptor)
+
+    monkeypatch.setattr(bootstrap.os, "fsync", fail_first_fsync)
+    with pytest.raises(bootstrap.BootstrapError, match="could not be published"):
+        bootstrap._publish_staged_output(manifest)
+    assert not output.exists()
+    assert staged.exists()
+
+
 def test_bootstrap_requires_exact_final_bytes_not_python_value_equality(
     tmp_path, monkeypatch
 ):
@@ -699,6 +731,23 @@ def test_input_binding_validator_rejects_off_plan_or_rehashed_content(tmp_path):
     forged["input_binding_hash"] = sha256_json(forged_body)
     with pytest.raises(VbdTrajectoryPrecisionDiagnosticV3AuthorizationError):
         validate_vbd_precision_diagnostic_v3_input_binding(forged, claim=claim)
+
+    for tombstone in (
+        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
+        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_OUTPUT_SHA256,
+    ):
+        forged = deepcopy(binding)
+        forged["prepared_input_hashes"][0] = tombstone
+        forged_body = {
+            key: value
+            for key, value in forged.items()
+            if key != "input_binding_hash"
+        }
+        forged["input_binding_hash"] = sha256_json(forged_body)
+        with pytest.raises(VbdTrajectoryPrecisionDiagnosticV3AuthorizationError):
+            validate_vbd_precision_diagnostic_v3_input_binding(
+                forged, claim=claim
+            )
 
 
 def test_human_authorization_has_no_creator_api():
