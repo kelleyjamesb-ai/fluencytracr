@@ -144,7 +144,7 @@ _ALLOWED_COMMAND_IDS = (
     "vbd_trajectory_combine",
     "vbd_trajectory_child_execute_slot",
 )
-_RUNNER_SOURCE_PATHS = (
+_RUNNER_SOURCE_PATHS_V3 = (
     "inference/pyproject.toml",
     "inference/requirements.lock",
     "inference/scripts/vbd_trajectory_precision_diagnostic_bootstrap.py",
@@ -184,6 +184,34 @@ _RUNNER_SOURCE_PATHS = (
     "inference/src/fluencytracr_inference/vbd_trajectory_validation_execution.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_validation_resumable.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_validation_cli.py",
+)
+_RUNNER_SOURCE_PATHS_V2 = tuple(
+    path
+    for path in _RUNNER_SOURCE_PATHS_V3
+    if path
+    not in {
+        "inference/scripts/vbd_trajectory_precision_diagnostic_v3_bootstrap.py",
+        "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v3_authorization.py",
+        "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v3_checkpoint.py",
+        "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v3_execution.py",
+        "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v3_rehearsal.py",
+    }
+)
+_RUNNER_SOURCE_PATHS_V1 = tuple(
+    path
+    for path in _RUNNER_SOURCE_PATHS_V2
+    if path
+    not in {
+        "inference/scripts/vbd_trajectory_precision_diagnostic_v2_bootstrap.py",
+        "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v2_authorization.py",
+        "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v2_checkpoint.py",
+        "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v2_execution.py",
+    }
+)
+_RUNNER_SOURCE_PATHS = (
+    *_RUNNER_SOURCE_PATHS_V3,
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_constants.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_diagnostic.py",
 )
 _ROOT_STATIC_FILES = {
     "workspace.json",

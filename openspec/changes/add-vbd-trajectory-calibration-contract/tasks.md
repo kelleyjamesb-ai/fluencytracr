@@ -106,6 +106,12 @@
   sampler-free staged/final write-read-semantic-checkpoint revalidation before
   a publication can succeed; do not create `A3`, a claim, or run a generator or
   sampler.
+- [x] 2.12 After task `1.11` and separate implementation authorization,
+  implement `vbd_group_effect_geometry_diagnostic_v1` with its frozen cases,
+  seeds, paired centered/noncentered model construction, strict complete-result
+  classification, proof-path rejection, and sampler-free target-equivalence
+  fixtures; do not create an authorization commit, permit, claim, external root,
+  or run a generator or sampler.
 
 ## 3. Future Engine Concordance
 

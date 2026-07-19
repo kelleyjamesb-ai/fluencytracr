@@ -14,6 +14,15 @@ from scipy.linalg import cho_factor, cho_solve
 
 from .hashing import sha256_json
 from .longitudinal_types import MAX_JAVASCRIPT_SAFE_INTEGER
+from .vbd_trajectory_group_effect_geometry_constants import (
+    VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_AGGREGATE_K,
+    VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_ARM_ORDER,
+    VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_CASES,
+    VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_LANE_ORDER,
+    VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS,
+    VbdTrajectoryGroupEffectGeometryCaseSpec,
+    vbd_trajectory_group_effect_geometry_chain_seeds,
+)
 from .vbd_trajectory_precision_diagnostic_constants import (
     VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CHAIN_SEEDS,
@@ -89,6 +98,10 @@ VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES = (
     "rho",
     "trajectory_movement",
 )
+VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_COMMON_PARAMETER_VARIABLES = (
+    VBD_TRAJECTORY_NUTS_PARAMETER_VARIABLES
+)
+VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_NONCENTERED_PARAMETER_VARIABLE = "u_std"
 
 
 class TrajectoryNutsError(RuntimeError):
@@ -101,6 +114,7 @@ _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SAMPLING_TOKEN = object()
 _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SAMPLING_TOKEN = object()
 _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_SAMPLING_TOKEN = object()
 _VBD_TRAJECTORY_REFERENCE_FIT_SAMPLING_TOKEN = object()
+_VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_SAMPLING_TOKEN = object()
 
 
 @dataclass(frozen=True)
@@ -538,6 +552,233 @@ def build_vbd_trajectory_nuts_precision_diagnostic_v3_binding(
         lane_ordinal=lane_ordinal,
         plan_hash=plan_hash,
         chain_seeds=chain_seeds,
+        binding_hash=sha256_json(body),
+    )
+
+
+def _validate_vbd_trajectory_group_effect_arm(value: object) -> str:
+    if (
+        VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_ARM_ORDER
+        != ("centered", "noncentered")
+        or type(value) is not str
+        or value not in VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_ARM_ORDER
+    ):
+        raise TrajectoryNutsError("group-effect geometry arm is invalid")
+    return value
+
+
+def _vbd_trajectory_group_effect_geometry_case(
+    case_ordinal: object,
+) -> VbdTrajectoryGroupEffectGeometryCaseSpec:
+    if (
+        type(case_ordinal) is not int
+        or not 0 <= case_ordinal < len(VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_CASES)
+    ):
+        raise TrajectoryNutsError("group-effect geometry case ordinal is invalid")
+    case = VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_CASES[case_ordinal]
+    if (
+        type(case) is not VbdTrajectoryGroupEffectGeometryCaseSpec
+        or case.case_ordinal != case_ordinal
+        or type(case.effect_size_sd) is not float
+        or type(case.panel_group_count) is not int
+        or case.panel_group_count not in (6, 12)
+        or type(case.aggregate_k) is not int
+        or case.aggregate_k != VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_AGGREGATE_K
+        or type(case.generator_seed) is not int
+        or case.generator_seed
+        not in VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS
+        or type(case.scenario_id) is not str
+        or not case.scenario_id
+    ):
+        raise TrajectoryNutsError("group-effect geometry case constants are invalid")
+    return case
+
+
+def _vbd_trajectory_group_effect_geometry_posterior_variables(
+    arm: object,
+) -> tuple[str, ...]:
+    validated_arm = _validate_vbd_trajectory_group_effect_arm(arm)
+    if validated_arm == "centered":
+        return VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_COMMON_PARAMETER_VARIABLES
+    return (
+        "alpha",
+        "beta",
+        "sigma_u",
+        VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_NONCENTERED_PARAMETER_VARIABLE,
+        "u",
+        "sigma_r",
+        "rho",
+        "trajectory_movement",
+    )
+
+
+def _vbd_trajectory_group_effect_geometry_common_parameter_names(
+    panel_group_count: object,
+) -> tuple[str, ...]:
+    valid_counts = tuple(
+        case.panel_group_count
+        for case in VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_CASES
+    )
+    if type(panel_group_count) is not int or panel_group_count not in valid_counts:
+        raise TrajectoryNutsError("geometry parameter group count is invalid")
+    return _expected_parameter_names(panel_group_count)
+
+
+def _vbd_trajectory_group_effect_geometry_only_parameter_names(
+    arm: object,
+    panel_group_count: object,
+) -> tuple[str, ...]:
+    validated_arm = _validate_vbd_trajectory_group_effect_arm(arm)
+    _vbd_trajectory_group_effect_geometry_common_parameter_names(panel_group_count)
+    if validated_arm == "centered":
+        return ()
+    return tuple(f"u_std[{index}]" for index in range(panel_group_count))
+
+
+def _vbd_trajectory_group_effect_geometry_diagnostic_parameter_names(
+    arm: object,
+    panel_group_count: object,
+) -> tuple[str, ...]:
+    return (
+        *_vbd_trajectory_group_effect_geometry_common_parameter_names(
+            panel_group_count
+        ),
+        *_vbd_trajectory_group_effect_geometry_only_parameter_names(
+            arm, panel_group_count
+        ),
+    )
+
+
+@dataclass(frozen=True)
+class TrajectoryNutsGroupEffectGeometryBinding:
+    case_ordinal: int
+    effect_size_sd: float
+    panel_group_count: int
+    aggregate_k: int
+    generator_seed: int
+    scenario_id: str
+    arm: str
+    lane: str
+    lane_ordinal: int
+    plan_hash: str
+    chain_seeds: tuple[int, int, int, int]
+    binding_hash: str
+
+    def body_without_hash(self) -> dict:
+        return {
+            "binding_kind": "group_effect_geometry_diagnostic_nonacceptance",
+            "case_ordinal": self.case_ordinal,
+            "effect_size_sd": float(self.effect_size_sd),
+            "panel_group_count": self.panel_group_count,
+            "aggregate_k": self.aggregate_k,
+            "generator_seed": self.generator_seed,
+            "scenario_id": self.scenario_id,
+            "arm": self.arm,
+            "lane": self.lane,
+            "lane_ordinal": self.lane_ordinal,
+            "plan_hash": self.plan_hash,
+            "chain_seeds": list(self.chain_seeds),
+            "ppc_state": "NOT_RUN",
+            "acceptance_concordance_state": "NOT_RUN",
+            "acceptance_slot_key": None,
+            "acceptance_evidence_eligible": False,
+        }
+
+    def __post_init__(self) -> None:
+        case = _vbd_trajectory_group_effect_geometry_case(self.case_ordinal)
+        try:
+            expected_chain_seeds = (
+                vbd_trajectory_group_effect_geometry_chain_seeds(
+                    case_ordinal=self.case_ordinal,
+                    lane_ordinal=self.lane_ordinal,
+                    arm=self.arm,
+                )
+            )
+        except (TypeError, ValueError) as exc:
+            raise TrajectoryNutsError(
+                "full NUTS group-effect geometry binding is invalid"
+            ) from exc
+        if (
+            VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_LANE_ORDER
+            != VBD_TRAJECTORY_LANES
+            or self.effect_size_sd != case.effect_size_sd
+            or type(self.effect_size_sd) is not float
+            or self.panel_group_count != case.panel_group_count
+            or type(self.panel_group_count) is not int
+            or self.aggregate_k != case.aggregate_k
+            or type(self.aggregate_k) is not int
+            or self.generator_seed != case.generator_seed
+            or type(self.generator_seed) is not int
+            or self.scenario_id != case.scenario_id
+            or type(self.scenario_id) is not str
+            or _validate_vbd_trajectory_group_effect_arm(self.arm) != self.arm
+            or self.lane not in VBD_TRAJECTORY_LANES
+            or type(self.lane_ordinal) is not int
+            or not 0 <= self.lane_ordinal < len(VBD_TRAJECTORY_LANES)
+            or VBD_TRAJECTORY_LANES[self.lane_ordinal] != self.lane
+            or type(self.plan_hash) is not str
+            or len(self.plan_hash) != 64
+            or any(
+                character not in "0123456789abcdef" for character in self.plan_hash
+            )
+            or type(self.chain_seeds) is not tuple
+            or self.chain_seeds != expected_chain_seeds
+            or any(
+                seed not in VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS
+                for seed in self.chain_seeds
+            )
+            or self.generator_seed in self.chain_seeds
+            or len(set(self.chain_seeds)) != len(self.chain_seeds)
+            or self.binding_hash != sha256_json(self.body_without_hash())
+        ):
+            raise TrajectoryNutsError(
+                "full NUTS group-effect geometry binding is invalid"
+            )
+
+
+def build_vbd_trajectory_nuts_group_effect_geometry_binding(
+    *,
+    case_ordinal: int,
+    arm: str,
+    lane: str,
+    lane_ordinal: int,
+    plan_hash: str,
+) -> TrajectoryNutsGroupEffectGeometryBinding:
+    case = _vbd_trajectory_group_effect_geometry_case(case_ordinal)
+    validated_arm = _validate_vbd_trajectory_group_effect_arm(arm)
+    chain_seeds = vbd_trajectory_group_effect_geometry_chain_seeds(
+        case_ordinal=case_ordinal,
+        lane_ordinal=lane_ordinal,
+        arm=validated_arm,
+    )
+    values = {
+        "case_ordinal": case.case_ordinal,
+        "effect_size_sd": case.effect_size_sd,
+        "panel_group_count": case.panel_group_count,
+        "aggregate_k": case.aggregate_k,
+        "generator_seed": case.generator_seed,
+        "scenario_id": case.scenario_id,
+        "arm": validated_arm,
+        "lane": lane,
+        "lane_ordinal": lane_ordinal,
+        "plan_hash": plan_hash,
+        "chain_seeds": chain_seeds,
+    }
+    body = {
+        "binding_kind": "group_effect_geometry_diagnostic_nonacceptance",
+        **{
+            key: value
+            for key, value in values.items()
+            if key != "chain_seeds"
+        },
+        "chain_seeds": list(chain_seeds),
+        "ppc_state": "NOT_RUN",
+        "acceptance_concordance_state": "NOT_RUN",
+        "acceptance_slot_key": None,
+        "acceptance_evidence_eligible": False,
+    }
+    return TrajectoryNutsGroupEffectGeometryBinding(
+        **values,
         binding_hash=sha256_json(body),
     )
 
@@ -1084,14 +1325,22 @@ def _validate_reference_seeds(
     ):
         raise ValueError("smoke NUTS seeds must remain in the smoke namespace")
     if settings.mode == "smoke" and any(
-        seed in VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS
+        seed in (
+            VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS
+            | VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS
+        )
         for seed in (*validated_chains, validated_ppc)
     ):
         raise ValueError("smoke NUTS cannot use a reserved diagnostic seed")
     return validated_chains, validated_ppc
 
 
-def _build_reference_model(prepared: TrajectoryPreparedInput) -> pm.Model:
+def _build_reference_model(
+    prepared: TrajectoryPreparedInput,
+    *,
+    group_effect_arm: Literal["centered", "noncentered"] = "centered",
+) -> pm.Model:
+    validated_arm = _validate_vbd_trajectory_group_effect_arm(group_effect_arm)
     with pm.Model() as model:
         alpha = pm.Normal(
             "alpha", mu=0.0, sigma=VBD_TRAJECTORY_FIXED_EFFECT_PRIOR_SD
@@ -1102,9 +1351,15 @@ def _build_reference_model(prepared: TrajectoryPreparedInput) -> pm.Model:
         sigma_u = pm.HalfNormal(
             "sigma_u", sigma=VBD_TRAJECTORY_GROUP_SCALE_PRIOR_SD
         )
-        u = pm.ZeroSumNormal(
-            "u", sigma=sigma_u, shape=prepared.panel_group_count
-        )
+        if validated_arm == "centered":
+            u = pm.ZeroSumNormal(
+                "u", sigma=sigma_u, shape=prepared.panel_group_count
+            )
+        else:
+            u_std = pm.ZeroSumNormal(
+                "u_std", sigma=1.0, shape=prepared.panel_group_count
+            )
+            u = pm.Deterministic("u", sigma_u * u_std)
         sigma_r = pm.HalfNormal(
             "sigma_r", sigma=VBD_TRAJECTORY_INNOVATION_SCALE_PRIOR_SD
         )
@@ -1800,15 +2055,24 @@ def _sample_vbd_trajectory_nuts_idata(
     settings: TrajectoryNutsSettings,
     chain_seeds: tuple[int, ...],
     _sampling_token: object,
+    group_effect_arm: Literal["centered", "noncentered"] = "centered",
 ):
-    if _sampling_token not in (
+    allowed_tokens = (
         _VBD_TRAJECTORY_REFERENCE_FIT_SAMPLING_TOKEN,
         _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_SAMPLING_TOKEN,
         _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SAMPLING_TOKEN,
         _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_SAMPLING_TOKEN,
-    ):
+    )
+    if not any(_sampling_token is token for token in allowed_tokens):
         raise TrajectoryNutsError("NUTS sampling requires a runner-owned token")
-    model = _build_reference_model(prepared)
+    validated_arm = _validate_vbd_trajectory_group_effect_arm(group_effect_arm)
+    if validated_arm != "centered":
+        raise TrajectoryNutsError(
+            "noncentered NUTS sampling requires the exact geometry wrapper"
+        )
+    model = _build_reference_model(
+        prepared, group_effect_arm=validated_arm
+    )
     with model:
         return pm.sample(
             draws=settings.draws,
@@ -1816,6 +2080,74 @@ def _sample_vbd_trajectory_nuts_idata(
             chains=settings.chains,
             cores=settings.cores,
             random_seed=list(chain_seeds),
+            target_accept=settings.target_accept,
+            max_treedepth=settings.max_treedepth,
+            init=settings.init,
+            nuts_sampler=settings.sampler,
+            blas_cores=settings.blas_cores,
+            progressbar=False,
+            compute_convergence_checks=settings.compute_convergence_checks,
+        )
+
+
+def _sample_vbd_trajectory_group_effect_geometry_idata(
+    prepared: TrajectoryPreparedInput,
+    source_panel: TrajectoryObservationPanel,
+    *,
+    binding: TrajectoryNutsGroupEffectGeometryBinding,
+    _runner_token: object,
+):
+    """Run only a future manifest-authorized paired geometry fit."""
+
+    if (
+        _runner_token is not _VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_SAMPLING_TOKEN
+        or type(binding) is not TrajectoryNutsGroupEffectGeometryBinding
+    ):
+        raise TrajectoryNutsError(
+            "group-effect geometry sampling requires its exact runner binding"
+        )
+    if type(prepared) is not TrajectoryPreparedInput:
+        raise TypeError("geometry diagnostic requires exact prepared input")
+    if type(source_panel) is not TrajectoryObservationPanel:
+        raise TypeError("geometry diagnostic requires an exact source panel")
+    validate_prepared_vbd_trajectory(prepared, source_panel)
+    case = _vbd_trajectory_group_effect_geometry_case(binding.case_ordinal)
+    if (
+        source_panel.seed != case.generator_seed
+        or source_panel.seed != binding.generator_seed
+        or source_panel.scenario_id != case.scenario_id
+        or source_panel.scenario_id != binding.scenario_id
+        or source_panel.panel_group_count != case.panel_group_count
+        or source_panel.panel_group_count != binding.panel_group_count
+        or source_panel.aggregate_k != case.aggregate_k
+        or source_panel.aggregate_k != binding.aggregate_k
+        or source_panel.study_plan_root != binding.plan_hash
+        or prepared.panel_group_count != binding.panel_group_count
+        or prepared.aggregate_k != binding.aggregate_k
+        or prepared.lane != binding.lane
+        or prepared.study_plan_root != binding.plan_hash
+        or binding.chain_seeds
+        != vbd_trajectory_group_effect_geometry_chain_seeds(
+            case_ordinal=binding.case_ordinal,
+            lane_ordinal=binding.lane_ordinal,
+            arm=binding.arm,
+        )
+    ):
+        raise TrajectoryNutsError(
+            "group-effect geometry binding differs from its source panel"
+        )
+    settings = vbd_nuts_execution_settings("full")
+    model = _build_reference_model(
+        prepared,
+        group_effect_arm=binding.arm,
+    )
+    with model:
+        return pm.sample(
+            draws=settings.draws,
+            tune=settings.tune,
+            chains=settings.chains,
+            cores=settings.cores,
+            random_seed=list(binding.chain_seeds),
             target_accept=settings.target_accept,
             max_treedepth=settings.max_treedepth,
             init=settings.init,

@@ -340,6 +340,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-19: bound the valid V3 21/2/0 divergence result as permanent non-evidentiary HOLD and predeclared the paired centered/non-centered geometry diagnostic with fresh seeds, unchanged posterior target and gates, exhaustive fail-closed classifications, and permit-before-claim one-shot governance. Exact repair diff bbf3dbef59a90a029ebcad02b9b56fbf8ff207e57283a87110c1678cceba359e received CODE, BUG, ADVERSARIAL, and statistical-methodology GO. Strict OpenSpec, docs sweep, semantic drift, V1 governance, queue guard, JSON, and diff checks passed. No implementation, claim, generator, sampler, canary, concordance, or evidence ran; task 2.6 remains open."
+    },
+    {
+      "id": "vbd-noncentered-geometry-diagnostic-implementation",
+      "title": "VBD centered-versus-noncentered geometry diagnostic implementation",
+      "bound": "Synthetic-only inference/, focused tests, and verified docs/status: implement the frozen geometry identity, cases, seeds, centered/noncentered model construction, strict paired plan/result/classification validators, proof-path rejection, and sampler-free target-equivalence/malformed-record fixtures; preserve all models, priors, estimands, sampler settings, thresholds, V3 HOLD, evidence gates, and trusted-host boundary; no generator/sampler execution, permit/claim/root creation, authorization commit, canary, task 2.6 completion, S/F, concordance, evidence, real/customer/live data, public surface, customer output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-19: implemented the frozen two-case/50-seed centered-versus-noncentered geometry diagnostic, exact target/reference fixtures, strict permanent-HOLD records, proof-path rejection, and future source-manifest binding. Public sampler-free records are NOT_RUN with no runner-completion binding and exclusively INVALID_HOLD; the generic sampler cannot accept the geometry capability. Exact diff 729bfba4a591d463db80c18d699f851a0012f278993b3e2e50729e519a3e3382 received CODE, BUG, ADVERSARIAL, and statistical-methodology GO. VBD 548, full inference 1113, bridge 22, snapshots 11, Harness 276/3 skipped, shared/confidence-engine builds, strict OpenSpec, docs sweep, semantic drift, V1 governance, compile, and diff checks passed. No generator, sampler, permit, claim, external root, authorization commit, canary, concordance, or evidence ran; task 2.6 remains open."
     }
   ]
 }

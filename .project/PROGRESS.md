@@ -2,6 +2,31 @@
 
 ## Current Session
 
+- OpenSpec task `2.12` completed on 2026-07-19 on
+  `codex/vbd-noncentered-geometry-diagnostic-implementation` from methodology
+  commit `de5b9019`. The implementation freezes the two synthetic geometry
+  cases and all 50 reserved seeds, constructs mathematically equivalent
+  centered and non-centered zero-sum group-effect graphs, binds deterministic
+  common-quantity references, and validates the exact twelve-arm matrix. Public
+  sampler-free records are explicitly `NOT_RUN`, have no runner-completion
+  binding, and can only be `INVALID_HOLD`; support/reject logic remains a private
+  future-runner target. The generic sampler rejects the geometry capability,
+  while the exact wrapper validates source, preparation, binding, arm, seeds,
+  and full settings before any future sampler call. Historical V1/V2/V3 source
+  manifests retain their exact path sets; future runner identity includes both
+  geometry modules. Exact diff
+  `729bfba4a591d463db80c18d699f851a0012f278993b3e2e50729e519a3e3382`
+  received CODE (`019f7b99-88a3-79c0-ab0e-6f24136c0b80`), BUG
+  (`019f7b99-95f6-7290-ae53-a09c5b29554d`), ADVERSARIAL
+  (`019f7b99-8f08-7df0-bf20-cf59d727e566`), and statistical-methodology
+  (`019f7b99-9c89-73e1-8ade-c52890d88b54`) GO. Verification passed: VBD `548`,
+  full inference `1,113`, bridge `22`, AI Fluency snapshots `11`, Harness `276`
+  with `3` expected skips, shared and confidence-engine builds, strict OpenSpec,
+  docs sweep, semantic drift, V1 governance, compile, and diff checks. No
+  generator, sampler, permit, claim, external root, authorization commit,
+  canary, concordance, or evidence ran. Task `2.6`, concordance, calibration,
+  real data, customer output, and parent task `5.6` remain incomplete.
+
 - James Kelley explicitly authorized the sequential bounded VBD synthetic
   implementation, concordance, full-evidence, and exact-byte acceptance queue
   items on 2026-07-15. The first item,

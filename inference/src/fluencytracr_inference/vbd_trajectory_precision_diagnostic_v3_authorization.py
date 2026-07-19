@@ -40,7 +40,7 @@ from .vbd_trajectory_precision_diagnostic_constants import (
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_WORKSPACE_PATH,
 )
 from .vbd_trajectory_validation_resumable import (
-    _RUNNER_SOURCE_PATHS,
+    _RUNNER_SOURCE_PATHS_V3 as _RUNNER_SOURCE_PATHS,
     _file_sha256,
     _git_output,
     _implementation_review_refs_are_valid,

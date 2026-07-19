@@ -17,7 +17,7 @@ from .vbd_trajectory_precision_diagnostic import (
     vbd_trajectory_precision_diagnostic_seed_manifest,
 )
 from .vbd_trajectory_validation_resumable import (
-    _RUNNER_SOURCE_PATHS,
+    _RUNNER_SOURCE_PATHS_V1 as _RUNNER_SOURCE_PATHS,
     _file_sha256,
     _git_output,
     _implementation_review_refs_are_valid,
