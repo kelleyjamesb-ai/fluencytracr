@@ -160,6 +160,10 @@ class BootstrapError(RuntimeError):
     pass
 
 
+class BootstrapRollbackUnconfirmedError(BootstrapError):
+    pass
+
+
 def _strict_object(pairs):
     result = {}
     for key, value in pairs:
@@ -1014,18 +1018,26 @@ def _rollback_new_final_output(workspace_fd: int, output_name: str) -> None:
     except FileNotFoundError:
         pass
     except OSError as exc:
-        raise BootstrapError("diagnostic final output rollback failed") from exc
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic final output rollback failed"
+        ) from exc
     try:
         os.fsync(workspace_fd)
     except OSError as exc:
-        raise BootstrapError("diagnostic final output rollback failed") from exc
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic final output rollback failed"
+        ) from exc
     try:
         os.stat(output_name, dir_fd=workspace_fd, follow_symlinks=False)
     except FileNotFoundError:
         return
     except OSError as exc:
-        raise BootstrapError("diagnostic final output rollback failed") from exc
-    raise BootstrapError("diagnostic final output remained after rollback")
+        raise BootstrapRollbackUnconfirmedError(
+            "diagnostic final output rollback failed"
+        ) from exc
+    raise BootstrapRollbackUnconfirmedError(
+        "diagnostic final output remained after rollback"
+    )
 
 
 def _publish_staged_output(
@@ -1132,8 +1144,9 @@ def _supervise_and_publish(
         if final_bytes != staged_bytes or final_value != staged_value:
             raise BootstrapError("diagnostic final output differs from staging")
         return final_value
-    except BaseException:
-        _remove_staged_output(manifest)
+    except BaseException as exc:
+        if not isinstance(exc, BootstrapRollbackUnconfirmedError):
+            _remove_staged_output(manifest)
         if published:
             _remove_final_output(manifest)
         raise
