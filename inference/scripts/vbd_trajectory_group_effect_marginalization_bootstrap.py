@@ -1215,8 +1215,52 @@ def _rollback_final(
     root_fd: int,
     expected_identity: tuple[int, int],
 ) -> None:
-    if not _durably_preserve_staged_alias(root_fd, expected_identity):
-        return
+    try:
+        if not _durably_preserve_staged_alias(root_fd, expected_identity):
+            return
+    except BootstrapError:
+        try:
+            final_info = os.stat(
+                _OUTPUT_NAME,
+                dir_fd=root_fd,
+                follow_symlinks=False,
+            )
+            if (
+                not stat.S_ISREG(final_info.st_mode)
+                or (final_info.st_dev, final_info.st_ino) != expected_identity
+            ):
+                raise BootstrapError("fallback rollback identity differs")
+            os.unlink(_OUTPUT_NAME, dir_fd=root_fd)
+            os.fsync(root_fd)
+            try:
+                os.stat(_OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                return
+            raise BootstrapError("fallback rollback left final output present")
+        except FileNotFoundError:
+            return
+        except BaseException as fallback_exc:
+            try:
+                marker_fd = os.open(
+                    _STAGED_NAME,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                    0o600,
+                    dir_fd=root_fd,
+                )
+                try:
+                    marker = b"ROLLBACK_UNCONFIRMED\n"
+                    written = 0
+                    while written < len(marker):
+                        written += os.write(marker_fd, marker[written:])
+                    os.fsync(marker_fd)
+                finally:
+                    os.close(marker_fd)
+                os.fsync(root_fd)
+            except BaseException:
+                pass
+            raise BootstrapError(
+                "final-output fallback rollback could not be confirmed"
+            ) from fallback_exc
     try:
         os.unlink(_OUTPUT_NAME, dir_fd=root_fd)
         os.fsync(root_fd)

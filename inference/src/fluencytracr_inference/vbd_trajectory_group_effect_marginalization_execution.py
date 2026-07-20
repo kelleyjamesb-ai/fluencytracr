@@ -3,16 +3,23 @@
 from __future__ import annotations
 
 import gc
+from pathlib import Path
 
 from .hashing import sha256_json
 from .vbd_trajectory_group_effect_marginalization_authorization import (
     _MARGINALIZATION_RUNNER_SOURCE_PATHS,
     _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_TOKEN,
+    _exact_native_equal,
     build_vbd_trajectory_group_effect_marginalization_completion_receipt,
     build_vbd_trajectory_group_effect_marginalization_input_binding,
+    preflight_vbd_trajectory_group_effect_marginalization_fixed_roots,
+    read_vbd_trajectory_group_effect_marginalization_claim,
+    read_vbd_trajectory_group_effect_marginalization_consumed_permit,
+    read_vbd_trajectory_group_effect_marginalization_execution_authorization,
     validate_vbd_trajectory_group_effect_marginalization_authorization_manifest,
     validate_vbd_trajectory_group_effect_marginalization_claim,
     validate_vbd_trajectory_group_effect_marginalization_execution_authorization,
+    verify_vbd_trajectory_group_effect_marginalization_authorization_commit,
     write_vbd_trajectory_group_effect_marginalization_completion_receipt,
     write_vbd_trajectory_group_effect_marginalization_input_binding,
 )
@@ -80,6 +87,35 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
         )
     except Exception as exc:
         raise PermissionError("marginalization attempt claim is invalid") from exc
+
+    preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
+        manifest=manifest,
+        phase="CLAIMED",
+    )
+    verify_vbd_trajectory_group_effect_marginalization_authorization_commit(
+        manifest=manifest,
+        authorization_commit=authorization_commit,
+    )
+    live_authorization = read_vbd_trajectory_group_effect_marginalization_execution_authorization(
+        Path(manifest["execution_authorization_record_path"]),
+        manifest=manifest,
+        authorization_commit=authorization_commit,
+    )
+    read_vbd_trajectory_group_effect_marginalization_consumed_permit(
+        manifest=manifest,
+        execution_authorization=live_authorization,
+        authorization_commit=authorization_commit,
+    )
+    live_claim = read_vbd_trajectory_group_effect_marginalization_claim(
+        manifest=manifest,
+        execution_authorization=live_authorization,
+        authorization_commit=authorization_commit,
+    )
+    if (
+        not _exact_native_equal(live_authorization, execution_authorization)
+        or not _exact_native_equal(live_claim, claim)
+    ):
+        raise PermissionError("marginalization live launch records differ")
 
     runtime = build_vbd_trajectory_runtime_identity()
     implementation = vbd_trajectory_runner_implementation_manifest(

@@ -896,7 +896,106 @@ def test_publication_preserves_rejecting_alias_when_rollback_unlink_fails(
     assert staged_info.st_nlink == final_info.st_nlink == 2
 
 
-def test_publication_preserves_rejecting_alias_when_rollback_fsync_fails(
+def test_publication_removes_final_when_second_link_rollback_restore_fails(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    final = workspace / bootstrap._OUTPUT_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+
+    def reject_final(
+        _manifest,
+        _commit,
+        path,
+        _repo,
+        *,
+        allow_pending_alias=False,
+        reviewed_sources=None,
+    ):
+        if path == final and not allow_pending_alias:
+            raise bootstrap.BootstrapError("final semantic validation failed")
+
+    original_link = bootstrap.os.link
+    link_calls = 0
+
+    def reject_second_link(*args, **kwargs):
+        nonlocal link_calls
+        link_calls += 1
+        if link_calls == 2:
+            raise OSError("injected staged alias restoration failure")
+        return original_link(*args, **kwargs)
+
+    monkeypatch.setattr(bootstrap, "_validate_persisted", reject_final)
+    monkeypatch.setattr(bootstrap.os, "link", reject_second_link)
+    with pytest.raises(bootstrap.BootstrapError, match="semantic validation failed"):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    assert link_calls == 2
+    assert not staged.exists()
+    assert not final.exists()
+    assert tuple(workspace.iterdir()) == ()
+
+
+def test_publication_marks_invalid_when_alias_restore_and_final_removal_fail(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    final = workspace / bootstrap._OUTPUT_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+
+    def reject_final(
+        _manifest,
+        _commit,
+        path,
+        _repo,
+        *,
+        allow_pending_alias=False,
+        reviewed_sources=None,
+    ):
+        if path == final and not allow_pending_alias:
+            raise bootstrap.BootstrapError("final semantic validation failed")
+
+    original_link = bootstrap.os.link
+    original_unlink = bootstrap.os.unlink
+    link_calls = 0
+
+    def reject_alias_restore(*args, **kwargs):
+        nonlocal link_calls
+        link_calls += 1
+        if link_calls == 2:
+            raise OSError("injected staged alias restoration failure")
+        return original_link(*args, **kwargs)
+
+    def reject_final_removal(path, *args, **kwargs):
+        if path == bootstrap._OUTPUT_NAME:
+            raise OSError("injected final removal failure")
+        return original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(bootstrap, "_validate_persisted", reject_final)
+    monkeypatch.setattr(bootstrap.os, "link", reject_alias_restore)
+    monkeypatch.setattr(bootstrap.os, "unlink", reject_final_removal)
+    with pytest.raises(
+        bootstrap.BootstrapError,
+        match="fallback rollback could not be confirmed",
+    ):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    assert final.exists()
+    assert staged.read_bytes() == b"ROLLBACK_UNCONFIRMED\n"
+    assert staged.stat().st_ino != final.stat().st_ino
+
+
+def test_publication_removes_final_when_rollback_alias_fsync_fails(
     tmp_path,
     monkeypatch,
 ):
@@ -933,15 +1032,10 @@ def test_publication_preserves_rejecting_alias_when_rollback_fsync_fails(
 
     monkeypatch.setattr(bootstrap, "_validate_persisted", reject_final)
     monkeypatch.setattr(bootstrap.os, "fsync", reject_rollback_fsync)
-    with pytest.raises(bootstrap.BootstrapError, match="could not be made durable"):
+    with pytest.raises(bootstrap.BootstrapError, match="semantic validation failed"):
         bootstrap._publish({}, "a" * 40, tmp_path, {})
-    staged_info = staged.stat()
-    final_info = final.stat()
-    assert (staged_info.st_dev, staged_info.st_ino) == (
-        final_info.st_dev,
-        final_info.st_ino,
-    )
-    assert staged_info.st_nlink == final_info.st_nlink == 2
+    assert staged.stat().st_nlink == 1
+    assert not final.exists()
 
 
 def test_rollback_rejects_mismatched_staged_identity(tmp_path):
@@ -955,15 +1049,14 @@ def test_rollback_rejects_mismatched_staged_identity(tmp_path):
     final_info = final.stat()
     root_fd = bootstrap._open_directory(workspace)
     try:
-        with pytest.raises(bootstrap.BootstrapError, match="not alias-invalid"):
-            bootstrap._rollback_final(
-                root_fd,
-                (final_info.st_dev, final_info.st_ino),
-            )
+        bootstrap._rollback_final(
+            root_fd,
+            (final_info.st_dev, final_info.st_ino),
+        )
     finally:
         bootstrap.os.close(root_fd)
     assert staged.exists()
-    assert final.exists()
+    assert not final.exists()
 
 
 def test_publication_handles_real_termination_through_rollback_in_post_unlink_window(
@@ -1093,6 +1186,82 @@ def test_persisted_output_rejects_name_rebinding_during_semantic_validation(
             manifest=manifest,
             authorization_commit="a" * 40,
         )
+
+
+@pytest.mark.parametrize(
+    "reader_kind",
+    ("execution_authorization", "claim", "input_binding", "completion_receipt"),
+)
+def test_lifecycle_readers_reject_name_rebinding_during_validation(
+    tmp_path,
+    monkeypatch,
+    reader_kind,
+):
+    path = tmp_path / f"{reader_kind}.json"
+    value = {"record": reader_kind}
+    encoded = authorization._canonical_bytes(value)
+    path.write_bytes(encoded)
+    manifest = {
+        "execution_authorization_record_path": str(path),
+        "claim_path": str(path),
+        "input_binding_path": str(path),
+        "completion_receipt_path": str(path),
+    }
+
+    def replace_name(candidate, **_kwargs):
+        path.rename(tmp_path / f"opened-{reader_kind}.json")
+        path.write_bytes(encoded)
+        return candidate
+
+    if reader_kind == "execution_authorization":
+        monkeypatch.setattr(
+            authorization,
+            "validate_vbd_trajectory_group_effect_marginalization_execution_authorization",
+            replace_name,
+        )
+        invoke = lambda: authorization.read_vbd_trajectory_group_effect_marginalization_execution_authorization(
+            path,
+            manifest=manifest,
+            authorization_commit="a" * 40,
+        )
+    elif reader_kind == "claim":
+        monkeypatch.setattr(
+            authorization,
+            "validate_vbd_trajectory_group_effect_marginalization_claim",
+            replace_name,
+        )
+        invoke = lambda: authorization.read_vbd_trajectory_group_effect_marginalization_claim(
+            manifest=manifest,
+            execution_authorization={},
+            authorization_commit="a" * 40,
+        )
+    elif reader_kind == "input_binding":
+        monkeypatch.setattr(
+            authorization,
+            "validate_vbd_trajectory_group_effect_marginalization_input_binding",
+            replace_name,
+        )
+        invoke = lambda: authorization.read_vbd_trajectory_group_effect_marginalization_input_binding(
+            manifest=manifest,
+            claim={},
+        )
+    else:
+        monkeypatch.setattr(
+            authorization,
+            "validate_vbd_trajectory_group_effect_marginalization_completion_receipt",
+            replace_name,
+        )
+        invoke = lambda: authorization.read_vbd_trajectory_group_effect_marginalization_completion_receipt(
+            manifest=manifest,
+            claim={},
+            input_binding={},
+            fit_records=[],
+        )
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="binding changed",
+    ):
+        invoke()
 
 
 def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypatch):
@@ -1410,4 +1579,38 @@ def test_execution_token_rejects_before_candidate_work():
             execution_authorization={},
             claim={},
             _execution_token=object(),
+        )
+
+
+def test_exported_execution_token_cannot_bypass_live_claimed_preflight(
+    valid_manifest,
+    monkeypatch,
+):
+    forged_authorization = {"authorization_commit": "a" * 40}
+    forged_claim = {"state": "CONSUMED_BEFORE_EXECUTION"}
+    monkeypatch.setattr(
+        execution,
+        "validate_vbd_trajectory_group_effect_marginalization_authorization_manifest",
+        lambda value: value,
+    )
+    monkeypatch.setattr(
+        execution,
+        "validate_vbd_trajectory_group_effect_marginalization_execution_authorization",
+        lambda value, **_kwargs: value,
+    )
+    monkeypatch.setattr(
+        execution,
+        "validate_vbd_trajectory_group_effect_marginalization_claim",
+        lambda value, **_kwargs: value,
+    )
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError
+    ):
+        execution.execute_authorized_vbd_trajectory_group_effect_marginalization(
+            manifest=valid_manifest,
+            execution_authorization=forged_authorization,
+            claim=forged_claim,
+            _execution_token=(
+                authorization._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_TOKEN
+            ),
         )

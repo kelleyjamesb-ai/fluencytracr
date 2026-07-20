@@ -380,6 +380,16 @@ def _read_canonical_json(path: Path, label: str) -> dict:
     return value
 
 
+def _read_bound_canonical_json(path: Path, label: str, validator) -> dict:
+    binding = _open_canonical_json_binding(path, label)
+    try:
+        value = validator(binding.value)
+        binding.revalidate(expected_link_count=1)
+        return value
+    finally:
+        binding.close()
+
+
 def _write_exclusive_json(path: Path, value: dict, label: str) -> None:
     encoded = _canonical_bytes(value)
     root = path.parent
@@ -1431,10 +1441,14 @@ def read_vbd_trajectory_group_effect_marginalization_execution_authorization(
     expected = Path(manifest["execution_authorization_record_path"])
     if path.resolve() != expected:
         _authorization_error("marginalization execution authorization path is off-plan")
-    return validate_vbd_trajectory_group_effect_marginalization_execution_authorization(
-        _read_canonical_json(path, "marginalization execution authorization"),
-        manifest=manifest,
-        authorization_commit=authorization_commit,
+    return _read_bound_canonical_json(
+        path,
+        "marginalization execution authorization",
+        lambda value: validate_vbd_trajectory_group_effect_marginalization_execution_authorization(
+            value,
+            manifest=manifest,
+            authorization_commit=authorization_commit,
+        ),
     )
 
 
@@ -1444,14 +1458,15 @@ def read_vbd_trajectory_group_effect_marginalization_claim(
     execution_authorization: dict,
     authorization_commit: str,
 ) -> dict:
-    return validate_vbd_trajectory_group_effect_marginalization_claim(
-        _read_canonical_json(
-            Path(manifest["claim_path"]),
-            "marginalization attempt claim",
+    return _read_bound_canonical_json(
+        Path(manifest["claim_path"]),
+        "marginalization attempt claim",
+        lambda value: validate_vbd_trajectory_group_effect_marginalization_claim(
+            value,
+            manifest=manifest,
+            execution_authorization=execution_authorization,
+            authorization_commit=authorization_commit,
         ),
-        manifest=manifest,
-        execution_authorization=execution_authorization,
-        authorization_commit=authorization_commit,
     )
 
 
@@ -1604,13 +1619,14 @@ def read_vbd_trajectory_group_effect_marginalization_input_binding(
     manifest: dict,
     claim: dict,
 ) -> dict:
-    return validate_vbd_trajectory_group_effect_marginalization_input_binding(
-        _read_canonical_json(
-            Path(manifest["input_binding_path"]),
-            "marginalization input binding",
+    return _read_bound_canonical_json(
+        Path(manifest["input_binding_path"]),
+        "marginalization input binding",
+        lambda value: validate_vbd_trajectory_group_effect_marginalization_input_binding(
+            value,
+            manifest=manifest,
+            claim=claim,
         ),
-        manifest=manifest,
-        claim=claim,
     )
 
 
@@ -1698,15 +1714,16 @@ def read_vbd_trajectory_group_effect_marginalization_completion_receipt(
     input_binding: dict,
     fit_records: list[dict],
 ) -> dict:
-    return validate_vbd_trajectory_group_effect_marginalization_completion_receipt(
-        _read_canonical_json(
-            Path(manifest["completion_receipt_path"]),
-            "marginalization completion receipt",
+    return _read_bound_canonical_json(
+        Path(manifest["completion_receipt_path"]),
+        "marginalization completion receipt",
+        lambda value: validate_vbd_trajectory_group_effect_marginalization_completion_receipt(
+            value,
+            manifest=manifest,
+            claim=claim,
+            input_binding=input_binding,
+            fit_records=fit_records,
         ),
-        manifest=manifest,
-        claim=claim,
-        input_binding=input_binding,
-        fit_records=fit_records,
     )
 
 
