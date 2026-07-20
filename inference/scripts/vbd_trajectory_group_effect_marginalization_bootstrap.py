@@ -6,6 +6,9 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 import hashlib
+import importlib.abc
+import importlib.machinery
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -129,10 +132,57 @@ _THREAD_ENV = (
     "OPENBLAS_NUM_THREADS",
     "VECLIB_MAXIMUM_THREADS",
 )
+_FIRST_PARTY_PACKAGE = "fluencytracr_inference"
+_FIRST_PARTY_SOURCE_PREFIX = "inference/src/fluencytracr_inference/"
+_REVIEWED_SOURCE_LOADER_TOKEN = object()
 
 
 class BootstrapError(RuntimeError):
     """The marginalization launch failed closed."""
+
+
+class _ReviewedSourceLoader(importlib.abc.Loader):
+    def __init__(self, entry: dict):
+        self._entry = entry
+        self._reviewed_source_loader_token = _REVIEWED_SOURCE_LOADER_TOKEN
+
+    def create_module(self, _spec):
+        return None
+
+    def exec_module(self, module) -> None:
+        source_path = self._entry["source_path"]
+        module.__file__ = source_path
+        module.__cached__ = None
+        if self._entry["is_package"]:
+            module.__path__ = [str(Path(source_path).parent)]
+        code = compile(
+            self._entry["source_bytes"],
+            source_path,
+            "exec",
+            dont_inherit=True,
+        )
+        exec(code, module.__dict__)
+
+
+class _ReviewedSourceFinder(importlib.abc.MetaPathFinder):
+    def __init__(self, reviewed_sources: dict):
+        self.reviewed_sources = reviewed_sources
+        self._reviewed_source_loader_token = _REVIEWED_SOURCE_LOADER_TOKEN
+
+    def find_spec(self, fullname, _path=None, _target=None):
+        entry = self.reviewed_sources.get(fullname)
+        if entry is None:
+            if fullname == _FIRST_PARTY_PACKAGE or fullname.startswith(
+                f"{_FIRST_PARTY_PACKAGE}."
+            ):
+                raise ImportError("unreviewed first-party module import rejected")
+            return None
+        return importlib.util.spec_from_loader(
+            fullname,
+            _ReviewedSourceLoader(entry),
+            origin=entry["source_path"],
+            is_package=entry["is_package"],
+        )
 
 
 def _strict_object(pairs):
@@ -763,12 +813,124 @@ def _consume_permit_and_claim(
     return claim
 
 
-def _install_source_paths(manifest: dict, repo: Path) -> None:
-    source = str(repo / "inference/src")
-    additions = [source, *manifest["site_package_paths"]]
-    for value in reversed(additions):
+def _reviewed_module_name(relative_path: str) -> tuple[str, bool] | None:
+    if not relative_path.startswith(_FIRST_PARTY_SOURCE_PREFIX):
+        return None
+    suffix = relative_path[len(_FIRST_PARTY_SOURCE_PREFIX) :]
+    parts = Path(suffix).parts
+    if not parts or not parts[-1].endswith(".py"):
+        return None
+    stem = Path(parts[-1]).stem
+    if stem == "__init__":
+        module_parts = parts[:-1]
+        is_package = True
+    else:
+        module_parts = (*parts[:-1], stem)
+        is_package = False
+    if any(not part.isidentifier() for part in module_parts):
+        raise BootstrapError("reviewed first-party module path is invalid")
+    name = ".".join((_FIRST_PARTY_PACKAGE, *module_parts))
+    return name, is_package
+
+
+def _reject_alternate_first_party_imports(reviewed_sources: dict) -> None:
+    package_directories = {
+        Path(entry["source_path"]).parent for entry in reviewed_sources.values()
+    }
+    for directory in package_directories:
+        pycache = directory / "__pycache__"
+        if pycache.exists() or pycache.is_symlink():
+            raise BootstrapError("alternate first-party import artifact exists")
+    for entry in reviewed_sources.values():
+        source_path = Path(entry["source_path"])
+        candidates = [source_path.with_suffix(".pyc")]
+        if entry["is_package"]:
+            candidates.extend(
+                source_path.parent.parent
+                / f"{source_path.parent.name}{extension_suffix}"
+                for extension_suffix in importlib.machinery.EXTENSION_SUFFIXES
+            )
+        else:
+            candidates.extend(
+                source_path.with_name(f"{source_path.stem}{extension_suffix}")
+                for extension_suffix in importlib.machinery.EXTENSION_SUFFIXES
+            )
+        if any(
+            candidate.exists() or candidate.is_symlink()
+            for candidate in candidates
+        ):
+            raise BootstrapError("alternate first-party import artifact exists")
+
+
+def _freeze_reviewed_first_party_sources(manifest: dict, repo: Path) -> dict:
+    reviewed_sources = {}
+    for item in manifest["in_scope_files"]:
+        identity = _reviewed_module_name(item["path"])
+        if identity is None:
+            continue
+        module_name, is_package = identity
+        if module_name in reviewed_sources:
+            raise BootstrapError("reviewed first-party module is duplicated")
+        source_path = repo / item["path"]
+        source_bytes, info = _read_file(source_path, "reviewed first-party source")
+        if (
+            info.st_nlink != 1
+            or _hash_bytes(source_bytes) != item["sha256"]
+        ):
+            raise BootstrapError("reviewed first-party source bytes differ")
+        reviewed_sources[module_name] = {
+            "source_path": str(source_path),
+            "source_bytes": source_bytes,
+            "is_package": is_package,
+            "sha256": item["sha256"],
+        }
+    if _FIRST_PARTY_PACKAGE not in reviewed_sources:
+        raise BootstrapError("reviewed first-party package source is incomplete")
+    _reject_alternate_first_party_imports(reviewed_sources)
+    return reviewed_sources
+
+
+def _install_reviewed_source_loader(
+    manifest: dict,
+    reviewed_sources: dict,
+) -> None:
+    for value in reversed(manifest["site_package_paths"]):
         if value not in sys.path:
             sys.path.insert(0, value)
+    existing_finders = [
+        finder
+        for finder in sys.meta_path
+        if getattr(finder, "_reviewed_source_loader_token", None)
+        is _REVIEWED_SOURCE_LOADER_TOKEN
+    ]
+    existing_modules = [
+        module
+        for name, module in sys.modules.items()
+        if name == _FIRST_PARTY_PACKAGE
+        or name.startswith(f"{_FIRST_PARTY_PACKAGE}.")
+    ]
+    if existing_finders:
+        if (
+            len(existing_finders) != 1
+            or not _exact_native_equal(
+                existing_finders[0].reviewed_sources,
+                reviewed_sources,
+            )
+            or any(
+                getattr(
+                    getattr(module, "__loader__", None),
+                    "_reviewed_source_loader_token",
+                    None,
+                )
+                is not _REVIEWED_SOURCE_LOADER_TOKEN
+                for module in existing_modules
+            )
+        ):
+            raise BootstrapError("reviewed first-party import state differs")
+        return
+    if existing_modules:
+        raise BootstrapError("first-party module was imported outside reviewed loader")
+    sys.meta_path.insert(0, _ReviewedSourceFinder(reviewed_sources))
 
 
 def _execute_child(
@@ -776,9 +938,12 @@ def _execute_child(
     authorization_path: Path,
     authorization_commit: str,
     repo: Path,
+    reviewed_sources: dict,
 ) -> None:
     try:
-        _install_source_paths(manifest, repo)
+        _revalidate_source_binding(manifest, authorization_commit, repo)
+        _reject_alternate_first_party_imports(reviewed_sources)
+        _install_reviewed_source_loader(manifest, reviewed_sources)
         from fluencytracr_inference import (
             vbd_trajectory_group_effect_marginalization_authorization as candidate,
         )
@@ -838,6 +1003,7 @@ def _run_claimed_child(
     authorization_path: Path,
     authorization_commit: str,
     repo: Path,
+    reviewed_sources: dict,
 ) -> None:
     original_mask = signal.pthread_sigmask(
         signal.SIG_BLOCK,
@@ -862,6 +1028,7 @@ def _run_claimed_child(
                     authorization_path,
                     authorization_commit,
                     repo,
+                    reviewed_sources,
                 )
             finally:
                 os._exit(70)
@@ -931,9 +1098,13 @@ def _validate_persisted(
     repo: Path,
     *,
     allow_pending_alias: bool = False,
+    reviewed_sources: dict,
 ) -> None:
+    if type(reviewed_sources) is not dict or not reviewed_sources:
+        raise BootstrapError("reviewed first-party source set is unavailable")
     _revalidate_source_binding(manifest, authorization_commit, repo)
-    _install_source_paths(manifest, repo)
+    _reject_alternate_first_party_imports(reviewed_sources)
+    _install_reviewed_source_loader(manifest, reviewed_sources)
     from fluencytracr_inference import (
         vbd_trajectory_group_effect_marginalization_authorization as candidate,
     )
@@ -953,8 +1124,17 @@ def _validate_persisted(
     _revalidate_source_binding(manifest, authorization_commit, repo)
 
 
-def _rollback_final(root_fd: int) -> None:
+def _rollback_final(
+    root_fd: int,
+    expected_identity: tuple[int, int],
+) -> None:
     try:
+        info = os.stat(_OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False)
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or (info.st_dev, info.st_ino) != expected_identity
+        ):
+            raise BootstrapError("final-output rollback identity differs")
         os.unlink(_OUTPUT_NAME, dir_fd=root_fd)
         os.fsync(root_fd)
     except FileNotFoundError:
@@ -967,16 +1147,42 @@ def _publish(
     manifest: dict,
     authorization_commit: str,
     repo: Path,
+    reviewed_sources: dict,
 ) -> None:
     staged = _WORKSPACE / _STAGED_NAME
     final = _WORKSPACE / _OUTPUT_NAME
     if _root_names(_WORKSPACE) != (_STAGED_NAME,):
         raise BootstrapError("staged marginalization workspace is off plan")
-    _validate_persisted(manifest, authorization_commit, staged, repo)
+    _validate_persisted(
+        manifest,
+        authorization_commit,
+        staged,
+        repo,
+        reviewed_sources=reviewed_sources,
+    )
     root_fd = _open_directory(_WORKSPACE)
     linked = False
-    stage_removed = False
+    committed = False
+    publication_identity = None
+    original_mask = signal.pthread_sigmask(
+        signal.SIG_BLOCK,
+        _TERMINATION_SIGNALS,
+    )
+    previous_handlers = {
+        signum: signal.getsignal(signum) for signum in _TERMINATION_SIGNALS
+    }
     try:
+        for signum in _TERMINATION_SIGNALS:
+            signal.signal(signum, _raise_supervisor_termination)
+        staged_info = os.stat(
+            _STAGED_NAME, dir_fd=root_fd, follow_symlinks=False
+        )
+        if (
+            not stat.S_ISREG(staged_info.st_mode)
+            or staged_info.st_nlink != 1
+        ):
+            raise BootstrapError("staged publication identity differs")
+        publication_identity = (staged_info.st_dev, staged_info.st_ino)
         os.link(
             _STAGED_NAME,
             _OUTPUT_NAME,
@@ -995,40 +1201,62 @@ def _publish(
         if (
             not stat.S_ISREG(staged_info.st_mode)
             or not stat.S_ISREG(final_info.st_mode)
-            or staged_info.st_dev != final_info.st_dev
-            or staged_info.st_ino != final_info.st_ino
+            or (staged_info.st_dev, staged_info.st_ino) != publication_identity
+            or (final_info.st_dev, final_info.st_ino) != publication_identity
             or staged_info.st_nlink != 2
             or final_info.st_nlink != 2
         ):
             raise BootstrapError("pending publication alias differs")
         _validate_persisted(
-            manifest, authorization_commit, final, repo, allow_pending_alias=True
+            manifest,
+            authorization_commit,
+            final,
+            repo,
+            allow_pending_alias=True,
+            reviewed_sources=reviewed_sources,
         )
         os.unlink(_STAGED_NAME, dir_fd=root_fd)
-        stage_removed = True
         os.fsync(root_fd)
         final_info = os.stat(
             _OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False
         )
-        if final_info.st_nlink != 1:
+        if (
+            not stat.S_ISREG(final_info.st_mode)
+            or (final_info.st_dev, final_info.st_ino) != publication_identity
+            or final_info.st_nlink != 1
+        ):
             raise BootstrapError("final publication link count differs")
+        if _root_names(_WORKSPACE) != (_OUTPUT_NAME,):
+            raise BootstrapError("final marginalization workspace is off plan")
+        _validate_persisted(
+            manifest,
+            authorization_commit,
+            final,
+            repo,
+            reviewed_sources=reviewed_sources,
+        )
+        final_info = os.stat(
+            _OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False
+        )
+        if (
+            not stat.S_ISREG(final_info.st_mode)
+            or (final_info.st_dev, final_info.st_ino) != publication_identity
+            or final_info.st_nlink != 1
+        ):
+            raise BootstrapError("final publication identity changed")
+        os.fsync(root_fd)
+        committed = True
     except BaseException:
-        if linked:
-            _rollback_final(root_fd)
+        signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
+        if linked and not committed and publication_identity is not None:
+            _rollback_final(root_fd, publication_identity)
         raise
     finally:
+        signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
         os.close(root_fd)
-    if not stage_removed or _root_names(_WORKSPACE) != (_OUTPUT_NAME,):
-        raise BootstrapError("final marginalization workspace is off plan")
-    try:
-        _validate_persisted(manifest, authorization_commit, final, repo)
-    except BaseException:
-        root_fd = _open_directory(_WORKSPACE)
-        try:
-            _rollback_final(root_fd)
-        finally:
-            os.close(root_fd)
-        raise
+        signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
 
 
 def _run(authorization_path: Path) -> int:
@@ -1046,6 +1274,7 @@ def _run(authorization_path: Path) -> int:
         authorization_commit,
         authorization_path,
     )
+    reviewed_sources = _freeze_reviewed_first_party_sources(manifest, repo)
     _consume_permit_and_claim(
         manifest,
         authorization_commit,
@@ -1058,8 +1287,14 @@ def _run(authorization_path: Path) -> int:
         authorization_path,
         authorization_commit,
         repo,
+        reviewed_sources,
     )
-    _publish(manifest, authorization_commit, repo)
+    _publish(
+        manifest,
+        authorization_commit,
+        repo,
+        reviewed_sources,
+    )
     payload = {
         "status": "COMPLETE_PERMANENT_HOLD",
         "authorization_commit": authorization_commit,

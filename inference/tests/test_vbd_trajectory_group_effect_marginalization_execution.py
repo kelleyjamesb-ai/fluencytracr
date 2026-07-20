@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import ast
 from copy import deepcopy
+import importlib.machinery
 import importlib.util
 import inspect
 from pathlib import Path
+import py_compile
+from types import SimpleNamespace
 
 import pytest
 
@@ -565,6 +568,39 @@ def test_bootstrap_has_only_stdlib_top_level_imports_and_claim_precedes_candidat
     assert source.index("def _execute_child(") < source.index(
         "from fluencytracr_inference import ("
     )
+    for function in ("_execute_child", "_validate_persisted"):
+        function_source = inspect.getsource(getattr(_load_bootstrap(), function))
+        assert function_source.index("_revalidate_source_binding(") < (
+            function_source.index("_reject_alternate_first_party_imports(")
+        )
+        assert function_source.index("_reject_alternate_first_party_imports(") < (
+            function_source.index("_install_reviewed_source_loader(")
+        )
+        assert function_source.index("_install_reviewed_source_loader(") < (
+            function_source.index("from fluencytracr_inference import (")
+        )
+
+
+def test_reviewed_source_finder_executes_frozen_source_and_ignores_third_party():
+    bootstrap = _load_bootstrap()
+    reviewed = {
+        "fluencytracr_inference": {
+            "source_path": "/reviewed/fluencytracr_inference/__init__.py",
+            "source_bytes": b"SOURCE_ONLY_SENTINEL = 'reviewed-bytes'\n",
+            "is_package": True,
+            "sha256": "1" * 64,
+        }
+    }
+    finder = bootstrap._ReviewedSourceFinder(reviewed)
+    spec = finder.find_spec("fluencytracr_inference")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.SOURCE_ONLY_SENTINEL == "reviewed-bytes"
+    assert module.__cached__ is None
+    assert finder.find_spec("numpy.linalg._umath_linalg") is None
+    with pytest.raises(ImportError, match="unreviewed first-party"):
+        finder.find_spec("fluencytracr_inference.unreviewed_shadow")
 
 
 def test_permit_is_consumed_once_before_claim_and_replay_rejects(
@@ -653,6 +689,7 @@ def test_publication_is_one_inode_and_rolls_back_invalid_pending_output(
         _repo,
         *,
         allow_pending_alias=False,
+        reviewed_sources=None,
     ):
         calls.append((path.name, allow_pending_alias))
         if fail_pending_validation and allow_pending_alias:
@@ -661,13 +698,13 @@ def test_publication_is_one_inode_and_rolls_back_invalid_pending_output(
     monkeypatch.setattr(bootstrap, "_validate_persisted", validate)
     if fail_pending_validation:
         with pytest.raises(bootstrap.BootstrapError):
-            bootstrap._publish({}, "a" * 40, tmp_path)
+            bootstrap._publish({}, "a" * 40, tmp_path, {})
         assert tuple(path.name for path in workspace.iterdir()) == (
             bootstrap._STAGED_NAME,
         )
         assert staged.stat().st_nlink == 1
     else:
-        bootstrap._publish({}, "a" * 40, tmp_path)
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
         final = workspace / bootstrap._OUTPUT_NAME
         assert final.read_bytes() == b"{}\n"
         assert final.stat().st_nlink == 1
@@ -676,6 +713,180 @@ def test_publication_is_one_inode_and_rolls_back_invalid_pending_output(
         (bootstrap._STAGED_NAME, False),
         (bootstrap._OUTPUT_NAME, True),
     ]
+
+
+def test_publication_rolls_back_final_when_post_unlink_enumeration_fails(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    monkeypatch.setattr(bootstrap, "_validate_persisted", lambda *_args, **_kwargs: None)
+    original_root_names = bootstrap._root_names
+
+    def fail_after_unlink(path):
+        if (
+            path == workspace
+            and (workspace / bootstrap._OUTPUT_NAME).exists()
+            and not staged.exists()
+        ):
+            raise bootstrap.BootstrapError("post-unlink enumeration failed")
+        return original_root_names(path)
+
+    monkeypatch.setattr(bootstrap, "_root_names", fail_after_unlink)
+    with pytest.raises(bootstrap.BootstrapError, match="enumeration failed"):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    assert not (workspace / bootstrap._OUTPUT_NAME).exists()
+
+
+def test_publication_rolls_back_final_when_final_semantic_validation_fails(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+
+    def validate(
+        _manifest,
+        _commit,
+        path,
+        _repo,
+        *,
+        allow_pending_alias=False,
+        reviewed_sources=None,
+    ):
+        if path.name == bootstrap._OUTPUT_NAME and not allow_pending_alias:
+            raise bootstrap.BootstrapError("final semantic validation failed")
+
+    monkeypatch.setattr(bootstrap, "_validate_persisted", validate)
+    with pytest.raises(bootstrap.BootstrapError, match="semantic validation failed"):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    assert not (workspace / bootstrap._OUTPUT_NAME).exists()
+
+
+def test_publication_handles_termination_through_rollback_in_post_unlink_window(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    monkeypatch.setattr(bootstrap, "_validate_persisted", lambda *_args, **_kwargs: None)
+    original_root_names = bootstrap._root_names
+
+    def terminate_after_unlink(path):
+        if (
+            path == workspace
+            and (workspace / bootstrap._OUTPUT_NAME).exists()
+            and not staged.exists()
+        ):
+            assert all(
+                bootstrap.signal.getsignal(signum)
+                is bootstrap._raise_supervisor_termination
+                for signum in bootstrap._TERMINATION_SIGNALS
+            )
+            bootstrap._raise_supervisor_termination(bootstrap.signal.SIGTERM, None)
+        return original_root_names(path)
+
+    monkeypatch.setattr(bootstrap, "_root_names", terminate_after_unlink)
+    with pytest.raises(bootstrap.BootstrapError, match="interrupted by signal"):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    assert not (workspace / bootstrap._OUTPUT_NAME).exists()
+
+
+@pytest.mark.parametrize("shadow_kind", ("timestamp_pyc", "extension"))
+def test_bootstrap_rejects_first_party_import_shadow_before_consumption(
+    tmp_path,
+    monkeypatch,
+    shadow_kind,
+):
+    bootstrap = _load_bootstrap()
+    repo = tmp_path / "repo"
+    script = repo / "inference/scripts/vbd_trajectory_group_effect_marginalization_bootstrap.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("# bootstrap placeholder\n", encoding="utf-8")
+    source = repo / "inference/src/fluencytracr_inference/hashing.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("SOURCE_ONLY_SENTINEL = True\n", encoding="utf-8")
+    package_source = source.parent / "__init__.py"
+    package_source.write_text("# reviewed package\n", encoding="utf-8")
+    if shadow_kind == "timestamp_pyc":
+        pycache = source.parent / "__pycache__"
+        pycache.mkdir()
+        py_compile.compile(
+            str(source),
+            cfile=str(pycache / "hashing.cpython-313.pyc"),
+            doraise=True,
+        )
+    else:
+        source.with_name(
+            source.stem + importlib.machinery.EXTENSION_SUFFIXES[0]
+        ).write_bytes(b"extension shadow")
+    source_hash = bootstrap._hash_bytes(source.read_bytes())
+    manifest = {
+        "in_scope_files": [
+            {
+                "path": "inference/src/fluencytracr_inference/__init__.py",
+                "sha256": bootstrap._hash_bytes(package_source.read_bytes()),
+            },
+            {
+                "path": "inference/src/fluencytracr_inference/hashing.py",
+                "sha256": source_hash,
+            }
+        ]
+    }
+    permit_info = SimpleNamespace(st_dev=1, st_ino=2)
+    calls = []
+    monkeypatch.setattr(bootstrap, "__file__", str(script))
+    monkeypatch.setattr(
+        bootstrap,
+        "_read_json",
+        lambda *_args: (manifest, SimpleNamespace(st_nlink=1)),
+    )
+    monkeypatch.setattr(
+        bootstrap,
+        "_validate_manifest",
+        lambda *_args: (Path("/usr/bin/git"), "a" * 40),
+    )
+    monkeypatch.setattr(bootstrap, "_validate_environment", lambda: None)
+    monkeypatch.setattr(bootstrap, "_validate_actual_command", lambda _manifest: None)
+    monkeypatch.setattr(
+        bootstrap,
+        "_validate_launch_records",
+        lambda *_args: ({}, {}, permit_info),
+    )
+    monkeypatch.setattr(
+        bootstrap,
+        "_consume_permit_and_claim",
+        lambda *_args: calls.append("claim"),
+    )
+    monkeypatch.setattr(
+        bootstrap,
+        "_run_claimed_child",
+        lambda *_args: calls.append("child_import"),
+    )
+    monkeypatch.setattr(
+        bootstrap,
+        "_publish",
+        lambda *_args: calls.append("publication_import"),
+    )
+    with pytest.raises(bootstrap.BootstrapError, match="alternate first-party import"):
+        bootstrap._run(Path("/fixed/authorization.json"))
+    assert calls == []
 
 
 def test_supervisor_terminates_and_reaps_failed_child(monkeypatch):
@@ -694,7 +905,11 @@ def test_supervisor_terminates_and_reaps_failed_child(monkeypatch):
     )
     with pytest.raises(KeyboardInterrupt):
         bootstrap._run_claimed_child(
-            {}, Path("/fixed/authorization.json"), "a" * 40, Path("/fixed/repo")
+            {},
+            Path("/fixed/authorization.json"),
+            "a" * 40,
+            Path("/fixed/repo"),
+            {},
         )
     assert terminated == [4242]
 
