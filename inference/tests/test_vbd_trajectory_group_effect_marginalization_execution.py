@@ -230,6 +230,54 @@ def test_input_binding_freezes_four_panels_twelve_fits_and_exact_order(monkeypat
         authorization.build_vbd_trajectory_group_effect_marginalization_input_binding(
             **mutation
         )
+    native_type_tamper = deepcopy(value)
+    native_type_tamper["internal_only"] = 1
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError
+    ):
+        authorization.validate_vbd_trajectory_group_effect_marginalization_input_binding(
+            native_type_tamper,
+            manifest=manifest,
+            claim=claim,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    (("evidence_eligible", 0), ("acceptance_count_effect", 0.0)),
+)
+def test_completion_receipt_rejects_native_type_substitution_without_rehash(
+    field,
+    replacement,
+):
+    manifest = {
+        "manifest_hash": "1" * 64,
+        "diagnostic_plan_hash": "2" * 64,
+        "seed_manifest_hash": "3" * 64,
+    }
+    claim = {"claim_hash": "4" * 64}
+    input_binding = {"input_binding_hash": "5" * 64}
+    fit_records = [
+        {"fit_record_hash": f"{100 + index:064x}"} for index in range(12)
+    ]
+    receipt = authorization.build_vbd_trajectory_group_effect_marginalization_completion_receipt(
+        manifest=manifest,
+        claim=claim,
+        input_binding=input_binding,
+        fit_records=fit_records,
+    )
+    mutation = deepcopy(receipt)
+    mutation[field] = replacement
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError
+    ):
+        authorization.validate_vbd_trajectory_group_effect_marginalization_completion_receipt(
+            mutation,
+            manifest=manifest,
+            claim=claim,
+            input_binding=input_binding,
+            fit_records=fit_records,
+        )
 
 
 def test_external_human_execution_record_is_strict_and_validation_only(
@@ -297,6 +345,200 @@ def test_external_human_execution_record_is_strict_and_validation_only(
     assert authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_OUTPUT_FILENAME == (
         "marginalization_diagnostic.json"
     )
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    (
+        ("maximum_launch_count", True),
+        ("maximum_launch_count", 1.0),
+        ("customer_output_authorized", 0),
+    ),
+)
+def test_package_permit_validation_rejects_native_type_substitution(
+    valid_manifest,
+    field,
+    replacement,
+):
+    authorization_commit = "f" * 40
+    body = authorization._permit_body(
+        manifest=valid_manifest,
+        authorization_commit=authorization_commit,
+        permit_token="1" * 64,
+    )
+    permit = {**body, "permit_hash": sha256_json(body)}
+    permit[field] = replacement
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="launch permit is invalid",
+    ):
+        authorization.validate_vbd_trajectory_group_effect_marginalization_launch_permit(
+            permit,
+            manifest=valid_manifest,
+            authorization_commit=authorization_commit,
+        )
+
+
+def test_execution_authorization_write_rejects_self_consistent_fabricated_permit_identity(
+    tmp_path,
+    monkeypatch,
+):
+    lifecycle = tmp_path / "lifecycle"
+    lifecycle.mkdir(mode=0o700)
+    permit_path = lifecycle / authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LAUNCH_PERMIT_FILENAME
+    authorization_path = lifecycle / authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_FILENAME
+    manifest = {
+        "manifest_hash": "1" * 64,
+        "launch_permit_path": str(permit_path),
+        "execution_authorization_record_path": str(authorization_path),
+        "canonical_workspace_identity_hash": "2" * 64,
+        "lifecycle_root_identity_hash": "3" * 64,
+        "command_hash": "4" * 64,
+        "launch_permit_path_hash": authorization._path_hash(permit_path),
+    }
+    authorization_commit = "a" * 40
+    permit_body = authorization._permit_body(
+        manifest=manifest,
+        authorization_commit=authorization_commit,
+        permit_token="5" * 64,
+    )
+    permit = {**permit_body, "permit_hash": sha256_json(permit_body)}
+    permit_path.write_bytes(authorization._canonical_bytes(permit))
+    permit_path.chmod(0o600)
+    fabricated_body = {
+        "schema_version": authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_SCHEMA_VERSION,
+        "authorization_commit": authorization_commit,
+        "authorization_manifest_hash": manifest["manifest_hash"],
+        "scope": authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_SCOPE,
+        "authorizing_decision_ref": "human-authorization:vbd-marginalization-diagnostic/fabricated",
+        "decision_text_hash": "6" * 64,
+        "authorized_at_utc": "2026-07-20T12:00:00Z",
+        "maximum_launch_count": 1,
+        "canonical_workspace_identity": manifest["canonical_workspace_identity_hash"],
+        "lifecycle_root_identity": manifest["lifecycle_root_identity_hash"],
+        "command_hash": manifest["command_hash"],
+        "launch_permit_path_hash": manifest["launch_permit_path_hash"],
+        "launch_permit_hash": "7" * 64,
+        "launch_permit_file_sha256": "8" * 64,
+        "launch_permit_device": 987654,
+        "launch_permit_inode": 123456,
+    }
+    fabricated = {
+        **fabricated_body,
+        "execution_authorization_hash": sha256_json(fabricated_body),
+    }
+    monkeypatch.setattr(
+        authorization,
+        "validate_vbd_trajectory_group_effect_marginalization_authorization_manifest",
+        lambda value: value,
+    )
+    monkeypatch.setattr(
+        authorization,
+        "verify_vbd_trajectory_group_effect_marginalization_authorization_commit",
+        lambda **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        authorization,
+        "preflight_vbd_trajectory_group_effect_marginalization_fixed_roots",
+        lambda **_kwargs: None,
+    )
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="permit identity differs",
+    ):
+        authorization.write_vbd_trajectory_group_effect_marginalization_execution_authorization(
+            manifest=manifest,
+            authorization=fabricated,
+            authorization_commit=authorization_commit,
+        )
+    assert permit_path.is_file()
+    assert not authorization_path.exists()
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    (
+        ("maximum_launch_count", True),
+        ("maximum_launch_count", 1.0),
+        ("customer_output_authorized", 0),
+    ),
+)
+def test_bootstrap_rejects_bool_int_permit_substitution_before_consumption(
+    tmp_path,
+    monkeypatch,
+    field,
+    replacement,
+):
+    bootstrap = _load_bootstrap()
+    lifecycle = tmp_path / "lifecycle"
+    workspace = tmp_path / "workspace"
+    lifecycle.mkdir(mode=0o700)
+    monkeypatch.setattr(bootstrap, "_LIFECYCLE", lifecycle)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    authorization_commit = "a" * 40
+    manifest = {
+        "manifest_hash": "1" * 64,
+        "canonical_workspace_identity_hash": "2" * 64,
+        "lifecycle_root_identity_hash": "3" * 64,
+        "command_hash": "4" * 64,
+        "launch_permit_path_hash": "5" * 64,
+    }
+    permit_body = {
+        "schema_version": bootstrap._PERMIT_SCHEMA_VERSION,
+        "authorization_commit": authorization_commit,
+        "authorization_manifest_hash": manifest["manifest_hash"],
+        "scope": bootstrap._SCOPE,
+        "permit_token": "6" * 64,
+        "maximum_launch_count": 1,
+        "state": "AVAILABLE_BEFORE_EXECUTION",
+        "internal_only": True,
+        "synthetic_only": True,
+        "customer_output_authorized": False,
+    }
+    permit = {**permit_body, "permit_hash": bootstrap._hash_json(permit_body)}
+    permit[field] = replacement
+    permit_path = lifecycle / bootstrap._PERMIT_NAME
+    permit_path.write_bytes(bootstrap._canonical_bytes(permit))
+    permit_path.chmod(0o600)
+    permit_info = permit_path.stat()
+    execution_body = {
+        "schema_version": bootstrap._EXECUTION_SCHEMA_VERSION,
+        "authorization_commit": authorization_commit,
+        "authorization_manifest_hash": manifest["manifest_hash"],
+        "scope": bootstrap._SCOPE,
+        "authorizing_decision_ref": "human-authorization:vbd-marginalization-diagnostic/native-type",
+        "decision_text_hash": "7" * 64,
+        "authorized_at_utc": "2026-07-20T12:00:00Z",
+        "maximum_launch_count": 1,
+        "canonical_workspace_identity": manifest["canonical_workspace_identity_hash"],
+        "lifecycle_root_identity": manifest["lifecycle_root_identity_hash"],
+        "command_hash": manifest["command_hash"],
+        "launch_permit_path_hash": manifest["launch_permit_path_hash"],
+        "launch_permit_hash": permit["permit_hash"],
+        "launch_permit_file_sha256": bootstrap._hash_bytes(
+            bootstrap._canonical_bytes(permit)
+        ),
+        "launch_permit_device": permit_info.st_dev,
+        "launch_permit_inode": permit_info.st_ino,
+    }
+    execution_authorization = {
+        **execution_body,
+        "execution_authorization_hash": bootstrap._hash_json(execution_body),
+    }
+    authorization_path = lifecycle / bootstrap._AUTHORIZATION_NAME
+    authorization_path.write_bytes(
+        bootstrap._canonical_bytes(execution_authorization)
+    )
+    authorization_path.chmod(0o600)
+    with pytest.raises(bootstrap.BootstrapError, match="launch permit is invalid"):
+        bootstrap._validate_launch_records(
+            manifest,
+            authorization_commit,
+            authorization_path,
+        )
+    assert permit_path.is_file()
+    assert not (lifecycle / bootstrap._CONSUMED_NAME).exists()
+    assert not (lifecycle / bootstrap._CLAIM_NAME).exists()
 
 
 def test_bootstrap_has_only_stdlib_top_level_imports_and_claim_precedes_candidate_import():

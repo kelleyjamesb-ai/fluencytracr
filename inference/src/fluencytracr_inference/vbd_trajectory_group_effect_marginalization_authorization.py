@@ -217,6 +217,21 @@ def _canonical_bytes(value: object) -> bytes:
     ).encode("utf-8") + b"\n"
 
 
+def _exact_native_equal(left: object, right: object) -> bool:
+    if type(left) is not type(right):
+        return False
+    if type(left) is dict:
+        return set(left) == set(right) and all(
+            _exact_native_equal(left[key], right[key]) for key in left
+        )
+    if type(left) in (list, tuple):
+        return len(left) == len(right) and all(
+            _exact_native_equal(left_item, right_item)
+            for left_item, right_item in zip(left, right, strict=True)
+        )
+    return left == right
+
+
 def _strict_pairs(pairs: list[tuple[str, object]]) -> dict:
     value = {}
     for key, item in pairs:
@@ -226,7 +241,10 @@ def _strict_pairs(pairs: list[tuple[str, object]]) -> dict:
     return value
 
 
-def _read_canonical_json(path: Path, label: str) -> dict:
+def _read_canonical_json_with_identity(
+    path: Path,
+    label: str,
+) -> tuple[dict, os.stat_result, str]:
     descriptor = -1
     root_fd = -1
     try:
@@ -267,6 +285,11 @@ def _read_canonical_json(path: Path, label: str) -> dict:
             os.close(root_fd)
     if type(value) is not dict or encoded != _canonical_bytes(value):
         _authorization_error(f"{label} bytes are noncanonical")
+    return value, info, hashlib.sha256(encoded).hexdigest()
+
+
+def _read_canonical_json(path: Path, label: str) -> dict:
+    value, _info, _file_hash = _read_canonical_json_with_identity(path, label)
     return value
 
 
@@ -299,7 +322,7 @@ def _write_exclusive_json(path: Path, value: dict, label: str) -> None:
             os.close(descriptor)
         if root_fd >= 0:
             os.close(root_fd)
-    if _read_canonical_json(path, label) != value:
+    if not _exact_native_equal(_read_canonical_json(path, label), value):
         _authorization_error(f"{label} readback differs")
 
 
@@ -939,7 +962,7 @@ def validate_vbd_trajectory_group_effect_marginalization_launch_permit(
         permit_token=token,
     )
     expected = {**body, "permit_hash": sha256_json(body)}
-    if value != expected:
+    if not _exact_native_equal(value, expected):
         _authorization_error("marginalization launch permit is invalid")
     return value
 
@@ -979,6 +1002,55 @@ def create_vbd_trajectory_group_effect_marginalization_launch_permit(
     )
 
 
+def _available_permit_identity(
+    *,
+    manifest: dict,
+    authorization_commit: str,
+) -> tuple[dict, int, int, str]:
+    permit_path = Path(manifest["launch_permit_path"])
+    permit, info, file_hash = _read_canonical_json_with_identity(
+        permit_path,
+        "marginalization launch permit",
+    )
+    permit = validate_vbd_trajectory_group_effect_marginalization_launch_permit(
+        permit,
+        manifest=manifest,
+        authorization_commit=authorization_commit,
+    )
+    if (
+        not stat.S_ISREG(info.st_mode)
+        or info.st_nlink != 1
+        or info.st_uid != os.getuid()
+        or stat.S_IMODE(info.st_mode) != 0o600
+    ):
+        _authorization_error("marginalization launch permit identity is unsafe")
+    return permit, info.st_dev, info.st_ino, file_hash
+
+
+def _validate_execution_authorization_available_permit(
+    value: dict,
+    *,
+    manifest: dict,
+    authorization_commit: str,
+) -> dict:
+    permit, device, inode, file_hash = _available_permit_identity(
+        manifest=manifest,
+        authorization_commit=authorization_commit,
+    )
+    expected_identity = {
+        "launch_permit_hash": permit["permit_hash"],
+        "launch_permit_file_sha256": file_hash,
+        "launch_permit_device": device,
+        "launch_permit_inode": inode,
+    }
+    actual_identity = {
+        key: value[key] for key in expected_identity
+    }
+    if not _exact_native_equal(actual_identity, expected_identity):
+        _authorization_error("marginalization launch permit identity differs")
+    return value
+
+
 def _regular_file_identity(path: Path, label: str) -> tuple[int, int, str]:
     try:
         info = path.lstat()
@@ -1014,15 +1086,9 @@ def build_vbd_trajectory_group_effect_marginalization_execution_authorization(
         manifest=manifest, phase="PERMIT_AVAILABLE"
     )
     _strict_commit(authorization_commit, "marginalization authorization commit")
-    permit_path = Path(manifest["launch_permit_path"])
-    permit = validate_vbd_trajectory_group_effect_marginalization_launch_permit(
-        _read_canonical_json(permit_path, "marginalization launch permit"),
+    permit, device, inode, file_hash = _available_permit_identity(
         manifest=manifest,
         authorization_commit=authorization_commit,
-    )
-    device, inode, file_hash = _regular_file_identity(
-        permit_path,
-        "marginalization launch permit",
     )
     if (
         type(authorizing_decision_ref) is not str
@@ -1052,10 +1118,15 @@ def build_vbd_trajectory_group_effect_marginalization_execution_authorization(
         "launch_permit_device": device,
         "launch_permit_inode": inode,
     }
-    return {
+    result = {
         **body,
         "execution_authorization_hash": sha256_json(body),
     }
+    return _validate_execution_authorization_available_permit(
+        result,
+        manifest=manifest,
+        authorization_commit=authorization_commit,
+    )
 
 
 def validate_vbd_trajectory_group_effect_marginalization_execution_authorization(
@@ -1151,6 +1222,11 @@ def write_vbd_trajectory_group_effect_marginalization_execution_authorization(
     preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
         manifest=manifest, phase="PERMIT_AVAILABLE"
     )
+    _validate_execution_authorization_available_permit(
+        authorization,
+        manifest=manifest,
+        authorization_commit=authorization_commit,
+    )
     _write_exclusive_json(
         Path(manifest["execution_authorization_record_path"]),
         authorization,
@@ -1226,7 +1302,7 @@ def validate_vbd_trajectory_group_effect_marginalization_claim(
         authorization_commit=authorization_commit,
     )
     expected = {**body, "claim_hash": sha256_json(body)}
-    if value != expected:
+    if not _exact_native_equal(value, expected):
         _authorization_error("marginalization attempt claim is invalid")
     return value
 
@@ -1417,7 +1493,7 @@ def validate_vbd_trajectory_group_effect_marginalization_input_binding(
             "expected_sampler_binding_hashes"
         ),
     )
-    if value != rebuilt:
+    if not _exact_native_equal(value, rebuilt):
         _authorization_error("marginalization input binding differs")
     return value
 
@@ -1505,7 +1581,7 @@ def validate_vbd_trajectory_group_effect_marginalization_completion_receipt(
         input_binding=input_binding,
         fit_records=fit_records,
     )
-    if value != rebuilt:
+    if not _exact_native_equal(value, rebuilt):
         _authorization_error("marginalization completion receipt differs")
     return value
 

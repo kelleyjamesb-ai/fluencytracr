@@ -157,6 +157,21 @@ def _canonical_bytes(value) -> bytes:
     )
 
 
+def _exact_native_equal(left, right) -> bool:
+    if type(left) is not type(right):
+        return False
+    if type(left) is dict:
+        return set(left) == set(right) and all(
+            _exact_native_equal(left[key], right[key]) for key in left
+        )
+    if type(left) in (list, tuple):
+        return len(left) == len(right) and all(
+            _exact_native_equal(left_item, right_item)
+            for left_item, right_item in zip(left, right, strict=True)
+        )
+    return left == right
+
+
 def _hash_json(value) -> str:
     return hashlib.sha256(_canonical_bytes(value)[:-1]).hexdigest()
 
@@ -563,8 +578,10 @@ def _validate_launch_records(
     if (
         type(permit.get("permit_token")) is not str
         or _HASH_RE.fullmatch(permit["permit_token"]) is None
-        or permit
-        != {**permit_body, "permit_hash": _hash_json(permit_body)}
+        or not _exact_native_equal(
+            permit,
+            {**permit_body, "permit_hash": _hash_json(permit_body)},
+        )
     ):
         raise BootstrapError("launch permit is invalid")
 
@@ -609,6 +626,7 @@ def _validate_launch_records(
         or _DECISION_RE.fullmatch(authorization["authorizing_decision_ref"]) is None
         or _strict_hash(authorization["decision_text_hash"], "decision hash")
         != authorization["decision_text_hash"]
+        or type(authorization["maximum_launch_count"]) is not int
         or authorization["maximum_launch_count"] != 1
         or authorization["canonical_workspace_identity"]
         != manifest["canonical_workspace_identity_hash"]
@@ -620,7 +638,9 @@ def _validate_launch_records(
         or authorization["launch_permit_hash"] != permit["permit_hash"]
         or authorization["launch_permit_file_sha256"]
         != _hash_bytes(_canonical_bytes(permit))
+        or type(authorization["launch_permit_device"]) is not int
         or authorization["launch_permit_device"] != permit_info.st_dev
+        or type(authorization["launch_permit_inode"]) is not int
         or authorization["launch_permit_inode"] != permit_info.st_ino
         or authorization["execution_authorization_hash"] != _hash_json(body)
     ):
@@ -735,7 +755,7 @@ def _consume_permit_and_claim(
     finally:
         os.close(root_fd)
     reread, info = _read_json(_LIFECYCLE / _CLAIM_NAME, "attempt claim")
-    if reread != claim or info.st_nlink != 1:
+    if not _exact_native_equal(reread, claim) or info.st_nlink != 1:
         raise BootstrapError("attempt claim readback differs")
     expected = tuple(sorted((_AUTHORIZATION_NAME, _CONSUMED_NAME, _CLAIM_NAME)))
     if _root_names(_LIFECYCLE) != expected or _root_names(_WORKSPACE) is not None:
