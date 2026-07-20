@@ -1174,18 +1174,11 @@ def _execute_child(
             vbd_trajectory_group_effect_marginalization_authorization as candidate,
         )
 
-        def revalidate_roots() -> None:
-            lifecycle_binding.revalidate()
-            workspace_binding.revalidate()
-            lifecycle_binding.revalidate()
-
-        candidate._install_vbd_trajectory_group_effect_marginalization_root_guard(
-            revalidate_roots,
-            _bootstrap_token=(
-                candidate._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
-            ),
+        _install_candidate_root_io(
+            candidate,
+            lifecycle_binding,
+            workspace_binding,
         )
-        revalidate_roots()
 
         candidate.bootstrap_claimed_vbd_trajectory_group_effect_marginalization(
             manifest=manifest,
@@ -1205,6 +1198,45 @@ def _execute_child(
         os.write(2, _canonical_bytes(payload))
         os._exit(70)
     os._exit(0)
+
+
+def _install_candidate_root_io(
+    candidate,
+    lifecycle_binding: _DirectoryBinding,
+    workspace_binding: _DirectoryBinding,
+) -> None:
+    def revalidate_roots() -> None:
+        lifecycle_binding.revalidate()
+        workspace_binding.revalidate()
+        lifecycle_binding.revalidate()
+
+    candidate._install_vbd_trajectory_group_effect_marginalization_root_guard(
+        revalidate_roots,
+        lifecycle_fd=lifecycle_binding.root_fd,
+        workspace_fd=workspace_binding.root_fd,
+        _bootstrap_token=(
+            candidate._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
+        ),
+    )
+    revalidate_roots()
+
+
+def _install_parent_candidate_root_io(
+    manifest: dict,
+    authorization_commit: str,
+    repo: Path,
+    reviewed_sources: dict,
+    lifecycle_binding: _DirectoryBinding,
+    workspace_binding: _DirectoryBinding,
+) -> None:
+    _revalidate_source_binding(manifest, authorization_commit, repo)
+    _reject_alternate_first_party_imports(reviewed_sources)
+    _install_reviewed_source_loader(manifest, reviewed_sources)
+    from fluencytracr_inference import (
+        vbd_trajectory_group_effect_marginalization_authorization as candidate,
+    )
+
+    _install_candidate_root_io(candidate, lifecycle_binding, workspace_binding)
 
 
 def _raise_supervisor_termination(signum: int, _frame) -> None:
@@ -1724,6 +1756,14 @@ def _run(authorization_path: Path) -> int:
         )
         lifecycle_binding.revalidate()
         workspace_binding.revalidate()
+        _install_parent_candidate_root_io(
+            manifest,
+            authorization_commit,
+            repo,
+            reviewed_sources,
+            lifecycle_binding,
+            workspace_binding,
+        )
         _publish(
             manifest,
             authorization_commit,

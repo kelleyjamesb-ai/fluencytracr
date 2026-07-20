@@ -810,6 +810,157 @@ def test_consumed_permit_rejects_name_rebinding_during_semantic_validation(
         )
 
 
+def _install_test_bound_root_io(monkeypatch, lifecycle: Path, workspace: Path):
+    monkeypatch.setattr(
+        authorization,
+        "VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH",
+        str(lifecycle),
+    )
+    monkeypatch.setattr(
+        authorization,
+        "VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH",
+        str(workspace),
+    )
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_ROOT_GUARD", None)
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_BOUND_ROOT_FDS", None)
+    lifecycle_fd = __import__("os").open(lifecycle, __import__("os").O_RDONLY)
+    workspace_fd = __import__("os").open(workspace, __import__("os").O_RDONLY)
+    authorization._install_vbd_trajectory_group_effect_marginalization_root_guard(
+        lambda: None,
+        lifecycle_fd=lifecycle_fd,
+        workspace_fd=workspace_fd,
+        _bootstrap_token=(
+            authorization._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
+        ),
+    )
+    return lifecycle_fd, workspace_fd
+
+
+@pytest.mark.parametrize(
+    ("root_name", "filename"),
+    (
+        ("lifecycle", "input_binding.json"),
+        ("lifecycle", "completion_receipt.json"),
+        ("workspace", "marginalization_diagnostic.staged.json"),
+    ),
+)
+def test_claimed_artifact_write_rejects_name_swap_at_open(
+    tmp_path,
+    monkeypatch,
+    root_name,
+    filename,
+):
+    os_module = __import__("os")
+    lifecycle = tmp_path / "lifecycle"
+    workspace = tmp_path / "workspace"
+    lifecycle.mkdir(mode=0o700)
+    workspace.mkdir(mode=0o700)
+    lifecycle_fd, workspace_fd = _install_test_bound_root_io(
+        monkeypatch, lifecycle, workspace
+    )
+    root = lifecycle if root_name == "lifecycle" else workspace
+    original_open = authorization.os.open
+    swapped = False
+
+    def swap_at_open(path, flags, mode=0o777, *, dir_fd=None):
+        nonlocal swapped
+        descriptor = original_open(path, flags, mode, dir_fd=dir_fd)
+        if path == filename and not swapped:
+            swapped = True
+            os_module.rename(
+                filename,
+                f"{filename}.detached",
+                src_dir_fd=dir_fd,
+                dst_dir_fd=dir_fd,
+            )
+            replacement = original_open(
+                filename,
+                os_module.O_WRONLY | os_module.O_CREAT | os_module.O_EXCL,
+                0o600,
+                dir_fd=dir_fd,
+            )
+            os_module.write(replacement, b"replacement\n")
+            os_module.close(replacement)
+        return descriptor
+
+    monkeypatch.setattr(authorization.os, "open", swap_at_open)
+    try:
+        with pytest.raises(
+            authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+            match="same-descriptor readback differs",
+        ):
+            authorization._write_exclusive_json(
+                root / filename,
+                {"artifact": filename},
+                filename,
+            )
+        assert swapped
+    finally:
+        monkeypatch.setattr(authorization.os, "open", original_open)
+        for descriptor in authorization._BOOTSTRAP_BOUND_ROOT_FDS.values():
+            os_module.close(descriptor)
+        os_module.close(lifecycle_fd)
+        os_module.close(workspace_fd)
+
+
+def test_persisted_validation_read_rejects_name_swap_at_open(
+    tmp_path,
+    monkeypatch,
+):
+    os_module = __import__("os")
+    lifecycle = tmp_path / "lifecycle"
+    workspace = tmp_path / "workspace"
+    lifecycle.mkdir(mode=0o700)
+    workspace.mkdir(mode=0o700)
+    filename = "marginalization_diagnostic.staged.json"
+    encoded = authorization._canonical_bytes({"record": "held"})
+    (workspace / filename).write_bytes(encoded)
+    lifecycle_fd, workspace_fd = _install_test_bound_root_io(
+        monkeypatch, lifecycle, workspace
+    )
+    original_open = authorization.os.open
+    swapped = False
+
+    def swap_at_open(path, flags, mode=0o777, *, dir_fd=None):
+        nonlocal swapped
+        descriptor = original_open(path, flags, mode, dir_fd=dir_fd)
+        if path == filename and not swapped:
+            swapped = True
+            os_module.rename(
+                filename,
+                f"{filename}.detached",
+                src_dir_fd=dir_fd,
+                dst_dir_fd=dir_fd,
+            )
+            replacement = original_open(
+                filename,
+                os_module.O_WRONLY | os_module.O_CREAT | os_module.O_EXCL,
+                0o600,
+                dir_fd=dir_fd,
+            )
+            os_module.write(replacement, encoded)
+            os_module.close(replacement)
+        return descriptor
+
+    monkeypatch.setattr(authorization.os, "open", swap_at_open)
+    try:
+        with pytest.raises(
+            authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+            match="binding changed",
+        ):
+            authorization._read_canonical_json(
+                workspace / filename,
+                "marginalization persisted output",
+            )
+        assert swapped
+    finally:
+        monkeypatch.setattr(authorization.os, "open", original_open)
+        for descriptor in authorization._BOOTSTRAP_BOUND_ROOT_FDS.values():
+            os_module.close(descriptor)
+        os_module.close(lifecycle_fd)
+        os_module.close(workspace_fd)
+
+
 @pytest.mark.parametrize("fail_pending_validation", (False, True))
 def test_publication_is_one_inode_and_rolls_back_invalid_pending_output(
     tmp_path, monkeypatch, fail_pending_validation
@@ -1467,6 +1618,11 @@ def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypa
         lambda *_args: fake_workspace_binding,
     )
     monkeypatch.setattr(bootstrap, "_run_claimed_child", lambda *_args: None)
+    monkeypatch.setattr(
+        bootstrap,
+        "_install_parent_candidate_root_io",
+        lambda *_args: None,
+    )
 
     def publish(*_args):
         output.write_bytes(b"{}\n")

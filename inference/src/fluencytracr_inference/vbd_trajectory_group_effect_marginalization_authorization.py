@@ -312,7 +312,7 @@ def _open_canonical_json_binding(path: Path, label: str) -> _CanonicalJsonBindin
     descriptor = -1
     root_fd = -1
     try:
-        root_fd = _open_absolute_directory_no_symlinks(
+        root_fd = _open_bound_or_absolute_directory(
             path.parent,
             create_leaf=False,
         )
@@ -396,14 +396,14 @@ def _write_exclusive_json(path: Path, value: dict, label: str) -> None:
     descriptor = -1
     root_fd = -1
     try:
-        root_fd = _open_absolute_directory_no_symlinks(
+        root_fd = _open_bound_or_absolute_directory(
             root,
-            create_leaf=True,
+            create_leaf=_BOOTSTRAP_BOUND_ROOT_FDS is None,
         )
         os.fchmod(root_fd, 0o700)
         descriptor = os.open(
             path.name,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
             0o600,
             dir_fd=root_fd,
         )
@@ -412,6 +412,27 @@ def _write_exclusive_json(path: Path, value: dict, label: str) -> None:
             written += os.write(descriptor, encoded[written:])
         os.fsync(descriptor)
         os.fsync(root_fd)
+        opened = os.fstat(descriptor)
+        current = os.stat(path.name, dir_fd=root_fd, follow_symlinks=False)
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        chunks = []
+        while True:
+            chunk = os.read(descriptor, 1 << 20)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or not stat.S_ISREG(current.st_mode)
+            or (opened.st_dev, opened.st_ino)
+            != (current.st_dev, current.st_ino)
+            or opened.st_nlink != 1
+            or current.st_nlink != 1
+            or b"".join(chunks) != encoded
+        ):
+            _authorization_error(f"{label} same-descriptor readback differs")
+        if _BOOTSTRAP_BOUND_ROOT_FDS is not None:
+            _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     except OSError as exc:
         _authorization_error(f"{label} could not be written create-once", exc)
     finally:
@@ -624,28 +645,92 @@ _ROOT_PHASE_FILES = {
 
 
 _BOOTSTRAP_ROOT_GUARD = None
+_BOOTSTRAP_BOUND_ROOT_FDS = None
 
 
 def _install_vbd_trajectory_group_effect_marginalization_root_guard(
     guard,
     *,
+    lifecycle_fd: int,
+    workspace_fd: int,
     _bootstrap_token: object,
 ) -> None:
-    global _BOOTSTRAP_ROOT_GUARD
+    global _BOOTSTRAP_BOUND_ROOT_FDS, _BOOTSTRAP_ROOT_GUARD
     if (
         _bootstrap_token
         is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
         or not callable(guard)
+        or type(lifecycle_fd) is not int
+        or type(workspace_fd) is not int
         or _BOOTSTRAP_ROOT_GUARD is not None
+        or _BOOTSTRAP_BOUND_ROOT_FDS is not None
     ):
         _authorization_error("marginalization bootstrap root guard is invalid")
+    duplicates = []
+    try:
+        lifecycle_info = os.fstat(lifecycle_fd)
+        workspace_info = os.fstat(workspace_fd)
+        if (
+            not stat.S_ISDIR(lifecycle_info.st_mode)
+            or not stat.S_ISDIR(workspace_info.st_mode)
+        ):
+            raise OSError("bound root is not a directory")
+        duplicates.append(os.dup(lifecycle_fd))
+        duplicates.append(os.dup(workspace_fd))
+        bound = dict(
+            zip(
+                (
+                    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH,
+                    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH,
+                ),
+                duplicates,
+                strict=True,
+            )
+        )
+    except OSError as exc:
+        for descriptor in duplicates:
+            os.close(descriptor)
+        _authorization_error("marginalization bootstrap root descriptors are invalid", exc)
     _BOOTSTRAP_ROOT_GUARD = guard
+    _BOOTSTRAP_BOUND_ROOT_FDS = bound
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
 
 
 def _revalidate_vbd_trajectory_group_effect_marginalization_root_guard() -> None:
     if _BOOTSTRAP_ROOT_GUARD is None:
         _authorization_error("marginalization bootstrap root guard is unavailable")
     _BOOTSTRAP_ROOT_GUARD()
+
+
+def _open_bound_or_absolute_directory(
+    path: Path,
+    *,
+    create_leaf: bool,
+) -> int:
+    path = _strict_absolute_path(str(path), "marginalization directory")
+    if _BOOTSTRAP_BOUND_ROOT_FDS is None:
+        return _open_absolute_directory_no_symlinks(path, create_leaf=create_leaf)
+    if create_leaf:
+        _authorization_error("claimed marginalization roots cannot be created again")
+    descriptor = _BOOTSTRAP_BOUND_ROOT_FDS.get(str(path))
+    if descriptor is None:
+        _authorization_error("claimed marginalization path is outside bound roots")
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
+    try:
+        duplicate = os.dup(descriptor)
+        source = os.fstat(descriptor)
+        opened = os.fstat(duplicate)
+    except OSError as exc:
+        _authorization_error("claimed marginalization root cannot be duplicated", exc)
+    if (
+        not stat.S_ISDIR(source.st_mode)
+        or not stat.S_ISDIR(opened.st_mode)
+        or (source.st_dev, source.st_ino) != (opened.st_dev, opened.st_ino)
+    ):
+        os.close(duplicate)
+        _authorization_error("claimed marginalization root descriptor differs")
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
+    return duplicate
 
 
 def _validate_root_files(
@@ -656,12 +741,14 @@ def _validate_root_files(
     expected_link_count: int = 1,
 ) -> int | None:
     if expected is None:
+        if _BOOTSTRAP_BOUND_ROOT_FDS is not None:
+            _authorization_error(f"{label} absence cannot be checked after binding")
         if path.exists() or path.is_symlink():
             _authorization_error(f"{label} must not exist")
         return None
     descriptor = -1
     try:
-        descriptor = _open_absolute_directory_no_symlinks(
+        descriptor = _open_bound_or_absolute_directory(
             path,
             create_leaf=False,
         )
@@ -1471,8 +1558,15 @@ def read_vbd_trajectory_group_effect_marginalization_execution_authorization(
     manifest: dict,
     authorization_commit: str,
 ) -> dict:
-    expected = Path(manifest["execution_authorization_record_path"])
-    if path.resolve() != expected:
+    expected = _strict_absolute_path(
+        str(manifest["execution_authorization_record_path"]),
+        "marginalization execution authorization path",
+    )
+    candidate = _strict_absolute_path(
+        str(path),
+        "marginalization execution authorization path",
+    )
+    if candidate != expected:
         _authorization_error("marginalization execution authorization path is off-plan")
     return _read_bound_canonical_json(
         path,
@@ -1915,26 +2009,35 @@ def validate_vbd_trajectory_group_effect_marginalization_persisted_output(
     manifest = validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
         manifest
     )
-    staged_path = (
-        Path(manifest["canonical_workspace_path"])
-        / VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_STAGED_OUTPUT_FILENAME
-    ).resolve()
-    output_path = Path(manifest["output_path"]).resolve()
-    resolved_path = path.resolve()
-    if resolved_path == staged_path and _publication_token is None:
+    staged_path = _strict_absolute_path(
+        str(
+            Path(manifest["canonical_workspace_path"])
+            / VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_STAGED_OUTPUT_FILENAME
+        ),
+        "marginalization staged output path",
+    )
+    output_path = _strict_absolute_path(
+        str(Path(manifest["output_path"])),
+        "marginalization output path",
+    )
+    candidate_path = _strict_absolute_path(
+        str(path),
+        "marginalization persisted output path",
+    )
+    if candidate_path == staged_path and _publication_token is None:
         root_phase = "STAGED"
         expected_link_count = 1
     elif (
-        resolved_path == output_path
+        candidate_path == output_path
         and _publication_token
         is _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PUBLICATION_TOKEN
     ):
         root_phase = "PUBLISHING"
         expected_link_count = 2
-    elif resolved_path == output_path and _publication_token is None:
+    elif candidate_path == output_path and _publication_token is None:
         root_phase = "PUBLISHED"
         expected_link_count = 1
-    elif resolved_path in {staged_path, output_path}:
+    elif candidate_path in {staged_path, output_path}:
         _authorization_error("marginalization publication token is invalid")
     else:
         _authorization_error("marginalization persisted output path is off-plan")
