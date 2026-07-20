@@ -439,7 +439,7 @@ record hash is
 `44f2080f78eed19c21611a4f3f832b79072caadbb222d6068435a6fe89240461`.
 Neither value enters evidence or clears task `2.6`.
 
-The prospective `vbd_group_effect_geometry_diagnostic_v1` pairs the frozen
+The completed `vbd_group_effect_geometry_diagnostic_v1` pairs the frozen
 centered `u ~ ZeroSumNormal(0,sigma_u)` target with
 `u_std ~ ZeroSumNormal(0,1); u=sigma_u*u_std`. Only the group-effect
 parameterization changes. The induced prior, exact zero-sum constraint,
@@ -476,6 +476,34 @@ consumption, including claim-establishment failure, leaves the launch consumed,
 and every second invocation rejects before numerical work. A passing diagnostic
 can support only a later contract amendment and new replacement-canary
 identities.
+
+The exact governed launch used implementation
+`28521d0d30aa713f77484e3172c05df0838b08e6` and sole-child manifest-only
+authorization `709dea164cc3e0c77e5b077a9b1d90a875c11948`. Its manifest hash is
+`91f7a73a5cbfe98acb8bc708cf9547dd1f4f7b7fcb423b79dd411f22e7f1371c`;
+execution-authorization hash is
+`da919576c0b2749b9b6dbddee8f05f67d7bd51a1f1107bc64f79dda58bffbe0b`;
+claim hash is
+`433df470d10409a652d078c088309b3277105e6a6f347514ec9c25f4079b774b`;
+input-binding hash is
+`84209f80ee86632a0ad7300af81395f788a2e886e33deec9c2513c6831ef360a`;
+and completion-receipt hash is
+`a242903c742f026169054bdf6fddca2d1e14d274049628f9e60d14b62dca4c12`.
+The strict persisted validator admitted exactly twelve ordered arms, 234
+sampler rows, and 180 deterministic-reference comparisons. Artifact SHA-256
+is `1fda8dab47c8563af77e85dc3a2095fde49fd87c09bc83afa24cbbb1a34d6339`;
+record hash is
+`a25e9141d5ae0372a4d92851f5e1ddf92265829fa3ae7033ab42a863cd50c1f8`.
+
+The predeclared classification is `REJECT_NONCENTERED_CANDIDATE`. Every
+non-centered arm had zero divergences, but case-0 Breadth `u_std[5]` had a
+99% lower-endpoint MCSE ratio of `0.11256762551677787`, and case-1 Frequency
+`u[2]` had a 99% upper-endpoint MCSE ratio of `0.24197029311231413` plus a
+99% upper-endpoint deterministic-reference difference of
+`0.23954276555797224`. These exceed the unchanged `0.10` MCSE and `0.20`
+reference gates. The result remains permanent non-evidentiary HOLD, rejects
+this candidate, cannot complete task `2.6`, and cannot be retried, resumed,
+extended, or moved into concordance or calibration.
 
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.

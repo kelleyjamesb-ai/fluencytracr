@@ -983,8 +983,8 @@ The divergence counts SHALL prevent any interpretation that the centered
 geometry is gate-clear. Neither passing MCSE nor a rehash SHALL clear the V3
 HOLD, the consumed precision canary, task `2.6`, or any proof stage.
 
-One prospective `vbd_group_effect_geometry_diagnostic_v1` MAY be specified
-only for later separately authorized implementation and execution. It SHALL
+The completed `vbd_group_effect_geometry_diagnostic_v1` SHALL be the sole
+authorized instance of this frozen paired diagnostic. It SHALL
 compare exactly two parameterization arms on the same fresh synthetic panel
 within each case/lane. The centered arm SHALL retain
 `u ~ ZeroSumNormal(sigma=sigma_u, shape=C)`. The non-centered arm SHALL use
@@ -1075,10 +1075,11 @@ exact-byte CODE, BUG, ADVERSARIAL, and statistical-methodology GO for this
 amendment. Repeatable sampler-free model-shape, variable-set,
 canonical-projection, posterior-identity, and malformed-record fixtures MAY
 run before exact implementation review and SHALL remain non-evidentiary. A
-future full diagnostic SHALL require a clean implementation commit, four exact
-GO reviews, a sole-child manifest-only authorization commit, a separate exact
-human execution record, one fixed external launch permit and claim, and one
-complete launch. The reviewed bootstrap SHALL first atomically consume and
+completed full diagnostic is recognized only because it used a clean
+implementation commit, four exact GO reviews, a sole-child manifest-only
+authorization commit, a separate exact human execution record, one fixed
+external launch permit and claim, and one complete launch. The reviewed
+bootstrap SHALL first atomically consume and
 durably sync the manifest-bound one-launch permit, then atomically create,
 durably sync, and strictly revalidate the fixed external claim before it starts
 any child, imports candidate generator code, generates data, or invokes a
@@ -1088,6 +1089,38 @@ second invocation SHALL reject before numerical work, and output produced
 without the valid claim SHALL be unclassifiable `INVALID_HOLD`. After claim
 creation, retry, resume, adaptive extension, arm omission, seed substitution,
 and result-conditioned model change SHALL be forbidden.
+
+The completed launch SHALL remain bound to implementation
+`28521d0d30aa713f77484e3172c05df0838b08e6`, authorization
+`709dea164cc3e0c77e5b077a9b1d90a875c11948`, manifest hash
+`91f7a73a5cbfe98acb8bc708cf9547dd1f4f7b7fcb423b79dd411f22e7f1371c`,
+execution-authorization hash
+`da919576c0b2749b9b6dbddee8f05f67d7bd51a1f1107bc64f79dda58bffbe0b`,
+claim hash
+`433df470d10409a652d078c088309b3277105e6a6f347514ec9c25f4079b774b`,
+input-binding hash
+`84209f80ee86632a0ad7300af81395f788a2e886e33deec9c2513c6831ef360a`,
+completion-receipt hash
+`a242903c742f026169054bdf6fddca2d1e14d274049628f9e60d14b62dca4c12`,
+artifact SHA-256
+`1fda8dab47c8563af77e85dc3a2095fde49fd87c09bc83afa24cbbb1a34d6339`,
+and record hash
+`a25e9141d5ae0372a4d92851f5e1ddf92265829fa3ae7033ab42a863cd50c1f8`.
+Strict persisted validation SHALL continue to reconstruct exactly twelve arms,
+234 sampler rows, and 180 deterministic-reference comparisons.
+
+The exact result SHALL remain `REJECT_NONCENTERED_CANDIDATE`. Case-0 Breadth
+`u_std[5]` failed the unchanged 99% lower-endpoint MCSE-ratio gate with
+`0.11256762551677787`; case-1 Frequency `u[2]` failed the unchanged 99% upper-
+endpoint MCSE-ratio gate with `0.24197029311231413` and the unchanged 99%
+upper-endpoint deterministic-reference gate with
+`0.23954276555797224`. Every non-centered arm recorded zero divergences, but
+divergence improvement SHALL NOT offset either failed accuracy gate. The
+artifact SHALL remain permanent HOLD with zero evidence and acceptance-count
+effect; task `2.6`, replacement `S/F`, concordance, calibration, and every
+later proof stage SHALL remain blocked. No retry, resume, seed rotation,
+adaptive extension, threshold change, or result-conditioned model change is
+permitted.
 
 #### Scenario: V3 MCSE passes while centered sampling diverges
 

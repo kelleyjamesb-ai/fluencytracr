@@ -251,7 +251,7 @@
       "bound": "Synthetic-only inference/, internal confidence-engine bridge tests only if required, and verified OpenSpec/docs/status: complete task 2.6 by implementing conditional_normal_mixture_quantile_v2 with exact binary64 oracles, centered 4x20k retained/5k tune/.999/adapt_full NUTS settings, five separate MCSE fields for every required parameter, fixed 4,000-state PPC selector, 7,200-second primary bundle-child timeout, old-lineage rejection, and exact six-/twelve-group full-setting precision canaries under the frozen smoke seeds; run both canaries only after focused/full verification and keep them permanent non-evidence HOLD; preserve model, priors, estimand, acceptance seeds, every statistical threshold, 30-bundle universe, and fail-closed behavior; no replacement S/F, acceptance seed, concordance bundle, acceptance canary, replicated study, real/customer/live data, public schema, route, UI, persistence, connector, export, customer output, confidence/probability, ROI, causality, productivity, ranking, new event/reason, promotion, task 3.1+, or parent 5.6 completion",
       "status": "pending",
       "risk": "high",
-      "last_note": "Statistical HOLD 2026-07-17: clean c7014906 canary 0 returned a fully validated result whose only otherwise-applicable failing category was mcse. Canary 1 did not run. Task 2.6, replacement S/F, concordance, and evidence remain blocked. Do not lower 0.10, rotate seeds, retry/extend, or run later work; next needs a bounded methodology decision based on this failed precision design."
+      "last_note": "Statistical HOLD updated 2026-07-19: canary 0 remains consumed with MCSE failure and canary 1 remains unrun. The separately governed geometry diagnostic validly classified REJECT_NONCENTERED_CANDIDATE: noncentering removed divergences but failed the unchanged 0.10 tail-MCSE and 0.20 deterministic-reference gates. Task 2.6, replacement S/F, concordance, and evidence remain blocked. Do not retry, rotate seeds, extend draws, lower gates, or run later work; the next move requires a new prospective methodology decision."
     },
     {
       "id": "vbd-trajectory-engine-concordance",
@@ -259,7 +259,7 @@
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
       "status": "pending",
       "risk": "high",
-      "last_note": "Old F=0287713d is permanent HOLD and must never resume. Numerical-precision contract amendment is complete; concordance remains pending behind separate task 2.6 implementation approval, both non-admissible precision canaries, replacement task 3.1 source/reviews, and a new sole-child freeze. No bundle beyond old bundle 0 may start."
+      "last_note": "Blocked 2026-07-19: old F=0287713d is permanent HOLD and must never resume. The one-shot geometry diagnostic rejected the current noncentered candidate under unchanged tail-MCSE and deterministic-reference gates, so task 2.6 remains incomplete and no replacement S/F or concordance bundle may start. A new prospective methodology decision is required before any further implementation."
     },
     {
       "id": "vbd-trajectory-full-evidence",
@@ -361,17 +361,17 @@
       "id": "vbd-noncentered-geometry-manifest-authorization",
       "title": "VBD geometry diagnostic sole-child manifest authorization",
       "bound": "Synthetic-only exact-D authorization milestone: after clean exact-commit CODE, BUG, ADVERSARIAL, and statistical-methodology GO, create and verify sole-child commit A whose only diff is the geometry authorization manifest binding exact implementation, runtime, lockfile, model, plan, seeds, command, fixed roots, and review refs; no external execution authorization record, permit or claim consumption, generator, sampler, result, task 2.6 completion, S/F, concordance, calibration, real/customer/live data, public surface, customer output, or promotion",
-      "status": "pending",
+      "status": "done",
       "risk": "high",
-      "last_note": "Pending completion and exact review of the authorization implementation commit D."
+      "last_note": "Done 2026-07-19: exact reviewed D2=28521d0d30aa713f77484e3172c05df0838b08e6 and sole-child manifest-only A2=709dea164cc3e0c77e5b077a9b1d90a875c11948 bind runtime, lockfile, model, plan, seeds, command, fixed roots, and four GO references under manifest hash 91f7a73a5cbfe98acb8bc708cf9547dd1f4f7b7fcb423b79dd411f22e7f1371c."
     },
     {
       "id": "vbd-noncentered-geometry-one-shot-execution",
       "title": "VBD geometry diagnostic one-shot execution",
       "bound": "Synthetic-only exact-A execution and status: create the exact external human execution-authorization record, consume the one permitted fixed launch permit and claim, run only the frozen two-case twelve-arm geometry diagnostic, validate the complete sanitized result, and preserve permanent HOLD and proof-count exclusion; no retry, resume, adaptive extension, seed substitution, model or threshold change, task 2.6 completion without a supported valid result and later amendment, S/F, concordance, calibration, real/customer/live data, public surface, customer output, or promotion",
-      "status": "pending",
+      "status": "done",
       "risk": "high",
-      "last_note": "Pending exact sole-child authorization commit A and a record that binds its final SHA."
+      "last_note": "Done/consumed 2026-07-19: exact A2 launch exited zero and strict persisted validation passed for artifact 1fda8dab47c8563af77e85dc3a2095fde49fd87c09bc83afa24cbbb1a34d6339, record a25e9141d5ae0372a4d92851f5e1ddf92265829fa3ae7033ab42a863cd50c1f8, 12 arms, 234 sampler rows, and 180 reference comparisons. Classification is REJECT_NONCENTERED_CANDIDATE because fixed tail-MCSE and reference gates failed. Four post-run reviews returned GO for artifact integrity and classification. Permanent HOLD, no retry, task 2.6 incomplete, and no S/F, concordance, or calibration."
     }
   ]
 }
