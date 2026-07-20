@@ -60,6 +60,11 @@
   supported/reject/invalid rules; obtain CODE, BUG, ADVERSARIAL, and
   statistical-methodology GO for the amended docs bytes without implementation
   or execution.
+- [x] 1.13 Record the consumed V1 marginalization launch as permanent
+  `INVALID_HOLD`, diagnose the pre-generation plan-dispatch `ValueError`
+  statically, and predeclare a separate V2 identity with fresh roots and seeds,
+  explicit generator admission, and pre-permit alternate-import scanning;
+  obtain four-role GO without implementation or execution.
 
 ## 2. Future Synthetic Implementation
 
@@ -152,7 +157,7 @@
   permit/claim lifecycle, isolated one-shot bootstrap, strict completed-result
   projection, and permanent-HOLD publication; do not create authorization
   commit `A`, a permit, claim, external root, or run a generator or sampler.
-- [ ] 2.18 After exact-commit CODE, BUG, ADVERSARIAL, and
+- [x] 2.18 After exact-commit CODE, BUG, ADVERSARIAL, and
   statistical-methodology GO for clean authorization implementation `D`,
   create and verify a separately reviewed sole-child manifest-only
   authorization commit `A`; do not create the external human execution record
@@ -163,7 +168,20 @@
   permanent HOLD and proof-count exclusion. A supported result may authorize
   only a later docs/OpenSpec amendment and fresh precision-canary identities;
   it does not complete task `2.6`, change the proof reference, or start
-  concordance or calibration.
+  concordance or calibration. The consumed V1 launch failed before an input
+  binding or result and does not satisfy this task.
+- [ ] 2.20 After task `1.13` and separate implementation authorization,
+  implement `vbd_group_effect_marginalization_diagnostic_v2` with fresh roots
+  and 52 fresh seeds, exact diagnostic-plan generator admission, a sampler-free
+  production-wrapper reachability fixture, V1 tombstones, and pre-permit
+  alternate-import scanning; do not create `A2`, a permit, claim, root, or run.
+- [ ] 2.21 After exact-commit four-role GO for clean V2 implementation `D2`,
+  create and review sole-child manifest-only authorization `A2`; do not create
+  the external execution record or run V2.
+- [ ] 2.22 After exact `A2` and a separately bound human execution record,
+  consume one new fixed launch and run V2 once. Preserve permanent HOLD and
+  proof exclusion; no retry, task `2.6`, canary, concordance, or calibration is
+  authorized.
 
 ## 3. Future Engine Concordance
 

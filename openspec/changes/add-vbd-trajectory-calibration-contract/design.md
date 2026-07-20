@@ -623,6 +623,49 @@ authorize only a later docs/OpenSpec amendment and fresh precision-canary
 identities after separate implementation, four-role review, manifest-only
 authorization, human execution authorization, and one consumed launch.
 
+The V1 authorization lineage is consumed and permanent `INVALID_HOLD`.
+Authorization commit `9e4010e2520f30f78ba40e0248e13dc546f2d346`
+bound manifest
+`bb50439dd69f0546a4e24a0bd16f351fb70d286df07024449c28a63a2053fbe1`.
+Execution authorization
+`3ee0fd4305169f3533b86c56641508a33e064517e2fbf520ca038b9dfc71af4b`
+consumed permit
+`d84faa9e55c5273fcf2690ebaa1739d6eb6cfc57c4eb8498c662ab9e1ecaa1a6`
+and created claim
+`b4d9f84d38deb7059dab5e209e42db9671e60a6c7b9d292328e2b682c3ac7fc9`.
+The child exited `1` with `ValueError`; no input binding, completion receipt,
+output, record hash, or sampler call exists, and the V1 workspace is empty.
+
+Static review identifies the exact failure. The V1 wrapper supplied
+`plan:vbd-group-effect-marginalization-diagnostic-v1` to
+`_generate_vbd_trajectory_case`, whose dispatcher recognized only smoke,
+validation, and concordance plan references. It raised
+`ValueError("synthetic generation plan identity is not compiled")` before
+`_generate_base_paths`. No synthetic panel or deterministic reference existed.
+
+A prospective `vbd_group_effect_marginalization_diagnostic_v2` preserves the
+four cases and all statistical settings. Its exact plan reference is
+`plan:vbd-group-effect-marginalization-diagnostic-v2`, its seed namespace is
+`group_effect_marginalization_diagnostic_v2_nonacceptance`, and its case
+scenario IDs are
+`development_smoke_scenario_vbd_group_effect_marginalization_diagnostic_v2_case_i`.
+It reserves generator seeds
+`2_055_901_200..203` and chain seeds
+`2_055_901_300+12*i+4*d+c`, exactly `2_055_901_300..347`. Its roots are
+`/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-workspace`
+and
+`/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-lifecycle`.
+V1 roots, seeds, authorization, permit, claim, command, and workspace satisfy
+no V2 gate.
+
+Future V2 implementation must explicitly admit only its exact diagnostic plan,
+case, seed namespace, and runner token. A sampler-free production-wrapper
+fixture must reach `_generate_base_paths` and reject V1 and every off-plan
+identity. Before permit creation, V2 authorization must repeat the standalone
+alternate-first-party-import-artifact scan. V2 otherwise changes no model,
+prior, estimand, case, sampler setting, reconstruction, threshold, gate,
+permanent-HOLD rule, or proof exclusion.
+
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.
 Diagnostic outputs are joined only after exact parameter-dimension,

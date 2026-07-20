@@ -1362,6 +1362,54 @@ result and later amendment exist, the current centered-reference prohibition
 against collapse and reconstruction SHALL remain in force for precision
 canaries, concordance, and evidence.
 
+The V1 launch SHALL remain consumed permanent `INVALID_HOLD` under
+authorization commit `9e4010e2520f30f78ba40e0248e13dc546f2d346`, manifest
+`bb50439dd69f0546a4e24a0bd16f351fb70d286df07024449c28a63a2053fbe1`,
+execution authorization
+`3ee0fd4305169f3533b86c56641508a33e064517e2fbf520ca038b9dfc71af4b`,
+permit `d84faa9e55c5273fcf2690ebaa1739d6eb6cfc57c4eb8498c662ab9e1ecaa1a6`,
+and claim `b4d9f84d38deb7059dab5e209e42db9671e60a6c7b9d292328e2b682c3ac7fc9`.
+The child exited `1` with `ValueError`; no input binding, completion receipt,
+output, record hash, or sampler call exists. The shared generator rejected the
+V1 diagnostic plan before `_generate_base_paths`. V1 SHALL NOT be retried,
+resumed, repaired in place, or reused.
+
+A prospective `vbd_group_effect_marginalization_diagnostic_v2` SHALL preserve
+the exact V1 model, priors, estimand, four cases, aggregate `k=16`, fit order,
+deterministic references, reconstruction, sampler settings, thresholds, gates,
+permanent HOLD, and proof exclusion. Its plan reference SHALL be
+`plan:vbd-group-effect-marginalization-diagnostic-v2`, its seed namespace SHALL
+be `group_effect_marginalization_diagnostic_v2_nonacceptance`, and its scenario
+IDs SHALL be
+`development_smoke_scenario_vbd_group_effect_marginalization_diagnostic_v2_case_i`.
+It SHALL reserve generator seeds
+`2_055_901_200..203` and chain seeds
+`2_055_901_300+12*i+4*d+c`, exactly `2_055_901_300..347`. Its roots SHALL be
+`/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-workspace`
+and
+`/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-lifecycle`.
+
+Future V2 implementation SHALL explicitly admit only the exact V2 plan, case,
+seed namespace, and runner token. A sampler-free production-wrapper fixture
+SHALL reach `_generate_base_paths` and reject V1 and every off-plan identity.
+Before permit creation, authorization preflight SHALL repeat the standalone
+alternate-first-party-import-artifact scan.
+
+#### Scenario: Consumed V1 identity is reused
+
+- **GIVEN** any path presents a V1 root, seed, authorization, permit, claim,
+  command, or workspace
+- **WHEN** V2 admission runs
+- **THEN** it SHALL reject before generation or sampling
+- **AND** V1 SHALL remain permanent `INVALID_HOLD`
+
+#### Scenario: V2 generator admission is not independently compiled
+
+- **GIVEN** V2 lacks its exact admission branch or production-wrapper fixture
+- **WHEN** implementation review runs
+- **THEN** V2 SHALL remain unauthorized
+- **AND** no permit, claim, root, generator, or sampler may run
+
 #### Scenario: Marginal target drops zero-sum cross-group covariance
 
 - **GIVEN** a candidate replaces `P=I-11'/C` with diagonal or independent

@@ -1204,6 +1204,47 @@ authorization, human execution authorization, and one consumed launch are
 required before the diagnostic may run. Task `2.6`, replacement `S/F`,
 concordance, calibration, real-data admission, and product work remain blocked.
 
+### Consumed Marginalization V1 And Prospective V2
+
+V1 is consumed permanent `INVALID_HOLD`. Its immutable hashes are:
+
+- authorization commit
+  `9e4010e2520f30f78ba40e0248e13dc546f2d346`;
+- manifest
+  `bb50439dd69f0546a4e24a0bd16f351fb70d286df07024449c28a63a2053fbe1`;
+- execution authorization
+  `3ee0fd4305169f3533b86c56641508a33e064517e2fbf520ca038b9dfc71af4b`;
+- permit `d84faa9e55c5273fcf2690ebaa1739d6eb6cfc57c4eb8498c662ab9e1ecaa1a6`;
+- claim `b4d9f84d38deb7059dab5e209e42db9671e60a6c7b9d292328e2b682c3ac7fc9`.
+
+The child exited `1` with `ValueError`. There is no input binding, completion
+receipt, output, record hash, or sampler call, and its workspace is empty.
+Static review proves the V1 diagnostic plan reached a shared generator that
+admitted only smoke, validation, and concordance identities. It raised
+`ValueError("synthetic generation plan identity is not compiled")` before
+`_generate_base_paths`; no panel or deterministic reference was produced.
+
+V1 roots, seeds, authorization, permit, claim, command, and workspace are
+tombstoned. Prospective V2 preserves every statistical choice. Its plan is
+`plan:vbd-group-effect-marginalization-diagnostic-v2`, its seed namespace is
+`group_effect_marginalization_diagnostic_v2_nonacceptance`, and its scenario
+IDs are
+`development_smoke_scenario_vbd_group_effect_marginalization_diagnostic_v2_case_i`.
+It reserves generator seeds `2_055_901_200..203`, chain seeds
+`2_055_901_300..347`, and
+the fixed roots
+`/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-workspace`
+and
+`/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-lifecycle`.
+
+Future V2 implementation must explicitly admit its plan, case, seed namespace,
+and runner token. A sampler-free production-wrapper fixture must reach
+`_generate_base_paths` and reject V1 and off-plan identities. Pre-permit
+authorization must repeat the standalone alternate-import-artifact scan.
+Implementation, review, manifest authorization, human authorization, and one
+new launch remain separate. Task `2.6`, canaries, concordance, calibration,
+evidence, and real/customer/live-data work remain blocked.
+
 The held lineage is permanently tombstoned as diagnostic-only HOLD:
 
 ```text

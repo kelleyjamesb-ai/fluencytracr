@@ -109,6 +109,17 @@ trajectory contract before implementation or real-data admission can proceed.
   supported/reject/invalid classification. This amendment does not implement or
   execute the diagnostic, change the current proof reference, complete task
   `2.6`, or authorize a canary, concordance, or calibration run.
+- Record the consumed `vbd_group_effect_marginalization_diagnostic_v1` launch
+  as permanent `INVALID_HOLD`. The claimed child failed with `ValueError`
+  before an input binding, sampler call, completion receipt, or output existed.
+  Static source review proves its diagnostic plan reached a shared generator
+  that admitted only smoke, validation, or concordance identities and rejected
+  before `_generate_base_paths`.
+- Predeclare a separate `vbd_group_effect_marginalization_diagnostic_v2`
+  identity with fresh roots and 52 fresh seeds. V2 preserves every statistical
+  choice while requiring explicit diagnostic-plan generator admission and a
+  pre-permit alternate-import-artifact scan. This amendment does not implement
+  or execute V2.
 
 ## Impact
 
