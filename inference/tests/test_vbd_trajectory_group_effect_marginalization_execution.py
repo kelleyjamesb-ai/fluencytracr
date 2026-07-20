@@ -125,7 +125,7 @@ def valid_manifest(monkeypatch):
 def test_fixed_roots_and_manifest_identity_are_diagnostic_specific():
     bootstrap = _load_bootstrap()
     assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH == (
-        "/Users/jkelley/.codex/evidence/"
+        "/Users/james.kelley/.codex/evidence/"
         "vbd-group-effect-marginalization-diagnostic-v1-workspace"
     )
     assert str(bootstrap._WORKSPACE) == (
@@ -346,7 +346,7 @@ def test_external_human_execution_record_is_strict_and_validation_only(
             authorization_commit=authorization_commit,
         )
     assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH == (
-        "/Users/jkelley/.codex/evidence/"
+        "/Users/james.kelley/.codex/evidence/"
         "vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
     )
     assert authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_SCOPE == (

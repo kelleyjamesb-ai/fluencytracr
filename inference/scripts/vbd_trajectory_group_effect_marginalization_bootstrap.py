@@ -40,10 +40,10 @@ _BOOTSTRAP_RELATIVE_PATH = (
     "inference/scripts/vbd_trajectory_group_effect_marginalization_bootstrap.py"
 )
 _WORKSPACE = Path(
-    "/Users/jkelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-workspace"
+    "/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-workspace"
 )
 _LIFECYCLE = Path(
-    "/Users/jkelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
+    "/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
 )
 _AUTHORIZATION_NAME = "execution_authorization.json"
 _PERMIT_NAME = "launch_permit.json"
