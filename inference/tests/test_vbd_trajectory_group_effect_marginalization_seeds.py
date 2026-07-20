@@ -113,12 +113,14 @@ def test_all_52_seeds_are_exclusive_from_generic_smoke():
     )
 
 
-def test_old_shared_import_closure_has_no_task_local_execution_capability():
+def test_shared_execution_capability_is_private_and_exactly_named_for_task_2_17():
     nuts_source = inspect.getsource(nuts)
     synthetic_source = inspect.getsource(synthetic)
-    assert "vbd_trajectory_group_effect_marginalization" not in nuts_source
-    assert "vbd_trajectory_group_effect_marginalization" not in synthetic_source
-    assert "_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_GENERATION_RUNNER_TOKEN" not in synthetic_source
-    assert "_VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SAMPLING_TOKEN" not in nuts_source
-    assert "_sample_vbd_trajectory_group_effect_marginalization_idata" not in nuts_source
-    assert "generate_vbd_trajectory_group_effect_marginalization_diagnostic_case" not in synthetic_source
+    assert nuts_source.count(
+        "def _sample_vbd_trajectory_group_effect_marginalization_idata("
+    ) == 1
+    assert synthetic_source.count(
+        "def generate_vbd_trajectory_group_effect_marginalization_diagnostic_case("
+    ) == 1
+    assert "_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_GENERATION_RUNNER_TOKEN" in synthetic_source
+    assert "_VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SAMPLING_TOKEN" in nuts_source

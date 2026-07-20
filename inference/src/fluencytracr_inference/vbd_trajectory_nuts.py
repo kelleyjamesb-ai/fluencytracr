@@ -23,6 +23,12 @@ from .vbd_trajectory_group_effect_geometry_constants import (
     VbdTrajectoryGroupEffectGeometryCaseSpec,
     vbd_trajectory_group_effect_geometry_chain_seeds,
 )
+from .vbd_trajectory_group_effect_marginalization_constants import (
+    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
+    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LANE_ORDER,
+    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS,
+    vbd_trajectory_group_effect_marginalization_chain_seeds,
+)
 from .vbd_trajectory_precision_diagnostic_constants import (
     VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CHAIN_SEEDS,
@@ -115,6 +121,7 @@ _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_SAMPLING_TOKEN = object()
 _VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_SAMPLING_TOKEN = object()
 _VBD_TRAJECTORY_REFERENCE_FIT_SAMPLING_TOKEN = object()
 _VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_SAMPLING_TOKEN = object()
+_VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SAMPLING_TOKEN = object()
 
 
 @dataclass(frozen=True)
@@ -1328,8 +1335,7 @@ def _validate_reference_seeds(
         seed in (
             VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS
             | VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS
-            | frozenset(range(2_055_901_000, 2_055_901_004))
-            | frozenset(range(2_055_901_100, 2_055_901_148))
+            | VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS
         )
         for seed in (*validated_chains, validated_ppc)
     ):
@@ -2142,6 +2148,105 @@ def _sample_vbd_trajectory_group_effect_geometry_idata(
     model = _build_reference_model(
         prepared,
         group_effect_arm=binding.arm,
+    )
+    with model:
+        return pm.sample(
+            draws=settings.draws,
+            tune=settings.tune,
+            chains=settings.chains,
+            cores=settings.cores,
+            random_seed=list(binding.chain_seeds),
+            target_accept=settings.target_accept,
+            max_treedepth=settings.max_treedepth,
+            init=settings.init,
+            nuts_sampler=settings.sampler,
+            blas_cores=settings.blas_cores,
+            progressbar=False,
+            compute_convergence_checks=settings.compute_convergence_checks,
+        )
+
+
+def _sample_vbd_trajectory_group_effect_marginalization_idata(
+    prepared: TrajectoryPreparedInput,
+    source_panel: TrajectoryObservationPanel,
+    *,
+    binding: object,
+    _runner_token: object,
+):
+    """Run one exact collapsed fit only for the claimed private runner."""
+
+    if (
+        _runner_token
+        is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SAMPLING_TOKEN
+    ):
+        raise TrajectoryNutsError(
+            "group-effect marginalization sampling requires its exact binding"
+        )
+    from .vbd_trajectory_group_effect_marginalization_diagnostic import (
+        VbdTrajectoryGroupEffectMarginalizationBinding,
+    )
+
+    if type(binding) is not VbdTrajectoryGroupEffectMarginalizationBinding:
+        raise TrajectoryNutsError(
+            "group-effect marginalization sampling requires its exact binding"
+        )
+    if type(prepared) is not TrajectoryPreparedInput:
+        raise TypeError("marginalization diagnostic requires exact prepared input")
+    if type(source_panel) is not TrajectoryObservationPanel:
+        raise TypeError("marginalization diagnostic requires exact source panel")
+    validate_prepared_vbd_trajectory(prepared, source_panel)
+    try:
+        case = VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES[
+            binding.case_ordinal
+        ]
+        expected_chain_seeds = (
+            vbd_trajectory_group_effect_marginalization_chain_seeds(
+                case_ordinal=binding.case_ordinal,
+                lane_ordinal=binding.lane_ordinal,
+            )
+        )
+        binding_hash_valid = (
+            binding.binding_hash == sha256_json(binding.body_without_hash())
+        )
+    except (AttributeError, IndexError, TypeError, ValueError) as exc:
+        raise TrajectoryNutsError(
+            "group-effect marginalization binding is malformed"
+        ) from exc
+    if (
+        source_panel.seed != case.generator_seed
+        or source_panel.seed != binding.generator_seed
+        or source_panel.scenario_id != case.scenario_id
+        or source_panel.scenario_id != binding.scenario_id
+        or source_panel.panel_group_count != case.panel_group_count
+        or source_panel.panel_group_count != binding.panel_group_count
+        or source_panel.aggregate_k != case.aggregate_k
+        or source_panel.aggregate_k != binding.aggregate_k
+        or source_panel.study_plan_root != binding.plan_hash
+        or prepared.panel_group_count != binding.panel_group_count
+        or prepared.aggregate_k != binding.aggregate_k
+        or prepared.lane != binding.lane
+        or prepared.study_plan_root != binding.plan_hash
+        or binding.lane not in VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LANE_ORDER
+        or binding.chain_seeds != expected_chain_seeds
+        or any(
+            seed
+            not in VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS
+            for seed in binding.chain_seeds
+        )
+        or not binding_hash_valid
+    ):
+        raise TrajectoryNutsError(
+            "group-effect marginalization binding differs from its source panel"
+        )
+    from .vbd_trajectory_group_effect_marginalization import (
+        build_vbd_trajectory_group_effect_marginalized_model,
+    )
+
+    settings = vbd_nuts_execution_settings("full")
+    model = build_vbd_trajectory_group_effect_marginalized_model(
+        prepared,
+        expected_model_input_hash=prepared.model_input_hash,
+        expected_prepared_input_hash=prepared.prepared_input_hash,
     )
     with model:
         return pm.sample(

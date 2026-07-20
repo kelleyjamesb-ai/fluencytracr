@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import replace
 from functools import lru_cache
 import inspect
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
@@ -24,6 +25,7 @@ from fluencytracr_inference.vbd_trajectory_group_effect_marginalization_constant
 )
 import fluencytracr_inference.vbd_trajectory_group_effect_marginalization as target
 import fluencytracr_inference.vbd_trajectory_group_effect_marginalization_diagnostic as diagnostic
+import fluencytracr_inference.vbd_trajectory_group_effect_marginalization_projection as completed_projection
 from fluencytracr_inference.vbd_trajectory_group_effect_marginalization import (
     VbdGroupEffectConditionalReconstruction,
     project_vbd_group_effect_marginalization_posterior,
@@ -435,6 +437,160 @@ def test_all_pass_is_supported_but_unexecuted_record_remains_permanent_invalid_h
     assert validate_vbd_trajectory_group_effect_marginalization_record(record) == record
 
 
+def test_private_completed_projection_binds_exact_source_and_remains_permanent_hold():
+    fits = []
+    for fit in _fit_matrix():
+        case_ordinal = fit["binding"]["case_ordinal"]
+        fits.append(
+            diagnostic.project_completed_vbd_trajectory_group_effect_marginalization_fit(
+                fit_record=fit,
+                panel_hash=sha256_json(["panel", case_ordinal]),
+                ordered_panel_manifest_root=sha256_json(
+                    ["ordered-panel", case_ordinal]
+                ),
+                _completion_token=(
+                    diagnostic._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_TOKEN
+                ),
+            )
+        )
+    provenance = {
+        "authorization_commit": "a" * 40,
+        "authorization_manifest_hash": "b" * 64,
+        "execution_authorization_hash": "c" * 64,
+        "implementation_commit": "d" * 40,
+        "implementation_tree": "e" * 40,
+        "implementation_review_refs": {
+            "CODE": f"review:code/go/{'d' * 40}/code-review",
+            "BUG": f"review:bug/go/{'d' * 40}/bug-review",
+            "ADVERSARIAL": (
+                f"review:adversarial/go/{'d' * 40}/adversarial-review"
+            ),
+            "STATISTICAL_METHODOLOGY": (
+                "review:statistical-methodology/go/"
+                f"{'d' * 40}/methodology-review"
+            ),
+        },
+        "launch_permit_hash": "f" * 64,
+        "consumed_permit_file_hash": "1" * 64,
+        "external_claim_hash": "2" * 64,
+        "input_binding_hash": "3" * 64,
+        "runtime_identity_hash": "4" * 64,
+        "requirements_lock_hash": "5" * 64,
+        "implementation_hash": "6" * 64,
+        "native_library_manifest_hash": "7" * 64,
+        "model_manifest_hash": "8" * 64,
+        "diagnostic_plan_hash": (
+            diagnostic.vbd_trajectory_group_effect_marginalization_plan()[
+                "plan_hash"
+            ]
+        ),
+        "seed_manifest_hash": (
+            diagnostic.vbd_trajectory_group_effect_marginalization_seed_manifest()[
+                "seed_manifest_hash"
+            ]
+        ),
+        "command_hash": "9" * 64,
+    }
+    completion = (
+        diagnostic.build_vbd_trajectory_group_effect_marginalization_completion_binding(
+            provenance=provenance,
+            fit_records=fits,
+            terminal_completion_receipt_hash="0" * 64,
+        )
+    )
+    record = diagnostic.build_completed_vbd_trajectory_group_effect_marginalization_record(
+        fit_records=fits,
+        runner_completion_binding=completion,
+        _completion_token=(
+            diagnostic._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_TOKEN
+        ),
+    )
+
+    assert record["execution_state"] == "COMPLETE"
+    assert record["classification"] in {
+        "REJECT_GROUP_EFFECT_MARGINALIZATION_CANDIDATE",
+        "SUPPORTED_FOR_LATER_REFERENCE_CONTRACT_AMENDMENT",
+    }
+    assert record["state"] == "HOLD"
+    assert record["evidence_eligible"] is False
+    assert record["acceptance_count_effect"] == 0
+    assert record["sampled_parameter_row_count"] == 60
+    assert record["reconstructed_quantity_row_count"] == 120
+    assert record["channel_diagnostic_row_count"] == 600
+    assert record["reference_comparison_count"] == 180
+    assert (
+        classify_vbd_trajectory_group_effect_marginalization_result(record)
+        == "INVALID_HOLD"
+    )
+    assert validate_vbd_trajectory_group_effect_marginalization_record(record) == record
+
+
+def test_sampler_free_completed_fit_projection_rejects_partial_inference_data(monkeypatch):
+    fit = _fit_matrix()[0]
+    binding = build_vbd_trajectory_group_effect_marginalization_binding(
+        case_ordinal=0,
+        lane="frequency",
+        lane_ordinal=0,
+        plan_hash=sha256_json(
+            vbd_trajectory_group_effect_marginalization_case_body(0)
+        ),
+    )
+    prepared = _prepared_for_case(6, "frequency", 0)
+    source_panel = _SourcePanel(binding, prepared)
+    panel_hash = sha256_json(source_panel.to_dict())
+    monkeypatch.setattr(completed_projection, "TrajectoryObservationPanel", _SourcePanel)
+    monkeypatch.setattr(
+        completed_projection,
+        "project_vbd_group_effect_marginalization_posterior",
+        lambda *_args, **_kwargs: object(),
+    )
+    monkeypatch.setattr(
+        completed_projection,
+        "build_vbd_trajectory_group_effect_marginalization_fit_record",
+        lambda **_kwargs: fit,
+    )
+    monkeypatch.setattr(
+        completed_projection,
+        "_sample_stat_count",
+        lambda *_args, **_kwargs: (0, True),
+    )
+    monkeypatch.setattr(
+        completed_projection,
+        "_bfmi_values",
+        lambda _idata: np.ones(4, dtype=np.float64),
+    )
+    reference_pair = _reference_pair(
+        binding,
+        _projection_bundle(6, "frequency", 0),
+        _candidate_common_summaries(
+            _projection_bundle(6, "frequency", 0).sampled_parameter_projections,
+            _projection_bundle(6, "frequency", 0).reconstructed_quantity_projections,
+            6,
+        ),
+    )
+    record = completed_projection.project_vbd_trajectory_group_effect_marginalization_fit(
+        SimpleNamespace(posterior=object(), sample_stats=object()),
+        binding=binding,
+        prepared=prepared,
+        source_panel=source_panel,
+        deterministic_reference_pair=reference_pair,
+        panel_hash=panel_hash,
+        ordered_panel_manifest_root=source_panel.ordered_panel_manifest_root,
+    )
+    assert record["source_provenance"]["source_execution_provenance_state"] == "COMPLETE"
+    assert record["panel_hash"] == panel_hash
+    with pytest.raises(ValueError, match="inference data is incomplete"):
+        completed_projection.project_vbd_trajectory_group_effect_marginalization_fit(
+            SimpleNamespace(posterior=object()),
+            binding=binding,
+            prepared=prepared,
+            source_panel=source_panel,
+            deterministic_reference_pair=reference_pair,
+            panel_hash=panel_hash,
+            ordered_panel_manifest_root=source_panel.ordered_panel_manifest_root,
+        )
+
+
 def test_fit_builder_derives_source_hashes_without_caller_hash_parameters():
     signature = inspect.signature(
         build_vbd_trajectory_group_effect_marginalization_fit_record
@@ -767,3 +923,72 @@ def test_marginalization_record_is_rejected_by_every_existing_python_proof_path(
         _validate_freeze_manifest(record)
     with pytest.raises(VbdTrajectoryValidationWorkspaceError):
         _validate_combined_value(record, {})
+
+
+def test_completed_and_malformed_records_remain_rejected_by_every_proof_path():
+    fits = [
+        diagnostic.project_completed_vbd_trajectory_group_effect_marginalization_fit(
+            fit_record=fit,
+            panel_hash=sha256_json(["completed-panel", fit["binding"]["case_ordinal"]]),
+            ordered_panel_manifest_root=sha256_json(
+                ["completed-order", fit["binding"]["case_ordinal"]]
+            ),
+            _completion_token=(
+                diagnostic._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_TOKEN
+            ),
+        )
+        for fit in _fit_matrix()
+    ]
+    implementation_commit = "d" * 40
+    provenance = {
+        "authorization_commit": "a" * 40,
+        "authorization_manifest_hash": "b" * 64,
+        "execution_authorization_hash": "c" * 64,
+        "implementation_commit": implementation_commit,
+        "implementation_tree": "e" * 40,
+        "implementation_review_refs": {
+            "CODE": f"review:code/go/{implementation_commit}/code",
+            "BUG": f"review:bug/go/{implementation_commit}/bug",
+            "ADVERSARIAL": f"review:adversarial/go/{implementation_commit}/adversarial",
+            "STATISTICAL_METHODOLOGY": (
+                "review:statistical-methodology/go/"
+                f"{implementation_commit}/methodology"
+            ),
+        },
+        "launch_permit_hash": "f" * 64,
+        "consumed_permit_file_hash": "1" * 64,
+        "external_claim_hash": "2" * 64,
+        "input_binding_hash": "3" * 64,
+        "runtime_identity_hash": "4" * 64,
+        "requirements_lock_hash": "5" * 64,
+        "implementation_hash": "6" * 64,
+        "native_library_manifest_hash": "7" * 64,
+        "model_manifest_hash": "8" * 64,
+        "diagnostic_plan_hash": diagnostic.vbd_trajectory_group_effect_marginalization_plan()["plan_hash"],
+        "seed_manifest_hash": diagnostic.vbd_trajectory_group_effect_marginalization_seed_manifest()["seed_manifest_hash"],
+        "command_hash": "9" * 64,
+    }
+    completion = diagnostic.build_vbd_trajectory_group_effect_marginalization_completion_binding(
+        provenance=provenance,
+        fit_records=fits,
+        terminal_completion_receipt_hash="0" * 64,
+    )
+    record = diagnostic.build_completed_vbd_trajectory_group_effect_marginalization_record(
+        fit_records=fits,
+        runner_completion_binding=completion,
+        _completion_token=(
+            diagnostic._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_TOKEN
+        ),
+    )
+    for value in (record, {**record, "unexpected": False}):
+        assert classify_vbd_trajectory_group_effect_marginalization_result(value) == "INVALID_HOLD"
+        with pytest.raises(VbdTrajectoryPrecisionCanaryError):
+            validate_vbd_trajectory_precision_canary_result(value)
+        with pytest.raises(VbdTrajectoryConcordanceError):
+            vbd_trajectory_concordance_bundle_from_dict(value)
+        with pytest.raises(VbdTrajectoryValidationStudyError):
+            vbd_trajectory_slot_result_from_dict(value)
+        with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+            _validate_freeze_manifest(value)
+        with pytest.raises(VbdTrajectoryValidationWorkspaceError):
+            _validate_combined_value(value, {})

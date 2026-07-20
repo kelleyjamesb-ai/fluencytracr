@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+import re
 
 from .hashing import sha256_json
 from .vbd_trajectory_concordance import (
@@ -73,6 +74,46 @@ VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CLASSIFICATIONS = (
     "SUPPORTED_FOR_LATER_REFERENCE_CONTRACT_AMENDMENT",
     "INVALID_HOLD",
 )
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_SCHEMA_VERSION = (
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_RUNNER_COMPLETION_2026_07_V1"
+)
+_VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_TOKEN = object()
+_REVIEW_ROLE_SLUGS = {
+    "CODE": "code",
+    "BUG": "bug",
+    "ADVERSARIAL": "adversarial",
+    "STATISTICAL_METHODOLOGY": "statistical-methodology",
+}
+_REVIEW_REF_RE = re.compile(
+    r"^review:(code|bug|adversarial|statistical-methodology)/go/"
+    r"[0-9a-f]{40}/[A-Za-z0-9._-]+$"
+)
+_COMPLETION_PROVENANCE_KEYS = {
+    "authorization_commit",
+    "authorization_manifest_hash",
+    "execution_authorization_hash",
+    "implementation_commit",
+    "implementation_tree",
+    "implementation_review_refs",
+    "launch_permit_hash",
+    "consumed_permit_file_hash",
+    "external_claim_hash",
+    "input_binding_hash",
+    "runtime_identity_hash",
+    "requirements_lock_hash",
+    "implementation_hash",
+    "native_library_manifest_hash",
+    "model_manifest_hash",
+    "diagnostic_plan_hash",
+    "seed_manifest_hash",
+    "command_hash",
+}
+_COMPLETION_KEYS = _COMPLETION_PROVENANCE_KEYS | {
+    "schema_version",
+    "terminal_completion_receipt_hash",
+    "ordered_fit_record_hashes_hash",
+    "completion_hash",
+}
 
 _BINDING_KEYS = {
     "binding_kind",
@@ -1548,6 +1589,32 @@ def _validate_fit_source_provenance(
         "reconstruction_provenance_root",
     ):
         _strict_sha256(record[name], name)
+    state = record["source_execution_provenance_state"]
+    if state == "NOT_RUN":
+        source_identity_valid = (
+            record["panel_hash"] is None
+            and record["ordered_panel_manifest_root"] is None
+            and record["source_execution_provenance_verified"] is False
+            and record["source_projection_hash"] is None
+        )
+    elif state == "COMPLETE":
+        for name in (
+            "panel_hash",
+            "ordered_panel_manifest_root",
+            "source_projection_hash",
+        ):
+            _strict_sha256(record[name], name)
+        source_body = {
+            key: item
+            for key, item in record.items()
+            if key != "source_projection_hash"
+        }
+        source_identity_valid = (
+            record["source_execution_provenance_verified"] is True
+            and record["source_projection_hash"] == sha256_json(source_body)
+        )
+    else:
+        source_identity_valid = False
     if (
         type(record["case_ordinal"]) is not int
         or record["case_ordinal"] != case.case_ordinal
@@ -1564,16 +1631,89 @@ def _validate_fit_source_provenance(
         != VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE
         or record["generator_id"] != VBD_TRAJECTORY_GENERATOR_ID
         or record["rng_id"] != VBD_TRAJECTORY_RNG_ID
-        or record["panel_hash"] is not None
-        or record["ordered_panel_manifest_root"] is not None
-        or record["source_execution_provenance_state"] != "NOT_RUN"
-        or record["source_execution_provenance_verified"] is not False
-        or record["source_projection_hash"] is not None
+        or not source_identity_valid
     ):
         raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
             "marginalization source provenance is invalid"
         )
     return record
+
+
+def project_completed_vbd_trajectory_group_effect_marginalization_fit(
+    *,
+    fit_record: dict,
+    panel_hash: str,
+    ordered_panel_manifest_root: str,
+    _completion_token: object,
+) -> dict:
+    """Bind one sanitized fit to immutable generated input inside the runner."""
+
+    if (
+        _completion_token
+        is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_TOKEN
+    ):
+        raise PermissionError(
+            "completed marginalization fit requires its runner token"
+        )
+    fit = validate_vbd_trajectory_group_effect_marginalization_fit_record(
+        fit_record
+    )
+    if fit["source_provenance"]["source_execution_provenance_state"] != "NOT_RUN":
+        raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+            "marginalization fit is already source-bound"
+        )
+    panel_hash = _strict_sha256(panel_hash, "completed panel hash")
+    ordered_panel_manifest_root = _strict_sha256(
+        ordered_panel_manifest_root,
+        "completed ordered panel manifest root",
+    )
+    projected = {
+        key: item for key, item in fit.items() if key != "fit_record_hash"
+    }
+    source = dict(projected["source_provenance"])
+    source.update(
+        {
+            "panel_hash": panel_hash,
+            "ordered_panel_manifest_root": ordered_panel_manifest_root,
+            "source_execution_provenance_state": "COMPLETE",
+            "source_execution_provenance_verified": True,
+        }
+    )
+    source_body = {
+        key: item for key, item in source.items() if key != "source_projection_hash"
+    }
+    source["source_projection_hash"] = sha256_json(source_body)
+    projected["source_provenance"] = source
+    projected["panel_hash"] = panel_hash
+    projected["ordered_panel_manifest_root"] = ordered_panel_manifest_root
+    gates = dict(projected["gate_results"])
+    gates.update(
+        {
+            "deterministic_reference_execution_provenance_state": "COMPLETE",
+            "deterministic_reference_execution_provenance_verified": True,
+        }
+    )
+    gates["all_reference_gates_passed"] = all(
+        gates[name]
+        for name in (
+            "reference_comparisons_passed",
+            "deterministic_reference_semantic_equality_passed",
+            "deterministic_reference_role_bindings_distinct",
+            "deterministic_reference_execution_provenance_verified",
+        )
+    )
+    gates["all_gates_passed"] = (
+        gates["all_sampler_gates_passed"]
+        and gates["all_reference_gates_passed"]
+    )
+    projected["gate_results"] = gates
+    completed = {
+        **projected,
+        "fit_record_hash": sha256_json(projected),
+    }
+    return validate_vbd_trajectory_group_effect_marginalization_fit_record(
+        completed
+    )
 
 
 def build_vbd_trajectory_group_effect_marginalization_fit_record(
@@ -1704,8 +1844,12 @@ def build_vbd_trajectory_group_effect_marginalization_fit_record(
         "reference_comparisons_passed": comparisons_passed,
         "deterministic_reference_semantic_equality_passed": True,
         "deterministic_reference_role_bindings_distinct": True,
-        "deterministic_reference_execution_provenance_state": "NOT_RUN",
-        "deterministic_reference_execution_provenance_verified": False,
+        "deterministic_reference_execution_provenance_state": (
+            source_provenance["source_execution_provenance_state"]
+        ),
+        "deterministic_reference_execution_provenance_verified": (
+            source_provenance["source_execution_provenance_verified"]
+        ),
     }
     gates["all_sampler_gates_passed"] = all(
         gates[name]
@@ -2006,8 +2150,12 @@ def validate_vbd_trajectory_group_effect_marginalization_fit_record(
         "reference_comparisons_passed": all(row["passed"] for row in comparisons),
         "deterministic_reference_semantic_equality_passed": True,
         "deterministic_reference_role_bindings_distinct": True,
-        "deterministic_reference_execution_provenance_state": "NOT_RUN",
-        "deterministic_reference_execution_provenance_verified": False,
+        "deterministic_reference_execution_provenance_state": (
+            source_provenance["source_execution_provenance_state"]
+        ),
+        "deterministic_reference_execution_provenance_verified": (
+            source_provenance["source_execution_provenance_verified"]
+        ),
     }
     gates["all_sampler_gates_passed"] = all(gates[name] for name in (
         "sampled_parameter_gates_passed", "reconstructed_channel_gates_passed",
@@ -2116,17 +2264,143 @@ def _derive_classification(fits: list[dict]) -> str:
     return "SUPPORTED_FOR_LATER_REFERENCE_CONTRACT_AMENDMENT"
 
 
-def _record_body(fit_records: list[dict]) -> dict:
+def _validate_runner_completion_binding(
+    value: object,
+    *,
+    fit_records: list[dict],
+) -> dict:
+    binding = _require_exact_keys(
+        value,
+        _COMPLETION_KEYS,
+        "marginalization runner completion binding",
+    )
+    for key in (
+        "authorization_commit",
+        "implementation_commit",
+        "implementation_tree",
+    ):
+        commit = binding[key]
+        if (
+            type(commit) is not str
+            or len(commit) != 40
+            or any(character not in "0123456789abcdef" for character in commit)
+        ):
+            raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+                "marginalization completion commit identity is invalid"
+            )
+    for key in (
+        _COMPLETION_PROVENANCE_KEYS
+        - {
+            "authorization_commit",
+            "implementation_commit",
+            "implementation_tree",
+            "implementation_review_refs",
+        }
+    ) | {
+        "terminal_completion_receipt_hash",
+        "ordered_fit_record_hashes_hash",
+        "completion_hash",
+    }:
+        _strict_sha256(binding[key], f"marginalization completion {key}")
+    refs = binding["implementation_review_refs"]
+    implementation_commit = binding["implementation_commit"]
+    if (
+        type(refs) is not dict
+        or set(refs) != set(_REVIEW_ROLE_SLUGS)
+        or len(set(refs.values())) != len(_REVIEW_ROLE_SLUGS)
+        or any(
+            type(refs[role]) is not str
+            or _REVIEW_REF_RE.fullmatch(refs[role]) is None
+            or not refs[role].startswith(
+                f"review:{slug}/go/{implementation_commit}/"
+            )
+            for role, slug in _REVIEW_ROLE_SLUGS.items()
+        )
+    ):
+        raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+            "marginalization completion review references are invalid"
+        )
+    expected_fit_hash = sha256_json(
+        [record["fit_record_hash"] for record in fit_records]
+    )
+    body = {
+        key: item for key, item in binding.items() if key != "completion_hash"
+    }
+    if (
+        binding["schema_version"]
+        != VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_SCHEMA_VERSION
+        or binding["diagnostic_plan_hash"]
+        != vbd_trajectory_group_effect_marginalization_plan()["plan_hash"]
+        or binding["seed_manifest_hash"]
+        != vbd_trajectory_group_effect_marginalization_seed_manifest()[
+            "seed_manifest_hash"
+        ]
+        or binding["ordered_fit_record_hashes_hash"] != expected_fit_hash
+        or binding["completion_hash"] != sha256_json(body)
+    ):
+        raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+            "marginalization runner completion binding is invalid"
+        )
+    return binding
+
+
+def build_vbd_trajectory_group_effect_marginalization_completion_binding(
+    *,
+    provenance: dict,
+    fit_records: list[dict],
+    terminal_completion_receipt_hash: str,
+) -> dict:
+    """Build the sanitized completion binding after all twelve fits finish."""
+
+    fits = _validate_fit_matrix(fit_records)
+    if type(provenance) is not dict or set(provenance) != _COMPLETION_PROVENANCE_KEYS:
+        raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+            "marginalization completion provenance is incomplete"
+        )
+    body = {
+        "schema_version": (
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_SCHEMA_VERSION
+        ),
+        **provenance,
+        "terminal_completion_receipt_hash": terminal_completion_receipt_hash,
+        "ordered_fit_record_hashes_hash": sha256_json(
+            [record["fit_record_hash"] for record in fits]
+        ),
+    }
+    return _validate_runner_completion_binding(
+        {**body, "completion_hash": sha256_json(body)},
+        fit_records=fits,
+    )
+
+
+def _record_body(
+    fit_records: list[dict],
+    *,
+    execution_state: str = "NOT_RUN",
+    runner_completion_binding: dict | None = None,
+) -> dict:
     plan = vbd_trajectory_group_effect_marginalization_plan()
     seed_manifest = vbd_trajectory_group_effect_marginalization_seed_manifest()
+    if execution_state == "NOT_RUN" and runner_completion_binding is None:
+        classification = "INVALID_HOLD"
+    elif execution_state == "COMPLETE":
+        _validate_runner_completion_binding(
+            runner_completion_binding,
+            fit_records=fit_records,
+        )
+        classification = _derive_classification(fit_records)
+    else:
+        raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+            "marginalization execution state is invalid"
+        )
     return {
         "schema_version": VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SCHEMA_VERSION,
         "diagnostic_id": VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_ID,
         "plan_hash": plan["plan_hash"],
         "seed_manifest_hash": seed_manifest["seed_manifest_hash"],
-        "execution_state": "NOT_RUN",
-        "runner_completion_binding": None,
-        "classification": "INVALID_HOLD",
+        "execution_state": execution_state,
+        "runner_completion_binding": runner_completion_binding,
+        "classification": classification,
         "state": VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_STATE,
         "hold_reasons": [VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_HOLD_REASON],
         "matrix_complete": True,
@@ -2162,6 +2436,36 @@ def build_vbd_trajectory_group_effect_marginalization_record(
     )
 
 
+def build_completed_vbd_trajectory_group_effect_marginalization_record(
+    *,
+    fit_records: list[dict],
+    runner_completion_binding: dict,
+    _completion_token: object,
+) -> dict:
+    """Build one executed result only from the private one-shot runner."""
+
+    if (
+        _completion_token
+        is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_TOKEN
+    ):
+        raise PermissionError(
+            "completed marginalization record requires its runner token"
+        )
+    fits = _validate_fit_matrix(fit_records)
+    completion = _validate_runner_completion_binding(
+        runner_completion_binding,
+        fit_records=fits,
+    )
+    body = _record_body(
+        fits,
+        execution_state="COMPLETE",
+        runner_completion_binding=completion,
+    )
+    return validate_vbd_trajectory_group_effect_marginalization_record(
+        {**body, "record_hash": sha256_json(body)}
+    )
+
+
 def validate_vbd_trajectory_group_effect_marginalization_record(
     value: object,
 ) -> dict:
@@ -2178,9 +2482,8 @@ def validate_vbd_trajectory_group_effect_marginalization_record(
         != vbd_trajectory_group_effect_marginalization_plan()["plan_hash"]
         or record["seed_manifest_hash"]
         != vbd_trajectory_group_effect_marginalization_seed_manifest()["seed_manifest_hash"]
-        or record["execution_state"] != "NOT_RUN"
-        or record["runner_completion_binding"] is not None
-        or record["classification"] != "INVALID_HOLD"
+        or record["classification"]
+        not in VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CLASSIFICATIONS
         or record["state"] != VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_STATE
         or record["hold_reasons"]
         != [VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_HOLD_REASON]
@@ -2210,13 +2513,36 @@ def validate_vbd_trajectory_group_effect_marginalization_record(
             "marginalization record identity or permanent HOLD posture is invalid"
         )
     fits = _validate_fit_matrix(record["fit_records"])
+    completion = record["runner_completion_binding"]
+    if record["execution_state"] == "NOT_RUN":
+        if completion is not None or record["classification"] != "INVALID_HOLD":
+            raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+                "unexecuted marginalization record posture is invalid"
+            )
+    elif record["execution_state"] == "COMPLETE":
+        completion = _validate_runner_completion_binding(
+            completion,
+            fit_records=fits,
+        )
+        if record["classification"] != _derive_classification(fits):
+            raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+                "completed marginalization classification differs"
+            )
+    else:
+        raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
+            "marginalization execution state is invalid"
+        )
     _strict_sha256(record["record_hash"], "marginalization record hash")
     body = {key: item for key, item in record.items() if key != "record_hash"}
     if record["record_hash"] != sha256_json(body):
         raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(
             "marginalization record hash differs"
         )
-    expected_body = _record_body(fits)
+    expected_body = _record_body(
+        fits,
+        execution_state=record["execution_state"],
+        runner_completion_binding=completion,
+    )
     expected = {**expected_body, "record_hash": sha256_json(expected_body)}
     if not _strict_json_equal(record, expected):
         raise VbdTrajectoryGroupEffectMarginalizationDiagnosticError(

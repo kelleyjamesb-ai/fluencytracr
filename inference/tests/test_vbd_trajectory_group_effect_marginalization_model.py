@@ -375,21 +375,17 @@ def test_reconstruction_projection_is_derived_from_bound_outer_grids(monkeypatch
         VbdGroupEffectMarginalizationPosteriorProjection()
 
 
-def test_task_2_16_exposes_no_generation_or_sampling_capability():
-    assert not hasattr(
-        nuts, "_VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SAMPLING_TOKEN"
-    )
-    assert not hasattr(
-        nuts, "_sample_vbd_trajectory_group_effect_marginalization_idata"
-    )
-    assert not hasattr(
+def test_task_2_17_generation_and_sampling_capabilities_require_runner_tokens():
+    assert hasattr(nuts, "_VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SAMPLING_TOKEN")
+    assert hasattr(nuts, "_sample_vbd_trajectory_group_effect_marginalization_idata")
+    assert hasattr(
         synthetic,
         "_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_GENERATION_RUNNER_TOKEN",
     )
-    assert not hasattr(
-        synthetic,
-        "generate_vbd_trajectory_group_effect_marginalization_diagnostic_case",
-    )
+    with pytest.raises(synthetic.VbdSyntheticRunnerError):
+        synthetic.generate_vbd_trajectory_group_effect_marginalization_diagnostic_case(
+            0, _runner_token=object()
+        )
     source = inspect.getsource(target)
     assert "pm.sample(" not in source
     assert "generate_vbd_trajectory" not in source
