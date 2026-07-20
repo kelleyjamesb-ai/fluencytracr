@@ -881,6 +881,16 @@ def test_exported_token_and_forged_descriptors_cannot_install_root_io(
         ],
         "bootstrap_path": bootstrap_path,
     }
+    monkeypatch.setattr(
+        authorization,
+        "VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH",
+        str(fake_lifecycle),
+    )
+    monkeypatch.setattr(
+        authorization,
+        "VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH",
+        str(fake_workspace),
+    )
     monkeypatch.setattr(authorization, "_BOOTSTRAP_ROOT_GUARD", None)
     monkeypatch.setattr(authorization, "_BOOTSTRAP_BOUND_ROOT_FDS", None)
     monkeypatch.setattr(authorization, "_BOOTSTRAP_FROZEN_MANIFEST_BYTES", None)
@@ -910,7 +920,7 @@ def test_exported_token_and_forged_descriptors_cannot_install_root_io(
     try:
         with pytest.raises(
             authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
-            match="root descriptors are invalid",
+            match="kernel process provenance differs",
         ):
             forged_launch()
         assert (
@@ -920,6 +930,89 @@ def test_exported_token_and_forged_descriptors_cannot_install_root_io(
         assert authorization._BOOTSTRAP_BOUND_ROOT_FDS is None
         assert sampler_boundary == []
     finally:
+        os_module.close(lifecycle_fd)
+        os_module.close(workspace_fd)
+
+
+def test_darwin_kernel_argv_parser_and_canonical_installer_positive_fixture(
+    tmp_path,
+    monkeypatch,
+):
+    os_module = __import__("os")
+    lifecycle = tmp_path / "canonical-lifecycle"
+    workspace = tmp_path / "canonical-workspace"
+    lifecycle.mkdir(mode=0o700)
+    workspace.mkdir(mode=0o700)
+    executable = "/canonical/python"
+    bootstrap_path = "/canonical/bootstrap.py"
+    command = [
+        executable,
+        "-I",
+        "-S",
+        "-B",
+        bootstrap_path,
+        "run",
+        "--execution-authorization",
+        "/canonical/authorization.json",
+    ]
+    argc = len(command).to_bytes(
+        authorization.ctypes.sizeof(authorization.ctypes.c_int),
+        byteorder=authorization.sys.byteorder,
+        signed=True,
+    )
+    raw = (
+        argc
+        + executable.encode("utf-8")
+        + b"\0\0"
+        + b"".join(value.encode("utf-8") + b"\0" for value in command)
+    )
+    assert authorization._parse_darwin_procargs2(raw) == (executable, command)
+    manifest = {"command_argv": command, "bootstrap_path": bootstrap_path}
+    monkeypatch.setattr(
+        authorization,
+        "VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH",
+        str(lifecycle),
+    )
+    monkeypatch.setattr(
+        authorization,
+        "VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH",
+        str(workspace),
+    )
+    for name in (
+        "_BOOTSTRAP_ROOT_GUARD",
+        "_BOOTSTRAP_BOUND_ROOT_FDS",
+        "_BOOTSTRAP_FROZEN_MANIFEST_BYTES",
+        "_BOOTSTRAP_CANONICAL_ROOT_CHAINS",
+    ):
+        monkeypatch.setattr(authorization, name, None)
+    monkeypatch.setattr(
+        authorization,
+        "_darwin_kernel_process_provenance",
+        lambda: (executable, command),
+    )
+    lifecycle_fd = os_module.open(lifecycle, os_module.O_RDONLY)
+    workspace_fd = os_module.open(workspace, os_module.O_RDONLY)
+    try:
+        authorization._install_vbd_trajectory_group_effect_marginalization_root_guard(
+            lifecycle_fd=lifecycle_fd,
+            workspace_fd=workspace_fd,
+            manifest_bytes=authorization._canonical_bytes(manifest),
+        )
+        authorization._revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
+        assert set(authorization._BOOTSTRAP_BOUND_ROOT_FDS) == {
+            str(lifecycle),
+            str(workspace),
+        }
+    finally:
+        for descriptor in (
+            authorization._BOOTSTRAP_BOUND_ROOT_FDS or {}
+        ).values():
+            os_module.close(descriptor)
+        for chain_fds, _identities in (
+            authorization._BOOTSTRAP_CANONICAL_ROOT_CHAINS or ()
+        ):
+            for descriptor in reversed(chain_fds):
+                os_module.close(descriptor)
         os_module.close(lifecycle_fd)
         os_module.close(workspace_fd)
 

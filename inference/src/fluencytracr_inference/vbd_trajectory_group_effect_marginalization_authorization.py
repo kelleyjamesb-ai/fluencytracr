@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 from datetime import datetime
 import hashlib
 import json
@@ -651,6 +652,79 @@ _BOOTSTRAP_FROZEN_MANIFEST_BYTES = None
 _BOOTSTRAP_CANONICAL_ROOT_CHAINS = None
 
 
+def _parse_darwin_procargs2(raw: bytes) -> tuple[str, list[str]]:
+    if type(raw) is not bytes or len(raw) < ctypes.sizeof(ctypes.c_int):
+        _authorization_error("Darwin process arguments are malformed")
+    argc = ctypes.c_int.from_buffer_copy(raw[: ctypes.sizeof(ctypes.c_int)]).value
+    if argc < 1 or argc > 256:
+        _authorization_error("Darwin process argument count is invalid")
+    offset = ctypes.sizeof(ctypes.c_int)
+
+    def read_string(start: int) -> tuple[str, int]:
+        end = raw.find(b"\0", start)
+        if end < 0 or end == start:
+            _authorization_error("Darwin process argument string is malformed")
+        try:
+            value = raw[start:end].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            _authorization_error("Darwin process argument is not UTF-8", exc)
+        return value, end + 1
+
+    executable, offset = read_string(offset)
+    while offset < len(raw) and raw[offset] == 0:
+        offset += 1
+    argv = []
+    for _index in range(argc):
+        value, offset = read_string(offset)
+        argv.append(value)
+    return executable, argv
+
+
+def _darwin_kernel_process_provenance() -> tuple[str, list[str]]:
+    if sys.platform != "darwin":
+        _authorization_error("marginalization bootstrap requires Darwin provenance")
+    pid = os.getpid()
+    libc = ctypes.CDLL(None, use_errno=True)
+    sysctl = libc.sysctl
+    sysctl.argtypes = [
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.c_uint,
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_size_t),
+        ctypes.c_void_p,
+        ctypes.c_size_t,
+    ]
+    sysctl.restype = ctypes.c_int
+    mib = (ctypes.c_int * 3)(1, 49, pid)
+    size = ctypes.c_size_t(0)
+    if sysctl(mib, 3, None, ctypes.byref(size), None, 0) != 0:
+        _authorization_error("Darwin process arguments are unavailable")
+    if size.value < ctypes.sizeof(ctypes.c_int) or size.value > (1 << 20):
+        _authorization_error("Darwin process argument size is invalid")
+    buffer = ctypes.create_string_buffer(size.value)
+    if sysctl(mib, 3, buffer, ctypes.byref(size), None, 0) != 0:
+        _authorization_error("Darwin process arguments cannot be read")
+    _kernel_executable, argv = _parse_darwin_procargs2(
+        bytes(buffer.raw[: size.value])
+    )
+
+    try:
+        libproc = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
+        proc_pidpath = libproc.proc_pidpath
+        proc_pidpath.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]
+        proc_pidpath.restype = ctypes.c_int
+        path_buffer = ctypes.create_string_buffer(4096)
+        length = proc_pidpath(pid, path_buffer, len(path_buffer))
+        if length <= 0 or length >= len(path_buffer):
+            raise OSError("proc_pidpath failed")
+        executable = bytes(path_buffer.raw[:length]).decode("utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        _authorization_error("Darwin executable provenance is unavailable", exc)
+    if not executable.startswith("/"):
+        _authorization_error("Darwin executable provenance is invalid")
+    return executable, argv
+
+
 def _open_canonical_directory_chain(
     path: Path,
 ) -> tuple[list[int], tuple[tuple[int, int], ...]]:
@@ -711,21 +785,21 @@ def _install_vbd_trajectory_group_effect_marginalization_root_guard(
     if type(manifest) is not dict or manifest_bytes != _canonical_bytes(manifest):
         _authorization_error("marginalization frozen manifest bytes are noncanonical")
     expected_argv = manifest.get("command_argv")
-    base_executable = getattr(sys, "_base_executable", None)
-    main_file = getattr(sys.modules.get("__main__"), "__file__", None)
     if (
         type(expected_argv) is not list
         or not expected_argv
         or any(type(value) is not str or not value for value in expected_argv)
-        or type(base_executable) is not str
-        or type(main_file) is not str
         or type(manifest.get("bootstrap_path")) is not str
-        or list(getattr(sys, "orig_argv", ()))[1:] != expected_argv[1:]
-        or os.path.realpath(base_executable) != expected_argv[0]
-        or os.path.realpath(sys.executable) != expected_argv[0]
-        or os.path.realpath(main_file) != manifest.get("bootstrap_path")
     ):
-        _authorization_error("marginalization bootstrap process provenance differs")
+        _authorization_error("marginalization frozen command provenance is invalid")
+    kernel_executable, kernel_argv = _darwin_kernel_process_provenance()
+    if (
+        kernel_argv != expected_argv
+        or os.path.realpath(kernel_executable) != expected_argv[0]
+        or len(expected_argv) < 5
+        or expected_argv[4] != manifest["bootstrap_path"]
+    ):
+        _authorization_error("marginalization kernel process provenance differs")
     duplicates = []
     chains = []
     try:
