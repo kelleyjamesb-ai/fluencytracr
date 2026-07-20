@@ -866,9 +866,15 @@ def _wait_for_child(child_pid: int) -> None:
 
 def _validate_actual_command(manifest: dict) -> None:
     original = list(getattr(sys, "orig_argv", ()))
-    if original:
-        original[0] = os.path.realpath(original[0])
-    if original != manifest["command_argv"]:
+    expected = manifest["command_argv"]
+    base_executable = getattr(sys, "_base_executable", None)
+    if (
+        not original
+        or type(base_executable) is not str
+        or os.path.realpath(base_executable) != expected[0]
+        or os.path.realpath(sys.executable) != expected[0]
+        or original[1:] != expected[1:]
+    ):
         raise BootstrapError("actual bootstrap command differs")
 
 

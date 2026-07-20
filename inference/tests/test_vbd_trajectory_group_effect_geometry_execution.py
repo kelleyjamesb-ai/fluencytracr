@@ -788,14 +788,40 @@ def test_publication_uses_one_inode_and_rolls_back_invalid_final(
 
 def test_actual_command_must_match_before_launch(monkeypatch):
     bootstrap = _load_bootstrap()
+    expected_executable = "/canonical/python"
+    invoked_executable = "/venv/python"
+    base_executable = "/base/python"
     command = [
-        "/exact/python", "-I", "-S", "-B", "/exact/bootstrap.py",
+        expected_executable, "-I", "-S", "-B", "/exact/bootstrap.py",
         "run", "--execution-authorization", "/exact/authorization.json",
     ]
-    monkeypatch.setattr(bootstrap.sys, "orig_argv", list(command))
-    monkeypatch.setattr(bootstrap.os.path, "realpath", lambda value: value)
+    framework_argv = ["/framework/Python.app/Python", *command[1:]]
+    monkeypatch.setattr(bootstrap.sys, "executable", invoked_executable)
+    monkeypatch.setattr(bootstrap.sys, "_base_executable", base_executable)
+    monkeypatch.setattr(bootstrap.sys, "orig_argv", framework_argv)
+    monkeypatch.setattr(
+        bootstrap.os.path,
+        "realpath",
+        lambda value: (
+            expected_executable
+            if value in {invoked_executable, base_executable}
+            else value
+        ),
+    )
     bootstrap._validate_actual_command({"command_argv": command})
-    monkeypatch.setattr(bootstrap.sys, "orig_argv", [*command, "--extra"])
+    monkeypatch.setattr(
+        bootstrap.sys,
+        "orig_argv",
+        [*framework_argv, "--extra"],
+    )
+    with pytest.raises(bootstrap.BootstrapError, match="actual bootstrap command"):
+        bootstrap._validate_actual_command({"command_argv": command})
+    monkeypatch.setattr(bootstrap.sys, "orig_argv", framework_argv)
+    monkeypatch.setattr(bootstrap.sys, "executable", "/different/python")
+    with pytest.raises(bootstrap.BootstrapError, match="actual bootstrap command"):
+        bootstrap._validate_actual_command({"command_argv": command})
+    monkeypatch.setattr(bootstrap.sys, "executable", expected_executable)
+    monkeypatch.setattr(bootstrap.sys, "_base_executable", "/different/base-python")
     with pytest.raises(bootstrap.BootstrapError, match="actual bootstrap command"):
         bootstrap._validate_actual_command({"command_argv": command})
 
