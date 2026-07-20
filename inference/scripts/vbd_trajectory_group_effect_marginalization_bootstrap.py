@@ -1176,6 +1176,7 @@ def _execute_child(
 
         _install_candidate_root_io(
             candidate,
+            manifest,
             lifecycle_binding,
             workspace_binding,
         )
@@ -1202,6 +1203,7 @@ def _execute_child(
 
 def _install_candidate_root_io(
     candidate,
+    manifest: dict,
     lifecycle_binding: _DirectoryBinding,
     workspace_binding: _DirectoryBinding,
 ) -> None:
@@ -1214,6 +1216,7 @@ def _install_candidate_root_io(
         revalidate_roots,
         lifecycle_fd=lifecycle_binding.root_fd,
         workspace_fd=workspace_binding.root_fd,
+        manifest_bytes=_canonical_bytes(manifest),
         _bootstrap_token=(
             candidate._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
         ),
@@ -1236,7 +1239,12 @@ def _install_parent_candidate_root_io(
         vbd_trajectory_group_effect_marginalization_authorization as candidate,
     )
 
-    _install_candidate_root_io(candidate, lifecycle_binding, workspace_binding)
+    _install_candidate_root_io(
+        candidate,
+        manifest,
+        lifecycle_binding,
+        workspace_binding,
+    )
 
 
 def _raise_supervisor_termination(signum: int, _frame) -> None:

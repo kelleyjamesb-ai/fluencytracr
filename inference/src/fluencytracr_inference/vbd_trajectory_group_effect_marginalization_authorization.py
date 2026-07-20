@@ -646,6 +646,7 @@ _ROOT_PHASE_FILES = {
 
 _BOOTSTRAP_ROOT_GUARD = None
 _BOOTSTRAP_BOUND_ROOT_FDS = None
+_BOOTSTRAP_FROZEN_MANIFEST_BYTES = None
 
 
 def _install_vbd_trajectory_group_effect_marginalization_root_guard(
@@ -653,17 +654,22 @@ def _install_vbd_trajectory_group_effect_marginalization_root_guard(
     *,
     lifecycle_fd: int,
     workspace_fd: int,
+    manifest_bytes: bytes,
     _bootstrap_token: object,
 ) -> None:
-    global _BOOTSTRAP_BOUND_ROOT_FDS, _BOOTSTRAP_ROOT_GUARD
+    global _BOOTSTRAP_BOUND_ROOT_FDS, _BOOTSTRAP_FROZEN_MANIFEST_BYTES
+    global _BOOTSTRAP_ROOT_GUARD
     if (
         _bootstrap_token
         is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
         or not callable(guard)
         or type(lifecycle_fd) is not int
         or type(workspace_fd) is not int
+        or type(manifest_bytes) is not bytes
+        or not manifest_bytes
         or _BOOTSTRAP_ROOT_GUARD is not None
         or _BOOTSTRAP_BOUND_ROOT_FDS is not None
+        or _BOOTSTRAP_FROZEN_MANIFEST_BYTES is not None
     ):
         _authorization_error("marginalization bootstrap root guard is invalid")
     duplicates = []
@@ -693,6 +699,7 @@ def _install_vbd_trajectory_group_effect_marginalization_root_guard(
         _authorization_error("marginalization bootstrap root descriptors are invalid", exc)
     _BOOTSTRAP_ROOT_GUARD = guard
     _BOOTSTRAP_BOUND_ROOT_FDS = bound
+    _BOOTSTRAP_FROZEN_MANIFEST_BYTES = manifest_bytes
     _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
 
 
@@ -2107,19 +2114,38 @@ def verify_vbd_trajectory_group_effect_marginalization_authorization_commit(
         _authorization_error("marginalization implementation tree binding differs")
 
 
-    manifest_path = (
-        _repo_root()
-        / VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH
-    )
-    if (
-        _read_canonical_json(manifest_path, "marginalization committed manifest")
-        != manifest
-        or _git_output("hash-object", str(manifest_path))
-        != _git_output(
-            "rev-parse",
-            f"{authorization_commit}:{VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH}",
+    if _BOOTSTRAP_FROZEN_MANIFEST_BYTES is None:
+        manifest_path = (
+            _repo_root()
+            / VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH
         )
-    ):
+        manifest_matches = (
+            _read_canonical_json(
+                manifest_path,
+                "marginalization committed manifest",
+            )
+            == manifest
+            and _git_output("hash-object", str(manifest_path))
+            == _git_output(
+                "rev-parse",
+                f"{authorization_commit}:{VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH}",
+            )
+        )
+    else:
+        object_format = _git_output("rev-parse", "--show-object-format")
+        if object_format not in {"sha1", "sha256"}:
+            _authorization_error("marginalization Git object format is invalid")
+        frozen = _BOOTSTRAP_FROZEN_MANIFEST_BYTES
+        object_bytes = f"blob {len(frozen)}\0".encode("ascii") + frozen
+        manifest_matches = (
+            frozen == _canonical_bytes(manifest)
+            and hashlib.new(object_format, object_bytes).hexdigest()
+            == _git_output(
+                "rev-parse",
+                f"{authorization_commit}:{VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH}",
+            )
+        )
+    if not manifest_matches:
         _authorization_error("marginalization committed manifest bytes differ")
 
 

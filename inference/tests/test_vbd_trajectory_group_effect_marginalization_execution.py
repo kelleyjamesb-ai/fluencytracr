@@ -810,7 +810,13 @@ def test_consumed_permit_rejects_name_rebinding_during_semantic_validation(
         )
 
 
-def _install_test_bound_root_io(monkeypatch, lifecycle: Path, workspace: Path):
+def _install_test_bound_root_io(
+    monkeypatch,
+    lifecycle: Path,
+    workspace: Path,
+    *,
+    manifest: dict | None = None,
+):
     monkeypatch.setattr(
         authorization,
         "VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH",
@@ -823,12 +829,16 @@ def _install_test_bound_root_io(monkeypatch, lifecycle: Path, workspace: Path):
     )
     monkeypatch.setattr(authorization, "_BOOTSTRAP_ROOT_GUARD", None)
     monkeypatch.setattr(authorization, "_BOOTSTRAP_BOUND_ROOT_FDS", None)
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_FROZEN_MANIFEST_BYTES", None)
     lifecycle_fd = __import__("os").open(lifecycle, __import__("os").O_RDONLY)
     workspace_fd = __import__("os").open(workspace, __import__("os").O_RDONLY)
     authorization._install_vbd_trajectory_group_effect_marginalization_root_guard(
         lambda: None,
         lifecycle_fd=lifecycle_fd,
         workspace_fd=workspace_fd,
+        manifest_bytes=authorization._canonical_bytes(
+            {} if manifest is None else manifest
+        ),
         _bootstrap_token=(
             authorization._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
         ),
@@ -1984,6 +1994,113 @@ def test_claimed_child_root_replacement_rejects_before_sampler(monkeypatch):
             ),
         )
 
+
+def test_bound_child_verifies_frozen_manifest_and_reaches_sampler_boundary(
+    tmp_path,
+    monkeypatch,
+):
+    lifecycle = tmp_path / "lifecycle"
+    workspace = tmp_path / "workspace"
+    lifecycle.mkdir(mode=0o700)
+    workspace.mkdir(mode=0o700)
+    authorization_commit = "a" * 40
+    implementation_commit = "b" * 40
+    implementation_tree = "c" * 40
+    manifest = {
+        "implementation_commit": implementation_commit,
+        "implementation_tree": implementation_tree,
+        "command_argv": ["frozen-command"],
+    }
+    lifecycle_fd, workspace_fd = _install_test_bound_root_io(
+        monkeypatch,
+        lifecycle,
+        workspace,
+        manifest=manifest,
+    )
+    frozen = authorization._canonical_bytes(manifest)
+    object_id = authorization.hashlib.sha1(
+        f"blob {len(frozen)}\0".encode("ascii") + frozen
+    ).hexdigest()
+    reached = []
+
+    def git_output(*args):
+        if args == ("status", "--porcelain=v1", "--untracked-files=all"):
+            return ""
+        if args == ("rev-parse", "HEAD"):
+            return authorization_commit
+        if args[:4] == ("rev-list", "--parents", "-n", "1"):
+            return f"{authorization_commit} {implementation_commit}"
+        if args[:4] == (
+            "diff-tree",
+            "--no-commit-id",
+            "--name-only",
+            "-r",
+        ):
+            return authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH
+        if args == ("rev-parse", f"{implementation_commit}^{{tree}}"):
+            return implementation_tree
+        if args == ("rev-parse", "--show-object-format"):
+            return "sha1"
+        if args == (
+            "rev-parse",
+            f"{authorization_commit}:{authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH}",
+        ):
+            return object_id
+        raise AssertionError(f"unexpected Git call: {args!r}")
+
+    monkeypatch.setattr(
+        authorization,
+        "validate_vbd_trajectory_group_effect_marginalization_authorization_manifest",
+        lambda value: value,
+    )
+    monkeypatch.setattr(
+        authorization,
+        "preflight_vbd_trajectory_group_effect_marginalization_fixed_roots",
+        lambda **_kwargs: None,
+    )
+    monkeypatch.setattr(authorization, "_git_output", git_output)
+    monkeypatch.setattr(
+        authorization,
+        "read_vbd_trajectory_group_effect_marginalization_execution_authorization",
+        lambda *_args, **_kwargs: {"authorization_commit": authorization_commit},
+    )
+    monkeypatch.setattr(
+        authorization,
+        "read_vbd_trajectory_group_effect_marginalization_consumed_permit",
+        lambda **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        authorization,
+        "read_vbd_trajectory_group_effect_marginalization_claim",
+        lambda **_kwargs: {},
+    )
+
+    def sampler_boundary(**_kwargs):
+        reached.append("sampler-boundary")
+        raise RuntimeError("sampler boundary sentinel")
+
+    monkeypatch.setattr(
+        execution,
+        "execute_authorized_vbd_trajectory_group_effect_marginalization",
+        sampler_boundary,
+    )
+    try:
+        with pytest.raises(RuntimeError, match="sampler boundary sentinel"):
+            authorization.bootstrap_claimed_vbd_trajectory_group_effect_marginalization(
+                manifest=manifest,
+                authorization_path=lifecycle / "execution_authorization.json",
+                authorization_commit=authorization_commit,
+                command_argv=manifest["command_argv"],
+                _bootstrap_token=(
+                    authorization._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
+                ),
+            )
+        assert reached == ["sampler-boundary"]
+    finally:
+        for descriptor in authorization._BOOTSTRAP_BOUND_ROOT_FDS.values():
+            __import__("os").close(descriptor)
+        __import__("os").close(lifecycle_fd)
+        __import__("os").close(workspace_fd)
 
 def test_exported_execution_token_cannot_bypass_live_claimed_preflight(
     valid_manifest,
