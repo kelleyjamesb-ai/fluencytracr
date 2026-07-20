@@ -774,7 +774,122 @@ def test_publication_rolls_back_final_when_final_semantic_validation_fails(
     assert not (workspace / bootstrap._OUTPUT_NAME).exists()
 
 
-def test_publication_handles_termination_through_rollback_in_post_unlink_window(
+def test_publication_preserves_rejecting_alias_when_rollback_unlink_fails(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    final = workspace / bootstrap._OUTPUT_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+
+    def reject_final(
+        _manifest,
+        _commit,
+        path,
+        _repo,
+        *,
+        allow_pending_alias=False,
+        reviewed_sources=None,
+    ):
+        if path == final and not allow_pending_alias:
+            raise bootstrap.BootstrapError("final semantic validation failed")
+
+    real_unlink = bootstrap.os.unlink
+
+    def reject_rollback_unlink(path, *args, **kwargs):
+        if path == bootstrap._OUTPUT_NAME:
+            raise OSError("injected rollback unlink failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(bootstrap, "_validate_persisted", reject_final)
+    monkeypatch.setattr(bootstrap.os, "unlink", reject_rollback_unlink)
+    with pytest.raises(bootstrap.BootstrapError, match="rollback could not be confirmed"):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    staged_info = staged.stat()
+    final_info = final.stat()
+    assert (staged_info.st_dev, staged_info.st_ino) == (
+        final_info.st_dev,
+        final_info.st_ino,
+    )
+    assert staged_info.st_nlink == final_info.st_nlink == 2
+
+
+def test_publication_preserves_rejecting_alias_when_rollback_fsync_fails(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    final = workspace / bootstrap._OUTPUT_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    rollback_started = False
+
+    def reject_final(
+        _manifest,
+        _commit,
+        path,
+        _repo,
+        *,
+        allow_pending_alias=False,
+        reviewed_sources=None,
+    ):
+        nonlocal rollback_started
+        if path == final and not allow_pending_alias:
+            rollback_started = True
+            raise bootstrap.BootstrapError("final semantic validation failed")
+
+    real_fsync = bootstrap.os.fsync
+
+    def reject_rollback_fsync(descriptor):
+        if rollback_started and staged.exists() and final.exists():
+            raise OSError("injected rollback fsync failure")
+        return real_fsync(descriptor)
+
+    monkeypatch.setattr(bootstrap, "_validate_persisted", reject_final)
+    monkeypatch.setattr(bootstrap.os, "fsync", reject_rollback_fsync)
+    with pytest.raises(bootstrap.BootstrapError, match="could not be made durable"):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    staged_info = staged.stat()
+    final_info = final.stat()
+    assert (staged_info.st_dev, staged_info.st_ino) == (
+        final_info.st_dev,
+        final_info.st_ino,
+    )
+    assert staged_info.st_nlink == final_info.st_nlink == 2
+
+
+def test_rollback_rejects_mismatched_staged_identity(tmp_path):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    final = workspace / bootstrap._OUTPUT_NAME
+    staged.write_bytes(b"staged\n")
+    final.write_bytes(b"final\n")
+    final_info = final.stat()
+    root_fd = bootstrap._open_directory(workspace)
+    try:
+        with pytest.raises(bootstrap.BootstrapError, match="not alias-invalid"):
+            bootstrap._rollback_final(
+                root_fd,
+                (final_info.st_dev, final_info.st_ino),
+            )
+    finally:
+        bootstrap.os.close(root_fd)
+    assert staged.exists()
+    assert final.exists()
+
+
+def test_publication_handles_real_termination_through_rollback_in_post_unlink_window(
     tmp_path,
     monkeypatch,
 ):
@@ -794,18 +909,67 @@ def test_publication_handles_termination_through_rollback_in_post_unlink_window(
             and (workspace / bootstrap._OUTPUT_NAME).exists()
             and not staged.exists()
         ):
+            current_mask = bootstrap.signal.pthread_sigmask(
+                bootstrap.signal.SIG_BLOCK,
+                (),
+            )
+            assert bootstrap.signal.SIGTERM in current_mask
             assert all(
                 bootstrap.signal.getsignal(signum)
                 is bootstrap._raise_supervisor_termination
                 for signum in bootstrap._TERMINATION_SIGNALS
             )
-            bootstrap._raise_supervisor_termination(bootstrap.signal.SIGTERM, None)
+            bootstrap.os.kill(bootstrap.os.getpid(), bootstrap.signal.SIGTERM)
         return original_root_names(path)
 
     monkeypatch.setattr(bootstrap, "_root_names", terminate_after_unlink)
     with pytest.raises(bootstrap.BootstrapError, match="interrupted by signal"):
         bootstrap._publish({}, "a" * 40, tmp_path, {})
     assert not (workspace / bootstrap._OUTPUT_NAME).exists()
+
+
+def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypatch):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    output = workspace / bootstrap._OUTPUT_NAME
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    monkeypatch.setattr(bootstrap, "_validate_environment", lambda: None)
+    monkeypatch.setattr(
+        bootstrap,
+        "_read_json",
+        lambda *_args: ({}, SimpleNamespace(st_nlink=1)),
+    )
+    monkeypatch.setattr(
+        bootstrap,
+        "_validate_manifest",
+        lambda *_args: (Path("/usr/bin/git"), "a" * 40),
+    )
+    monkeypatch.setattr(bootstrap, "_validate_actual_command", lambda *_args: None)
+    monkeypatch.setattr(
+        bootstrap,
+        "_validate_launch_records",
+        lambda *_args: ({}, {}, SimpleNamespace()),
+    )
+    monkeypatch.setattr(
+        bootstrap,
+        "_freeze_reviewed_first_party_sources",
+        lambda *_args: {},
+    )
+    monkeypatch.setattr(bootstrap, "_consume_permit_and_claim", lambda *_args: None)
+    monkeypatch.setattr(bootstrap, "_run_claimed_child", lambda *_args: None)
+
+    def publish(*_args):
+        output.write_bytes(b"{}\n")
+
+    def closed_stdout(descriptor, _payload):
+        assert descriptor == 1
+        raise OSError("stdout is closed")
+
+    monkeypatch.setattr(bootstrap, "_publish", publish)
+    monkeypatch.setattr(bootstrap.os, "write", closed_stdout)
+    assert bootstrap._run(tmp_path / "execution_authorization.json") == 0
+    assert output.read_bytes() == b"{}\n"
 
 
 @pytest.mark.parametrize("shadow_kind", ("timestamp_pyc", "extension"))
@@ -1025,6 +1189,37 @@ def test_fixed_root_preflight_rejects_cross_device_roots(monkeypatch):
         authorization.preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
             manifest={}, phase="PUBLISHED"
         )
+
+
+def test_fixed_root_leaf_creation_fsyncs_parent_directory(tmp_path, monkeypatch):
+    leaf = tmp_path / "new-fixed-root"
+    fsync_calls = []
+    monkeypatch.setattr(authorization.os, "fsync", fsync_calls.append)
+    descriptor = authorization._open_absolute_directory_no_symlinks(
+        leaf,
+        create_leaf=True,
+    )
+    authorization.os.close(descriptor)
+    assert leaf.is_dir()
+    assert len(fsync_calls) == 1
+
+
+def test_fixed_root_leaf_creation_fails_closed_when_parent_fsync_fails(
+    tmp_path,
+    monkeypatch,
+):
+    leaf = tmp_path / "new-fixed-root"
+
+    def reject_fsync(_descriptor):
+        raise OSError("injected parent directory fsync failure")
+
+    monkeypatch.setattr(authorization.os, "fsync", reject_fsync)
+    with pytest.raises(OSError, match="parent directory fsync failure"):
+        authorization._open_absolute_directory_no_symlinks(
+            leaf,
+            create_leaf=True,
+        )
+    assert leaf.is_dir()
 
 
 def test_execution_exposes_no_caller_plan_or_retry_controls():

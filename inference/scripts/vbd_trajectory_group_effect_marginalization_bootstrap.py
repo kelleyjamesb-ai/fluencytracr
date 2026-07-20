@@ -1124,23 +1124,106 @@ def _validate_persisted(
     _revalidate_source_binding(manifest, authorization_commit, repo)
 
 
+def _durably_preserve_staged_alias(
+    root_fd: int,
+    expected_identity: tuple[int, int],
+) -> bool:
+    try:
+        final_info = os.stat(
+            _OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False
+        )
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise BootstrapError("final-output rollback state cannot be inspected") from exc
+    if (
+        not stat.S_ISREG(final_info.st_mode)
+        or (final_info.st_dev, final_info.st_ino) != expected_identity
+    ):
+        raise BootstrapError("final-output rollback identity differs")
+    try:
+        staged_info = os.stat(
+            _STAGED_NAME, dir_fd=root_fd, follow_symlinks=False
+        )
+    except FileNotFoundError:
+        try:
+            os.link(
+                _OUTPUT_NAME,
+                _STAGED_NAME,
+                src_dir_fd=root_fd,
+                dst_dir_fd=root_fd,
+                follow_symlinks=False,
+            )
+            staged_info = os.stat(
+                _STAGED_NAME, dir_fd=root_fd, follow_symlinks=False
+            )
+            final_info = os.stat(
+                _OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False
+            )
+        except OSError as exc:
+            raise BootstrapError("staged rollback alias could not be restored") from exc
+    except OSError as exc:
+        raise BootstrapError("staged rollback alias cannot be inspected") from exc
+    if (
+        not stat.S_ISREG(staged_info.st_mode)
+        or not stat.S_ISREG(final_info.st_mode)
+        or (staged_info.st_dev, staged_info.st_ino) != expected_identity
+        or (final_info.st_dev, final_info.st_ino) != expected_identity
+        or staged_info.st_nlink < 2
+        or final_info.st_nlink < 2
+    ):
+        raise BootstrapError("failed publication is not alias-invalid")
+    try:
+        os.fsync(root_fd)
+        staged_after = os.stat(
+            _STAGED_NAME, dir_fd=root_fd, follow_symlinks=False
+        )
+        final_after = os.stat(
+            _OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False
+        )
+    except OSError as exc:
+        raise BootstrapError("staged rollback alias could not be made durable") from exc
+    if (
+        not stat.S_ISREG(staged_after.st_mode)
+        or not stat.S_ISREG(final_after.st_mode)
+        or (staged_after.st_dev, staged_after.st_ino) != expected_identity
+        or (final_after.st_dev, final_after.st_ino) != expected_identity
+        or staged_after.st_nlink < 2
+        or final_after.st_nlink < 2
+    ):
+        raise BootstrapError("durable staged rollback alias is invalid")
+    return True
+
+
 def _rollback_final(
     root_fd: int,
     expected_identity: tuple[int, int],
 ) -> None:
+    if not _durably_preserve_staged_alias(root_fd, expected_identity):
+        return
     try:
-        info = os.stat(_OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False)
-        if (
-            not stat.S_ISREG(info.st_mode)
-            or (info.st_dev, info.st_ino) != expected_identity
-        ):
-            raise BootstrapError("final-output rollback identity differs")
         os.unlink(_OUTPUT_NAME, dir_fd=root_fd)
         os.fsync(root_fd)
     except FileNotFoundError:
         return
     except OSError as exc:
         raise BootstrapError("final-output rollback could not be confirmed") from exc
+    try:
+        os.stat(_OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        staged_info = os.stat(
+            _STAGED_NAME, dir_fd=root_fd, follow_symlinks=False
+        )
+        if (
+            not stat.S_ISREG(staged_info.st_mode)
+            or (staged_info.st_dev, staged_info.st_ino) != expected_identity
+            or staged_info.st_nlink != 1
+        ):
+            raise BootstrapError("staged rollback identity differs")
+        return
+    except OSError as exc:
+        raise BootstrapError("final-output rollback could not be confirmed") from exc
+    raise BootstrapError("final output remained after rollback")
 
 
 def _publish(
@@ -1245,6 +1328,7 @@ def _publish(
         ):
             raise BootstrapError("final publication identity changed")
         os.fsync(root_fd)
+        signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
         committed = True
     except BaseException:
         signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
@@ -1300,7 +1384,10 @@ def _run(authorization_path: Path) -> int:
         "authorization_commit": authorization_commit,
         "output_path": str(_WORKSPACE / _OUTPUT_NAME),
     }
-    os.write(1, _canonical_bytes(payload))
+    try:
+        os.write(1, _canonical_bytes(payload))
+    except OSError:
+        pass
     return 0
 
 

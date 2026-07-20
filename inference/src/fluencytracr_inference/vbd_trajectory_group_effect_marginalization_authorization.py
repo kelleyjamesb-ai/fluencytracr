@@ -182,10 +182,14 @@ def _open_absolute_directory_no_symlinks(
         parts = path.parts[1:]
         for index, part in enumerate(parts):
             if create_leaf and index == len(parts) - 1:
+                created = False
                 try:
                     os.mkdir(part, mode=0o700, dir_fd=descriptor)
+                    created = True
                 except FileExistsError:
                     pass
+                if created:
+                    os.fsync(descriptor)
             child = os.open(
                 part,
                 os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
