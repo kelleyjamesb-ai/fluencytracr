@@ -380,6 +380,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-19: selected collapse-only-u with alpha/beta sampled; froze exact low-rank target, conditional-mixture and five-channel influence diagnostics, four cells, 52 disjoint seeds, 12 fits, exact recomputation equality, cardinalities, and permanent-HOLD classification. Final reviewed contract diff b1caa947c35e38d4a1c800b721ea95cf507d05ccecee8767bb031406535ed412 received CODE, BUG, ADVERSARIAL, and statistical-methodology GO. Strict OpenSpec, docs sweep, semantic drift, V1 governance, queue guard, JSON, and diff checks passed. No implementation or execution; task 2.6 and all proof stages remain blocked."
+    },
+    {
+      "id": "vbd-group-effect-marginalization-diagnostic-implementation",
+      "title": "VBD group-effect marginalization diagnostic implementation without execution",
+      "bound": "Synthetic-only inference/, focused tests, and verified OpenSpec/docs/status: complete task 2.16 by implementing vbd_group_effect_marginalization_diagnostic_v1 with the exact low-rank marginalized group-effect target, conditional-Normal mixture reconstruction, five chain-aware influence diagnostics, frozen four-case and 52-seed plan, exact deterministic reference/recomputation equality, deterministic-reference comparisons, sampler-free dense-oracle/gradient/reconstruction/malformed-input fixtures, strict permanent-HOLD records, and proof-path rejection; preserve every model, prior, estimand, sampler setting, threshold, evidence gate, fail-closed rule, and trusted-host boundary; no generator or PyMC sampler execution, authorization manifest or commit A, permit, claim, execution record, external root, result, task 2.17-2.19, task 2.6, canary, S/F, concordance, calibration, real/customer/live data, public surface, customer output, or promotion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-20: implemented exact low-rank marginalization, conditional mixtures, five chain diagnostics, 52-seed isolation, two-call deterministic equality, strict NOT_RUN records, malformed fixtures, and proof rejection. Exact package ff211931 received CODE, BUG, ADVERSARIAL, and statistical GO. Focused 96, guarded compatibility 64, pure inference 83, safe Harness 257/3 skipped, builds and governance passed; no generator or sampler ran."
     }
   ]
 }

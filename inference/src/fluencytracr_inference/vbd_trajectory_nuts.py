@@ -1328,6 +1328,8 @@ def _validate_reference_seeds(
         seed in (
             VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS
             | VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS
+            | frozenset(range(2_055_901_000, 2_055_901_004))
+            | frozenset(range(2_055_901_100, 2_055_901_148))
         )
         for seed in (*validated_chains, validated_ppc)
     ):

@@ -150,6 +150,8 @@ def _is_reserved_diagnostic_seed(seed: int) -> bool:
     return (
         seed in VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS
         or seed in VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS
+        or 2_055_901_000 <= seed <= 2_055_901_003
+        or 2_055_901_100 <= seed <= 2_055_901_147
     )
 
 

@@ -138,7 +138,7 @@
   and proof-count exclusion. No retry, resume, seed rotation, adaptive
   extension, model/threshold change, canary, concordance, or calibration may
   occur in this task.
-- [ ] 2.16 After task `1.12` and separate implementation authorization,
+- [x] 2.16 After task `1.12` and separate implementation authorization,
   implement `vbd_group_effect_marginalization_diagnostic_v1`, including the
   exact low-rank marginal target, conditional reconstruction, influence-channel
   diagnostics, four-case seed plan, exact reference/recomputation equality,
