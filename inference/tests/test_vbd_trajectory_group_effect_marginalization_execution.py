@@ -675,6 +675,71 @@ def test_permit_is_consumed_once_before_claim_and_replay_rejects(
         )
 
 
+def test_lifecycle_consume_rejects_directory_name_replacement_before_success(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    lifecycle = tmp_path / "lifecycle"
+    moved = tmp_path / "opened-lifecycle"
+    workspace = tmp_path / "workspace"
+    lifecycle.mkdir(mode=0o700)
+    monkeypatch.setattr(bootstrap, "_LIFECYCLE", lifecycle)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    authorization_path = lifecycle / bootstrap._AUTHORIZATION_NAME
+    authorization_path.write_bytes(bootstrap._canonical_bytes({"fixed": True}))
+    authorization_path.chmod(0o600)
+    permit = {"permit_token": "1" * 64}
+    permit_path = lifecycle / bootstrap._PERMIT_NAME
+    permit_path.write_bytes(bootstrap._canonical_bytes(permit))
+    permit_path.chmod(0o600)
+    permit_info = permit_path.stat()
+    manifest = {
+        "manifest_hash": "1" * 64,
+        "implementation_commit": "a" * 40,
+        "implementation_review_refs": {
+            "CODE": "code",
+            "BUG": "bug",
+            "ADVERSARIAL": "adversarial",
+            "STATISTICAL_METHODOLOGY": "methodology",
+        },
+        "command_hash": "2" * 64,
+        "bootstrap_sha256": "3" * 64,
+        "canonical_workspace_identity_hash": "4" * 64,
+        "lifecycle_root_identity_hash": "5" * 64,
+        "diagnostic_plan_hash": "6" * 64,
+        "seed_manifest_hash": "7" * 64,
+    }
+    execution_authorization = {
+        "execution_authorization_hash": "8" * 64,
+        "launch_permit_hash": "9" * 64,
+        "launch_permit_file_sha256": bootstrap._hash_bytes(
+            bootstrap._canonical_bytes(permit)
+        ),
+        "launch_permit_device": permit_info.st_dev,
+        "launch_permit_inode": permit_info.st_ino,
+    }
+    original_write = bootstrap._write_exclusive_at
+
+    def write_then_replace(root_fd, name, value):
+        original_write(root_fd, name, value)
+        lifecycle.rename(moved)
+        lifecycle.mkdir(mode=0o700)
+
+    monkeypatch.setattr(bootstrap, "_write_exclusive_at", write_then_replace)
+    with pytest.raises(bootstrap.BootstrapError, match="directory name binding differs"):
+        bootstrap._consume_permit_and_claim(
+            manifest,
+            "b" * 40,
+            execution_authorization,
+            permit,
+            permit_info,
+        )
+    assert tuple(lifecycle.iterdir()) == ()
+    assert (moved / bootstrap._CONSUMED_NAME).is_file()
+    assert (moved / bootstrap._CLAIM_NAME).is_file()
+
+
 def test_bootstrap_file_read_rejects_name_rebinding_during_descriptor_read(
     tmp_path,
     monkeypatch,
@@ -792,6 +857,46 @@ def test_publication_is_one_inode_and_rolls_back_invalid_pending_output(
     ]
 
 
+def test_publication_rejects_workspace_directory_name_replacement_during_validation(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    moved = tmp_path / "opened-workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    replaced = False
+
+    def replace_workspace(
+        _manifest,
+        _commit,
+        path,
+        _repo,
+        *,
+        allow_pending_alias=False,
+        reviewed_sources=None,
+    ):
+        nonlocal replaced
+        if path.name == bootstrap._STAGED_NAME and not replaced:
+            replaced = True
+            workspace.rename(moved)
+            workspace.mkdir(mode=0o700)
+            replacement = workspace / bootstrap._STAGED_NAME
+            replacement.write_bytes(b"{}\n")
+            replacement.chmod(0o600)
+
+    monkeypatch.setattr(bootstrap, "_validate_persisted", replace_workspace)
+    with pytest.raises(bootstrap.BootstrapError, match="directory name binding differs"):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    assert replaced
+    assert not (moved / bootstrap._OUTPUT_NAME).exists()
+    assert not (workspace / bootstrap._OUTPUT_NAME).exists()
+
+
 def test_publication_rolls_back_final_when_post_unlink_enumeration_fails(
     tmp_path,
     monkeypatch,
@@ -804,18 +909,18 @@ def test_publication_rolls_back_final_when_post_unlink_enumeration_fails(
     staged.chmod(0o600)
     monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
     monkeypatch.setattr(bootstrap, "_validate_persisted", lambda *_args, **_kwargs: None)
-    original_root_names = bootstrap._root_names
+    original_binding_names = bootstrap._DirectoryBinding.names
 
-    def fail_after_unlink(path):
+    def fail_after_unlink(binding):
         if (
-            path == workspace
+            binding.path == workspace
             and (workspace / bootstrap._OUTPUT_NAME).exists()
             and not staged.exists()
         ):
             raise bootstrap.BootstrapError("post-unlink enumeration failed")
-        return original_root_names(path)
+        return original_binding_names(binding)
 
-    monkeypatch.setattr(bootstrap, "_root_names", fail_after_unlink)
+    monkeypatch.setattr(bootstrap._DirectoryBinding, "names", fail_after_unlink)
     with pytest.raises(bootstrap.BootstrapError, match="enumeration failed"):
         bootstrap._publish({}, "a" * 40, tmp_path, {})
     assert not (workspace / bootstrap._OUTPUT_NAME).exists()
@@ -1071,11 +1176,11 @@ def test_publication_handles_real_termination_through_rollback_in_post_unlink_wi
     staged.chmod(0o600)
     monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
     monkeypatch.setattr(bootstrap, "_validate_persisted", lambda *_args, **_kwargs: None)
-    original_root_names = bootstrap._root_names
+    original_binding_names = bootstrap._DirectoryBinding.names
 
-    def terminate_after_unlink(path):
+    def terminate_after_unlink(binding):
         if (
-            path == workspace
+            binding.path == workspace
             and (workspace / bootstrap._OUTPUT_NAME).exists()
             and not staged.exists()
         ):
@@ -1090,9 +1195,9 @@ def test_publication_handles_real_termination_through_rollback_in_post_unlink_wi
                 for signum in bootstrap._TERMINATION_SIGNALS
             )
             bootstrap.os.kill(bootstrap.os.getpid(), bootstrap.signal.SIGTERM)
-        return original_root_names(path)
+        return original_binding_names(binding)
 
-    monkeypatch.setattr(bootstrap, "_root_names", terminate_after_unlink)
+    monkeypatch.setattr(bootstrap._DirectoryBinding, "names", terminate_after_unlink)
     with pytest.raises(bootstrap.BootstrapError, match="interrupted by signal"):
         bootstrap._publish({}, "a" * 40, tmp_path, {})
     assert not (workspace / bootstrap._OUTPUT_NAME).exists()
@@ -1285,7 +1390,7 @@ def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypa
     monkeypatch.setattr(
         bootstrap,
         "_validate_launch_records",
-        lambda *_args: ({}, {}, SimpleNamespace()),
+        lambda *_args: ({}, {}, SimpleNamespace(), SimpleNamespace(close=lambda: None)),
     )
     monkeypatch.setattr(
         bootstrap,
@@ -1367,7 +1472,12 @@ def test_bootstrap_rejects_first_party_import_shadow_before_consumption(
     monkeypatch.setattr(
         bootstrap,
         "_validate_launch_records",
-        lambda *_args: ({}, {}, permit_info),
+        lambda *_args: (
+            {},
+            {},
+            permit_info,
+            SimpleNamespace(close=lambda: None),
+        ),
     )
     monkeypatch.setattr(
         bootstrap,

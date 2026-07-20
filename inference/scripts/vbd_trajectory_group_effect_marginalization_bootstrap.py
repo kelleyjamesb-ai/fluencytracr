@@ -273,6 +273,122 @@ def _open_directory(path: Path) -> int:
         raise
 
 
+class _DirectoryBinding:
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.parent_fd = _open_directory(path.parent)
+        self.root_fd = -1
+        try:
+            self.root_fd = os.open(
+                path.name,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                dir_fd=self.parent_fd,
+            )
+            info = os.fstat(self.root_fd)
+            if not stat.S_ISDIR(info.st_mode):
+                raise OSError("bound root is not a directory")
+            self.identity = (info.st_dev, info.st_ino)
+            self.revalidate()
+        except BaseException:
+            self.close()
+            raise
+
+    def revalidate(self) -> None:
+        opened = os.fstat(self.root_fd)
+        current = os.stat(
+            self.path.name,
+            dir_fd=self.parent_fd,
+            follow_symlinks=False,
+        )
+        if (
+            not stat.S_ISDIR(opened.st_mode)
+            or not stat.S_ISDIR(current.st_mode)
+            or (opened.st_dev, opened.st_ino) != self.identity
+            or (current.st_dev, current.st_ino) != self.identity
+        ):
+            raise BootstrapError("fixed-root directory name binding differs")
+
+    def names(self) -> tuple[str, ...]:
+        self.revalidate()
+        names = tuple(sorted(os.listdir(self.root_fd)))
+        self.revalidate()
+        return names
+
+    def close(self) -> None:
+        if self.root_fd >= 0:
+            os.close(self.root_fd)
+            self.root_fd = -1
+        if self.parent_fd >= 0:
+            os.close(self.parent_fd)
+            self.parent_fd = -1
+
+
+def _read_file_at(
+    binding: _DirectoryBinding,
+    name: str,
+    label: str,
+) -> tuple[bytes, os.stat_result]:
+    descriptor = -1
+    try:
+        binding.revalidate()
+        descriptor = os.open(
+            name,
+            os.O_RDONLY | os.O_NOFOLLOW,
+            dir_fd=binding.root_fd,
+        )
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode):
+            raise OSError("not a regular file")
+        chunks = []
+        while True:
+            chunk = os.read(descriptor, 1 << 20)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        encoded = b"".join(chunks)
+        info = os.fstat(descriptor)
+        current = os.stat(
+            name,
+            dir_fd=binding.root_fd,
+            follow_symlinks=False,
+        )
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or not stat.S_ISREG(current.st_mode)
+            or (current.st_dev, current.st_ino) != (info.st_dev, info.st_ino)
+        ):
+            raise OSError("current file name binding differs")
+        binding.revalidate()
+        return encoded, info
+    except OSError as exc:
+        raise BootstrapError(f"{label} cannot be read safely") from exc
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
+def _read_json_at(
+    binding: _DirectoryBinding,
+    name: str,
+    label: str,
+) -> tuple[dict, os.stat_result]:
+    encoded, info = _read_file_at(binding, name, label)
+    try:
+        value = json.loads(
+            encoded.decode("utf-8"),
+            object_pairs_hook=_strict_object,
+            parse_constant=lambda _value: (_ for _ in ()).throw(
+                BootstrapError(f"{label} contains a nonfinite value")
+            ),
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise BootstrapError(f"{label} is not strict JSON") from exc
+    if type(value) is not dict or encoded != _canonical_bytes(value):
+        raise BootstrapError(f"{label} is not canonical JSON")
+    binding.revalidate()
+    return value, info
+
+
 def _read_file(path: Path, label: str) -> tuple[bytes, os.stat_result]:
     root_fd = -1
     descriptor = -1
@@ -608,21 +724,31 @@ def _validate_manifest(manifest: dict, repo: Path, script: Path) -> tuple[Path, 
     return git_path, authorization
 
 
-def _validate_launch_records(
+def _validate_launch_records_in_binding(
     manifest: dict,
     authorization_commit: str,
     authorization_path: Path,
+    binding: _DirectoryBinding,
 ) -> tuple[dict, dict, os.stat_result]:
     if authorization_path != _LIFECYCLE / _AUTHORIZATION_NAME:
         raise BootstrapError("execution authorization path is off plan")
-    if _root_names(_WORKSPACE) is not None:
+    binding.revalidate()
+    workspace_names = _root_names(_WORKSPACE)
+    binding.revalidate()
+    if workspace_names is not None:
         raise BootstrapError("marginalization workspace already exists")
-    if _root_names(_LIFECYCLE) != tuple(sorted((_AUTHORIZATION_NAME, _PERMIT_NAME))):
+    if binding.names() != tuple(sorted((_AUTHORIZATION_NAME, _PERMIT_NAME))):
         raise BootstrapError("marginalization lifecycle is not ready for one launch")
-    authorization, authorization_info = _read_json(
-        authorization_path, "execution authorization"
+    authorization, authorization_info = _read_json_at(
+        binding,
+        _AUTHORIZATION_NAME,
+        "execution authorization",
     )
-    permit, permit_info = _read_json(_LIFECYCLE / _PERMIT_NAME, "launch permit")
+    permit, permit_info = _read_json_at(
+        binding,
+        _PERMIT_NAME,
+        "launch permit",
+    )
     if authorization_info.st_nlink != 1 or permit_info.st_nlink != 1:
         raise BootstrapError("launch records have unsafe link counts")
 
@@ -708,7 +834,27 @@ def _validate_launch_records(
         or authorization["execution_authorization_hash"] != _hash_json(body)
     ):
         raise BootstrapError("execution authorization is invalid")
+    binding.revalidate()
     return authorization, permit, permit_info
+
+
+def _validate_launch_records(
+    manifest: dict,
+    authorization_commit: str,
+    authorization_path: Path,
+) -> tuple[dict, dict, os.stat_result, _DirectoryBinding]:
+    binding = _DirectoryBinding(_LIFECYCLE)
+    try:
+        values = _validate_launch_records_in_binding(
+            manifest,
+            authorization_commit,
+            authorization_path,
+            binding,
+        )
+        return (*values, binding)
+    except BaseException:
+        binding.close()
+        raise
 
 
 def _write_exclusive_at(root_fd: int, name: str, value: dict) -> None:
@@ -739,9 +885,13 @@ def _consume_permit_and_claim(
     authorization: dict,
     permit: dict,
     permit_info: os.stat_result,
+    lifecycle_binding: _DirectoryBinding | None = None,
 ) -> dict:
-    root_fd = _open_directory(_LIFECYCLE)
+    binding = lifecycle_binding or _DirectoryBinding(_LIFECYCLE)
+    owns_binding = lifecycle_binding is None
+    root_fd = binding.root_fd
     try:
+        binding.revalidate()
         try:
             os.link(
                 _PERMIT_NAME,
@@ -775,8 +925,10 @@ def _consume_permit_and_claim(
             or consumed.st_nlink != 1
         ):
             raise BootstrapError("consumed launch permit identity differs")
-        consumed_bytes, consumed_read_info = _read_file(
-            _LIFECYCLE / _CONSUMED_NAME, "consumed launch permit"
+        consumed_bytes, consumed_read_info = _read_file_at(
+            binding,
+            _CONSUMED_NAME,
+            "consumed launch permit",
         )
         if (
             consumed_read_info.st_dev != permit_info.st_dev
@@ -818,14 +970,22 @@ def _consume_permit_and_claim(
         }
         claim = {**claim_body, "claim_hash": _hash_json(claim_body)}
         _write_exclusive_at(root_fd, _CLAIM_NAME, claim)
+        binding.revalidate()
+        reread, info = _read_json_at(binding, _CLAIM_NAME, "attempt claim")
+        if not _exact_native_equal(reread, claim) or info.st_nlink != 1:
+            raise BootstrapError("attempt claim readback differs")
+        expected = tuple(sorted((_AUTHORIZATION_NAME, _CONSUMED_NAME, _CLAIM_NAME)))
+        if binding.names() != expected:
+            raise BootstrapError("post-claim lifecycle state differs")
+        binding.revalidate()
+        workspace_names = _root_names(_WORKSPACE)
+        binding.revalidate()
+        if workspace_names is not None:
+            raise BootstrapError("post-claim workspace state differs")
+        binding.revalidate()
     finally:
-        os.close(root_fd)
-    reread, info = _read_json(_LIFECYCLE / _CLAIM_NAME, "attempt claim")
-    if not _exact_native_equal(reread, claim) or info.st_nlink != 1:
-        raise BootstrapError("attempt claim readback differs")
-    expected = tuple(sorted((_AUTHORIZATION_NAME, _CONSUMED_NAME, _CLAIM_NAME)))
-    if _root_names(_LIFECYCLE) != expected or _root_names(_WORKSPACE) is not None:
-        raise BootstrapError("post-claim fixed-root state differs")
+        if owns_binding:
+            binding.close()
     return claim
 
 
@@ -1294,16 +1454,23 @@ def _publish(
 ) -> None:
     staged = _WORKSPACE / _STAGED_NAME
     final = _WORKSPACE / _OUTPUT_NAME
-    if _root_names(_WORKSPACE) != (_STAGED_NAME,):
-        raise BootstrapError("staged marginalization workspace is off plan")
-    _validate_persisted(
-        manifest,
-        authorization_commit,
-        staged,
-        repo,
-        reviewed_sources=reviewed_sources,
-    )
-    root_fd = _open_directory(_WORKSPACE)
+    binding = _DirectoryBinding(_WORKSPACE)
+    try:
+        if binding.names() != (_STAGED_NAME,):
+            raise BootstrapError("staged marginalization workspace is off plan")
+        binding.revalidate()
+        _validate_persisted(
+            manifest,
+            authorization_commit,
+            staged,
+            repo,
+            reviewed_sources=reviewed_sources,
+        )
+        binding.revalidate()
+    except BaseException:
+        binding.close()
+        raise
+    root_fd = binding.root_fd
     linked = False
     committed = False
     publication_identity = None
@@ -1350,6 +1517,7 @@ def _publish(
             or final_info.st_nlink != 2
         ):
             raise BootstrapError("pending publication alias differs")
+        binding.revalidate()
         _validate_persisted(
             manifest,
             authorization_commit,
@@ -1358,6 +1526,7 @@ def _publish(
             allow_pending_alias=True,
             reviewed_sources=reviewed_sources,
         )
+        binding.revalidate()
         os.unlink(_STAGED_NAME, dir_fd=root_fd)
         os.fsync(root_fd)
         final_info = os.stat(
@@ -1369,8 +1538,9 @@ def _publish(
             or final_info.st_nlink != 1
         ):
             raise BootstrapError("final publication link count differs")
-        if _root_names(_WORKSPACE) != (_OUTPUT_NAME,):
+        if binding.names() != (_OUTPUT_NAME,):
             raise BootstrapError("final marginalization workspace is off plan")
+        binding.revalidate()
         _validate_persisted(
             manifest,
             authorization_commit,
@@ -1378,6 +1548,7 @@ def _publish(
             repo,
             reviewed_sources=reviewed_sources,
         )
+        binding.revalidate()
         final_info = os.stat(
             _OUTPUT_NAME, dir_fd=root_fd, follow_symlinks=False
         )
@@ -1388,6 +1559,7 @@ def _publish(
         ):
             raise BootstrapError("final publication identity changed")
         os.fsync(root_fd)
+        binding.revalidate()
         signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
         signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
         committed = True
@@ -1400,7 +1572,7 @@ def _publish(
         signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
         for signum, handler in previous_handlers.items():
             signal.signal(signum, handler)
-        os.close(root_fd)
+        binding.close()
         signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
 
 
@@ -1414,19 +1586,23 @@ def _run(authorization_path: Path) -> int:
         raise BootstrapError("authorization manifest link count is unsafe")
     _git_path, authorization_commit = _validate_manifest(manifest, repo, script)
     _validate_actual_command(manifest)
-    authorization, permit, permit_info = _validate_launch_records(
+    authorization, permit, permit_info, lifecycle_binding = _validate_launch_records(
         manifest,
         authorization_commit,
         authorization_path,
     )
-    reviewed_sources = _freeze_reviewed_first_party_sources(manifest, repo)
-    _consume_permit_and_claim(
-        manifest,
-        authorization_commit,
-        authorization,
-        permit,
-        permit_info,
-    )
+    try:
+        reviewed_sources = _freeze_reviewed_first_party_sources(manifest, repo)
+        _consume_permit_and_claim(
+            manifest,
+            authorization_commit,
+            authorization,
+            permit,
+            permit_info,
+            lifecycle_binding,
+        )
+    finally:
+        lifecycle_binding.close()
     _run_claimed_child(
         manifest,
         authorization_path,
