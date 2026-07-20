@@ -93,8 +93,8 @@ def valid_manifest(monkeypatch):
     )
     monkeypatch.setattr(
         authorization,
-        "vbd_trajectory_runner_implementation_manifest",
-        lambda *, source_paths: {
+        "vbd_trajectory_group_effect_marginalization_implementation_manifest",
+        lambda: {
             "files": files,
             "implementation_hash": sha256_json({"files": files}),
         },
@@ -119,6 +119,19 @@ def valid_manifest(monkeypatch):
     )
     return authorization.build_vbd_trajectory_group_effect_marginalization_authorization_manifest(
         implementation_review_refs=refs
+    )
+
+
+def test_task_specific_implementation_manifest_hashes_exact_52_file_source_set():
+    manifest = (
+        authorization.vbd_trajectory_group_effect_marginalization_implementation_manifest()
+    )
+    assert [item["path"] for item in manifest["files"]] == list(
+        authorization._MARGINALIZATION_RUNNER_SOURCE_PATHS
+    )
+    assert len(manifest["files"]) == 52
+    assert manifest["implementation_hash"] == sha256_json(
+        {"files": manifest["files"]}
     )
 
 

@@ -7,7 +7,6 @@ from pathlib import Path
 
 from .hashing import sha256_json
 from .vbd_trajectory_group_effect_marginalization_authorization import (
-    _MARGINALIZATION_RUNNER_SOURCE_PATHS,
     _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_TOKEN,
     _exact_native_equal,
     _revalidate_vbd_trajectory_group_effect_marginalization_root_guard,
@@ -20,6 +19,7 @@ from .vbd_trajectory_group_effect_marginalization_authorization import (
     validate_vbd_trajectory_group_effect_marginalization_authorization_manifest,
     validate_vbd_trajectory_group_effect_marginalization_claim,
     validate_vbd_trajectory_group_effect_marginalization_execution_authorization,
+    vbd_trajectory_group_effect_marginalization_implementation_manifest,
     verify_vbd_trajectory_group_effect_marginalization_authorization_commit,
     write_vbd_trajectory_group_effect_marginalization_completion_receipt,
     write_vbd_trajectory_group_effect_marginalization_input_binding,
@@ -50,10 +50,7 @@ from .vbd_trajectory_synthetic import (
     generate_vbd_trajectory_group_effect_marginalization_diagnostic_case,
 )
 from .vbd_trajectory_types import vbd_trajectory_model_manifest_body
-from .vbd_trajectory_validation_resumable import (
-    build_vbd_trajectory_runtime_identity,
-    vbd_trajectory_runner_implementation_manifest,
-)
+from .vbd_trajectory_validation_resumable import build_vbd_trajectory_runtime_identity
 
 
 def execute_authorized_vbd_trajectory_group_effect_marginalization(
@@ -121,8 +118,8 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
     _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
 
     runtime = build_vbd_trajectory_runtime_identity()
-    implementation = vbd_trajectory_runner_implementation_manifest(
-        source_paths=_MARGINALIZATION_RUNNER_SOURCE_PATHS
+    implementation = (
+        vbd_trajectory_group_effect_marginalization_implementation_manifest()
     )
     plan = vbd_trajectory_group_effect_marginalization_plan()
     seed_manifest = vbd_trajectory_group_effect_marginalization_seed_manifest()

@@ -48,9 +48,9 @@ from .vbd_trajectory_validation_resumable import (
     _repo_root,
     _strict_sha256,
     _trusted_git_executable,
+    _validate_regular_file,
     build_vbd_trajectory_runtime_identity,
     read_strict_json,
-    vbd_trajectory_runner_implementation_manifest,
 )
 
 
@@ -68,6 +68,21 @@ _MARGINALIZATION_RUNNER_SOURCE_PATHS = tuple(
         )
     )
 )
+
+
+def vbd_trajectory_group_effect_marginalization_implementation_manifest() -> dict:
+    """Hash the exact task-specific 52-file runner source set."""
+
+    files = []
+    for relative in _MARGINALIZATION_RUNNER_SOURCE_PATHS:
+        path = _repo_root() / relative
+        _validate_regular_file(
+            path,
+            label=f"marginalization runner source {relative}",
+        )
+        files.append({"path": relative, "sha256": _file_sha256(path)})
+    body = {"files": files}
+    return {**body, "implementation_hash": sha256_json(body)}
 
 
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH = (
@@ -1005,8 +1020,8 @@ def validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
     )
     _strict_commit(value["implementation_tree"], "marginalization implementation tree")
     files = _validate_in_scope_files(value["in_scope_files"])
-    current_implementation = vbd_trajectory_runner_implementation_manifest(
-        source_paths=_MARGINALIZATION_RUNNER_SOURCE_PATHS
+    current_implementation = (
+        vbd_trajectory_group_effect_marginalization_implementation_manifest()
     )
     current_runtime = build_vbd_trajectory_runtime_identity()
     if not _implementation_review_refs_are_valid(
@@ -1222,8 +1237,8 @@ def build_vbd_trajectory_group_effect_marginalization_authorization_manifest(
         implementation_commit,
     ):
         _authorization_error("marginalization implementation review refs are invalid")
-    implementation = vbd_trajectory_runner_implementation_manifest(
-        source_paths=_MARGINALIZATION_RUNNER_SOURCE_PATHS
+    implementation = (
+        vbd_trajectory_group_effect_marginalization_implementation_manifest()
     )
     files = sorted(implementation["files"], key=lambda item: item["path"])
     runtime = build_vbd_trajectory_runtime_identity()
