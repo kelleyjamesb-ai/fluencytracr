@@ -146,7 +146,7 @@
   strict permanent-HOLD records, and
   proof-path rejection; do not create an authorization commit, permit, claim,
   external root, or run a generator or sampler.
-- [ ] 2.17 After task `2.16` and separate sequential authorization, implement
+- [x] 2.17 After task `2.16` and separate sequential authorization, implement
   the diagnostic-specific exact-source authorization manifest construction,
   execution-record validation, fixed-root preflight, consume-before-import
   permit/claim lifecycle, isolated one-shot bootstrap, strict completed-result

@@ -388,6 +388,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-20: implemented exact low-rank marginalization, conditional mixtures, five chain diagnostics, 52-seed isolation, two-call deterministic equality, strict NOT_RUN records, malformed fixtures, and proof rejection. Exact package ff211931 received CODE, BUG, ADVERSARIAL, and statistical GO. Focused 96, guarded compatibility 64, pure inference 83, safe Harness 257/3 skipped, builds and governance passed; no generator or sampler ran."
+    },
+    {
+      "id": "vbd-group-effect-marginalization-authorization-implementation",
+      "title": "VBD group-effect marginalization diagnostic authorization and one-shot runner implementation",
+      "bound": "Synthetic-only inference/, focused tests, and verified OpenSpec/docs/status: complete task 2.17 by implementing diagnostic-specific exact-source authorization manifest construction, execution-record validation, fixed-root preflight, consume-before-import permit/claim lifecycle, isolated one-shot bootstrap, strict completed-result projection, permanent-HOLD publication, and proof-path rejection; preserve the frozen four cases, 52 seeds, exact marginalized target, reconstruction, priors, estimand, full sampler settings, thresholds, no-retry rule, evidence exclusion, and trusted-host boundary; no generator or sampler execution, authorization manifest commit A, external authorization record, permit or claim creation or consumption, external root or result, task 2.18-2.19, task 2.6, canary, S/F, concordance, calibration, real/customer/live data, public surface, customer output, or promotion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-20: implemented exact-source authorization, fixed-root preflight, consume-before-import lifecycle, isolated one-shot bootstrap, descriptor-bound child/publication I/O, strict completed projection, permanent HOLD, and proof rejection. Exact package f309a5b6 received CODE, BUG, ADVERSARIAL, and statistical GO. Focused 66 and full sampler-free 165 passed; no generator, sampler, manifest A, permit, claim, root, or result was created."
     }
   ]
 }
