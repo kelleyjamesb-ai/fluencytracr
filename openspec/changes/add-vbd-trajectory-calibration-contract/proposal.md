@@ -91,6 +91,24 @@ trajectory contract before implementation or real-data admission can proceed.
   requires a separately reviewed implementation `D3`, manifest-only
   authorization `A3`, separate human authorization, and one new launch; this
   amendment does not implement or execute it.
+- Record that the completed centered-versus-noncentered geometry diagnostic is
+  permanent non-evidentiary HOLD and rejected the noncentered candidate under
+  the unchanged tail-MCSE and deterministic-reference gates even though every
+  noncentered fit had zero divergences. No part of that launch is retryable or
+  admissible evidence.
+- Predeclare one narrower group-effect marginalization diagnostic. It preserves
+  the posterior model and keeps `alpha` and `beta` as ordinary sampled
+  parameters, but analytically integrates the Helmert zero-sum `u` block so the
+  demonstrated `sigma_u`-`u` funnel is absent from NUTS. It reconstructs each
+  `u[c]` and terminal movement from exact conditional-Normal mixtures and
+  measures outer-chain Monte Carlo error through mean and endpoint-influence
+  channels without pseudo-draws or conditional-mean substitution.
+- Freeze four new aggregate-`k=16` effect/group cells, twelve full-setting fits,
+  disjoint diagnostic-only seeds, unchanged sampler/reference gates,
+  sampler-free target/reconstruction oracles, permanent HOLD, and exhaustive
+  supported/reject/invalid classification. This amendment does not implement or
+  execute the diagnostic, change the current proof reference, complete task
+  `2.6`, or authorize a canary, concordance, or calibration run.
 
 ## Impact
 

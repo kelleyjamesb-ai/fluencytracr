@@ -373,13 +373,13 @@
       "risk": "high",
       "last_note": "Done/consumed 2026-07-19: exact A2 launch exited zero and strict persisted validation passed for artifact 1fda8dab47c8563af77e85dc3a2095fde49fd87c09bc83afa24cbbb1a34d6339, record a25e9141d5ae0372a4d92851f5e1ddf92265829fa3ae7033ab42a863cd50c1f8, 12 arms, 234 sampler rows, and 180 reference comparisons. Classification is REJECT_NONCENTERED_CANDIDATE because fixed tail-MCSE and reference gates failed. Four post-run reviews returned GO for artifact integrity and classification. Permanent HOLD, no retry, task 2.6 incomplete, and no S/F, concordance, or calibration."
     },
-{
-  "id": "vbd-collapsed-gaussian-methodology-decision",
-  "title": "VBD collapsed Gaussian-block methodology decision",
-  "bound": "Docs/OpenSpec/status only: bind the valid rejected noncentered geometry artifact and predeclare one prospective target-equivalent collapsed Gaussian-block reference design that samples only sigma_u, sigma_r, and rho, analytically marginalizes alpha, beta, and zero-sum group effects under the existing conditional-Gaussian likelihood, reconstructs alpha/beta/u/trajectory_movement through conditional-Normal mixtures with chain-aware influence diagnostics, and uses fresh disjoint synthetic cases/seeds plus exhaustive one-shot classification; preserve the model, priors, estimand, NUTS settings, every statistical threshold, evidence gates, fail-closed behavior, and trusted-host boundary; no implementation, generator/sampler execution, permit/claim/root, replacement canary, task 2.6 completion, S/F, concordance, calibration, real/customer/live data, public surface, customer output, threshold change, seed reuse, promotion, or parent 5.6 completion",
-  "status": "in_progress",
-  "risk": "high",
-  "last_note": "Human-authorized 2026-07-19 via 'Okay, go ahead and do that next move.' Docs/OpenSpec/status only on a dependent branch rooted at exact geometry closeout 61303104; no implementation or execution."
-}
+    {
+      "id": "vbd-collapsed-gaussian-methodology-decision",
+      "title": "VBD group-effect marginalization methodology decision",
+      "bound": "Docs/OpenSpec/status only: bind the valid rejected noncentered geometry artifact and predeclare one prospective target-equivalent reference diagnostic that keeps alpha and beta sampled, analytically marginalizes only the Helmert zero-sum group effects under the existing conditional-Gaussian likelihood, reconstructs u and trajectory_movement through exact conditional-Normal mixtures with chain-aware mean and endpoint-influence diagnostics, and uses four fresh disjoint synthetic cells/seeds plus exhaustive one-shot classification; preserve the model, priors, estimand, NUTS settings, every statistical threshold, evidence gates, fail-closed behavior, and trusted-host boundary; no implementation, generator/sampler execution, permit/claim/root, replacement canary, task 2.6 completion, S/F, concordance, calibration, real/customer/live data, public surface, customer output, threshold change, seed reuse, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-19: selected collapse-only-u with alpha/beta sampled; froze exact low-rank target, conditional-mixture and five-channel influence diagnostics, four cells, 52 disjoint seeds, 12 fits, exact recomputation equality, cardinalities, and permanent-HOLD classification. Final reviewed contract diff b1caa947c35e38d4a1c800b721ea95cf507d05ccecee8767bb031406535ed412 received CODE, BUG, ADVERSARIAL, and statistical-methodology GO. Strict OpenSpec, docs sweep, semantic drift, V1 governance, queue guard, JSON, and diff checks passed. No implementation or execution; task 2.6 and all proof stages remain blocked."
+    }
   ]
 }

@@ -51,6 +51,15 @@
   equivalence checks, and supported/inconclusive/reject rules; obtain CODE,
   BUG, ADVERSARIAL, and statistical-methodology GO for the amended docs bytes
   without implementation or execution.
+- [x] 1.12 Record the rejected noncentered candidate as permanent
+  non-evidentiary HOLD and predeclare one target-equivalent group-effect
+  marginalization diagnostic that keeps `alpha` and `beta` sampled, integrates
+  only the Helmert zero-sum `u` block, reconstructs `u` and movement through
+  exact conditional-Normal mixtures with chain-aware influence diagnostics,
+  and uses four fresh synthetic cells with disjoint seeds and exhaustive
+  supported/reject/invalid rules; obtain CODE, BUG, ADVERSARIAL, and
+  statistical-methodology GO for the amended docs bytes without implementation
+  or execution.
 
 ## 2. Future Synthetic Implementation
 
@@ -129,6 +138,32 @@
   and proof-count exclusion. No retry, resume, seed rotation, adaptive
   extension, model/threshold change, canary, concordance, or calibration may
   occur in this task.
+- [ ] 2.16 After task `1.12` and separate implementation authorization,
+  implement `vbd_group_effect_marginalization_diagnostic_v1`, including the
+  exact low-rank marginal target, conditional reconstruction, influence-channel
+  diagnostics, four-case seed plan, exact reference/recomputation equality,
+  deterministic-reference comparisons, sampler-free dense-oracle fixtures,
+  strict permanent-HOLD records, and
+  proof-path rejection; do not create an authorization commit, permit, claim,
+  external root, or run a generator or sampler.
+- [ ] 2.17 After task `2.16` and separate sequential authorization, implement
+  the diagnostic-specific exact-source authorization manifest construction,
+  execution-record validation, fixed-root preflight, consume-before-import
+  permit/claim lifecycle, isolated one-shot bootstrap, strict completed-result
+  projection, and permanent-HOLD publication; do not create authorization
+  commit `A`, a permit, claim, external root, or run a generator or sampler.
+- [ ] 2.18 After exact-commit CODE, BUG, ADVERSARIAL, and
+  statistical-methodology GO for clean authorization implementation `D`,
+  create and verify a separately reviewed sole-child manifest-only
+  authorization commit `A`; do not create the external human execution record
+  or run the diagnostic.
+- [ ] 2.19 After exact `A` and a separately bound human execution record,
+  consume the one permitted fixed launch, run the frozen four-case twelve-fit
+  diagnostic once, strictly validate the sanitized result, and preserve
+  permanent HOLD and proof-count exclusion. A supported result may authorize
+  only a later docs/OpenSpec amendment and fresh precision-canary identities;
+  it does not complete task `2.6`, change the proof reference, or start
+  concordance or calibration.
 
 ## 3. Future Engine Concordance
 

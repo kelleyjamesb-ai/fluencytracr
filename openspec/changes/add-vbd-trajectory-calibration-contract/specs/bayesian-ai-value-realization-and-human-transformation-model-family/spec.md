@@ -1161,6 +1161,248 @@ permitted.
 - **AND** no threshold, seed, draw count, or model component may be changed in
   response
 
+### Requirement: VBD Group-Effect Marginalization Diagnostic Is Exact And Non-Evidentiary
+
+The completed `vbd_group_effect_geometry_diagnostic_v1` result SHALL remain
+`REJECT_NONCENTERED_CANDIDATE` and permanent
+`HOLD(parameterization_geometry_diagnostic_nonacceptance)` under its exact
+artifact, record, seed, authorization, and review bindings. Its zero-divergence
+noncentered fits SHALL NOT offset the failed 99% endpoint MCSE and deterministic-
+reference gates. It SHALL NOT be retried, extended, reweighted, rehashed,
+reinterpreted, or admitted to any canary, proof, evidence, or acceptance count.
+
+The prospective `vbd_group_effect_marginalization_diagnostic_v1` SHALL change
+only the computational representation of the zero-sum group effects.
+`alpha` and `beta` SHALL remain named sampled parameters with their existing
+independent Normal priors. `sigma_u`, `sigma_r`, and `rho` SHALL remain
+sampled under their unchanged HalfNormal, HalfNormal, and bounded Uniform
+priors. NUTS posterior variables SHALL be exactly
+`alpha,beta,sigma_u,sigma_r,rho`. Neither `u` nor
+`trajectory_movement` SHALL be sampled, stored as a posterior pseudo-draw, or
+replaced by a conditional mean. Full collapse of `alpha` or `beta`,
+noncentering, partial pooling drift, prior duplication, or any other model
+change SHALL reject.
+
+Let `B` be the exact prepared `C x (C-1)` Helmert basis,
+`P=B B'=I-11'/C`, `Z` the group-incidence matrix, `A=Z B`,
+`F=[1,tau]`, `gamma=(alpha,beta)`, `K` the existing block-diagonal
+stationary AR(1) covariance, `D=diag(known_se^2)`, `R=K+D`, and
+`e=y-F gamma`. For each sampled `sigma_u`, the implementation SHALL define
+`U=sigma_u A`, `W=I+U'R^-1 U`, and `V=R+U U'`, and SHALL evaluate exactly
+
+```text
+log p(y | gamma,sigma_u,sigma_r,rho) =
+  -0.5 * (n*log(2*pi) + log|V| + e'V^-1 e)
+
+log|V| = log|R| + log|W|
+q = R^-1 e
+b = U' q
+e'V^-1 e = e' q - b' W^-1 b
+```
+
+All solves and log determinants SHALL use positive-definite Cholesky
+factorization. Explicit matrix inversion, a singular density on `u`,
+blockwise group likelihoods after marginalization, an omitted determinant,
+a duplicated `u` prior, or independent group blocks in place of the full
+negative cross-group covariance `P` SHALL reject. The production collapsed
+target SHALL be implemented independently from the deterministic engine; it
+SHALL NOT call the primary engine's conditional-Gaussian evaluator to make its
+own target appear concordant.
+
+For every original chain/draw index `j`, standardized Helmert coordinates
+SHALL have the exact component distribution
+
+```text
+z_j | y,gamma_j,sigma_u_j,sigma_r_j,rho_j
+  ~ Normal(W_j^-1 U_j'R_j^-1 e_j, W_j^-1)
+u_j = B * (sigma_u_j*z_j)
+```
+
+For the existing latent-level contrast `ell`, define
+`G_j=K_j+sigma_u_j^2 Z P Z'` and `V_j=G_j+D`. The movement component SHALL
+be exactly
+
+```text
+movement_j | y,gamma_j,sigma_u_j,sigma_r_j,rho_j ~ Normal(
+  ell'F gamma_j + ell'G_j V_j^-1 e_j,
+  ell'(G_j - G_j V_j^-1 G_j)ell
+)
+```
+
+Each `u[c]` and movement summary SHALL be the equal-weight direct
+conditional-Normal mixture over the original unflattened chain-by-draw grid.
+The implementation SHALL preserve the joint `u`-AR conditional covariance.
+Adding separate marginal variances, treating conditional components as
+independent observations, discretizing them, drawing pseudo-support, using
+antithetic values, or substituting their means SHALL reject.
+
+For a reconstructed quantity, each outer draw provides component CDF
+`F_j`, density `f_j`, mean `m_j`, and variance `s_j^2`. The mixture
+endpoint `q_p` SHALL solve `mean_j(F_j(q_p))=p` directly for
+`p={.10,.90,.005,.995}`, and the full mixture posterior variance SHALL be
+`mean_j(s_j^2+m_j^2)-mean_j(m_j)^2`. The chain-shaped endpoint influence
+channel SHALL be
+
+```text
+psi[p,j] = (p - F_j(q_p)) / mean_j(f_j(q_p))
+```
+
+A nonfinite endpoint, nonfinite or nonpositive mixture density, nonpositive
+mixture variance, malformed chain grid, or changed coordinate order SHALL
+reject. The five diagnostic channels SHALL be the unflattened `m_j` array and
+the four endpoint-influence arrays. Chain-aware mean MCSE SHALL be computed for
+each channel and divided by the full mixture posterior SD. The worst R-hat and
+minimum bulk/tail ESS across the same five channels SHALL be retained, not a
+pseudo-draw diagnostic. Every ratio SHALL remain `<=0.10`, every R-hat
+`<=1.01`, and every bulk/tail ESS `>=400`.
+
+Sampled `alpha`, `beta`, `sigma_u`, `sigma_r`, and `rho` SHALL retain
+the existing trace diagnostics and five separately named mean/80%-endpoint/
+99%-endpoint MCSE ratios. All twelve fits SHALL independently require R-hat
+`<=1.01`, bulk/tail ESS `>=400`, zero divergences, zero treedepth
+saturation, BFMI `>=0.3`, and every MCSE/posterior-SD ratio `<=0.10`.
+For the common quantities `alpha`, `beta`, `sigma_u`, `u[0..C-1]`,
+`sigma_r`, `rho`, and `trajectory_movement`, deterministic-reference
+mean differences SHALL remain `<=0.15` reference SD, every lower/upper 80%
+and 99% endpoint difference `<=0.20` reference SD, and SD ratios within
+`[0.85,1.15]`. No average, lane, case, or diagnostic family may rescue
+another failure.
+
+The diagnostic SHALL contain exactly four aggregate-`k=16` cases in this
+order:
+
+- ordinal `0`: effect `0`, six panel groups, generator seed
+  `2_055_901_000`;
+- ordinal `1`: effect `0`, twelve panel groups, generator seed
+  `2_055_901_001`;
+- ordinal `2`: effect `0.5`, six panel groups, generator seed
+  `2_055_901_002`; and
+- ordinal `3`: effect `0.5`, twelve panel groups, generator seed
+  `2_055_901_003`.
+
+For case ordinal `i`, canonical lane ordinal `d`, and chain index `c`, the
+chain seed SHALL be `2_055_901_100+12*i+4*d+c`, producing exactly
+`2_055_901_100..147`. The four generator and 48 chain seeds SHALL be a new
+exclusive diagnostic namespace, rejected by generic smoke, every V1/V2/V3 and
+geometry diagnostic, both precision canaries, concordance, study,
+recomputation, and acceptance paths. No seed may be substituted, rotated, or
+reused.
+
+Execution order SHALL be case ordinal, then canonical lane ordinal. Every one
+of the twelve fits SHALL use four chains, 20,000 retained draws, 5,000 tuning
+draws, `target_accept=.999`, `max_treedepth=15`,
+`jitter+adapt_full`, `cores=1`, and `blas_cores=1`. One deterministic
+state-space reference and one fresh deterministic recomputation SHALL be
+generated independently and bind each fit before classification. Their strict
+canonical semantic summaries and reference hashes SHALL match exactly; any
+mismatch SHALL be exclusively `INVALID_HOLD` before numerical
+classification. PPC, acceptance concordance, canary state, and proof eligibility
+SHALL be `NOT_RUN` or false, never passing. The complete record SHALL contain
+exactly twelve fit records, 60 sampled trace-parameter rows, 120 reconstructed-
+quantity rows each containing exactly five named channel-diagnostic records
+(600 channel records total), and 180 common-quantity deterministic-reference
+comparisons.
+
+Before any future governed launch, repeatable sampler-free fixtures SHALL prove
+for both `C=6` and `C=12`: exact prepared Helmert identity and
+`B B'=P`; low-rank log-density and automatic gradient agreement with an
+independently constructed dense `Normal(F gamma,V)`; conditional `u` and
+movement moments against direct joint-Gaussian conditioning; exact mixture
+moments, endpoints, and influence channels; chain-major shape; and zero-sum
+reconstruction. Negative fixtures SHALL reject omitted determinants, duplicated
+priors, changed design, known SE, contrast, covariance, or parameter set,
+malformed dimensions/labels, conditional-mean substitution, and any call from
+the candidate target into the primary target evaluator.
+
+Diagnostic PPC SHALL remain `NOT_RUN`. A sampler-free future-PPC oracle MAY
+use fixed supplied standard-Normal arrays only and SHALL apply them in this
+order for each selected outer state: one `C-1` Helmert-coordinate conditional
+draw, then by group ordinal one conditional AR-state draw and one new
+known-SE observation-error draw. It SHALL preserve the joint conditional
+distribution and SHALL NOT create a reconstruction seed or result. Any later
+change to the accepted proof PPC requires its own docs/OpenSpec amendment and
+must preserve the already frozen evidence seed formulas.
+
+The no-extra-key classification SHALL validate exact identity, source/runtime/
+plan bindings, all fixture hashes, complete case/lane matrix, exact row counts,
+exact deterministic reference/recomputation equality, runner completion, and
+persisted semantic readback before evaluating numerical results:
+
+- `REJECT_GROUP_EFFECT_MARGINALIZATION_CANDIDATE` SHALL apply to every complete
+  structurally valid result with any sampler, influence-channel, mixture, or
+  deterministic-reference gate failure.
+- `SUPPORTED_FOR_LATER_REFERENCE_CONTRACT_AMENDMENT` SHALL require every
+  structural, target-equivalence, sampler, influence-channel, mixture, and
+  deterministic-reference gate to pass in all twelve fits.
+- Every missing, extra, duplicate, malformed, off-plan, hash-invalid,
+  identity-invalid, runner-error, write/read-invalid, or otherwise unclassified
+  state SHALL be exclusively `INVALID_HOLD`.
+
+Every classification SHALL remain permanently
+`HOLD(group_effect_marginalization_diagnostic_nonacceptance)`, have zero
+evidence eligibility and acceptance-count effect, and be rejected by every
+canary, freeze, concordance, study, artifact, bridge, and acceptance validator.
+This internal diagnostic label SHALL NOT become a canonical product suppression
+reason. A supported result MAY authorize only a later docs/OpenSpec amendment
+that changes the reference design and reserves fresh precision-canary
+identities. It SHALL NOT itself modify the current centered proof reference,
+complete task `2.6`, create replacement `S/F`, or start concordance or
+calibration.
+
+Implementation SHALL require separate explicit human authorization after
+exact-byte CODE, BUG, ADVERSARIAL, and statistical-methodology GO for this
+amendment. A future launch SHALL additionally require clean implementation
+`D`, exact-commit four-role GO, a separately reviewed sole-child manifest-only
+authorization `A`, a separate exact human execution record, and one fixed
+external permit and claim consumed before any candidate import, generation, or
+sampling. Failure after consumption SHALL remain permanent HOLD. Retry,
+resume, adaptive extension, seed substitution, result-conditioned change, and
+reuse of any prior diagnostic state SHALL be forbidden. Until a supported
+result and later amendment exist, the current centered-reference prohibition
+against collapse and reconstruction SHALL remain in force for precision
+canaries, concordance, and evidence.
+
+#### Scenario: Marginal target drops zero-sum cross-group covariance
+
+- **GIVEN** a candidate replaces `P=I-11'/C` with diagonal or independent
+  group blocks, factors the likelihood by group, or omits a determinant
+- **WHEN** sampler-free target validation runs
+- **THEN** the candidate rejects before any governed launch
+- **AND** self-consistent rehashing cannot make the changed posterior equivalent
+
+#### Scenario: Reconstructed tails use pseudo-draws or conditional means
+
+- **GIVEN** any `u[c]` or movement summary is formed from random pseudo-draws,
+  discretized support, conditional means alone, or flattened component rows
+- **WHEN** mixture or influence validation runs
+- **THEN** the candidate rejects
+- **AND** the unchanged tail-MCSE and reference gates still apply
+
+#### Scenario: All marginalization diagnostic gates pass
+
+- **GIVEN** the exact four-case, twelve-fit result is complete and every
+  structural, target, sampler, influence, mixture, and reference gate passes
+- **WHEN** classification runs
+- **THEN** it is `SUPPORTED_FOR_LATER_REFERENCE_CONTRACT_AMENDMENT`
+- **AND** it remains permanent HOLD and cannot change the proof reference
+
+#### Scenario: One complete fit fails an unchanged gate
+
+- **GIVEN** a structurally valid complete result with one failed sampled,
+  reconstructed, mixture, or deterministic-reference gate
+- **WHEN** classification runs
+- **THEN** it is `REJECT_GROUP_EFFECT_MARGINALIZATION_CANDIDATE`
+- **AND** no passing fit, average, extra draw, retry, or threshold change may
+  rescue it
+
+#### Scenario: Result matrix or persisted record is incomplete
+
+- **GIVEN** any missing, extra, duplicate, off-plan, malformed, hash-invalid,
+  runner-error, or persisted-validation failure
+- **WHEN** classification runs
+- **THEN** the result is exclusively `INVALID_HOLD`
+- **AND** no numerical interpretation or later authorization is available
+
 #### Scenario: Natural PyMC storage order reaches canonical projection
 
 - **GIVEN** a full-shape sampler-free production-path fixture with the exact

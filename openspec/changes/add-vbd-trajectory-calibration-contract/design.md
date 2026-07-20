@@ -505,6 +505,124 @@ reference gates. The result remains permanent non-evidentiary HOLD, rejects
 this candidate, cannot complete task `2.6`, and cannot be retried, resumed,
 extended, or moved into concordance or calibration.
 
+The next bounded candidate marginalizes only the zero-sum group-effect block.
+It does not marginalize `alpha` or `beta`: those fixed effects remain named
+NUTS variables with their existing Normal priors and ordinary trace
+diagnostics. This is the smallest geometry change that removes the demonstrated
+`sigma_u`-`u` funnel. Full collapse of the fixed effects is deferred unless a
+later governed result demonstrates a separate fixed-effect geometry failure.
+
+Let `B` be the exact prepared `C x (C-1)` Helmert basis, `P=B B'`, `Z` the
+group-incidence matrix, `A=Z B`, `F=[1,tau]`, and
+`gamma=(alpha,beta)`. Let `K` be the existing block-diagonal stationary AR(1)
+covariance, `D=diag(known_se^2)`, `R=K+D`, and `e=y-F gamma`. For sampled
+`sigma_u`, define `U=sigma_u A`, `W=I+U'R^-1 U`, and
+
+```text
+V = R + U U'
+log p(y | gamma,sigma_u,sigma_r,rho) =
+  -0.5 * (n*log(2*pi) + log|V| + e'V^-1 e)
+```
+
+The implementation may use the determinant lemma and Woodbury identity, but
+must obtain all terms through Cholesky solves:
+
+```text
+log|V| = log|R| + log|W|
+q = R^-1 e
+b = U' q
+e'V^-1 e = e' q - b' W^-1 b
+```
+
+It may not form an explicit inverse, omit either determinant, factor the
+marginal likelihood by group, duplicate the integrated `u` prior, introduce a
+singular density on `u`, or replace `P` with independent group blocks. The
+negative cross-group covariance in `P=I-11'/C` is part of the frozen model.
+
+For each retained outer draw, standardized Helmert coordinates have the exact
+conditional distribution
+
+```text
+z | y,gamma,sigma_u,sigma_r,rho ~ Normal(W^-1 U'R^-1 e, W^-1)
+u = B * (sigma_u*z)
+```
+
+Each `u[c]` is therefore one conditional Normal component. For terminal
+movement, let `ell` be the existing latent-level contrast,
+`G=K+sigma_u^2 Z P Z'`, and `V=G+D`. Its component is
+
+```text
+movement | y,gamma,sigma_u,sigma_r,rho ~ Normal(
+  ell'F gamma + ell'G V^-1 e,
+  ell'(G - G V^-1 G)ell
+)
+```
+
+The implementation must derive this as one joint latent conditional. Adding
+separate marginal variances, dropping the `u`-AR conditional covariance, or
+substituting conditional means changes the target and is forbidden.
+
+Equal-weight conditional components across the original chain-by-draw grid are
+summarized by direct mixture-CDF inversion and the exact mixture variance. No
+pseudo-draws, antithetic values, discretized conditional support, or
+component-as-observation ESS is allowed. Mean Monte Carlo error uses the
+unflattened conditional-mean array. For endpoint probability `p`, mixture
+endpoint `q_p`, component CDF `F_j`, and mixture density `f_hat`, the
+chain-shaped influence channel is
+
+```text
+psi[p,j] = (p - F_j(q_p)) / f_hat(q_p)
+```
+
+Chain-aware mean MCSE is applied to that channel. The five channels are the
+conditional mean plus the 80%-lower, 80%-upper, 99%-lower, and 99%-upper
+influences. Each MCSE divided by the full mixture posterior SD remains
+`<=0.10`; the worst R-hat and minimum bulk/tail ESS across those five channels
+must still satisfy `<=1.01` and `>=400`. Sampled `alpha`, `beta`, `sigma_u`,
+`sigma_r`, and `rho` retain every existing trace, divergence, treedepth,
+BFMI, and five-field MCSE gate unchanged.
+
+The prospective `vbd_group_effect_marginalization_diagnostic_v1` has four
+aggregate-`k=16` cases in exact order: `(effect=0,groups=6)`,
+`(effect=0,groups=12)`, `(effect=0.5,groups=6)`, and
+`(effect=0.5,groups=12)`. Generator seeds are `2_055_901_000+i`. For case
+`i`, lane ordinal `d`, and chain `c`, chain seed is
+`2_055_901_100+12*i+4*d+c`, yielding `2_055_901_100..147`. These 52 seeds
+form a new diagnostic-only namespace and are rejected by generic smoke, every
+prior diagnostic/canary, concordance, study, recomputation, and acceptance
+path.
+
+Each of the twelve case/lane fits uses four chains, 20,000 retained draws,
+5,000 tuning draws, `target_accept=.999`, `max_treedepth=15`,
+`jitter+adapt_full`, `cores=1`, and `blas_cores=1`. One deterministic
+reference and one fresh deterministic recomputation are independently generated
+and bound per fit. Their strict semantic summaries and canonical reference
+hashes must match exactly; mismatch is `INVALID_HOLD` before numerical
+classification. PPC and acceptance concordance are `NOT_RUN`. All common
+quantities retain the existing mean, 80%/99% endpoint, and SD-ratio gates. Sampler-free fixtures must
+cover both group counts, exact Helmert/covariance identity, collapsed log
+density and gradient against an independently constructed dense Normal,
+conditional `u` and movement moments against direct joint-Gaussian
+conditioning, exact mixture summaries/influence channels, chain-major shape,
+zero-sum reconstruction, and rejection of omitted determinants, duplicate
+priors, changed design/SE/contrast, malformed variables, and conditional-mean
+substitution. The complete result contains twelve fits, 60 sampled-parameter
+rows, 120 reconstructed-quantity rows with exactly five named channel-
+diagnostic records each (600 channel records total), and 180 reference
+comparisons.
+
+After structure and provenance validate, any failed sampler, influence, or
+deterministic-reference gate is
+`REJECT_GROUP_EFFECT_MARGINALIZATION_CANDIDATE`; all gates passing is
+`SUPPORTED_FOR_LATER_REFERENCE_CONTRACT_AMENDMENT`; and any incomplete,
+malformed, off-plan, identity-invalid, runner-error, or otherwise unclassified
+state is exclusively `INVALID_HOLD`. Every result remains permanent
+`HOLD(group_effect_marginalization_diagnostic_nonacceptance)`, contributes
+zero proof count, and cannot change the current centered reference. Support can
+authorize only a later docs/OpenSpec amendment and fresh precision-canary
+identities after separate implementation, four-role review, manifest-only
+authorization, human execution authorization, and one consumed launch.
+
 Sampler MCSE is evaluated independently and stored separately for the
 posterior mean and each lower and upper 80% and 99% interval endpoint.
 Diagnostic outputs are joined only after exact parameter-dimension,

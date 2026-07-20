@@ -947,7 +947,7 @@ criterion passed for this fresh case, while the divergences leave
 target-faithful exploration unestablished. It supplies no evidence, clears no
 canary, and cannot complete task `2.6`.
 
-The next prospective diagnostic is exactly
+The governed diagnostic was predeclared as exactly
 `vbd_group_effect_geometry_diagnostic_v1`. It tests one hypothesis only:
 whether replacing the centered zero-sum group effect with its mathematically
 equivalent non-centered representation removes the observed funnel behavior
@@ -1009,7 +1009,7 @@ difference `<=0.20` reference posterior SD, and SD ratio in
 `[0.85,1.15]`. The standardized `u_std` coordinates independently require
 the hard sampler gates but have no deterministic-reference counterpart.
 
-The prospective result classification is fixed before implementation and uses
+The predeclared result classification was fixed before implementation and uses
 the following precedence. Exact identity, schema, provenance, source/reference
 bindings, complete case/lane/arm matrix, and runner completion validate first.
 Any failure at that boundary is exclusively `INVALID_HOLD`; no other
@@ -1056,6 +1056,153 @@ generator code, generating data, or invoking a sampler. A crash or failure
 after permit consumption, including claim-establishment failure, leaves the
 launch permanently consumed; every second invocation rejects before numerical
 work. Output produced without the valid claim is unclassifiable `INVALID_HOLD`.
+
+### Completed Geometry Result And Group-Effect Marginalization Decision
+
+The exact governed geometry launch completed, and strict persisted validation
+admitted artifact
+`1fda8dab47c8563af77e85dc3a2095fde49fd87c09bc83afa24cbbb1a34d6339`
+with record
+`a25e9141d5ae0372a4d92851f5e1ddf92265829fa3ae7033ab42a863cd50c1f8`.
+It contained twelve arms, 234 sampler rows, and 180 deterministic-reference
+comparisons. Its predeclared classification is
+`REJECT_NONCENTERED_CANDIDATE`: all noncentered arms had zero divergences,
+but case-0 Breadth `u_std[5]` had 99%-lower endpoint MCSE ratio
+`0.11256762551677787`, while case-1 Frequency `u[2]` had 99%-upper
+endpoint MCSE ratio `0.24197029311231413` and 99%-upper deterministic-
+reference difference `0.23954276555797224`. The unchanged limits are
+`0.10` and `0.20`. That result is permanent non-evidentiary HOLD, has zero
+proof count, and cannot be retried, extended, reweighted, or moved into task
+`2.6`, a canary, concordance, or calibration.
+
+The next bounded methodology is
+`vbd_group_effect_marginalization_diagnostic_v1`. It removes only the
+demonstrated `sigma_u`-`u` sampling funnel. `alpha` and `beta` remain
+named NUTS parameters with their unchanged Normal priors; `sigma_u`,
+`sigma_r`, and `rho` remain sampled under their unchanged priors. The exact
+posterior variable set is
+`alpha,beta,sigma_u,sigma_r,rho`. Full fixed-effect collapse and every
+model, prior, estimand, threshold, or evidence-gate change remain outside this
+decision.
+
+For the exact prepared Helmert basis `B`, define
+`P=B B'=I-11'/C`, group incidence `Z`, `A=Z B`, fixed-effect design
+`F=[1,tau]`, `gamma=(alpha,beta)`, block-diagonal stationary AR covariance
+`K`, known-error covariance `D=diag(known_se^2)`, `R=K+D`,
+`e=y-F gamma`, `U=sigma_u A`, and `W=I+U'R^-1 U`. The exact marginal
+target is:
+
+```text
+V = R + U U'
+log p(y | gamma,sigma_u,sigma_r,rho) =
+  -0.5 * (n*log(2*pi) + log|V| + e'V^-1 e)
+
+log|V| = log|R| + log|W|
+q = R^-1 e
+b = U' q
+e'V^-1 e = e' q - b' W^-1 b
+```
+
+All solves and determinants use positive-definite Cholesky factors. The target
+may not call the primary engine's target evaluator. It rejects explicit
+inverses, groupwise factorization after marginalization, missing determinant
+terms, duplicated `u` priors, a singular density on `u`, or replacement of
+the full zero-sum covariance with independent group blocks.
+
+For each retained chain/draw state, standardized Helmert coordinates and group
+effects have the exact conditional distribution:
+
+```text
+z | y,gamma,sigma_u,sigma_r,rho ~ Normal(W^-1 U'R^-1 e, W^-1)
+u = B * (sigma_u*z)
+```
+
+For the existing latent contrast `ell`, with
+`G=K+sigma_u^2 Z P Z'` and `V=G+D`, movement is:
+
+```text
+movement | y,gamma,sigma_u,sigma_r,rho ~ Normal(
+  ell'F gamma + ell'G V^-1 e,
+  ell'(G - G V^-1 G)ell
+)
+```
+
+Every `u[c]` and movement summary uses direct equal-weight
+conditional-Normal mixture CDF inversion over the original chain-by-draw grid.
+No pseudo-draw, discretized support, antithetic value, conditional-mean
+substitution, component-as-observation ESS, or loss of joint `u`-AR
+conditional covariance is permitted.
+
+For component CDF `F_j`, density `f_j`, mean `m_j`, mixture endpoint
+`q_p`, and `p={.10,.90,.005,.995}`, the endpoint influence channel is:
+
+```text
+psi[p,j] = (p - F_j(q_p)) / mean_j(f_j(q_p))
+```
+
+The five chain-shaped diagnostic channels are `m_j` and the four endpoint
+influences. Each chain-aware mean MCSE divided by the full mixture posterior SD
+must be `<=0.10`; the worst R-hat and minimum bulk/tail ESS across those
+channels must be `<=1.01` and `>=400`. Sampled parameters retain the same
+five MCSE fields plus every existing R-hat, ESS, zero-divergence, zero-
+treedepth-saturation, and BFMI gate. Common quantities retain deterministic-
+reference limits of mean difference `<=0.15` reference SD, every 80%/99%
+endpoint difference `<=0.20` reference SD, and SD ratio in `[0.85,1.15]`.
+
+The diagnostic freezes these aggregate-`k=16` cases:
+
+| Ordinal | Effect SD | Panel groups | Generator seed |
+| --- | ---: | ---: | ---: |
+| 0 | 0 | 6 | `2_055_901_000` |
+| 1 | 0 | 12 | `2_055_901_001` |
+| 2 | 0.5 | 6 | `2_055_901_002` |
+| 3 | 0.5 | 12 | `2_055_901_003` |
+
+For case `i`, lane ordinal `d`, and chain `c`, chain seed is
+`2_055_901_100+12*i+4*d+c`, exactly `2_055_901_100..147`. These 52 seeds
+are diagnostic-only and rejected by every generic smoke, prior diagnostic,
+precision canary, concordance, study, recomputation, and acceptance path.
+Each of the twelve fits uses four chains, 20,000 retained draws, 5,000 tuning
+draws, `target_accept=.999`, `max_treedepth=15`,
+`jitter+adapt_full`, `cores=1`, and `blas_cores=1`. PPC and acceptance
+concordance remain `NOT_RUN`.
+
+Each fit binds one independently generated deterministic reference and one
+fresh deterministic recomputation. Their strict semantic summaries and
+canonical reference hashes must match exactly; any mismatch is `INVALID_HOLD`
+before numerical classification.
+
+A complete record has exactly twelve fits, 60 sampled trace-parameter rows,
+120 reconstructed-quantity rows each containing exactly five named channel-
+diagnostic records (600 channel records total), and 180 common-quantity
+reference comparisons. Sampler-free fixtures cover both group counts, exact
+Helmert/covariance identity, low-rank target and gradient agreement with an
+independent dense Normal, direct joint-Gaussian reconstruction moments, exact
+mixture/influence calculations, chain-major shape, zero-sum reconstruction,
+and every malformed or target-changing negative case. A future-PPC fixture may
+use fixed supplied standard-Normal arrays, first for one `C-1` Helmert
+coordinate draw and then, in group order, for conditional AR state and new
+known-SE error draws. The diagnostic itself performs no PPC and creates no
+reconstruction RNG or result.
+
+After exact structure and provenance validate:
+
+- any complete result with a failed sampler, influence, mixture, or reference
+  gate is `REJECT_GROUP_EFFECT_MARGINALIZATION_CANDIDATE`;
+- all twelve fits passing every structural and numerical gate is
+  `SUPPORTED_FOR_LATER_REFERENCE_CONTRACT_AMENDMENT`; and
+- every incomplete, malformed, duplicate, off-plan, hash-invalid, runner-error,
+  write/read-invalid, or otherwise unclassified result is `INVALID_HOLD`.
+
+Every classification remains
+`HOLD(group_effect_marginalization_diagnostic_nonacceptance)`, contributes
+zero evidence, and cannot change the current centered reference. A supported
+result permits only a later docs/OpenSpec reference amendment and fresh
+precision-canary identities. Separate implementation authorization, exact-
+commit CODE/BUG/ADVERSARIAL/statistical-methodology GO, manifest-only
+authorization, human execution authorization, and one consumed launch are
+required before the diagnostic may run. Task `2.6`, replacement `S/F`,
+concordance, calibration, real-data admission, and product work remain blocked.
 
 The held lineage is permanently tombstoned as diagnostic-only HOLD:
 
@@ -1835,14 +1982,19 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Obtain separate human authorization for one bounded numerical-precision repair
-implementation item. That item must implement this amendment, add both
-disjoint full-setting precision canaries, verify the complete repaired runner,
-and only then propose a replacement candidate source `S`. Exact CODE, BUG,
-ADVERSARIAL, and statistical-methodology GO plus a new manifest-only sole-child
-freeze `F` are still required before restarting concordance from bundle 0 in a
-fresh workspace. The tombstoned lineage above must remain permanent HOLD and
-cannot contribute even a previously passing sub-result. Parent task `5.6`,
-full evidence, real-data admission, runtime monitoring, readout language, pilot
-manifest, downstream three-lane outcome integration, persistence, and UI
-remain incomplete.
+Obtain separate explicit human authorization for task `2.16`: bounded
+implementation without execution of
+`vbd_group_effect_marginalization_diagnostic_v1` and its sampler-free
+target/reconstruction fixtures. That implementation may not create an
+authorization commit, permit, claim, external evidence root, generator result,
+or sampler result. Exact-commit CODE, BUG, ADVERSARIAL, and statistical-
+methodology GO, a later separately reviewed manifest-only authorization, and a
+separate human execution record are required before one governed launch.
+
+Even a supported diagnostic result would authorize only another docs/OpenSpec
+reference amendment and fresh precision-canary identities. It would not itself
+complete task `2.6`, create replacement `S/F`, or start concordance or
+calibration. The rejected geometry run and tombstoned lineage remain permanent
+HOLD and contribute no sub-result. Parent task `5.6`, full evidence, real-data
+admission, runtime monitoring, readout language, pilot manifest, downstream
+three-lane outcome integration, persistence, and UI remain incomplete.
