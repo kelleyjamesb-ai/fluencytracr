@@ -560,6 +560,14 @@ _ROOT_PHASE_FILES = {
         },
         None,
     ),
+    "CLAIMED_WORKSPACE_BOUND": (
+        {
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_FILENAME,
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CONSUMED_PERMIT_FILENAME,
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CLAIM_FILENAME,
+        },
+        set(),
+    ),
     "INPUT_BOUND": (
         {
             VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_FILENAME,
@@ -567,7 +575,7 @@ _ROOT_PHASE_FILES = {
             VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CLAIM_FILENAME,
             VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_INPUT_BINDING_FILENAME,
         },
-        None,
+        set(),
     ),
     "COMPLETION_RECORDED": (
         {
@@ -577,7 +585,7 @@ _ROOT_PHASE_FILES = {
             VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_INPUT_BINDING_FILENAME,
             VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_RECEIPT_FILENAME,
         },
-        None,
+        set(),
     ),
     "STAGED": (
         {
@@ -613,6 +621,31 @@ _ROOT_PHASE_FILES = {
         {VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_OUTPUT_FILENAME},
     ),
 }
+
+
+_BOOTSTRAP_ROOT_GUARD = None
+
+
+def _install_vbd_trajectory_group_effect_marginalization_root_guard(
+    guard,
+    *,
+    _bootstrap_token: object,
+) -> None:
+    global _BOOTSTRAP_ROOT_GUARD
+    if (
+        _bootstrap_token
+        is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
+        or not callable(guard)
+        or _BOOTSTRAP_ROOT_GUARD is not None
+    ):
+        _authorization_error("marginalization bootstrap root guard is invalid")
+    _BOOTSTRAP_ROOT_GUARD = guard
+
+
+def _revalidate_vbd_trajectory_group_effect_marginalization_root_guard() -> None:
+    if _BOOTSTRAP_ROOT_GUARD is None:
+        _authorization_error("marginalization bootstrap root guard is unavailable")
+    _BOOTSTRAP_ROOT_GUARD()
 
 
 def _validate_root_files(
@@ -2002,14 +2035,16 @@ def bootstrap_claimed_vbd_trajectory_group_effect_marginalization(
         is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
     ):
         _authorization_error("marginalization execution requires bootstrap token")
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     manifest = validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
         manifest
     )
     if command_argv != manifest["command_argv"]:
         _authorization_error("marginalization bootstrap argv differs")
     preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
-        manifest=manifest, phase="CLAIMED"
+        manifest=manifest, phase="CLAIMED_WORKSPACE_BOUND"
     )
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     verify_vbd_trajectory_group_effect_marginalization_authorization_commit(
         manifest=manifest,
         authorization_commit=authorization_commit,
@@ -2041,8 +2076,10 @@ def bootstrap_claimed_vbd_trajectory_group_effect_marginalization(
             _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_TOKEN
         ),
     )
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     write_vbd_trajectory_group_effect_marginalization_staged_output(
         manifest=manifest,
         record=record,
     )
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     return record

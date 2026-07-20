@@ -10,6 +10,7 @@ from .vbd_trajectory_group_effect_marginalization_authorization import (
     _MARGINALIZATION_RUNNER_SOURCE_PATHS,
     _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_TOKEN,
     _exact_native_equal,
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard,
     build_vbd_trajectory_group_effect_marginalization_completion_receipt,
     build_vbd_trajectory_group_effect_marginalization_input_binding,
     preflight_vbd_trajectory_group_effect_marginalization_fixed_roots,
@@ -69,6 +70,7 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
         is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_TOKEN
     ):
         raise PermissionError("marginalization execution requires its runner token")
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     manifest = validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
         manifest
     )
@@ -89,9 +91,9 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
         raise PermissionError("marginalization attempt claim is invalid") from exc
 
     preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
-        manifest=manifest,
-        phase="CLAIMED",
+        manifest=manifest, phase="CLAIMED_WORKSPACE_BOUND",
     )
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     verify_vbd_trajectory_group_effect_marginalization_authorization_commit(
         manifest=manifest,
         authorization_commit=authorization_commit,
@@ -116,6 +118,7 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
         or not _exact_native_equal(live_claim, claim)
     ):
         raise PermissionError("marginalization live launch records differ")
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
 
     runtime = build_vbd_trajectory_runtime_identity()
     implementation = vbd_trajectory_runner_implementation_manifest(
@@ -205,6 +208,7 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
         binding=input_binding,
         claim=claim,
     )
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
 
     fit_records = []
     for case_index, expected_case in enumerate(
@@ -214,6 +218,7 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
         for lane_ordinal, lane in enumerate(
             VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LANE_ORDER
         ):
+            _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
             binding = build_vbd_trajectory_group_effect_marginalization_binding(
                 case_ordinal=expected_case.case_ordinal,
                 lane=lane,
@@ -255,6 +260,7 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
             finally:
                 del idata
                 gc.collect()
+            _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
 
     receipt = build_vbd_trajectory_group_effect_marginalization_completion_receipt(
         manifest=manifest,
@@ -269,6 +275,7 @@ def execute_authorized_vbd_trajectory_group_effect_marginalization(
         input_binding=input_binding,
         fit_records=fit_records,
     )
+    _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
     provenance = {
         "authorization_commit": authorization_commit,
         "authorization_manifest_hash": manifest["manifest_hash"],

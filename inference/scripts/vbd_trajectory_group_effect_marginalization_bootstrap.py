@@ -135,6 +135,7 @@ _THREAD_ENV = (
 _FIRST_PARTY_PACKAGE = "fluencytracr_inference"
 _FIRST_PARTY_SOURCE_PREFIX = "inference/src/fluencytracr_inference/"
 _REVIEWED_SOURCE_LOADER_TOKEN = object()
+_SUPERVISOR_ROOT_GUARD = None
 
 
 class BootstrapError(RuntimeError):
@@ -273,17 +274,46 @@ def _open_directory(path: Path) -> int:
         raise
 
 
+def _open_directory_identity_chain(
+    path: Path,
+) -> tuple[list[int], tuple[tuple[int, int], ...]]:
+    """Open every absolute component so later checks detect ancestor rebinding."""
+
+    path = _strict_path(str(path), "directory")
+    descriptors = [os.open("/", os.O_RDONLY | os.O_DIRECTORY)]
+    identities = []
+    try:
+        root_info = os.fstat(descriptors[0])
+        identities.append((root_info.st_dev, root_info.st_ino))
+        for part in path.parts[1:]:
+            child = os.open(
+                part,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                dir_fd=descriptors[-1],
+            )
+            info = os.fstat(child)
+            if not stat.S_ISDIR(info.st_mode):
+                os.close(child)
+                raise OSError("path component is not a directory")
+            descriptors.append(child)
+            identities.append((info.st_dev, info.st_ino))
+        return descriptors, tuple(identities)
+    except BaseException:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+        raise
+
+
 class _DirectoryBinding:
     def __init__(self, path: Path) -> None:
         self.path = path
-        self.parent_fd = _open_directory(path.parent)
+        self._chain_fds, self._chain_identities = _open_directory_identity_chain(
+            path
+        )
+        self.parent_fd = self._chain_fds[-2]
         self.root_fd = -1
         try:
-            self.root_fd = os.open(
-                path.name,
-                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
-                dir_fd=self.parent_fd,
-            )
+            self.root_fd = self._chain_fds[-1]
             info = os.fstat(self.root_fd)
             if not stat.S_ISDIR(info.st_mode):
                 raise OSError("bound root is not a directory")
@@ -294,19 +324,24 @@ class _DirectoryBinding:
             raise
 
     def revalidate(self) -> None:
-        opened = os.fstat(self.root_fd)
-        current = os.stat(
-            self.path.name,
-            dir_fd=self.parent_fd,
-            follow_symlinks=False,
-        )
-        if (
-            not stat.S_ISDIR(opened.st_mode)
-            or not stat.S_ISDIR(current.st_mode)
-            or (opened.st_dev, opened.st_ino) != self.identity
-            or (current.st_dev, current.st_ino) != self.identity
-        ):
-            raise BootstrapError("fixed-root directory name binding differs")
+        current_fds: list[int] = []
+        try:
+            current_fds, current_identities = _open_directory_identity_chain(self.path)
+            opened_identities = tuple(
+                (info.st_dev, info.st_ino)
+                for info in (os.fstat(descriptor) for descriptor in self._chain_fds)
+            )
+            if (
+                opened_identities != self._chain_identities
+                or current_identities != self._chain_identities
+                or opened_identities[-1] != self.identity
+            ):
+                raise BootstrapError("fixed-root directory name binding differs")
+        except OSError as exc:
+            raise BootstrapError("fixed-root directory name binding differs") from exc
+        finally:
+            for descriptor in reversed(current_fds):
+                os.close(descriptor)
 
     def names(self) -> tuple[str, ...]:
         self.revalidate()
@@ -315,12 +350,25 @@ class _DirectoryBinding:
         return names
 
     def close(self) -> None:
-        if self.root_fd >= 0:
-            os.close(self.root_fd)
-            self.root_fd = -1
-        if self.parent_fd >= 0:
-            os.close(self.parent_fd)
-            self.parent_fd = -1
+        for descriptor in reversed(getattr(self, "_chain_fds", [])):
+            os.close(descriptor)
+        self._chain_fds = []
+        self.root_fd = -1
+        self.parent_fd = -1
+
+
+def _create_directory_binding(path: Path) -> _DirectoryBinding:
+    parent = _DirectoryBinding(path.parent)
+    try:
+        parent.revalidate()
+        os.mkdir(path.name, mode=0o700, dir_fd=parent.root_fd)
+        os.fsync(parent.root_fd)
+        binding = _DirectoryBinding(path)
+        parent.revalidate()
+        binding.revalidate()
+        return binding
+    finally:
+        parent.close()
 
 
 def _read_file_at(
@@ -1115,6 +1163,8 @@ def _execute_child(
     authorization_commit: str,
     repo: Path,
     reviewed_sources: dict,
+    lifecycle_binding: _DirectoryBinding,
+    workspace_binding: _DirectoryBinding,
 ) -> None:
     try:
         _revalidate_source_binding(manifest, authorization_commit, repo)
@@ -1123,6 +1173,19 @@ def _execute_child(
         from fluencytracr_inference import (
             vbd_trajectory_group_effect_marginalization_authorization as candidate,
         )
+
+        def revalidate_roots() -> None:
+            lifecycle_binding.revalidate()
+            workspace_binding.revalidate()
+            lifecycle_binding.revalidate()
+
+        candidate._install_vbd_trajectory_group_effect_marginalization_root_guard(
+            revalidate_roots,
+            _bootstrap_token=(
+                candidate._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
+            ),
+        )
+        revalidate_roots()
 
         candidate.bootstrap_claimed_vbd_trajectory_group_effect_marginalization(
             manifest=manifest,
@@ -1180,7 +1243,23 @@ def _run_claimed_child(
     authorization_commit: str,
     repo: Path,
     reviewed_sources: dict,
+    lifecycle_binding: _DirectoryBinding | None = None,
+    workspace_binding: _DirectoryBinding | None = None,
 ) -> None:
+    global _SUPERVISOR_ROOT_GUARD
+    if _SUPERVISOR_ROOT_GUARD is not None:
+        raise BootstrapError("claimed root supervisor is already active")
+
+    def revalidate_roots() -> None:
+        if lifecycle_binding is not None:
+            lifecycle_binding.revalidate()
+        if workspace_binding is not None:
+            workspace_binding.revalidate()
+        if lifecycle_binding is not None:
+            lifecycle_binding.revalidate()
+
+    revalidate_roots()
+    _SUPERVISOR_ROOT_GUARD = revalidate_roots
     original_mask = signal.pthread_sigmask(
         signal.SIG_BLOCK,
         _TERMINATION_SIGNALS,
@@ -1196,6 +1275,8 @@ def _run_claimed_child(
         child_pid = os.fork()
         if child_pid == 0:
             try:
+                if lifecycle_binding is None or workspace_binding is None:
+                    raise BootstrapError("claimed root bindings are unavailable")
                 for signum, handler in previous_handlers.items():
                     signal.signal(signum, handler)
                 signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
@@ -1205,6 +1286,8 @@ def _run_claimed_child(
                     authorization_commit,
                     repo,
                     reviewed_sources,
+                    lifecycle_binding,
+                    workspace_binding,
                 )
             finally:
                 os._exit(70)
@@ -1212,6 +1295,12 @@ def _run_claimed_child(
             signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
             _wait_for_child(child_pid)
             child_reaped = True
+            if lifecycle_binding is not None:
+                lifecycle_binding.revalidate()
+            if workspace_binding is not None:
+                workspace_binding.revalidate()
+            if lifecycle_binding is not None:
+                lifecycle_binding.revalidate()
         finally:
             signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
             if not child_reaped:
@@ -1220,11 +1309,14 @@ def _run_claimed_child(
         for signum, handler in previous_handlers.items():
             signal.signal(signum, handler)
         signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
+        _SUPERVISOR_ROOT_GUARD = None
 
 
 def _wait_for_child(child_pid: int) -> None:
     deadline = time.monotonic() + _TIMEOUT_SECONDS
     while True:
+        if _SUPERVISOR_ROOT_GUARD is not None:
+            _SUPERVISOR_ROOT_GUARD()
         pid, status = os.waitpid(child_pid, os.WNOHANG)
         if pid == child_pid:
             if not os.WIFEXITED(status) or os.WEXITSTATUS(status) != 0:
@@ -1451,14 +1543,21 @@ def _publish(
     authorization_commit: str,
     repo: Path,
     reviewed_sources: dict,
+    workspace_binding: _DirectoryBinding | None = None,
+    lifecycle_binding: _DirectoryBinding | None = None,
 ) -> None:
     staged = _WORKSPACE / _STAGED_NAME
     final = _WORKSPACE / _OUTPUT_NAME
-    binding = _DirectoryBinding(_WORKSPACE)
+    binding = workspace_binding or _DirectoryBinding(_WORKSPACE)
+    owns_binding = workspace_binding is None
     try:
+        if lifecycle_binding is not None:
+            lifecycle_binding.revalidate()
         if binding.names() != (_STAGED_NAME,):
             raise BootstrapError("staged marginalization workspace is off plan")
         binding.revalidate()
+        if lifecycle_binding is not None:
+            lifecycle_binding.revalidate()
         _validate_persisted(
             manifest,
             authorization_commit,
@@ -1468,7 +1567,8 @@ def _publish(
         )
         binding.revalidate()
     except BaseException:
-        binding.close()
+        if owns_binding:
+            binding.close()
         raise
     root_fd = binding.root_fd
     linked = False
@@ -1518,6 +1618,8 @@ def _publish(
         ):
             raise BootstrapError("pending publication alias differs")
         binding.revalidate()
+        if lifecycle_binding is not None:
+            lifecycle_binding.revalidate()
         _validate_persisted(
             manifest,
             authorization_commit,
@@ -1527,6 +1629,8 @@ def _publish(
             reviewed_sources=reviewed_sources,
         )
         binding.revalidate()
+        if lifecycle_binding is not None:
+            lifecycle_binding.revalidate()
         os.unlink(_STAGED_NAME, dir_fd=root_fd)
         os.fsync(root_fd)
         final_info = os.stat(
@@ -1541,6 +1645,8 @@ def _publish(
         if binding.names() != (_OUTPUT_NAME,):
             raise BootstrapError("final marginalization workspace is off plan")
         binding.revalidate()
+        if lifecycle_binding is not None:
+            lifecycle_binding.revalidate()
         _validate_persisted(
             manifest,
             authorization_commit,
@@ -1572,7 +1678,8 @@ def _publish(
         signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
         for signum, handler in previous_handlers.items():
             signal.signal(signum, handler)
-        binding.close()
+        if owns_binding:
+            binding.close()
         signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
 
 
@@ -1591,6 +1698,7 @@ def _run(authorization_path: Path) -> int:
         authorization_commit,
         authorization_path,
     )
+    workspace_binding = None
     try:
         reviewed_sources = _freeze_reviewed_first_party_sources(manifest, repo)
         _consume_permit_and_claim(
@@ -1601,21 +1709,35 @@ def _run(authorization_path: Path) -> int:
             permit_info,
             lifecycle_binding,
         )
+        lifecycle_binding.revalidate()
+        workspace_binding = _create_directory_binding(_WORKSPACE)
+        lifecycle_binding.revalidate()
+        workspace_binding.revalidate()
+        _run_claimed_child(
+            manifest,
+            authorization_path,
+            authorization_commit,
+            repo,
+            reviewed_sources,
+            lifecycle_binding,
+            workspace_binding,
+        )
+        lifecycle_binding.revalidate()
+        workspace_binding.revalidate()
+        _publish(
+            manifest,
+            authorization_commit,
+            repo,
+            reviewed_sources,
+            workspace_binding,
+            lifecycle_binding,
+        )
+        lifecycle_binding.revalidate()
+        workspace_binding.revalidate()
     finally:
+        if workspace_binding is not None:
+            workspace_binding.close()
         lifecycle_binding.close()
-    _run_claimed_child(
-        manifest,
-        authorization_path,
-        authorization_commit,
-        repo,
-        reviewed_sources,
-    )
-    _publish(
-        manifest,
-        authorization_commit,
-        repo,
-        reviewed_sources,
-    )
     payload = {
         "status": "COMPLETE_PERMANENT_HOLD",
         "authorization_commit": authorization_commit,

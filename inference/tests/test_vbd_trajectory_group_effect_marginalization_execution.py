@@ -897,6 +897,61 @@ def test_publication_rejects_workspace_directory_name_replacement_during_validat
     assert not (workspace / bootstrap._OUTPUT_NAME).exists()
 
 
+def test_directory_binding_rejects_absolute_ancestor_replacement(tmp_path):
+    bootstrap = _load_bootstrap()
+    fixed_parent = tmp_path / "fixed-parent"
+    fixed_parent.mkdir()
+    workspace = fixed_parent / "workspace"
+    workspace.mkdir(mode=0o700)
+    binding = bootstrap._DirectoryBinding(workspace)
+    detached = tmp_path / "detached-parent"
+    try:
+        fixed_parent.rename(detached)
+        fixed_parent.mkdir()
+        (fixed_parent / "workspace").mkdir(mode=0o700)
+        with pytest.raises(
+            bootstrap.BootstrapError,
+            match="directory name binding differs",
+        ):
+            binding.revalidate()
+    finally:
+        binding.close()
+
+
+def test_publication_rejects_workspace_ancestor_replacement_before_link(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    fixed_parent = tmp_path / "fixed-parent"
+    fixed_parent.mkdir()
+    workspace = fixed_parent / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    detached = tmp_path / "detached-parent"
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+
+    def replace_ancestor(*_args, **_kwargs):
+        fixed_parent.rename(detached)
+        fixed_parent.mkdir()
+        replacement = fixed_parent / "workspace"
+        replacement.mkdir(mode=0o700)
+        replacement_staged = replacement / bootstrap._STAGED_NAME
+        replacement_staged.write_bytes(b"{}\n")
+        replacement_staged.chmod(0o600)
+
+    monkeypatch.setattr(bootstrap, "_validate_persisted", replace_ancestor)
+    with pytest.raises(
+        bootstrap.BootstrapError,
+        match="directory name binding differs",
+    ):
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    assert not (detached / "workspace" / bootstrap._OUTPUT_NAME).exists()
+    assert not (fixed_parent / "workspace" / bootstrap._OUTPUT_NAME).exists()
+
+
 def test_publication_rolls_back_final_when_post_unlink_enumeration_fails(
     tmp_path,
     monkeypatch,
@@ -1387,10 +1442,18 @@ def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypa
         lambda *_args: (Path("/usr/bin/git"), "a" * 40),
     )
     monkeypatch.setattr(bootstrap, "_validate_actual_command", lambda *_args: None)
+    fake_lifecycle_binding = SimpleNamespace(
+        revalidate=lambda: None,
+        close=lambda: None,
+    )
+    fake_workspace_binding = SimpleNamespace(
+        revalidate=lambda: None,
+        close=lambda: None,
+    )
     monkeypatch.setattr(
         bootstrap,
         "_validate_launch_records",
-        lambda *_args: ({}, {}, SimpleNamespace(), SimpleNamespace(close=lambda: None)),
+        lambda *_args: ({}, {}, SimpleNamespace(), fake_lifecycle_binding),
     )
     monkeypatch.setattr(
         bootstrap,
@@ -1398,6 +1461,11 @@ def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypa
         lambda *_args: {},
     )
     monkeypatch.setattr(bootstrap, "_consume_permit_and_claim", lambda *_args: None)
+    monkeypatch.setattr(
+        bootstrap,
+        "_create_directory_binding",
+        lambda *_args: fake_workspace_binding,
+    )
     monkeypatch.setattr(bootstrap, "_run_claimed_child", lambda *_args: None)
 
     def publish(*_args):
@@ -1522,6 +1590,49 @@ def test_supervisor_terminates_and_reaps_failed_child(monkeypatch):
             {},
         )
     assert terminated == [4242]
+
+
+def test_supervisor_rejects_lifecycle_ancestor_replacement_at_child_boundary(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    lifecycle_parent = tmp_path / "lifecycle-parent"
+    lifecycle_parent.mkdir()
+    lifecycle = lifecycle_parent / "lifecycle"
+    lifecycle.mkdir(mode=0o700)
+    workspace_parent = tmp_path / "workspace-parent"
+    workspace_parent.mkdir()
+    workspace = workspace_parent / "workspace"
+    workspace.mkdir(mode=0o700)
+    lifecycle_binding = bootstrap._DirectoryBinding(lifecycle)
+    workspace_binding = bootstrap._DirectoryBinding(workspace)
+    detached = tmp_path / "detached-lifecycle-parent"
+    monkeypatch.setattr(bootstrap.os, "fork", lambda: 4242)
+
+    def replace_before_child_return(_child_pid):
+        lifecycle_parent.rename(detached)
+        lifecycle_parent.mkdir()
+        (lifecycle_parent / "lifecycle").mkdir(mode=0o700)
+
+    monkeypatch.setattr(bootstrap, "_wait_for_child", replace_before_child_return)
+    try:
+        with pytest.raises(
+            bootstrap.BootstrapError,
+            match="directory name binding differs",
+        ):
+            bootstrap._run_claimed_child(
+                {},
+                Path("/fixed/authorization.json"),
+                "a" * 40,
+                Path("/fixed/repo"),
+                {},
+                lifecycle_binding,
+                workspace_binding,
+            )
+    finally:
+        lifecycle_binding.close()
+        workspace_binding.close()
 
 
 def test_actual_argv_and_executable_must_match_before_launch(monkeypatch):
@@ -1689,6 +1800,32 @@ def test_execution_token_rejects_before_candidate_work():
             execution_authorization={},
             claim={},
             _execution_token=object(),
+        )
+
+
+def test_claimed_child_root_replacement_rejects_before_sampler(monkeypatch):
+    def reject_rebound_root():
+        raise authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError(
+            "fixed-root directory name binding differs"
+        )
+
+    monkeypatch.setattr(
+        authorization,
+        "_BOOTSTRAP_ROOT_GUARD",
+        reject_rebound_root,
+    )
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="directory name binding differs",
+    ):
+        authorization.bootstrap_claimed_vbd_trajectory_group_effect_marginalization(
+            manifest={},
+            authorization_path=Path("/fixed/authorization.json"),
+            authorization_commit="a" * 40,
+            command_argv=[],
+            _bootstrap_token=(
+                authorization._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
+            ),
         )
 
 
