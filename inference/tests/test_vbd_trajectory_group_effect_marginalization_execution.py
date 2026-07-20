@@ -123,9 +123,16 @@ def valid_manifest(monkeypatch):
 
 
 def test_fixed_roots_and_manifest_identity_are_diagnostic_specific():
+    bootstrap = _load_bootstrap()
     assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH == (
-        "/Users/jameskelley/.codex/evidence/"
+        "/Users/jkelley/.codex/evidence/"
         "vbd-group-effect-marginalization-diagnostic-v1-workspace"
+    )
+    assert str(bootstrap._WORKSPACE) == (
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH
+    )
+    assert str(bootstrap._LIFECYCLE) == (
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH
     )
 
 
@@ -339,7 +346,7 @@ def test_external_human_execution_record_is_strict_and_validation_only(
             authorization_commit=authorization_commit,
         )
     assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH == (
-        "/Users/jameskelley/.codex/evidence/"
+        "/Users/jkelley/.codex/evidence/"
         "vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
     )
     assert authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_SCOPE == (
@@ -668,6 +675,76 @@ def test_permit_is_consumed_once_before_claim_and_replay_rejects(
         )
 
 
+def test_bootstrap_file_read_rejects_name_rebinding_during_descriptor_read(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    path = tmp_path / "launch_permit.consumed.json"
+    encoded = bootstrap._canonical_bytes({"permit": "reviewed"})
+    path.write_bytes(encoded)
+    original_read = bootstrap.os.read
+    replaced = False
+
+    def replace_after_eof(descriptor, size):
+        nonlocal replaced
+        chunk = original_read(descriptor, size)
+        if not chunk and not replaced:
+            replaced = True
+            path.rename(tmp_path / "opened-permit.json")
+            path.write_bytes(encoded)
+        return chunk
+
+    monkeypatch.setattr(bootstrap.os, "read", replace_after_eof)
+    with pytest.raises(bootstrap.BootstrapError, match="cannot be read safely"):
+        bootstrap._read_file(path, "consumed launch permit")
+    assert replaced
+
+
+def test_consumed_permit_rejects_name_rebinding_during_semantic_validation(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "launch_permit.consumed.json"
+    permit = {"permit_hash": "a" * 64}
+    encoded = authorization._canonical_bytes(permit)
+    path.write_bytes(encoded)
+    info = path.stat()
+    execution_authorization = {
+        "launch_permit_hash": permit["permit_hash"],
+        "launch_permit_file_sha256": authorization.hashlib.sha256(
+            encoded
+        ).hexdigest(),
+        "launch_permit_device": info.st_dev,
+        "launch_permit_inode": info.st_ino,
+    }
+    monkeypatch.setattr(
+        authorization,
+        "validate_vbd_trajectory_group_effect_marginalization_execution_authorization",
+        lambda value, **_kwargs: value,
+    )
+
+    def replace_name(value, **_kwargs):
+        path.rename(tmp_path / "opened-consumed-permit.json")
+        path.write_bytes(encoded)
+        return value
+
+    monkeypatch.setattr(
+        authorization,
+        "validate_vbd_trajectory_group_effect_marginalization_launch_permit",
+        replace_name,
+    )
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="binding changed",
+    ):
+        authorization.read_vbd_trajectory_group_effect_marginalization_consumed_permit(
+            manifest={"consumed_permit_path": str(path)},
+            execution_authorization=execution_authorization,
+            authorization_commit="a" * 40,
+        )
+
+
 @pytest.mark.parametrize("fail_pending_validation", (False, True))
 def test_publication_is_one_inode_and_rolls_back_invalid_pending_output(
     tmp_path, monkeypatch, fail_pending_validation
@@ -926,6 +1003,96 @@ def test_publication_handles_real_termination_through_rollback_in_post_unlink_wi
     with pytest.raises(bootstrap.BootstrapError, match="interrupted by signal"):
         bootstrap._publish({}, "a" * 40, tmp_path, {})
     assert not (workspace / bootstrap._OUTPUT_NAME).exists()
+
+
+def test_publication_delivers_real_post_commit_signal_to_previous_handler(
+    tmp_path,
+    monkeypatch,
+):
+    bootstrap = _load_bootstrap()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / bootstrap._STAGED_NAME
+    final = workspace / bootstrap._OUTPUT_NAME
+    staged.write_bytes(b"{}\n")
+    staged.chmod(0o600)
+    monkeypatch.setattr(bootstrap, "_WORKSPACE", workspace)
+    monkeypatch.setattr(bootstrap, "_validate_persisted", lambda *_args, **_kwargs: None)
+    received = []
+
+    def previous_handler(signum, _frame):
+        received.append(signum)
+
+    original_handler = bootstrap.signal.getsignal(bootstrap.signal.SIGTERM)
+    bootstrap.signal.signal(bootstrap.signal.SIGTERM, previous_handler)
+    original_sigmask = bootstrap.signal.pthread_sigmask
+    sent = False
+    block_calls = 0
+
+    def signal_after_commit(how, mask):
+        nonlocal block_calls, sent
+        result = original_sigmask(how, mask)
+        if how == bootstrap.signal.SIG_BLOCK:
+            block_calls += 1
+        if block_calls == 3 and not sent:
+            sent = True
+            bootstrap.os.kill(bootstrap.os.getpid(), bootstrap.signal.SIGTERM)
+        return result
+
+    monkeypatch.setattr(bootstrap.signal, "pthread_sigmask", signal_after_commit)
+    try:
+        bootstrap._publish({}, "a" * 40, tmp_path, {})
+    finally:
+        bootstrap.signal.signal(bootstrap.signal.SIGTERM, original_handler)
+    assert sent
+    assert received == [bootstrap.signal.SIGTERM]
+    assert final.exists()
+    assert final.stat().st_nlink == 1
+
+
+def test_persisted_output_rejects_name_rebinding_during_semantic_validation(
+    tmp_path,
+    monkeypatch,
+):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir(mode=0o700)
+    staged = workspace / authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_STAGED_OUTPUT_FILENAME
+    encoded = authorization._canonical_bytes({"execution_state": "COMPLETE"})
+    staged.write_bytes(encoded)
+    manifest = {
+        "canonical_workspace_path": str(workspace),
+        "output_path": str(workspace / "marginalization_diagnostic.json"),
+    }
+    monkeypatch.setattr(
+        authorization,
+        "validate_vbd_trajectory_group_effect_marginalization_authorization_manifest",
+        lambda value: value,
+    )
+    monkeypatch.setattr(
+        authorization,
+        "preflight_vbd_trajectory_group_effect_marginalization_fixed_roots",
+        lambda **_kwargs: None,
+    )
+
+    def replace_name(value, **_kwargs):
+        staged.rename(workspace / "opened-staged.json")
+        staged.write_bytes(encoded)
+        return value
+
+    monkeypatch.setattr(
+        authorization,
+        "_validate_vbd_trajectory_group_effect_marginalization_persisted_record",
+        replace_name,
+    )
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="binding changed",
+    ):
+        authorization.validate_vbd_trajectory_group_effect_marginalization_persisted_output(
+            staged,
+            manifest=manifest,
+            authorization_commit="a" * 40,
+        )
 
 
 def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypatch):

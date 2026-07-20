@@ -40,10 +40,10 @@ _BOOTSTRAP_RELATIVE_PATH = (
     "inference/scripts/vbd_trajectory_group_effect_marginalization_bootstrap.py"
 )
 _WORKSPACE = Path(
-    "/Users/jameskelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-workspace"
+    "/Users/jkelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-workspace"
 )
 _LIFECYCLE = Path(
-    "/Users/jameskelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
+    "/Users/jkelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
 )
 _AUTHORIZATION_NAME = "execution_authorization.json"
 _PERMIT_NAME = "launch_permit.json"
@@ -292,7 +292,20 @@ def _read_file(path: Path, label: str) -> tuple[bytes, os.stat_result]:
             if not chunk:
                 break
             chunks.append(chunk)
-        return b"".join(chunks), info
+        encoded = b"".join(chunks)
+        info = os.fstat(descriptor)
+        current = os.stat(
+            path.name,
+            dir_fd=root_fd,
+            follow_symlinks=False,
+        )
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or not stat.S_ISREG(current.st_mode)
+            or (current.st_dev, current.st_ino) != (info.st_dev, info.st_ino)
+        ):
+            raise OSError("current file name binding differs")
+        return encoded, info
     except OSError as exc:
         raise BootstrapError(f"{label} cannot be read safely") from exc
     finally:
@@ -762,11 +775,14 @@ def _consume_permit_and_claim(
             or consumed.st_nlink != 1
         ):
             raise BootstrapError("consumed launch permit identity differs")
-        consumed_bytes, _ = _read_file(
+        consumed_bytes, consumed_read_info = _read_file(
             _LIFECYCLE / _CONSUMED_NAME, "consumed launch permit"
         )
         if (
-            _hash_bytes(consumed_bytes)
+            consumed_read_info.st_dev != permit_info.st_dev
+            or consumed_read_info.st_ino != permit_info.st_ino
+            or consumed_read_info.st_nlink != 1
+            or _hash_bytes(consumed_bytes)
             != authorization["launch_permit_file_sha256"]
             or consumed_bytes != _canonical_bytes(permit)
         ):
@@ -1329,6 +1345,7 @@ def _publish(
             raise BootstrapError("final publication identity changed")
         os.fsync(root_fd)
         signal.pthread_sigmask(signal.SIG_SETMASK, original_mask)
+        signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)
         committed = True
     except BaseException:
         signal.pthread_sigmask(signal.SIG_BLOCK, _TERMINATION_SIGNALS)

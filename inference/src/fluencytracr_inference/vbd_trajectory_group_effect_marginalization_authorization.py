@@ -245,10 +245,70 @@ def _strict_pairs(pairs: list[tuple[str, object]]) -> dict:
     return value
 
 
-def _read_canonical_json_with_identity(
-    path: Path,
-    label: str,
-) -> tuple[dict, os.stat_result, str]:
+class _CanonicalJsonBinding:
+    def __init__(
+        self,
+        *,
+        descriptor: int,
+        root_fd: int,
+        name: str,
+        value: dict,
+        encoded: bytes,
+        info: os.stat_result,
+        label: str,
+    ) -> None:
+        self.descriptor = descriptor
+        self.root_fd = root_fd
+        self.name = name
+        self.value = value
+        self.encoded = encoded
+        self.info = info
+        self.file_hash = hashlib.sha256(encoded).hexdigest()
+        self.label = label
+
+    def revalidate(self, *, expected_link_count: int | None = None) -> None:
+        try:
+            opened = os.fstat(self.descriptor)
+            current = os.stat(
+                self.name,
+                dir_fd=self.root_fd,
+                follow_symlinks=False,
+            )
+            os.lseek(self.descriptor, 0, os.SEEK_SET)
+            chunks = []
+            while True:
+                chunk = os.read(self.descriptor, 1 << 20)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            current_bytes = b"".join(chunks)
+        except OSError as exc:
+            _authorization_error(f"{self.label} binding cannot be revalidated", exc)
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or not stat.S_ISREG(current.st_mode)
+            or (opened.st_dev, opened.st_ino)
+            != (self.info.st_dev, self.info.st_ino)
+            or (current.st_dev, current.st_ino)
+            != (self.info.st_dev, self.info.st_ino)
+            or current_bytes != self.encoded
+            or hashlib.sha256(current_bytes).hexdigest() != self.file_hash
+            or (
+                expected_link_count is not None
+                and (
+                    opened.st_nlink != expected_link_count
+                    or current.st_nlink != expected_link_count
+                )
+            )
+        ):
+            _authorization_error(f"{self.label} binding changed")
+
+    def close(self) -> None:
+        os.close(self.descriptor)
+        os.close(self.root_fd)
+
+
+def _open_canonical_json_binding(path: Path, label: str) -> _CanonicalJsonBinding:
     descriptor = -1
     root_fd = -1
     try:
@@ -278,6 +338,20 @@ def _read_canonical_json_with_identity(
                 f"{label} contains a nonfinite value"
             ),
         )
+        if type(value) is not dict or encoded != _canonical_bytes(value):
+            _authorization_error(f"{label} bytes are noncanonical")
+        binding = _CanonicalJsonBinding(
+            descriptor=descriptor,
+            root_fd=root_fd,
+            name=path.name,
+            value=value,
+            encoded=encoded,
+            info=info,
+            label=label,
+        )
+        descriptor = -1
+        root_fd = -1
+        return binding
     except VbdTrajectoryGroupEffectMarginalizationAuthorizationError:
         raise
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -287,9 +361,18 @@ def _read_canonical_json_with_identity(
             os.close(descriptor)
         if root_fd >= 0:
             os.close(root_fd)
-    if type(value) is not dict or encoded != _canonical_bytes(value):
-        _authorization_error(f"{label} bytes are noncanonical")
-    return value, info, hashlib.sha256(encoded).hexdigest()
+
+
+def _read_canonical_json_with_identity(
+    path: Path,
+    label: str,
+) -> tuple[dict, os.stat_result, str]:
+    binding = _open_canonical_json_binding(path, label)
+    try:
+        binding.revalidate()
+        return binding.value, binding.info, binding.file_hash
+    finally:
+        binding.close()
 
 
 def _read_canonical_json(path: Path, label: str) -> dict:
@@ -1055,20 +1138,6 @@ def _validate_execution_authorization_available_permit(
     return value
 
 
-def _regular_file_identity(path: Path, label: str) -> tuple[int, int, str]:
-    try:
-        info = path.lstat()
-        if (
-            path.is_symlink()
-            or not stat.S_ISREG(info.st_mode)
-            or info.st_nlink != 1
-        ):
-            _authorization_error(f"{label} is unsafe")
-        return info.st_dev, info.st_ino, hashlib.sha256(path.read_bytes()).hexdigest()
-    except OSError as exc:
-        _authorization_error(f"{label} identity is unavailable", exc)
-
-
 def build_vbd_trajectory_group_effect_marginalization_execution_authorization(
     *,
     manifest: dict,
@@ -1325,25 +1394,32 @@ def read_vbd_trajectory_group_effect_marginalization_consumed_permit(
         )
     )
     path = Path(manifest["consumed_permit_path"])
-    permit = validate_vbd_trajectory_group_effect_marginalization_launch_permit(
-        _read_canonical_json(path, "marginalization consumed permit"),
-        manifest=manifest,
-        authorization_commit=authorization_commit,
-    )
-    device, inode, file_hash = _regular_file_identity(
+    binding = _open_canonical_json_binding(
         path,
         "marginalization consumed permit",
     )
-    if (
-        permit["permit_hash"]
-        != execution_authorization["launch_permit_hash"]
-        or file_hash
-        != execution_authorization["launch_permit_file_sha256"]
-        or device != execution_authorization["launch_permit_device"]
-        or inode != execution_authorization["launch_permit_inode"]
-    ):
-        _authorization_error("marginalization consumed permit identity differs")
-    return permit
+    try:
+        permit = validate_vbd_trajectory_group_effect_marginalization_launch_permit(
+            binding.value,
+            manifest=manifest,
+            authorization_commit=authorization_commit,
+        )
+        if (
+            permit["permit_hash"]
+            != execution_authorization["launch_permit_hash"]
+            or binding.file_hash
+            != execution_authorization["launch_permit_file_sha256"]
+            or binding.info.st_dev
+            != execution_authorization["launch_permit_device"]
+            or binding.info.st_ino
+            != execution_authorization["launch_permit_inode"]
+            or binding.info.st_nlink != 1
+        ):
+            _authorization_error("marginalization consumed permit identity differs")
+        binding.revalidate(expected_link_count=1)
+        return permit
+    finally:
+        binding.close()
 
 
 def read_vbd_trajectory_group_effect_marginalization_execution_authorization(
@@ -1700,45 +1776,14 @@ def _validate_vbd_trajectory_group_effect_marginalization_fit_input_bindings(
             _authorization_error("marginalization persisted fit input binding differs")
 
 
-def validate_vbd_trajectory_group_effect_marginalization_persisted_output(
-    path: Path,
+def _validate_vbd_trajectory_group_effect_marginalization_persisted_record(
+    value: dict,
     *,
     manifest: dict,
     authorization_commit: str,
-    _publication_token: object | None = None,
 ) -> dict:
-    manifest = validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
-        manifest
-    )
-    staged_path = (
-        Path(manifest["canonical_workspace_path"])
-        / VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_STAGED_OUTPUT_FILENAME
-    ).resolve()
-    output_path = Path(manifest["output_path"]).resolve()
-    resolved_path = path.resolve()
-    if resolved_path == staged_path and _publication_token is None:
-        root_phase = "STAGED"
-        expected_link_count = 1
-    elif (
-        resolved_path == output_path
-        and _publication_token
-        is _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PUBLICATION_TOKEN
-    ):
-        root_phase = "PUBLISHING"
-        expected_link_count = 2
-    elif resolved_path == output_path and _publication_token is None:
-        root_phase = "PUBLISHED"
-        expected_link_count = 1
-    elif resolved_path in {staged_path, output_path}:
-        _authorization_error("marginalization publication token is invalid")
-    else:
-        _authorization_error("marginalization persisted output path is off-plan")
-    preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
-        manifest=manifest,
-        phase=root_phase,
-    )
     record = validate_vbd_trajectory_group_effect_marginalization_record(
-        _read_canonical_json(path, "marginalization persisted output")
+        value
     )
     if record["execution_state"] != "COMPLETE":
         _authorization_error("marginalization persisted output is unexecuted")
@@ -1807,14 +1852,60 @@ def validate_vbd_trajectory_group_effect_marginalization_persisted_output(
         fit_records=record["fit_records"],
         input_binding=input_binding,
     )
-    info = path.lstat()
-    if (
-        path.is_symlink()
-        or not stat.S_ISREG(info.st_mode)
-        or info.st_nlink != expected_link_count
-    ):
-        _authorization_error("marginalization persisted output publication is incomplete")
     return record
+
+
+def validate_vbd_trajectory_group_effect_marginalization_persisted_output(
+    path: Path,
+    *,
+    manifest: dict,
+    authorization_commit: str,
+    _publication_token: object | None = None,
+) -> dict:
+    manifest = validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
+        manifest
+    )
+    staged_path = (
+        Path(manifest["canonical_workspace_path"])
+        / VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_STAGED_OUTPUT_FILENAME
+    ).resolve()
+    output_path = Path(manifest["output_path"]).resolve()
+    resolved_path = path.resolve()
+    if resolved_path == staged_path and _publication_token is None:
+        root_phase = "STAGED"
+        expected_link_count = 1
+    elif (
+        resolved_path == output_path
+        and _publication_token
+        is _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PUBLICATION_TOKEN
+    ):
+        root_phase = "PUBLISHING"
+        expected_link_count = 2
+    elif resolved_path == output_path and _publication_token is None:
+        root_phase = "PUBLISHED"
+        expected_link_count = 1
+    elif resolved_path in {staged_path, output_path}:
+        _authorization_error("marginalization publication token is invalid")
+    else:
+        _authorization_error("marginalization persisted output path is off-plan")
+    preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
+        manifest=manifest,
+        phase=root_phase,
+    )
+    binding = _open_canonical_json_binding(
+        path,
+        "marginalization persisted output",
+    )
+    try:
+        record = _validate_vbd_trajectory_group_effect_marginalization_persisted_record(
+            binding.value,
+            manifest=manifest,
+            authorization_commit=authorization_commit,
+        )
+        binding.revalidate(expected_link_count=expected_link_count)
+        return record
+    finally:
+        binding.close()
 
 
 def verify_vbd_trajectory_group_effect_marginalization_authorization_commit(
