@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import secrets
 import stat
+import sys
 
 from .hashing import sha256_json
 from .vbd_trajectory_group_effect_marginalization_constants import (
@@ -647,32 +648,86 @@ _ROOT_PHASE_FILES = {
 _BOOTSTRAP_ROOT_GUARD = None
 _BOOTSTRAP_BOUND_ROOT_FDS = None
 _BOOTSTRAP_FROZEN_MANIFEST_BYTES = None
+_BOOTSTRAP_CANONICAL_ROOT_CHAINS = None
+
+
+def _open_canonical_directory_chain(
+    path: Path,
+) -> tuple[list[int], tuple[tuple[int, int], ...]]:
+    path = _strict_absolute_path(str(path), "marginalization canonical root")
+    descriptors = [os.open("/", os.O_RDONLY | os.O_DIRECTORY)]
+    identities = []
+    try:
+        root = os.fstat(descriptors[0])
+        identities.append((root.st_dev, root.st_ino))
+        for part in path.parts[1:]:
+            child = os.open(
+                part,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                dir_fd=descriptors[-1],
+            )
+            info = os.fstat(child)
+            if not stat.S_ISDIR(info.st_mode):
+                os.close(child)
+                raise OSError("canonical root component is not a directory")
+            descriptors.append(child)
+            identities.append((info.st_dev, info.st_ino))
+        return descriptors, tuple(identities)
+    except BaseException:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+        raise
 
 
 def _install_vbd_trajectory_group_effect_marginalization_root_guard(
-    guard,
     *,
     lifecycle_fd: int,
     workspace_fd: int,
     manifest_bytes: bytes,
-    _bootstrap_token: object,
 ) -> None:
-    global _BOOTSTRAP_BOUND_ROOT_FDS, _BOOTSTRAP_FROZEN_MANIFEST_BYTES
-    global _BOOTSTRAP_ROOT_GUARD
+    global _BOOTSTRAP_BOUND_ROOT_FDS, _BOOTSTRAP_CANONICAL_ROOT_CHAINS
+    global _BOOTSTRAP_FROZEN_MANIFEST_BYTES, _BOOTSTRAP_ROOT_GUARD
     if (
-        _bootstrap_token
-        is not _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
-        or not callable(guard)
-        or type(lifecycle_fd) is not int
+        type(lifecycle_fd) is not int
         or type(workspace_fd) is not int
         or type(manifest_bytes) is not bytes
         or not manifest_bytes
         or _BOOTSTRAP_ROOT_GUARD is not None
         or _BOOTSTRAP_BOUND_ROOT_FDS is not None
         or _BOOTSTRAP_FROZEN_MANIFEST_BYTES is not None
+        or _BOOTSTRAP_CANONICAL_ROOT_CHAINS is not None
     ):
         _authorization_error("marginalization bootstrap root guard is invalid")
+    try:
+        manifest = json.loads(
+            manifest_bytes.decode("utf-8"),
+            object_pairs_hook=_strict_pairs,
+            parse_constant=lambda _value: _authorization_error(
+                "marginalization frozen manifest contains a nonfinite value"
+            ),
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        _authorization_error("marginalization frozen manifest is invalid", exc)
+    if type(manifest) is not dict or manifest_bytes != _canonical_bytes(manifest):
+        _authorization_error("marginalization frozen manifest bytes are noncanonical")
+    expected_argv = manifest.get("command_argv")
+    base_executable = getattr(sys, "_base_executable", None)
+    main_file = getattr(sys.modules.get("__main__"), "__file__", None)
+    if (
+        type(expected_argv) is not list
+        or not expected_argv
+        or any(type(value) is not str or not value for value in expected_argv)
+        or type(base_executable) is not str
+        or type(main_file) is not str
+        or type(manifest.get("bootstrap_path")) is not str
+        or list(getattr(sys, "orig_argv", ()))[1:] != expected_argv[1:]
+        or os.path.realpath(base_executable) != expected_argv[0]
+        or os.path.realpath(sys.executable) != expected_argv[0]
+        or os.path.realpath(main_file) != manifest.get("bootstrap_path")
+    ):
+        _authorization_error("marginalization bootstrap process provenance differs")
     duplicates = []
+    chains = []
     try:
         lifecycle_info = os.fstat(lifecycle_fd)
         workspace_info = os.fstat(workspace_fd)
@@ -681,6 +736,22 @@ def _install_vbd_trajectory_group_effect_marginalization_root_guard(
             or not stat.S_ISDIR(workspace_info.st_mode)
         ):
             raise OSError("bound root is not a directory")
+        for path, supplied in (
+            (
+                Path(VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH),
+                lifecycle_info,
+            ),
+            (
+                Path(VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH),
+                workspace_info,
+            ),
+        ):
+            chain_fds, identities = _open_canonical_directory_chain(path)
+            if identities[-1] != (supplied.st_dev, supplied.st_ino):
+                for descriptor in reversed(chain_fds):
+                    os.close(descriptor)
+                raise OSError("supplied root is not the canonical directory")
+            chains.append((chain_fds, identities))
         duplicates.append(os.dup(lifecycle_fd))
         duplicates.append(os.dup(workspace_fd))
         bound = dict(
@@ -696,17 +767,50 @@ def _install_vbd_trajectory_group_effect_marginalization_root_guard(
     except OSError as exc:
         for descriptor in duplicates:
             os.close(descriptor)
+        for chain_fds, _identities in chains:
+            for descriptor in reversed(chain_fds):
+                os.close(descriptor)
         _authorization_error("marginalization bootstrap root descriptors are invalid", exc)
-    _BOOTSTRAP_ROOT_GUARD = guard
     _BOOTSTRAP_BOUND_ROOT_FDS = bound
     _BOOTSTRAP_FROZEN_MANIFEST_BYTES = manifest_bytes
+    _BOOTSTRAP_CANONICAL_ROOT_CHAINS = tuple(chains)
+    _BOOTSTRAP_ROOT_GUARD = True
     _revalidate_vbd_trajectory_group_effect_marginalization_root_guard()
 
 
 def _revalidate_vbd_trajectory_group_effect_marginalization_root_guard() -> None:
-    if _BOOTSTRAP_ROOT_GUARD is None:
+    if (
+        _BOOTSTRAP_ROOT_GUARD is not True
+        or _BOOTSTRAP_BOUND_ROOT_FDS is None
+        or _BOOTSTRAP_CANONICAL_ROOT_CHAINS is None
+    ):
         _authorization_error("marginalization bootstrap root guard is unavailable")
-    _BOOTSTRAP_ROOT_GUARD()
+    for index, path in enumerate(
+        (
+            Path(VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH),
+            Path(VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH),
+        )
+    ):
+        retained_fds, expected_identities = _BOOTSTRAP_CANONICAL_ROOT_CHAINS[index]
+        fresh_fds = []
+        try:
+            retained_identities = tuple(
+                (info.st_dev, info.st_ino)
+                for info in (os.fstat(descriptor) for descriptor in retained_fds)
+            )
+            fresh_fds, fresh_identities = _open_canonical_directory_chain(path)
+            bound = os.fstat(_BOOTSTRAP_BOUND_ROOT_FDS[str(path)])
+            if (
+                retained_identities != expected_identities
+                or fresh_identities != expected_identities
+                or (bound.st_dev, bound.st_ino) != expected_identities[-1]
+            ):
+                _authorization_error("marginalization canonical root binding differs")
+        except OSError as exc:
+            _authorization_error("marginalization canonical root cannot be revalidated", exc)
+        finally:
+            for descriptor in reversed(fresh_fds):
+                os.close(descriptor)
 
 
 def _open_bound_or_absolute_directory(

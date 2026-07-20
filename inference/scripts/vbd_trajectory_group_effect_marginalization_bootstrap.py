@@ -1207,21 +1207,14 @@ def _install_candidate_root_io(
     lifecycle_binding: _DirectoryBinding,
     workspace_binding: _DirectoryBinding,
 ) -> None:
-    def revalidate_roots() -> None:
-        lifecycle_binding.revalidate()
-        workspace_binding.revalidate()
-        lifecycle_binding.revalidate()
-
     candidate._install_vbd_trajectory_group_effect_marginalization_root_guard(
-        revalidate_roots,
         lifecycle_fd=lifecycle_binding.root_fd,
         workspace_fd=workspace_binding.root_fd,
         manifest_bytes=_canonical_bytes(manifest),
-        _bootstrap_token=(
-            candidate._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
-        ),
     )
-    revalidate_roots()
+    lifecycle_binding.revalidate()
+    workspace_binding.revalidate()
+    lifecycle_binding.revalidate()
 
 
 def _install_parent_candidate_root_io(

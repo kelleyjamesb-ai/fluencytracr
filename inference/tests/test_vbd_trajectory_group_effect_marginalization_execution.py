@@ -830,20 +830,98 @@ def _install_test_bound_root_io(
     monkeypatch.setattr(authorization, "_BOOTSTRAP_ROOT_GUARD", None)
     monkeypatch.setattr(authorization, "_BOOTSTRAP_BOUND_ROOT_FDS", None)
     monkeypatch.setattr(authorization, "_BOOTSTRAP_FROZEN_MANIFEST_BYTES", None)
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_CANONICAL_ROOT_CHAINS", None)
     lifecycle_fd = __import__("os").open(lifecycle, __import__("os").O_RDONLY)
     workspace_fd = __import__("os").open(workspace, __import__("os").O_RDONLY)
-    authorization._install_vbd_trajectory_group_effect_marginalization_root_guard(
+    monkeypatch.setattr(
+        authorization,
+        "_BOOTSTRAP_BOUND_ROOT_FDS",
+        {
+            str(lifecycle): __import__("os").dup(lifecycle_fd),
+            str(workspace): __import__("os").dup(workspace_fd),
+        },
+    )
+    monkeypatch.setattr(
+        authorization,
+        "_BOOTSTRAP_FROZEN_MANIFEST_BYTES",
+        authorization._canonical_bytes({} if manifest is None else manifest),
+    )
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_ROOT_GUARD", True)
+    monkeypatch.setattr(
+        authorization,
+        "_revalidate_vbd_trajectory_group_effect_marginalization_root_guard",
         lambda: None,
-        lifecycle_fd=lifecycle_fd,
-        workspace_fd=workspace_fd,
-        manifest_bytes=authorization._canonical_bytes(
-            {} if manifest is None else manifest
-        ),
-        _bootstrap_token=(
-            authorization._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
-        ),
     )
     return lifecycle_fd, workspace_fd
+
+
+def test_exported_token_and_forged_descriptors_cannot_install_root_io(
+    tmp_path,
+    monkeypatch,
+):
+    os_module = __import__("os")
+    fake_lifecycle = tmp_path / "attacker-lifecycle"
+    fake_workspace = tmp_path / "attacker-workspace"
+    fake_lifecycle.mkdir(mode=0o700)
+    fake_workspace.mkdir(mode=0o700)
+    lifecycle_fd = os_module.open(fake_lifecycle, os_module.O_RDONLY)
+    workspace_fd = os_module.open(fake_workspace, os_module.O_RDONLY)
+    executable = "/verified/python"
+    bootstrap_path = "/verified/bootstrap.py"
+    manifest = {
+        "command_argv": [
+            executable,
+            "-I",
+            "-S",
+            "-B",
+            bootstrap_path,
+            "run",
+            "--execution-authorization",
+            "/forged/authorization.json",
+        ],
+        "bootstrap_path": bootstrap_path,
+    }
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_ROOT_GUARD", None)
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_BOUND_ROOT_FDS", None)
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_FROZEN_MANIFEST_BYTES", None)
+    monkeypatch.setattr(authorization, "_BOOTSTRAP_CANONICAL_ROOT_CHAINS", None)
+    monkeypatch.setattr(authorization.sys, "executable", executable)
+    monkeypatch.setattr(authorization.sys, "_base_executable", executable)
+    monkeypatch.setattr(
+        authorization.sys,
+        "orig_argv",
+        ["framework", *manifest["command_argv"][1:]],
+    )
+    monkeypatch.setattr(
+        authorization.sys.modules["__main__"],
+        "__file__",
+        bootstrap_path,
+    )
+    sampler_boundary = []
+
+    def forged_launch():
+        authorization._install_vbd_trajectory_group_effect_marginalization_root_guard(
+            lifecycle_fd=lifecycle_fd,
+            workspace_fd=workspace_fd,
+            manifest_bytes=authorization._canonical_bytes(manifest),
+        )
+        sampler_boundary.append("reached")
+
+    try:
+        with pytest.raises(
+            authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+            match="root descriptors are invalid",
+        ):
+            forged_launch()
+        assert (
+            authorization._VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_CHILD_TOKEN
+            is not None
+        )
+        assert authorization._BOOTSTRAP_BOUND_ROOT_FDS is None
+        assert sampler_boundary == []
+    finally:
+        os_module.close(lifecycle_fd)
+        os_module.close(workspace_fd)
 
 
 @pytest.mark.parametrize(
@@ -1978,6 +2056,11 @@ def test_claimed_child_root_replacement_rejects_before_sampler(monkeypatch):
     monkeypatch.setattr(
         authorization,
         "_BOOTSTRAP_ROOT_GUARD",
+        True,
+    )
+    monkeypatch.setattr(
+        authorization,
+        "_revalidate_vbd_trajectory_group_effect_marginalization_root_guard",
         reject_rebound_root,
     )
     with pytest.raises(
