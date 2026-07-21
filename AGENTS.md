@@ -185,6 +185,20 @@ Do not commit local provider worktrees or duplicate repository copies. Use point
 - For Vercel Services or production-routing work, use the current slice command profile as the source of truth: parse `vercel.json`, run relevant workspace builds, use `vercel build` / `vercel deploy --prebuilt` when deployment proof is required, and smoke the canonical project `fluencytracr-frontend.vercel.app`.
 - For GitHub/Vercel merge follow-through, do not treat a merged PR as live proof. Confirm the latest `main` deployment in the `fluencytracr-frontend` Vercel project is current and `READY` before reporting production readiness.
 
+## GitHub Change and Release Contract
+
+- Use one roadmap prompt per branch and PR. Necessary cross-layer changes for that prompt stay together; unrelated fixes move to a separate, explicitly authorized unit.
+- Before editing or reporting status, resolve the exact repository, default branch, working branch, base SHA, head SHA, and associated PR. Re-check GitHub after every push; local commits are not remote evidence.
+- Every PR must preserve the nine hard invariants. A change that would introduce a new canonical event or suppression reason is blocked unless the invariant and its governing contracts are deliberately revised in a separately authorized change.
+- Keep contracts synchronized within the same PR: README and governing docs, schemas, OpenSpec, Assurance Harness fixtures, and verdict shapes must change together whenever the prompt affects them. Run strict OpenSpec validation and the required Assurance Harness gate before requesting review.
+- A PR description must identify the roadmap prompt and affected invariant, summarize scope and exclusions, list exact checks run, disclose contract, schema, privacy, and telemetry impact, retain required attribution, and state the deployment and live-proof boundary.
+- Treat PR creation, review-thread resolution, CI reruns, merge, close, release, and branch-history rewrites as distinct GitHub actions. Do not infer authority for one from approval of another.
+- Commits must remain traceable to the roadmap prompt or invariant. Do not rewrite reviewed remote history unless James explicitly authorizes it. If rewriting is required, use `--force-with-lease`, never an unqualified force push, then re-verify the PR head.
+- Address review feedback against the exact reviewed head. Do not resolve a thread until the code or documentation change is pushed and its supporting evidence is available; distinguish a reply, a pushed fix, thread resolution, approval, and merge.
+- V4 research or documentation is not promoted by merge alone. Promotion requires the existing V4 gates and evidence recorded in the PR.
+- Keep customer, participant, and production-sensitive data out of issues, PR bodies, comments, screenshots, logs, and fixtures. Agentic telemetry remains development-only unless a separately authorized product and privacy change says otherwise.
+- Merge is not release proof. For a production claim, record the Vercel production deployment that is traceable to the merged GitHub state and separately capture a successful canonical-domain smoke check. Preview deployments and bot comments are not production evidence.
+
 ## 11. When in Doubt
 
 If a request appears to violate any invariant, stop and ask the human. Do not soften invariants under feature pressure. The governance posture is the product.
