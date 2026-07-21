@@ -5,6 +5,7 @@ from __future__ import annotations
 import ctypes
 from datetime import datetime
 import hashlib
+import importlib.machinery
 import json
 import os
 from pathlib import Path
@@ -17,6 +18,8 @@ from .hashing import sha256_json
 from .vbd_trajectory_group_effect_marginalization_constants import (
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LANE_ORDER,
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH,
+    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_LIFECYCLE_ROOT_PATH,
+    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_WORKSPACE_PATH,
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH,
 )
 from .vbd_trajectory_group_effect_geometry_constants import (
@@ -86,31 +89,32 @@ def vbd_trajectory_group_effect_marginalization_implementation_manifest() -> dic
 
 
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH = (
-    "inference/evidence/vbd_trajectory_group_effect_marginalization_authorization.json"
+    "inference/evidence/"
+    "vbd_trajectory_group_effect_marginalization_v2_authorization.json"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_BOOTSTRAP_RELATIVE_PATH = (
     "inference/scripts/vbd_trajectory_group_effect_marginalization_bootstrap.py"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_2026_07_V2"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_2026_07_V2"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LAUNCH_PERMIT_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_LAUNCH_PERMIT_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_LAUNCH_PERMIT_2026_07_V2"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CLAIM_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_ATTEMPT_CLAIM_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_ATTEMPT_CLAIM_2026_07_V2"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_INPUT_BINDING_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_INPUT_BINDING_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_INPUT_BINDING_2026_07_V2"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_RECEIPT_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_COMPLETION_RECEIPT_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_COMPLETION_RECEIPT_2026_07_V2"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_SCOPE = (
-    "vbd_group_effect_marginalization_diagnostic_v1_nonacceptance_one_launch"
+    "vbd_group_effect_marginalization_diagnostic_v2_nonacceptance_one_launch"
 )
 VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_FILENAME = (
     "execution_authorization.json"
@@ -1070,6 +1074,8 @@ def validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
             VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_ROOT_PATH,
             VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_WORKSPACE_PATH,
             VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_LIFECYCLE_ROOT_PATH,
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_WORKSPACE_PATH,
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_LIFECYCLE_ROOT_PATH,
         )
     )
     lifecycle_children = {
@@ -1329,6 +1335,47 @@ def build_vbd_trajectory_group_effect_marginalization_authorization_manifest(
     )
 
 
+def _reject_vbd_trajectory_group_effect_marginalization_alternate_import_artifacts(
+    *, manifest: dict
+) -> None:
+    """Repeat the standalone first-party shadow scan before creating a permit."""
+
+    manifest = validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
+        manifest
+    )
+    source_prefix = "inference/src/fluencytracr_inference/"
+    source_paths = tuple(
+        _repo_root() / item["path"]
+        for item in manifest["in_scope_files"]
+        if item["path"].startswith(source_prefix)
+        and item["path"].endswith(".py")
+    )
+    if not source_paths or not any(path.name == "__init__.py" for path in source_paths):
+        _authorization_error("marginalization reviewed first-party source set is incomplete")
+    for directory in {path.parent for path in source_paths}:
+        pycache = directory / "__pycache__"
+        if pycache.exists() or pycache.is_symlink():
+            _authorization_error("alternate first-party import artifact exists")
+    for source_path in source_paths:
+        candidates = [source_path.with_suffix(".pyc")]
+        if source_path.name == "__init__.py":
+            candidates.extend(
+                source_path.parent.parent
+                / f"{source_path.parent.name}{extension_suffix}"
+                for extension_suffix in importlib.machinery.EXTENSION_SUFFIXES
+            )
+        else:
+            candidates.extend(
+                source_path.with_name(source_path.stem + extension_suffix)
+                for extension_suffix in importlib.machinery.EXTENSION_SUFFIXES
+            )
+        if any(
+            candidate.exists() or candidate.is_symlink()
+            for candidate in candidates
+        ):
+            _authorization_error("alternate first-party import artifact exists")
+
+
 def _permit_body(
     *,
     manifest: dict,
@@ -1400,6 +1447,9 @@ def create_vbd_trajectory_group_effect_marginalization_launch_permit(
     )
     preflight_vbd_trajectory_group_effect_marginalization_fixed_roots(
         manifest=manifest, phase="BEFORE_PERMIT"
+    )
+    _reject_vbd_trajectory_group_effect_marginalization_alternate_import_artifacts(
+        manifest=manifest
     )
     body = _permit_body(
         manifest=manifest,

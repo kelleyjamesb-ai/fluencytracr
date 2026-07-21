@@ -170,7 +170,7 @@
   it does not complete task `2.6`, change the proof reference, or start
   concordance or calibration. The consumed V1 launch failed before an input
   binding or result and does not satisfy this task.
-- [ ] 2.20 After task `1.13` and separate implementation authorization,
+- [x] 2.20 After task `1.13` and separate implementation authorization,
   implement `vbd_group_effect_marginalization_diagnostic_v2` with fresh roots
   and 52 fresh seeds, exact diagnostic-plan generator admission, a sampler-free
   production-wrapper reachability fixture, V1 tombstones, and pre-permit

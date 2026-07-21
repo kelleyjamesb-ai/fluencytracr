@@ -237,36 +237,40 @@ test("VBD MCSE diagnostic cannot enter the proof artifact bridge", () => {
     false
   );
 
-  const marginalizationDiagnostic = {
-    schema_version:
-      "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_2026_07_V1",
-    diagnostic_id: "vbd_group_effect_marginalization_diagnostic_v1",
-    execution_state: "NOT_RUN",
-    runner_completion_binding: null,
-    classification: "INVALID_HOLD",
-    state: "HOLD",
-    hold_reasons: ["group_effect_marginalization_diagnostic_nonacceptance"],
-    evidence_eligible: false,
-    acceptance_count_effect: 0,
-    customer_output_authorized: false,
-    internal_only: true,
-    synthetic_only: true,
-    aggregate_only: true,
-    record_hash: sha256Json({
-      diagnostic_id: "vbd_group_effect_marginalization_diagnostic_v1",
-      state: "HOLD"
-    })
-  };
-  assert.equal(
-    VbdTrajectoryProofArtifactSchema.safeParse(marginalizationDiagnostic).success,
-    false
-  );
-  assert.equal(
-    LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(
-      marginalizationDiagnostic
-    ).success,
-    false
-  );
+  for (const version of ["V1", "V2"]) {
+    const diagnosticId =
+      `vbd_group_effect_marginalization_diagnostic_${version.toLowerCase()}`;
+    const marginalizationDiagnostic = {
+      schema_version:
+        `FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_2026_07_${version}`,
+      diagnostic_id: diagnosticId,
+      execution_state: "NOT_RUN",
+      runner_completion_binding: null,
+      classification: "INVALID_HOLD",
+      state: "HOLD",
+      hold_reasons: ["group_effect_marginalization_diagnostic_nonacceptance"],
+      evidence_eligible: false,
+      acceptance_count_effect: 0,
+      customer_output_authorized: false,
+      internal_only: true,
+      synthetic_only: true,
+      aggregate_only: true,
+      record_hash: sha256Json({
+        diagnostic_id: diagnosticId,
+        state: "HOLD"
+      })
+    };
+    assert.equal(
+      VbdTrajectoryProofArtifactSchema.safeParse(marginalizationDiagnostic).success,
+      false
+    );
+    assert.equal(
+      LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(
+        marginalizationDiagnostic
+      ).success,
+      false
+    );
+  }
 });
 
 test("stale artifact and nested fit hashes reject", { skip: venvSkip }, () => {

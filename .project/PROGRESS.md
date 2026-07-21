@@ -2,6 +2,32 @@
 
 ## Current Session
 
+- OpenSpec task `2.20` completed without execution on 2026-07-20 on
+  `codex/vbd-group-effect-marginalization-v2-implementation` from exact V2
+  decision commit `2e7a1edbbfc1acd8da172b5cb16f8e937c72d6d1`. The implementation
+  rotates the diagnostic, schema, plan, namespace, roots, four generator seeds
+  `2_055_901_200..203`, and 48 chain seeds `2_055_901_300..347`; preserves all
+  52 consumed V1 seeds, roots, artifacts, and identities as immutable
+  tombstones; reserves the complete 104-seed V1/V2 union; and rejects alternate
+  plan-family substitution before base-path generation. Exact-native case-body
+  and generation-spec validation, immutable import-time body/spec snapshots,
+  private-token admission, a sampler-free production-wrapper fixture, shared
+  V2 panel validation, frozen-spec panel regeneration, pre-permit alternate-
+  import scanning, and V1/V2 proof exclusion fail closed. Exact implementation
+  diff `868a493914ce54a14e57d45f170e39739dee7920e791eb68a75fb8ca5f642e82`
+  received CODE, BUG, ADVERSARIAL, and statistical-methodology GO after all
+  review findings were repaired. Verification passed: five focused sampler-free
+  suites `323`; geometry seed compatibility `12`; shared and confidence-engine
+  builds; filtered V1/V2 proof exclusion `1`; strict OpenSpec; V1 governance;
+  semantic drift; agentic guard; docs sweep; and diff checks. No generator,
+  sampler, V2 authorization manifest or commit `A2`, permit, claim, external
+  root, result, task `2.21-2.22`, task `2.6`, canary, concordance, calibration,
+  real/customer/live data, public surface, customer output, or promotion
+  occurred. Next: obtain explicit confirmation before committing clean V2
+  implementation `D2`; bind four-role review to that exact commit; task `2.21`
+  remains a separate authorization step and task `2.22` remains separately
+  execution-gated.
+
 - Marginalization V1 postmortem and V2 docs decision (2026-07-20): exact
   authorization `A=9e4010e2520f30f78ba40e0248e13dc546f2d346`, manifest
   `bb50439dd69f0546a4e24a0bd16f351fb70d286df07024449c28a63a2053fbe1`,

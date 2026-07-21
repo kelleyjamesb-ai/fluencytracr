@@ -21,29 +21,30 @@ import time
 
 
 _SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_2026_07_V2"
 )
 _EXECUTION_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_2026_07_V2"
 )
 _PERMIT_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_LAUNCH_PERMIT_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_LAUNCH_PERMIT_2026_07_V2"
 )
 _CLAIM_SCHEMA_VERSION = (
-    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_ATTEMPT_CLAIM_2026_07_V1"
+    "FT_AI_VALUE_VBD_GROUP_EFFECT_MARGINALIZATION_ATTEMPT_CLAIM_2026_07_V2"
 )
-_SCOPE = "vbd_group_effect_marginalization_diagnostic_v1_nonacceptance_one_launch"
+_SCOPE = "vbd_group_effect_marginalization_diagnostic_v2_nonacceptance_one_launch"
 _MANIFEST_RELATIVE_PATH = (
-    "inference/evidence/vbd_trajectory_group_effect_marginalization_authorization.json"
+    "inference/evidence/"
+    "vbd_trajectory_group_effect_marginalization_v2_authorization.json"
 )
 _BOOTSTRAP_RELATIVE_PATH = (
     "inference/scripts/vbd_trajectory_group_effect_marginalization_bootstrap.py"
 )
 _WORKSPACE = Path(
-    "/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-workspace"
+    "/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-workspace"
 )
 _LIFECYCLE = Path(
-    "/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
+    "/Users/james.kelley/.codex/evidence/vbd-group-effect-marginalization-diagnostic-v2-lifecycle"
 )
 _AUTHORIZATION_NAME = "execution_authorization.json"
 _PERMIT_NAME = "launch_permit.json"

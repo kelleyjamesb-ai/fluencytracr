@@ -24,6 +24,7 @@ from .vbd_trajectory_group_effect_geometry_constants import (
     vbd_trajectory_group_effect_geometry_chain_seeds,
 )
 from .vbd_trajectory_group_effect_marginalization_constants import (
+    VBD_TRAJECTORY_ALL_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS,
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LANE_ORDER,
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS,
@@ -1335,7 +1336,7 @@ def _validate_reference_seeds(
         seed in (
             VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS
             | VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS
-            | VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS
+            | VBD_TRAJECTORY_ALL_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS
         )
         for seed in (*validated_chains, validated_ppc)
     ):

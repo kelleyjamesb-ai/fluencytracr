@@ -24,6 +24,8 @@ from fluencytracr_inference.vbd_trajectory_group_effect_marginalization_diagnost
 )
 from fluencytracr_inference.vbd_trajectory_group_effect_marginalization_constants import (
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH,
+    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_LIFECYCLE_ROOT_PATH,
+    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_WORKSPACE_PATH,
     VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH,
 )
 
@@ -139,7 +141,7 @@ def test_fixed_roots_and_manifest_identity_are_diagnostic_specific():
     bootstrap = _load_bootstrap()
     assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH == (
         "/Users/james.kelley/.codex/evidence/"
-        "vbd-group-effect-marginalization-diagnostic-v1-workspace"
+        "vbd-group-effect-marginalization-diagnostic-v2-workspace"
     )
     assert str(bootstrap._WORKSPACE) == (
         VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH
@@ -147,6 +149,16 @@ def test_fixed_roots_and_manifest_identity_are_diagnostic_specific():
     assert str(bootstrap._LIFECYCLE) == (
         VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH
     )
+    assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_WORKSPACE_PATH != (
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_WORKSPACE_PATH
+    )
+    assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_LIFECYCLE_ROOT_PATH != (
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH
+    )
+    assert authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH.endswith(
+        "vbd_trajectory_group_effect_marginalization_v2_authorization.json"
+    )
+    assert not (_REPO / authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH).exists()
 
 
 def test_manifest_binds_complete_source_runtime_model_plan_seed_and_command(
@@ -194,6 +206,78 @@ def test_manifest_rejects_source_runtime_model_plan_seed_root_or_command_drift(
     mutation["manifest_hash"] = sha256_json(body)
     with pytest.raises(
         authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError
+    ):
+        authorization.validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
+            mutation
+        )
+
+
+@pytest.mark.parametrize("root_kind", ("workspace", "lifecycle"))
+def test_manifest_rejects_self_consistently_rehashed_v1_tombstoned_roots(
+    valid_manifest, root_kind
+):
+    mutation = deepcopy(valid_manifest)
+    if root_kind == "workspace":
+        workspace = Path(
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_WORKSPACE_PATH
+        )
+        output = workspace / authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_OUTPUT_FILENAME
+        mutation["canonical_workspace_path"] = str(workspace)
+        mutation["canonical_workspace_identity_hash"] = authorization._path_hash(
+            workspace
+        )
+        mutation["output_path"] = str(output)
+        mutation["output_path_hash"] = authorization._path_hash(output)
+    else:
+        lifecycle = Path(
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_LIFECYCLE_ROOT_PATH
+        )
+        mutation["lifecycle_root_path"] = str(lifecycle)
+        mutation["lifecycle_root_identity_hash"] = authorization._path_hash(lifecycle)
+        for path_field, hash_field, filename in (
+            (
+                "execution_authorization_record_path",
+                "execution_authorization_record_path_hash",
+                authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_EXECUTION_AUTHORIZATION_FILENAME,
+            ),
+            (
+                "launch_permit_path",
+                "launch_permit_path_hash",
+                authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LAUNCH_PERMIT_FILENAME,
+            ),
+            (
+                "consumed_permit_path",
+                "consumed_permit_path_hash",
+                authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CONSUMED_PERMIT_FILENAME,
+            ),
+            (
+                "claim_path",
+                "claim_path_hash",
+                authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CLAIM_FILENAME,
+            ),
+            (
+                "input_binding_path",
+                "input_binding_path_hash",
+                authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_INPUT_BINDING_FILENAME,
+            ),
+            (
+                "completion_receipt_path",
+                "completion_receipt_path_hash",
+                authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_COMPLETION_RECEIPT_FILENAME,
+            ),
+        ):
+            path = lifecycle / filename
+            mutation[path_field] = str(path)
+            mutation[hash_field] = authorization._path_hash(path)
+        mutation["command_argv"][-1] = mutation[
+            "execution_authorization_record_path"
+        ]
+        mutation["command_hash"] = sha256_json(mutation["command_argv"])
+    body = {key: value for key, value in mutation.items() if key != "manifest_hash"}
+    mutation["manifest_hash"] = sha256_json(body)
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="authorization manifest is invalid",
     ):
         authorization.validate_vbd_trajectory_group_effect_marginalization_authorization_manifest(
             mutation
@@ -360,10 +444,10 @@ def test_external_human_execution_record_is_strict_and_validation_only(
         )
     assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH == (
         "/Users/james.kelley/.codex/evidence/"
-        "vbd-group-effect-marginalization-diagnostic-v1-lifecycle"
+        "vbd-group-effect-marginalization-diagnostic-v2-lifecycle"
     )
     assert authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_SCOPE == (
-        "vbd_group_effect_marginalization_diagnostic_v1_nonacceptance_one_launch"
+        "vbd_group_effect_marginalization_diagnostic_v2_nonacceptance_one_launch"
     )
     assert authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_OUTPUT_FILENAME == (
         "marginalization_diagnostic.json"
@@ -1829,6 +1913,66 @@ def test_committed_publication_succeeds_when_stdout_is_closed(tmp_path, monkeypa
     monkeypatch.setattr(bootstrap.os, "write", closed_stdout)
     assert bootstrap._run(tmp_path / "execution_authorization.json") == 0
     assert output.read_bytes() == b"{}\n"
+
+
+def test_permit_creation_repeats_alternate_import_scan_before_permit_body():
+    source = inspect.getsource(
+        authorization.create_vbd_trajectory_group_effect_marginalization_launch_permit
+    )
+    assert source.index(
+        "preflight_vbd_trajectory_group_effect_marginalization_fixed_roots("
+    ) < source.index(
+        "_reject_vbd_trajectory_group_effect_marginalization_alternate_import_artifacts("
+    )
+    assert source.index(
+        "_reject_vbd_trajectory_group_effect_marginalization_alternate_import_artifacts("
+    ) < source.index("body = _permit_body(")
+
+
+@pytest.mark.parametrize("shadow_kind", ("pycache", "legacy_pyc", "extension"))
+def test_package_prepermit_scan_rejects_alternate_first_party_import_artifacts(
+    tmp_path, monkeypatch, shadow_kind
+):
+    repo = tmp_path / "repo"
+    package = repo / "inference/src/fluencytracr_inference"
+    package.mkdir(parents=True)
+    package_init = package / "__init__.py"
+    source = package / "hashing.py"
+    package_init.write_text("# reviewed package\n", encoding="utf-8")
+    source.write_text("SOURCE_ONLY_SENTINEL = True\n", encoding="utf-8")
+    if shadow_kind == "pycache":
+        (package / "__pycache__").mkdir()
+    elif shadow_kind == "legacy_pyc":
+        source.with_suffix(".pyc").write_bytes(b"shadow")
+    else:
+        source.with_name(
+            source.stem + importlib.machinery.EXTENSION_SUFFIXES[0]
+        ).write_bytes(b"shadow")
+    manifest = {
+        "in_scope_files": [
+            {
+                "path": "inference/src/fluencytracr_inference/__init__.py",
+                "sha256": "1" * 64,
+            },
+            {
+                "path": "inference/src/fluencytracr_inference/hashing.py",
+                "sha256": "2" * 64,
+            },
+        ]
+    }
+    monkeypatch.setattr(
+        authorization,
+        "validate_vbd_trajectory_group_effect_marginalization_authorization_manifest",
+        lambda value: value,
+    )
+    monkeypatch.setattr(authorization, "_repo_root", lambda: repo)
+    with pytest.raises(
+        authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
+        match="alternate first-party import artifact",
+    ):
+        authorization._reject_vbd_trajectory_group_effect_marginalization_alternate_import_artifacts(
+            manifest=manifest
+        )
 
 
 @pytest.mark.parametrize("shadow_kind", ("timestamp_pyc", "extension"))
