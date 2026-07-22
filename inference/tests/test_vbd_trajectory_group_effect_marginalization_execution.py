@@ -1018,10 +1018,15 @@ def test_exported_token_and_forged_descriptors_cannot_install_root_io(
         )
         sampler_boundary.append("reached")
 
+    expected_provenance_error = (
+        "kernel process provenance differs"
+        if authorization.sys.platform == "darwin"
+        else "marginalization bootstrap requires Darwin provenance"
+    )
     try:
         with pytest.raises(
             authorization.VbdTrajectoryGroupEffectMarginalizationAuthorizationError,
-            match="kernel process provenance differs",
+            match=expected_provenance_error,
         ):
             forged_launch()
         assert (

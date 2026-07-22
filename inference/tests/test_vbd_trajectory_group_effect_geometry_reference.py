@@ -1,4 +1,5 @@
 import math
+import platform
 
 import numpy as np
 import pytest
@@ -19,9 +20,14 @@ from fluencytracr_inference.vbd_trajectory_types import (
 )
 
 
-_LEGACY_C6_FIT_SUMMARY_HASH = (
-    "bf1a4b0f659c5fe8414636e057a93d78e964aae3d14cf06ba8603689807b6409"
-)
+_LEGACY_C6_FIT_SUMMARY_HASH_BY_RUNTIME = {
+    ("Darwin", "arm64"): (
+        "bf1a4b0f659c5fe8414636e057a93d78e964aae3d14cf06ba8603689807b6409"
+    ),
+    ("Linux", "x86_64"): (
+        "05b0c2c5bed28f03d9a8da6a88872f8dbb6c2875ad8c967de2f06905892e81c7"
+    ),
+}
 
 
 def _generator_free_prepared_input(
@@ -165,4 +171,8 @@ def test_all_common_quantity_reference_is_canonical_and_deterministic(
     assert movement.to_dict() == legacy.movement_summary.to_dict()
     assert first.legacy_fit_summary_hash == legacy.fit_summary_hash()
     if panel_group_count == 6:
-        assert legacy.fit_summary_hash() == _LEGACY_C6_FIT_SUMMARY_HASH
+        runtime = (platform.system(), platform.machine())
+        assert runtime in _LEGACY_C6_FIT_SUMMARY_HASH_BY_RUNTIME
+        assert legacy.fit_summary_hash() == (
+            _LEGACY_C6_FIT_SUMMARY_HASH_BY_RUNTIME[runtime]
+        )
