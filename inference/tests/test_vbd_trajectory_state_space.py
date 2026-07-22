@@ -414,18 +414,64 @@ def test_primary_engine_fits_each_lane_with_exact_support_and_runtime_oracles(
             summary.interval_99_upper.hex(),
         ],
     }
-    expected_runtime_oracle = {
+    darwin_runtime_oracle = {
         "effective_sample_size": expected_ess,
         "max_normalized_weight": expected_max_weight,
         "summary": list(summary_oracles[lane]),
     }
+    linux_runtime_oracles = {
+        "frequency": {
+            "effective_sample_size": "0x1.867d51b62b0c1p+12",
+            "max_normalized_weight": "0x1.6aa2ffe631a12p-10",
+            "summary": [
+                "0x1.321dbbd7171f2p-1",
+                "0x1.6fbdd5a58631dp-4",
+                "0x1.ee665088ae810p-2",
+                "0x1.6d0351eb618e7p-1",
+                "0x1.77381196c1e19p-2",
+                "0x1.a874b8719ca3ep-1",
+            ],
+        },
+        "engagement": {
+            "effective_sample_size": "0x1.39dafc9769096p+11",
+            "max_normalized_weight": "0x1.fe9ef960f45f7p-8",
+            "summary": [
+                "0x1.ca57bdffff08dp-2",
+                "0x1.46e0e3312a3a2p-4",
+                "0x1.6197274a592d5p-2",
+                "0x1.19848a3cffc96p-1",
+                "0x1.ef1f839fe5a79p-3",
+                "0x1.4e4e2b6754239p-1",
+            ],
+        },
+        "breadth": {
+            "effective_sample_size": "0x1.7af43ac9efbccp+11",
+            "max_normalized_weight": "0x1.7bd444b3a8ef3p-8",
+            "summary": [
+                "0x1.4386b175be1e2p-1",
+                "0x1.e95c888ed52eep-4",
+                "0x1.ea4819123a1bcp-2",
+                "0x1.91eb530c7404ep-1",
+                "0x1.4bf45ba83f06ap-2",
+                "0x1.e124aabe0fc8cp-1",
+            ],
+        },
+    }
+    runtime = (platform.system(), platform.machine())
+    runtime_oracles = {
+        ("Darwin", "arm64"): darwin_runtime_oracle,
+        ("Linux", "x86_64"): linux_runtime_oracles[lane],
+    }
+    if runtime not in runtime_oracles:
+        pytest.fail(f"unsupported native runtime oracle: {runtime!r}")
+    expected_runtime_oracle = runtime_oracles[runtime]
     if actual_runtime_oracle != expected_runtime_oracle:
         pytest.fail(
             "native runtime oracle mismatch: "
             + json.dumps(
                 {
                     "lane": lane,
-                    "runtime": [platform.system(), platform.machine()],
+                    "runtime": list(runtime),
                     "actual": actual_runtime_oracle,
                     "expected": expected_runtime_oracle,
                 },
