@@ -3,6 +3,11 @@ name: Inference Harness
 # Opt into Node 24 for JavaScript-based actions before runner default (see GitHub changelog 2025-09-19).
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  VECLIB_MAXIMUM_THREADS: "1"
 
 on:
   push:
@@ -77,6 +82,44 @@ jobs:
           inference/.venv/bin/pip install -r inference/requirements.lock
       - name: Install Node dependencies
         run: npm ci
+      - name: Record pinned inference runtime
+        run: |
+          inference/.venv/bin/python - <<'PY'
+          import json
+          import os
+          import platform
+
+          import numpy as np
+          import scipy
+          from threadpoolctl import threadpool_info
+
+          np.linalg.solve(np.eye(2), np.ones(2))
+          thread_keys = (
+              "MKL_NUM_THREADS",
+              "NUMEXPR_NUM_THREADS",
+              "OMP_NUM_THREADS",
+              "OPENBLAS_NUM_THREADS",
+              "VECLIB_MAXIMUM_THREADS",
+          )
+          environment = {key: os.environ.get(key) for key in thread_keys}
+          pools = threadpool_info()
+          print(
+              json.dumps(
+                  {
+                      "platform": platform.platform(),
+                      "machine": platform.machine(),
+                      "python": platform.python_version(),
+                      "numpy": np.__version__,
+                      "scipy": scipy.__version__,
+                      "thread_environment": environment,
+                      "thread_pools": pools,
+                  },
+                  sort_keys=True,
+              )
+          )
+          assert set(environment.values()) == {"1"}
+          assert all(pool.get("num_threads") == 1 for pool in pools)
+          PY
       - name: Validate longitudinal concordance OpenSpec
         run: npx openspec validate add-longitudinal-state-space-nuts-concordance --strict
       - name: Run inference harness suite

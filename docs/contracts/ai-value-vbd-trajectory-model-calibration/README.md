@@ -519,14 +519,19 @@ The pinned unequal-mixture oracle uses weights `(0.35,0.65)`, means
 
 ```text
 p=.005 -> -0x1.070d647d89159p+1
-p=.10  -> -0x1.f4c4b60ce6076p-1
+p=.10  -> -0x1.f4c4b60ce6076p-1  (Darwin arm64)
+           -0x1.f4c4b60ce6077p-1  (Linux x86_64)
 p=.90  ->  0x1.d2857797c387dp+0
 p=.995 ->  0x1.aec938ed2fe2fp+1
 ```
 
-Every value must match exactly under the pinned runtime. These are conformance
-oracles, not configurable product thresholds. The retired 16-point
-`normal_quadrature_v1` support must not enter a repaired VBD fit.
+Every value must match exactly under its bound native runtime. The one-ULP
+`p=.10` distinction above is a closed pair of exact pinned-SciPy outputs, not a
+tolerance, fallback, or algorithm choice. Prepared, fit, diagnostic, and
+result hashes remain bound to that same runtime and do not claim cross-platform
+numeric identity. These are conformance oracles, not configurable product
+thresholds. The retired 16-point `normal_quadrature_v1` support must not enter
+a repaired VBD fit.
 
 The NUTS reference keeps the same marginalized-AR-state Gaussian likelihood,
 priors, named sampled parameters, and centered zero-sum group-effect

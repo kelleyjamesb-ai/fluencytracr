@@ -349,11 +349,16 @@ The standard-Normal endpoint oracle SHALL exactly equal binary64 hex values
 unequal-mixture oracle with weights `(0.35,0.65)`, means `(-0.4,0.7)`, and SDs
 `(0.6,1.1)` SHALL exactly equal mean `0x1.428f5c28f5c28p-2`, SD
 `0x1.17007814169ffp+0`, and endpoint hex values
-`(-0x1.070d647d89159p+1,-0x1.f4c4b60ce6076p-1,
-0x1.d2857797c387dp+0,0x1.aec938ed2fe2fp+1)`. The retired 16-point
-Gauss-Hermite support SHALL NOT enter a repaired VBD fit. The NUTS engine SHALL
-sample the matching conditional scalar at every retained draw. Neither engine
-SHALL emit a latent path.
+`(-0x1.070d647d89159p+1,<runtime-bound-p10>,
+0x1.d2857797c387dp+0,0x1.aec938ed2fe2fp+1)`. The exact
+`<runtime-bound-p10>` value SHALL be `-0x1.f4c4b60ce6076p-1` on Darwin arm64
+and `-0x1.f4c4b60ce6077p-1` on Linux x86_64 under the pinned SciPy runtime.
+This closed one-ULP pair SHALL NOT be interpreted as a tolerance, fallback, or
+method choice; prepared, fit, diagnostic, and result identities remain bound to
+the exact native runtime and SHALL NOT claim cross-platform numeric identity.
+The retired 16-point Gauss-Hermite support SHALL NOT enter a repaired VBD fit.
+The NUTS engine SHALL sample the matching conditional scalar at every retained
+draw. Neither engine SHALL emit a latent path.
 
 Each plan SHALL freeze one ordered three-lane direction vector with components
 in `{+1,-1}` before generated truth or post-period evidence is inspected. With

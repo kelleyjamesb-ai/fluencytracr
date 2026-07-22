@@ -1,5 +1,7 @@
 from dataclasses import replace
+import json
 import math
+import platform
 
 import numpy as np
 import pytest
@@ -306,7 +308,7 @@ def test_indefinite_mode_hessian_fails_instead_of_being_repaired(
 
 
 @pytest.mark.parametrize("lane", VBD_TRAJECTORY_LANES)
-def test_primary_engine_fits_each_lane_with_exact_full_support(
+def test_primary_engine_fits_each_lane_with_exact_support_and_runtime_oracles(
     lane, smoke_case, fit_by_lane
 ):
     fit = fit_by_lane[lane]
@@ -395,17 +397,42 @@ def test_primary_engine_fits_each_lane_with_exact_full_support(
         == expected_excluded_commitment
     )
     assert diagnostics["outer_weight_retention_hash"] == expected_retention_hash
-    assert float(diagnostics["effective_sample_size"]).hex() == expected_ess
-    assert float(diagnostics["max_normalized_weight"]).hex() == expected_max_weight
     summary = fit.movement_summary
-    assert (
-        summary.posterior_mean.hex(),
-        summary.posterior_sd.hex(),
-        summary.interval_80_lower.hex(),
-        summary.interval_80_upper.hex(),
-        summary.interval_99_lower.hex(),
-        summary.interval_99_upper.hex(),
-    ) == summary_oracles[lane]
+    actual_runtime_oracle = {
+        "effective_sample_size": float(
+            diagnostics["effective_sample_size"]
+        ).hex(),
+        "max_normalized_weight": float(
+            diagnostics["max_normalized_weight"]
+        ).hex(),
+        "summary": [
+            summary.posterior_mean.hex(),
+            summary.posterior_sd.hex(),
+            summary.interval_80_lower.hex(),
+            summary.interval_80_upper.hex(),
+            summary.interval_99_lower.hex(),
+            summary.interval_99_upper.hex(),
+        ],
+    }
+    expected_runtime_oracle = {
+        "effective_sample_size": expected_ess,
+        "max_normalized_weight": expected_max_weight,
+        "summary": list(summary_oracles[lane]),
+    }
+    if actual_runtime_oracle != expected_runtime_oracle:
+        pytest.fail(
+            "native runtime oracle mismatch: "
+            + json.dumps(
+                {
+                    "lane": lane,
+                    "runtime": [platform.system(), platform.machine()],
+                    "actual": actual_runtime_oracle,
+                    "expected": expected_runtime_oracle,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
     retention_body = {
         "algorithm": "binary64_representable_normalized_weight_retention_v1",
         "excluded_sobol_ordinal_commitment": diagnostics[
