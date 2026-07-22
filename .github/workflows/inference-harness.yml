@@ -7,6 +7,8 @@ env:
   NUMEXPR_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
   OPENBLAS_NUM_THREADS: "1"
+  # DYNAMIC_ARCH kernels vary by runner CPU; pin the exact CI oracle target.
+  OPENBLAS_CORETYPE: "Haswell"
   VECLIB_MAXIMUM_THREADS: "1"
 
 on:
@@ -103,6 +105,9 @@ jobs:
           )
           environment = {key: os.environ.get(key) for key in thread_keys}
           pools = threadpool_info()
+          openblas_pools = [
+              pool for pool in pools if pool.get("internal_api") == "openblas"
+          ]
           print(
               json.dumps(
                   {
@@ -111,6 +116,7 @@ jobs:
                       "python": platform.python_version(),
                       "numpy": np.__version__,
                       "scipy": scipy.__version__,
+                      "openblas_coretype": os.environ.get("OPENBLAS_CORETYPE"),
                       "thread_environment": environment,
                       "thread_pools": pools,
                   },
@@ -118,7 +124,12 @@ jobs:
               )
           )
           assert set(environment.values()) == {"1"}
+          assert os.environ.get("OPENBLAS_CORETYPE") == "Haswell"
+          assert openblas_pools
           assert all(pool.get("num_threads") == 1 for pool in pools)
+          assert {
+              pool.get("architecture") for pool in openblas_pools
+          } == {"Haswell"}
           PY
       - name: Validate longitudinal concordance OpenSpec
         run: npx openspec validate add-longitudinal-state-space-nuts-concordance --strict
