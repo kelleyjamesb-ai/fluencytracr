@@ -62,9 +62,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  inference-harness:
+  inference-plan:
+    name: inference-plan
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 5
+    outputs:
+      shards: ${{ steps.shards.outputs.shards }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -72,6 +75,57 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+      - name: Validate inference shard plan
+        id: shards
+        run: |
+          python inference/qa/run_test_shard.py validate
+          echo "shards=$(python inference/qa/run_test_shard.py matrix)" >> "$GITHUB_OUTPUT"
+
+  inference-python:
+    name: inference-python (${{ matrix.shard }})
+    needs: inference-plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.inference-plan.outputs.shards) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: inference/requirements.lock
+      - name: Install pinned inference environment
+        run: |
+          python -m venv inference/.venv
+          inference/.venv/bin/python -m pip install --upgrade pip
+          inference/.venv/bin/pip install -r inference/requirements.lock
+      - name: Record pinned inference runtime
+        run: inference/.venv/bin/python inference/qa/verify_ci_runtime.py
+      - name: Validate and run inference shard
+        run: |
+          PYTHONPATH=inference/src inference/.venv/bin/python \
+            inference/qa/run_test_shard.py validate
+          PYTHONPATH=inference/src inference/.venv/bin/python \
+            inference/qa/run_test_shard.py run "${{ matrix.shard }}"
+
+  inference-bridge:
+    name: inference-bridge
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: inference/requirements.lock
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
@@ -82,65 +136,68 @@ jobs:
           python -m venv inference/.venv
           inference/.venv/bin/python -m pip install --upgrade pip
           inference/.venv/bin/pip install -r inference/requirements.lock
+      - name: Record pinned inference runtime
+        run: inference/.venv/bin/python inference/qa/verify_ci_runtime.py
       - name: Install Node dependencies
         run: npm ci
-      - name: Record pinned inference runtime
-        run: |
-          inference/.venv/bin/python - <<'PY'
-          import json
-          import os
-          import platform
-
-          import numpy as np
-          import scipy
-          from threadpoolctl import threadpool_info
-
-          np.linalg.solve(np.eye(2), np.ones(2))
-          thread_keys = (
-              "MKL_NUM_THREADS",
-              "NUMEXPR_NUM_THREADS",
-              "OMP_NUM_THREADS",
-              "OPENBLAS_NUM_THREADS",
-              "VECLIB_MAXIMUM_THREADS",
-          )
-          environment = {key: os.environ.get(key) for key in thread_keys}
-          pools = threadpool_info()
-          openblas_pools = [
-              pool for pool in pools if pool.get("internal_api") == "openblas"
-          ]
-          print(
-              json.dumps(
-                  {
-                      "platform": platform.platform(),
-                      "machine": platform.machine(),
-                      "python": platform.python_version(),
-                      "numpy": np.__version__,
-                      "scipy": scipy.__version__,
-                      "openblas_coretype": os.environ.get("OPENBLAS_CORETYPE"),
-                      "thread_environment": environment,
-                      "thread_pools": pools,
-                  },
-                  sort_keys=True,
-              )
-          )
-          assert set(environment.values()) == {"1"}
-          assert os.environ.get("OPENBLAS_CORETYPE") == "Haswell"
-          assert openblas_pools
-          assert all(pool.get("num_threads") == 1 for pool in pools)
-          assert {
-              pool.get("architecture") for pool in openblas_pools
-          } == {"Haswell"}
-          PY
       - name: Validate longitudinal concordance OpenSpec
         run: npx openspec validate add-longitudinal-state-space-nuts-concordance --strict
-      - name: Run inference harness suite
-        run: PYTHONPATH=inference/src inference/.venv/bin/python -m pytest inference/tests/ -q
       - name: Run AI Fluency snapshot boundary test
         run: npm run test:ai-value-ai-fluency-instrument-snapshot
       - name: Run Python to TypeScript inference bridge
         run: |
+          set -euo pipefail
+          test -x inference/.venv/bin/python
           npm run build --workspace packages/confidence-engine
-          node --test \
+          bridge_report="${RUNNER_TEMP:-/tmp}/inference-bridge.tap"
+          node --test --test-reporter=tap \
             packages/confidence-engine/test/inference_proof_artifact_bridge.test.mjs \
             packages/confidence-engine/test/longitudinal_state_space_concordance.test.mjs \
-            packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs
+            packages/confidence-engine/test/longitudinal_synthetic_outcome_proof.test.mjs \
+            | tee "$bridge_report"
+          summary_value() {
+            awk -v key="$1" '$1 == "#" && $2 == key { value = $3 } END { print value }' \
+              "$bridge_report"
+          }
+          expected_tests="71"
+          tests="$(summary_value tests)"
+          passes="$(summary_value pass)"
+          failures="$(summary_value fail)"
+          cancelled="$(summary_value cancelled)"
+          skipped="$(summary_value skipped)"
+          todo="$(summary_value todo)"
+          if [[ ! "$tests" =~ ^[1-9][0-9]*$ || \
+                "$tests" != "$expected_tests" || \
+                "$passes" != "$tests" || \
+                "$failures" != "0" || \
+                "$cancelled" != "0" || \
+                "$skipped" != "0" || \
+                "$todo" != "0" ]]; then
+            printf 'bridge summary is not fully passing: expected=%s tests=%s pass=%s fail=%s cancelled=%s skipped=%s todo=%s\n' \
+              "$expected_tests" "$tests" "$passes" "$failures" "$cancelled" "$skipped" "$todo"
+            exit 1
+          fi
+
+  inference-harness:
+    name: inference-harness
+    if: ${{ always() }}
+    needs:
+      - inference-plan
+      - inference-python
+      - inference-bridge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every inference check
+        env:
+          PLAN_RESULT: ${{ needs.inference-plan.result }}
+          PYTHON_SHARDS_RESULT: ${{ needs.inference-python.result }}
+          BRIDGE_RESULT: ${{ needs.inference-bridge.result }}
+        run: |
+          if [[ "$PLAN_RESULT" != "success" || \
+                "$PYTHON_SHARDS_RESULT" != "success" || \
+                "$BRIDGE_RESULT" != "success" ]]; then
+            printf 'required inference checks failed: plan=%s shards=%s bridge=%s\n' \
+              "$PLAN_RESULT" "$PYTHON_SHARDS_RESULT" "$BRIDGE_RESULT"
+            exit 1
+          fi
