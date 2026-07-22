@@ -1,10 +1,15 @@
 import { aiValueEngine } from "@fluencytracr/shared";
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { selectAiValueWorkspaceChain } from "../lib/aiValueFlowSelection";
+import {
+  selectAiValueJourneyObjects,
+  selectAiValueWorkspaceChain,
+  selectBestBaselineForWorkflow
+} from "../lib/aiValueFlowSelection";
 import type { AiValueObjectSummary } from "../lib/aiValueApi";
 import {
+  AiValueApiError,
   listAiValueObjects,
   runAiValueSpine
 } from "../lib/aiValueApi";
@@ -74,7 +79,41 @@ beforeEach(() => {
   }));
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("useAiValueWorkspace", () => {
+  it("clears live context and requires sign-in after an unauthorized refresh", async () => {
+    vi.mocked(listAiValueObjects).mockRejectedValueOnce(
+      new AiValueApiError("Unauthorized", 401)
+    );
+    const { result } = renderHook(() => useAiValueWorkspace());
+
+    await act(async () => {
+      await result.current.connectLiveEvidence();
+    });
+
+    expect(result.current.mode).toBe("error");
+    expect(result.current.live).toBeNull();
+    expect(result.current.errorMessage).toMatch(/Sign in with an organization session/i);
+  });
+});
+
 describe("selectAiValueWorkspaceChain", () => {
+  it("requires exact workflow identity before attaching a baseline", () => {
+    expect(
+      selectBestBaselineForWorkflow(
+        [
+          summary("fluency_baseline", "fluency_baseline_sales_case_kickoff", null),
+          summary("fluency_baseline", "fluency_baseline_customer_support_ticket_triage", null),
+          summary("fluency_baseline", "baseline_wrong_family", "sales_case_resolution")
+        ],
+        "customer_support_case_resolution"
+      )
+    ).toBeNull();
+  });
+
   it("prefers the complete Northstar evidence-case-backed chain over older generic objects", () => {
     const selection = selectAiValueWorkspaceChain({
       blueprints: [
@@ -87,8 +126,8 @@ describe("selectAiValueWorkspaceChain", () => {
       ],
       engagements: [summary("engagement", "engagement_northstar_enterprise_v1", null)],
       baselines: [
-        summary("fluency_baseline", "fluency_baseline_customer_support_kickoff", null),
-        summary("fluency_baseline", "fluency_baseline_sales_kickoff", null)
+        summary("fluency_baseline", "fluency_baseline_customer_support_kickoff", "customer_support_case_resolution"),
+        summary("fluency_baseline", "fluency_baseline_sales_kickoff", "sales_proposal_response")
       ],
       evidenceCases: [
         summary(
@@ -119,8 +158,8 @@ describe("selectAiValueWorkspaceChain", () => {
       ],
       engagements: [summary("engagement", "engagement_northstar_enterprise_v1", null)],
       baselines: [
-        summary("fluency_baseline", "fluency_baseline_customer_support_kickoff", null),
-        summary("fluency_baseline", "fluency_baseline_sales_kickoff", null)
+        summary("fluency_baseline", "fluency_baseline_customer_support_kickoff", "customer_support_case_resolution"),
+        summary("fluency_baseline", "fluency_baseline_sales_kickoff", "sales_proposal_response")
       ],
       evidenceCases: [],
       preferredBlueprintId: "bp_customer_support_case_resolution",
@@ -189,5 +228,71 @@ describe("useAiValueWorkspace request lifecycle", () => {
     });
 
     expect(runAiValueSpine).not.toHaveBeenCalled();
+  });
+});
+
+describe("selectAiValueJourneyObjects", () => {
+  it("honors the preferred valid case and ignores an invalid preferred blueprint", () => {
+    const byType = {
+      blueprint: [
+        summary("blueprint", "bp_alpha", "workflow_alpha"),
+        summary("blueprint", "bp_beta", "workflow_beta"),
+        summary("blueprint", "bp_invalid", "workflow_invalid", false)
+      ],
+      metrics_library: [
+        summary("metrics_library", "metrics_alpha", "workflow_alpha"),
+        summary("metrics_library", "metrics_beta", "workflow_beta"),
+        summary("metrics_library", "metrics_invalid", "workflow_invalid")
+      ],
+      engagement: [],
+      fluency_baseline: []
+    };
+
+    expect(
+      selectAiValueJourneyObjects(byType, { preferredBlueprintId: "bp_beta" }).blueprint
+        ?.object_id
+    ).toBe("bp_beta");
+    expect(
+      selectAiValueJourneyObjects(byType, { preferredBlueprintId: "bp_invalid" }).blueprint
+        ?.object_id
+    ).not.toBe("bp_invalid");
+  });
+
+  it("does not treat missing workflow identity as a valid object match", () => {
+    const selection = selectAiValueJourneyObjects({
+      blueprint: [summary("blueprint", "bp_unscoped", null)],
+      metrics_library: [summary("metrics_library", "metrics_unscoped", null)],
+      engagement: [],
+      fluency_baseline: []
+    });
+
+    expect(selection.workflowFamily).toBeNull();
+    expect(selection.blueprint).toBeNull();
+    expect(selection.metricsLibrary).toBeNull();
+  });
+
+  it("does not stitch a preferred blueprint to unrelated libraries or readiness", () => {
+    const selection = selectAiValueJourneyObjects(
+      {
+        blueprint: [
+          summary("blueprint", "bp_beta", "workflow_beta"),
+          summary("blueprint", "bp_alpha", "workflow_alpha")
+        ],
+        metrics_library: [summary("metrics_library", "metrics_alpha", "workflow_alpha")],
+        evidence_readiness: [
+          summary("evidence_readiness", "readiness_alpha", "workflow_alpha")
+        ],
+        value_evidence_case: [
+          summary("value_evidence_case", "case_alpha", "workflow_alpha")
+        ],
+        engagement: [],
+        fluency_baseline: []
+      },
+      { preferredBlueprintId: "bp_beta" }
+    );
+
+    expect(selection.blueprint).toBeNull();
+    expect(selection.metricsLibrary).toBeNull();
+    expect(selection.readiness).toBeNull();
   });
 });

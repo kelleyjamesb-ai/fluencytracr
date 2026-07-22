@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
+import { getFrontendSessionContext, getStoredOrganizationId } from "../auth";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import {
@@ -20,64 +21,87 @@ import {
 } from "../lib/aiValueApi";
 import type { SelectedOutcomeMetricSelection } from "../lib/aiValueMetricSelection";
 import type { RequestBoundLiveReport } from "../lib/aiValueLiveReport";
-import { getFrontendSessionContext } from "../auth";
+import type { AiFluencyImportFixture } from "../lib/aiFluencyImportFixture";
+import { checksumAiFluencyPayload } from "../lib/aiFluencyImportIntegrity";
+import {
+  CORE_BEHAVIORAL_MIN_COHORT,
+  CUSTOMER_VISIBLE_SERIES_MIN_COHORT,
+  gleanMetricsLibrarySeedCoverage,
+  matchHypothesisToGleanWorkflows
+} from "../lib/gleanMetricsLibraryAdapter";
 
 const workspacePages = [
   {
     slug: "home",
-    label: "Blueprint Hypothesis",
-    navLabel: "Blueprint",
+    label: "Home",
+    navLabel: "Home",
     path: "/ai-value-workspace",
-    detail: "Customer-approved goals, workflows, expected behaviors, metrics, lags, and value-driver pathways.",
-    feedsNext: "Move the approved hypothesis into AI Fluency Evidence."
+    detail: "Start or resume one customer value thread.",
+    feedsNext: "Define the customer hypothesis."
+  },
+  {
+    slug: "value-case",
+    label: "Value Case",
+    navLabel: "Value Case",
+    path: "/ai-value-workspace/value-case",
+    detail: "State what the customer expects to change.",
+    feedsNext: "Attach the hypothesis to one workflow."
+  },
+  {
+    slug: "workflow",
+    label: "Workflow",
+    navLabel: "Workflow",
+    path: "/ai-value-workspace/workflow",
+    detail: "Confirm the recurring work pattern that the hypothesis applies to.",
+    feedsNext: "Choose the customer-owned metric for that workflow."
+  },
+  {
+    slug: "metrics",
+    label: "Metric",
+    navLabel: "Metric",
+    path: "/ai-value-workspace/metrics",
+    detail: "Choose the customer-owned outcome that will test the hypothesis.",
+    feedsNext: "Add readiness context from AI Fluency."
   },
   {
     slug: "readiness",
-    label: "AI Fluency Evidence",
+    label: "AI Fluency Measurement",
     navLabel: "AI Fluency",
     path: "/ai-value-workspace/readiness",
-    detail: "Instrument capture, five-factor profile, translation outcomes, and report interpretation from one evidence source.",
-    feedsNext: "Review source readiness before behavior evidence is assembled."
+    detail: "Import completed aggregate results from the external AI Fluency experience.",
+    feedsNext: "Connect approved evidence sources after the measurement is imported."
   },
   {
     slug: "sources",
     label: "Evidence Sources",
-    navLabel: "Sources",
+    navLabel: "Evidence",
     path: "/ai-value-workspace/sources",
-    detail: "Approved aggregate source lanes, held reasons, owner roles, and source package references.",
-    feedsNext: "Use cleared source packages to inspect behavior evidence."
+    detail: "Connect approved aggregate sources for the workflow and metric.",
+    feedsNext: "Review change over time."
   },
   {
-    slug: "vbd",
-    label: "Behavior Evidence",
-    navLabel: "Behavior / VBD",
-    path: "/ai-value-workspace/vbd",
-    detail: "Velocity, breadth, depth, and token context across approved aggregate windows.",
-    feedsNext: "Connect the customer-owned metric for the priority workflow."
+    slug: "progress",
+    label: "Progress Over Time",
+    navLabel: "Progress",
+    path: "/ai-value-workspace/progress",
+    detail: "Review VBD, metric, and evidence movement across approved windows.",
+    feedsNext: "Carry the reviewed movement into the decision."
   },
   {
-    slug: "metrics",
-    label: "Metric Review",
-    navLabel: "Metrics",
-    path: "/ai-value-workspace/metrics",
-    detail: "The customer-owned operating metric that will test the accepted hypothesis.",
-    feedsNext: "Build the next Evidence Checkpoint."
+    slug: "decisions",
+    label: "Decision",
+    navLabel: "Decision",
+    path: "/ai-value-workspace/decisions",
+    detail: "Choose the next intervention, review, or hold.",
+    feedsNext: "Intervene, remeasure, and update the evidence timeline."
   },
   {
     slug: "case",
     label: "Evidence Checkpoint",
     navLabel: "Checkpoint",
     path: "/ai-value-workspace/case",
-    detail: "A governed milestone review of hypothesis, behavior evidence, metric evidence, and blocked claims.",
-    feedsNext: "Carry checkpoint status into the Executive Report."
-  },
-  {
-    slug: "decisions",
-    label: "Executive Report",
-    navLabel: "Report",
-    path: "/ai-value-workspace/decisions",
-    detail: "Executive-ready narrative, caveats, and next operating decision.",
-    feedsNext: "Intervene, remeasure, and update the Evidence Timeline."
+    detail: "A governed milestone review of hypothesis, evidence, metric, and blocked claims.",
+    feedsNext: "Carry checkpoint status into the decision."
   }
 ] as const;
 
@@ -85,6 +109,48 @@ type WorkspacePageSlug = (typeof workspacePages)[number]["slug"];
 type WorkspacePage = (typeof workspacePages)[number];
 
 const workspacePageBySlug = new Map(workspacePages.map((page) => [page.slug, page]));
+const guidedWorkspacePages = workspacePages.filter((page) => page.slug !== "case");
+
+type ValueSetupDraft = {
+  hypothesis: string;
+  workflowId: string;
+  metricIds: string[];
+};
+
+const emptyValueSetupDraft: ValueSetupDraft = {
+  hypothesis: "",
+  workflowId: "",
+  metricIds: []
+};
+
+const VALUE_SETUP_DRAFT_KEY = "aiValue.guidedSetupDraft.v1";
+const valueSetupStorageKey = () => `${VALUE_SETUP_DRAFT_KEY}:${getStoredOrganizationId()}`;
+
+const canonicalizeSetupHypothesis = (hypothesis: string) => {
+  const result = matchHypothesisToGleanWorkflows(hypothesis);
+  if (result.candidates.length === 0) return "";
+  return `${result.elements.function}: ${result.elements.expectedChange} ${result.elements.businessObject}; metric intent: ${result.elements.metricIntent}.`;
+};
+
+const readValueSetupDraft = (): ValueSetupDraft => {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(valueSetupStorageKey()) ?? "null") as Partial<ValueSetupDraft> | null;
+    if (!parsed || typeof parsed.hypothesis !== "string" || parsed.hypothesis.length > 1000) {
+      return emptyValueSetupDraft;
+    }
+    const canonicalHypothesis = canonicalizeSetupHypothesis(parsed.hypothesis);
+    if (!canonicalHypothesis) return emptyValueSetupDraft;
+    return {
+      hypothesis: canonicalHypothesis,
+      workflowId: typeof parsed.workflowId === "string" ? parsed.workflowId : "",
+      metricIds: Array.isArray(parsed.metricIds)
+        ? parsed.metricIds.filter((id): id is string => typeof id === "string").slice(0, 10)
+        : []
+    };
+  } catch {
+    return emptyValueSetupDraft;
+  }
+};
 
 const vbdQuadrants = [
   {
@@ -865,42 +931,6 @@ const sourcePackageStatusTone: Record<SourcePackageReviewStatus, "neutral" | "wa
   aligned: "good"
 };
 
-const sourcePackageSourceStates = [
-  "missing",
-  "uploaded",
-  "parsed",
-  "held",
-  "approved",
-  "suppressed",
-  "aligned"
-] satisfies SourcePackageReviewStatus[];
-
-const sourcePackageAlignmentKeys = [
-  "Approved organization boundary",
-  "Approved client boundary",
-  "Workflow family",
-  "Function area",
-  "Aggregate cohort",
-  "Baseline window",
-  "Comparison window"
-] as const;
-
-const sourcePackageReadinessChecks = [
-  "Metric owner review",
-  "Source package review",
-  "Reviewer role",
-  "Review decision"
-] as const;
-
-const sourcePackageSourceModeLabels: Record<string, string> = {
-  blueprint_document_upload: "Blueprint document review",
-  ai_fluency_dashboard_export: "Aggregate instrument review",
-  scrubbed_glean_bigquery_export: "Scrubbed aggregate telemetry review",
-  customer_metric_aggregate_export: "Customer metric aggregate review",
-  assumption_approval: "Assumption review",
-  governance_attestation: "Governance attestation"
-};
-
 const sourcePackageReviewLanes = [
   {
     id: "blueprint",
@@ -1005,92 +1035,32 @@ const aiFluencyEvidenceViews = [
   description: string;
 }[];
 
-const aiFluencyCaptureFacts = [
-  {
-    label: "Target cohort",
-    value: "Claims, servicing, underwriting, and producer support leaders",
-    detail: "Same aggregate audience used for the Blueprint and report read."
-  },
-  {
-    label: "Participation",
-    value: "Coverage review open",
-    detail: "Final nudges focus on underrepresented functions before the evidence handoff."
-  },
-  {
-    label: "Segment coverage",
-    value: "Most planned segments represented",
-    detail: "Legal review remains held for coverage review before interpretation."
-  },
-  {
-    label: "AIOM handoff",
-    value: "Context ready",
-    detail: "AIOM supports capture and context; Value Realization owns the final value narrative."
-  }
-] as const;
+type AiFluencyCollectionStatus = "collecting" | "complete" | "held";
 
-const aiFluencyProfileFactors = [
-  {
-    label: "Confidence",
-    value: "Read: developing strength",
-    detail: "Respondents report confidence in target workflows, with uneven confidence in governed review tasks."
-  },
-  {
-    label: "Usage Quality",
-    value: "Read: needs packaging",
-    detail: "Reported use is improving, but quality practices still need clearer workflow packaging."
-  },
-  {
-    label: "Behavior Change",
-    value: "Read: emerging change",
-    detail: "Respondents report practical work change in claims intake and coverage review."
-  },
-  {
-    label: "Leadership Reinforcement",
-    value: "Read: inconsistent reinforcement",
-    detail: "Leader reinforcement is present but not yet consistent enough for broad value language."
-  },
-  {
-    label: "Capability Growth",
-    value: "Read: strongest factor",
-    detail: "Capability growth is the strongest reported factor and supports focused expansion."
-  }
-] as const;
+export const canImportAiFluencyMeasurement = (status: AiFluencyCollectionStatus) =>
+  status === "complete";
 
-const aiFluencyTranslationSignals = [
-  {
-    label: "AI Attitude",
-    value: "Read: favorable",
-    detail: "Respondents generally believe AI is useful enough to keep engaging with it."
-  },
-  {
-    label: "Behavioral Intent",
-    value: "Read: strong intent",
-    detail: "Intent to continue or expand use is stronger than some embedded behavior evidence."
-  },
-  {
-    label: "Perceived AI Impact",
-    value: "Read: emerging impact",
-    detail: "Respondents see work value, especially where the Blueprint names repeated workflows."
-  }
-] as const;
+const externalAiFluencyMeasurement = {
+  experience: "Illustrative external AI Fluency fixture",
+  collectionStatus: "complete" as AiFluencyCollectionStatus,
+  collectionLabel: "Fixture state: collection complete",
+  importSource: "Illustrative published aggregate report",
+  sourceId: "illustrative-organizational-report",
+  reportVersion: "wireframe-v1"
+} as const;
 
-const aiFluencyReportReadItems = [
-  {
-    label: "Measurement read",
-    value: "Reported fluency is an instrument signal",
-    detail: "Use it to explain readiness, belief, and self-reported capability."
-  },
-  {
-    label: "Boundary read",
-    value: "Observed behavior is reviewed later in Behavior / VBD",
-    detail: "Do not merge the instrument signal with behavior telemetry until the alignment step."
-  },
-  {
-    label: "Ownership read",
-    value: "Value Realization owns the final value narrative",
-    detail: "AIOM supports capture and context; Value Realization decides what travels into the report."
-  }
-] as const;
+const currentOrganizationId = getStoredOrganizationId;
+const aiFluencyImportReceiptKey = (organizationId = currentOrganizationId()) =>
+  `aiValue.aiFluencyImportReceipt.v1:${organizationId}`;
+const aiFluencyValueCaseBinding = (draft: ValueSetupDraft) =>
+  checksumAiFluencyPayload({
+    hypothesis: draft.hypothesis,
+    workflowId: draft.workflowId,
+    metricIds: [...draft.metricIds].sort()
+  });
+
+const serializeAiFluencyImportReceipt = (fixture: AiFluencyImportFixture) =>
+  JSON.stringify(fixture.receipt);
 
 const labelFromToken = (
   value: unknown,
@@ -1149,8 +1119,8 @@ const sampleExecutiveReport = {
       title: "Human Readiness",
       summary: "Fluency Baseline shows support is capable but uneven.",
       bullets: [
-        "Strongest signal: support managers report higher confidence using Glean for case triage and answer validation.",
-        "Gap: frontline reps need stronger workflow reinforcement and examples of good verified use.",
+        "Aggregate readiness signal: respondents report confidence using Glean for case triage and answer validation.",
+        "Gap: the workflow needs stronger reinforcement and visible examples of good verified use.",
         "Recommended action: Run a targeted enablement sprint focused on verified answer reuse inside high-volume support workflows."
       ]
     },
@@ -1257,13 +1227,25 @@ const legacySlugRedirects: Record<string, WorkspacePageSlug> = {
   evidence: "case",
   scenario: "case",
   roi: "case",
-  readout: "decisions"
+  readout: "decisions",
+  vbd: "progress"
+};
+
+const workspaceSlugFromPath = (pathname: string) =>
+  pathname.replace(/\/+$/, "").split("/ai-value-workspace/")[1]?.split("/")[0];
+
+const canonicalWorkspaceRedirect = (pathname: string) => {
+  const slug = workspaceSlugFromPath(pathname);
+  if (!slug) return null;
+  const legacyTarget = legacySlugRedirects[slug];
+  if (legacyTarget) return workspacePageBySlug.get(legacyTarget)?.path ?? "/ai-value-workspace";
+  return workspacePageBySlug.has(slug as WorkspacePageSlug)
+    ? null
+    : "/ai-value-workspace";
 };
 
 const currentPageFromPath = (pathname: string): WorkspacePageSlug => {
-  const raw = pathname.replace(/\/+$/, "").split("/ai-value-workspace/")[1];
-  const slug = raw?.split("/")[0];
-  if (slug && legacySlugRedirects[slug]) return legacySlugRedirects[slug];
+  const slug = workspaceSlugFromPath(pathname);
   return slug && workspacePageBySlug.has(slug as WorkspacePageSlug)
     ? (slug as WorkspacePageSlug)
     : "home";
@@ -1272,7 +1254,7 @@ const currentPageFromPath = (pathname: string): WorkspacePageSlug => {
 type Journey = ReturnType<typeof useAiValueJourney>;
 
 const workspacePageIndex = (slug: WorkspacePageSlug) =>
-  Math.max(0, workspacePages.findIndex((page) => page.slug === slug));
+  Math.max(0, guidedWorkspacePages.findIndex((page) => page.slug === slug) - 1);
 
 const visibleEvidenceCoverage = (journey: Journey) =>
   journey.realEvidenceStatus.coverage.slice(0, 4);
@@ -1368,14 +1350,97 @@ const WorkspaceReportToolbar = ({
   </header>
 );
 
-const reportSidebarLinks: Array<{ label: string; path: string; slug?: WorkspacePageSlug }> = [
-  { label: "Home", path: "/ai-value-workspace", slug: "home" },
-  { label: "Value cases", path: "/ai-value-workspace/case", slug: "case" },
-  { label: "AI Fluency", path: "/ai-value-workspace/readiness", slug: "readiness" },
-  { label: "Evidence", path: "/ai-value-workspace/sources", slug: "sources" },
-  { label: "Metrics", path: "/ai-value-workspace/metrics", slug: "metrics" },
-  { label: "Workflows", path: "/ai-value-workspace/vbd", slug: "vbd" },
-  { label: "Decisions", path: "/ai-value-workspace/decisions", slug: "decisions" }
+const HomeWorkspaceHeader = () => (
+  <header
+    className="ai-value-workspace-report-toolbar ai-value-home-toolbar"
+    aria-label="AI value workspace header"
+  >
+    <div className="ai-value-workspace-report-toolbar-main">
+      <p className="ai-value-workspace-report-kicker">AI Value Platform</p>
+      <div>
+        <h1>AI Value Workspace</h1>
+        <p>One clear path from customer hypothesis to evidence-backed decision.</p>
+      </div>
+    </div>
+    <StatusPill label="Aggregate evidence only" tone="neutral" />
+  </header>
+);
+
+const setupHeaderBySlug: Partial<Record<WorkspacePageSlug, { kicker: string; title: string; detail: string; step: string }>> = {
+  "value-case": {
+    kicker: "Set up",
+    title: "Define the customer hypothesis",
+    detail: "Say what the customer expects to change.",
+    step: "Step 1 of 7"
+  },
+  workflow: {
+    kicker: "Set up",
+    title: "Confirm the workflow",
+    detail: "Attach the hypothesis to one recurring work pattern.",
+    step: "Step 2 of 7"
+  },
+  metrics: {
+    kicker: "Set up",
+    title: "Choose the metric",
+    detail: "Select the customer-owned outcome that will test the hypothesis.",
+    step: "Step 3 of 7"
+  }
+};
+
+const SetupWorkspaceHeader = ({ slug }: { slug: WorkspacePageSlug }) => {
+  const header = setupHeaderBySlug[slug] ?? setupHeaderBySlug["value-case"]!;
+  return (
+    <header
+      className="ai-value-workspace-report-toolbar ai-value-home-toolbar"
+      aria-label="Value setup header"
+    >
+      <div className="ai-value-workspace-report-toolbar-main">
+        <p className="ai-value-workspace-report-kicker">{header.kicker}</p>
+        <div><h1>{header.title}</h1><p>{header.detail}</p></div>
+      </div>
+      <StatusPill label={header.step} tone="neutral" />
+    </header>
+  );
+};
+
+const CheckpointWorkspaceHeader = () => (
+  <header className="ai-value-workspace-report-toolbar ai-value-home-toolbar" aria-label="Evidence checkpoint header">
+    <div className="ai-value-workspace-report-toolbar-main">
+      <p className="ai-value-workspace-report-kicker">Governed review</p>
+      <div><h1>Evidence Checkpoint</h1><p>Review assembled evidence without changing the seven-step guided flow.</p></div>
+    </div>
+    <StatusPill label="Outside guided setup" tone="neutral" />
+  </header>
+);
+
+const reportSidebarGroups: Array<{
+  label: string;
+  items: Array<{ label: string; path: string; slug: WorkspacePageSlug }>;
+}> = [
+  {
+    label: "Start",
+    items: [{ label: "Home", path: "/ai-value-workspace", slug: "home" }]
+  },
+  {
+    label: "Set up",
+    items: [
+      { label: "1. Value case", path: "/ai-value-workspace/value-case", slug: "value-case" },
+      { label: "2. Workflow", path: "/ai-value-workspace/workflow", slug: "workflow" },
+      { label: "3. Metric", path: "/ai-value-workspace/metrics", slug: "metrics" }
+    ]
+  },
+  {
+    label: "Measure",
+    items: [
+      { label: "4. AI Fluency", path: "/ai-value-workspace/readiness", slug: "readiness" },
+      { label: "5. Evidence", path: "/ai-value-workspace/sources", slug: "sources" },
+      { label: "6. Progress", path: "/ai-value-workspace/progress", slug: "progress" }
+    ]
+  },
+  {
+    label: "Act",
+    items: [{ label: "7. Decision", path: "/ai-value-workspace/decisions", slug: "decisions" }]
+  }
 ];
 
 const reportBoundaryLabels = [
@@ -1391,16 +1456,20 @@ const WorkspaceReportSidebar = ({ activePageSlug }: { activePageSlug: WorkspaceP
       <span>Value Platform</span>
     </Link>
     <nav aria-label="Workspace">
-      <p>Workspace</p>
-      {reportSidebarLinks.map((item) => (
-        <Link
-          key={item.label}
-          className={item.slug === activePageSlug ? "active" : undefined}
-          aria-current={item.slug === activePageSlug ? "page" : undefined}
-          to={item.path}
-        >
-          {item.label}
-        </Link>
+      {reportSidebarGroups.map((group) => (
+        <section className="ai-value-workspace-nav-group" key={group.label} aria-label={group.label}>
+          <p>{group.label}</p>
+          {group.items.map((item) => (
+            <Link
+              key={item.label}
+              className={item.slug === activePageSlug ? "active" : undefined}
+              aria-current={item.slug === activePageSlug ? "page" : undefined}
+              to={item.path}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </section>
       ))}
     </nav>
     <section className="ai-value-workspace-report-boundaries" aria-label="Governance boundaries">
@@ -1416,29 +1485,69 @@ const WorkspaceReportSidebar = ({ activePageSlug }: { activePageSlug: WorkspaceP
 
 export const AIValueWorkspace = () => {
   const location = useLocation();
+  const redirectPath = canonicalWorkspaceRedirect(location.pathname);
   const activePageSlug = currentPageFromPath(location.pathname);
   const { mode, live, liveReport, errorMessage, connectLiveEvidence } =
     useAiValueWorkspace();
   const journey = useAiValueJourney();
+  const [setupDraft, setSetupDraft] = useState<ValueSetupDraft>(readValueSetupDraft);
+  const setupWorkflow = valueSetupMatch(setupDraft).candidates.find(
+    (candidate) => candidate.id === setupDraft.workflowId
+  );
+  const setupMetricIds = new Set(setupWorkflow?.metrics.map((metric) => metric.id) ?? []);
+  const setupComplete = Boolean(
+    setupDraft.hypothesis &&
+    setupWorkflow &&
+    setupDraft.metricIds.some((id) => setupMetricIds.has(id))
+  );
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(valueSetupStorageKey(), JSON.stringify(setupDraft));
+    } catch {
+      return;
+    }
+  }, [setupDraft]);
 
   const workflowName =
+    setupWorkflow?.name ??
     live?.workflowName ??
     (journey.workflowHandoff.selected
       ? journey.workflowHandoff.workflowName
       : aiValueWorkspace.workflowName);
   const valueRouteLabel =
-    live?.valueRouteLabel ??
+    setupWorkflow
+      ? "Pending customer confirmation"
+      : live?.valueRouteLabel ??
     (journey.workflowHandoff.selected
       ? journey.workflowHandoff.valueRouteLabel
       : aiValueWorkspace.valueRouteLabel);
   const decisionLabel =
-    live?.decisionLabel ??
+    setupWorkflow
+      ? "Setup draft — not reviewed"
+      : live?.decisionLabel ??
     (journey.workflowHandoff.selected && journey.evidenceScenarioPlan.decisionLabel
       ? journey.evidenceScenarioPlan.decisionLabel
       : aiValueWorkspace.decisionLabel);
-  const claimModeLabel = live?.claimModeLabel ?? aiValueWorkspace.claimModeLabel;
+  const claimModeLabel = setupWorkflow
+    ? "No claims yet"
+    : live?.claimModeLabel ?? aiValueWorkspace.claimModeLabel;
   const activePage = workspacePageBySlug.get(activePageSlug) ?? workspacePages[0];
   const activeStepNumber = workspacePageIndex(activePageSlug) + 1;
+  const requiresSession = [journey.errorMessage, errorMessage].some((message) =>
+    message?.toLowerCase().includes("sign in")
+  );
+  const hasBlueprintSummary = journey.stages.some(
+    (stage) => stage.key === "blueprint" && stage.state === "done"
+  );
+  const caseUnavailable = Boolean(
+    !journey.loading &&
+    !journey.workflowHandoff.selected &&
+    !requiresSession &&
+    (journey.errorMessage || hasBlueprintSummary)
+  );
+
+  if (redirectPath) return <Navigate to={redirectPath} replace />;
 
   return (
     <main className="ai-value-workspace-report-app">
@@ -1448,100 +1557,126 @@ export const AIValueWorkspace = () => {
       >
         <WorkspaceReportSidebar activePageSlug={activePageSlug} />
         <section className="ai-value-workspace-report-main" aria-label="AI value report workspace">
-          <WorkspaceReportToolbar
-            activePage={activePage}
-            activePageSlug={activePageSlug}
-            activeStepNumber={activeStepNumber}
-            connectLiveEvidence={connectLiveEvidence}
-            mode={mode}
-            statusTone={journey.realEvidenceStatus.statusTone}
-            stepCount={workspacePages.length}
-          />
+          {activePageSlug === "home" ? (
+            <HomeWorkspaceHeader />
+          ) : ["value-case", "workflow", "metrics"].includes(activePageSlug) ? (
+            <SetupWorkspaceHeader slug={activePageSlug} />
+          ) : activePageSlug === "case" ? (
+            <CheckpointWorkspaceHeader />
+          ) : (
+            <WorkspaceReportToolbar
+              activePage={activePage}
+              activePageSlug={activePageSlug}
+              activeStepNumber={activeStepNumber}
+              connectLiveEvidence={connectLiveEvidence}
+              mode={mode}
+              statusTone={journey.realEvidenceStatus.statusTone}
+              stepCount={guidedWorkspacePages.length - 1}
+            />
+          )}
 
           <section className="ai-value-workspace-report-surface">
-            <section className="ai-value-next-action" aria-label="Current guided action">
-              <div>
-                <span>Next best action</span>
-                <strong>{activePage.label}</strong>
-                <p>{activePage.detail}</p>
-              </div>
-              <StatusPill label={`Step ${activeStepNumber} of ${workspacePages.length}`} tone="neutral" />
-            </section>
-
-            {(mode === "example" || (mode === "live" && live !== null)) && (
-              <section className="ai-value-context-bar" aria-label="Current client value thread">
-                <div>
-                  <span className="ai-value-map-label">Workflow</span>
-                  <strong>{workflowName}</strong>
-                </div>
-                <div>
-                  <span className="ai-value-map-label">Value route</span>
-                  <strong>{valueRouteLabel}</strong>
-                </div>
-                <div>
-                  <span className="ai-value-map-label">Current decision</span>
-                  <strong>{decisionLabel}</strong>
-                </div>
-                <div>
-                  <span className="ai-value-map-label">Value language</span>
-                  <strong>{claimModeLabel}</strong>
-                </div>
-              </section>
-            )}
-
-            {journey.errorMessage && (
-              <p role="alert" aria-live="polite" className="ai-value-inline-alert">
-                {journey.errorMessage}
-              </p>
-            )}
-            {errorMessage && (
-              <p role="alert" aria-live="polite" className="ai-value-inline-alert">
-                {errorMessage}
-              </p>
-            )}
-
-            <section
-              className="ai-value-console-layout ai-value-workspace-report-layout"
-              aria-label="Value journey console"
-            >
-              <section className="ai-value-active-workspace" aria-label="Active value journey step">
-                {activePageSlug === "home" && (
-                  <BlueprintHypothesisPage
-                    workflowName={workflowName}
-                    valueRouteLabel={valueRouteLabel}
-                    decisionLabel={decisionLabel}
-                  />
-                )}
-
-                {activePageSlug === "readiness" && <ReadinessPage />}
-
-                {activePageSlug === "sources" && <EvidenceSourcesPage journey={journey} />}
-
-                {activePageSlug === "vbd" && <VbdPage />}
-
-                {activePageSlug === "metrics" && (
-                  <MetricsPage journey={journey} />
-                )}
-
-                {activePageSlug === "case" && <EvidenceCheckpointPage journey={journey} />}
-
-                {activePageSlug === "decisions" && (
-                  <DecisionsPage
-                    journey={journey}
-                    mode={mode}
-                    liveReport={liveReport}
-                  />
-                )}
-
-                <WorkspacePageHandoff currentSlug={activePageSlug} />
-              </section>
-
-              <WorkspaceAssistantPanel
-                activePageSlug={activePageSlug}
-                claimModeLabel={claimModeLabel}
-                journey={journey}
+            {activePageSlug === "home" ? (
+              <HomePage
+                workflowName={journey.workflowHandoff.workflowName}
+                valueRouteLabel={journey.workflowHandoff.valueRouteLabel}
+                decisionLabel={journey.evidenceScenarioPlan.decisionLabel}
+                hasActiveCase={journey.workflowHandoff.selected}
+                isLoading={journey.loading}
+                requiresSession={requiresSession}
+                caseUnavailable={caseUnavailable}
+                errorMessage={journey.errorMessage}
               />
-            </section>
+            ) : activePageSlug !== "home" && journey.loading ? (
+              <WorkspaceCaseAccessLoading />
+            ) : requiresSession ? (
+              <WorkspaceSessionRequired />
+            ) : activePageSlug !== "home" && journey.errorMessage ? (
+              <WorkspaceAccessUnavailable onRefresh={() => void journey.refresh()} />
+            ) : activePageSlug === "value-case" ? (
+              <ValueCaseDefinitionPage draft={setupDraft} onChange={setSetupDraft} />
+            ) : activePageSlug === "workflow" ? (
+              <WorkflowSetupPage draft={setupDraft} onChange={setSetupDraft} />
+            ) : activePageSlug === "metrics" ? (
+              <MetricSetupPage draft={setupDraft} onChange={setSetupDraft} journey={journey} />
+            ) : activePageSlug === "case" ? (
+              <section className="ai-value-active-workspace" aria-label="Active value journey step">
+                <EvidenceCheckpointPage journey={journey} />
+                <WorkspacePageHandoff currentSlug="case" />
+              </section>
+            ) : !setupComplete && ["readiness", "sources", "progress", "decisions"].includes(activePageSlug) ? (
+              <GuidedPrerequisiteGate targetSlug={activePageSlug} />
+            ) : (
+              <>
+                <section className="ai-value-next-action" aria-label="Current guided action">
+                  <div>
+                    <span>Next best action</span>
+                    <strong>{activePage.label}</strong>
+                    <p>{activePage.detail}</p>
+                  </div>
+                  <StatusPill label={`Step ${activeStepNumber} of ${guidedWorkspacePages.length - 1}`} tone="neutral" />
+                </section>
+
+                <section className="ai-value-context-bar" aria-label="Current client value thread">
+                  <div>
+                    <span className="ai-value-map-label">Workflow</span>
+                    <strong>{workflowName}</strong>
+                  </div>
+                  <div>
+                    <span className="ai-value-map-label">Value route</span>
+                    <strong>{valueRouteLabel}</strong>
+                  </div>
+                  <div>
+                    <span className="ai-value-map-label">Current decision</span>
+                    <strong>{decisionLabel}</strong>
+                  </div>
+                  <div>
+                    <span className="ai-value-map-label">Value language</span>
+                    <strong>{claimModeLabel}</strong>
+                  </div>
+                </section>
+
+                {journey.errorMessage && (
+                  <p role="alert" aria-live="polite" className="ai-value-inline-alert">
+                    {journey.errorMessage}
+                  </p>
+                )}
+                {errorMessage && (
+                  <p role="alert" aria-live="polite" className="ai-value-inline-alert">
+                    {errorMessage}
+                  </p>
+                )}
+
+                <section
+                  className="ai-value-console-layout ai-value-workspace-report-layout"
+                  aria-label="Value journey console"
+                >
+                  <section className="ai-value-active-workspace" aria-label="Active value journey step">
+                    {activePageSlug === "readiness" && <ReadinessPage draft={setupDraft} />}
+
+                    {activePageSlug === "sources" && (
+                      <GuidedEvidencePage draft={setupDraft} journey={journey} />
+                    )}
+
+                    {activePageSlug === "progress" && <ProgressPage draft={setupDraft} />}
+
+                    {activePageSlug === "case" && <EvidenceCheckpointPage journey={journey} />}
+
+                    {activePageSlug === "decisions" && (
+                      <GuidedDecisionPage mode={mode} liveReport={liveReport} />
+                    )}
+
+                    <WorkspacePageHandoff currentSlug={activePageSlug} />
+                  </section>
+
+                  <WorkspaceAssistantPanel
+                    activePageSlug={activePageSlug}
+                    claimModeLabel={claimModeLabel}
+                    journey={journey}
+                  />
+                </section>
+              </>
+            )}
           </section>
         </section>
       </section>
@@ -1550,13 +1685,28 @@ export const AIValueWorkspace = () => {
 };
 
 const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug }) => {
-  const currentIndex = workspacePages.findIndex((page) => page.slug === currentSlug);
-  const current = workspacePages[currentIndex];
-  const previous = currentIndex > 0 ? workspacePages[currentIndex - 1] : null;
+  if (currentSlug === "case") {
+    return (
+      <nav className="ai-value-page-handoff" aria-label="Workspace page handoff">
+        <div>
+          <p className="eyebrow">Where this goes next</p>
+          <p>Carry checkpoint status into the decision.</p>
+        </div>
+        <div className="ai-value-page-handoff-actions">
+          <Link className="ai-value-step" to="/ai-value-workspace/progress">Back to Progress</Link>
+          <Link className="ai-value-step active" to="/ai-value-workspace/decisions">Continue to Decision</Link>
+        </div>
+      </nav>
+    );
+  }
+
+  const currentIndex = guidedWorkspacePages.findIndex((page) => page.slug === currentSlug);
+  const current = guidedWorkspacePages[currentIndex];
+  const previous = currentIndex > 0 ? guidedWorkspacePages[currentIndex - 1] : null;
   const next =
     currentSlug === "decisions"
       ? workspacePageBySlug.get("readiness")
-      : workspacePages[currentIndex + 1];
+      : guidedWorkspacePages[currentIndex + 1];
   const nextLabel = currentSlug === "decisions" ? "Remeasure from" : "Continue to";
 
   if (!current || !next) return null;
@@ -1581,218 +1731,251 @@ const WorkspacePageHandoff = ({ currentSlug }: { currentSlug: WorkspacePageSlug 
   );
 };
 
-const BlueprintHypothesisPage = ({
+const WorkspaceCaseAccessLoading = () => (
+  <section className="ai-value-home-empty" role="status" aria-label="Checking workspace access">
+    <div>
+      <p className="eyebrow">Organization session</p>
+      <h2>Checking workspace access</h2>
+      <p>Workspace content remains hidden until the organization session is verified.</p>
+    </div>
+  </section>
+);
+
+const WorkspaceAccessUnavailable = ({ onRefresh }: { onRefresh: () => void }) => (
+  <section className="ai-value-home-empty" role="alert" aria-label="Workspace access unavailable">
+    <div>
+      <p className="eyebrow">Workspace unavailable</p>
+      <h2>Evidence remains hidden</h2>
+      <p>The organization workspace could not be verified. Retry before reviewing case-study or evidence content.</p>
+    </div>
+    <button className="ai-value-home-secondary-action" type="button" onClick={onRefresh}>
+      Retry workspace check
+    </button>
+  </section>
+);
+
+const WorkspaceSessionRequired = () => (
+  <section className="ai-value-home-empty" role="region" aria-label="Organization session required">
+    <div>
+      <p className="eyebrow">Organization session required</p>
+      <h2>Sign in to view this value case</h2>
+      <p>Case evidence and readouts are hidden until the organization session is restored.</p>
+    </div>
+    <Link className="ai-value-home-primary-action" to="/login">Sign in</Link>
+  </section>
+);
+
+const HomePage = ({
   workflowName,
   valueRouteLabel,
-  decisionLabel
+  decisionLabel,
+  hasActiveCase,
+  isLoading,
+  requiresSession,
+  caseUnavailable,
+  errorMessage
 }: {
   workflowName: string;
   valueRouteLabel: string;
   decisionLabel: string;
+  hasActiveCase: boolean;
+  isLoading: boolean;
+  requiresSession: boolean;
+  caseUnavailable: boolean;
+  errorMessage: string | null;
 }) => (
-  <>
-    <section className="ai-value-blueprint-hero" aria-label="Blueprint hypothesis summary">
-      <article className="ai-value-panel ai-value-blueprint-primary">
-        <div className="ai-value-section-head">
-          <div>
-            <p className="eyebrow">Approved theory of change</p>
-            <h2>Blueprint Hypothesis</h2>
-            <p>
-              Start with what the customer agreed to test: the workflow, the expected
-              behavior change, the selected metric, the timing window, and the governed
-              value driver.
-            </p>
-          </div>
-          <StatusPill label="Customer review required" tone="warn" />
-        </div>
+  <section className="ai-value-home" aria-label="Value case home">
+    <header className="ai-value-home-intro">
+      <p className="eyebrow">Your next move</p>
+      <h2>
+        {isLoading
+          ? "Checking value cases"
+          : hasActiveCase
+            ? "Review the value case"
+            : requiresSession
+              ? "Sign in to continue"
+              : caseUnavailable
+                ? "Value case unavailable"
+                : "Create a value case"}
+      </h2>
+      <p>
+        {isLoading
+          ? "Loading the organization workspace and its aggregate value-case status."
+          : hasActiveCase
+            ? "Focus on the customer question, current status, and the decision that needs attention."
+            : requiresSession
+              ? "Connect an organization session before creating or reviewing customer value cases."
+              : caseUnavailable
+                ? "A value case exists, but its reviewed details could not be loaded."
+                : "Start with one customer-approved workflow, value question, and outcome to review."}
+      </p>
+    </header>
 
-        <div className="ai-value-map-grid">
-          <div className="ai-value-map-cell">
-            <span className="ai-value-map-label">Workflow</span>
-            <strong>{workflowName}</strong>
-          </div>
-          <div className="ai-value-map-cell">
-            <span className="ai-value-map-label">Value route</span>
-            <strong>{valueRouteLabel}</strong>
-          </div>
-          <div className="ai-value-map-cell">
-            <span className="ai-value-map-label">Status</span>
-            <strong>{decisionLabel}</strong>
-          </div>
-          <div className="ai-value-map-cell">
-            <span className="ai-value-map-label">Driver</span>
-            <strong>Capacity</strong>
-          </div>
-        </div>
+    {errorMessage && !requiresSession && !isLoading && (
+      <p role="alert" aria-live="polite" className="ai-value-inline-alert ai-value-home-alert">
+        {errorMessage}
+      </p>
+    )}
 
-        <div className="ai-value-blueprint-pathways" aria-label="Expected pathways">
-          <article>
-            <span className="ai-value-map-label">Expected behaviors</span>
-            <strong>Knowledge retrieval, reuse, delegation, verification</strong>
-          </article>
-          <article>
-            <span className="ai-value-map-label">Recommended metrics</span>
-            <strong>Resolution time, first contact resolution, escalation rate</strong>
-          </article>
-          <article>
-            <span className="ai-value-map-label">Expected lag</span>
-            <strong>Day 30 behavior signal, Day 90 metric review</strong>
-          </article>
+    {isLoading ? (
+      <article className="ai-value-home-empty" role="status" aria-label="Checking value cases">
+        <div>
+          <p className="eyebrow">Organization workspace</p>
+          <h3>Checking for an active value case</h3>
+          <p>Case actions will appear after the organization status is known.</p>
         </div>
       </article>
-
-      <article className="ai-value-panel ai-value-blueprint-side">
-        <p className="eyebrow">What needs attention</p>
-        <h3>Lock the hypothesis before evidence review</h3>
-        <ol className="ai-value-short-list">
-          <li>Confirm the customer selected the expected behaviors and metrics.</li>
-          <li>Record the approved timing windows and governed driver set.</li>
-          <li>Block unsupported economic, causal, workforce-measurement, or scoring language.</li>
-        </ol>
-        <div className="ai-value-evidence-timeline" aria-label="Evidence Timeline">
-          {["Day 0", "Day 30", "Day 60", "Day 90", "Day 180", "Day 365"].map((window, index) => (
-            <span className={index <= 1 ? "ready" : ""} key={window}>{window}</span>
-          ))}
-        </div>
-      </article>
-    </section>
-
-    <SourcePackageReviewQueuePanel />
-
-    <CustomerDataModelProjectionPanel />
-
-    <section className="ai-value-phase-grid" aria-label="Value journey preview">
-      {workspacePages.filter((page) => page.slug !== "home").map((page, index) => (
-        <article className="ai-value-panel ai-value-phase-card" key={page.slug}>
-          <div className="ai-value-phase-head">
-            <span className="ai-value-phase-number">{index + 2}</span>
+    ) : hasActiveCase ? (
+      <article className="ai-value-home-case" role="region" aria-label="Active value case">
+        <div className="ai-value-home-case-summary">
+          <div className="ai-value-home-case-heading">
             <div>
-              <h3>{page.label}</h3>
-              <p>{page.detail}</p>
+              <p className="eyebrow">Active value case</p>
+              <h3>{workflowName}</h3>
             </div>
+            <StatusPill label={decisionLabel} tone="warn" />
           </div>
-          <p className="ai-value-feeds-next">
-            <strong>Next step:</strong> {page.feedsNext}
+          <p className="ai-value-home-question">
+            Does the approved AI workflow create the expected value while maintaining quality?
           </p>
-          <Link className="ai-value-step ai-value-phase-action" to={page.path}>
-            Open {page.navLabel}
+          <dl className="ai-value-home-facts">
+            <div>
+              <dt>Workflow</dt>
+              <dd>{workflowName}</dd>
+            </div>
+            <div>
+              <dt>Value route</dt>
+              <dd>{valueRouteLabel}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="ai-value-home-next">
+          <p className="eyebrow">Next action</p>
+          <h3>Review the current value case</h3>
+          <p>Resolve open assumptions and check what evidence is ready for the next decision.</p>
+          <Link className="ai-value-home-primary-action" to="/ai-value-workspace/value-case">
+            Review value case
           </Link>
-        </article>
-      ))}
-    </section>
-  </>
+        </div>
+      </article>
+    ) : (
+      <article
+        className="ai-value-home-empty"
+        role="region"
+        aria-label={
+          requiresSession
+            ? "Organization session required"
+            : caseUnavailable
+              ? "Value case unavailable"
+              : "No active value case"
+        }
+      >
+        <div>
+          <p className="eyebrow">
+            {requiresSession
+              ? "Organization session required"
+              : caseUnavailable
+                ? "Case details unavailable"
+                : "No active value case"}
+          </p>
+          <h3>
+            {requiresSession
+              ? "Sign in to view value cases"
+              : caseUnavailable
+                ? "The value case could not be loaded"
+                : "Define what the customer wants to test"}
+          </h3>
+          <p>
+            {requiresSession
+              ? "Your organization session determines which aggregate value cases and evidence you can review."
+              : caseUnavailable
+                ? "Refresh the workspace before making a case or evidence decision."
+                : "Capture the workflow, expected change, customer-owned metric, and review window before bringing evidence into the workspace."}
+          </p>
+        </div>
+        {caseUnavailable ? (
+          <button
+            className="ai-value-home-primary-action"
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            Refresh workspace
+          </button>
+        ) : (
+          <Link
+            className="ai-value-home-primary-action"
+            to={requiresSession ? "/login" : "/ai-value-workspace/value-case"}
+          >
+            {requiresSession ? "Sign in" : "Start a value case"}
+          </Link>
+        )}
+      </article>
+    )}
+
+    <p className="ai-value-home-boundary">
+      This workspace uses aggregate evidence for internal planning. It does not prove ROI,
+      causality, productivity, or individual performance.
+    </p>
+  </section>
 );
 
 const SourcePackageReviewQueuePanel = () => {
-  const dataSpineClearLaneCount = sourcePackageReviewLanes.filter(
-    (lane) => lane.dataSpineReviewClear
-  ).length;
+  const clearLanes = sourcePackageReviewLanes.filter((lane) => lane.dataSpineReviewClear);
+  const blockedLanes = sourcePackageReviewLanes.filter((lane) => !lane.dataSpineReviewClear);
 
   return (
-    <section
-      className="ai-value-source-package-queue"
-      aria-label="Source Review Queue"
-    >
+    <section className="ai-value-source-package-queue" aria-label="Source Review Queue">
       <div className="ai-value-section-head">
         <div>
-          <p className="eyebrow">Evidence intake queue</p>
-          <h3>Source Review Queue</h3>
-          <p>
-            Review aggregate source lanes before the Data Spine gate tests them.
-          </p>
+          <p className="eyebrow">Next gate</p>
+          <h3>Resolve {blockedLanes.length} source lanes</h3>
+          <p>These aggregate lanes block the Evidence Checkpoint. Resolve them before stronger report language.</p>
         </div>
         <div className="ai-value-source-package-head-actions">
-          <StatusPill label="Data Spine gate before Evidence Checkpoint assembly" tone="warn" />
-          <StatusPill
-            label={`${dataSpineClearLaneCount} of ${sourcePackageReviewLanes.length} lanes clear for Data Spine review`}
-            tone="good"
-          />
+          <StatusPill label={`${clearLanes.length} of ${sourcePackageReviewLanes.length} lanes ready`} tone="good" />
         </div>
       </div>
 
-      <div
-        className="ai-value-source-package-summary"
-        role="group"
-        aria-label="Source package review boundaries"
-      >
-        <div>
-          <span className="ai-value-map-label">Data Spine alignment keys</span>
-          <div className="ai-value-source-package-key-list">
-            {sourcePackageAlignmentKeys.map((key) => (
-              <span key={key}>{key}</span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <span className="ai-value-map-label">Review queue labels</span>
-          <div className="ai-value-source-package-status-list">
-            {sourcePackageSourceStates.map((status) => (
-              <StatusPill key={status} label={status} tone={sourcePackageStatusTone[status]} />
-            ))}
-          </div>
-          <div className="ai-value-source-package-key-list ai-value-source-package-readiness-list">
-            {sourcePackageReadinessChecks.map((check) => (
-              <span key={check}>{check}</span>
-            ))}
-          </div>
-        </div>
-      </div>
+      <p className="ai-value-source-package-meta">
+        Review requires approved boundaries, workflow and function mapping, an aggregate cohort, and matched baseline and comparison windows.
+      </p>
 
-      <div className="ai-value-source-package-lane-grid">
-        {sourcePackageReviewLanes.map((lane) => (
+      <div className="ai-value-source-package-blocker-grid" aria-label="Source lanes requiring action">
+        {blockedLanes.map((lane) => (
           <article
             className={`ai-value-source-package-lane ai-value-source-package-lane-${lane.status}`}
             key={lane.id}
             aria-label={`${lane.label} source package lane`}
           >
             <div className="ai-value-source-package-lane-head">
-              <div>
-                <span className="ai-value-map-label">
-                  {sourcePackageSourceModeLabels[lane.sourceMode] ?? "Source package review"}
-                </span>
-                <h4>{lane.label}</h4>
-              </div>
+              <h4>{lane.label}</h4>
               <StatusPill label={lane.status} tone={sourcePackageStatusTone[lane.status]} />
             </div>
-            <dl className="ai-value-source-package-facts">
-              <div>
-                <dt>Evidence layer</dt>
-                <dd>{lane.evidenceLayer}</dd>
-              </div>
-              <div>
-                <dt>Owner role</dt>
-                <dd>{lane.ownerRole}</dd>
-              </div>
-              <div>
-                <dt>Review packet</dt>
-                <dd>{lane.reviewPacket}</dd>
-              </div>
-              <div>
-                <dt>Data Spine state</dt>
-                <dd>{lane.dataSpineReviewClear ? "Clear for review" : "Hold before review"}</dd>
-              </div>
-            </dl>
-            <div className="ai-value-source-package-action">
-              <span className="ai-value-map-label">Action needed</span>
-              <p>{lane.nextAction}</p>
-            </div>
-            <p className="ai-value-source-package-caveat">{lane.caveat}</p>
+            <p className="ai-value-source-package-owner">Owner: {lane.ownerRole}</p>
+            <p>{lane.nextAction}</p>
           </article>
         ))}
       </div>
 
-      <div className="ai-value-source-package-footer">
+      <section className="ai-value-source-package-ready" aria-label="Source lanes ready for review">
         <div>
-          <span className="ai-value-map-label">Next action</span>
-          <strong>Close held lanes before executive review readiness.</strong>
+          <span className="ai-value-map-label">Ready for review</span>
+          <p>These lanes are available for the next Data Spine review.</p>
         </div>
-        <p>
-          Held or suppressed lanes stay out of executive review readiness.
-          Source Packages show aggregate evidence status only; they do not create
-          Data Spine, Evidence Checkpoint, model-review, or report-output readiness
-          by themselves.
-        </p>
-      </div>
+        <div>
+          {clearLanes.map((lane) => (
+            <span className="ai-value-source-package-ready-lane" key={lane.id}>
+              {lane.label}
+              <StatusPill label={lane.status} tone={sourcePackageStatusTone[lane.status]} />
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <p className="ai-value-source-package-boundary">
+        Source status informs internal planning only; it does not establish an Evidence Checkpoint or executive-report readiness on its own.
+      </p>
     </section>
   );
 };
@@ -1804,23 +1987,21 @@ const EvidenceSourcesPage = ({ journey }: { journey: Journey }) => (
         <div>
           <p className="eyebrow">Source readiness</p>
           <h2>Evidence Sources</h2>
-          <p>
-            Inspect the approved aggregate lanes before anything becomes an Evidence
-            Checkpoint. Held, missing, suppressed, or drifted lanes stay visible and
-            block stronger report language.
-          </p>
+          <p>Connect the approved aggregate evidence needed for the next checkpoint.</p>
         </div>
         <StatusPill label={journey.realEvidenceStatus.statusLabel} tone={journey.realEvidenceStatus.statusTone} />
       </div>
 
-      <div className="ai-value-source-coverage-grid" aria-label="Current source coverage">
-        {visibleEvidenceCoverage(journey).map((item) => (
-          <article key={item.label}>
-            <span className="ai-value-map-label">{item.label}</span>
-            <strong>{item.stateLabel}</strong>
-            <p>{item.detail}</p>
-          </article>
-        ))}
+      <div className="ai-value-source-readiness-summary" aria-label="Current source coverage">
+        <strong>What is missing</strong>
+        <ul>
+          {visibleEvidenceCoverage(journey).map((item) => (
+            <li key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.stateLabel}</strong>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {journey.realEvidenceStatus.heldReasons.length > 0 && (
@@ -1835,7 +2016,23 @@ const EvidenceSourcesPage = ({ journey }: { journey: Journey }) => (
       )}
     </section>
 
-    <SourcePackageReviewQueuePanel />
+    <CustomerDataModelProjectionPanel />
+  </section>
+);
+
+const GuidedEvidencePage = ({ draft, journey }: { draft: ValueSetupDraft; journey: Journey }) => (
+  <section className="ai-value-focused-stack" aria-label="Guided evidence workspace">
+    <ConnectedSetupSummary draft={draft} />
+    <section className="ai-value-panel" aria-label="Evidence binding status">
+      <p className="eyebrow">Step 5 · Evidence</p>
+      <h3>Bind approved sources to this workflow and metric</h3>
+      <p>The organization has source status on file, but it is not yet bound to this guided draft. Evidence remains held to prevent cross-workflow stitching.</p>
+      <StatusPill label="Binding required" tone="warn" />
+    </section>
+    <details className="ai-value-advanced-workbench">
+      <summary>View existing organization source review — not bound to this draft</summary>
+      <EvidenceSourcesPage journey={journey} />
+    </details>
   </section>
 );
 
@@ -1889,11 +2086,317 @@ const EvidenceCheckpointPage = ({ journey }: { journey: Journey }) => (
   </section>
 );
 
+const valueSetupMatch = (draft: ValueSetupDraft) =>
+  matchHypothesisToGleanWorkflows(draft.hypothesis);
+
+const GuidedPrerequisiteGate = ({ targetSlug }: { targetSlug: WorkspacePageSlug }) => (
+  <section className="ai-value-case-definition" aria-label="Guided setup required">
+    <section className="ai-value-case-no-match" role="status">
+      <p className="eyebrow">Setup required</p>
+      <h2>Connect the value case before opening {workspacePageBySlug.get(targetSlug)?.navLabel ?? "this step"}</h2>
+      <p>Complete the hypothesis, workflow, and draft customer metric in order. Later evidence and decisions stay held until those inputs are connected.</p>
+      <ol className="ai-value-prerequisite-list">
+        <li>Define the customer hypothesis</li>
+        <li>Confirm one recurring workflow</li>
+        <li>Choose at least one draft customer-owned metric</li>
+      </ol>
+      <Link className="ai-value-home-primary-action" to="/ai-value-workspace/value-case">Start with Value Case</Link>
+    </section>
+  </section>
+);
+
+const ValueSetupGate = ({
+  title,
+  detail,
+  path,
+  action
+}: {
+  title: string;
+  detail: string;
+  path: string;
+  action: string;
+}) => (
+  <section className="ai-value-case-no-match" role="status">
+    <p className="eyebrow">Complete the previous step</p>
+    <h3>{title}</h3>
+    <p>{detail}</p>
+    <Link className="ai-value-home-primary-action" to={path}>{action}</Link>
+  </section>
+);
+
+const ValueCaseDefinitionPage = ({
+  draft,
+  onChange
+}: {
+  draft: ValueSetupDraft;
+  onChange: (draft: ValueSetupDraft) => void;
+}) => {
+  const navigate = useNavigate();
+  const [hypothesis, setHypothesis] = useState(draft.hypothesis);
+  const result = useMemo(() => matchHypothesisToGleanWorkflows(hypothesis), [hypothesis]);
+  const containsDirectIdentifier = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b|\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/.test(hypothesis);
+  const canContinue = result.candidates.length > 0 && !containsDirectIdentifier;
+
+  return (
+    <section className="ai-value-case-definition" aria-label="Value case definition">
+      <header className="ai-value-case-definition-intro">
+        <p className="eyebrow">Step 1 · Value case</p>
+        <h2>What does the customer expect to change?</h2>
+        <p>
+          Write one plain-language hypothesis. We use it only to identify the
+          function, business object, expected change, and metric intent for the next step.
+          Do not include names, email addresses, phone numbers, or person-level details.
+          After you continue, only an aggregate function/object/change summary is kept
+          for this browser tab; the original free text is not retained.
+        </p>
+      </header>
+
+      <form
+        className="ai-value-case-match"
+        aria-label="Customer hypothesis setup"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!canContinue) return;
+          onChange({ hypothesis: canonicalizeSetupHypothesis(hypothesis), workflowId: "", metricIds: [] });
+          navigate("/ai-value-workspace/workflow");
+        }}
+      >
+        <label className="ai-value-case-hypothesis-field">
+          <span>Customer hypothesis</span>
+          <textarea
+            value={hypothesis}
+            placeholder="Example: Faster verified knowledge retrieval for IT incidents will reduce mean time to resolution."
+            rows={4}
+            onChange={(event) => setHypothesis(event.target.value)}
+          />
+        </label>
+
+        {containsDirectIdentifier ? (
+          <section className="ai-value-case-no-match" role="alert">
+            <p className="eyebrow">Remove person-level details</p>
+            <h3>Keep the hypothesis aggregate</h3>
+            <p>Use a function, workflow, and customer-owned outcome without names or contact information.</p>
+          </section>
+        ) : canContinue ? (
+          <section className="ai-value-case-elements" aria-label="Hypothesis elements">
+            <div><span>Function</span><strong>{result.elements.function}</strong></div>
+            <div><span>Business object</span><strong>{result.elements.businessObject}</strong></div>
+            <div><span>Expected change</span><strong>{result.elements.expectedChange}</strong></div>
+            <div><span>Metric intent</span><strong>{result.elements.metricIntent}</strong></div>
+          </section>
+        ) : (
+          <section className="ai-value-case-no-match" role="status">
+            <p className="eyebrow">More detail needed</p>
+            <h3>Name the function, business object, and expected change or metric</h3>
+            <p>Nothing is inferred from a generic AI goal.</p>
+          </section>
+        )}
+
+        <button
+          className="ai-value-home-primary-action ai-value-case-confirm-action"
+          type="submit"
+          disabled={!canContinue}
+        >
+          Continue to workflow
+        </button>
+      </form>
+    </section>
+  );
+};
+
+const WorkflowSetupPage = ({
+  draft,
+  onChange
+}: {
+  draft: ValueSetupDraft;
+  onChange: (draft: ValueSetupDraft) => void;
+}) => {
+  const navigate = useNavigate();
+  const result = valueSetupMatch(draft);
+  const availableIds = result.candidates.map((candidate) => candidate.id);
+  const initialWorkflowId = availableIds.includes(draft.workflowId)
+    ? draft.workflowId
+    : result.candidates[0]?.id ?? "";
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState(initialWorkflowId);
+  const selectedCandidate = result.candidates.find((candidate) => candidate.id === selectedWorkflowId);
+
+  if (!draft.hypothesis || result.candidates.length === 0) {
+    return (
+      <ValueSetupGate
+        title="Define the value case first"
+        detail="A workflow suggestion needs a specific customer hypothesis."
+        path="/ai-value-workspace/value-case"
+        action="Go to Value Case"
+      />
+    );
+  }
+
+  return (
+    <section className="ai-value-case-definition" aria-label="Workflow setup">
+      <header className="ai-value-case-definition-intro">
+        <p className="eyebrow">Step 2 · Workflow</p>
+        <h2>Which recurring work should change?</h2>
+        <p className="ai-value-setup-thread"><strong>Hypothesis:</strong> {draft.hypothesis}</p>
+      </header>
+      <form
+        className="ai-value-case-match"
+        aria-label="Workflow confirmation"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!selectedCandidate) return;
+          onChange({ ...draft, workflowId: selectedCandidate.id, metricIds: [] });
+          navigate("/ai-value-workspace/metrics");
+        }}
+      >
+        <fieldset className="ai-value-case-workflows">
+          <legend>Choose one workflow</legend>
+          <p>Suggestions are deterministic and explain which hypothesis phrases matched.</p>
+          {result.candidates.map((candidate, index) => (
+            <label className={candidate.id === selectedWorkflowId ? "selected" : undefined} key={candidate.id}>
+              <input
+                type="radio"
+                name="value-case-workflow"
+                value={candidate.id}
+                checked={candidate.id === selectedWorkflowId}
+                onChange={() => setSelectedWorkflowId(candidate.id)}
+              />
+              <span>
+                <small>{index === 0 ? "Primary suggestion" : "Supporting suggestion"}</small>
+                <strong>{candidate.name}</strong>
+                <span>{candidate.archetypes.join(" · ")}</span>
+                <span>Matched: {candidate.matchedSignals.join(", ")}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+
+        {selectedCandidate && (
+          <section className="ai-value-case-workflow-detail ai-value-workflow-setup-detail" aria-label="Selected workflow">
+            <div>
+              <p className="eyebrow">Workflow shape</p>
+              <h3>{selectedCandidate.name}</h3>
+              <ol>{selectedCandidate.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+            </div>
+          </section>
+        )}
+
+        <button className="ai-value-home-primary-action ai-value-case-confirm-action" type="submit">
+          Continue to metric
+        </button>
+      </form>
+    </section>
+  );
+};
+
+const MetricSetupPage = ({
+  draft,
+  onChange,
+  journey
+}: {
+  draft: ValueSetupDraft;
+  onChange: (draft: ValueSetupDraft) => void;
+  journey: Journey;
+}) => {
+  const navigate = useNavigate();
+  const result = valueSetupMatch(draft);
+  const selectedCandidate = result.candidates.find((candidate) => candidate.id === draft.workflowId);
+  const availableMetricIds = selectedCandidate?.metrics.map((metric) => metric.id) ?? [];
+  const initialMetricIds = draft.metricIds.filter((id) => availableMetricIds.includes(id));
+  const [metricIds, setMetricIds] = useState<string[]>(
+    initialMetricIds.length > 0 ? initialMetricIds : availableMetricIds.slice(0, 1)
+  );
+
+  if (!selectedCandidate) {
+    return (
+      <section className="ai-value-case-definition" aria-label="Guided metric setup">
+        <ValueSetupGate
+          title="Confirm the workflow first"
+          detail="Metrics are suggested only after the hypothesis is attached to one workflow."
+          path="/ai-value-workspace/workflow"
+          action="Go to Workflow"
+        />
+      </section>
+    );
+  }
+
+  return (
+    <section className="ai-value-case-definition" aria-label="Guided metric setup">
+      <header className="ai-value-case-definition-intro">
+        <p className="eyebrow">Step 3 · Metric</p>
+        <h2>How will the customer know it changed?</h2>
+        <p className="ai-value-setup-thread">
+          <strong>Workflow:</strong> {selectedCandidate.name}
+        </p>
+      </header>
+      <form
+        className="ai-value-case-match"
+        aria-label="Metric confirmation"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (metricIds.length === 0) return;
+          onChange({ ...draft, metricIds });
+          navigate("/ai-value-workspace/readiness");
+        }}
+      >
+        <fieldset className="ai-value-case-metrics ai-value-metric-setup-list">
+          <legend>Choose customer-owned metrics</legend>
+          {selectedCandidate.metrics.map((metric) => (
+            <label key={metric.id}>
+              <input
+                type="checkbox"
+                checked={metricIds.includes(metric.id)}
+                onChange={() => setMetricIds((current) =>
+                  current.includes(metric.id)
+                    ? current.filter((id) => id !== metric.id)
+                    : [...current, metric.id]
+                )}
+              />
+              <span>
+                <strong>{metric.name}</strong>
+                <small>Suggested source: {metric.suggestedSourceCategories.join(" + ")}</small>
+                <small>Owner to confirm: {metric.suggestedOwnerRole}</small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+
+        <aside className="ai-value-case-evidence-boundary" aria-label="Metric ownership boundary">
+          <strong>The customer owns the metric</strong>
+          <p>Definition, unit, source identity, owner, baseline, and comparison window remain unconfirmed.</p>
+        </aside>
+
+        <button
+          className="ai-value-home-primary-action ai-value-case-confirm-action"
+          type="submit"
+          disabled={metricIds.length === 0}
+        >
+          Continue to AI Fluency
+        </button>
+      </form>
+
+      <details className="ai-value-advanced-workbench">
+        <summary>Advanced metric review</summary>
+        <MetricsPage journey={journey} />
+      </details>
+    </section>
+  );
+};
+
 const assistantPromptsBySlug: Record<WorkspacePageSlug, string[]> = {
   home: [
     "What is the customer-approved hypothesis?",
     "Which expected pathways are still unapproved?",
     "What language is safe at this stage?"
+  ],
+  "value-case": [
+    "Is the hypothesis specific enough?",
+    "What does the customer expect to change?",
+    "Which part still needs clarification?"
+  ],
+  workflow: [
+    "Which workflow best matches the hypothesis?",
+    "What are the recurring workflow steps?",
+    "Why is this the primary suggestion?"
   ],
   readiness: [
     "Is instrument capture complete enough?",
@@ -1905,10 +2408,10 @@ const assistantPromptsBySlug: Record<WorkspacePageSlug, string[]> = {
     "Why is this source held?",
     "What can be used in the next checkpoint?"
   ],
-  vbd: [
-    "What does the behavior evidence suggest?",
-    "Which VBD signal is driving this view?",
-    "How should token context be interpreted?"
+  progress: [
+    "What changed across the approved windows?",
+    "Which VBD signal is driving the movement?",
+    "Is the customer-owned metric moving too?"
   ],
   metrics: [
     "Which metric best tests the hypothesis?",
@@ -2580,28 +3083,229 @@ const PilotWindowCard = ({
   </article>
 );
 
-const VbdPage = () => (
-  <section className="ai-value-focused-stack" aria-label="VBD operating map workspace">
-    <VbdMapPanel />
+const ConnectedSetupSummary = ({ draft }: { draft: ValueSetupDraft }) => {
+  const result = valueSetupMatch(draft);
+  const workflow = result.candidates.find((candidate) => candidate.id === draft.workflowId);
+  const metrics = workflow?.metrics.filter((metric) => draft.metricIds.includes(metric.id)) ?? [];
+  const complete = Boolean(draft.hypothesis && workflow && metrics.length > 0);
+
+  return (
+    <section className="ai-value-connected-setup" aria-label="Connected value setup">
+      <div>
+        <p className="eyebrow">{complete ? "Draft thread connected" : "Setup not connected"}</p>
+        <h3>{complete ? "Hypothesis, workflow, and draft metric" : "Finish setup to bind this evidence"}</h3>
+      </div>
+      <dl>
+        <div><dt>Hypothesis</dt><dd>{draft.hypothesis || "Not defined"}</dd></div>
+        <div><dt>Workflow</dt><dd>{workflow?.name ?? "Not selected"}</dd></div>
+        <div><dt>Draft metric</dt><dd>{metrics.map((metric) => metric.name).join(", ") || "Not selected"}</dd></div>
+      </dl>
+      {!complete && (
+        <Link className="ai-value-home-secondary-action" to="/ai-value-workspace/value-case">
+          Complete setup
+        </Link>
+      )}
+    </section>
+  );
+};
+
+const ProgressPage = ({ draft }: { draft: ValueSetupDraft }) => (
+  <section className="ai-value-focused-stack" aria-label="Progress over time workspace">
+    <ConnectedSetupSummary draft={draft} />
+    <section className="ai-value-panel ai-value-progress-intro" aria-label="Progress interpretation">
+      <p className="eyebrow">Step 6 · Progress</p>
+      <h3>What is changing over time?</h3>
+      <p>Review approved VBD movement and the selected customer metric in the same window. Neither is available yet.</p>
+      <section className="ai-value-checkpoint-grid" aria-label="Progress evidence status">
+        <article><span className="ai-value-map-label">VBD movement</span><strong>Held for approved windows</strong><p>No source-bound movement has been admitted.</p></article>
+        <article><span className="ai-value-map-label">Customer metric movement</span><strong>Held for baseline and comparison</strong><p>The selected metric remains a draft until its owner and values are confirmed.</p></article>
+      </section>
+    </section>
+    <details className="ai-value-advanced-workbench">
+      <summary>Explore illustrative VBD sandbox</summary>
+      <div className="ai-value-progress-sandbox-boundary">Illustrative simulation only — not current evidence or approved movement.</div>
+      <VbdMapPanel />
+    </details>
   </section>
 );
 
-const ReadinessPage = () => {
+const GuidedDecisionPage = ({
+  mode,
+  liveReport
+}: {
+  mode: ReturnType<typeof useAiValueWorkspace>["mode"];
+  liveReport: RequestBoundLiveReport | null;
+}) => (
+  <section className="ai-value-focused-stack" aria-label="Guided decision workspace">
+    <section className="ai-value-panel" aria-label="Decision status">
+      <p className="eyebrow">Step 7 · Decision</p>
+      <h3>Decision held until evidence is reviewed</h3>
+      <p>The value case is connected, but source approval, VBD movement, and customer metric movement are still missing.</p>
+      <StatusPill label="Hold" tone="warn" />
+      <p className="ai-value-decision-prototype-link">
+        Need a visual example? Open the separate illustrative readout. It is not bound to this value case.
+      </p>
+      <Link className="ai-value-home-secondary-action" to="/ai-value-readout">
+        Open illustrative readout
+      </Link>
+    </section>
+    {mode !== "example" && (
+      <ExecutiveReportPackagePanel mode={mode} liveReport={liveReport} />
+    )}
+  </section>
+);
+
+const ReadinessPage = ({ draft }: { draft: ValueSetupDraft }) => {
   const [activeView, setActiveView] = useState<AiFluencyEvidenceViewKey>("capture");
+  const [importState, setImportState] = useState<"idle" | "loading" | "loaded" | "error">("idle");
+  const [importedData, setImportedData] = useState<AiFluencyImportFixture | null>(null);
+  const resultsRef = useRef<HTMLElement | null>(null);
+  const mountedRef = useRef(true);
+  const importReady = canImportAiFluencyMeasurement(externalAiFluencyMeasurement.collectionStatus);
   const activeViewDefinition =
     aiFluencyEvidenceViews.find((view) => view.key === activeView) ??
     aiFluencyEvidenceViews[0];
 
+  const loadIllustrativeImport = async (restore = false) => {
+    if (!importReady || importState === "loading") return;
+    const organizationId = currentOrganizationId();
+    const receiptKey = aiFluencyImportReceiptKey(organizationId);
+    const valueCaseBinding = aiFluencyValueCaseBinding(draft);
+    const storedReceipt = sessionStorage.getItem(receiptKey);
+    setImportState("loading");
+    try {
+      const { createAiFluencyImportFixture } = await import("../lib/aiFluencyImportFixture");
+      const fixture = createAiFluencyImportFixture(organizationId, valueCaseBinding);
+      const { receipt, ...payload } = fixture;
+      const expectedReceipt = serializeAiFluencyImportReceipt(fixture);
+      if (
+        receipt.organizationId !== organizationId ||
+        receipt.valueCaseBinding !== valueCaseBinding ||
+        receipt.sourceId !== externalAiFluencyMeasurement.sourceId ||
+        receipt.reportVersion !== externalAiFluencyMeasurement.reportVersion ||
+        receipt.payloadChecksum !== checksumAiFluencyPayload(payload) ||
+        receipt.collectionStatus !== "complete" ||
+        !receipt.collectionClosed ||
+        !receipt.aggregateOnly ||
+        (restore && storedReceipt !== expectedReceipt)
+      ) {
+        throw new Error("Import fixture identity mismatch");
+      }
+      if (!mountedRef.current || currentOrganizationId() !== organizationId) {
+        if (mountedRef.current) setImportState("idle");
+        return;
+      }
+      setImportedData(fixture);
+      setImportState("loaded");
+      if (!restore) sessionStorage.setItem(receiptKey, expectedReceipt);
+    } catch {
+      if (mountedRef.current) {
+        setImportedData(null);
+        setImportState("error");
+      }
+      sessionStorage.removeItem(receiptKey);
+    }
+  };
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const organizationId = currentOrganizationId();
+    if (sessionStorage.getItem(aiFluencyImportReceiptKey(organizationId))) {
+      void loadIllustrativeImport(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (importState === "loaded") resultsRef.current?.focus();
+  }, [importState]);
+
+  useEffect(() => {
+    const importedOrganizationId = importedData?.receipt.organizationId;
+    const invalidateForOrganizationChange = () => {
+      if (importedOrganizationId && currentOrganizationId() !== importedOrganizationId) {
+        setImportedData(null);
+        setImportState("idle");
+      }
+    };
+    window.addEventListener("storage", invalidateForOrganizationChange);
+    window.addEventListener("focus", invalidateForOrganizationChange);
+    return () => {
+      window.removeEventListener("storage", invalidateForOrganizationChange);
+      window.removeEventListener("focus", invalidateForOrganizationChange);
+    };
+  }, [importedData]);
+
   return (
     <section className="ai-value-focused-stack" aria-label="AI Fluency workspace">
+      <ConnectedSetupSummary draft={draft} />
+      <section className="ai-value-panel ai-fluency-import-panel" aria-label="AI Fluency import">
+        <div>
+          <p className="eyebrow">Step 4 · External measurement</p>
+          <h3>Simulate import only after collection is complete</h3>
+          <p>
+            The assessment runs outside FluencyTracr. This wireframe demonstrates
+            the import gate with a separate illustrative fixture; it does not query an external system.
+          </p>
+        </div>
+        <dl>
+          <div><dt>Experience</dt><dd>{externalAiFluencyMeasurement.experience}</dd></div>
+          <div><dt>Collection</dt><dd>{externalAiFluencyMeasurement.collectionLabel}</dd></div>
+          <div><dt>Import source</dt><dd>{externalAiFluencyMeasurement.importSource}</dd></div>
+        </dl>
+        <StatusPill label="Simulation only" tone="neutral" />
+        <button
+          className="ai-value-home-primary-action"
+          type="button"
+          disabled={!importReady || importState === "loading" || importState === "loaded"}
+          onClick={() => void loadIllustrativeImport()}
+        >
+          {importState === "loading"
+            ? "Loading completed results…"
+            : importState === "loaded"
+              ? "Illustrative results loaded"
+              : "Import AI Fluency results"}
+        </button>
+        <p role="status" aria-live="polite">
+          {importState === "loaded"
+            ? "Illustrative completed results loaded. No backend import occurred."
+            : importState === "loading"
+              ? "Loading the separate illustrative result fixture."
+              : importState === "error"
+              ? "The illustrative results could not be loaded. Nothing was imported."
+              : !importReady
+                ? "Import remains disabled while collection is open or held."
+                : "The illustrative completed fixture is ready to load after an explicit import action."}
+        </p>
+        <p className="ai-value-import-boundary">
+          Wireframe action only. A future backend import will verify collection status,
+          source identity, aggregate suppression, and report version before pulling data.
+        </p>
+      </section>
+
+      {!importedData ? (
+        <section className="ai-value-panel ai-fluency-import-empty" role="status" aria-label="AI Fluency results not imported">
+          <p className="eyebrow">Waiting for import</p>
+          <h3>Results stay hidden until you import the completed measurement</h3>
+          <p>No AI Fluency values have been attached to this value case.</p>
+        </section>
+      ) : (
       <section
+        ref={resultsRef}
+        tabIndex={-1}
         className="ai-value-panel ai-fluency-evidence-panel"
         aria-label="AI Fluency Evidence"
+        aria-live="polite"
       >
         <div className="ai-value-section-head">
           <div>
             <p className="eyebrow">Instrument-derived evidence</p>
-            <h3>AI Fluency Evidence</h3>
+            <h3>Illustrative AI Fluency Evidence</h3>
             <p>
               Keep capture, profile, translation, and report interpretation in one
               place because each read comes from the same AI Fluency instrument.
@@ -2613,15 +3317,39 @@ const ReadinessPage = () => {
           </div>
         </div>
 
+        <section
+          className="ai-fluency-case-study-summary"
+          aria-label={`${importedData.caseStudy.organizationName} case study`}
+        >
+          <div>
+            <p className="eyebrow">Internal renamed example</p>
+            <h4>{importedData.caseStudy.organizationName} illustrative AI Fluency profile</h4>
+            <p>{importedData.caseStudy.summary}</p>
+          </div>
+          <dl>
+            <div>
+              <dt>Overall aggregate result</dt>
+              <dd>{importedData.caseStudy.overallResult}</dd>
+            </div>
+            <div>
+              <dt>Prior aggregate result</dt>
+              <dd>{importedData.caseStudy.priorAggregateResult}</dd>
+            </div>
+            <div>
+              <dt>Example cohort size</dt>
+              <dd>{importedData.caseStudy.cohortSize}</dd>
+            </div>
+            <div>
+              <dt>Reported completion rate</dt>
+              <dd>{importedData.caseStudy.completionRate}</dd>
+            </div>
+          </dl>
+          <p className="ai-fluency-case-study-caveat">{importedData.caseStudy.caveat}</p>
+        </section>
+
         <div className="ai-fluency-evidence-note">
-          <strong>Sample scenario data</strong>
-          <p>
-            Labels below are illustrative instrument outputs for a national insurance
-            company scenario. Replace them with approved aggregate customer results
-            before they inform an internal reviewed report draft. These are
-            aggregate instrument signals, not FluencyTracr scores, individual
-            measures, manager or team comparisons, or economic outputs.
-          </p>
+          <strong>Illustrative case-study data</strong>
+          <p>{importedData.illustrativeBoundary}</p>
         </div>
 
         <div
@@ -2664,7 +3392,7 @@ const ReadinessPage = () => {
                 </p>
               </div>
               <div className="ai-fluency-evidence-grid">
-                {aiFluencyCaptureFacts.map((item) => (
+                {importedData.captureFacts.map((item) => (
                   <article key={item.label}>
                     <span className="ai-value-map-label">{item.label}</span>
                     <strong>{item.value}</strong>
@@ -2689,11 +3417,14 @@ const ReadinessPage = () => {
                 </p>
               </div>
               <div className="ai-fluency-factor-list">
-                {aiFluencyProfileFactors.map((factor) => (
+                {importedData.profileFactors.map((factor) => (
                   <article key={factor.label}>
                     <div>
                       <strong>{factor.label}</strong>
                       <p>{factor.detail}</p>
+                      <p className="ai-fluency-factor-action">
+                        <strong>Practice next:</strong> {factor.action}
+                      </p>
                     </div>
                     <span>{factor.value}</span>
                   </article>
@@ -2711,12 +3442,13 @@ const ReadinessPage = () => {
                 <span className="ai-value-map-label">Translation lens</span>
                 <h4>Attitude, intent, and perceived impact</h4>
                 <p>
-                  This read shows whether capability is becoming belief,
-                  willingness, and perceived work value.
+                  This read places reported attitude, intent, and perceived work
+                  value alongside capability. It does not establish a transition or
+                  causal linkage among those constructs.
                 </p>
               </div>
               <div className="ai-fluency-evidence-grid ai-fluency-evidence-grid-three">
-                {aiFluencyTranslationSignals.map((signal) => (
+                {importedData.translationSignals.map((signal) => (
                   <article key={signal.label}>
                     <span className="ai-value-map-label">{signal.label}</span>
                     <strong>{signal.value}</strong>
@@ -2741,7 +3473,7 @@ const ReadinessPage = () => {
                 </p>
               </div>
               <div className="ai-fluency-report-read-list">
-                {aiFluencyReportReadItems.map((item) => (
+                {importedData.reportReadItems.map((item) => (
                   <article key={item.label}>
                     <span className="ai-value-map-label">{item.label}</span>
                     <strong>{item.value}</strong>
@@ -2761,6 +3493,7 @@ const ReadinessPage = () => {
           )}
         </section>
       </section>
+      )}
     </section>
   );
 };
@@ -3358,7 +4091,7 @@ const ValueRoiAccessPanel = ({ journey }: { journey: Journey }) => {
       className="ai-value-panel ai-value-roi-access-panel"
     >
       <div>
-        <p className="eyebrow">Step 6 · Evidence Checkpoint</p>
+        <p className="eyebrow">Evidence Checkpoint</p>
         <h3>Review the checkpoint before the executive report</h3>
         <p>
           Use this screen to see whether the {metricName} for the {workflowName} is

@@ -20,6 +20,9 @@ export const getStoredAuthToken = () => {
   return token?.trim() ?? "";
 };
 
+export const getStoredOrganizationId = () =>
+  (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
+
 const notifyAuthChanged = () => {
   authSessionRevision += 1;
   authListeners.forEach((listener) => listener());
@@ -79,7 +82,7 @@ if (typeof window !== "undefined") {
 }
 
 const getStoredLocalExampleSession = () => {
-  const orgId = (localStorage.getItem("orgId") ?? "org-1").trim();
+  const orgId = getStoredOrganizationId();
   const role = (localStorage.getItem("role") ?? "ADMIN").trim();
   return { orgId, role };
 };

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
+  ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY,
   listAiValueObjects,
   reviewOutcomeEvidence,
   fetchAiValueObject,
@@ -694,17 +696,22 @@ async function maybeFetchPayload(
   try {
     const detail = await fetchAiValueObject(role, summary.object_type, summary.object_id);
     return detail.payload as Record<string, any>;
-  } catch {
+  } catch (error) {
+    if (error instanceof AiValueApiError && error.status === 401) {
+      throw error;
+    }
     return null;
   }
 }
 
 function buildEvidenceItems(byType: Record<string, AiValueObjectSummary[]>): EvidenceReviewItem[] {
-  return (byType.outcome_evidence_export ?? []).map((summary) => ({
-    exportId: summary.object_id,
-    reviewState: reviewStateOf(summary),
-    workflowFamily: summary.workflow_family
-  }));
+  return (byType.outcome_evidence_export ?? [])
+    .filter((summary) => summary.valid !== false)
+    .map((summary) => ({
+      exportId: summary.object_id,
+      reviewState: reviewStateOf(summary),
+      workflowFamily: summary.workflow_family
+    }));
 }
 
 function buildValueOpportunities(
@@ -1649,13 +1656,13 @@ function buildWorkflowHandoff(params: {
   opportunities: ValueOpportunity[];
 }): WorkflowHandoff {
   const { blueprint, metricsLibrary, opportunities } = params;
-  if (!blueprint) {
+  if (!blueprint || !metricsLibrary) {
     return {
       selected: false,
       workflowName: "No workflow selected yet",
       valueRouteLabel: "Choose the first workflow",
       evidenceStatus: "Value modeling paused",
-      summary: "Finish the Blueprint workshop to choose the first client workflow before modeling value.",
+      summary: "Finish the Blueprint and Metrics Library review before modeling value.",
       nextAction: "Open Blueprint workshop"
     };
   }
@@ -2496,26 +2503,42 @@ export const useAiValueJourney = (): AiValueJourney => {
       const { objects } = await listAiValueObjects(role);
       const byType: Record<string, AiValueObjectSummary[]> = {};
       for (const summary of objects) {
+        if (summary.valid === false) continue;
         byType[summary.object_type] = byType[summary.object_type] ?? [];
         byType[summary.object_type].push(summary);
       }
 
-      const selectedObjects = selectAiValueJourneyObjects(byType);
-      const items = buildEvidenceItems(byType).filter(
-        (item) =>
-          !selectedObjects.workflowFamily ||
-          item.workflowFamily === selectedObjects.workflowFamily
-      );
-      const blueprintSummary = selectedObjects.blueprint ?? latest(byType.blueprint);
-      const metricsLibrarySummary =
-        selectedObjects.metricsLibrary ?? latest(byType.metrics_library);
+      const query = new URLSearchParams(window.location.search);
+      const selectedObjects = selectAiValueJourneyObjects(byType, {
+        preferredBlueprintId:
+          query.get("blueprintId") ?? localStorage.getItem(ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY),
+        preferredEngagementId:
+          query.get("engagementId") ?? localStorage.getItem(ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY)
+      });
+      const selectedWorkflowFamily = selectedObjects.workflowFamily;
+      const selectedEngagementId = selectedObjects.engagement?.object_id;
+      const scopedByType = Object.fromEntries(
+        Object.entries(byType).map(([objectType, summaries]) => [
+          objectType,
+          selectedWorkflowFamily
+            ? summaries.filter(
+                (summary) =>
+                  summary.workflow_family === selectedWorkflowFamily ||
+                  (objectType === "engagement" && summary.object_id === selectedEngagementId)
+              )
+            : []
+        ])
+      ) as Record<string, AiValueObjectSummary[]>;
+      const items = buildEvidenceItems(scopedByType);
+      const blueprintSummary = selectedObjects.blueprint;
+      const metricsLibrarySummary = selectedObjects.metricsLibrary;
       const [engagement, blueprint, metricsLibrary, readiness, scenario, roiScenario] = await Promise.all([
-        maybeFetchPayload(role, selectedObjects.engagement ?? latest(byType.engagement)),
+        maybeFetchPayload(role, selectedObjects.engagement),
         maybeFetchPayload(role, blueprintSummary),
         maybeFetchPayload(role, metricsLibrarySummary),
-        maybeFetchPayload(role, selectedObjects.readiness ?? latest(byType.evidence_readiness)),
-        maybeFetchPayload(role, selectedObjects.scenario ?? latest(byType.value_scenario)),
-        maybeFetchPayload(role, selectedObjects.roiScenario ?? latest(byType.roi_scenario))
+        maybeFetchPayload(role, selectedObjects.readiness),
+        maybeFetchPayload(role, selectedObjects.scenario),
+        maybeFetchPayload(role, selectedObjects.roiScenario)
       ]);
       const nextMaterializerRequest = blueprintSummary && metricsLibrarySummary
         ? {
@@ -2606,7 +2629,7 @@ export const useAiValueJourney = (): AiValueJourney => {
 
       setStages(
         deriveStages({
-          byType,
+          byType: scopedByType,
           opportunities: mappedOpportunities,
           customerEvidenceReview: evidenceReview
         })
@@ -2639,13 +2662,17 @@ export const useAiValueJourney = (): AiValueJourney => {
       setClientName(
         typeof engagement?.client?.client_name === "string"
           ? engagement.client.client_name
-          : humanize((byType.engagement ?? [])[0]?.validation?.client_id as string | undefined)
+          : humanize((scopedByType.engagement ?? [])[0]?.validation?.client_id as string | undefined)
       );
     } catch (error) {
+      setWorkflowHandoff(
+        buildWorkflowHandoff({ blueprint: null, metricsLibrary: null, opportunities: [] })
+      );
+      setStages(deriveStages({ byType: {}, opportunities: [] }));
       setErrorMessage(
         error instanceof AiValueApiError && error.status === 401
           ? "Sign in with an organization session to see the journey."
-          : "Using example evidence until approved aggregate data is connected."
+          : "Value-case details could not be loaded. Refresh the workspace to try again."
       );
     } finally {
       setLoading(false);
@@ -2655,6 +2682,14 @@ export const useAiValueJourney = (): AiValueJourney => {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const requireOrganizationSession = useCallback(() => {
+    setWorkflowHandoff(
+      buildWorkflowHandoff({ blueprint: null, metricsLibrary: null, opportunities: [] })
+    );
+    setStages(deriveStages({ byType: {}, opportunities: [] }));
+    setErrorMessage("Sign in with an organization session to see the journey.");
+  }, []);
 
   const materializeRealEvidence = useCallback(async () => {
     if (!materializerRequest) {
@@ -2677,6 +2712,10 @@ export const useAiValueJourney = (): AiValueJourney => {
       lastMaterializerResultRef.current = result;
       await refresh();
     } catch (error) {
+      if (error instanceof AiValueApiError && error.status === 401) {
+        requireOrganizationSession();
+        return;
+      }
       setRealEvidenceStatus((current) => ({
         ...current,
         statusLabel: "Evidence check needs retry",
@@ -2694,7 +2733,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       materializerRunning: false,
       materializerError: null
     }));
-  }, [materializerRequest, refresh]);
+  }, [materializerRequest, refresh, requireOrganizationSession]);
 
   const review = useCallback(
     async (exportId: string, decision: "ACCEPTED" | "REJECTED") => {
@@ -2703,6 +2742,10 @@ export const useAiValueJourney = (): AiValueJourney => {
         await reviewOutcomeEvidence(sessionRole(), exportId, decision);
         await refresh();
       } catch (error) {
+        if (error instanceof AiValueApiError && error.status === 401) {
+          requireOrganizationSession();
+          return;
+        }
         setErrorMessage(
           error instanceof AiValueApiError && error.status === 403
             ? "Your current role can view evidence but cannot review it."
@@ -2710,7 +2753,7 @@ export const useAiValueJourney = (): AiValueJourney => {
         );
       }
     },
-    [refresh]
+    [refresh, requireOrganizationSession]
   );
 
   return {

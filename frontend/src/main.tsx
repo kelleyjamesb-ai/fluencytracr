@@ -69,6 +69,7 @@ createRoot(container).render(
             </ProtectedRoute>
           }
         />
+        <Route path="/vbd" element={<Navigate to="/ai-value-workspace/progress" replace />} />
         <Route
           path="/ai-value"
           element={
