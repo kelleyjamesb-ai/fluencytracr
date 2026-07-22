@@ -155,10 +155,14 @@ def test_fixed_roots_and_manifest_identity_are_diagnostic_specific():
     assert VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_V1_LIFECYCLE_ROOT_PATH != (
         VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LIFECYCLE_ROOT_PATH
     )
-    assert authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH.endswith(
+    manifest_relative_path = (
+        authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH
+    )
+    assert manifest_relative_path == (
+        "inference/evidence/"
         "vbd_trajectory_group_effect_marginalization_v2_authorization.json"
     )
-    assert not (_REPO / authorization.VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_AUTHORIZATION_MANIFEST_RELATIVE_PATH).exists()
+    assert manifest_relative_path not in authorization._MARGINALIZATION_RUNNER_SOURCE_PATHS
 
 
 def test_manifest_binds_complete_source_runtime_model_plan_seed_and_command(

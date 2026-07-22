@@ -21,15 +21,6 @@ from .vbd_trajectory_group_effect_geometry_constants import (
     VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_RESERVED_SEEDS,
     VBD_TRAJECTORY_GROUP_EFFECT_GEOMETRY_STATE,
 )
-from .vbd_trajectory_group_effect_marginalization_constants import (
-    VBD_TRAJECTORY_ALL_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_ID,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE,
-    validate_vbd_trajectory_group_effect_marginalization_case_body,
-    vbd_trajectory_group_effect_marginalization_case_body,
-)
 from .vbd_trajectory_precision_diagnostic_constants import (
     VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_AGGREGATE_K,
@@ -123,6 +114,23 @@ VBD_TRAJECTORY_TEMPORARY_PULSE_POST_PATTERN = (
     "plus_0.5_all_lanes_w12_w14_then_zero_w15_w17"
 )
 VBD_TRAJECTORY_COMMON_AVAILABILITY_SHOCK_TERMINAL = (0.5, 0.5, 0.5)
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_ID = (
+    "vbd_group_effect_marginalization_diagnostic_v2"
+)
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF = (
+    "plan:vbd-group-effect-marginalization-diagnostic-v2"
+)
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE = (
+    "group_effect_marginalization_diagnostic_v2_nonacceptance"
+)
+VBD_TRAJECTORY_ALL_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS = frozenset(
+    (
+        *range(2_055_901_000, 2_055_901_004),
+        *range(2_055_901_100, 2_055_901_148),
+        *range(2_055_901_200, 2_055_901_204),
+        *range(2_055_901_300, 2_055_901_348),
+    )
+)
 
 _GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_GENERATION_RUNNER_TOKEN = object()
 
@@ -155,6 +163,28 @@ _QUANTILE_DELTAS = VBD_TRAJECTORY_QUANTILE_DELTAS
 
 class VbdSyntheticRunnerError(RuntimeError):
     """The compiled generator could not produce its exact aggregate package."""
+
+
+def vbd_trajectory_group_effect_marginalization_case_body(
+    case_ordinal: int,
+) -> dict:
+    from .vbd_trajectory_group_effect_marginalization_constants import (
+        vbd_trajectory_group_effect_marginalization_case_body as case_body,
+    )
+
+    return case_body(case_ordinal)
+
+
+def validate_vbd_trajectory_group_effect_marginalization_case_body(
+    value: object,
+    *,
+    case_ordinal: int,
+) -> dict:
+    from .vbd_trajectory_group_effect_marginalization_constants import (
+        validate_vbd_trajectory_group_effect_marginalization_case_body as validate_case_body,
+    )
+
+    return validate_case_body(value, case_ordinal=case_ordinal)
 
 
 def _is_reserved_diagnostic_seed(seed: int) -> bool:
@@ -259,6 +289,10 @@ def _vbd_group_effect_marginalization_generation_spec(
         raise VbdSyntheticRunnerError(
             "marginalization diagnostic generation requires its runner token"
         )
+    from .vbd_trajectory_group_effect_marginalization_constants import (
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
+    )
+
     body = validate_vbd_trajectory_group_effect_marginalization_case_body(
         vbd_trajectory_group_effect_marginalization_case_body(case_ordinal),
         case_ordinal=case_ordinal,
@@ -318,13 +352,61 @@ def _vbd_group_effect_marginalization_generation_spec(
 
 
 _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_GENERATION_SPECS = tuple(
-    _vbd_group_effect_marginalization_generation_spec(
-        case_ordinal,
-        runner_token=(
+    _VbdTrajectoryGenerationSpec(
+        scenario_id=(
+            "development_smoke_scenario_"
+            f"vbd_group_effect_marginalization_diagnostic_v2_case_{case_ordinal}"
+        ),
+        seed=2_055_901_200 + case_ordinal,
+        panel_group_count=panel_group_count,
+        aggregate_k=16,
+        terminal_truth=(effect_size_sd, effect_size_sd, effect_size_sd),
+        direction_vector=(1, 1, 1),
+        post_pattern=VBD_TRAJECTORY_SUSTAINED_POST_PATTERN,
+        correlations=(
+            VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+            VBD_TRAJECTORY_DGP_GROUP_CORRELATION,
+            VBD_TRAJECTORY_DGP_OBSERVATION_CORRELATION,
+        ),
+        plan_ref=VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF,
+        plan_hash=plan_hash,
+        seed_namespace=VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE,
+        acceptance_slot_key=None,
+        depth_context_ref="depth-context:a",
+        shock_kind=None,
+        reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
+        reported_covariance_ratio=_COVARIANCE_RATIO,
+        zero_pre_period_variance=False,
+        marginalization_runner_token=(
             _GROUP_EFFECT_MARGINALIZATION_DIAGNOSTIC_GENERATION_RUNNER_TOKEN
         ),
     )
-    for case_ordinal in range(len(VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES))
+    for case_ordinal, effect_size_sd, panel_group_count, plan_hash in (
+        (
+            0,
+            0.0,
+            6,
+            "843fb35a0c329d4c9ae4309bbfce4f8dea1b443ffcf54ea211b4ca71b1ebe7f4",
+        ),
+        (
+            1,
+            0.0,
+            12,
+            "2edc451549aa3529a77833cf42ac564d0b66dadbd895e13544499c92bdce4441",
+        ),
+        (
+            2,
+            0.5,
+            6,
+            "3f1d6cb86009918bbaeca7b90e6610cc17a2c61a9710af198e9be5556e44f951",
+        ),
+        (
+            3,
+            0.5,
+            12,
+            "01b06a07036d6aff7cfca42c0f8ada4f2a8455460d0fa21483008af87d2356a2",
+        ),
+    )
 )
 
 
@@ -1637,10 +1719,11 @@ def _generate_vbd_trajectory_case(
             raise ValueError("concordance generation identity is not compiled")
     elif spec.plan_ref == VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF:
         matches = tuple(
-            case
-            for case in VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES
-            if case.generator_seed == seed
-            and case.scenario_id == spec.scenario_id
+            candidate
+            for candidate in (
+                _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_GENERATION_SPECS
+            )
+            if candidate.seed == seed and candidate.scenario_id == spec.scenario_id
         )
         if (
             len(matches) != 1
@@ -1650,11 +1733,7 @@ def _generate_vbd_trajectory_case(
             raise ValueError(
                 "marginalization diagnostic generation identity is not compiled"
             )
-        canonical_marginalization_spec = (
-            _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_GENERATION_SPECS[
-                matches[0].case_ordinal
-            ]
-        )
+        canonical_marginalization_spec = matches[0]
         if not _exact_vbd_trajectory_generation_spec_equal(
             spec, canonical_marginalization_spec
         ):
@@ -2438,13 +2517,26 @@ def generate_vbd_trajectory_group_effect_marginalization_diagnostic_case(
         raise VbdSyntheticRunnerError(
             "marginalization diagnostic generation requires its runner token"
         )
-    validate_vbd_trajectory_group_effect_marginalization_case_body(
+    body = validate_vbd_trajectory_group_effect_marginalization_case_body(
         vbd_trajectory_group_effect_marginalization_case_body(case_ordinal),
         case_ordinal=case_ordinal,
     )
-    return _generate_vbd_trajectory_case(
-        _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_GENERATION_SPECS[case_ordinal]
-    )
+    spec = _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_GENERATION_SPECS[
+        case_ordinal
+    ]
+    if (
+        body["scenario_id"] != spec.scenario_id
+        or body["generator_seed"] != spec.seed
+        or body["panel_group_count"] != spec.panel_group_count
+        or body["aggregate_k"] != spec.aggregate_k
+        or tuple(float(body["effect_size_sd"]) for _ in range(3))
+        != spec.terminal_truth
+        or sha256_json(body) != spec.plan_hash
+    ):
+        raise VbdSyntheticRunnerError(
+            "marginalization diagnostic frozen generation spec drifted"
+        )
+    return _generate_vbd_trajectory_case(spec)
 
 
 def _generate_vbd_trajectory_depth_validation_pair(
@@ -2703,23 +2795,22 @@ def _spec_for_panel(panel: TrajectoryObservationPanel) -> _VbdTrajectoryGenerati
             reported_standard_error_ratio=_STANDARD_ERROR_RATIO,
             reported_covariance_ratio=_COVARIANCE_RATIO,
         )
-    marginalization_case = next(
+    marginalization_spec = next(
         (
-            case
-            for case in VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES
-            if panel.seed == case.generator_seed
-            and panel.scenario_id == case.scenario_id
+            spec
+            for spec in (
+                _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_GENERATION_SPECS
+            )
+            if panel.seed == spec.seed and panel.scenario_id == spec.scenario_id
         ),
         None,
     )
     if (
         panel.seed_namespace
         == VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE
-        and marginalization_case is not None
+        and marginalization_spec is not None
     ):
-        return _VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_GENERATION_SPECS[
-            marginalization_case.case_ordinal
-        ]
+        return marginalization_spec
     if _is_reserved_diagnostic_seed(panel.seed):
         raise TrajectoryStructureError(
             "reserved diagnostic seed has an off-plan synthetic identity"

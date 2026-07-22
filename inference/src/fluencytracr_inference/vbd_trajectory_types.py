@@ -16,16 +16,15 @@ import scipy
 
 from .hashing import sha256_json
 from .longitudinal_types import MAX_JAVASCRIPT_SAFE_INTEGER
-from .vbd_trajectory_group_effect_marginalization_constants import (
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE,
-    validate_vbd_trajectory_group_effect_marginalization_case_body,
-    vbd_trajectory_group_effect_marginalization_case_body,
-)
 
 
 VBD_TRAJECTORY_SCHEMA_VERSION = "FT_AI_VALUE_VBD_TRAJECTORY_INPUT_2026_07_V1"
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF = (
+    "plan:vbd-group-effect-marginalization-diagnostic-v2"
+)
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE = (
+    "group_effect_marginalization_diagnostic_v2_nonacceptance"
+)
 VBD_TRAJECTORY_EVENT_SCHEMA_VERSION = "FT_V2_2026_05"
 VBD_TRAJECTORY_MODEL_FAMILY = (
     "bayesian_ai_value_realization_and_human_transformation_model_family"
@@ -2199,6 +2198,12 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
             )
         acceptance_slot_key = slot.slot_id
     elif plan_ref == VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF:
+        from .vbd_trajectory_group_effect_marginalization_constants import (
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
+            validate_vbd_trajectory_group_effect_marginalization_case_body,
+            vbd_trajectory_group_effect_marginalization_case_body,
+        )
+
         if (
             panel.seed_namespace
             != VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE

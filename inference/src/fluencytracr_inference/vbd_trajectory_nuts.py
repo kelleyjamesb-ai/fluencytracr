@@ -23,13 +23,6 @@ from .vbd_trajectory_group_effect_geometry_constants import (
     VbdTrajectoryGroupEffectGeometryCaseSpec,
     vbd_trajectory_group_effect_geometry_chain_seeds,
 )
-from .vbd_trajectory_group_effect_marginalization_constants import (
-    VBD_TRAJECTORY_ALL_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LANE_ORDER,
-    VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS,
-    vbd_trajectory_group_effect_marginalization_chain_seeds,
-)
 from .vbd_trajectory_precision_diagnostic_constants import (
     VBD_TRAJECTORY_ALL_PRECISION_DIAGNOSTIC_RESERVED_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_CHAIN_SEEDS,
@@ -64,6 +57,14 @@ from .vbd_trajectory_types import (
 )
 
 
+VBD_TRAJECTORY_ALL_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS = frozenset(
+    (
+        *range(2_055_901_000, 2_055_901_004),
+        *range(2_055_901_100, 2_055_901_148),
+        *range(2_055_901_200, 2_055_901_204),
+        *range(2_055_901_300, 2_055_901_348),
+    )
+)
 VBD_TRAJECTORY_NUTS_REFERENCE_ENGINE = "pymc_nuts_state_space_reference"
 VBD_TRAJECTORY_NUTS_FULL_CHAINS = 4
 VBD_TRAJECTORY_NUTS_FULL_DRAWS = 20_000
@@ -2183,6 +2184,12 @@ def _sample_vbd_trajectory_group_effect_marginalization_idata(
         raise TrajectoryNutsError(
             "group-effect marginalization sampling requires its exact binding"
         )
+    from .vbd_trajectory_group_effect_marginalization_constants import (
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_LANE_ORDER,
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_RESERVED_SEEDS,
+        vbd_trajectory_group_effect_marginalization_chain_seeds,
+    )
     from .vbd_trajectory_group_effect_marginalization_diagnostic import (
         VbdTrajectoryGroupEffectMarginalizationBinding,
     )
