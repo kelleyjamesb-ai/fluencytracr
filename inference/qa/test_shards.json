@@ -1,0 +1,62 @@
+{
+  "schema_version": "FT_INFERENCE_TEST_SHARDS_2026_07_V1",
+  "shards": {
+    "foundation-measurement": [
+      "test_acceptance_study.py",
+      "test_ai_fluency_measurement_calibration.py",
+      "test_ai_fluency_measurement_calibration_acceptance.py",
+      "test_ai_fluency_measurement_calibration_evidence.py",
+      "test_ai_fluency_measurement_calibration_resumable.py",
+      "test_ai_fluency_measurement_evidence.py",
+      "test_ai_fluency_measurement_manifest.py",
+      "test_ai_fluency_ordinal_measurement.py",
+      "test_artifact_shape.py",
+      "test_calibration_runner.py",
+      "test_constants_mirror.py",
+      "test_environment_smoke.py",
+      "test_hashing.py",
+      "test_hold_paths.py",
+      "test_inference_ci_runtime.py",
+      "test_inference_harness_shards.py",
+      "test_no_connector_imports.py",
+      "test_recovery_smoke.py",
+      "test_synthetic.py",
+      "test_synthetic_study.py"
+    ],
+    "longitudinal": [
+      "test_longitudinal_artifact_shape.py",
+      "test_longitudinal_boundary_hardening.py",
+      "test_longitudinal_concordance.py",
+      "test_longitudinal_concordance_cli.py",
+      "test_longitudinal_concordance_evidence.py",
+      "test_longitudinal_hold_paths.py",
+      "test_longitudinal_replicated_validation.py",
+      "test_longitudinal_replicated_validation_cli.py",
+      "test_longitudinal_replicated_validation_controls.py",
+      "test_longitudinal_replicated_validation_evidence.py",
+      "test_longitudinal_state_space.py",
+      "test_longitudinal_synthetic.py",
+      "test_longitudinal_validation_synthetic.py"
+    ],
+    "vbd-engine": [
+      "test_vbd_trajectory_artifact.py",
+      "test_vbd_trajectory_bootstrap_conformance.py",
+      "test_vbd_trajectory_concordance.py",
+      "test_vbd_trajectory_concordance_cli.py",
+      "test_vbd_trajectory_nuts.py",
+      "test_vbd_trajectory_precision_canary.py",
+      "test_vbd_trajectory_precision_diagnostic.py",
+      "test_vbd_trajectory_precision_diagnostic_authorization.py",
+      "test_vbd_trajectory_preparation.py",
+      "test_vbd_trajectory_state_space.py",
+      "test_vbd_trajectory_statistics.py",
+      "test_vbd_trajectory_types.py",
+      "test_vbd_trajectory_validation_cli.py",
+      "test_vbd_trajectory_validation_controls.py",
+      "test_vbd_trajectory_validation_plan.py",
+      "test_vbd_trajectory_validation_resumable.py",
+      "test_vbd_trajectory_validation_study.py",
+      "test_vbd_trajectory_validation_synthetic.py"
+    ]
+  }
+}
