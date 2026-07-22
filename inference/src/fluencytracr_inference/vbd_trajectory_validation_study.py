@@ -172,6 +172,12 @@ class VbdTrajectoryLaneResult:
     context_binding_hash: str
     fit_summary_hash: str
     diagnostics_hash: str
+    generated_point_count: int
+    finite_log_weight_count: int
+    retained_weight_count: int
+    retained_sobol_ordinal_commitment: str
+    excluded_sobol_ordinal_commitment: str
+    outer_weight_retention_hash: str
     lane_result_hash: str
 
     def __post_init__(self) -> None:
@@ -228,8 +234,47 @@ class VbdTrajectoryLaneResult:
             "context_binding_hash",
             "fit_summary_hash",
             "diagnostics_hash",
+            "retained_sobol_ordinal_commitment",
+            "excluded_sobol_ordinal_commitment",
+            "outer_weight_retention_hash",
         ):
             _strict_sha256(getattr(self, name), name)
+        if (
+            type(self.generated_point_count) is not int
+            or self.generated_point_count != 8192
+            or type(self.finite_log_weight_count) is not int
+            or type(self.retained_weight_count) is not int
+            or not 4096
+            <= self.retained_weight_count
+            <= self.finite_log_weight_count
+            <= self.generated_point_count
+        ):
+            raise VbdTrajectoryValidationStudyError(
+                "lane outer-weight retention counts are invalid"
+            )
+        if (
+            self.retained_sobol_ordinal_commitment
+            == self.excluded_sobol_ordinal_commitment
+        ):
+            raise VbdTrajectoryValidationStudyError(
+                "lane ordinal commitments must be distinct"
+            )
+        retention_body = {
+            "algorithm": "binary64_representable_normalized_weight_retention_v1",
+            "excluded_sobol_ordinal_commitment": (
+                self.excluded_sobol_ordinal_commitment
+            ),
+            "finite_log_weight_count": self.finite_log_weight_count,
+            "generated_point_count": self.generated_point_count,
+            "retained_sobol_ordinal_commitment": (
+                self.retained_sobol_ordinal_commitment
+            ),
+            "retained_weight_count": self.retained_weight_count,
+        }
+        if sha256_json(retention_body) != self.outer_weight_retention_hash:
+            raise VbdTrajectoryValidationStudyError(
+                "lane outer-weight retention hash mismatch"
+            )
         if self.lane_result_hash != sha256_json(self.body_without_hash()):
             raise VbdTrajectoryValidationStudyError("lane result hash mismatch")
 
@@ -258,6 +303,16 @@ class VbdTrajectoryLaneResult:
             "context_binding_hash": self.context_binding_hash,
             "fit_summary_hash": self.fit_summary_hash,
             "diagnostics_hash": self.diagnostics_hash,
+            "generated_point_count": self.generated_point_count,
+            "finite_log_weight_count": self.finite_log_weight_count,
+            "retained_weight_count": self.retained_weight_count,
+            "retained_sobol_ordinal_commitment": (
+                self.retained_sobol_ordinal_commitment
+            ),
+            "excluded_sobol_ordinal_commitment": (
+                self.excluded_sobol_ordinal_commitment
+            ),
+            "outer_weight_retention_hash": self.outer_weight_retention_hash,
         }
 
     def to_dict(self) -> dict:
@@ -279,8 +334,27 @@ def build_vbd_trajectory_lane_result(
     model_input_hash: str,
     context_binding_hash: str,
     fit_summary_hash: str,
-    diagnostics_hash: str,
+    integration_diagnostics: dict,
 ) -> VbdTrajectoryLaneResult:
+    if type(integration_diagnostics) is not dict:
+        raise VbdTrajectoryValidationStudyError(
+            "integration diagnostics must be an object"
+        )
+    retention_keys = (
+        "generated_point_count",
+        "finite_log_weight_count",
+        "retained_weight_count",
+        "retained_sobol_ordinal_commitment",
+        "excluded_sobol_ordinal_commitment",
+        "outer_weight_retention_hash",
+    )
+    try:
+        retention = {key: integration_diagnostics[key] for key in retention_keys}
+    except KeyError as exc:
+        raise VbdTrajectoryValidationStudyError(
+            "integration diagnostics omit outer-weight retention"
+        ) from exc
+    diagnostics_hash = sha256_json(integration_diagnostics)
     direction_adjusted_truth = float(direction_sign * raw_truth)
     body = {
         "lane": lane,
@@ -308,6 +382,7 @@ def build_vbd_trajectory_lane_result(
         "context_binding_hash": context_binding_hash,
         "fit_summary_hash": fit_summary_hash,
         "diagnostics_hash": diagnostics_hash,
+        **retention,
     }
     return VbdTrajectoryLaneResult(
         lane=lane,
@@ -327,6 +402,16 @@ def build_vbd_trajectory_lane_result(
         context_binding_hash=context_binding_hash,
         fit_summary_hash=fit_summary_hash,
         diagnostics_hash=diagnostics_hash,
+        generated_point_count=retention["generated_point_count"],
+        finite_log_weight_count=retention["finite_log_weight_count"],
+        retained_weight_count=retention["retained_weight_count"],
+        retained_sobol_ordinal_commitment=retention[
+            "retained_sobol_ordinal_commitment"
+        ],
+        excluded_sobol_ordinal_commitment=retention[
+            "excluded_sobol_ordinal_commitment"
+        ],
+        outer_weight_retention_hash=retention["outer_weight_retention_hash"],
         lane_result_hash=sha256_json(body),
     )
 
@@ -965,6 +1050,12 @@ def _lane_result_from_dict(value: object) -> VbdTrajectoryLaneResult:
         "context_binding_hash",
         "fit_summary_hash",
         "diagnostics_hash",
+        "generated_point_count",
+        "finite_log_weight_count",
+        "retained_weight_count",
+        "retained_sobol_ordinal_commitment",
+        "excluded_sobol_ordinal_commitment",
+        "outer_weight_retention_hash",
         "lane_result_hash",
     }
     if set(value) != expected or type(value["posterior_summary"]) is not dict:
@@ -1005,5 +1096,20 @@ def _lane_result_from_dict(value: object) -> VbdTrajectoryLaneResult:
         ),
         fit_summary_hash=_strict_sha256(value["fit_summary_hash"], "fit_summary_hash"),
         diagnostics_hash=_strict_sha256(value["diagnostics_hash"], "diagnostics_hash"),
+        generated_point_count=value["generated_point_count"],
+        finite_log_weight_count=value["finite_log_weight_count"],
+        retained_weight_count=value["retained_weight_count"],
+        retained_sobol_ordinal_commitment=_strict_sha256(
+            value["retained_sobol_ordinal_commitment"],
+            "retained_sobol_ordinal_commitment",
+        ),
+        excluded_sobol_ordinal_commitment=_strict_sha256(
+            value["excluded_sobol_ordinal_commitment"],
+            "excluded_sobol_ordinal_commitment",
+        ),
+        outer_weight_retention_hash=_strict_sha256(
+            value["outer_weight_retention_hash"],
+            "outer_weight_retention_hash",
+        ),
         lane_result_hash=_strict_sha256(value["lane_result_hash"], "lane_result_hash"),
     )

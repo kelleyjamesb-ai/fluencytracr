@@ -11,9 +11,11 @@ from fluencytracr_inference.vbd_trajectory_nuts import (
     TrajectorySamplerDiagnostics,
     TrajectorySamplerParameterDiagnostic,
     _build_reference_model,
+    _compute_sampler_diagnostics,
     _compute_posterior_predictive_checks,
     _conditional_state_distribution,
     _expected_parameter_names,
+    _ppc_flat_draw_selection,
     _sample_stat_count,
     _validate_reference_seeds,
     fit_vbd_trajectory_nuts_reference,
@@ -63,10 +65,11 @@ def test_nuts_settings_compile_exact_full_and_nonqualifying_smoke_modes():
     assert full.to_dict() == {
         "mode": "full",
         "chains": 4,
-        "draws": 1000,
-        "tune": 2000,
-        "target_accept": 0.99,
+        "draws": 20000,
+        "tune": 5000,
+        "target_accept": 0.999,
         "max_treedepth": 15,
+        "init": "jitter+adapt_full",
         "sampler": "pymc",
         "cores": 1,
         "blas_cores": 1,
@@ -90,25 +93,36 @@ def test_model_manifest_binds_exact_engines_statistics_ppc_and_gates():
         "proposal": "student_t_df_5_v1",
         "proposal_scale": 1.5,
         "minimum_finite_point_count": 4096,
+        "minimum_retained_weight_count": 4096,
         "minimum_effective_sample_size": 256.0,
         "maximum_normalized_weight": 0.05,
-        "conditional_quadrature": "normal_quadrature_v1",
-        "conditional_quadrature_point_count": 16,
-        "stable_support_index": "16*original_sobol_ordinal+quadrature_index",
+        "weight_retention_algorithm": (
+            "binary64_representable_normalized_weight_retention_v1"
+        ),
+        "ordinal_commitment_algorithm": "vbd_outer_weight_ordinals_v1",
+        "conditional_mixture_quantile": "conditional_normal_mixture_quantile_v2",
+        "conditional_mixture_bisection_iterations": 64,
+        "normal_cdf": "scipy.special.ndtr",
+        "normal_quantile": "scipy.special.ndtri",
+        "original_sobol_ordinal_retained": True,
+        "original_sobol_ordinal_identity_preserved": True,
         "random_numbers_used": False,
     }
     assert manifest["reference_engine"]["engine_id"] == (
         "pymc_nuts_state_space_reference"
     )
     assert manifest["reference_engine"]["chains"] == 4
-    assert manifest["reference_engine"]["draws"] == 1000
-    assert manifest["reference_engine"]["tune"] == 2000
+    assert manifest["reference_engine"]["draws"] == 20000
+    assert manifest["reference_engine"]["tune"] == 5000
+    assert manifest["reference_engine"]["target_accept"] == 0.999
+    assert manifest["reference_engine"]["init"] == "jitter+adapt_full"
     assert manifest["posterior_statistics"]["weighted_quantile"] == (
         "weighted_quantile_v1"
     )
     assert tuple(manifest["posterior_predictive_check"]["statistics"]) == (
         nuts.VBD_TRAJECTORY_PPC_STATISTIC_NAMES
     )
+    assert manifest["posterior_predictive_check"]["replicate_count"] == 4000
     assert manifest["diagnostic_gates"] == {
         "r_hat_max": 1.01,
         "bulk_ess_min": 400.0,
@@ -208,6 +222,31 @@ def test_ppc_statistics_match_frozen_five_statistic_oracle():
     ] == 0.0
 
 
+def test_full_ppc_selector_is_exact_chain_major_4000_state_grid():
+    settings = vbd_nuts_execution_settings("full")
+    idata = az.from_dict(
+        {
+            "posterior": {
+            "value": np.zeros((settings.chains, settings.draws), dtype=float)
+            }
+        }
+    )
+
+    selected = _ppc_flat_draw_selection(idata, settings)
+
+    assert len(selected) == 4000
+    assert np.array_equal(selected[:1000], 20 * np.arange(1000) + 10)
+    assert np.array_equal(
+        selected[1000:2000], settings.draws + 20 * np.arange(1000) + 10
+    )
+    assert selected[-1] == 3 * settings.draws + 19_990
+    assert len(np.unique(selected)) == len(selected)
+
+    idata.posterior.coords["draw"] = np.arange(settings.draws)[::-1]
+    with pytest.raises(nuts.TrajectoryNutsError, match="off grid"):
+        _ppc_flat_draw_selection(idata, settings)
+
+
 def test_conditional_smoothed_state_matches_direct_gaussian_conditioning(prepared):
     rows = prepared.group_rows[0]
     state_covariance = _stationary_ar1_covariance(18, -0.35, 0.17)
@@ -238,7 +277,10 @@ def _boundary_sampler_diagnostics(panel_group_count=6):
             bulk_ess=400.0,
             tail_ess=400.0,
             posterior_mean_mcse=0.1,
-            interval_endpoint_mcse=0.1,
+            interval_80_lower_endpoint_mcse=0.1,
+            interval_80_upper_endpoint_mcse=0.1,
+            interval_99_lower_endpoint_mcse=0.1,
+            interval_99_upper_endpoint_mcse=0.1,
             posterior_sd=1.0,
         )
         for name in required_names
@@ -269,6 +311,22 @@ def test_sampler_diagnostic_boundaries_are_inclusive_and_fail_closed():
         replace(first, bulk_ess=np.nextafter(400.0, -math.inf)),
         replace(first, tail_ess=np.nextafter(400.0, -math.inf)),
         replace(first, posterior_mean_mcse=np.nextafter(0.1, math.inf)),
+        replace(
+            first,
+            interval_80_lower_endpoint_mcse=np.nextafter(0.1, math.inf),
+        ),
+        replace(
+            first,
+            interval_80_upper_endpoint_mcse=np.nextafter(0.1, math.inf),
+        ),
+        replace(
+            first,
+            interval_99_lower_endpoint_mcse=np.nextafter(0.1, math.inf),
+        ),
+        replace(
+            first,
+            interval_99_upper_endpoint_mcse=np.nextafter(0.1, math.inf),
+        ),
     )
     for mutation in mutations:
         altered = replace(
@@ -314,6 +372,79 @@ def test_malformed_sample_stats_fail_shape_and_type_validation():
         binary=False,
         threshold=10,
     ) == (-1, False)
+
+
+@pytest.mark.parametrize(
+    "mutation", ["labels", "cardinality", "q90_negative", "q995_nonfinite"]
+)
+def test_sampler_diagnostics_reject_misaligned_or_malformed_arviz_rows(
+    monkeypatch, prepared, mutation
+):
+    settings = vbd_nuts_execution_settings("smoke")
+    rng = np.random.default_rng(20260716)
+    scalar = lambda: rng.normal(size=(settings.chains, settings.draws))
+    idata = az.from_dict(
+        {
+            "posterior": {
+                "alpha": scalar(),
+                "beta": scalar(),
+                "sigma_u": np.abs(scalar()) + 0.1,
+                "u": rng.normal(
+                    size=(settings.chains, settings.draws, 6)
+                ),
+                "sigma_r": np.abs(scalar()) + 0.1,
+                "rho": np.tanh(scalar()),
+                "trajectory_movement": scalar(),
+            },
+            "sample_stats": {
+                "diverging": np.zeros(
+                    (settings.chains, settings.draws), dtype=int
+                ),
+                "tree_depth": np.ones(
+                    (settings.chains, settings.draws), dtype=int
+                ),
+            },
+        }
+    )
+    original_mcse = nuts.az.mcse
+
+    def misaligned_mcse(*args, **kwargs):
+        result = original_mcse(*args, **kwargs)
+        if (
+            kwargs.get("method") == "quantile"
+            and kwargs.get("prob") == nuts.VBD_TRAJECTORY_INTERVAL_99[1]
+        ):
+            if mutation == "q995_nonfinite":
+                result = result * math.nan
+            else:
+                result = result.to_dataset()
+            if mutation == "labels":
+                result = result.assign_coords(u_dim_0=[1, 0, 2, 3, 4, 5])
+            elif mutation == "cardinality":
+                result = result.isel(u_dim_0=slice(0, 5))
+        if (
+            mutation == "q90_negative"
+            and kwargs.get("method") == "quantile"
+            and kwargs.get("prob") == nuts.VBD_TRAJECTORY_INTERVAL_80[1]
+        ):
+            result = -abs(result)
+        return result
+
+    monkeypatch.setattr(nuts.az, "mcse", misaligned_mcse)
+    monkeypatch.setattr(nuts, "_bfmi_values", lambda _idata: np.ones(2))
+
+    diagnostics = _compute_sampler_diagnostics(
+        idata,
+        prepared=prepared,
+        settings=settings,
+    )
+
+    assert diagnostics.trace_shape_matches is False
+    assert "parameter_diagnostics" in diagnostics.failing_diagnostics
+    assert all(
+        not parameter.parameter_name.startswith("u[")
+        for parameter in diagnostics.parameters
+    )
 
 
 def test_ppc_gate_boundaries_are_inclusive():

@@ -66,6 +66,19 @@ function refreshFitHash(fit) {
   fit.fit_summary_hash = sha256Json(body);
 }
 
+function refreshRetentionHash(diagnostics) {
+  diagnostics.outer_weight_retention_hash = sha256Json({
+    algorithm: "binary64_representable_normalized_weight_retention_v1",
+    excluded_sobol_ordinal_commitment:
+      diagnostics.excluded_sobol_ordinal_commitment,
+    finite_log_weight_count: diagnostics.finite_log_weight_count,
+    generated_point_count: diagnostics.generated_point_count,
+    retained_sobol_ordinal_commitment:
+      diagnostics.retained_sobol_ordinal_commitment,
+    retained_weight_count: diagnostics.retained_weight_count
+  });
+}
+
 function coordinatedRehash(artifact) {
   const modelRoot = sha256Json(artifact.input_manifest.model_manifest);
   artifact.input_manifest.model_manifest_root = modelRoot;
@@ -164,6 +177,26 @@ test("Python and TypeScript VBD hashes have byte parity", { skip: venvSkip }, ()
 test("VBD artifact cannot be relabeled as longitudinal concordance", { skip: venvSkip }, () => {
   assert.equal(
     LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(emitSmokeArtifact()).success,
+    false
+  );
+});
+
+test("VBD MCSE diagnostic cannot enter the proof artifact bridge", () => {
+  const diagnostic = {
+    schema_version: "FT_AI_VALUE_VBD_PRECISION_DESIGN_DIAGNOSTIC_2026_07_V1",
+    diagnostic_id: "vbd_precision_design_diagnostic_v1",
+    state: "HOLD",
+    hold_reasons: ["mcse_design_diagnostic_nonacceptance"],
+    evidence_eligible: false,
+    acceptance_count_effect: 0,
+    customer_output_authorized: false,
+    internal_only: true,
+    synthetic_only: true,
+    aggregate_only: true
+  };
+  assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(diagnostic).success, false);
+  assert.equal(
+    LongitudinalStateSpaceConcordanceArtifactSchema.safeParse(diagnostic).success,
     false
   );
 });
@@ -484,7 +517,14 @@ test("movement and integration diagnostics remain internally coherent", { skip: 
       };
     },
     (artifact) => {
-      artifact.lane_records[0].deterministic_fit.integration_diagnostics.finite_point_count = 4095;
+      artifact.lane_records[0].deterministic_fit.integration_diagnostics.retained_weight_count = 4095;
+    },
+    (artifact) => {
+      artifact.lane_records[0].deterministic_fit.integration_diagnostics.finite_log_weight_count = 4095;
+    },
+    (artifact) => {
+      artifact.lane_records[0].deterministic_fit.integration_diagnostics
+        .retained_sobol_ordinal_commitment = "0".repeat(64);
     },
     (artifact) => {
       artifact.lane_records[0].deterministic_fit.integration_diagnostics.effective_sample_size = 9000;
@@ -495,7 +535,7 @@ test("movement and integration diagnostics remain internally coherent", { skip: 
     },
     (artifact) => {
       artifact.lane_records[0].deterministic_fit.integration_diagnostics
-        .conditional_movement_quadrature.movement_support_count = 16;
+        .conditional_movement_mixture.component_count = 16;
     }
   ];
   for (const mutate of mutations) {
@@ -504,6 +544,34 @@ test("movement and integration diagnostics remain internally coherent", { skip: 
     coordinatedRehash(artifact);
     assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(artifact).success, false);
   }
+});
+
+test("equal retained and excluded ordinal commitments reject after coordinated rehash", { skip: venvSkip }, () => {
+  const artifact = bridgeValidArtifact();
+  const diagnostics = artifact.lane_records[0].deterministic_fit.integration_diagnostics;
+  diagnostics.excluded_sobol_ordinal_commitment =
+    diagnostics.retained_sobol_ordinal_commitment;
+  refreshRetentionHash(diagnostics);
+  coordinatedRehash(artifact);
+  assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(artifact).success, false);
+});
+
+test("ESS count consistency uses only the compiled binary64 allowance", { skip: venvSkip }, () => {
+  const accepted = bridgeValidArtifact();
+  const acceptedDiagnostics =
+    accepted.lane_records[0].deterministic_fit.integration_diagnostics;
+  acceptedDiagnostics.effective_sample_size =
+    acceptedDiagnostics.retained_weight_count + 5e-10;
+  coordinatedRehash(accepted);
+  assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(accepted).success, true);
+
+  const rejected = bridgeValidArtifact();
+  const rejectedDiagnostics =
+    rejected.lane_records[0].deterministic_fit.integration_diagnostics;
+  rejectedDiagnostics.effective_sample_size =
+    rejectedDiagnostics.retained_weight_count + 2e-9;
+  coordinatedRehash(rejected);
+  assert.equal(VbdTrajectoryProofArtifactSchema.safeParse(rejected).success, false);
 });
 
 test("nonfinite numerical evidence rejects even after coordinated rehash", { skip: venvSkip }, () => {

@@ -222,12 +222,44 @@
       "last_note": "Done 2026-07-16: tasks 2.1-2.5 include the exact 2,000-slot planner, 40-chunk original/recomputation runner, four canaries, production-bound controls, replay/tamper checks, evidence snapshots, and committed combined readback. Final hardening adds exact-S unique GO review refs, trusted Git isolation, generated all-lane zero-variance preparation, attestation-level copied-checkpoint rejection, successful checkpoint resume, idempotent combined recovery, and an internal-only VBD bridge export. VBD 269, inference 834, bridges 104, snapshots 11, harness 276/3 skipped, builds, wheel/import, OpenSpec, and governance passed. No acceptance seed or evidence ran; concordance remains pending until merge."
     },
     {
+      "id": "vbd-numerical-precision-contract-amendment",
+      "title": "VBD deterministic-tail and NUTS precision contract amendment",
+      "bound": "Docs/OpenSpec/status only: amend the synthetic VBD proof contract to predeclare a higher-accuracy deterministic conditional-Normal tail method, a credible fixed NUTS precision and geometry design, and endpoint-specific MCSE evidence while preserving the three-lane model, priors, estimand, six cells, existing generator/chain/PPC seeds, every statistical threshold, 30-bundle evidence universe, fail-closed HOLD behavior, trusted-host boundary, and old F/evidence as permanent HOLD; no implementation, sampler execution, replacement S/F, concordance, canary, replicated study, real/customer/live data, public schema, route, UI, persistence, export, customer output, confidence/probability, ROI, causality, productivity, ranking, new event/reason, promotion, or task 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-17: direct conditional-Normal mixture CDF, centered 4x20k/5k/.999/adapt_full NUTS, five-field MCSE, fixed 4,000-state PPC selector, two non-admissible precision canaries, 7,200s primary bundle-child timeout, and old-lineage tombstone are frozen. Thresholds, acceptance seeds, model target, and 30-bundle universe unchanged. Exact CODE/BUG/ADVERSARIAL/statistical GO after repair. No implementation or evidence ran."
+    },
+    {
+      "id": "vbd-binary64-representable-retention-amendment",
+      "title": "VBD binary64 representable-retention contract amendment",
+      "bound": "Docs/OpenSpec/status only: define deterministic outer-weight retention after all 8,192 Sobol nodes are generated and finite log weights are identified and normalized in original ordinal order; retain only finite strictly positive binary64-normalized weights, renormalize retained weights, then apply unchanged >=4096, ESS, and max-weight gates; hash-bind generated/finite/retained counts and retained/excluded ordinal commitments; caller-supplied nonpositive weights still HOLD; preserve every model, prior, estimand, seed, threshold, canary, evidence-universe, and fail-closed requirement; no implementation, sampler/canary/evidence execution, replacement S/F, real/customer/live data, public surface, output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-17: frozen exact binary64 representable retention, pinned NumPy reductions, unchanged post-retention count/ESS/max-weight gates, and exact count/ordinal/hash bindings. Final CODE/BUG/ADVERSARIAL/statistical reviews returned GO. No floor, seed, model, gate, implementation, canary, or evidence change; task 2.6 remains unchecked."
+    },
+    {
+      "id": "vbd-reference-engine-hardening",
+      "title": "VBD reference-engine geometry hardening after bundle-0 statistical HOLD",
+      "bound": "Synthetic-only inference/ plus required OpenSpec/docs/status: diagnose and make the smallest PyMC reference-engine parameterization or sampler-geometry repair needed for the accepted bundle-0 divergence and MCSE failures, then reassess 99% tail concordance; preserve the frozen longitudinal model, priors, estimands, six cells, seeds, draws/tuning/chains, target_accept, max_treedepth, every statistical threshold, deterministic engine, exact evidence plan, fail-closed HOLD behavior, and trusted-host threat model; focused diagnostic/development runs only, no accepted concordance continuation, canaries, replicated calibration, real/customer/live data, public schemas, routes, UI, persistence, exports, customer outputs, confidence/probability, ROI, causality, productivity, ranking, new events/reasons/thresholds, promotion, or task 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Closed NO-GO 2026-07-17 and superseded by vbd-numerical-precision-contract-amendment: reference-only repair cannot address the 16-point deterministic tail error or 4,000-draw MCSE design. No implementation was retained. Old F/evidence remain permanent HOLD and must never resume."
+    },
+    {
+      "id": "vbd-numerical-precision-implementation-canaries",
+      "title": "VBD numerical-precision implementation and non-admissible precision canaries",
+      "bound": "Synthetic-only inference/, internal confidence-engine bridge tests only if required, and verified OpenSpec/docs/status: complete task 2.6 by implementing conditional_normal_mixture_quantile_v2 with exact binary64 oracles, centered 4x20k retained/5k tune/.999/adapt_full NUTS settings, five separate MCSE fields for every required parameter, fixed 4,000-state PPC selector, 7,200-second primary bundle-child timeout, old-lineage rejection, and exact six-/twelve-group full-setting precision canaries under the frozen smoke seeds; run both canaries only after focused/full verification and keep them permanent non-evidence HOLD; preserve model, priors, estimand, acceptance seeds, every statistical threshold, 30-bundle universe, and fail-closed behavior; no replacement S/F, acceptance seed, concordance bundle, acceptance canary, replicated study, real/customer/live data, public schema, route, UI, persistence, connector, export, customer output, confidence/probability, ROI, causality, productivity, ranking, new event/reason, promotion, task 3.1+, or parent 5.6 completion",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Statistical HOLD 2026-07-17: clean c7014906 canary 0 returned a fully validated result whose only otherwise-applicable failing category was mcse. Canary 1 did not run. Task 2.6, replacement S/F, concordance, and evidence remain blocked. Do not lower 0.10, rotate seeds, retry/extend, or run later work; next needs a bounded methodology decision based on this failed precision design."
+    },
+    {
       "id": "vbd-trajectory-engine-concordance",
       "title": "VBD trajectory source freeze and NUTS concordance",
       "bound": "Synthetic-only inference evidence execution after the implementation runner merges: complete tasks 3.1-3.3 by reviewing exact source commit S, creating the manifest-only sole-child freeze commit F, running exactly 30 compiled concordance bundles with 90 NUTS lane fits, 90 primary deterministic lane fits, and 90 fresh deterministic recomputations, and recording only sanitized summaries; no replicated full-study cases, real/customer/live data, public surfaces, customer output, promotion, or task 5.6 completion",
       "status": "pending",
       "risk": "high",
-      "last_note": "Human-authorized future queue item. Activate only after the implementation/runner item is merged and exact source commit S is available."
+      "last_note": "Old F=0287713d is permanent HOLD and must never resume. Numerical-precision contract amendment is complete; concordance remains pending behind separate task 2.6 implementation approval, both non-admissible precision canaries, replacement task 3.1 source/reviews, and a new sole-child freeze. No bundle beyond old bundle 0 may start."
     },
     {
       "id": "vbd-trajectory-full-evidence",
@@ -244,6 +276,38 @@
       "status": "pending",
       "risk": "high",
       "last_note": "Human-authorized future queue item. Explicit human acceptance of the final exact committed record remains nondelegable."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-reproduction-amendment",
+      "title": "VBD MCSE diagnostic-reproduction contract amendment",
+      "bound": "Docs/OpenSpec/status only: define one separately authorized, create-once, permanently non-evidentiary VBD precision-design diagnostic using a newly reserved synthetic six-group null case and disjoint smoke seeds; retain complete sanitized lane/parameter/five-coordinate MCSE-ratio and effective-sample-size diagnostics needed for a prospective methodology decision; preserve canary 0 as permanent HOLD and preserve every model, prior, estimand, existing seed, <=0.10 MCSE threshold, statistical/evidence gate, and fail-closed rule; no failed-canary retry/resume/extension, implementation, sampler execution, canary 1, replacement S/F, concordance, evidence, task 2.6 completion, real/customer/live data, public surface, customer output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-17: froze one globally one-shot, disjoint, permanently held MCSE diagnostic with exclusive seeds, full sanitized prefix/ESS evidence, D/A/review/human authorization binding, and standalone isolated bootstrap. Four-role GO; no implementation or execution."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-implementation",
+      "title": "VBD MCSE diagnostic implementation without execution",
+      "bound": "Synthetic-only inference/, focused tests, and verified OpenSpec/docs/status: implement the task-1.8 diagnostic plan and exclusive seed manifest, complete sanitized 5k/10k/20k prefix projection, strict no-extra-key records and hashes, D/A manifest and human-authorization validators, workspace-independent one-shot claim mechanics, categorical proof-path rejection, and startable isolated standalone bootstrap; preserve the failed canary, model, priors, estimand, all existing seeds, <=0.10 MCSE threshold, every statistical/evidence gate, and fail-closed HOLD; no diagnostic generator or sampler execution, authorization commit A, human execution record, claim consumption, canary 1, replacement S/F, concordance, evidence, task 2.6 completion, real/customer/live data, route, UI, persistence, export, customer output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-17: implemented and verified the exclusive seeds/case, complete sanitized prefix projection, strict plan/review/claim/hash reconstruction, canary tombstone, categorical proof rejection, and claim-before-import isolated child with compiled timeout. Full inference 985 passed; no diagnostic generation, sampling, authorization commit A, human execution record, or real claim occurred."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-execution",
+      "title": "VBD MCSE diagnostic one-shot execution",
+      "bound": "Synthetic-only exact-A execution/status: create the exact external human authorization record, consume the one permitted fixed claim, and run only the frozen non-evidentiary diagnostic; preserve all models, seeds, thresholds, gates, permanent HOLD, no-retry behavior, and proof-path exclusion; no retry, replacement case, code/docs amendment, canary 1, task 2.6 completion, replacement S/F, concordance, evidence, real/customer/live data, public surface, customer output, or promotion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done/consumed 2026-07-17: exact A 7e4f5f00 and the human record passed four-role preflight; claim and all three input bindings were created, then the first lane completed 5,000 tune plus 20,000 draws across four chains in 356 seconds. Projection failed before any MCSE rows or output because PyMC's valid posterior storage order differed from the projector's required emitted order. No staged/final artifact or statistical evidence exists; fail-closed HOLD and no-retry remain intact."
+    },
+    {
+      "id": "vbd-mcse-diagnostic-replacement-amendment",
+      "title": "VBD MCSE replacement-diagnostic contract amendment",
+      "bound": "Docs/OpenSpec/status only: preserve the consumed v1 diagnostic as permanent uninterpretable HOLD; define one separately implemented and authorized replacement diagnostic identity with newly reserved disjoint smoke seeds, exact posterior-variable-set validation followed by canonical name-based projection, a full-shape sampler-free PyMC/DataTree/ArviZ natural-order conformance fixture, and hash-chained create-once allowlisted postmortem checkpoints that cannot enable resume or retry; preserve the model, priors, estimand, 20k/5k settings, <=0.10 MCSE gate, all consumed seeds, every evidence gate, and fail-closed behavior; no implementation, diagnostic execution, claim creation, canary 1, task 2.6 completion, replacement S/F, concordance, evidence, real/customer/live data, public surface, customer output, promotion, or parent 5.6 completion",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-18: V1 remains permanent uninterpretable HOLD. V2 freezes disjoint seeds, exact-set/name-based projection, natural-order full-shape conformance, and exact non-resumable checkpoint chaining. Four-role GO and governance checks passed. Task 1.9 complete; no implementation, claim, sampler, canary, concordance, or evidence ran."
     }
   ]
 }

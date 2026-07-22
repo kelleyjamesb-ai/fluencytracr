@@ -57,7 +57,7 @@ def test_smoke_panel_is_complete_deterministic_and_hash_bound(smoke_case):
 
     assert len(panel.bundles) == 6 * 18
     assert panel.ordered_panel_manifest_root == (
-        "fa5b815c8d50e8c6f617b57b0de6ca91111775e1611b6012d530cbb7455164ca"
+        "f979732f4de7dfdcefb5963e4981b6787b290484ab99684ff853359d911fbf3e"
     )
     assert tuple(lane for lane, _ in panel.lane_observation_roots) == VBD_TRAJECTORY_LANES
     assert generate_vbd_trajectory_smoke_case().panel == panel

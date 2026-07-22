@@ -47,6 +47,38 @@ trajectory contract before implementation or real-data admission can proceed.
   explicitly approved, while execution, evidence generation, independent
   acceptance, and parent task `5.6` remain incomplete until their exact gates
   pass.
+- Record the post-bundle-0 numerical-precision amendment: replace the retired
+  16-point conditional-Normal tail discretization with direct mixture-CDF
+  inversion, increase fixed NUTS retained/tuning draws and target acceptance
+  without rotating existing seeds or lowering any gate, preserve all five
+  parameter MCSE values, retain the 4,000-replicate PPC through a fixed draw
+  selector, and keep implementation plus replacement evidence unauthorized
+  until a later bounded decision.
+- Record the binary64 representable-retention amendment: generate every
+  planned Sobol node, normalize every finite log weight in original ordinal
+  order, retain and renormalize only normalized weights represented as finite
+  and strictly positive binary64 values, then apply every unchanged retained-
+  count, ESS, and maximum-weight gate. Commit generated/finite/retained counts
+  and retained/excluded ordinal sets without adding a floor, tolerance, point,
+  seed, model, threshold, or evidence-universe change.
+- Record the post-canary MCSE diagnostic amendment: preserve the failed
+  six-group precision canary as permanent HOLD, reserve one different
+  synthetic six-group null case inside the smoke namespace, and define a
+  create-once, non-evidentiary diagnostic that retains complete dimensionless
+  parameter-level MCSE, ESS, prefix-scaling, and chain-tail disagreement
+  information. The diagnostic cannot retry the canary, clear task `2.6`, select
+  a replacement precision design, enter evidence, or authorize implementation
+  or execution.
+- Record that the consumed `vbd_precision_design_diagnostic_v1` launch is a
+  permanent uninterpretable HOLD, not a statistical result and not a retryable
+  attempt. Define a separate `vbd_precision_design_diagnostic_v2` identity with
+  disjoint reserved smoke seeds, exact posterior-variable-set validation plus
+  canonical name-based projection, a full-shape sampler-free conformance
+  fixture using PyMC's natural storage order, and create-once hash-chained
+  postmortem checkpoints that cannot enable resume or retry. The replacement
+  still requires a reviewed implementation `D2`, manifest-only authorization
+  `A2`, separate human authorization, and one new launch; this amendment does
+  not implement or execute it.
 
 ## Impact
 

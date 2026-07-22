@@ -152,10 +152,54 @@ Time encoding uses the twelve unique pre-period indexes once, then broadcasts
 the result to panel groups. The latent-level contrast is recovered by exact
 conditional Gaussian fixed-interval smoothing at every hyperparameter support;
 it is not the existing fixed-coefficient movement contrast. Deterministic
-intervals use the frozen 8,192-point outer integration and a 16-point
-Gauss-Hermite conditional-Normal support, followed by `weighted_quantile_v1`.
-The NUTS reference samples the matching scalar conditional latent contrast at
-each retained draw.
+intervals retain the frozen 8,192-point outer integration but evaluate its
+conditional-Normal mixture CDF directly. `conditional_normal_mixture_quantile_v2`
+uses exact mixture moments, pinned `ndtr`/`ndtri`, outward-adjacent component-
+quantile bounds, exactly 64 binary64 bisection iterations, and the final upper
+bound. Exact binary64 standard-Normal and unequal-mixture oracles replace a
+caller tolerance. The retired 16-point Gauss-Hermite expansion is not accurate
+enough for the 99% concordance gate and cannot enter a repaired fit. The NUTS
+reference samples the matching scalar conditional latent contrast at each
+retained draw.
+
+The unchanged outer integration generates all 8,192 Sobol nodes and preserves
+their original zero-based ordinals. It evaluates all nodes, keeps each finite
+binary64 log weight with its matching conditional moments, and computes the
+finite-log-weight `scipy.special.logsumexp` in original ordinal order. It
+computes candidates with `numpy.exp`, selects the represented positive
+candidates without changing their relative order, then renormalizes through
+exactly one `numpy.sum(...,dtype=numpy.float64)` reduction and binary64 vector
+division. Binary64 normalization can map a mathematically positive tail weight
+to positive zero. The engine applies the unchanged `>=4096` retained-count,
+`ESS>=256`, and maximum-normalized-weight `<=.05` gates after retention. This
+exact representability predicate is not a floor or tolerance. The engine
+cannot clamp, round up, replace, merge, reorder, or otherwise rescue an
+unrepresented weight.
+
+Integration diagnostics and their existing semantic/hash bindings must include
+the generated-point, finite-log-weight, and retained-weight counts; SHA-256
+canonical-JSON commitments to the ascending retained and excluded original
+ordinal lists; and one retention-record hash over the exact no-extra-key object
+defined in the contract and normative spec. Retained-list length equals the
+retained count; excluded-list length equals generated minus retained count; and
+their union is exactly every generated ordinal. The lists and weights remain
+private support and are not emitted. Fresh recomputation must rederive the same
+fields. The generic conditional-mixture boundary still requires every caller-
+supplied weight to be finite and strictly positive; the outer integrator must
+filter its own binary64 zeros before calling it. Missing, forged, inconsistent,
+duplicate, or off-range ordinal commitments HOLD.
+
+The repaired reference keeps the same likelihood, priors, named parameters,
+centered zero-sum parameterization, existing generator/chain/PPC seeds, four
+chains, and `max_treedepth=15`, but uses 20,000 retained draws and 5,000 tuning
+draws per chain, `target_accept=.999`, PyMC `jitter+adapt_full`, `cores=1`,
+and `blas_cores=1`. All diagnostic thresholds remain unchanged. Mean,
+80%-lower, 80%-upper, 99%-lower, and 99%-upper MCSE values remain separately
+labeled for every required parameter. All 80,000 draws feed summaries and
+diagnostics. PPC remains exactly 4,000 replicates through the fixed chain-
+balanced draw selector in the normative spec. No collapsed target,
+noncentering, post-hoc coefficient reconstruction, seed rotation, adaptive
+extension, antithetic sampling, or endpoint correction is allowed.
 
 The lane estimand is the direction-adjusted difference between the mean latent
 level over the final three predeclared evaluation windows and the mean latent
@@ -205,8 +249,106 @@ separately reviewable stages:
 
 Pre-freeze development smoke uses only the disjoint
 `2_055_900_000..2_055_900_999` namespace, computes no aggregate acceptance
-gate, and always HOLDS. It may expose mechanical defects only; it cannot change
-the frozen statistical contract or enter later evidence.
+gate, and always HOLDS. In addition to fast smoke, the repair runs two exact
+full-setting non-admissible precision bundles at six and twelve groups with the
+fixed smoke seeds in the normative spec. They must finish inside the compiled
+primary bundle-child timeout and clear the otherwise applicable diagnostics
+before candidate `S`, but they cannot enter evidence. A failure requires HOLD
+or a new docs amendment, never tuning under the same contract.
+
+Canary ordinal `0` subsequently returned a fully validated result whose only
+otherwise-applicable failing category was `mcse`. That result is a permanent
+HOLD and cannot be resumed, repeated, extended, or reconstructed from a new
+run. Because the validated parent retained only the category and not the
+parameter/endpoint coordinates, a prospective precision design cannot be
+chosen from the observed failure magnitude.
+
+The diagnostic amendment therefore reserves one different synthetic
+six-group null case inside the existing smoke namespace. It uses the unchanged
+generator, model target, parameterization, NUTS settings, and statistical
+thresholds, but it does not run deterministic concordance or PPC. Its only
+purpose is to retain a complete, sanitized diagnostic matrix for every lane
+and required parameter at the first 25%, 50%, and 100% of retained draws.
+Dimensionless MCSE/posterior-SD ratios, bulk/tail and endpoint-quantile ESS,
+R-hat, lane sampler failure categories, and chain endpoint offsets normalized
+by pooled posterior SD distinguish an isolated extreme-tail precision problem
+from broad mixing failure without retaining posterior estimates or draws.
+
+The diagnostic has its own identity, exclusively reserved seeds, immutable
+workspace-independent attempt claim, strict validator, and create-once result.
+The claim root and canonical workspace are fixed absolute identities in a
+separately reviewed sole-child authorization manifest rather than caller
+inputs, so another
+checkout or empty directory cannot mint a second attempt. A hash-bound
+standalone standard-library bootstrap starts under isolated Python and admits
+only the reviewed source bundle and pinned site packages. The diagnostic is
+permanently HOLD, cannot satisfy any
+canary or acceptance condition, and is categorically rejected by freeze,
+concordance, study, recomputation, artifact, and acceptance validators. A
+crash, timeout, malformed record, or write failure consumes the one launch.
+The result may inform only a later docs/OpenSpec methodology decision; it
+cannot select, implement, or execute that design by itself.
+
+The authorized V1 launch is now consumed. Exact implementation
+`50636e6721bf6b8e8e9269106a218527a159a94e`, authorization
+`7e4f5f00f6d826ccd771b2553350608bedb0f0e0`, human-authorization hash
+`1c8d781a6835a338b7e69a0d8d4de7d8d61b57f28db7364adee6d475d9d17c64`,
+claim hash `f9a512969703833b73e27f902bc79f78d5dfd50504f49ea1d431e335006a89fc`,
+and input-binding hash
+`3726b313662d6de51fe1252f9212664bda664e628343d0ac5d747f5763eb7a43`
+remain a permanent uninterpretable HOLD. The frequency sampler completed, but
+projection rejected before any sanitized row, staged workspace, or final
+record because valid PyMC storage order differed from the projector's emitted-
+row order. That launch contains no MCSE, ESS, R-hat, BFMI, mixing, or tail-
+precision result and cannot be retried, resumed, reconstructed, or interpreted
+statistically.
+
+A replacement is a new diagnostic identity, not a V1 retry. It reserves
+generator seed `2_055_900_600` and chain seed
+`2_055_900_700+4*lane_ordinal+chain_index`, yielding exactly
+`2_055_900_700..711`, all disjoint from every canary, consumed diagnostic,
+concordance, and study formula.
+The projector first requires exact order-insensitive equality between the
+posterior variable names and
+`{alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho}`. It rejects missing or
+extra, non-string, coerced, or malformed variables, then reads each posterior
+and ArviZ diagnostic variable by exact name and emits the unchanged canonical
+flattened parameter order. PyMC storage order has no semantic role.
+A sampler-free full-shape fixture must traverse the production PyMC model,
+DataTree, ArviZ, and projection identity boundary with PyMC's natural storage
+order `alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho`; a manually
+reordered fake trace is insufficient. Its emitted rows and hashes must equal
+those from identical values stored in canonical order.
+
+The replacement writes postmortem observability checkpoints to a new fixed
+external root bound by its authorization manifest. Checkpoints are create-once,
+predecessor-hash-chained records over one exact phase/lane sequence. Their only
+dynamic content is identity and input-binding hashes, ordinal, allowlisted
+phase, allowlisted lane, predecessor hash, and creation timestamp. Exact
+ordinal/phase/lane filenames and strict whole-root enumeration prevent unknown
+or duplicate files from hiding beside the chain. Checkpoints contain no draws,
+estimates, messages, exception text, tracebacks, paths, panel values, unsafe
+data, or caller-supplied detail. The terminal ready-for-publication checkpoint
+precedes atomic result publication. Execution never reads a checkpoint to skip,
+resume, continue, retry, or reuse work. Missing, extra, malformed, duplicated,
+or reordered checkpoints leave the consumed replacement uninterpretable HOLD;
+they never restore launch authority or supply any statistical result field.
+
+Future implementation requires a new clean reviewed commit `D2`. Its sole-child
+manifest-only authorization commit `A2` binds separate V2 workspace, claim,
+checkpoint, and result roots, the replacement seeds and identity, exact command,
+runtime, lockfile, fixture, and four unique GO references. A separate human
+record against exact `A2` is required before one new launch. No V1 commit,
+manifest, authorization, claim, binding, workspace, seed, checkpoint, or output
+can satisfy any V2 gate.
+
+Sampler MCSE is evaluated independently and stored separately for the
+posterior mean and each lower and upper 80% and 99% interval endpoint.
+Diagnostic outputs are joined only after exact parameter-dimension,
+coordinate-label, and cardinality equality. The resumable
+runner writes each admitted launch to a private sibling attempt-anchor before
+execution; deletion of workspace launch/result suffixes can therefore restore
+the admitted launch and fail durably without re-executing a seed.
 
 The direct-aggregate generator is reproducible under
 `Generator(PCG64DXSM(seed))` with one frozen draw sequence and lower-Cholesky

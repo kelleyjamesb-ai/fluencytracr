@@ -37,7 +37,7 @@ def _terminal_truth(case):
 def test_original_smoke_interface_has_portable_canonical_hash():
     case = generate_vbd_trajectory_smoke_case()
     assert case.panel.ordered_panel_manifest_root == (
-        "fa5b815c8d50e8c6f617b57b0de6ca91111775e1611b6012d530cbb7455164ca"
+        "f979732f4de7dfdcefb5963e4981b6787b290484ab99684ff853359d911fbf3e"
     )
     validate_trajectory_panel(case.panel)
 

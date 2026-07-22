@@ -8,6 +8,7 @@ from fluencytracr_inference.vbd_trajectory_validation_plan import (
 )
 from fluencytracr_inference.vbd_trajectory_validation_study import (
     VbdTrajectoryValidationStudyError,
+    _lane_result_from_dict,
     build_vbd_trajectory_lane_result,
     evaluate_vbd_trajectory_result_manifest,
     primary_coverage_gate,
@@ -19,6 +20,22 @@ from fluencytracr_inference.vbd_trajectory_validation_study import (
 
 def _hash(role: str) -> str:
     return sha256_json({"fixture": "standalone_lane_summary", "role": role})
+
+
+def _integration_diagnostics() -> dict:
+    body = {
+        "algorithm": "binary64_representable_normalized_weight_retention_v1",
+        "excluded_sobol_ordinal_commitment": _hash("excluded_ordinals"),
+        "finite_log_weight_count": 8192,
+        "generated_point_count": 8192,
+        "retained_sobol_ordinal_commitment": _hash("retained_ordinals"),
+        "retained_weight_count": 8192,
+    }
+    return {
+        "status": "PASS",
+        **body,
+        "outer_weight_retention_hash": sha256_json(body),
+    }
 
 
 def _lane_result(
@@ -44,7 +61,7 @@ def _lane_result(
         model_input_hash=_hash("model"),
         context_binding_hash=_hash("context"),
         fit_summary_hash=_hash("fit"),
-        diagnostics_hash=_hash("diagnostics"),
+        integration_diagnostics=_integration_diagnostics(),
     )
 
 
@@ -105,6 +122,53 @@ def test_lane_summary_coverage_includes_endpoints_and_null_flag_is_strict():
 def test_lane_summary_rejects_hash_tampering():
     with pytest.raises(VbdTrajectoryValidationStudyError):
         replace(_lane_result(), lane_result_hash="0" * 64)
+
+
+def test_lane_summary_rejects_retention_tampering_and_missing_fields():
+    lane = _lane_result()
+    with pytest.raises(VbdTrajectoryValidationStudyError, match="retention hash"):
+        replace(lane, outer_weight_retention_hash="0" * 64)
+    with pytest.raises(VbdTrajectoryValidationStudyError, match="counts"):
+        replace(lane, retained_weight_count=4095)
+    with pytest.raises(VbdTrajectoryValidationStudyError, match="must be distinct"):
+        replace(
+            lane,
+            excluded_sobol_ordinal_commitment=(
+                lane.retained_sobol_ordinal_commitment
+            ),
+        )
+
+    retention_fields = (
+        "generated_point_count",
+        "finite_log_weight_count",
+        "retained_weight_count",
+        "retained_sobol_ordinal_commitment",
+        "excluded_sobol_ordinal_commitment",
+        "outer_weight_retention_hash",
+    )
+    for field in retention_fields:
+        payload = lane.to_dict()
+        payload.pop(field)
+        with pytest.raises(VbdTrajectoryValidationStudyError, match="shape"):
+            _lane_result_from_dict(payload)
+
+    with pytest.raises(VbdTrajectoryValidationStudyError, match="omit"):
+        build_vbd_trajectory_lane_result(
+            lane="frequency",
+            raw_truth=0.2,
+            direction_sign=-1,
+            posterior_mean=-0.2,
+            posterior_sd=0.2,
+            interval_80_lower=-0.3,
+            interval_80_upper=-0.1,
+            interval_99_lower=-0.5,
+            interval_99_upper=0.1,
+            prepared_input_hash=_hash("prepared"),
+            model_input_hash=_hash("model"),
+            context_binding_hash=_hash("context"),
+            fit_summary_hash=_hash("fit"),
+            integration_diagnostics={"status": "PASS"},
+        )
 
 
 def test_lane_summary_is_summary_only():

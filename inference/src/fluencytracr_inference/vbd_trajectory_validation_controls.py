@@ -478,9 +478,7 @@ def _fit_validation_case(
                 model_input_hash=prepared.model_input_hash,
                 context_binding_hash=prepared.context_binding_hash,
                 fit_summary_hash=fit.fit_summary_hash(),
-                diagnostics_hash=sha256_json(
-                    fit.integration_diagnostics.to_dict()
-                ),
+                integration_diagnostics=fit.integration_diagnostics.to_dict(),
             )
         )
     return tuple(results)

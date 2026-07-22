@@ -1,14 +1,85 @@
 import math
+import platform
 
 import numpy as np
 import pytest
 
 from fluencytracr_inference.vbd_trajectory_statistics import (
     TrajectoryStatisticsError,
+    conditional_normal_mixture_quantile_v2,
     normal_quadrature_v1,
+    summarize_conditional_normal_mixture_v2,
     summarize_weighted_support,
     weighted_quantile_v1,
 )
+
+
+def test_conditional_normal_mixture_v2_matches_exact_binary64_oracles():
+    probabilities = (0.005, 0.10, 0.90, 0.995)
+    standard = [
+        "-0x1.49b4c64d69160p+1",
+        "-0x1.4813c36e26d32p+0",
+        "0x1.4813c36e26d33p+0",
+        "0x1.49b4c64d69160p+1",
+    ]
+    for probability, expected in zip(probabilities, standard, strict=True):
+        assert conditional_normal_mixture_quantile_v2(
+            [1.0], [0.0], [1.0], probability
+        ).hex() == expected
+
+    summary = summarize_conditional_normal_mixture_v2(
+        "trajectory_movement",
+        [0.35, 0.65],
+        [-0.4, 0.7],
+        [0.6**2, 1.1**2],
+    )
+    assert summary.posterior_mean.hex() == "0x1.428f5c28f5c28p-2"
+    assert summary.posterior_sd.hex() == "0x1.17007814169ffp+0"
+    endpoints = [
+        summary.interval_99_lower.hex(),
+        summary.interval_80_lower.hex(),
+        summary.interval_80_upper.hex(),
+        summary.interval_99_upper.hex(),
+    ]
+    assert endpoints[0] == "-0x1.070d647d89159p+1"
+    # Pinned SciPy wheels differ by one ULP here on Darwin arm64 and Linux
+    # x86_64. Both are exact outputs of the contract's 64-step binary64
+    # bisection under their bound native runtime; no caller tolerance is used.
+    p10_oracles = {
+        ("Darwin", "arm64"): "-0x1.f4c4b60ce6076p-1",
+        ("Linux", "x86_64"): "-0x1.f4c4b60ce6077p-1",
+    }
+    runtime = (platform.system(), platform.machine())
+    assert runtime in p10_oracles
+    assert endpoints[1] == p10_oracles[runtime]
+    assert endpoints[2:] == [
+        "0x1.d2857797c387dp+0",
+        "0x1.aec938ed2fe2fp+1",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("weights", "means", "standard_deviations", "probability"),
+    [
+        ([], [], [], 0.10),
+        ([0.0], [0.0], [1.0], 0.10),
+        ([-0.0], [0.0], [1.0], 0.10),
+        ([-1.0], [0.0], [1.0], 0.10),
+        ([math.nan], [0.0], [1.0], 0.10),
+        ([math.inf], [0.0], [1.0], 0.10),
+        ([1.0], [math.nan], [1.0], 0.10),
+        ([1.0], [0.0], [0.0], 0.10),
+        ([1.0], [0.0], [1.0], 0.50),
+        ([1.0], [0.0, 1.0], [1.0], 0.10),
+    ],
+)
+def test_conditional_normal_mixture_v2_fails_closed(
+    weights, means, standard_deviations, probability
+):
+    with pytest.raises(TrajectoryStatisticsError):
+        conditional_normal_mixture_quantile_v2(
+            weights, means, standard_deviations, probability
+        )
 
 
 def test_weighted_quantile_v1_uses_midpoints_endpoints_and_linear_interpolation():

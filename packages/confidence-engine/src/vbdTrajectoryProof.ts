@@ -56,21 +56,31 @@ const MODEL_MANIFEST = {
     proposal: "student_t_df_5_v1",
     proposal_scale: 1.5,
     minimum_finite_point_count: 4096,
+    minimum_retained_weight_count: 4096,
     minimum_effective_sample_size: 256,
     maximum_normalized_weight: 0.05,
-    conditional_quadrature: "normal_quadrature_v1",
-    conditional_quadrature_point_count: 16,
-    stable_support_index: "16*original_sobol_ordinal+quadrature_index",
+    weight_retention_algorithm:
+      "binary64_representable_normalized_weight_retention_v1",
+    ordinal_commitment_algorithm: "vbd_outer_weight_ordinals_v1",
+    conditional_mixture_quantile: "conditional_normal_mixture_quantile_v2",
+    conditional_mixture_bisection_iterations: 64,
+    normal_cdf: "scipy.special.ndtr",
+    normal_quantile: "scipy.special.ndtri",
+    original_sobol_ordinal_retained: true,
+    original_sobol_ordinal_identity_preserved: true,
     random_numbers_used: false
   },
   reference_engine: {
     engine_id: "pymc_nuts_state_space_reference",
     sampler: "pymc",
     chains: 4,
-    draws: 1000,
-    tune: 2000,
-    target_accept: 0.99,
+    draws: 20000,
+    tune: 5000,
+    target_accept: 0.999,
     max_treedepth: 15,
+    init: "jitter+adapt_full",
+    cores: 1,
+    blas_cores: 1,
     trajectory_movement: "conditional_normal_smoothed_contrast_v1",
     explicit_chain_seeds: true
   },
@@ -101,6 +111,9 @@ const MODEL_MANIFEST = {
     manifest_id: "vbd_trajectory_ppc_v1",
     rng: "numpy.random.PCG64DXSM",
     state_generation: "conditional_smoothed_ar1_path_v1",
+    replicate_count: 4000,
+    draw_selector: "per_chain_zero_based_20*j+10_for_j_0_through_999",
+    selection_order: "chain_major_then_increasing_draw_index",
     tail: "upper_inclusive",
     statistics: [
       "pre_post_mean_movement",
@@ -330,8 +343,16 @@ const IntegrationDiagnosticsSchema = z
     point_count: z.literal(8192),
     finite_point_count: z.number().int().min(4096).max(8192),
     compiled_min_finite_point_count: z.literal(4096),
+    generated_point_count: z.literal(8192),
+    finite_log_weight_count: z.number().int().min(4096).max(8192),
+    retained_weight_count: z.number().int().min(4096).max(8192),
+    compiled_min_retained_weight_count: z.literal(4096),
+    retained_sobol_ordinal_commitment: SHA256,
+    excluded_sobol_ordinal_commitment: SHA256,
+    outer_weight_retention_hash: SHA256,
     effective_sample_size: EffectiveSampleSize,
     compiled_min_effective_sample_size: z.literal(256),
+    compiled_ess_count_rounding_allowance: z.literal(1e-9),
     max_normalized_weight: NormalizedWeight,
     compiled_max_normalized_weight: z.literal(0.05),
     mode_transformed: z.tuple([Finite, Finite, Finite]),
@@ -343,14 +364,23 @@ const IntegrationDiagnosticsSchema = z
       .object({
         sequence: z.literal("unscrambled_sobol_v1"),
         proposal: z.literal("student_t_df_5_v1"),
-        original_sobol_ordinal_retained: z.literal(true)
+        original_sobol_ordinal_retained: z.literal(true),
+        original_sobol_ordinal_identity_preserved: z.literal(true),
+        weight_retention_algorithm: z.literal(
+          "binary64_representable_normalized_weight_retention_v1"
+        ),
+        ordinal_commitment_algorithm: z.literal(
+          "vbd_outer_weight_ordinals_v1"
+        )
       })
       .strict(),
-    conditional_movement_quadrature: z
+    conditional_movement_mixture: z
       .object({
-        algorithm: z.literal("normal_quadrature_v1"),
-        point_count: z.literal(16),
-        movement_support_count: z.number().int().positive()
+        algorithm: z.literal("conditional_normal_mixture_quantile_v2"),
+        component_count: z.number().int().positive(),
+        bisection_iterations: z.literal(64),
+        normal_cdf: z.literal("scipy.special.ndtr"),
+        normal_quantile: z.literal("scipy.special.ndtri")
       })
       .strict(),
     random_numbers_used: z.literal(false),
@@ -359,8 +389,23 @@ const IntegrationDiagnosticsSchema = z
   })
   .strict()
   .superRefine((value, ctx) => {
-    if (value.effective_sample_size > value.finite_point_count) {
-      addIssue(ctx, ["effective_sample_size"], "ESS cannot exceed finite support count");
+    if (value.point_count !== value.generated_point_count) {
+      addIssue(ctx, ["point_count"], "legacy point count alias drifted");
+    }
+    if (value.finite_point_count !== value.retained_weight_count) {
+      addIssue(ctx, ["finite_point_count"], "legacy finite count alias drifted");
+    }
+    if (
+      value.retained_sobol_ordinal_commitment ===
+      value.excluded_sobol_ordinal_commitment
+    ) {
+      addIssue(ctx, ["excluded_sobol_ordinal_commitment"], "ordinal commitments must be distinct");
+    }
+    if (value.retained_weight_count > value.finite_log_weight_count) {
+      addIssue(ctx, ["retained_weight_count"], "retained count cannot exceed finite log-weight count");
+    }
+    if (value.effective_sample_size > value.retained_weight_count + 1e-9) {
+      addIssue(ctx, ["effective_sample_size"], "ESS cannot exceed retained support count");
     }
     if (
       value.maximum_conditional_movement_variance <
@@ -369,10 +414,23 @@ const IntegrationDiagnosticsSchema = z
       addIssue(ctx, ["maximum_conditional_movement_variance"], "movement variance bounds reversed");
     }
     if (
-      value.conditional_movement_quadrature.movement_support_count !==
-      16 * value.finite_point_count
+      value.conditional_movement_mixture.component_count !==
+      value.retained_weight_count
     ) {
-      addIssue(ctx, ["conditional_movement_quadrature", "movement_support_count"], "support count must be derived");
+      addIssue(ctx, ["conditional_movement_mixture", "component_count"], "component count must be derived");
+    }
+    const expectedRetentionHash = sha256Json({
+      algorithm: "binary64_representable_normalized_weight_retention_v1",
+      excluded_sobol_ordinal_commitment:
+        value.excluded_sobol_ordinal_commitment,
+      finite_log_weight_count: value.finite_log_weight_count,
+      generated_point_count: value.generated_point_count,
+      retained_sobol_ordinal_commitment:
+        value.retained_sobol_ordinal_commitment,
+      retained_weight_count: value.retained_weight_count
+    });
+    if (value.outer_weight_retention_hash !== expectedRetentionHash) {
+      addIssue(ctx, ["outer_weight_retention_hash"], "outer weight retention hash mismatch");
     }
   });
 

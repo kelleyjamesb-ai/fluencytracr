@@ -13,6 +13,30 @@
   requirements.
 - [x] 1.5 Validate the proposal strictly and obtain CODE, BUG, and ADVERSARIAL
   acceptance for the contract bytes.
+- [x] 1.6 Amend the held proof contract with direct conditional-Normal mixture
+  tail quantiles, fixed higher-precision NUTS settings, unchanged acceptance
+  seeds and thresholds, five-field parameter MCSE evidence, a fixed 4,000-state
+  PPC selector, and disjoint full-setting precision canaries; obtain CODE, BUG,
+  ADVERSARIAL, and statistical-methodology GO for the amended docs bytes.
+- [x] 1.7 Amend the deterministic outer-weight contract with exact binary64
+  representable retention, unchanged post-retention count/ESS/maximum-weight
+  gates, and hash-bound generated/finite/retained counts plus retained/excluded
+  original-ordinal commitments; obtain CODE, BUG, ADVERSARIAL, and statistical-
+  methodology GO for the amended docs bytes without implementation or
+  execution.
+- [x] 1.8 Amend the failed precision design with one create-once,
+  permanently non-evidentiary MCSE diagnostic over a newly reserved synthetic
+  six-group null case; freeze complete sanitized MCSE-ratio, ESS,
+  prefix-scaling, and normalized chain-tail diagnostics while preserving the
+  failed canary, model, priors, estimand, existing seeds, thresholds, and all
+  evidence gates; obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO
+  for the amended docs bytes without implementation or execution.
+- [x] 1.9 Record the consumed V1 diagnostic as permanent uninterpretable HOLD
+  and define a separate replacement identity with disjoint reserved seeds,
+  exact-set/canonical-name projection, a full-shape natural-order sampler-free
+  conformance fixture, and non-resumable hash-chained postmortem checkpoints;
+  obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO for the amended
+  docs bytes without implementation or execution.
 
 ## 2. Future Synthetic Implementation
 
@@ -32,11 +56,42 @@
   complete negative-control suite. Smoke, partial, malformed, missing,
   duplicate, off-plan, or mixed-provenance studies MUST HOLD; do not execute
   concordance or evidence.
+- [ ] 2.6 After task `1.7` and separate implementation reactivation, implement
+  the numerical-precision and binary64 representable-retention amendments,
+  five-field MCSE records, fixed PPC selector, old-lineage rejection, and both
+  permanently non-admissible full-setting precision canaries. Do not create
+  replacement candidate `S` until both canaries clear every otherwise
+  applicable gate.
+- [x] 2.7 After the separate task-`1.8` implementation authorization, implement
+  the exclusive diagnostic seeds and case, complete 5k/10k/20k sanitized
+  projection, exact record/hash reconstruction, claim-before-import one-shot
+  bootstrap with compiled timeout, D/A and human-authorization validation,
+  canary tombstone, and categorical proof-path rejection without executing the
+  diagnostic or creating authorization commit `A`.
+- [ ] 2.8 After exact-commit CODE, BUG, ADVERSARIAL, and statistical-methodology
+  GO for implementation commit `D`, create and review sole-child manifest-only
+  authorization commit `A`, then obtain a separate exact human execution record
+  before the one permitted diagnostic launch. The result remains permanent
+  HOLD and cannot complete task `2.6` or enter any proof count. The consumed V1
+  launch produced no valid diagnostic result and does not satisfy this task.
+- [ ] 2.9 After task `1.9` and separate implementation authorization, implement
+  replacement diagnostic `vbd_precision_design_diagnostic_v2`, reserve its
+  seeds from every other path, validate the exact posterior variable set before
+  canonical name-based projection, add the production-path full-shape
+  sampler-free conformance fixture, and add the exact create-once checkpoint
+  chain without creating `A2`, a claim, or running a generator or sampler.
+- [ ] 2.10 After exact-commit CODE, BUG, ADVERSARIAL, and statistical-methodology
+  GO for clean implementation `D2`, create and review sole-child manifest-only
+  authorization `A2`, then obtain a separate exact human execution record before
+  the one permitted V2 launch. V2 remains permanent HOLD, cannot complete task
+  `2.6`, and cannot enter any proof count.
 
 ## 3. Future Engine Concordance
 
-- [ ] 3.1 Verify the complete implementation and runner without acceptance-
-  plan execution, then create clean candidate source commit `S`.
+- [ ] 3.1 After task `2.6` and both precision canaries pass, verify the complete
+  repaired implementation and runner without acceptance-plan execution, then
+  create a clean replacement candidate source commit `S`. The tombstoned
+  pre-amendment `S` does not satisfy this task.
 - [ ] 3.2 Obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO against
   exact commit `S`; then, before concordance or any acceptance canary, create
   freeze commit `F` with sole parent `S` and only the sanitized manifest binding

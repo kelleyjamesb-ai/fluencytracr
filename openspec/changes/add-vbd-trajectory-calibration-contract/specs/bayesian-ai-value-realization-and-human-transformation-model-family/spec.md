@@ -274,11 +274,91 @@ At every deterministic hyperparameter support, the proof SHALL analytically
 condition the Gaussian coefficient/group vector and AR(1) states and compute
 the exact conditional Normal mean and variance of that latent-level contrast
 using the `K`, `R`, `B=K+R`, `H`, and contrast-vector equations frozen in the
-contract. The deterministic engine SHALL expand that conditional Normal with
-the frozen 16-point Gauss-Hermite `normal_quadrature_v1` beneath the accepted
-8,192-point outer integration and SHALL compute 80% and 99% endpoints with
-`weighted_quantile_v1`. The NUTS engine SHALL sample the matching conditional
-scalar at every retained draw. Neither engine SHALL emit a latent path.
+contract. Beneath the unchanged accepted 8,192-point outer integration, the
+repaired deterministic engine SHALL evaluate the conditional-Normal mixture
+directly under `conditional_normal_mixture_quantile_v2`. It SHALL generate all
+8,192 Sobol nodes, preserve their zero-based original ordinals, evaluate every
+node, and keep each finite binary64 log weight with its matching conditional
+moments. In original ordinal order it SHALL apply pinned
+`scipy.special.logsumexp` to every finite log weight and `numpy.exp` to each
+log-normalized candidate. It SHALL retain exactly candidates whose normalized
+binary64 weights are finite and strictly greater than zero, preserve their
+relative original ordinal order in a native `numpy.float64` vector, compute
+`retained_sum` with exactly
+`float(numpy.sum(retained_candidates,dtype=numpy.float64))`, require a finite
+strictly positive sum, and compute final weights with exactly
+`numpy.asarray(retained_candidates/retained_sum,dtype=numpy.float64)`. It SHALL
+compute ESS as
+`float(1.0/numpy.sum(final_weights**2,dtype=numpy.float64))` and maximum weight
+as `float(numpy.max(final_weights))`, then apply the unchanged retained-count
+`>=4096`, ESS `>=256`, and maximum-normalized-weight `<=.05` gates. It SHALL NOT
+apply a floor, epsilon, tolerance, clipping, replacement, merged component,
+alternate point, different reduction/reordering, or exclusion of a represented
+positive weight.
+
+The integration diagnostics, fit semantic hash, and fresh recomputation SHALL
+bind `generated_point_count=8192`, `finite_log_weight_count`,
+`retained_weight_count`, commitments to the retained and excluded ascending
+zero-based original ordinal lists, and one retention-record hash over those
+fields. Each ordinal commitment SHALL be `sha256_json` of
+`{"algorithm":"vbd_outer_weight_ordinals_v1","ordinals":[...]}`. The retained
+and excluded lists SHALL be disjoint, duplicate-free, in range, and an exact
+partition of `0..8191`. It SHALL require
+`len(retained_ordinals)==retained_weight_count`,
+`len(excluded_ordinals)==generated_point_count-retained_weight_count`, and
+`retained_weight_count<=finite_log_weight_count<=generated_point_count`. The
+retention-record hash SHALL be `sha256_json` of exactly this object with no
+additional keys and with placeholders replaced by the fit's exact integer and
+lowercase-SHA-256 values:
+
+```json
+{
+  "algorithm": "binary64_representable_normalized_weight_retention_v1",
+  "excluded_sobol_ordinal_commitment": "<lowercase-sha256>",
+  "finite_log_weight_count": 0,
+  "generated_point_count": 8192,
+  "retained_sobol_ordinal_commitment": "<lowercase-sha256>",
+  "retained_weight_count": 0
+}
+```
+
+`outer_weight_retention_hash` itself SHALL NOT enter that preimage. Neither
+ordinal list nor any weight/support value SHALL be emitted. Missing, stale,
+malformed, forged, inconsistent, or recomputation-mismatched retention evidence
+SHALL HOLD.
+
+With the resulting retained positive weights it SHALL compute exact mixture
+moments and evaluate
+`F(x)=sum_i w_i*Phi((x-m_i)/s_i)`. For each
+`p in {.005,.10,.90,.995}`, initial bounds SHALL be the outward `nextafter`
+values around the minimum and maximum component quantiles
+`m_i+s_i*ndtri(p)`. The bracket SHALL satisfy `F(lower)<=p<=F(upper)`. Exactly
+64 binary64 bisection iterations SHALL move `upper` when `F(mid)>=p` and
+`lower` otherwise; the returned endpoint SHALL be the final upper bound.
+Pinned SciPy `ndtr` and `ndtri` SHALL be used. Empty support, nonfinite input,
+nonpositive variance, a caller-supplied nonpositive/nonfinite weight,
+nonpositive/nonfinite retained total weight, failed bracketing, or a nonfinite
+result SHALL HOLD. The outer integrator SHALL remove its own unrepresented
+binary64 zeros before calling the mixture helper. No fallback, caller
+tolerance, adaptive iteration count, method switch, or support reordering is
+permitted.
+
+The standard-Normal endpoint oracle SHALL exactly equal binary64 hex values
+`(-0x1.49b4c64d69160p+1,-0x1.4813c36e26d32p+0,
+0x1.4813c36e26d33p+0,0x1.49b4c64d69160p+1)` in probability order. The
+unequal-mixture oracle with weights `(0.35,0.65)`, means `(-0.4,0.7)`, and SDs
+`(0.6,1.1)` SHALL exactly equal mean `0x1.428f5c28f5c28p-2`, SD
+`0x1.17007814169ffp+0`, and endpoint hex values
+`(-0x1.070d647d89159p+1,<runtime-bound-p10>,
+0x1.d2857797c387dp+0,0x1.aec938ed2fe2fp+1)`. The exact
+`<runtime-bound-p10>` value SHALL be `-0x1.f4c4b60ce6076p-1` on Darwin arm64
+and `-0x1.f4c4b60ce6077p-1` on Linux x86_64 under the pinned SciPy runtime.
+This closed one-ULP pair SHALL NOT be interpreted as a tolerance, fallback, or
+method choice; prepared, fit, diagnostic, and result identities remain bound to
+the exact native runtime and SHALL NOT claim cross-platform numeric identity.
+The retired 16-point Gauss-Hermite support SHALL NOT enter a repaired VBD fit.
+The NUTS engine SHALL sample the matching conditional scalar at every retained
+draw. Neither engine SHALL emit a latent path.
 
 Each plan SHALL freeze one ordered three-lane direction vector with components
 in `{+1,-1}` before generated truth or post-period evidence is inspected. With
@@ -288,6 +368,35 @@ window weights, then multiply by the matching direction-vector component. The po
 fixed-interval smoothing conditional on exactly `w00..w17`, no later window,
 and no forecast. The trajectory model SHALL select no lag. Downstream lags
 belong to a separate predeclared integration plan.
+
+#### Scenario: Conditional-Normal tails are recovered without discretization
+
+- **GIVEN** the standard-Normal and unequal-mixture conformance oracles
+- **WHEN** the repaired deterministic engine computes all 80% and 99% endpoints
+- **THEN** every binary64 moment and endpoint matches exactly
+- **AND** selecting `normal_quadrature_v1` or any caller-provided method HOLDS
+
+#### Scenario: Binary64 underflow is handled without a numerical floor
+
+- **GIVEN** all 8,192 planned Sobol nodes are generated and every finite log
+  weight is normalized in original ordinal order
+- **AND** binary64 represents one or more mathematically positive normalized
+  tail weights as positive zero
+- **WHEN** the deterministic engine constructs its mixture
+- **THEN** it retains and renormalizes exactly the finite strictly positive
+  represented weights in their original relative order
+- **AND** it applies the unchanged retained-count, ESS, and maximum-weight gates
+- **AND** it binds all required counts and ordinal commitments without a floor,
+  tolerance, point substitution, seed change, or support reordering
+
+#### Scenario: Representability evidence is incomplete or forged
+
+- **GIVEN** a deterministic fit omits or alters a count, ordinal commitment, or
+  retention-record hash, or a fresh recomputation derives different values
+- **WHEN** the fit or study is validated
+- **THEN** it HOLDS even when its posterior summaries otherwise match
+- **AND** caller-supplied zero, negative, or nonfinite mixture weights still
+  HOLD at the generic helper boundary
 
 #### Scenario: Separate trajectories are estimated
 
@@ -391,6 +500,317 @@ compute no aggregate acceptance gate, and SHALL remain permanently
 the model, DGP, priors, cells, thresholds, or acceptance seeds. Any pre-freeze
 acceptance-plan seed, truth, canary, or result SHALL invalidate the full study.
 
+Before replacement candidate `S`, the precision repair SHALL run two
+permanently non-admissible full-setting development bundles. Ordinal `0` SHALL
+use effect `0`, six groups, and bundle seed `2_055_900_100`; ordinal `1` SHALL
+use effect `0.5`, twelve groups, and bundle seed `2_055_900_101`. Chain seeds
+SHALL be `2_055_900_200+20*ordinal+4*lane_ordinal+chain_index`; PPC seeds SHALL
+be `2_055_900_300+10*ordinal+lane_ordinal`. Every lane SHALL run the repaired
+full settings in ordinal/lane order, remain
+`HOLD(precision_canary_nonacceptance)`, emit no evidence, and stay outside all
+acceptance counts. Each bundle SHALL finish inside the amended compiled
+7,200-second primary bundle-child timeout, replacing the held implementation's
+600-second child timeout, and clear all otherwise applicable sampler, PPC, and
+cross-engine checks before candidate `S`. Failure SHALL block `S` and SHALL NOT
+trigger a retry, setting change, seed change, or adaptive extension under this
+amendment.
+
+The validated ordinal-`0` precision canary run from source commit
+`c7014906918b3be4e40e0c312421383c66f2960a` SHALL remain permanent HOLD because
+its only reported otherwise-applicable failing category was `mcse`. Failure-
+record commit `afda2e6f2ce2645e35cb3b315a7c4c249b245993` SHALL remain the
+immutable status anchor. No later path may retry, resume, extend,
+reconstruct, relabel, or clear that canary, and ordinal `1`, task `2.6`,
+replacement candidate `S`, concordance, and evidence SHALL remain blocked.
+
+One separate `vbd_precision_design_diagnostic_v1` MAY be specified only for a
+later separately authorized implementation and execution. It SHALL use effect
+`0`, six groups, `k=16`, generator seed `2_055_900_400`, and chain seeds
+`2_055_900_500+4*lane_ordinal+chain_index` for the existing lane and chain
+ordinals. Those thirteen seeds SHALL be reserved exclusively for this
+diagnostic identity, and every other smoke, canary, concordance, or study plan
+SHALL reject them. It SHALL use the unchanged generator, likelihood, priors, estimand,
+centered parameterization, four chains, 20,000 retained draws, 5,000 tuning
+draws, `target_accept=.999`, `max_treedepth=15`, `jitter+adapt_full`,
+`cores=1`, `blas_cores=1`, and 7,200-second bundle-child timeout. It SHALL run
+all three lanes in canonical order, SHALL NOT run PPC or deterministic
+concordance, and SHALL record those checks as `NOT_RUN`, never passing.
+
+For every required parameter in canonical order, the diagnostic SHALL retain
+the five separately named MCSE/posterior-SD ratios at exact retained-draw
+prefixes 5,000, 10,000, and 20,000 per chain; R-hat and bulk/tail ESS at each
+prefix; 0.5% and 99.5% quantile ESS at each prefix; and four chain-indexed 0.5%
+and 99.5% endpoint offsets from the pooled endpoint, each divided by the pooled
+posterior SD at that prefix. Each prefix SHALL use the first exact retained
+draws from every chain without thinning, reordering, chain dropping, tuning
+draws, or offset selection; every ratio SHALL use that prefix's independently
+recomputed pooled posterior SD. For this six-group case, exact parameter order
+SHALL be `alpha`, `beta`, `sigma_u`, `u[0]`, `u[1]`, `u[2]`, `u[3]`, `u[4]`,
+`u[5]`, `sigma_r`, `rho`, `trajectory_movement`, yielding exactly 12 parameter
+rows per lane/prefix and 108 total. The complete matrix SHALL be emitted whether a
+coordinate passes or fails. The record SHALL derive the complete full-prefix
+set of ratios strictly greater than `0.10` and the unique worst coordinate by
+stable lane, parameter, and endpoint order. It SHALL retain lane-level
+divergence and treedepth-saturation counts, BFMI values, exact non-MCSE sampler
+failure-category names, and every immutable source/runtime/lockfile/model/
+input/seed/attempt/result binding required by the contract.
+
+The diagnostic SHALL retain no absolute MCSE, posterior SD, posterior mean,
+interval endpoint, latent state, draw, PPC value, deterministic result,
+synthetic panel array, path, acceptance slot, or evidence count. It SHALL be
+create-once and permanently `HOLD(mcse_design_diagnostic_nonacceptance)` with
+exact `state=HOLD`,
+`hold_reasons=["mcse_design_diagnostic_nonacceptance"]`, zero evidence
+eligibility, and zero acceptance-count effect. Its no-extra-key `record_hash`
+SHALL equal `sha256_json` over the exact validated record with only
+`record_hash` removed. A launch anchor
+SHALL be created before the child starts; timeout, crash, malformed output,
+binding failure, or write failure SHALL consume the authorization and SHALL NOT
+permit retry, continuation, or replacement under the same amendment.
+
+Before future execution, a reviewed clean implementation commit `D` SHALL
+receive exact CODE, BUG, ADVERSARIAL, and statistical-methodology GO. A sole-
+child authorization commit `A` SHALL differ only by one sanitized manifest
+binding `D`, its tree, those four unique GO references, runtime, lockfile,
+model, plan, exclusive seeds, standalone bootstrap, exact command, and one
+absolute canonical workspace plus external attempt-claim root. Four-role
+review SHALL verify the one-file `D..A` diff, and a human SHALL separately
+authorize execution against exact `A`. Workspace and claim-root identities
+SHALL be fixed absolute paths predeclared in the `A` manifest, SHALL NOT depend
+on the future `A` commit hash, SHALL NOT be caller inputs, and SHALL be
+identical from every checkout. The later human record and external claim SHALL
+bind both paths to exact `A`. The bootstrap SHALL atomically create the workspace-independent
+claim before sampling and bind the human execution-authorization hash. Any
+second invocation for `A`, including from another empty workspace, SHALL reject
+before sampling. The sanitized result SHALL bind `A`, its manifest, the human
+authorization hash, all four review references, the canonical workspace, and
+the external claim.
+
+The human execution decision SHALL be a create-once, no-extra-key record at
+the exact path bound by the `A` manifest. Its exact keys SHALL bind schema,
+exact `A`, manifest, scope, decision reference/text hash/timestamp, integer
+one-launch maximum, workspace, external claim root, command, and authorization
+hash. Its hash SHALL be derived from the exact record with only its hash field
+removed. Mutation, replacement, a second record, or another path SHALL reject
+before sampling.
+
+The public command SHALL execute a manifest-hash-bound standalone standard-
+library bootstrap directly under isolated `-I -S -B`; `-m`, repository
+`PYTHONPATH`, checkout imports, and unverified site-package imports SHALL be
+forbidden. The bootstrap SHALL verify its own bytes, `A`, and reviewed `D` Git
+blobs before installing the existing deny-by-default frozen-source loader.
+Freeze,
+concordance, study, recomputation, artifact, and acceptance validators SHALL
+reject this schema categorically even when it is internally valid and rehashed.
+Its result MAY inform only a later separately reviewed prospective precision-
+design amendment and SHALL NOT satisfy task `2.6` or authorize a sampler
+change. `mcse_design_diagnostic_nonacceptance` SHALL remain an internal
+inference-development state and SHALL NOT become a canonical suppression
+reason or customer-facing output.
+
+#### Scenario: A precision canary is offered as evidence
+
+- **GIVEN** a complete passing diagnostic record from either precision canary
+- **WHEN** freeze, concordance, combination, or acceptance validates it
+- **THEN** it remains HOLD and is excluded from every count and denominator
+- **AND** rehashing cannot remove `precision_canary_nonacceptance`
+
+#### Scenario: The MCSE diagnostic is used to clear the failed canary
+
+- **GIVEN** a complete, hash-valid `vbd_precision_design_diagnostic_v1` record
+- **WHEN** any canary, freeze, concordance, study, artifact, or acceptance path
+  validates it
+- **THEN** the record remains `HOLD(mcse_design_diagnostic_nonacceptance)` and
+  is rejected from every proof count, denominator, and gate
+- **AND** neither a passing coordinate nor a self-consistent rehash can clear
+  canary ordinal `0`, run ordinal `1`, or complete task `2.6`
+
+#### Scenario: The one-shot diagnostic is repeated after a failed launch
+
+- **GIVEN** the diagnostic launch anchor exists, including after timeout,
+  crash, malformed output, binding failure, or write failure
+- **WHEN** a caller retries, resumes, extends, replaces, or reuses any seed or
+  checkpoint under this amendment
+- **THEN** validation rejects before sampling
+- **AND** a later diagnostic or precision design requires a new docs/OpenSpec
+  amendment and separate authorization
+
+#### Scenario: A second workspace is used to bypass the diagnostic claim
+
+- **GIVEN** exact authorization commit `A` has an external attempt claim
+- **WHEN** the command is invoked from another checkout, directory, workspace,
+  authorization record, or output path
+- **THEN** the `A` manifest supplies the same canonical workspace and external
+  claim root
+- **AND** validation rejects before any generator or sampler work
+
+The authorized `vbd_precision_design_diagnostic_v1` launch SHALL remain a
+consumed permanent uninterpretable HOLD. Its exact implementation commit SHALL
+be `50636e6721bf6b8e8e9269106a218527a159a94e`; authorization commit SHALL be
+`7e4f5f00f6d826ccd771b2553350608bedb0f0e0`; human execution-authorization hash
+SHALL be
+`1c8d781a6835a338b7e69a0d8d4de7d8d61b57f28db7364adee6d475d9d17c64`;
+external claim hash SHALL be
+`f9a512969703833b73e27f902bc79f78d5dfd50504f49ea1d431e335006a89fc`;
+and input-binding hash SHALL be
+`3726b313662d6de51fe1252f9212664bda664e628343d0ac5d747f5763eb7a43`.
+The launch SHALL NOT be described as a failed MCSE result because no sanitized
+parameter row, staged output, or final diagnostic record survived projection.
+It supports no conclusion about MCSE, ESS, R-hat, BFMI, mixing, or tail
+precision.
+No later implementation may retry, resume, continue, reconstruct, reinterpret,
+delete, replace, or reuse its commit, authorization, claim, binding, workspace,
+seed, or output identity.
+
+One separate `vbd_precision_design_diagnostic_v2` MAY be specified only after a
+later separately authorized implementation and execution. It SHALL use the same
+effect `0`, six groups, `k=16`, generator, likelihood, priors, estimand,
+centered parameterization, three canonical lanes, required parameters, prefix
+definitions, sanitized matrix, NUTS settings, 7,200-second timeout, permanent
+HOLD state, proof-path exclusion, and `<=0.10` MCSE gate defined for V1. It
+SHALL NOT run PPC or deterministic concordance. It SHALL use newly reserved
+generator seed `2_055_900_600` and chain seeds
+`2_055_900_700+4*lane_ordinal+chain_index`, yielding exactly
+`2_055_900_700..711`. These thirteen seeds SHALL be exclusive to the V2
+identity; every generic smoke, precision canary, V1 diagnostic, concordance,
+study, recomputation, artifact, and acceptance path SHALL reject them.
+
+Before any V2 projection, the projector SHALL require order-insensitive exact
+string-key-set equality between posterior data-variable names and
+`{alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho}`. Missing or extra
+variables, non-string or coerced keys, and malformed variables SHALL reject.
+After exact-set validation, the projector SHALL access every posterior and
+ArviZ diagnostic variable by its canonical name and SHALL emit the unchanged
+flattened parameter order `alpha`, `beta`, `sigma_u`, `u[0]`, `u[1]`, `u[2]`,
+`u[3]`, `u[4]`, `u[5]`, `sigma_r`, `rho`, `trajectory_movement`. PyMC storage
+order, mapping insertion order, and DataTree traversal order SHALL NOT affect
+emitted row identity or order. All existing dimension, coordinate-label,
+cardinality, finite-value, and no-extra-key checks SHALL remain conjunctive.
+
+Before implementation `D2` is reviewable, a sampler-free full-shape conformance
+fixture SHALL construct the production PyMC model and route deterministic test
+arrays through the production PyMC/DataTree/ArviZ identity and projector entry
+point. It SHALL use PyMC's natural posterior storage order
+`alpha,beta,trajectory_movement,sigma_u,u,sigma_r,rho`, exactly four chains,
+exactly 20,000 retained-draw positions, and exactly six ordered `u` coordinates.
+It SHALL exercise every 5,000/10,000/20,000 prefix and prove that canonical
+output rows and hashes equal those from identical values presented in canonical
+storage order, without invoking a sampler. A manually reordered fake trace,
+reduced chain/draw shape, omitted variable, or bypass of the production
+conversion boundary SHALL NOT satisfy the fixture. No fixture array or derived
+estimate may enter a diagnostic result or committed evidence.
+
+V2 SHALL write an observational checkpoint chain under a new fixed external
+checkpoint root bound by authorization `A2`. The exact phase/lane sequence SHALL
+be:
+
+1. ordinal `0`, `claim_created`, lane `null`;
+2. ordinal `1`, `input_bound`, lane `null`;
+3. ordinals `2..4`, `lane_sampling_started`, `lane_sampling_completed`, and
+   `lane_projection_completed` for lane `frequency`;
+4. ordinals `5..7`, the same three phases for lane `engagement`;
+5. ordinals `8..10`, the same three phases for lane `breadth`; and
+6. ordinal `11`, `result_ready_for_publication`, lane `null`.
+
+The exact checkpoint filename allowlist SHALL be:
+
+1. `checkpoint-00-claim_created-global.json`;
+2. `checkpoint-01-input_bound-global.json`;
+3. `checkpoint-02-lane_sampling_started-frequency.json`;
+4. `checkpoint-03-lane_sampling_completed-frequency.json`;
+5. `checkpoint-04-lane_projection_completed-frequency.json`;
+6. `checkpoint-05-lane_sampling_started-engagement.json`;
+7. `checkpoint-06-lane_sampling_completed-engagement.json`;
+8. `checkpoint-07-lane_projection_completed-engagement.json`;
+9. `checkpoint-08-lane_sampling_started-breadth.json`;
+10. `checkpoint-09-lane_sampling_completed-breadth.json`;
+11. `checkpoint-10-lane_projection_completed-breadth.json`; and
+12. `checkpoint-11-result_ready_for_publication-global.json`.
+
+Each no-extra-key checkpoint SHALL contain exactly `schema`,
+`diagnostic_identity`, `implementation_commit`, `authorization_commit`,
+`authorization_manifest_hash`, `human_execution_authorization_hash`,
+`attempt_claim_hash`, `input_binding_hash`, `ordinal`, `phase`, `lane`,
+`predecessor_checkpoint_hash`, `created_at_utc`, and `checkpoint_hash`.
+`schema` SHALL equal `vbd_precision_design_diagnostic_checkpoint_v2`;
+`diagnostic_identity` SHALL equal `vbd_precision_design_diagnostic_v2`;
+identity hashes SHALL match `D2`, `A2`, and their admitted records;
+`input_binding_hash` SHALL be `null` only at ordinal `0` and SHALL equal the
+exact admitted V2 input-binding hash at ordinals `1..11`;
+`predecessor_checkpoint_hash` SHALL be `null` only at ordinal `0` and otherwise
+equal the preceding checkpoint hash; and `checkpoint_hash` SHALL equal
+`sha256_json` over the exact validated record with only `checkpoint_hash`
+removed. Every checkpoint SHALL be atomically create-once and immutable.
+
+Before each create-once write, strict whole-root enumeration SHALL equal exactly
+the already-written allowlist prefix and no other directory entry. After
+ordinal `11`, strict whole-root enumeration SHALL equal all twelve allowlisted
+filenames exactly; unknown, missing, duplicate, aliased, non-regular, or off-
+plan entries SHALL reject. The checkpoint writer SHALL accept only the exact
+filename and phase/lane pair at the next ordinal. Checkpoints SHALL contain no draws, absolute or relative estimates,
+diagnostic values, messages, exception text, tracebacks, filesystem paths,
+panel values, source rows, unsafe data, or caller-defined fields. The bootstrap,
+runner, and child SHALL NOT read any checkpoint to select work, skip a phase,
+resume, retry, continue, reconstruct, or reuse a seed. Checkpoint presence SHALL
+never create launch authority. Missing, extra, malformed, duplicated, replaced,
+or reordered checkpoints SHALL leave the already consumed launch
+uninterpretable HOLD; deletion or repair SHALL NOT permit another launch. A V2
+result SHALL be published atomically only after
+`result_ready_for_publication` is durably created and SHALL bind that complete
+ordinal-`0..11` terminal checkpoint hash as provenance only. Both the final
+result and complete checkpoint root SHALL be required for internal diagnostic
+validity. A checkpoint SHALL NOT supply, reconstruct, or alter a statistical
+result field, and neither that binding nor a complete checkpoint chain can
+satisfy a canary, proof, acceptance, or task-`2.6` gate.
+
+Future V2 implementation SHALL require a clean commit `D2` with exact CODE,
+BUG, ADVERSARIAL, and statistical-methodology GO. A sole-child manifest-only
+authorization commit `A2` SHALL bind `D2`, its tree, four unique GO references,
+the replacement identity and seeds, runtime, lockfile, production-path fixture,
+standalone bootstrap, exact command, and new fixed workspace, claim,
+checkpoint, human-authorization, and result paths. Four-role review SHALL
+verify the one-file `D2..A2` diff. A separate create-once human execution record
+against exact `A2` SHALL precede one new launch. V1's `D`, `A`, reviews, human
+authorization, claim, bindings, paths, and consumed seeds SHALL satisfy no V2
+gate. V2 SHALL remain permanently
+`HOLD(mcse_design_diagnostic_nonacceptance)`, SHALL contribute zero evidence,
+and SHALL NOT complete task `2.6`, authorize canary ordinal `1`, or alter any
+model, prior, estimand, NUTS setting, statistical threshold, acceptance seed,
+or evidence gate.
+
+#### Scenario: Natural PyMC storage order reaches canonical projection
+
+- **GIVEN** a full-shape sampler-free production-path fixture with the exact
+  posterior variable set in PyMC's natural storage order
+- **WHEN** the V2 identity and projection boundary validate it
+- **THEN** variables are read by canonical name and rows are emitted in the
+  frozen flattened parameter order
+- **AND** storage order alone cannot cause rejection or alter row identity
+
+#### Scenario: A posterior variable is missing or added
+
+- **GIVEN** a rehashed posterior container with one required variable missing or
+  one unrecognized variable added
+- **WHEN** V2 projection validates the variable set
+- **THEN** it rejects before diagnostic projection
+- **AND** canonical name lookup cannot excuse an incomplete or expanded set
+
+#### Scenario: The consumed V1 launch is offered as V2 authority
+
+- **GIVEN** any V1 commit, authorization, claim, input binding, workspace, seed,
+  checkpoint substitute, or output identity
+- **WHEN** V2 implementation, authorization, launch, or result validation runs
+- **THEN** it rejects before generation or sampling
+- **AND** the V1 launch remains permanent uninterpretable HOLD
+
+#### Scenario: A checkpoint is used to resume a consumed launch
+
+- **GIVEN** any valid, partial, copied, repaired, or rehashed checkpoint chain
+- **WHEN** a caller requests resume, retry, continuation, reconstruction, phase
+  skipping, or seed reuse
+- **THEN** the existing attempt claim rejects before generation or sampling
+- **AND** checkpoints remain postmortem observations with no launch authority
+
 Before any acceptance canary result, a clean source commit `S` SHALL contain the
 implementation, contract, lockfile, plan, seeds, and runtime builder without
 execution output. CODE, BUG, and ADVERSARIAL reviewers SHALL return GO against
@@ -405,6 +825,29 @@ one-file diff. Any post-canary amend, rebase, replacement, or frozen-identity
 change SHALL invalidate all results and require a new full freeze and rerun.
 Pre-execution implementation review SHALL NOT satisfy later exact-byte evidence
 review.
+
+The held lineage is permanently diagnostic-only HOLD: source
+`e59181b56bcccde4872b84f6dc78370215c0197a`, freeze
+`0287713dfba10bcaafc781f01218e931c70195e8`, manifest
+`fea230dd1eca0192140b309c02b55574133ab0519d2293ec7245b200eb565d0f`,
+workspace hash
+`c82292eba08a350a289f0b19602b2b243456cb63805c636c201025a63aec1eba`,
+and bundle-0 result hash
+`ab640359fb1de8362e745c8bf3da08f588974b03c0d34c0e7da2707ed931817f`.
+No repaired path may resume, relabel, rehash, reinterpret, copy, or combine any
+old permit, launch, checkpoint, receipt, deterministic/NUTS sub-result, or
+bundle result. The old bundle SHALL remain HOLD for MCSE, divergence, and
+concordance failures under every later schema. Only a fresh reviewed `S`, new
+sole-child `F`, fresh permits/workspace, and complete restart at bundle 0 MAY
+contribute to the unchanged 30-bundle universe.
+
+#### Scenario: Held pre-amendment evidence is offered to the repair
+
+- **GIVEN** any identity or record from the held pre-amendment lineage
+- **WHEN** a repaired development, concordance, or combination path validates
+  its inputs
+- **THEN** it rejects before sampling or combination
+- **AND** self-consistent rehashing cannot rescue a passing old sub-result
 
 The runner SHALL accept only a compiled slot key, regenerate the complete
 synthetic observation bundle internally from the bound generator/scenario/
@@ -469,30 +912,89 @@ transformed 3x3 covariance, marginal standard errors, and canonical oracle hash
 recorded in the contract. A self-consistent implementation that matches only
 the three medians SHALL NOT satisfy conformance.
 
+The original pre-freeze concordance seed families rooted at
+`2_056_000_000`, `2_056_020_000`, and `2_106_000_000` SHALL remain retired
+after an interrupted mocked task-3 child test instantiated the first original
+generator seed before candidate source commit `S` or freeze `F`. No fit, gate,
+or numerical summary was produced or inspected. The replacement families
+below SHALL be a one-time pre-freeze integrity rotation and SHALL NOT change
+after reviewed candidate `S` and its manifest-only freeze child `F`.
+
 The full proof SHALL first run PyMC NUTS concordance for five fixed seeds in
 each cell of effects `{0, 0.2, 0.5}` pre-period SD by panel-group counts
 `{6, 12}`. Cell order SHALL be lexicographic over those listed sets, with group
 ordinal `6->0`, `12->1`, and
 concordance seed SHALL equal
-`2_056_000_000 + 10*cell_ordinal + seed_index` for `seed_index={0,...,4}`.
+`2_056_500_000 + 10*cell_ordinal + seed_index` for `seed_index={0,...,4}`.
 That bundle seed SHALL generate correlated data. For lane ordinals
 `frequency=0`, `engagement=1`, `breadth=2`, explicit NUTS chain seed SHALL be
-`2_056_020_000+1_000*cell_ordinal+100*seed_index+10*lane_ordinal+
+`2_056_520_000+1_000*cell_ordinal+100*seed_index+10*lane_ordinal+
 chain_index` for chain indexes `0..3`; implicit or cross-bundle/lane/chain seed
 reuse SHALL reject.
-NUTS SHALL use four chains, 1,000 retained draws and 2,000 tuning draws per
-chain, `target_accept=.99`, and `max_treedepth=15`.
-Mean differences SHALL be `<=0.15` reference SD, interval endpoint differences
-`<=0.20` reference SD, and SD ratios within `[0.85,1.15]`. R-hat SHALL be
+The repaired NUTS reference SHALL preserve the existing likelihood, priors,
+named sampled parameters, centered zero-sum group-effect parameterization, and
+all four existing chain-seed formulas. It SHALL use four chains, 20,000
+retained draws and 5,000 tuning draws per chain, `target_accept=.999`,
+`max_treedepth=15`, PyMC `jitter+adapt_full`, `cores=1`, and `blas_cores=1`
+under the pinned runtime. It SHALL NOT use a collapsed target, noncentering,
+post-hoc coefficient reconstruction, conditional-mean substitution,
+antithetic draws, endpoint correction, lane-specific settings, retry,
+extension, seed rotation, or result-conditioned parameterization.
+Mean differences SHALL be `<=0.15` reference SD. The lower and upper endpoints
+of both the 80% and 99% movement intervals SHALL be independently rederived,
+and each endpoint difference SHALL be `<=0.20` reference SD. This SHALL include
+the 99% lower endpoint used by the later null false-movement decision. SD ratios
+SHALL remain within `[0.85,1.15]`. R-hat SHALL be
 `<=1.01`, bulk/tail ESS `>=400`, divergences and treedepth saturation zero,
 BFMI `>=0.3`, MCSE/SD `<=0.1`, and PPC p-values within `[0.05,0.95]`.
+MCSE/SD SHALL be computed separately for the posterior mean, both 80%
+endpoints, and both 99% endpoints. Every required parameter SHALL retain five
+separately named MCSE values for mean, 80%-lower, 80%-upper, 99%-lower, and
+99%-upper. A derived maximum SHALL NOT replace them. Every ArviZ diagnostic
+array SHALL match the posterior parameter dimensions, coordinate labels, and
+cardinality exactly before joining; positional truncation, reordered labels,
+merged/duplicated/swapped endpoints, coordinate drift, or missing rows SHALL
+HOLD. Each of the five MCSE/posterior-SD ratios SHALL independently remain
+`<=0.1`.
+Each hashed lane record SHALL name all four normalized endpoint differences,
+and the compact diagnostic summary SHALL report separate worst-case 80% and
+99% endpoint differences. Missing, merged, or ambiguously labeled endpoint
+evidence SHALL HOLD.
+
+#### Scenario: A geometry change alters the posterior target
+
+- **GIVEN** a candidate collapses, noncenters, reconstructs, or substitutes any
+  named sampled parameter or selects settings by lane/result
+- **WHEN** the repaired reference manifest is validated
+- **THEN** it rejects before sampling
+- **AND** higher draw count cannot legitimize the changed target
+
+#### Scenario: Endpoint MCSE evidence is incomplete
+
+- **GIVEN** a parameter row merges, omits, duplicates, swaps, or reorders any
+  of the five required mean/endpoint MCSE values
+- **WHEN** diagnostics or combination validates the row
+- **THEN** the lane HOLDS
+- **AND** a derived maximum cannot replace endpoint-specific evidence
+
+#### Scenario: An acceptance seed is changed by the repair
+
+- **GIVEN** any generator, chain, or PPC seed differs from the frozen
+  acceptance formulas
+- **WHEN** the repaired plan or launch is validated
+- **THEN** it rejects before generation or sampling
+- **AND** disjoint precision-smoke seeds cannot be substituted into evidence
 
 Every lane SHALL use the five exact `vbd_trajectory_ppc_v1` statistics defined
 in the contract: pre/post mean movement, `ddof=1` between-group variance, mean
 `ddof=1` within-group variance, maximum absolute global-mean deviation, and the
-specified pooled lag-one centered ratio. One replicate per retained draw SHALL
-use stable chain-major/draw-major order and
-`ppc_seed=2_106_000_000+1_000*cell_ordinal+100*seed_index+
+specified pooled lag-one centered ratio. All 80,000 retained draws SHALL feed
+posterior summaries and diagnostics. PPC SHALL use exactly 4,000 fixed,
+chain-balanced posterior states: for each chain, zero-based draw indexes SHALL
+equal `20*j+10` for `j in {0,...,999}`, processed in stable chain-major and
+increasing selected-draw order. Exactly one replicate per selected state SHALL
+use
+`ppc_seed=2_106_500_000+1_000*cell_ordinal+100*seed_index+
 10*lane_ordinal`. Each one-sided upper-tail p-value SHALL
 equal `count(T_rep>=T_observed)/4000`, ties included with no smoothing. Its
 inclusive gate SHALL be `[.05,.95]`; formula, seed, order, or sidedness drift
@@ -502,7 +1004,11 @@ Each replicate SHALL draw a fresh conditional smoothed AR(1) path followed by
 new known-SE observation error under `Generator(PCG64DXSM(ppc_seed))`; it SHALL
 NOT reuse a stored path or draw a new unconditional AR path. Predictive 80%
 endpoints SHALL use `weighted_quantile_v1` with equal chain-major/draw-major
-weights.
+weights over the same selected states. The PPC generator SHALL initialize
+exactly once. Missing, duplicated, off-grid, reordered, or unequally allocated
+indexes; use of an unselected state; selected cardinality other than 4,000;
+denominator drift; reseeding; or random-number-consumption drift SHALL HOLD.
+The selector SHALL NOT be described or used as an autocorrelation correction.
 
 The concordance universe SHALL be 30 bundle executions, each with three nested
 primary deterministic, three nested NUTS, and three separately regenerated
@@ -511,6 +1017,73 @@ fresh deterministic records. Fresh deterministic processes SHALL refuse every
 primary result/artifact/checkpoint, carry distinct attestations, and match
 prepared-input and semantic-result hashes exactly. Bundle and nested-fit counts
 SHALL remain distinct.
+Every full generator and full-NUTS entry SHALL verify exact clean freeze `F`
+before acceptance-seed admission or sampling. Combination SHALL independently
+regenerate each compiled bundle and require exact ordered-panel,
+lane-observation, and truth-receipt roots across its primary and all three fresh
+deterministic processes. A child HOLD SHALL remain HOLD after combination, and
+sampler and PPC failure counts SHALL remain disjoint.
+
+#### Scenario: Replacement concordance is not a complete fresh universe
+
+- **GIVEN** fewer than all 30 newly frozen bundle executions, any old-lineage
+  record, or any missing fresh deterministic recomputation
+- **WHEN** concordance combination evaluates completeness
+- **THEN** the study HOLDS
+- **AND** no old passing lane or sub-result can rescue the replacement universe
+
+Every concordance and later validation child SHALL start under isolated Python
+with site startup disabled, no repository `PYTHONPATH`, and no repository
+working directory. Before any execution-module import, a standard-library-only
+bootstrap SHALL verify the complete reviewed package source set received over
+an inherited descriptor and SHALL install a deny-by-default in-memory loader.
+The source bytes SHALL come from the candidate Git objects and match every
+freeze-manifest file hash. The source bundle's manifest hash SHALL equal the
+already-admitted launch receipt before any candidate blob is read. Missing
+source, mutable-source fallback, package
+startup before verification, or source-hash drift SHALL fail before execution.
+
+While the external workspace lock is held, workspace JSON reads and
+create-once writes SHALL traverse no-follow directory descriptors rooted at the
+held workspace inode. Admitted intermediate directories SHALL remain
+inode-bound and their device/inode identities SHALL be persisted in the
+create-once workspace record. Root or subdirectory substitution SHALL fail and
+SHALL NOT redirect evidence I/O or silently roll back completed work. Exact-
+tree and evidence-snapshot enumeration SHALL use held descriptors rather than
+mutable workspace pathname traversal. A later validation workspace SHALL persist the
+canonical external concordance receipt path, path hash, device, and inode,
+rerun full external concordance verification on every load, and require the
+local receipt copy to equal that externally recomputed receipt. A local
+shape-only verification token SHALL NOT admit replicated validation.
+
+Workspace initialization SHALL preallocate one sibling expendable launch
+permit for every exact canary, slot, bundle, and lane process and SHALL bind
+each permit's phase/stem, hash, device, and inode in a create-once manifest
+outside the deletable evidence workspace. Before a child launch, the runner
+SHALL construct the complete launch receipt in memory, destroy and sync the
+exact open permit inode, unlink it, sync its directory, require zero surviving
+links, and only then persist the permit-bound claim. A crash after consumption
+but before claim publication SHALL fail closed and SHALL NOT recreate the
+permit. Only that same locked execution may publish the
+claim-bound anchor and reach `Popen`, after immediately revalidating permit
+consumption, claim, anchor, workspace launch, lock, and frozen source. Resume
+MAY reconstruct a missing anchor and workspace launch from a valid claim, but
+a recovered claim without a result/checkpoint SHALL become a durable runner
+failure and SHALL NOT execute. A missing permit without its claim, a deleted
+claim after permit consumption, a stale or hard-linked permit, a malformed or
+off-plan record, or directory-entry disappearance SHALL fail closed. Permits,
+claims, and anchors SHALL remain internal crash/replay state and SHALL NOT be
+evidence artifacts or committed outputs.
+
+The runner SHALL name
+`trusted_frozen_host_crash_replay_and_workspace_tamper_detection_v1` as its
+compiled threat model. The parent process and reviewed frozen host SHALL be
+trusted prerequisites. This proof SHALL detect source/workspace drift, crash
+replay, substitution, rollback, malformed rows, and incomplete evidence inside
+that boundary, but SHALL NOT claim cryptographic attestation against an actor
+that already controls the parent process and can coordinate arbitrary code
+execution plus complete workspace forgery. Any external signing or hardware
+attestation authority requires a separate governed change.
 
 After concordance and before any full chunk, canaries SHALL run exact slots
 `primary/(0,6,0)`, `primary/(.5,12,199)`,
@@ -588,18 +1161,20 @@ semantic-result hash, executable/runtime roots, and freeze commit. Publication
 SHALL recompute those hashes and require distinct fresh-execution attestations
 and byte-equal semantic results.
 
-All interval gates SHALL use `weighted_quantile_v1`: require finite values and
-weights, unique stable support indices, nonnegative weights, and finite strictly
-positive total weight; remove zero-weight supports and reject if none remains;
-sort retained supports by movement value and stable support index; normalize
+Deterministic trajectory interval gates SHALL use
+`conditional_normal_mixture_quantile_v2`. Empirical NUTS parameter/movement
+and PPC interval gates SHALL use `weighted_quantile_v1`: require finite values
+and weights, unique stable support indices, nonnegative weights, and finite
+strictly positive total weight; remove zero-weight supports and reject if none
+remains; sort retained supports by value and stable support index; normalize
 weights; place support `i` at midpoint CDF
 `cumulative_weight_before_i+weight_i/2`; use endpoint values outside the
-midpoint range and linear interpolation inside. Deterministic supports use
-their weights and NUTS draws use equal weights in chain-major/draw-major order.
-The 80% equal-tail interval SHALL be `[Q(.10),Q(.90)]` and the 99% equal-tail
-interval `[Q(.005),Q(.995)]`. Coverage SHALL include endpoints. On the
-direction-adjusted scale, null false movement SHALL require 99% lower endpoint
-strictly greater than zero.
+midpoint range and linear interpolation inside. NUTS draws use equal weights in
+chain-major/draw-major order and PPC uses equal weights over its selected 4,000
+states. Both methods use 80% probabilities `(.10,.90)` and 99% probabilities
+`(.005,.995)`. Coverage SHALL include endpoints. On the direction-adjusted
+scale, null false movement SHALL require 99% lower endpoint strictly greater
+than zero.
 
 Every primary lane/cell observed 80% coverage rate SHALL remain in the compiled
 `74-86%` band. Each of the 36 targeted cells with `N=30` SHALL report its point
