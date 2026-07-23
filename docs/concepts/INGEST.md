@@ -96,7 +96,19 @@ Calibration baselines are governed separately. See [CALIBRATION.md](./CALIBRATIO
 
 The ingest architecture depends on calibration, but it does not define calibration policy. V3 ingest should carry a calibration reference with aggregate records so downstream verdicts can explain what baseline was used. Swapping or updating calibration references must remain a deliberate governance-reviewed operation, not an admin override of suppression behavior.
 
-## 8. Open Questions
+## 8. Forward Reference to Canonical Inference
+
+Aggregate ingest defines what data may cross into FluencyTracr. It does not make
+arbitrary client hardware authoritative for Bayesian computation. See
+[Canonical Aggregate Inference Service](./CANONICAL_AGGREGATE_INFERENCE_SERVICE.md)
+for the docs-only architecture that separates portable aggregate transformation
+from one attested, bit-for-bit authoritative numerical runtime.
+
+That concept does not authorize a new endpoint, deployment, production model
+run, or customer output. Aggregate ingest and canonical inference require
+separate implementation and governance decisions.
+
+## 9. Open Questions
 
 These questions are deliberately open and must be resolved before V3 implementation:
 
@@ -109,6 +121,6 @@ These questions are deliberately open and must be resolved before V3 implementat
 
 These are implementation decisions, not permission to weaken the privacy boundary.
 
-## 9. Attribution
+## 10. Attribution
 
 See [ATTRIBUTION.md](../../ATTRIBUTION.md) for intellectual provenance. The customer-side-transformer privacy-boundary architectural choice is credited to James Kelley. The key insight is that FluencyTracr's production ingest should preserve aggregate evidence by construction: raw GCE remains inside the customer environment, while only cohort distributions cross into FluencyTracr.

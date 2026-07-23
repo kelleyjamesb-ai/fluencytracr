@@ -21,7 +21,7 @@ SHARD_NAMES = (
     "vbd-engine",
 )
 EXPECTED_TEST_COUNTS = {
-    "foundation-measurement": 332,
+    "foundation-measurement": 339,
     "longitudinal": 253,
     "vbd-engine": 757,
 }
