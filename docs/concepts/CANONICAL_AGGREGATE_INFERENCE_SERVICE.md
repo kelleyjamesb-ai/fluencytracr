@@ -20,7 +20,7 @@ A client computer does not become an authoritative numerical runtime merely beca
 
 The canonical service is the sole numerical authority. Any future proposal for a second authoritative runtime, including an on-premises appliance, must explicitly supersede this decision through a new governance concept. It is not an implementation option under this document.
 
-The service must run on fixed, attested hardware and an immutable numerical software image. A container digest alone is insufficient because containers inherit host CPU features and native dispatch behavior.
+The service must run on one active, trust-rooted runtime profile and an immutable numerical software image. The execution substrate is either fixed physical/dedicated hardware or a provider-attested virtual profile that has passed predeclared exact-byte qualification across fresh hosts. A virtual profile must be requalified after every boot, host replacement, image/runtime change, or measurement drift. A container digest or coarse machine label alone is insufficient because containers inherit host CPU features and native dispatch behavior.
 
 ## 3. Relationship to the Ingest Privacy Boundary
 
@@ -88,8 +88,11 @@ A content hash does not anonymize data, prove semantic validity, or self-certify
 
 The runtime identity must be immutable, versioned, machine-verifiable, and checked before model import or random-number generation. At minimum it binds:
 
-- physical host or dedicated-host identity;
-- CPU vendor, family, model, stepping, microcode, and required instruction profile;
+- execution substrate kind: `FIXED_PHYSICAL_HOST` or `QUALIFIED_ATTESTED_VIRTUAL_PROFILE`;
+- physical/dedicated-host identity when the physical-host substrate is used;
+- provider, TEE, instance, machine-series, and virtual-profile identity when the virtual substrate is used;
+- the predeclared cross-host qualification plan, complete result manifest, and active requalification record for a virtual profile;
+- CPU vendor, family, model, stepping, microcode, and required instruction profile, with any provider-hidden field explicitly governed by the virtual-profile qualification contract;
 - firmware, hypervisor, and virtual-machine identity;
 - immutable operating-system image digest and kernel policy;
 - service-image digest, when a container is used;
@@ -104,9 +107,9 @@ The runtime identity must be immutable, versioned, machine-verifiable, and check
 
 An environment-variable declaration or self-asserted hash is not sufficient. Runtime measurements must be verified against an approved measurement policy and signed by a hardware-backed trust root outside the service process. The receipt-signing key must be hardware-sealed and certified to the measured workload, or a hardware quote must directly bind the numerical-body hash, attempt-envelope hash, semantic-result hash when present, execution nonce, and runtime measurement. An ordinary service-held signing key is insufficient. The verifier must validate the complete certificate/quote chain and support nonce/freshness checking, key rotation, signer and runtime revocation, rollback protection, and separation between runtime operators and governance approvers.
 
-One active runtime-profile version is allowed to serve new requests. A replacement host, microcode update, image rebuild, or runtime upgrade is a new candidate profile even when the advertised machine class is unchanged. It cannot receive canonical traffic until repeated exact conformance and explicit activation. Unvalidated failover prefers downtime over numerically ambiguous output.
+One active runtime-profile version is allowed to serve new requests. A replacement host, boot, microcode update, image rebuild, runtime upgrade, or measurement drift invalidates active status even when the advertised machine class is unchanged. A virtual profile requires the exact requalification named by its contract before every activation. Unvalidated failover prefers downtime over numerically ambiguous output.
 
-A rolling serverless platform, generic `ubuntu-latest` runner, Vercel function, or unpinned customer computer cannot satisfy this identity. A standard container on heterogeneous hosts also cannot satisfy it without a fixed CPU and trust-rooted execution boundary.
+A rolling serverless platform, generic `ubuntu-latest` runner, Vercel function, or unpinned customer computer cannot satisfy this identity. A standard container on heterogeneous hosts also cannot satisfy it without trust-rooted provider attestation, a closed numerical profile, successful predeclared cross-host exact conformance, and per-boot requalification.
 
 ## 7. Service Execution Model
 
@@ -170,7 +173,7 @@ Receipt verification is trust-rooted evidence about execution identity. It is no
 
 ## 10. Conformance, Release, and Deployment Admission
 
-Exact binary64 conformance must run on the same fixed hardware and immutable runtime candidate that will serve canonical requests.
+Exact binary64 conformance must run on the immutable runtime candidate that will serve canonical requests. A physical-host profile runs conformance on that fixed host. A virtual profile runs its predeclared cross-host qualification and then repeats active-instance conformance after every boot or replacement before serving requests.
 
 Standard GitHub-hosted runners may continue to run:
 
@@ -261,7 +264,7 @@ A later service implementation sequence should be:
 
 1. approve this architecture concept;
 2. define docs-only admission, request, semantic-result, receipt, and runtime-governance contracts;
-3. select fixed hardware, trust root, and immutable runtime-image governance;
+3. select a fixed-physical or qualified-attested-virtual substrate, trust root, and immutable runtime-image governance;
 4. build a synthetic-only admission controller and no-persistence numerical prototype;
 5. run repeated exact conformance on the service runtime;
 6. bind the inference harness to that exact runtime and release manifest;
@@ -293,7 +296,7 @@ Each implementation step requires its own bounded approval, privacy review, exac
 
 These questions must be resolved before implementation:
 
-- Which fixed-hardware provider, dedicated-host class, and hardware-attestation trust root will be used?
+- Will the first runtime use fixed physical hardware or a provider-attested virtual profile, and what exact qualification evidence closes that substrate choice?
 - What exact admission-controller state is sufficient to block replay, overlap, complementary cohorts, and subtraction without storing prohibited payloads?
 - How will the service and conformance runner share one immutable image, signer policy, and measurement verifier?
 - What authentication and tenant-isolation model is appropriate for internal synthetic-only use and later aggregate production use?
@@ -301,6 +304,11 @@ These questions must be resolved before implementation:
 - What availability target accepts downtime rather than unvalidated failover?
 - How are runtime upgrades proposed, compared, signed, activated, revoked, rolled back, and retained for replay?
 - When may aggregate production inputs replace the initial synthetic-only restriction?
+
+The first provider-specific candidate is defined in
+[`docs/contracts/canonical-inference-gcp-runtime-candidate/README.md`](../contracts/canonical-inference-gcp-runtime-candidate/README.md).
+It selects C3/TDX only for downstream contract hardening and authorizes no GCP
+action or model execution.
 
 These are implementation decisions, not permission to weaken the canonical runtime, trust root, or aggregate-only boundary.
 
