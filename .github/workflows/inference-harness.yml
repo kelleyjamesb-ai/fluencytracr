@@ -147,7 +147,7 @@ jobs:
           PYTHONPATH=inference/src inference/.venv/bin/python -m pytest -q \
             --junitxml="$report" \
             inference/tests/test_vbd_trajectory_statistics.py::test_conditional_normal_mixture_v2_matches_exact_binary64_oracles \
-            inference/tests/test_vbd_trajectory_state_space.py::test_primary_engine_fits_each_lane_with_exact_support_and_runtime_oracles
+            inference/tests/test_vbd_trajectory_state_space.py::test_primary_engine_fits_each_lane_with_exact_full_support
           REPORT_PATH="$report" inference/.venv/bin/python - <<'PY'
           import os
           from pathlib import Path
