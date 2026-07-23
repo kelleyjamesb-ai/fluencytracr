@@ -20,6 +20,12 @@ cross only as JSON validated by the `ConfidenceModel` Zod schemas.
   (`requirements.lock`). It adds nothing to the root `pyproject.toml` or
   `requirements.txt`.
 
+Future architecture is defined in
+[`CANONICAL_AGGREGATE_INFERENCE_SERVICE.md`](../docs/concepts/CANONICAL_AGGREGATE_INFERENCE_SERVICE.md).
+That docs-only concept does not turn this proof harness into a service or
+authorize routes, deployment, production inputs, persistence, model execution,
+or customer output.
+
 ## Environment
 
 Requires Python 3.13 (pinned via `requires-python`). Create the environment
