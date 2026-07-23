@@ -7,8 +7,12 @@ env:
   NUMEXPR_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
   OPENBLAS_NUM_THREADS: "1"
-  # DYNAMIC_ARCH kernels vary by runner CPU; pin the exact CI oracle target.
+  # This is a nonauthoritative portable-CI profile. Canonical evidence remains
+  # bound to the separately governed canonical aggregate inference service.
+  # Pin BLAS to AVX2/FMA-era Haswell and disable NumPy's x86-64-v4/AVX-512
+  # dispatch so heterogeneous hosted CPUs must execute one x86-64-v3 profile.
   OPENBLAS_CORETYPE: "Haswell"
+  NPY_DISABLE_CPU_FEATURES: "AVX5124FMAPS,AVX5124VNNIW,AVX512BF16,AVX512BITALG,AVX512BW,AVX512CD,AVX512DQ,AVX512ER,AVX512F,AVX512FP16,AVX512IFMA,AVX512PF,AVX512VBMI,AVX512VBMI2,AVX512VL,AVX512VNNI,AVX512VPOPCNTDQ,AVX512_CLX,AVX512_CNL,AVX512_ICL,AVX512_KNL,AVX512_KNM,AVX512_SKX,AVX512_SPR,GFNI,VAES,VPCLMULQDQ,X86_V4"
   VECLIB_MAXIMUM_THREADS: "1"
 
 on:
@@ -113,6 +117,59 @@ jobs:
           PYTHONPATH=inference/src inference/.venv/bin/python \
             inference/qa/run_test_shard.py run "${{ matrix.shard }}"
 
+  inference-native-probe:
+    name: inference-native-probe (${{ matrix.replica }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2, 3]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: inference/requirements.lock
+      - name: Install pinned inference environment
+        run: |
+          python -m venv inference/.venv
+          inference/.venv/bin/python -m pip install --upgrade pip
+          inference/.venv/bin/pip install -r inference/requirements.lock
+      - name: Record normalized nonauthoritative runtime
+        run: inference/.venv/bin/python inference/qa/verify_ci_runtime.py
+      - name: Run exact native-runtime probe
+        run: |
+          set -euo pipefail
+          report="${RUNNER_TEMP:-/tmp}/inference-native-probe.xml"
+          PYTHONPATH=inference/src inference/.venv/bin/python -m pytest -q \
+            --junitxml="$report" \
+            inference/tests/test_vbd_trajectory_statistics.py::test_conditional_normal_mixture_v2_matches_exact_binary64_oracles \
+            inference/tests/test_vbd_trajectory_state_space.py::test_primary_engine_fits_each_lane_with_exact_support_and_runtime_oracles
+          REPORT_PATH="$report" inference/.venv/bin/python - <<'PY'
+          import os
+          from pathlib import Path
+          from xml.etree import ElementTree
+
+          root = ElementTree.parse(Path(os.environ["REPORT_PATH"])).getroot()
+          suites = list(root)
+          if root.tag != "testsuites" or len(suites) != 1 or suites[0].tag != "testsuite":
+              raise SystemExit("native probe JUnit shape is invalid")
+          suite = suites[0]
+          observed = {
+              name: int(suite.get(name, "-1"))
+              for name in ("tests", "failures", "errors", "skipped")
+          }
+          expected = {"tests": 4, "failures": 0, "errors": 0, "skipped": 0}
+          if observed != expected:
+              raise SystemExit(
+                  f"native probe totals are not exact: expected={expected!r} observed={observed!r}"
+              )
+          PY
+
   inference-bridge:
     name: inference-bridge
     runs-on: ubuntu-latest
@@ -184,6 +241,7 @@ jobs:
     needs:
       - inference-plan
       - inference-python
+      - inference-native-probe
       - inference-bridge
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -192,12 +250,14 @@ jobs:
         env:
           PLAN_RESULT: ${{ needs.inference-plan.result }}
           PYTHON_SHARDS_RESULT: ${{ needs.inference-python.result }}
+          NATIVE_PROBE_RESULT: ${{ needs.inference-native-probe.result }}
           BRIDGE_RESULT: ${{ needs.inference-bridge.result }}
         run: |
           if [[ "$PLAN_RESULT" != "success" || \
                 "$PYTHON_SHARDS_RESULT" != "success" || \
+                "$NATIVE_PROBE_RESULT" != "success" || \
                 "$BRIDGE_RESULT" != "success" ]]; then
-            printf 'required inference checks failed: plan=%s shards=%s bridge=%s\n' \
-              "$PLAN_RESULT" "$PYTHON_SHARDS_RESULT" "$BRIDGE_RESULT"
+            printf 'required inference checks failed: plan=%s shards=%s native_probe=%s bridge=%s\n' \
+              "$PLAN_RESULT" "$PYTHON_SHARDS_RESULT" "$NATIVE_PROBE_RESULT" "$BRIDGE_RESULT"
             exit 1
           fi
