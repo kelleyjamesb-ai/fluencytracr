@@ -23,61 +23,16 @@ THREAD_ENV_KEYS = (
     "VECLIB_MAXIMUM_THREADS",
 )
 EXPECTED_OPENBLAS_CORETYPE = "Haswell"
-APPROVED_NUMPY_X86_V3_ENABLED_FEATURES = frozenset(
-    {
-        "MMX",
-        "SSE",
-        "SSE2",
-        "SSE3",
-        "SSSE3",
-        "SSE41",
-        "POPCNT",
-        "SSE42",
-        "X86_V2",
-        "AVX",
-        "F16C",
-        "FMA3",
-        "AVX2",
-        "LAHF",
-        "CX16",
-        "MOVBE",
-        "BMI",
-        "BMI2",
-        "LZCNT",
-        "X86_V3",
-    }
+EXPECTED_NUMPY_CPU_BASELINE = ("X86_V2",)
+EXPECTED_NUMPY_CPU_DISPATCH = (
+    "X86_V3",
+    "X86_V4",
+    "AVX512_ICL",
+    "AVX512_SPR",
 )
+EXPECTED_NUMPY_EFFECTIVE_DISPATCH = ("X86_V3",)
 EXPECTED_NUMPY_DISABLED_CPU_FEATURE_SET = frozenset(
-    {
-        "GFNI",
-        "VPCLMULQDQ",
-        "VAES",
-        "X86_V4",
-        "AVX512F",
-        "AVX512CD",
-        "AVX512ER",
-        "AVX512PF",
-        "AVX5124FMAPS",
-        "AVX5124VNNIW",
-        "AVX512VPOPCNTDQ",
-        "AVX512VL",
-        "AVX512BW",
-        "AVX512DQ",
-        "AVX512VNNI",
-        "AVX512IFMA",
-        "AVX512VBMI",
-        "AVX512VBMI2",
-        "AVX512BITALG",
-        "AVX512FP16",
-        "AVX512BF16",
-        "AVX512_KNL",
-        "AVX512_KNM",
-        "AVX512_SKX",
-        "AVX512_CLX",
-        "AVX512_CNL",
-        "AVX512_ICL",
-        "AVX512_SPR",
-    }
+    set(EXPECTED_NUMPY_CPU_DISPATCH) - set(EXPECTED_NUMPY_EFFECTIVE_DISPATCH)
 )
 EXPECTED_NUMPY_DISABLED_CPU_FEATURES = ",".join(
     sorted(EXPECTED_NUMPY_DISABLED_CPU_FEATURE_SET)
@@ -141,6 +96,9 @@ def main() -> int:
     enabled_numpy_features = tuple(
         sorted(name for name, enabled in NUMPY_CPU_FEATURES.items() if enabled)
     )
+    effective_numpy_dispatch = tuple(
+        name for name in NUMPY_CPU_DISPATCH if NUMPY_CPU_FEATURES.get(name, False)
+    )
     print(
         json.dumps(
             {
@@ -150,6 +108,7 @@ def main() -> int:
                 "numpy": np.__version__,
                 "numpy_cpu_baseline": NUMPY_CPU_BASELINE,
                 "numpy_cpu_dispatch": NUMPY_CPU_DISPATCH,
+                "numpy_cpu_effective_dispatch": effective_numpy_dispatch,
                 "numpy_cpu_features_enabled": enabled_numpy_features,
                 "numpy_disabled_cpu_features": os.environ.get("NPY_DISABLE_CPU_FEATURES"),
                 "scipy": scipy.__version__,
@@ -172,17 +131,15 @@ def main() -> int:
     if (
         mask_value != EXPECTED_NUMPY_DISABLED_CPU_FEATURES
         or mask_tokens != EXPECTED_NUMPY_DISABLED_CPU_FEATURE_SET
-        or any(name not in NUMPY_CPU_FEATURES for name in mask_tokens)
+        or any(name not in NUMPY_CPU_DISPATCH for name in mask_tokens)
     ):
         raise RuntimeError("inference CI NumPy CPU feature mask is not pinned")
-    enabled_feature_set = frozenset(enabled_numpy_features)
-    if enabled_feature_set != APPROVED_NUMPY_X86_V3_ENABLED_FEATURES:
-        missing = sorted(APPROVED_NUMPY_X86_V3_ENABLED_FEATURES - enabled_feature_set)
-        unexpected = sorted(enabled_feature_set - APPROVED_NUMPY_X86_V3_ENABLED_FEATURES)
-        raise RuntimeError(
-            "inference CI NumPy enabled feature inventory is not exact: "
-            f"missing={missing!r} unexpected={unexpected!r}"
-        )
+    if NUMPY_CPU_BASELINE != EXPECTED_NUMPY_CPU_BASELINE:
+        raise RuntimeError("inference CI NumPy baseline inventory is not exact")
+    if NUMPY_CPU_DISPATCH != EXPECTED_NUMPY_CPU_DISPATCH:
+        raise RuntimeError("inference CI NumPy compiled dispatch inventory is not exact")
+    if effective_numpy_dispatch != EXPECTED_NUMPY_EFFECTIVE_DISPATCH:
+        raise RuntimeError("inference CI NumPy effective dispatch inventory is not exact")
     if not openblas_pools:
         raise RuntimeError("inference CI did not load OpenBLAS")
     if any(pool.get("num_threads") != 1 for pool in pools):

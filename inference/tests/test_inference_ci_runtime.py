@@ -35,16 +35,24 @@ def _configure_valid_runtime(monkeypatch):
     )
     monkeypatch.setattr(
         runtime,
+        "NUMPY_CPU_BASELINE",
+        runtime.EXPECTED_NUMPY_CPU_BASELINE,
+    )
+    monkeypatch.setattr(
+        runtime,
+        "NUMPY_CPU_DISPATCH",
+        runtime.EXPECTED_NUMPY_CPU_DISPATCH,
+    )
+    monkeypatch.setattr(
+        runtime,
         "NUMPY_CPU_FEATURES",
         {
-            **{
-                name: True
-                for name in runtime.APPROVED_NUMPY_X86_V3_ENABLED_FEATURES
-            },
-            **{
-                name: False
-                for name in runtime.EXPECTED_NUMPY_DISABLED_CPU_FEATURE_SET
-            },
+            "X86_V3": True,
+            "X86_V4": False,
+            "AVX512_ICL": False,
+            "AVX512_SPR": False,
+            "VAES": True,
+            "VPCLMULQDQ": True,
         },
     )
     monkeypatch.setattr(runtime.np.linalg, "solve", lambda *_args: None)
@@ -127,9 +135,12 @@ def test_ci_runtime_accepts_only_the_exact_single_thread_haswell_pool(
         output["numpy_disabled_cpu_features"]
         == runtime.EXPECTED_NUMPY_DISABLED_CPU_FEATURES
     )
-    assert set(output["numpy_cpu_features_enabled"]) == (
-        runtime.APPROVED_NUMPY_X86_V3_ENABLED_FEATURES
+    assert tuple(output["numpy_cpu_baseline"]) == runtime.EXPECTED_NUMPY_CPU_BASELINE
+    assert tuple(output["numpy_cpu_dispatch"]) == runtime.EXPECTED_NUMPY_CPU_DISPATCH
+    assert tuple(output["numpy_cpu_effective_dispatch"]) == (
+        runtime.EXPECTED_NUMPY_EFFECTIVE_DISPATCH
     )
+    assert {"VAES", "VPCLMULQDQ"} <= set(output["numpy_cpu_features_enabled"])
 
 
 @pytest.mark.parametrize(
@@ -141,10 +152,10 @@ def test_ci_runtime_accepts_only_the_exact_single_thread_haswell_pool(
         ("multiple_threads", "non-single-threaded"),
         ("wrong_architecture", "architecture"),
         ("missing_numpy_mask", "NumPy CPU feature mask"),
-        ("missing_x86_v3", "enabled feature inventory"),
-        ("x86_v4_enabled", "enabled feature inventory"),
-        ("unexpected_vaes", "enabled feature inventory"),
-        ("unknown_x86_v5", "enabled feature inventory"),
+        ("missing_x86_v3", "effective dispatch inventory"),
+        ("x86_v4_enabled", "effective dispatch inventory"),
+        ("baseline_drift", "baseline inventory"),
+        ("unknown_x86_v5", "compiled dispatch inventory"),
         ("wrong_platform", "requires Linux x86_64"),
     ],
 )
@@ -194,13 +205,14 @@ def test_ci_runtime_rejects_provenance_drift(monkeypatch, mutation, message):
             "NUMPY_CPU_FEATURES",
             {**runtime.NUMPY_CPU_FEATURES, "X86_V4": True},
         )
-    elif mutation == "unexpected_vaes":
+    elif mutation == "baseline_drift":
+        monkeypatch.setattr(runtime, "NUMPY_CPU_BASELINE", ("X86_V2", "X86_V3"))
+    elif mutation == "unknown_x86_v5":
         monkeypatch.setattr(
             runtime,
-            "NUMPY_CPU_FEATURES",
-            {**runtime.NUMPY_CPU_FEATURES, "VAES": True},
+            "NUMPY_CPU_DISPATCH",
+            (*runtime.NUMPY_CPU_DISPATCH, "X86_V5"),
         )
-    elif mutation == "unknown_x86_v5":
         monkeypatch.setattr(
             runtime,
             "NUMPY_CPU_FEATURES",
