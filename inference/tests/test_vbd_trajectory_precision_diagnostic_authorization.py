@@ -29,7 +29,7 @@ from fluencytracr_inference.vbd_trajectory_precision_diagnostic_authorization im
     verify_vbd_precision_diagnostic_authorization_commit,
 )
 from fluencytracr_inference.vbd_trajectory_validation_resumable import (
-    _RUNNER_SOURCE_PATHS,
+    _RUNNER_SOURCE_PATHS_V1 as _RUNNER_SOURCE_PATHS,
     _repo_root,
 )
 

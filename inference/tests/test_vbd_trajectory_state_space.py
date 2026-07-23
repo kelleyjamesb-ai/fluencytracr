@@ -308,7 +308,7 @@ def test_indefinite_mode_hessian_fails_instead_of_being_repaired(
 
 
 @pytest.mark.parametrize("lane", VBD_TRAJECTORY_LANES)
-def test_primary_engine_fits_each_lane_with_exact_support_and_runtime_oracles(
+def test_primary_engine_fits_each_lane_with_exact_full_support(
     lane, smoke_case, fit_by_lane
 ):
     fit = fit_by_lane[lane]

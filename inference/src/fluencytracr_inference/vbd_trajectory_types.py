@@ -19,6 +19,12 @@ from .longitudinal_types import MAX_JAVASCRIPT_SAFE_INTEGER
 
 
 VBD_TRAJECTORY_SCHEMA_VERSION = "FT_AI_VALUE_VBD_TRAJECTORY_INPUT_2026_07_V1"
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF = (
+    "plan:vbd-group-effect-marginalization-diagnostic-v2"
+)
+VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE = (
+    "group_effect_marginalization_diagnostic_v2_nonacceptance"
+)
 VBD_TRAJECTORY_EVENT_SCHEMA_VERSION = "FT_V2_2026_05"
 VBD_TRAJECTORY_MODEL_FAMILY = (
     "bayesian_ai_value_realization_and_human_transformation_model_family"
@@ -1021,6 +1027,7 @@ def _reference_spec_for_plan_ref(
     if plan_ref not in (
         VBD_TRAJECTORY_VALIDATION_PLAN_REF,
         VBD_TRAJECTORY_CONCORDANCE_PLAN_REF,
+        VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF,
     ):
         raise TrajectoryStructureError("reference manifest study plan is off plan")
     return {
@@ -2190,6 +2197,62 @@ def validate_trajectory_panel(panel: TrajectoryObservationPanel) -> None:
                 "validation panel metadata drifted from its seed-resolved slot"
             )
         acceptance_slot_key = slot.slot_id
+    elif plan_ref == VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_PLAN_REF:
+        from .vbd_trajectory_group_effect_marginalization_constants import (
+            VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES,
+            validate_vbd_trajectory_group_effect_marginalization_case_body,
+            vbd_trajectory_group_effect_marginalization_case_body,
+        )
+
+        if (
+            panel.seed_namespace
+            != VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_SEED_NAMESPACE
+        ):
+            raise TrajectoryStructureError(
+                "seed namespace is not the compiled marginalization V2 namespace"
+            )
+        matches = tuple(
+            case
+            for case in VBD_TRAJECTORY_GROUP_EFFECT_MARGINALIZATION_CASES
+            if case.generator_seed == seed
+            and case.scenario_id == panel.scenario_id
+        )
+        if len(matches) != 1:
+            raise TrajectoryStructureError(
+                "marginalization V2 seed does not resolve one exact case"
+            )
+        case = matches[0]
+        case_body = validate_vbd_trajectory_group_effect_marginalization_case_body(
+            vbd_trajectory_group_effect_marginalization_case_body(
+                case.case_ordinal
+            ),
+            case_ordinal=case.case_ordinal,
+        )
+        expected_case_semantics = (
+            case.scenario_id,
+            case.panel_group_count,
+            case.aggregate_k,
+            (1, 1, 1),
+            (0.35, 0.35, 0.25),
+        )
+        observed_case_semantics = (
+            panel.scenario_id,
+            panel.panel_group_count,
+            panel.aggregate_k,
+            panel.direction_vector,
+            (
+                panel.dgp_group_correlation,
+                panel.dgp_innovation_correlation,
+                panel.dgp_observation_correlation,
+            ),
+        )
+        if (
+            panel.study_plan_root != sha256_json(case_body)
+            or observed_case_semantics != expected_case_semantics
+        ):
+            raise TrajectoryStructureError(
+                "marginalization V2 panel metadata drifted from its exact case"
+            )
     else:
         if panel.seed_namespace != VBD_TRAJECTORY_CONCORDANCE_SEED_NAMESPACE:
             raise TrajectoryStructureError(
