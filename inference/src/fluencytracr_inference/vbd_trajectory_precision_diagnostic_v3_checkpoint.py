@@ -162,33 +162,110 @@ def _canonical_bytes(value: object) -> bytes:
 
 
 def _strict_root_fd(root: Path) -> int:
-    if not root.is_absolute() or root.resolve(strict=False) != root:
+    if (
+        not isinstance(root, Path)
+        or root.anchor != os.sep
+        or any(part in (".", "..") or "\0" in part for part in root.parts[1:])
+    ):
         raise VbdTrajectoryPrecisionDiagnosticV3CheckpointError(
-            "checkpoint root must be absolute"
+            "checkpoint root must be canonical and absolute"
         )
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    root_fd = -1
     try:
-        info = root.lstat()
-        if root.is_symlink() or not stat.S_ISDIR(info.st_mode):
+        root_fd = os.open(root.anchor, flags)
+        for component in root.parts[1:]:
+            previous_fd = root_fd
+            root_fd = os.open(component, flags, dir_fd=previous_fd)
+            os.close(previous_fd)
+        if not stat.S_ISDIR(os.fstat(root_fd).st_mode):
             raise OSError("checkpoint root is not a directory")
-        return os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    except OSError as exc:
+        return root_fd
+    except (OSError, TypeError, ValueError) as exc:
+        if root_fd >= 0:
+            try:
+                os.close(root_fd)
+            except OSError:
+                pass
         raise VbdTrajectoryPrecisionDiagnosticV3CheckpointError(
             "checkpoint root is unavailable"
         ) from exc
 
 
-def _enumerate_regular_names(root_fd: int) -> tuple[str, ...]:
+def _enumerate_regular_entries(root_fd: int) -> tuple[tuple[str, int, int], ...]:
     try:
-        names = tuple(sorted(os.listdir(root_fd)))
-        for name in names:
+        entries = []
+        for name in sorted(os.listdir(root_fd)):
             info = os.stat(name, dir_fd=root_fd, follow_symlinks=False)
             if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise OSError("checkpoint entry is not a unique regular file")
-        return names
+            entries.append((name, info.st_dev, info.st_ino))
+        return tuple(entries)
     except OSError as exc:
         raise VbdTrajectoryPrecisionDiagnosticV3CheckpointError(
             "checkpoint root enumeration is unsafe"
         ) from exc
+
+
+def _read_unique_regular_file(
+    root_fd: int,
+    filename: str,
+    *,
+    expected_device: int,
+    expected_inode: int,
+) -> bytes:
+    file_fd = -1
+    try:
+        file_fd = os.open(
+            filename,
+            os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+            dir_fd=root_fd,
+        )
+        before = os.fstat(file_fd)
+        if (
+            not stat.S_ISREG(before.st_mode)
+            or before.st_nlink != 1
+            or before.st_dev != expected_device
+            or before.st_ino != expected_inode
+        ):
+            raise OSError("checkpoint entry changed after enumeration")
+        chunks = []
+        while True:
+            chunk = os.read(file_fd, 64 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        after = os.fstat(file_fd)
+        if (
+            not stat.S_ISREG(after.st_mode)
+            or after.st_nlink != 1
+            or (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+                after.st_mtime_ns,
+                after.st_ctime_ns,
+            )
+            != (
+                before.st_dev,
+                before.st_ino,
+                before.st_size,
+                before.st_mtime_ns,
+                before.st_ctime_ns,
+            )
+        ):
+            raise OSError("checkpoint entry changed while reading")
+        return b"".join(chunks)
+    except (OSError, TypeError, ValueError) as exc:
+        raise VbdTrajectoryPrecisionDiagnosticV3CheckpointError(
+            "checkpoint bytes are invalid"
+        ) from exc
+    finally:
+        if file_fd >= 0:
+            try:
+                os.close(file_fd)
+            except OSError:
+                pass
 
 
 @dataclass(frozen=True)
@@ -208,6 +285,12 @@ class VbdTrajectoryPrecisionDiagnosticV3CheckpointIdentity:
             "human execution authorization",
         )
         _strict_sha256(self.attempt_claim_hash, "attempt claim")
+        consumed_commits = {
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT,
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT,
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_IMPLEMENTATION_COMMIT,
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_COMMIT,
+        }
         consumed_hashes = {
             VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
             VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_EXECUTION_AUTHORIZATION_HASH,
@@ -220,14 +303,8 @@ class VbdTrajectoryPrecisionDiagnosticV3CheckpointIdentity:
             VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_OUTPUT_SHA256,
         }
         if (
-            self.implementation_commit
-            == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT
-            or self.authorization_commit
-            == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT
-            or self.implementation_commit
-            == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_IMPLEMENTATION_COMMIT
-            or self.authorization_commit
-            == VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_COMMIT
+            self.implementation_commit in consumed_commits
+            or self.authorization_commit in consumed_commits
             or any(
                 value in consumed_hashes
                 for value in (
@@ -332,34 +409,39 @@ def validate_vbd_precision_diagnostic_v3_checkpoint_root(
                 for item in VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE
             )
         )
-        if _enumerate_regular_names(root_fd) != expected_names:
+        entries = _enumerate_regular_entries(root_fd)
+        if tuple(entry[0] for entry in entries) != expected_names:
             raise VbdTrajectoryPrecisionDiagnosticV3CheckpointError(
                 "checkpoint root is incomplete or off plan"
             )
+        entry_identities = {
+            name: (device, inode) for name, device, inode in entries
+        }
         values = []
         predecessor = None
         input_binding = None
         for ordinal, (filename, _phase, _lane) in enumerate(
             VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE
         ):
+            expected_device, expected_inode = entry_identities[filename]
+            data = _read_unique_regular_file(
+                root_fd,
+                filename,
+                expected_device=expected_device,
+                expected_inode=expected_inode,
+            )
             try:
-                file_fd = os.open(filename, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=root_fd)
-                try:
-                    data = b""
-                    while True:
-                        chunk = os.read(file_fd, 64 * 1024)
-                        if not chunk:
-                            break
-                        data += chunk
-                finally:
-                    os.close(file_fd)
                 value = json.loads(data)
-            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            except (RecursionError, UnicodeDecodeError, ValueError) as exc:
                 raise VbdTrajectoryPrecisionDiagnosticV3CheckpointError(
                     "checkpoint bytes are invalid"
                 ) from exc
             if ordinal == 1:
-                input_binding = value.get("input_binding_hash")
+                input_binding = (
+                    value.get("input_binding_hash")
+                    if type(value) is dict
+                    else None
+                )
             validate_vbd_precision_diagnostic_v3_checkpoint(
                 value,
                 identity=identity,

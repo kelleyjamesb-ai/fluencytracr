@@ -2,6 +2,7 @@ from copy import deepcopy
 import json
 import os
 from itertools import permutations
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -30,8 +31,10 @@ from fluencytracr_inference.vbd_trajectory_precision_diagnostic_constants import
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHAIN_SEEDS,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_GENERATOR_SEED,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_RESERVED_SEEDS,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
+    VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_COMMIT,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_MANIFEST_HASH,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_IMPLEMENTATION_COMMIT,
     VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_OUTPUT_SHA256,
@@ -529,7 +532,9 @@ def test_checkpoint_chain_readback_is_exact_and_has_no_creation_api(tmp_path):
         )
 
 
-def test_checkpoint_root_rejects_unknown_partial_or_consumed_identity(tmp_path):
+def test_checkpoint_root_rejects_unknown_partial_or_consumed_identity(
+    tmp_path, monkeypatch
+):
     identity = _checkpoint_identity()
     partial = (tmp_path / "partial").resolve()
     partial.mkdir()
@@ -551,13 +556,196 @@ def test_checkpoint_root_rejects_unknown_partial_or_consumed_identity(tmp_path):
             root=unknown, identity=identity
         )
 
+    canonical_root = (tmp_path / "canonical-root").resolve()
+    canonical_root.mkdir()
+    _write_checkpoint_chain(canonical_root, identity)
+    leaf_alias = tmp_path / "leaf-root-alias"
+    leaf_alias.symlink_to(canonical_root, target_is_directory=True)
+    parent_alias = tmp_path / "parent-root-alias"
+    parent_alias.symlink_to(tmp_path, target_is_directory=True)
+    for aliased_root in (leaf_alias, parent_alias / canonical_root.name):
+        with pytest.raises(
+            VbdTrajectoryPrecisionDiagnosticV3CheckpointError,
+            match="root is unavailable",
+        ):
+            validate_vbd_precision_diagnostic_v3_checkpoint_root(
+                root=aliased_root,
+                identity=identity,
+            )
+
+    invalid_roots = (
+        Path("//" + str(canonical_root).lstrip("/")),
+        Path(str(canonical_root) + "\0child"),
+    )
+    fd_count = len(os.listdir("/dev/fd"))
+    for invalid_root in invalid_roots:
+        for _attempt in range(5):
+            with pytest.raises(VbdTrajectoryPrecisionDiagnosticV3CheckpointError):
+                validate_vbd_precision_diagnostic_v3_checkpoint_root(
+                    root=invalid_root,
+                    identity=identity,
+                )
+    assert len(os.listdir("/dev/fd")) == fd_count
+
+    wrong_shape_root = (tmp_path / "wrong-shape-root").resolve()
+    wrong_shape_root.mkdir()
+    _write_checkpoint_chain(wrong_shape_root, identity)
+    (
+        wrong_shape_root
+        / VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE[1][0]
+    ).write_text("[]\n", encoding="utf-8")
+    with pytest.raises(VbdTrajectoryPrecisionDiagnosticV3CheckpointError):
+        validate_vbd_precision_diagnostic_v3_checkpoint_root(
+            root=wrong_shape_root,
+            identity=identity,
+        )
+
+    race_root = (tmp_path / "hardlink-race-root").resolve()
+    race_root.mkdir()
+    _write_checkpoint_chain(race_root, identity)
+    race_filename = VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE[0][0]
+    race_alias = tmp_path / "hardlink-race-alias.json"
+    real_open = checkpoint_module.os.open
+    swapped = False
+
+    def hardlink_swap_open(path, flags, mode=0o777, *, dir_fd=None):
+        nonlocal swapped
+        if os.fspath(path) == race_filename and dir_fd is not None and not swapped:
+            os.link(race_root / race_filename, race_alias)
+            swapped = True
+        if dir_fd is None:
+            return real_open(path, flags, mode)
+        return real_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(checkpoint_module.os, "open", hardlink_swap_open)
+    with pytest.raises(
+        VbdTrajectoryPrecisionDiagnosticV3CheckpointError,
+        match="checkpoint bytes are invalid",
+    ):
+        validate_vbd_precision_diagnostic_v3_checkpoint_root(
+            root=race_root,
+            identity=identity,
+        )
+    assert swapped is True
+    monkeypatch.setattr(checkpoint_module.os, "open", real_open)
+
+    replacement_root = (tmp_path / "replacement-race-root").resolve()
+    replacement_root.mkdir()
+    _write_checkpoint_chain(replacement_root, identity)
+    replacement_filename = (
+        VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE[0][0]
+    )
+    replacement_source = tmp_path / "replacement-source.json"
+    replacement_source.write_bytes(
+        (replacement_root / replacement_filename).read_bytes()
+    )
+    replaced = False
+
+    def replacement_swap_open(path, flags, mode=0o777, *, dir_fd=None):
+        nonlocal replaced
+        if (
+            os.fspath(path) == replacement_filename
+            and dir_fd is not None
+            and not replaced
+        ):
+            os.replace(replacement_source, replacement_root / replacement_filename)
+            replaced = True
+        if dir_fd is None:
+            return real_open(path, flags, mode)
+        return real_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(checkpoint_module.os, "open", replacement_swap_open)
+    with pytest.raises(
+        VbdTrajectoryPrecisionDiagnosticV3CheckpointError,
+        match="checkpoint bytes are invalid",
+    ):
+        validate_vbd_precision_diagnostic_v3_checkpoint_root(
+            root=replacement_root,
+            identity=identity,
+        )
+    assert replaced is True
+    monkeypatch.setattr(checkpoint_module.os, "open", real_open)
+
+    fifo_root = (tmp_path / "fifo-race-root").resolve()
+    fifo_root.mkdir()
+    _write_checkpoint_chain(fifo_root, identity)
+    fifo_filename = VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE[0][0]
+    fifo_swapped = False
+
+    def fifo_swap_open(path, flags, mode=0o777, *, dir_fd=None):
+        nonlocal fifo_swapped
+        if os.fspath(path) == fifo_filename and dir_fd is not None and not fifo_swapped:
+            (fifo_root / fifo_filename).unlink()
+            os.mkfifo(fifo_root / fifo_filename)
+            fifo_swapped = True
+        if dir_fd is None:
+            return real_open(path, flags, mode)
+        return real_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(checkpoint_module.os, "open", fifo_swap_open)
+    with pytest.raises(
+        VbdTrajectoryPrecisionDiagnosticV3CheckpointError,
+        match="checkpoint bytes are invalid",
+    ):
+        validate_vbd_precision_diagnostic_v3_checkpoint_root(
+            root=fifo_root,
+            identity=identity,
+        )
+    assert fifo_swapped is True
+    monkeypatch.setattr(checkpoint_module.os, "open", real_open)
+
+    malformed_payloads = (
+        ("[" * 10_000 + "0" + "]" * 10_000 + "\n").encode("utf-8"),
+        ("9" * 10_000 + "\n").encode("utf-8"),
+    )
+    for ordinal, payload in enumerate(malformed_payloads):
+        malformed_root = (tmp_path / f"malformed-json-{ordinal}").resolve()
+        malformed_root.mkdir()
+        _write_checkpoint_chain(malformed_root, identity)
+        (
+            malformed_root
+            / VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V3_CHECKPOINT_SEQUENCE[1][0]
+        ).write_bytes(payload)
+        with pytest.raises(
+            VbdTrajectoryPrecisionDiagnosticV3CheckpointError,
+            match="checkpoint bytes are invalid",
+        ):
+            validate_vbd_precision_diagnostic_v3_checkpoint_root(
+                root=malformed_root,
+                identity=identity,
+            )
+
     for field, consumed_value in (
         (
             "implementation_commit",
             VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT,
         ),
         (
+            "authorization_commit",
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT,
+        ),
+        (
             "implementation_commit",
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_AUTHORIZATION_COMMIT,
+        ),
+        (
+            "authorization_commit",
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V1_CONSUMED_IMPLEMENTATION_COMMIT,
+        ),
+        (
+            "implementation_commit",
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_IMPLEMENTATION_COMMIT,
+        ),
+        (
+            "authorization_commit",
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_COMMIT,
+        ),
+        (
+            "implementation_commit",
+            VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_AUTHORIZATION_COMMIT,
+        ),
+        (
+            "authorization_commit",
             VBD_TRAJECTORY_PRECISION_DIAGNOSTIC_V2_CONSUMED_IMPLEMENTATION_COMMIT,
         ),
         (
