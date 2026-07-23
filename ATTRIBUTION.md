@@ -77,6 +77,11 @@ not necessarily reviewed or approved FluencyTracr.
 - Governance grounding: calibration baselines are immutable reference artifacts, not tunable thresholds or admin overrides
 - Used in: V3 calibration concept document
 
+### Canonical aggregate inference authority
+- Source: James Kelley, architectural decision to separate portable aggregate transformation from one bit-for-bit authoritative inference service
+- Governance grounding: local and client-native numerical results remain nonauthoritative; governed Bayesian evidence requires one fixed, trust-rooted runtime without weakening the aggregate-only privacy boundary
+- Used in: Canonical Aggregate Inference Service concept document
+
 ### AI Scale Readiness Portfolio
 - Source: James Kelley, scale-readiness portfolio framing for V4 value realization
 - Governance grounding: aggregate readiness zones should guide where to scale, coach, redesign, calibrate trust, expand adoption, or hold without becoming a scorecard, ranking, ROI claim, or productivity measure
