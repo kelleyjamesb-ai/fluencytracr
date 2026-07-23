@@ -17,7 +17,7 @@ from .vbd_trajectory_precision_diagnostic import (
     vbd_trajectory_precision_diagnostic_seed_manifest,
 )
 from .vbd_trajectory_validation_resumable import (
-    _RUNNER_SOURCE_PATHS,
+    _RUNNER_SOURCE_PATHS_V1 as _RUNNER_SOURCE_PATHS,
     _file_sha256,
     _git_output,
     _implementation_review_refs_are_valid,
@@ -308,7 +308,9 @@ def build_vbd_precision_diagnostic_authorization_manifest(
         implementation_review_refs, implementation_commit
     ):
         _authorization_error("diagnostic implementation review refs are invalid")
-    implementation_manifest = vbd_trajectory_runner_implementation_manifest()
+    implementation_manifest = vbd_trajectory_runner_implementation_manifest(
+        source_paths=_RUNNER_SOURCE_PATHS
+    )
     files = sorted(
         implementation_manifest["files"], key=lambda item: item["path"]
     )

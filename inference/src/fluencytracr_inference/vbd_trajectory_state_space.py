@@ -24,10 +24,12 @@ from .vbd_trajectory_statistics import (
     TrajectoryPosteriorSummary,
     TrajectoryStatisticsError,
     _summarize_pre_normalized_conditional_normal_mixture_v2,
+    summarize_weighted_support,
 )
 from .vbd_trajectory_types import (
     TrajectoryObservationPanel,
     VBD_TRAJECTORY_LANES,
+    VBD_TRAJECTORY_PANEL_GROUP_COUNTS,
 )
 
 
@@ -47,6 +49,9 @@ VBD_TRAJECTORY_WEIGHT_RETENTION_ALGORITHM = (
     "binary64_representable_normalized_weight_retention_v1"
 )
 VBD_TRAJECTORY_ORDINAL_COMMITMENT_ALGORITHM = "vbd_outer_weight_ordinals_v1"
+VBD_TRAJECTORY_COMMON_QUANTITY_REFERENCE_SCHEMA = (
+    "FT_AI_VALUE_VBD_TRAJECTORY_COMMON_QUANTITY_REFERENCE_2026_07_V1"
+)
 
 
 class TrajectoryIntegrationError(RuntimeError):
@@ -385,6 +390,103 @@ class TrajectoryDeterministicFit:
         return {**self._hash_body(), "fit_summary_hash": self.fit_summary_hash()}
 
 
+def vbd_trajectory_common_quantity_names(
+    panel_group_count: int,
+) -> tuple[str, ...]:
+    """Return the exact common posterior order shared by both NUTS arms."""
+
+    if (
+        type(panel_group_count) is not int
+        or panel_group_count not in VBD_TRAJECTORY_PANEL_GROUP_COUNTS
+    ):
+        raise TrajectoryIntegrationError(
+            "common-quantity panel group count is off plan"
+        )
+    return (
+        "alpha",
+        "beta",
+        "sigma_u",
+        *(f"u[{index}]" for index in range(panel_group_count)),
+        "sigma_r",
+        "rho",
+        "trajectory_movement",
+    )
+
+
+@dataclass(frozen=True)
+class TrajectoryDeterministicCommonQuantityReference:
+    """Sanitized deterministic summaries used to bind paired NUTS arms."""
+
+    lane: str
+    panel_group_count: int
+    prepared_input_hash: str
+    model_input_hash: str
+    quantity_summaries: tuple[TrajectoryPosteriorSummary, ...]
+    legacy_fit_summary_hash: str
+    engine_kind: str = VBD_TRAJECTORY_PRIMARY_ENGINE
+
+    def __post_init__(self) -> None:
+        if self.lane not in VBD_TRAJECTORY_LANES:
+            raise TrajectoryIntegrationError(
+                "common-quantity reference lane is invalid"
+            )
+        for value in (
+            self.prepared_input_hash,
+            self.model_input_hash,
+            self.legacy_fit_summary_hash,
+        ):
+            if not _is_sha256(value):
+                raise TrajectoryIntegrationError(
+                    "common-quantity reference hash is invalid"
+                )
+        expected_names = vbd_trajectory_common_quantity_names(
+            self.panel_group_count
+        )
+        if (
+            type(self.quantity_summaries) is not tuple
+            or any(
+                type(summary) is not TrajectoryPosteriorSummary
+                for summary in self.quantity_summaries
+            )
+            or tuple(
+                summary.quantity_name for summary in self.quantity_summaries
+            )
+            != expected_names
+            or self.engine_kind != VBD_TRAJECTORY_PRIMARY_ENGINE
+        ):
+            raise TrajectoryIntegrationError(
+                "common-quantity reference structure is invalid"
+            )
+
+    def _hash_body(self) -> dict:
+        return {
+            "schema_version": VBD_TRAJECTORY_COMMON_QUANTITY_REFERENCE_SCHEMA,
+            "lane": self.lane,
+            "panel_group_count": self.panel_group_count,
+            "prepared_input_hash": self.prepared_input_hash,
+            "model_input_hash": self.model_input_hash,
+            "engine_kind": self.engine_kind,
+            "quantity_order": list(
+                vbd_trajectory_common_quantity_names(self.panel_group_count)
+            ),
+            "quantity_summaries": [
+                summary.to_dict() for summary in self.quantity_summaries
+            ],
+            "legacy_fit_summary_hash": self.legacy_fit_summary_hash,
+            "posterior_support_emitted": False,
+            "latent_paths_emitted": False,
+        }
+
+    def reference_hash(self) -> str:
+        return sha256_json(self._hash_body())
+
+    def to_dict(self) -> dict:
+        return {
+            **self._hash_body(),
+            "reference_hash": self.reference_hash(),
+        }
+
+
 @dataclass(frozen=True)
 class _ConditionalGaussianResult:
     log_marginal: float
@@ -607,16 +709,140 @@ def _finite_difference_hessian(function, point: np.ndarray) -> np.ndarray:
     return result
 
 
-def fit_vbd_trajectory_state_space(
+def _build_common_quantity_reference(
+    *,
+    prepared: TrajectoryPreparedInput,
+    outer_weights: np.ndarray,
+    retained_ordinals: np.ndarray,
+    physical_hyperparameters: np.ndarray,
+    theta_means: np.ndarray,
+    theta_covariances: np.ndarray,
+    movement_summary: TrajectoryPosteriorSummary,
+    legacy_fit: TrajectoryDeterministicFit,
+) -> TrajectoryDeterministicCommonQuantityReference:
+    count = len(outer_weights)
+    theta_dimension = 2 + prepared.panel_group_count - 1
+    if (
+        type(outer_weights) is not np.ndarray
+        or outer_weights.shape != (count,)
+        or type(retained_ordinals) is not np.ndarray
+        or retained_ordinals.shape != (count,)
+        or retained_ordinals.dtype.kind != "i"
+        or len(np.unique(retained_ordinals)) != count
+        or type(physical_hyperparameters) is not np.ndarray
+        or physical_hyperparameters.shape != (count, 3)
+        or type(theta_means) is not np.ndarray
+        or theta_means.shape != (count, theta_dimension)
+        or type(theta_covariances) is not np.ndarray
+        or theta_covariances.shape
+        != (count, theta_dimension, theta_dimension)
+        or count == 0
+        or not np.all(np.isfinite(outer_weights))
+        or not np.all(outer_weights > 0.0)
+        or not np.all(np.isfinite(physical_hyperparameters))
+        or not np.all(np.isfinite(theta_means))
+        or not np.all(np.isfinite(theta_covariances))
+        or type(legacy_fit) is not TrajectoryDeterministicFit
+        or legacy_fit.prepared_input_hash != prepared.prepared_input_hash
+        or legacy_fit.model_input_hash != prepared.model_input_hash
+        or legacy_fit.movement_summary != movement_summary
+    ):
+        raise TrajectoryIntegrationError(
+            "common-quantity retained support is invalid"
+        )
+
+    try:
+        summaries: dict[str, TrajectoryPosteriorSummary] = {}
+        for index, name in enumerate(("alpha", "beta")):
+            summaries[name] = (
+                _summarize_pre_normalized_conditional_normal_mixture_v2(
+                    name,
+                    outer_weights,
+                    theta_means[:, index],
+                    theta_covariances[:, index, index],
+                )
+            )
+
+        summaries["sigma_u"] = summarize_weighted_support(
+            "sigma_u",
+            physical_hyperparameters[:, 0],
+            outer_weights,
+            retained_ordinals,
+        )
+        group_slice = slice(2, theta_dimension)
+        group_means = theta_means[:, group_slice]
+        group_covariances = theta_covariances[
+            :, group_slice, group_slice
+        ]
+        for group_index, basis_row in enumerate(prepared.zero_sum_basis):
+            quantity_name = f"u[{group_index}]"
+            conditional_means = group_means @ basis_row
+            conditional_variances = np.einsum(
+                "i,nij,j->n",
+                basis_row,
+                group_covariances,
+                basis_row,
+                optimize=False,
+            )
+            summaries[quantity_name] = (
+                _summarize_pre_normalized_conditional_normal_mixture_v2(
+                    quantity_name,
+                    outer_weights,
+                    conditional_means,
+                    conditional_variances,
+                )
+            )
+        summaries["sigma_r"] = summarize_weighted_support(
+            "sigma_r",
+            physical_hyperparameters[:, 1],
+            outer_weights,
+            retained_ordinals,
+        )
+        summaries["rho"] = summarize_weighted_support(
+            "rho",
+            physical_hyperparameters[:, 2],
+            outer_weights,
+            retained_ordinals,
+        )
+        summaries["trajectory_movement"] = movement_summary
+    except (TrajectoryStatisticsError, ValueError) as exc:
+        raise TrajectoryIntegrationError(
+            "common-quantity posterior summary is invalid"
+        ) from exc
+
+    ordered = tuple(
+        summaries[name]
+        for name in vbd_trajectory_common_quantity_names(
+            prepared.panel_group_count
+        )
+    )
+    return TrajectoryDeterministicCommonQuantityReference(
+        lane=prepared.lane,
+        panel_group_count=prepared.panel_group_count,
+        prepared_input_hash=prepared.prepared_input_hash,
+        model_input_hash=prepared.model_input_hash,
+        quantity_summaries=ordered,
+        legacy_fit_summary_hash=legacy_fit.fit_summary_hash(),
+    )
+
+
+def _fit_vbd_trajectory_state_space(
     prepared: TrajectoryPreparedInput,
     source_panel: TrajectoryObservationPanel,
-) -> TrajectoryDeterministicFit:
-    """Fit one lane with the fixed deterministic integration contract."""
+    *,
+    include_common_reference: bool,
+) -> tuple[
+    TrajectoryDeterministicFit,
+    TrajectoryDeterministicCommonQuantityReference | None,
+]:
+    """Run the one deterministic integration path with optional summaries."""
 
     if type(prepared) is not TrajectoryPreparedInput:
         raise TypeError("primary engine requires an exact TrajectoryPreparedInput")
     if type(source_panel) is not TrajectoryObservationPanel:
         raise TypeError("primary engine requires an exact source panel")
+    if type(include_common_reference) is not bool:
+        raise TypeError("common-quantity collection flag must be boolean")
     validate_prepared_vbd_trajectory(prepared, source_panel)
 
     def negative_log_target(transformed: np.ndarray) -> float:
@@ -701,9 +927,18 @@ def fit_vbd_trajectory_state_space(
     log_weights: list[float] = []
     movement_means: list[float] = []
     movement_variances: list[float] = []
+    physical_hyperparameters: list[tuple[float, float, float]] | None = (
+        [] if include_common_reference else None
+    )
+    theta_means: list[np.ndarray] | None = (
+        [] if include_common_reference else None
+    )
+    theta_covariances: list[np.ndarray] | None = (
+        [] if include_common_reference else None
+    )
     finite_log_weight_ordinals: list[int] = []
     for ordinal, node in enumerate(nodes):
-        target, conditional, _ = _evaluate_target(prepared, node)
+        target, conditional, physical = _evaluate_target(prepared, node)
         if not math.isfinite(target) or conditional is None:
             continue
         delta = node - mode
@@ -714,9 +949,22 @@ def fit_vbd_trajectory_state_space(
         log_weight = target - proposal_log_density
         if not math.isfinite(log_weight):
             continue
+        if include_common_reference and (
+            physical is None
+            or physical_hyperparameters is None
+            or theta_means is None
+            or theta_covariances is None
+        ):
+            raise TrajectoryIntegrationError(
+                "common-quantity conditional support is unavailable"
+            )
         log_weights.append(float(log_weight))
         movement_means.append(conditional.movement_mean)
         movement_variances.append(conditional.movement_variance)
+        if include_common_reference:
+            physical_hyperparameters.append(physical)
+            theta_means.append(conditional.theta_mean.copy())
+            theta_covariances.append(conditional.theta_covariance.copy())
         finite_log_weight_ordinals.append(ordinal)
     if not log_weights:
         raise TrajectoryIntegrationError("no finite cubature log weights")
@@ -778,10 +1026,74 @@ def fit_vbd_trajectory_state_space(
         ),
         movement_component_count=len(movement_mean_array),
     )
-    return TrajectoryDeterministicFit(
+    legacy_fit = TrajectoryDeterministicFit(
         lane=prepared.lane,
         prepared_input_hash=prepared.prepared_input_hash,
         model_input_hash=prepared.model_input_hash,
         movement_summary=movement_summary,
         integration_diagnostics=diagnostics,
     )
+    if not include_common_reference:
+        return legacy_fit, None
+    if (
+        physical_hyperparameters is None
+        or theta_means is None
+        or theta_covariances is None
+    ):
+        raise TrajectoryIntegrationError(
+            "common-quantity support collection is incomplete"
+        )
+    retained_ordinals = np.asarray(
+        finite_log_weight_ordinals, dtype=np.int64
+    )[retained]
+    reference = _build_common_quantity_reference(
+        prepared=prepared,
+        outer_weights=outer_weights,
+        retained_ordinals=retained_ordinals,
+        physical_hyperparameters=np.asarray(
+            physical_hyperparameters, dtype=np.float64
+        )[retained],
+        theta_means=np.asarray(theta_means, dtype=np.float64)[retained],
+        theta_covariances=np.asarray(
+            theta_covariances, dtype=np.float64
+        )[retained],
+        movement_summary=movement_summary,
+        legacy_fit=legacy_fit,
+    )
+    return legacy_fit, reference
+
+
+def fit_vbd_trajectory_state_space(
+    prepared: TrajectoryPreparedInput,
+    source_panel: TrajectoryObservationPanel,
+) -> TrajectoryDeterministicFit:
+    """Fit one lane with the unchanged deterministic integration contract."""
+
+    legacy_fit, reference = _fit_vbd_trajectory_state_space(
+        prepared,
+        source_panel,
+        include_common_reference=False,
+    )
+    if reference is not None:
+        raise TrajectoryIntegrationError(
+            "legacy deterministic fit unexpectedly retained common support"
+        )
+    return legacy_fit
+
+
+def fit_vbd_trajectory_all_common_quantity_reference(
+    prepared: TrajectoryPreparedInput,
+    source_panel: TrajectoryObservationPanel,
+) -> TrajectoryDeterministicCommonQuantityReference:
+    """Return all common summaries from one deterministic integration pass."""
+
+    _legacy_fit, reference = _fit_vbd_trajectory_state_space(
+        prepared,
+        source_panel,
+        include_common_reference=True,
+    )
+    if reference is None:
+        raise TrajectoryIntegrationError(
+            "common-quantity deterministic reference is unavailable"
+        )
+    return reference

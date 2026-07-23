@@ -144,7 +144,7 @@ _ALLOWED_COMMAND_IDS = (
     "vbd_trajectory_combine",
     "vbd_trajectory_child_execute_slot",
 )
-_RUNNER_SOURCE_PATHS = (
+_RUNNER_SOURCE_PATHS_V1 = (
     "inference/pyproject.toml",
     "inference/requirements.lock",
     "inference/scripts/vbd_trajectory_precision_diagnostic_bootstrap.py",
@@ -175,6 +175,20 @@ _RUNNER_SOURCE_PATHS = (
     "inference/src/fluencytracr_inference/vbd_trajectory_validation_execution.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_validation_resumable.py",
     "inference/src/fluencytracr_inference/vbd_trajectory_validation_cli.py",
+)
+_IMPLEMENTATION_ONLY_SOURCE_PATHS = (
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_constants.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_diagnostic.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_geometry_projection.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_marginalization.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_marginalization_constants.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_marginalization_diagnostic.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_group_effect_marginalization_projection.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v2_checkpoint.py",
+    "inference/src/fluencytracr_inference/vbd_trajectory_precision_diagnostic_v3_checkpoint.py",
+)
+_RUNNER_SOURCE_PATHS = tuple(
+    sorted((*_RUNNER_SOURCE_PATHS_V1, *_IMPLEMENTATION_ONLY_SOURCE_PATHS))
 )
 _ROOT_STATIC_FILES = {
     "workspace.json",
@@ -2915,10 +2929,17 @@ def _git_bytes(*args: str) -> bytes:
     return completed.stdout
 
 
-@lru_cache(maxsize=1)
-def vbd_trajectory_runner_implementation_manifest() -> dict:
+@lru_cache(maxsize=4)
+def vbd_trajectory_runner_implementation_manifest(
+    *,
+    source_paths: tuple[str, ...] = _RUNNER_SOURCE_PATHS,
+) -> dict:
+    if source_paths not in (_RUNNER_SOURCE_PATHS_V1, _RUNNER_SOURCE_PATHS):
+        raise VbdTrajectoryValidationWorkspaceError(
+            "runner source manifest version is invalid"
+        )
     files = []
-    for relative in _RUNNER_SOURCE_PATHS:
+    for relative in source_paths:
         path = _repo_root() / relative
         _validate_regular_file(path, label=f"runner source {relative}")
         files.append({"path": relative, "sha256": _file_sha256(path)})

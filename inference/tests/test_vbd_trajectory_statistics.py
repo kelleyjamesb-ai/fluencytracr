@@ -35,24 +35,23 @@ def test_conditional_normal_mixture_v2_matches_exact_binary64_oracles():
     )
     assert summary.posterior_mean.hex() == "0x1.428f5c28f5c28p-2"
     assert summary.posterior_sd.hex() == "0x1.17007814169ffp+0"
-    endpoints = [
+    # Pinned SciPy wheels differ by one ULP here on Darwin arm64 and Linux
+    # x86_64. Both are exact outputs of the contract's 64-step binary64
+    # bisection under their bound native runtime; no caller tolerance is used.
+    runtime = (platform.system(), platform.machine())
+    runtime_oracles = {
+        ("Darwin", "arm64"): "-0x1.f4c4b60ce6076p-1",
+        ("Linux", "x86_64"): "-0x1.f4c4b60ce6077p-1",
+    }
+    assert runtime in runtime_oracles
+    assert [
         summary.interval_99_lower.hex(),
         summary.interval_80_lower.hex(),
         summary.interval_80_upper.hex(),
         summary.interval_99_upper.hex(),
-    ]
-    assert endpoints[0] == "-0x1.070d647d89159p+1"
-    # Pinned SciPy wheels differ by one ULP here on Darwin arm64 and Linux
-    # x86_64. Both are exact outputs of the contract's 64-step binary64
-    # bisection under their bound native runtime; no caller tolerance is used.
-    p10_oracles = {
-        ("Darwin", "arm64"): "-0x1.f4c4b60ce6076p-1",
-        ("Linux", "x86_64"): "-0x1.f4c4b60ce6077p-1",
-    }
-    runtime = (platform.system(), platform.machine())
-    assert runtime in p10_oracles
-    assert endpoints[1] == p10_oracles[runtime]
-    assert endpoints[2:] == [
+    ] == [
+        "-0x1.070d647d89159p+1",
+        runtime_oracles[runtime],
         "0x1.d2857797c387dp+0",
         "0x1.aec938ed2fe2fp+1",
     ]
