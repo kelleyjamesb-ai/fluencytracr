@@ -7,10 +7,9 @@ env:
   NUMEXPR_NUM_THREADS: "1"
   OMP_NUM_THREADS: "1"
   OPENBLAS_NUM_THREADS: "1"
-  # This is a nonauthoritative portable-CI profile. Canonical evidence remains
-  # bound to the separately governed canonical aggregate inference service.
-  # Pin BLAS to AVX2/FMA-era Haswell and disable NumPy's x86-64-v4/AVX-512
-  # dispatch so heterogeneous hosted CPUs must execute one x86-64-v3 profile.
+  # This nonauthoritative portable-CI profile pins only NumPy dispatch and
+  # OpenBLAS. Other native/JIT components may remain host-dependent and cannot
+  # establish canonical evidence; that belongs to the governed service runtime.
   OPENBLAS_CORETYPE: "Haswell"
   NPY_DISABLE_CPU_FEATURES: "AVX512_ICL,AVX512_SPR,X86_V4"
   VECLIB_MAXIMUM_THREADS: "1"
