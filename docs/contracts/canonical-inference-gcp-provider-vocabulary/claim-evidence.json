@@ -1,0 +1,863 @@
+{
+  "artifact_bindings": {
+    "compute_field_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+    "source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+  },
+  "claim_count": 20,
+  "claim_registry_sha256": "4d9a53791b6f3dc8fec4b0dfe7d7d0ad6ef7fdd502f15193fe35989291fc062c",
+  "claims": [
+    {
+      "claim_id": "GCP_C3_CPU_PLATFORM",
+      "covers_sections": [
+        "2",
+        "10"
+      ],
+      "frozen_mapping": "C3 uses Intel Sapphire Rapids",
+      "locators": [
+        "C3 machine series row",
+        "Processor: Intel Sapphire Rapids"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CPU_PLATFORMS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "2427a0cc367fd4ff17dda3cd31ad5ff9500bc7d32743963c5e6a521567ea2f3f",
+          "evidence_contexts": [
+            "8581C Processor A4 A3 Ultra M4 M4N 2.1 2.9 4.0 C4 C4N 2.3 3.1 4.0 N4 2.1 2.9 3.3 Intel Xeon Scalable Processor (Sapphire Rapids) 4th generation Intel Xeon Platinum 8490H Processor X4 1.9 2.9 3.5 Intel Xeon Platinum 8481C Processor C3 Z3 H3 2.2 3.0 3.0 Z3 bare metal 2.2 3.0 3.8 A3 Mega A3 High A3 Edge 2.0 3.8 2.9 Intel Xeon Scalable Processor (Ice Lake) 3rd Generation Intel Xeon Platinum 8373C Processor N2 2 M3 2.6 3.4 3.5 Intel Xeon Scalable Processor (Cascade Lake) 2nd Generation Intel Xeon Gold 6268CL Processor N2 2 2.8 3.4 3.9 Intel Xeon Gold 6253CL Processor C2 3.1 3.8 3.9 Intel",
+            "Platinum 6985P-C Processor C4 2.8 1 3.9 4.2 Intel Xeon Scalable Processor (Emerald Rapids) 5th generation Intel Xeon Platinum 8581C Processor A4 A3 Ultra M4 M4N 2.1 2.9 4.0 C4 C4N 2.3 3.1 4.0 N4 2.1 2.9 3.3 Intel Xeon Scalable Processor (Sapphire Rapids) 4th generation Intel Xeon Platinum 8490H Processor X4 1.9 2.9 3.5 Intel Xeon Platinum 8481C Processor C3 Z3 H3 2.2 3.0 3.0 Z3 bare metal 2.2 3.0 3.8 A3 Mega A3 High A3 Edge 2.0 3.8 2.9 Intel Xeon Scalable Processor (Ice Lake) 3rd Generation Intel Xeon Platinum 8373C Processor N2 2 M3 2.6 3.4 3.5 Intel Xeon Scalable Processor (Cascade Lake) 2nd Generation"
+          ],
+          "evidence_needles": [
+            "C3",
+            "Sapphire Rapids"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_C3_TDX_MACHINE_SUPPORT",
+      "covers_sections": [
+        "2",
+        "10"
+      ],
+      "frozen_mapping": "c3-standard-* supports Intel TDX",
+      "locators": [
+        "Intel TDX supported machine types: c3-standard-*"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "71418d54fc8c6fc50c2ba8463369eacef6b39ce120196f424f6918410439cf52",
+          "evidence_contexts": [
+            "machine types has a maximum vNIC queue count of 8 . VM instances don't support kdump . Instead, use the guest console logs. Confidential VM instances with AMD SEV-SNP don't support reservations . Intel TDX Local SSD is only supported on c3-standard-*-lssd machine types ( Preview ). VM instances take longer to shut down compared to standard VM instances. This delay increases with VM memory size. Only Balanced Persistent Disk volumes that use the NVMe interface are supported. VM instances can't be provisioned on sole-tenant node groups. Due to additional security constraints, the CPUID instruction might",
+            "AMD Milan CPU platforms: asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west4-a europe-west4-b europe-west4-c europe-west9-a europe-west9-b us-central1-a us-central1-b us-central1-c us-east1-c us-east1-d us-east4-a us-east4-c us-east5-b us-east5-c us-west1-a us-west1-b c3-standard-*-lssd Intel TDX is supported"
+          ],
+          "evidence_needles": [
+            "c3-standard-*",
+            "Intel TDX is supported on c3-standard-* machine types"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_C3_STANDARD_4_MACHINE_TYPE",
+      "covers_sections": [
+        "2",
+        "10"
+      ],
+      "frozen_mapping": "c3-standard-4 exists with 4 vCPUs and 16 GB and is included by c3-standard-* TDX support",
+      "locators": [
+        "C3 machine series > C3 machine types > C3 standard > c3-standard-4 row",
+        "Intel TDX supported machine types: c3-standard-*"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_C3_MACHINE_TYPES_2026_07_24",
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "9e702600f82f6590b2ce7b9b711c3457cf86aa44b6c4f9ad068962e48774ed99",
+          "evidence_contexts": [
+            "machine type to use Local SSD with your VM; you can't attach Local SSD volumes separately. To create a bare metal instance with C3, use one of the following machine types: c3-standard-192-metal c3-highcpu-192-metal c3-highmem-192-metal C3 standard Machine types vCPUs 1 Memory (GB) Local SSD Default egress bandwidth (Gbps) 3 Tier_1 egress bandwidth (Gbps) c3-standard-4 4 16 Not supported Up to 23 N/A c3-standard-8 8 32 Not supported Up to 23 N/A c3-standard-22 22 88 Not supported Up to 23 N/A c3-standard-44 44 176 Not supported Up to 32 Up to 50 c3-standard-88 88 352 Not supported Up to 62 Up to 100",
+            "with C3, use one of the following machine types: c3-standard-192-metal c3-highcpu-192-metal c3-highmem-192-metal C3 standard Machine types vCPUs 1 Memory (GB) Local SSD Default egress bandwidth (Gbps) 3 Tier_1 egress bandwidth (Gbps) c3-standard-4 4 16 Not supported Up to 23 N/A c3-standard-8 8 32 Not supported Up to 23 N/A c3-standard-22 22 88 Not supported Up to 23 N/A c3-standard-44 44 176 Not supported Up to 32 Up to 50 c3-standard-88 88 352 Not supported Up to 62 Up to 100 c3-standard-176 176 704 Not supported Up to 100 Up to 200 c3-standard-192-metal 192 2 768 Not supported Up to 100 Up to 200 1 Each CPU uses"
+          ],
+          "evidence_needles": [
+            "C3 standard",
+            "c3-standard-4 4 16 Not supported"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+        },
+        {
+          "evidence_commitment_sha256": "71418d54fc8c6fc50c2ba8463369eacef6b39ce120196f424f6918410439cf52",
+          "evidence_contexts": [
+            "machine types has a maximum vNIC queue count of 8 . VM instances don't support kdump . Instead, use the guest console logs. Confidential VM instances with AMD SEV-SNP don't support reservations . Intel TDX Local SSD is only supported on c3-standard-*-lssd machine types ( Preview ). VM instances take longer to shut down compared to standard VM instances. This delay increases with VM memory size. Only Balanced Persistent Disk volumes that use the NVMe interface are supported. VM instances can't be provisioned on sole-tenant node groups. Due to additional security constraints, the CPUID instruction might",
+            "AMD Milan CPU platforms: asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west4-a europe-west4-b europe-west4-c europe-west9-a europe-west9-b us-central1-a us-central1-b us-central1-c us-east1-c us-east1-d us-east4-a us-east4-c us-east5-b us-east5-c us-west1-a us-west1-b c3-standard-*-lssd Intel TDX is supported"
+          ],
+          "evidence_needles": [
+            "c3-standard-*",
+            "Intel TDX is supported on c3-standard-* machine types"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_C3_TDX_ZONE_SET",
+      "covers_sections": [
+        "10"
+      ],
+      "frozen_mapping": "us-central1-a, us-central1-b, and us-central1-c are provisionally listed",
+      "locators": [
+        "Intel TDX regional availability: us-central1"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "78fac582106ed74fb234c3d0fd1fd1eed67cb3301566c8a62f16eeed9d2cdddb",
+          "evidence_contexts": [
+            "AMD Milan CPU platforms: asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west4-a europe-west4-b europe-west4-c europe-west9-a europe-west9-b us-central1-a us-central1-b us-central1-c us-east1-c us-east1-d us-east4-a us-east4-c us-east5-b us-east5-c us-west1-a us-west1-b c3-standard-*-lssd Intel TDX is supported",
+            "SEV-SNP is supported in the following zones, on N2D machine type with AMD Milan CPU platforms: asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west4-a europe-west4-b europe-west4-c europe-west9-a europe-west9-b us-central1-a us-central1-b us-central1-c us-east1-c us-east1-d us-east4-a us-east4-c"
+          ],
+          "evidence_needles": [
+            "Intel TDX is supported on c3-standard-* machine types",
+            "us-central1-a us-central1-b us-central1-c"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_C3_TDX_LIVE_MIGRATION",
+      "covers_sections": [
+        "9"
+      ],
+      "frozen_mapping": "live migration is not supported for Intel TDX",
+      "locators": [
+        "Intel TDX maintenance behavior and live migration limitation"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "8bd6cf7fca2b963982604910a1c7b3f2870efaf11b36b706082ec23a3f867e8e",
+          "evidence_contexts": [
+            "support a3-highgpu-1g View machine type names Intel Sapphire Rapids Intel TDX See limitations NVIDIA See limitations Not supported Supported C4D View machine type names AMD EPYC Turin AMD SEV See limitations Not supported Not supported c3-standard-* View machine type names Intel Sapphire Rapids Intel TDX See limitations Not supported Not supported c3-standard-*-lssd ( Preview ) View machine type names Intel Sapphire Rapids Intel TDX See limitations Not supported Not supported C3D View machine type names AMD EPYC Genoa AMD SEV See limitations Supported Not supported C2D View machine type names AMD EPYC Milan AMD SEV See limitations Not supported Not supported g4-standard-48 ( Preview ) View machine",
+            "A3 High G4 Machine types, CPUs, and zones Confidential VM is supported on the following machine types and configurations. For information about the GPU quotas required to create instances with attached GPUs, see GPU quota requirement . Machine type CPU platform Confidential Computing technology Live migration support GPU support a3-highgpu-1g View machine type names Intel Sapphire Rapids Intel TDX See limitations NVIDIA See limitations Not supported Supported C4D View machine type names AMD EPYC Turin AMD SEV See limitations Not supported Not supported c3-standard-* View machine type names Intel Sapphire Rapids Intel TDX See limitations Not supported Not supported",
+            "of memory assigned to an instance. You might notice longer boot times for Confidential VM instances with large amounts of memory. Establishing SSH connections takes longer on Confidential VM instances than non-Confidential VM instances. Live migration is only supported on N2D and C3D machine types running AMD SEV. Confidential VM instances might experience lower network bandwidth and higher latency compared to non-Confidential VM instances. Confidential VM instances with Hyperdisk Throughput have a restricted maximum data transfer size (MDTS), which reduces performance. To minimize performance degradation, avoid read-ahead requests exceeding the MDTS limit by"
+          ],
+          "evidence_needles": [
+            "c3-standard-* View machine type names Intel Sapphire Rapids Intel TDX See limitations Not supported Not supported",
+            "Machine type CPU platform Confidential Computing technology Live migration support GPU support",
+            "Live migration is only supported on N2D and C3D machine types running AMD SEV."
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_TDX_SOLE_TENANCY",
+      "covers_sections": [
+        "9"
+      ],
+      "frozen_mapping": "sole-tenancy is not supported for Intel TDX",
+      "locators": [
+        "Intel TDX sole-tenancy limitation"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "dc6c2dc6a4d6a280868fc009bcf1650b89e142f09cd87ab715188812dbc12c8d",
+          "evidence_contexts": [
+            "machine types ( Preview ). VM instances take longer to shut down compared to standard VM instances. This delay increases with VM memory size. Only Balanced Persistent Disk volumes that use the NVMe interface are supported. VM instances can't be provisioned on sole-tenant node groups. Due to additional security constraints, the CPUID instruction might return limited or no CPU architecture details. This might impact the performance of workloads that depend on those CPUID values. VM instances don't support kdump . Instead, use the guest console logs. Guest images without the TDX halt fixes might experience extended halt durations,"
+          ],
+          "evidence_needles": [
+            "VM instances can't be provisioned on sole-tenant node groups."
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_TDX_ATTESTATION_SOURCE",
+      "covers_sections": [
+        "6"
+      ],
+      "frozen_mapping": "Intel TDX module provides hardware and firmware attestation evidence",
+      "locators": [
+        "Intel TDX attestation",
+        "TDX attestation report and quote"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "5ad05396e3e947c0e4584db0dad80376ab14b8c1c709008b44f8b19cc2bbfd5a",
+          "evidence_contexts": [
+            "(RTMR), rooting all measurements in hardware. Users can extend the RTMR[3] register with user space measurements. Request an attestation report You can request attestation reports from the Google-managed vTPM, AMD's Secure Processor, and Intel's TDX module with the following tools: Go-TPM Go-TPM tools (version 0.4.4 or later is required for AMD SEV-SNP and Intel TDX support) The GceNonHostInfo event in the vTPM attestation event log shows what Confidential Computing technology is in use. Go-TPM tools can request an attestation report from the AMD Secure Processor if AMD SEV-SNP is used, or from the Intel TDX",
+            "Confidential VM attestation | Google Cloud Documentation Skip to main content Technology areas close AI and ML Application development Application hosting Compute Data analytics and pipelines Databases Distributed, hybrid, and multicloud Industry solutions Migration Networking Observability and monitoring Security Storage Cross-product tools close Access and resources management"
+          ],
+          "evidence_needles": [
+            "Intel's TDX module",
+            "attestation"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_TDX_USERSPACE_MEASUREMENT",
+      "covers_sections": [
+        "6"
+      ],
+      "frozen_mapping": "userspace measurement can extend RTMR3",
+      "locators": [
+        "RTMR extension",
+        "RTMR[3] userspace measurement"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "a33e88ea34c2f538da68bef8e318a1a5a31b265ae9e054c8c6976e83d75a28f7",
+          "evidence_contexts": [
+            "Confidential VM instances is measured into the Measurement of the Trust Domain (MRTD), while the remaining boot chain is measured into the Runtime Measurement Registers (RTMR), rooting all measurements in hardware. Users can extend the RTMR[3] register with user space measurements. Request an attestation report You can request attestation reports from the Google-managed vTPM, AMD's Secure Processor, and Intel's TDX module with the following tools: Go-TPM Go-TPM tools (version 0.4.4 or later is required for AMD SEV-SNP and Intel TDX support) The GceNonHostInfo event in the vTPM attestation event log shows what Confidential Computing"
+          ],
+          "evidence_needles": [
+            "RTMR[3] register with user space measurements."
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+      "covers_sections": [
+        "2"
+      ],
+      "frozen_mapping": "workload author, workload operator, and data collaborator roles are distinct",
+      "locators": [
+        "Confidential Space parties and responsibilities"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "889eb57455666556fd5c6c2a33ba480de391139cdf6fd0402c9af5a6f920e3df",
+          "evidence_contexts": [
+            "output might access results based on that data. Data collaborators can't access each other's data or modify the workload code. See Create and grant access to confidential resources to learn more about the role of data collaborators. Workload author : The person who creates the application that accesses and processes the confidential data. They add the application to a containerized image, for example, using Docker , and upload the image to a repository such as Artifact Registry . The workload author has no access to the data or the results, and can't control access to them either. See Create and",
+            "image to a repository such as Artifact Registry . The workload author has no access to the data or the results, and can't control access to them either. See Create and customize workloads to learn more about the workload author's role. Workload operator : The person who runs the workload. The workload operator typically has full administrative privileges on the project they run the workload in. For example, they can manage resources in their project (such as Compute Engine instances, disks, and networking rules) and can interact with any Google Cloud API that acts on them. The workload operator has no",
+            "in Google Cloud (for example, in an on-premises environment or in another cloud), then they can be any resource. Confidential Space roles The components in a Confidential Space system are managed by people with three distinct roles: Data collaborators : The people or organizations who own the protected resources being operated on by the workload. Data collaborators can access their own data, set permissions on that data, and depending on the workload's output might access results based on that data. Data collaborators can't access each other's data or modify the workload code. See Create and grant"
+          ],
+          "evidence_needles": [
+            "Workload author",
+            "Workload operator",
+            "Data collaborators"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+      "covers_sections": [
+        "6"
+      ],
+      "frozen_mapping": "Section 6.4 CEL policy paths and INTEL_TDX literal",
+      "locators": [
+        "VM assertions",
+        "Container assertions",
+        "assertion.hwmodel"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "89cba3ed9c1eb05ddbd6631a2393dbe3d63028d8d7420793d3a8b06b717db3c2",
+          "evidence_contexts": [
+            "longer on the latest version and fails attestation as a result. Example The following code verifies that a stable version of the Confidential Space image is being used: \"STABLE\" in assertion.submods.confidential_space.support_attributes assertion.swname Enumeration Verifies the software running on the attesting entity. The value is always CONFIDENTIAL_SPACE . Example assertion.swname == \"CONFIDENTIAL_SPACE\" assertion.swversion Array of strings Verifies the software version of the Confidential Space image. We recommend using assertion.submods.confidential_space.support_attributes instead to target the",
+            "in assertion.submods.confidential_space.support_attributes assertion.swname Enumeration Verifies the software running on the attesting entity. The value is always CONFIDENTIAL_SPACE . Example assertion.swname == \"CONFIDENTIAL_SPACE\" assertion.swversion Array of strings Verifies the software version of the Confidential Space image. We recommend using assertion.submods.confidential_space.support_attributes instead to target the latest version of an image. Example int(assertion.swversion[0]) == 230103 Container assertions Assertion Type Description assertion.submods.container.cmd_override Interacts with:",
+            "to construct an attestation policy are detailed in the following table. Policies can validate assertions made by the Confidential Space image, the workload container, and the VM instance. Image assertions Assertion Type Description assertion.dbgstat Interacts with: Workload operator : The --image-family value. Enumeration Verifies that the Confidential Space image is the debug or production version. The valid values are the following: enable : Check that the debug image is being used. disabled-since-boot : Check that the production image is being used. Examples The following code verifies that the",
+            "policy of the container launcher for when the workload stops. The valid values are the following: Never (default) Always OnFailure Example assertion.submods.container.restart_policy == \"Never\" VM assertions Assertion Type Description assertion.google_service_accounts Interacts with: Workload operator : The tee-impersonate-service-accounts metadata variable, and the --service-account value. Array of strings Verifies that a specified service account is connected to the VM running the workload, or has been listed using tee-impersonate-service-accounts in the VM metadata. Example workload - service - account @ my - project",
+            "connected to the VM running the workload, or has been listed using tee-impersonate-service-accounts in the VM metadata. Example workload - service - account @ my - project . iam.gserviceaccount.com in assertion . google_service_accounts assertion.hwmodel String Verifies the underlying Confidential Computing technology. The supported platforms are as follows: GCP_AMD_SEV INTEL_TDX Example assertion.hwmodel == \"GCP_AMD_SEV\" assertion.submods.confidential_space.monitoring_enabled Interacts with: Workload author : The monitoring_memory_allow launch policy. Workload operator : The tee-monitoring-memory-enable",
+            "debug version of the Confidential Space image is being used: assertion.dbgstat == \"enable\" The following code verifies that the production version of the Confidential Space image is being used: assertion.dbgstat == \"disabled-since-boot\" assertion.submods.confidential_space.support_attributes Array of strings Verifies the security version of the production Confidential Space image that's running on the Confidential VM instance, using its support attributes. Debug Confidential Space images have no support attribute set. The following are valid support attributes: LATEST : This is the latest version of the image, and is supported. The LATEST",
+            "Interacts with: Workload author : The monitoring_memory_allow launch policy. Workload operator : The tee-monitoring-memory-enable metadata variable. Boolean Verifies the monitoring state on the attesting entity. Example assertion.submods.confidential_space.monitoring_enabled.memory == true assertion.submods.gce.instance_id String Verifies the VM instance ID. Example assertion.submods.gce.instance_id == \"0000000000000000000\" assertion.submods.gce.instance_name String Verifies the name of the VM instance. Example assertion . submods . gce . instance_name == \"workload-vm\" assertion.submods.gce.project_id String Verifies that the VM is",
+            "Space image. We recommend using assertion.submods.confidential_space.support_attributes instead to target the latest version of an image. Example int(assertion.swversion[0]) == 230103 Container assertions Assertion Type Description assertion.submods.container.cmd_override Interacts with: Workload author : The allow_cmd_override launch policy. Workload operator : The tee-cmd metadata variable. Array of strings Verifies the CMD commands and parameters used in the workload image. Examples The following code verifies the CMD of the workload image hasn't been overwritten: size(assertion.submods.container.cmd_override) == 0 The",
+            "of the workload image hasn't been overwritten: size(assertion.submods.container.cmd_override) == 0 The following code verifies that program is the only content in the CMD overrides: assertion.submods.container.cmd_override == ['program'] assertion.submods.container.env Interacts with: Workload author : The allow_env_override launch policy. Workload operator : The tee-env- ENVIRONMENT_VARIABLE_NAME metadata variable. JSON object Verifies that environment variables and their values have been explicitly passed to the container. Example The following code verifies that the environment variable example-env-1 is set to value-1",
+            "Example The following code verifies that the environment variable example-env-1 is set to value-1 , and example-env-2 is set to value-2 . assertion.submods.container.env == {\"example-env-1\": \"value-1\", \"example-env-2\": \"value-2\"} assertion.submods.container.env_override Interacts with: Workload author : The allow_env_override launch policy. Workload operator : The tee-env- ENVIRONMENT_VARIABLE_NAME metadata variable. String Verifies if the workload operator has overwritten environment variables in the container. Examples The following code verifies that the workload operator has not overridden the example environment",
+            "example environment variable: !has(assertion.submods.container.env_override.example) The following code verifies that the workload operator hasn't overwritten any environment variables: size(assertion.submods.container.env_override) == 0 assertion.submods.container.image_digest String Verifies the image digest of the workload container. Specifying this condition lets multiple parties agree on an authorized workload that is allowed to access their data. Example assertion.submods.container.image_digest == \"sha256:837ccb607e312b170fac7383d7ccfd61fa5072793f19a25e75fbacb56539b86b\" assertion.submods.container.image_id String Verifies",
+            "this condition lets multiple parties agree on an authorized workload that is allowed to access their data. Example assertion.submods.container.image_digest == \"sha256:837ccb607e312b170fac7383d7ccfd61fa5072793f19a25e75fbacb56539b86b\" assertion.submods.container.image_id String Verifies the image ID of the workload container. Example assertion.submods.container.image_id == \"sha256:652a44b0e911271ba07cf2915cd700fdfa50abd62a98f87a57fdebc59843d93f\" assertion.submods.container.image_reference Interacts with: Workload operator : The tee-image-reference metadata variable. String Verifies the location of the workload container",
+            "assertion.submods.container.image_id String Verifies the image ID of the workload container. Example assertion.submods.container.image_id == \"sha256:652a44b0e911271ba07cf2915cd700fdfa50abd62a98f87a57fdebc59843d93f\" assertion.submods.container.image_reference Interacts with: Workload operator : The tee-image-reference metadata variable. String Verifies the location of the workload container running on top of the Confidential Space image. Example assertion.submods.container.image_reference == \"us-docker.pkg.dev/PROJECT_ID/WORKLOAD_CONTAINER:latest\" assertion.submods.container.image_signatures Interacts with:",
+            "metadata variable. String Verifies the location of the workload container running on top of the Confidential Space image. Example assertion.submods.container.image_reference == \"us-docker.pkg.dev/PROJECT_ID/WORKLOAD_CONTAINER:latest\" assertion.submods.container.image_signatures Interacts with: Workload operator : The tee-signed-image-repos metadata variable. JSON object Verifies that the image has a certain signature or is signed by a public key and signing algorithm. Specifying this condition lets multiple parties agree on an authorized workload that is allowed to access their data. The assertion can include the following",
+            "(ECDSA on the P-256 Curve with a SHA-256 digest) Example ['ECDSA_P256_SHA256: PUBLIC_KEY_FINGERPRINT '].exists(fingerprint, fingerprint in assertion.submods.container.image_signatures.map(sig, sig.signature_algorithm+':'+sig.key_id)) assertion.submods.container.restart_policy Interacts with: Workload operator : The tee-restart-policy metadata variable. Enumeration Verifies the restart policy of the container launcher for when the workload stops. The valid values are the following: Never (default) Always OnFailure Example assertion.submods.container.restart_policy == \"Never\" VM assertions Assertion Type Description",
+            "launch policy. Workload operator : The tee-monitoring-memory-enable metadata variable. Boolean Verifies the monitoring state on the attesting entity. Example assertion.submods.confidential_space.monitoring_enabled.memory == true assertion.submods.gce.instance_id String Verifies the VM instance ID. Example assertion.submods.gce.instance_id == \"0000000000000000000\" assertion.submods.gce.instance_name String Verifies the name of the VM instance. Example assertion . submods . gce . instance_name == \"workload-vm\" assertion.submods.gce.project_id String Verifies that the VM is running a Google Cloud project with the",
+            "the attesting entity. Example assertion.submods.confidential_space.monitoring_enabled.memory == true assertion.submods.gce.instance_id String Verifies the VM instance ID. Example assertion.submods.gce.instance_id == \"0000000000000000000\" assertion.submods.gce.instance_name String Verifies the name of the VM instance. Example assertion . submods . gce . instance_name == \"workload-vm\" assertion.submods.gce.project_id String Verifies that the VM is running a Google Cloud project with the specified project ID. Example assertion.submods.gce.project_id == \"project-id\" assertion.submods.gce.project_number String Verifies that the",
+            "the VM instance ID. Example assertion.submods.gce.instance_id == \"0000000000000000000\" assertion.submods.gce.instance_name String Verifies the name of the VM instance. Example assertion . submods . gce . instance_name == \"workload-vm\" assertion.submods.gce.project_id String Verifies that the VM is running a Google Cloud project with the specified project ID. Example assertion.submods.gce.project_id == \"project-id\" assertion.submods.gce.project_number String Verifies that the VM is running in a Google Cloud project with the specified project number. Example assertion.submods.gce.project_number == \"00000000000\"",
+            ". submods . gce . instance_name == \"workload-vm\" assertion.submods.gce.project_id String Verifies that the VM is running a Google Cloud project with the specified project ID. Example assertion.submods.gce.project_id == \"project-id\" assertion.submods.gce.project_number String Verifies that the VM is running in a Google Cloud project with the specified project number. Example assertion.submods.gce.project_number == \"00000000000\" assertion.submods.gce.zone Interacts with: Workload operator : The --zone value. String Verifies that the VM is running in the specified zone. Example assertion.submods.gce.zone == \"us-central1-a\"",
+            "== \"project-id\" assertion.submods.gce.project_number String Verifies that the VM is running in a Google Cloud project with the specified project number. Example assertion.submods.gce.project_number == \"00000000000\" assertion.submods.gce.zone Interacts with: Workload operator : The --zone value. String Verifies that the VM is running in the specified zone. Example assertion.submods.gce.zone == \"us-central1-a\" assertion.submods.nvidia_gpu.cc_feature Interacts with: Workload operator : The tee-install-gpu-driver metadata variable. Enumeration Verifies the Confidential Computing features supported",
+            "== \"00000000000\" assertion.submods.gce.zone Interacts with: Workload operator : The --zone value. String Verifies that the VM is running in the specified zone. Example assertion.submods.gce.zone == \"us-central1-a\" assertion.submods.nvidia_gpu.cc_feature Interacts with: Workload operator : The tee-install-gpu-driver metadata variable. Enumeration Verifies the Confidential Computing features supported by an NVIDIA GPU. Only single GPU passthrough (SPT) mode is supported in Confidential Space, so the value is always SPT . For more information about NVIDIA Confidential Computing support, see NVIDIA Trusted",
+            "is supported in Confidential Space, so the value is always SPT . For more information about NVIDIA Confidential Computing support, see NVIDIA Trusted Computing Solutions (PDF) . Example assertion.submods.nvidia_gpu.cc_feature == \"SPT\" assertion.submods.nvidia_gpu.cc_mode Interacts with: Workload operator : The tee-install-gpu-driver metadata variable. Enumeration Verifies the status of NVIDIA's Confidential Computing driver. The valid values are the following: OFF : none of the NVIDIA Confidential Computing features are active. ON : the NVIDIA H100 hardware, firmware, and software have fully activated the confidential",
+            "activated the confidential computing features. DEVTOOLS : the GPU is in a partial confidential computing mode that matches the workflows of ON mode, but disables security protections. Example assertion.submods.nvidia_gpu.cc_mode == \"ON\" assertion.submods.nvidia_gpu.gpus Interacts with: Workload operator : The tee-install-gpu-driver metadata variable. Array of objects Verifies claims for each attested NVIDIA GPU. Confidential Space only supports a single GPU claim. A gpus object is similar to the following: { \"hwmodel\" : \"GCP_NVIDIA_H100\" , \"ueid\" : \"490457405999046854973671575630853621547794591064\" , \"l4_serial_number\" :",
+            "- service - account @ my - project . iam.gserviceaccount.com in assertion . google_service_accounts assertion.hwmodel String Verifies the underlying Confidential Computing technology. The supported platforms are as follows: GCP_AMD_SEV INTEL_TDX Example assertion.hwmodel == \"GCP_AMD_SEV\" assertion.submods.confidential_space.monitoring_enabled Interacts with: Workload author : The monitoring_memory_allow launch policy. Workload operator : The tee-monitoring-memory-enable metadata variable. Boolean Verifies the monitoring state on the attesting entity. Example"
+          ],
+          "evidence_needles": [
+            "assertion.swname",
+            "assertion.swversion",
+            "assertion.dbgstat",
+            "assertion.google_service_accounts",
+            "assertion.hwmodel",
+            "assertion.submods.confidential_space.support_attributes",
+            "assertion.submods.confidential_space.monitoring_enabled.memory",
+            "assertion.submods.container.cmd_override",
+            "assertion.submods.container.env",
+            "assertion.submods.container.env_override",
+            "assertion.submods.container.image_digest",
+            "assertion.submods.container.image_id",
+            "assertion.submods.container.image_reference",
+            "assertion.submods.container.image_signatures",
+            "assertion.submods.container.restart_policy",
+            "assertion.submods.gce.instance_id",
+            "assertion.submods.gce.instance_name",
+            "assertion.submods.gce.project_id",
+            "assertion.submods.gce.project_number",
+            "assertion.submods.gce.zone",
+            "assertion.submods.nvidia_gpu.cc_feature",
+            "assertion.submods.nvidia_gpu.cc_mode",
+            "assertion.submods.nvidia_gpu.gpus",
+            "INTEL_TDX"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+      "covers_sections": [
+        "6"
+      ],
+      "frozen_mapping": "Sections 6.1-6.3 raw JWT header, payload, TDX, submods, and signature structure",
+      "locators": [
+        "Top-level claims",
+        "Intel TDX claims",
+        "Submods claims",
+        "Workload container claims",
+        "Container image signature claims"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "fd32b9754daac9578d4f6234ecca343c3c0734da86979895ff67e88ae55b38fb",
+          "evidence_contexts": [
+            "Top-level claims The following table describes the top-level claims in the attestation token. These items are compliant with the OpenID Connect 1.0 specification . Read more about attestation tokens Key Type Description Header x5c String Only present in PKI tokens. The certificate chain to validate PKI tokens against. You can download the root certificate from the PKI token validation endpoint . JSON data payload attester_tcb Array of strings One or more TCB (trusted computing base) components. This claim is to specify the source of attestation evidence. For the hwmodel claim",
+            "attestation tokens Key Type Description Header x5c String Only present in PKI tokens. The certificate chain to validate PKI tokens against. You can download the root certificate from the PKI token validation endpoint . JSON data payload attester_tcb Array of strings One or more TCB (trusted computing base) components. This claim is to specify the source of attestation evidence. For the hwmodel claim \"GCP_INTEL_TDX\" on Confidential Space, the value is set to [\"INTEL\"] , indicating that the attestation root of trust originates from Intel-specific hardware technology. aud String The audience. For the",
+            "from the audience in the token request. The maximum length is 512 bytes. dbgstat String The debug status for the Confidential Space image. In production images, the value is disabled-since-boot . In debug images, the value is enabled . eat_nonce String, or array of strings One or more nonces for the attestation token. The values are echoed from the token options sent in the custom token request. Each nonce must be between 8 and 88 bytes inclusive. A maximum of six nonces are allowed. exp Int, Unix timestamp The expiration time on or after which the token must not be accepted for processing. The",
+            "exp Int, Unix timestamp The expiration time on or after which the token must not be accepted for processing. The value is a JSON number that represents the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the expiry time. google_service_accounts Array of strings The validated service accounts that are running the Confidential Space workload. hwmodel Enumeration The unique identifier for the hardware token. Must be one of the following values: GCP_AMD_SEV GCP_AMD_SEV_ES GCP_SHIELDED_VM GCP_INTEL_TDX https://aws.amazon.com/tags Object See AWS principal tag claims . iat Int, Unix timestamp The time",
+            "certificate from the PKI token validation endpoint . JSON data payload attester_tcb Array of strings One or more TCB (trusted computing base) components. This claim is to specify the source of attestation evidence. For the hwmodel claim \"GCP_INTEL_TDX\" on Confidential Space, the value is set to [\"INTEL\"] , indicating that the attestation root of trust originates from Intel-specific hardware technology. aud String The audience. For the default token used with a workload identity pool, the audience is https://sts.googleapis.com . This token is fetched every hour by the launcher in the Confidential VM",
+            "claims . gce.project_id Array of strings See Compute Engine claims . gce.zone Array of strings See Compute Engine claims . Intel TDX claims The following table describes the tdx claims in the attestation token. Key Type Description gcp_attester_tcb_status String A string value that represents the TCB level status of the Google Cloud platform being evaluated. For more information about tcbStatus , see Intel's Provisioning Certification Service API documentation . This claim indicates that the TDX TCB version was up to date with Intel's reference values when Google began its firmware rollout. However, it",
+            "indicates that the TDX TCB version was up to date with Intel's reference values when Google began its firmware rollout. However, it doesn't guarantee that the Google fleet remains up to date with Intel's real-time TCB reference values. gcp_attester_tcb_date String The TCB date for the attesting Google Cloud platform. The time value is UTC in ISO 8601 format (YYYY-MM-DDThh:mm:ssZ) . Submods claims The following table describes the submods claims in the attestation token. Key Type Description confidential_space.support_attributes Array of strings The array can contain the values EXPERIMENTAL , USABLE , STABLE ,",
+            "These claims are placed in the https://aws.amazon.com/tags claims, in the principal_tags object in the attestation token. To learn about the https://aws.amazon.com/tags claim structure, see AWS principal tag claims . Key Type Description confidential_space.support_attributes Array of strings Derivative claim of support attributes. This is a concatenated string representation of the original claims. For example, if the original claims are Latest , Stable , and Usable , this attribute contains LATEST=STABLE=USABLE . If the original claim is only Usable , this attribute contains USABLE . container.image_digest Array of strings",
+            "attestation token. Key Type Description confidential_space.support_attributes Array of strings The array can contain the values EXPERIMENTAL , USABLE , STABLE , and LATEST . For more information, see Confidential Space image lifecycle . confidential_space.monitoring_enabled Object Shows what kind of system monitoring is enabled. The value can be {\"memory\":false} or {\"memory\":true} . container Object See Workload container claims . gce Object See Compute Engine claims . nvidia_gpu Object See NVIDIA GPU claims . Compute Engine claims The following table describes the gce claims in the attestation token. Key Type Description",
+            "Object See Workload container claims . gce Object See Compute Engine claims . nvidia_gpu Object See NVIDIA GPU claims . Compute Engine claims The following table describes the gce claims in the attestation token. Key Type Description instance_id String The VM instance ID. instance_name String The VM instance name. project_id String The project ID for the project that the VM is running in. project_number String The project number for the project that the VM is running in. zone String The Compute Engine zone where the Confidential VM instance is running. NVIDIA GPU claims The following table",
+            ". gce Object See Compute Engine claims . nvidia_gpu Object See NVIDIA GPU claims . Compute Engine claims The following table describes the gce claims in the attestation token. Key Type Description instance_id String The VM instance ID. instance_name String The VM instance name. project_id String The project ID for the project that the VM is running in. project_number String The project number for the project that the VM is running in. zone String The Compute Engine zone where the Confidential VM instance is running. NVIDIA GPU claims The following table describes the nvidia_gpu claims in the",
+            "using container.signatures.key_ids in your AWS policies, you must remove any references to container.image_digest . For more information about container image signature claims, see AWS policies with container image signature claims . gce.project_id Array of strings See Compute Engine claims . gce.zone Array of strings See Compute Engine claims . Intel TDX claims The following table describes the tdx claims in the attestation token. Key Type Description gcp_attester_tcb_status String A string value that represents the TCB level status of the Google Cloud platform being evaluated. For more information",
+            "table describes the gce claims in the attestation token. Key Type Description instance_id String The VM instance ID. instance_name String The VM instance name. project_id String The project ID for the project that the VM is running in. project_number String The project number for the project that the VM is running in. zone String The Compute Engine zone where the Confidential VM instance is running. NVIDIA GPU claims The following table describes the nvidia_gpu claims in the attestation token. Key Type Description cc_feature Enumeration The Confidential Computing supported by an NVIDIA GPU. Only single",
+            "during the VM boot process. This value is always true . sub String The subject, which is the fully qualified virtual machine ID for the Confidential VM. For example, https://www.googleapis.com/compute/v1/projects/ PROJECT_ID /zones/ ZONE /instances/ INSTANCE_ID . This format is known as the instance's selfLink . submods Object An object containing various claims. See Submods claims . tdx Array of objects An array of various claims. See Intel TDX claims . swname String The name of the approved operating system for the VM. Values are CONFIDENTIAL_SPACE or GCE . The CONFIDENTIAL_SPACE",
+            "VBIOS version. For example, 96.00.CF.00.01 . Workload container claims The following table describes the container claims in the attestation token. For more information about these claims, see Attestation assertions . Key Type Description args Array of strings The full argv the container is invoked with. This claim includes the container's entrypoint path and any additional command-line arguments. cmd_override Array of strings The CMD commands and parameters used in the workload image. env Object The environment variables and their values that have been explicitly passed to the container.",
+            "about these claims, see Attestation assertions . Key Type Description args Array of strings The full argv the container is invoked with. This claim includes the container's entrypoint path and any additional command-line arguments. cmd_override Array of strings The CMD commands and parameters used in the workload image. env Object The environment variables and their values that have been explicitly passed to the container. env_override Object The overwritten environment variables in the container. image_digest String The image digest of the workload container. image_id String The image ID of the",
+            "and any additional command-line arguments. cmd_override Array of strings The CMD commands and parameters used in the workload image. env Object The environment variables and their values that have been explicitly passed to the container. env_override Object The overwritten environment variables in the container. image_digest String The image digest of the workload container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims .",
+            "representation of the original claims. For example, if the original claims are Latest , Stable , and Usable , this attribute contains LATEST=STABLE=USABLE . If the original claim is only Usable , this attribute contains USABLE . container.image_digest Array of strings See Workload container claims . Container image signatures and digests don't appear together in a single token. If you're using container.image_digest in your AWS policies, you must remove any references to container.signatures.key_ids . container.signatures.key_id Array of strings A concatenated list of container image signature key IDs.",
+            "The environment variables and their values that have been explicitly passed to the container. env_override Object The overwritten environment variables in the container. image_digest String The image digest of the workload container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims . restart_policy Enumeration The restart policy of the container launcher when the workload stops. Valid values are Always , OnFailure , and Never",
+            "been explicitly passed to the container. env_override Object The overwritten environment variables in the container. image_digest String The image digest of the workload container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims . restart_policy Enumeration The restart policy of the container launcher when the workload stops. Valid values are Always , OnFailure , and Never . Default is Never . Container image signature claims The",
+            "in the container. image_digest String The image digest of the workload container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims . restart_policy Enumeration The restart policy of the container launcher when the workload stops. Valid values are Always , OnFailure , and Never . Default is Never . Container image signature claims The following table describes the image_signatures claims in the attestation token. Key Type",
+            "of strings See Workload container claims . Container image signatures and digests don't appear together in a single token. If you're using container.image_digest in your AWS policies, you must remove any references to container.signatures.key_ids . container.signatures.key_id Array of strings A concatenated list of container image signature key IDs. This field represents multiple signature key IDs joined into a single string in the array. For example, if you have key IDs aKey1 , zKey2 , and bKey3 , this claim contains the value aKey1=bKey3=zKey2 . Container image signatures and digests don't",
+            "Latest , Stable , and Usable , this attribute contains LATEST=STABLE=USABLE . If the original claim is only Usable , this attribute contains USABLE . container.image_digest Array of strings See Workload container claims . Container image signatures and digests don't appear together in a single token. If you're using container.image_digest in your AWS policies, you must remove any references to container.signatures.key_ids . container.signatures.key_id Array of strings A concatenated list of container image signature key IDs. This field represents multiple signature key IDs joined into a single",
+            "-outform DER | openssl sha256 Where public_key.pem is your public key in PEM format. signature String The base64-encoded signature for a payload that's associated with the signed container and that follows the Simple Signing format . signature_algorithm Enumeration The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256 digest) ECDSA_P256_SHA256 (ECDSA on the P-256 Curve with a SHA-256 digest) What's next See the IETF draft for The Entity Attestation Token (EAT) for more information on",
+            "signature String The base64-encoded signature for a payload that's associated with the signed container and that follows the Simple Signing format . signature_algorithm Enumeration The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256 digest) ECDSA_P256_SHA256 (ECDSA on the P-256 Curve with a SHA-256 digest) What's next See the IETF draft for The Entity Attestation Token (EAT) for more information on attestation claims. See the OpenID Connect Core 1.0 for more information on OpenID token claims.",
+            "that's associated with the signed container and that follows the Simple Signing format . signature_algorithm Enumeration The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256 digest) ECDSA_P256_SHA256 (ECDSA on the P-256 Curve with a SHA-256 digest) What's next See the IETF draft for The Entity Attestation Token (EAT) for more information on attestation claims. See the OpenID Connect Core 1.0 for more information on OpenID token claims. Send feedback Except as otherwise noted, the content of",
+            "the Simple Signing format . signature_algorithm Enumeration The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256 digest) ECDSA_P256_SHA256 (ECDSA on the P-256 Curve with a SHA-256 digest) What's next See the IETF draft for The Entity Attestation Token (EAT) for more information on attestation claims. See the OpenID Connect Core 1.0 for more information on OpenID token claims. Send feedback Except as otherwise noted, the content of this page is licensed under the Creative Commons Attribution",
+            "container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims . restart_policy Enumeration The restart policy of the container launcher when the workload stops. Valid values are Always , OnFailure , and Never . Default is Never . Container image signature claims The following table describes the image_signatures claims in the attestation token. Key Type Description key_id String The hexadecimal fingerprint of the public key. To get"
+          ],
+          "evidence_needles": [
+            "x5c",
+            "attester_tcb",
+            "eat_nonce",
+            "google_service_accounts",
+            "GCP_INTEL_TDX",
+            "gcp_attester_tcb_status",
+            "gcp_attester_tcb_date",
+            "confidential_space.support_attributes",
+            "confidential_space.monitoring_enabled",
+            "instance_id",
+            "instance_name",
+            "project_id",
+            "project_number",
+            "zone",
+            "args",
+            "cmd_override",
+            "env_override",
+            "image_digest",
+            "image_id",
+            "image_reference",
+            "image_signatures",
+            "key_id",
+            "signature",
+            "signature_algorithm",
+            "RSASSA_PSS_SHA256",
+            "RSASSA_PKCS1V15_SHA256",
+            "ECDSA_P256_SHA256",
+            "restart_policy"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+      "covers_sections": [
+        "6"
+      ],
+      "frozen_mapping": "Section 6.5 OIDC and PKI validation endpoint vocabulary",
+      "locators": [
+        "OIDC tokens",
+        "PKI tokens",
+        "id_token_signing_alg_values_supported",
+        "root_ca_uri"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "5432a92215ec24d4bdf45506d3d26411595ea9a8d9515f2df4b232b29e4c7579",
+          "evidence_contexts": [
+            ". Intel Trust Authority: https://portal.trustauthority.intel.com/.well-known/openid-configuration . Key Description claims_supported The keys in the attestation token. For more details, see Attestation token claims . id_token_signing_alg_values_supported The signing algorithms ( alg values) supported by the token. Confidential Space supports the RS256 algorithm. issuer The HTTPS scheme that Confidential Space uses as its issuer identifier. The value depends on the attestation service being used: Google Cloud Attestation: https://confidentialcomputing.googleapis.com Intel Trust Authority:",
+            "supports. Confidential Space supports public . PKI tokens The following table describes the high-level fields returned at the PKI token validation endpoint, https://confidentialcomputing.googleapis.com/.well-known/attestation-pki-root . root_ca_uri The path to the root certificate that is used to verify a PKI token type signature. Send feedback Except as otherwise noted, the content of this page is licensed under the Creative Commons Attribution 4.0 License , and code samples are licensed under the Apache 2.0 License . For details, see the Google Developers Site Policies . Java is a registered"
+          ],
+          "evidence_needles": [
+            "id_token_signing_alg_values_supported",
+            "root_ca_uri"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+      "covers_sections": [
+        "2",
+        "7"
+      ],
+      "frozen_mapping": "Confidential Space TDX deployment, maintenance termination, service-account, metadata, and restart controls are documented",
+      "locators": [
+        "Deploy a Confidential Space workload",
+        "Intel TDX",
+        "maintenance policy",
+        "workload metadata"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "6715e2743f53e13716c83e73389dc368cf6c10bde7949366b953e8e83bb2c374",
+          "evidence_contexts": [
+            "results somewhere. What zone the VM instance should run in. Here's an example that creates a Confidential VM, and runs a Docker container called WORKLOAD_CONTAINER_NAME : CPU-based workloads gcloud compute instances create INSTANCE_NAME \\ --confidential-compute-type = CONFIDENTIAL_COMPUTING_TECHNOLOGY \\ --machine-type = MACHINE_TYPE_NAME \\ --maintenance-policy = MAINTENANCE_POLICY \\ --shielded-secure-boot \\ --image-project = confidential-space-images \\ --image-family = IMAGE_FAMILY \\ --metadata = \"^~^tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest\" \\ --service-account =",
+            "VM, and runs a Docker container called WORKLOAD_CONTAINER_NAME : CPU-based workloads gcloud compute instances create INSTANCE_NAME \\ --confidential-compute-type = CONFIDENTIAL_COMPUTING_TECHNOLOGY \\ --machine-type = MACHINE_TYPE_NAME \\ --maintenance-policy = MAINTENANCE_POLICY \\ --shielded-secure-boot \\ --image-project = confidential-space-images \\ --image-family = IMAGE_FAMILY \\ --metadata = \"^~^tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest\" \\ --service-account = WORKLOAD_SERVICE_ACCOUNT_NAME @ WORKLOAD_OPERATOR_PROJECT_ID .iam.gserviceaccount.com \\",
+            "instance to determine its behavior before it runs. While some flags have required values that don't change, you still need to make the following choices: Whether to base the VM instance on a production or debug Confidential Space image . Whether to use AMD SEV, Intel TDX, or Intel TDX with NVIDIA Confidential Computing to help keep your workload data private. What VM metadata variables need to be passed, which include details like which workload container image to run, which attestation service to use, whether to log to Cloud Logging, and what environment variables to set. What service account to attach to the VM to run the workload, and what permissions it needs to",
+            "determined by the Confidential Computing technology you've chosen, either AMD SEV or Intel TDX. See Machine types, CPUs, and zones . MAINTENANCE_POLICY : For N2D machine types that use SEV, set this to MIGRATE for live migration support. For all other machine types, set this value to TERMINATE , as they don't support live migration . IMAGE_FAMILY_NAME : The family for the Confidential Space images . Choose one of the following: confidential-space for production workloads confidential-space-debug for debug workloads Additional metadata variables , which change how the VM behaves, including what attestation service to use. WORKLOAD_AUTHOR_PROJECT : The ID of the project that hosts the",
+            "= tmpfs , source = tmpfs , destination =/ run / workload tee-restart-policy Interacts with: Data collaborators : The container.restart_policy assertion. Enumeration The restart policy of the container launcher when the workload stops. The valid values are: Never (default) Always OnFailure This variable is only supported by the production Confidential Space image. Example tee-restart-policy=OnFailure tee-signed-image-repos Interacts with: Data collaborators : The container.image_signatures assertion. String A list of comma-separated container repositories that store the signatures that are generated by Sigstore Cosign . Example"
+          ],
+          "evidence_needles": [
+            "--confidential-compute-type = CONFIDENTIAL_COMPUTING_TECHNOLOGY",
+            "--maintenance-policy = MAINTENANCE_POLICY",
+            "Whether to use AMD SEV, Intel TDX, or Intel TDX with NVIDIA Confidential Computing",
+            "For all other machine types, set this value to TERMINATE , as they don't support live migration .",
+            "The valid values are: Never (default) Always OnFailure"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+      "covers_sections": [
+        "7"
+      ],
+      "frozen_mapping": "Section 7 metadata keys and provider domains",
+      "locators": [
+        "Workload metadata variables table"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "1db00754913cf25249f3c88b42cd60b6838d22c382ee13d7a721bb38c75d5e88",
+          "evidence_contexts": [
+            "you create the VM. To pass in multiple variables, first set the delimiter by prefixing the --metadata value with ^~^ . This sets the delimiter to ~ , as , is used in variable values. For example: metadata=\"^~^tee-restart-policy=Always ~ tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest\" The following table details the metadata variables you can set for your workload VM. Note: Some metadata variables can be affected by the launch policies that workload authors set. Metadata key Type Description and values tee-image-reference Interacts with:",
+            "The container.image_reference assertion. String Required. This points to the location of the workload container. Example tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest ita-api-key String Only required if you're using Intel Trust Authority as your attestation service. Set the value to your Intel Trust Authority API key. See Intel's documentation for how to create an Intel Trust Authority API key. Intel Trust Authority only supports Intel TDX VM instances. Example ita-api-key= API_KEY ita-region String Only required if you're using",
+            "service. Set the value to your Intel Trust Authority API key. See Intel's documentation for how to create an Intel Trust Authority API key. Intel Trust Authority only supports Intel TDX VM instances. Example ita-api-key= API_KEY ita-region String Only required if you're using Intel Trust Authority as your attestation service. Set the value to the region that you want Intel Trust Authority to run in. The valid regions are: US: https://api.trustauthority.intel.com Europe: https://api.eu.trustauthority.intel.com Intel Trust Authority only supports Intel TDX VM instances. Example ita-region=",
+            "Intel Trust Authority to run in. The valid regions are: US: https://api.trustauthority.intel.com Europe: https://api.eu.trustauthority.intel.com Intel Trust Authority only supports Intel TDX VM instances. Example ita-region= REGION_NAME tee-added-capabilities Interacts with: Workload author : The allow_capabilities launch policy. JSON string array Adds additional Linux capabilities to the workload container. Example tee-added-capabilities=\"[\\\"CAP_SYS_ADMIN\\\", \\\"CAP_SYS_CHROOT\\\"]\" tee-cgroup-ns Interacts with: Workload author : The allow_cgroups launch policy. Boolean Defaults to false . When set to true ,",
+            "Interacts with: Workload author : The allow_capabilities launch policy. JSON string array Adds additional Linux capabilities to the workload container. Example tee-added-capabilities=\"[\\\"CAP_SYS_ADMIN\\\", \\\"CAP_SYS_CHROOT\\\"]\" tee-cgroup-ns Interacts with: Workload author : The allow_cgroups launch policy. Boolean Defaults to false . When set to true , enables a namespaced cgroup mount at /sys/fs/cgroup . Example tee-cgroup-ns=true tee-cmd Interacts with: Workload author : The allow_cmd_override launch policy. Data collaborators : The container.cmd_override assertion. JSON string array",
+            "\\\"CAP_SYS_CHROOT\\\"]\" tee-cgroup-ns Interacts with: Workload author : The allow_cgroups launch policy. Boolean Defaults to false . When set to true , enables a namespaced cgroup mount at /sys/fs/cgroup . Example tee-cgroup-ns=true tee-cmd Interacts with: Workload author : The allow_cmd_override launch policy. Data collaborators : The container.cmd_override assertion. JSON string array Overrides the CMD instructions specified in the workload container's Dockerfile . Example tee-cmd=\"[\\\"params1\\\", \\\"params2\\\"]\" tee-container-log-redirect Interacts with: Workload author : The log_redirect",
+            "allow_cmd_override launch policy. Data collaborators : The container.cmd_override assertion. JSON string array Overrides the CMD instructions specified in the workload container's Dockerfile . Example tee-cmd=\"[\\\"params1\\\", \\\"params2\\\"]\" tee-container-log-redirect Interacts with: Workload author : The log_redirect launch policy. Enumeration Outputs STDOUT and STDERR from the workload container to Cloud Logging or serial console, using the confidential-space-launcher field. The valid values are: false : (default) no logging occurs. true : outputs to the serial console and Cloud Logging. cloud_logging : outputs to",
+            "console and Cloud Logging. cloud_logging : outputs to Cloud Logging only. serial : outputs to the serial console only. A high log volume in the serial console might impact workload performance. Example tee-container-log-redirect=true tee-dev-shm-size-kb Integer Sets the size in kB of the /dev/shm shared memory mount. Example tee-dev-shm-size-kb=65536 tee-env- ENVIRONMENT_VARIABLE_NAME Interacts with: Data collaborators : The container.env and container.env_override assertions. String Sets environment variables in the workload container. The workload author must also add the environment variable names to",
+            "log volume in the serial console might impact workload performance. Example tee-container-log-redirect=true tee-dev-shm-size-kb Integer Sets the size in kB of the /dev/shm shared memory mount. Example tee-dev-shm-size-kb=65536 tee-env- ENVIRONMENT_VARIABLE_NAME Interacts with: Data collaborators : The container.env and container.env_override assertions. String Sets environment variables in the workload container. The workload author must also add the environment variable names to the allow_env_override launch policy, or they won't be set. Example tee-env-example-env-1='value-1'~tee-env-example-env-2='value-2'",
+            "variables in the workload container. The workload author must also add the environment variable names to the allow_env_override launch policy, or they won't be set. Example tee-env-example-env-1='value-1'~tee-env-example-env-2='value-2' tee-impersonate-service-accounts Interacts with: Data collaborators : The google_service_accounts assertion. String A list of service accounts that can be impersonated by the workload operator. The workload operator must be allowed to impersonate the service accounts . Multiple service accounts can be listed, separated by commas. Example tee - impersonate - service - accounts =",
+            "listed, separated by commas. Example tee - impersonate - service - accounts = SERVICE_ACCOUNT_NAME_1 @ WORKLOAD_OPERATOR_PROJECT_ID .iam.gserviceaccount.com, SERVICE_ACCOUNT_NAME_2 @ WORKLOAD_OPERATOR_PROJECT_ID . iam.gserviceaccount.com tee-install-gpu-driver Interacts with: Data collaborators : The nvidia_gpu.cc_feature , nvidia_gpu.cc_mode , and nvidia_gpu.gpus assertions. Boolean Whether to install NVIDIA's Confidential Computing GPU driver. Requires a machine type that supports NVIDIA Confidential Computing. Example tee-install-gpu-driver=true tee-monitoring-memory-enable Interacts with: Data collaborators",
+            ", nvidia_gpu.cc_mode , and nvidia_gpu.gpus assertions. Boolean Whether to install NVIDIA's Confidential Computing GPU driver. Requires a machine type that supports NVIDIA Confidential Computing. Example tee-install-gpu-driver=true tee-monitoring-memory-enable Interacts with: Data collaborators : The instance_memory_monitoring_enabled assertion. Workload author : The monitoring_memory_allow launch policy. Boolean Defaults to false . When set to true , enables memory usage monitoring. The metrics collected by the Confidential VM are of the guest/memory/bytes_used type, and can be viewed in Cloud Logging or",
+            ". When set to true , enables memory usage monitoring. The metrics collected by the Confidential VM are of the guest/memory/bytes_used type, and can be viewed in Cloud Logging or Metrics Explorer . Example tee-monitoring-memory-enable=true tee-mount Interacts with: Workload author : The allow_mount_destinations launch policy. String A list of semicolon-separated mount definitions. A mount definition consists of a comma-separated list of key-value pairs, requiring type , source , and destination . destination must be an absolute path and type / source must be tmpfs . Example type = tmpfs , source =",
+            "the --metadata option when you create the VM. To pass in multiple variables, first set the delimiter by prefixing the --metadata value with ^~^ . This sets the delimiter to ~ , as , is used in variable values. For example: metadata=\"^~^tee-restart-policy=Always ~ tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest\" The following table details the metadata variables you can set for your workload VM. Note: Some metadata variables can be affected by the launch policies that workload authors set. Metadata key Type Description and values",
+            "The restart policy of the container launcher when the workload stops. The valid values are: Never (default) Always OnFailure This variable is only supported by the production Confidential Space image. Example tee-restart-policy=OnFailure tee-signed-image-repos Interacts with: Data collaborators : The container.image_signatures assertion. String A list of comma-separated container repositories that store the signatures that are generated by Sigstore Cosign . Example tee-signed-image-repos=us-docker.pkg.dev/projectA/repo/example,us-docker.pkg.dev/projectB/repo/example,us-docker.pkg.dev/projectC/repo/example Send"
+          ],
+          "evidence_needles": [
+            "tee-image-reference",
+            "ita-api-key",
+            "ita-region",
+            "tee-added-capabilities",
+            "tee-cgroup-ns",
+            "tee-cmd",
+            "tee-container-log-redirect",
+            "tee-dev-shm-size-kb",
+            "ENVIRONMENT_VARIABLE_NAME",
+            "tee-impersonate-service-accounts",
+            "tee-install-gpu-driver",
+            "tee-monitoring-memory-enable",
+            "tee-mount",
+            "tee-restart-policy",
+            "tee-signed-image-repos"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_TEE_ENV_SUFFIX_GRAMMAR",
+      "covers_sections": [
+        "7"
+      ],
+      "frozen_mapping": "provider does not publish a complete environment-key suffix grammar; dynamic keys are default-deny",
+      "locators": [
+        "tee-env-ENVIRONMENT_VARIABLE_NAME",
+        "tee-env-example-env-1"
+      ],
+      "required_for_ready": false,
+      "snapshot_state": "UNAVAILABLE_FROM_PROVIDER",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "d46121d845f7f39c4bfc054722f3660af274d70d968e8ac09bd6aa03500f2742",
+          "evidence_contexts": [
+            "log volume in the serial console might impact workload performance. Example tee-container-log-redirect=true tee-dev-shm-size-kb Integer Sets the size in kB of the /dev/shm shared memory mount. Example tee-dev-shm-size-kb=65536 tee-env- ENVIRONMENT_VARIABLE_NAME Interacts with: Data collaborators : The container.env and container.env_override assertions. String Sets environment variables in the workload container. The workload author must also add the environment variable names to the allow_env_override launch policy, or they won't be set. Example tee-env-example-env-1='value-1'~tee-env-example-env-2='value-2'",
+            "and container.env_override assertions. String Sets environment variables in the workload container. The workload author must also add the environment variable names to the allow_env_override launch policy, or they won't be set. Example tee-env-example-env-1='value-1'~tee-env-example-env-2='value-2' tee-impersonate-service-accounts Interacts with: Data collaborators : The google_service_accounts assertion. String A list of service accounts that can be impersonated by the workload operator. The workload operator must be allowed to impersonate the service accounts . Multiple service accounts can be listed, separated by"
+          ],
+          "evidence_needles": [
+            "ENVIRONMENT_VARIABLE_NAME",
+            "tee-env-example-env-1='value-1'"
+          ],
+          "observation": "FIELD_UNAVAILABLE_FROM_PROVIDER",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+      "covers_sections": [
+        "8"
+      ],
+      "frozen_mapping": "Section 8 launch-policy labels, types, defaults, and domains",
+      "locators": [
+        "Launch policies table"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "9450554424a3183d33e0d1ecbd01b5383f3d59c38bcd38dccc412917fc530fef",
+          "evidence_contexts": [
+            "LABEL \"tee.launch_policy.allow_cmd_override\"=\"true\" In a Bazel BUILD file: container_image( ... labels={\"tee.launch_policy.allow_cmd_override\":\"true\"} ... ) The available launch policies are in the following table: Policy Type Description tee.launch_policy.allow_capabilities Interacts with: Workload operator : The tee-added-capabilities metadata variable. Boolean (default is false ) Determines if the workload operator can add additional Linux capabilities to the workload container. tee.launch_policy.allow_cgroups Interacts with: Workload operator : The tee-cgroup-ns metadata variable. Boolean (default is false ) Determines if",
+            "Interacts with: Workload operator : The tee-added-capabilities metadata variable. Boolean (default is false ) Determines if the workload operator can add additional Linux capabilities to the workload container. tee.launch_policy.allow_cgroups Interacts with: Workload operator : The tee-cgroup-ns metadata variable. Boolean (default is false ) Determines if workload container is allowed to include a namespaced cgroup mount at /sys/fs/cgroup . tee.launch_policy.allow_cmd_override Interacts with: Workload operator : The tee-cmd metadata variable. Data collaborators : The container.cmd_override",
+            "Launch policies override the VM metadata variables set by workload operators to restrict malicious actions. A workload author can set policies with a label as part of building their container image. For example, in a Dockerfile : LABEL \"tee.launch_policy.allow_cmd_override\"=\"true\" In a Bazel BUILD file: container_image( ... labels={\"tee.launch_policy.allow_cmd_override\":\"true\"} ... ) The available launch policies are in the following table: Policy Type Description tee.launch_policy.allow_capabilities Interacts with: Workload operator : The tee-added-capabilities metadata variable. Boolean (default is false ) Determines if",
+            "Data collaborators : The container.cmd_override assertion. Boolean (default is false ) Determines if the CMD specified in the workload container's Dockerfile can be overridden by a workload operator with the tee-cmd metadata value. tee.launch_policy.allow_env_override Interacts with: Workload operator : The tee-env- ENVIRONMENT_VARIABLE_NAME metadata variable. Data collaborators : The container.env and container.env_override assertions. Comma-separated string A comma-separated string of permitted environment variable names that are allowed to be set by a workload operator with tee-env- ENVIRONMENT_VARIABLE_NAME metadata",
+            "and container.env_override assertions. Comma-separated string A comma-separated string of permitted environment variable names that are allowed to be set by a workload operator with tee-env- ENVIRONMENT_VARIABLE_NAME metadata values. tee.launch_policy.allow_mount_destinations Interacts with: Workload operator : The tee-mount metadata variable. Colon-separated string A colon-separated string of permitted mount directories the workload operator is allowed to mount to using tee-mount . For example: /run/tmp:/var/tmp:/tmp tee.launch_policy.log_redirect Interacts with: Workload operator : The tee-container-log-redirect metadata",
+            "with: Workload operator : The tee-mount metadata variable. Colon-separated string A colon-separated string of permitted mount directories the workload operator is allowed to mount to using tee-mount . For example: /run/tmp:/var/tmp:/tmp tee.launch_policy.log_redirect Interacts with: Workload operator : The tee-container-log-redirect metadata variable. Defined string Determines how logging works if tee-container-log-redirect is set to true by a workload operator. The valid values are the following: debugonly (default): Only allow stdout and stderr redirects when using a debug image. always : Always allow stdout and",
+            "operator. The valid values are the following: debugonly (default): Only allow stdout and stderr redirects when using a debug image. always : Always allow stdout and stderr redirects. never : Never allow stdout and stderr redirects. tee.launch_policy.monitoring_memory_allow Interacts with: Data collaborators : The monitoring_enabled.memory assertion. Workload operator : The tee-monitoring-memory-enable metadata variable. Defined string Determines how workload memory usage monitoring works if tee-monitoring-memory-enable is set to true by a workload operator. The valid values are the following: debugonly (default): Only allow"
+          ],
+          "evidence_needles": [
+            "tee.launch_policy.allow_capabilities",
+            "tee.launch_policy.allow_cgroups",
+            "tee.launch_policy.allow_cmd_override",
+            "tee.launch_policy.allow_env_override",
+            "tee.launch_policy.allow_mount_destinations",
+            "tee.launch_policy.log_redirect",
+            "tee.launch_policy.monitoring_memory_allow"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET",
+      "covers_sections": [
+        "7",
+        "8"
+      ],
+      "frozen_mapping": "signed/reproducible image, disk, memory, ingress, logging, mount, and swap controls are documented",
+      "locators": [
+        "Create and customize workloads",
+        "signed images",
+        "disk and memory",
+        "inbound connections",
+        "logging",
+        "mounts",
+        "swap"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "1a2193aaa6d53eb0a5293c2fbe012194f0468319e27e6d55871c5eb27553a091",
+          "evidence_contexts": [
+            "and confidentiality properties as the Confidential VM. You can use tee-dev-shm-size to increase the size of the /dev/shm shared memory mount for the workload. The /dev/shm size is specified in KB. You can use tee-mount to specify tmpfs mounts in the running container using semicolon-separated configurations. The type and source are always tmpfs . The destination is the mountpoint, which interacts with the tee.launch_policy.allow_mount_destinations launch policy. You can optionally specify the tmpfs size in bytes. The default size is 50% of VM memory. Inbound ports By default,",
+            "stores disk integrity tags in memory. This uses approximately 1% memory overhead for each disk byte. For example, a 100 GB disk requires 1 GB of memory and a 10 TB disk requires 100 GB of memory. Make sure to keep within VM memory limits. Swap memory is disabled on Confidential Space VMs, which means excessive memory use can crash the workload. Verify that your machine selection supports your workload memory usage in addition to the disk integrity overhead. In-memory scratch mounts Confidential Space supports adding in-memory scratch spaces. This uses the available memory in the Confidential Space VM. Because the scratch space uses the",
+            "take the following things into account: Additional Linux capabilities Disk and memory limits Resources not managed by Google Cloud IAM Inbound ports Launch policies Multiple workload runs Namespaced cgroups Reproducible container images Signed container images Additional Linux capabilities The Confidential Space workload runs in a Linux container using containerd. This container runs using default Linux capabilities . In order to add capabilities, you can use tee-added-capabilities . Disk and memory limits Confidential Space automatically resizes the boot disk stateful partition when using larger boot disk sizes"
+          ],
+          "evidence_needles": [
+            "tmpfs",
+            "Swap memory is disabled on Confidential Space VMs",
+            "Signed container images"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_COMPUTE_INSTANCE_FIELD_SET",
+      "covers_sections": [
+        "9"
+      ],
+      "frozen_mapping": "compute-field-projection.json classifies the complete Instance schema from Compute v1 revision 20260709",
+      "locators": [
+        "REST Resource: instances",
+        "schemas.Instance",
+        "compute-field-projection.json"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+        "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "e32730c05c111f52c396b64dc4737f1307696c2212cb11abd1bdcb16ac765347",
+          "evidence_contexts": [
+            ": boolean , \"performanceMonitoringUnit\" : enum , \"turboMode\" : string } , \"lastStartTimestamp\" : string , \"lastStopTimestamp\" : string , \"lastSuspendedTimestamp\" : string , \"satisfiesPzs\" : boolean , \"satisfiesPzi\" : boolean , \"resourceStatus\" : { \"effectiveInstanceMetadata\" : { \"vmDnsSettingMetadataValue\" : string , \"enableOsloginMetadataValue\" : boolean , \"enableOsconfigMetadataValue\" : boolean , \"enableOsInventoryMetadataValue\" : boolean , \"enableGuestAttributesMetadataValue\" : boolean , \"blockProjectSshKeysMetadataValue\" : boolean , \"serialPortEnableMetadataValue\" : boolean ,",
+            ": { \"updateAutoLearnPolicy\" : boolean } , \"sourceMachineImageEncryptionKey\" : { \"rawKey\" : string , \"rsaEncryptedKey\" : string , \"kmsKeyName\" : string , \"sha256\" : string , \"kmsKeyServiceAccount\" : string } , \"confidentialInstanceConfig\" : { \"enableConfidentialCompute\" : boolean , \"confidentialInstanceType\" : enum } , \"fingerprint\" : string , \"privateIpv6GoogleAccess\" : enum , \"advancedMachineFeatures\" : { \"enableNestedVirtualization\" : boolean , \"threadsPerCore\" : integer , \"visibleCoreCount\" : integer , \"enableUefiNetworking\" : boolean , \"performanceMonitoringUnit\" : enum , \"turboMode\""
+          ],
+          "evidence_needles": [
+            "resourceStatus",
+            "confidentialInstanceConfig"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+        },
+        {
+          "evidence_commitment_sha256": "de75945f971a0c794f5f37d50896a0b2c68ec86a4dd5bbe5da0d3ec5ee56f693",
+          "evidence_contexts": [
+            "the zone us-east1-b is located in theus-east1 region. For more information, readRegions and\\nZones.\", \"properties\": { \"creationTimestamp\": { \"type\": \"string\", \"description\": \"[Output Only] Creation timestamp inRFC3339\\ntext format.\" }, \"resourceStatus\": { \"readOnly\": true, \"$ref\": \"ZoneResourceStatus\" }, \"id\": { \"format\": \"uint64\", \"type\": \"string\", \"description\": \"[Output Only] The unique identifier for the resource. This identifier is\\ndefined by the server.\" }, \"kind\": { \"description\": \"Output only. [Output Only] Type of the resource. Always compute#zone for\\nzones.\", \"default\": \"compute#zone\",",
+            "], \"readOnly\": true }, \"cpuPlatform\": { \"description\": \"Output only. [Output Only] The CPU platform used by this instance.\", \"type\": \"string\", \"readOnly\": true }, \"shieldedInstanceConfig\": { \"$ref\": \"ShieldedInstanceConfig\" }, \"confidentialInstanceConfig\": { \"$ref\": \"ConfidentialInstanceConfig\" }, \"workloadIdentityConfig\": { \"$ref\": \"WorkloadIdentityConfig\" }, \"id\": { \"description\": \"Output only. [Output Only] The unique identifier for the resource. This identifier is\\ndefined by the server.\", \"readOnly\": true, \"format\": \"uint64\", \"type\": \"string\" }, \"resourceStatus\": { \"description\": \"Output only. [Output"
+          ],
+          "evidence_needles": [
+            "resourceStatus",
+            "confidentialInstanceConfig"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_SOLE_TENANT_SERVER_ID",
+      "covers_sections": [
+        "9"
+      ],
+      "frozen_mapping": "physical-server identity is documented for sole-tenant fallback only",
+      "locators": [
+        "Sole-tenant node server ID",
+        "physical server"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_SOLE_TENANCY_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "27e8f01fa661ae0efd30c1160ed2d91152707e411a10fe70c4ed1419fed07cbb",
+          "evidence_contexts": [
+            "same Compute Engine features as other VMs, including transparent scheduling and block storage, but with an added layer of hardware isolation. To give you full control over the VMs on the physical server, each sole-tenant node maintains a one-to-one mapping to the physical server that is backing the node. Within a sole-tenant node, you can provision multiple VMs on machine types of various sizes, which lets you efficiently use the underlying resources of the dedicated host hardware. Also, if you choose not to share the host hardware with other projects, you can meet security or compliance requirements with workloads that require physical isolation from"
+          ],
+          "evidence_needles": [
+            "one-to-one mapping to the physical server that is backing the node"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    },
+    {
+      "claim_id": "GCP_HOST_EVENT_CONTROL_SET",
+      "covers_sections": [
+        "9"
+      ],
+      "frozen_mapping": "host maintenance migrate/terminate and automatic-restart behavior are documented",
+      "locators": [
+        "Host maintenance policy",
+        "MIGRATE",
+        "TERMINATE",
+        "automatic restart"
+      ],
+      "required_for_ready": true,
+      "snapshot_state": "CONFIRMED_AT_RETRIEVAL",
+      "source_ids": [
+        "GCP_HOST_EVENTS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "evidence_commitment_sha256": "21d31a50759cf05d2bd0b927103089fb9072ff68def42eecf16f0fe9ebe75e0f",
+          "evidence_contexts": [
+            "system event that is published to the list of zone operations and to the System Events logs. You can review this event by viewing the Compute Engine operations for a specific zone. Live migration events have the following operation type: compute.instances.migrateOnHostMaintenance Terminate and restart If you don't want your instance to live migrate, or if your instance type doesn't support live migration, then you can instead choose to allow Google Cloud to stop the instance when a host event occurs. With this configuration, if a host event occurs, then Compute Engine sends a soft power-off signal to shut down the instance. It then",
+            "server in the same zone. Z3, X4, and H4D instances have different default wait times. These instance types restart on the same host server after instance termination. To configure automatic restart, set the host maintenance policy field automaticRestart to true . This setting does not apply if the instance is taken offline due to a zonal outage or through manual operation, such as calling sudo shutdown within the guest OS. When Compute Engine automatically restarts your instance, it reports a system event that is published to the list of zone operations. You can review this event by viewing the Compute"
+          ],
+          "evidence_needles": [
+            "compute.instances.migrateOnHostMaintenance",
+            "automaticRestart"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_HOST_EVENTS_2026_07_24"
+        }
+      ],
+      "source_requirement": "ALL"
+    }
+  ],
+  "decision_algorithm": {
+    "non_required_unavailable_disposition": "DEFAULT_DENY_NO_PROMOTION",
+    "observation_to_state": {
+      "CONTRADICTS_FROZEN_MAPPING": "CONFLICTING_PROVIDER_EVIDENCE",
+      "FIELD_UNAVAILABLE_FROM_PROVIDER": "UNAVAILABLE_FROM_PROVIDER",
+      "MATCHED_FROZEN_MAPPING": "CONFIRMED_AT_RETRIEVAL",
+      "SOURCE_OR_PROVENANCE_UNAVAILABLE": "REVALIDATION_REQUIRED"
+    },
+    "ready_requires": {
+      "all_required_claims_confirmed": true,
+      "all_required_sections_covered_by_required_claims": true,
+      "all_source_ids_resolve": true,
+      "no_boundary_leakage": true
+    },
+    "required_claim_state_precedence": [
+      "CONFLICTING_PROVIDER_EVIDENCE",
+      "REVALIDATION_REQUIRED",
+      "UNAVAILABLE_FROM_PROVIDER",
+      "CONFIRMED_AT_RETRIEVAL"
+    ],
+    "version": "GCP_PROVIDER_DECISION_V1"
+  },
+  "recorded_decision": "GCP_PROVIDER_VOCABULARY_READY_FOR_RUNTIME_OBJECT_HARDENING",
+  "required_sections": [
+    "2",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+  ],
+  "schema_version": "GCP_PROVIDER_CLAIM_EVIDENCE_V1",
+  "source_observation_count": 22
+}

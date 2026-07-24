@@ -14,32 +14,45 @@ It authorizes documentation and contract hardening only. It does not authorize G
 
 ## 2. Selected Candidate
 
-The selected candidate shape is:
+The selected candidate shape uses the exact canonical core vocabulary hardened
+by Section 7.1:
 
 ```text
 provider=GCP
-execution_environment=Confidential Space production image
+execution_environment=CONFIDENTIAL_SPACE
+confidential_space_image_posture=PRODUCTION
 machine_series=C3
 provisional_machine_type=c3-standard-4
-cpu_platform=Intel Sapphire Rapids
-confidential_computing=Intel TDX
-live_migration=false
-host_maintenance=TERMINATE
-automatic_restart=false
-workload_restart_policy=Never
-initial_input_mode=synthetic_only
+cpu_platform=INTEL_SAPPHIRE_RAPIDS
+confidential_computing_technology=INTEL_TDX
+execution_substrate=QUALIFIED_ATTESTED_VIRTUAL_PROFILE
+scheduling.onHostMaintenance=TERMINATE
+scheduling.automaticRestart=false
+tee-restart-policy=Never
+initial_input_mode=SYNTHETIC_ONLY
 initial_public_ingress=false
 ```
 
-Every field remains provisional until the downstream qualification contracts close its identity, measurement, policy, and evidence requirements.
+Earlier title-case descriptions such as `Confidential Space production image`,
+`Intel Sapphire Rapids`, and `Intel TDX` are human display text only and are not
+accepted provider values or aliases. Raw JWT, CEL policy, and Compute literals
+remain separately governed by the provider-vocabulary contract.
+
+Every field remains provisional until the downstream qualification contracts
+close its identity, measurement, policy, and evidence requirements.
 
 ## 3. Claim-to-Source Map
 
-Official GCP documentation was retrieved on 2026-07-23. Every mutable claim must be revalidated before downstream hardening and immediately before any future GCP action.
+Official GCP documentation was originally retrieved on 2026-07-23 and was
+source-bound by the provider-vocabulary snapshot during
+`2026-07-24T03:07:50Z..2026-07-24T03:08:12Z`. Every mutable claim still requires
+fresh revalidation before downstream hardening and immediately before any future
+GCP action.
 
 | Selection claim | Exact official source | Selection use |
 | --- | --- | --- |
 | C3 uses Intel Sapphire Rapids | [Compute Engine CPU platforms](https://cloud.google.com/compute/docs/cpu-platforms) | Establishes the provisional CPU generation for the candidate |
+| Exact `c3-standard-4` shape is listed with 4 vCPUs and 16 GB | [General-purpose machine family](https://cloud.google.com/compute/docs/general-purpose-machines#c3_series) | Establishes exact candidate-shape existence; TDX eligibility still requires the separate wildcard support source |
 | Intel TDX supports `c3-standard-*` in listed zones | [Confidential VM supported configurations](https://cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations) | Establishes provisional machine shapes and zones; availability must be rechecked |
 | Intel TDX C3 does not support live migration | [Confidential VM supported configurations](https://cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations) and [host events](https://cloud.google.com/compute/docs/instances/host-maintenance-overview) | Requires termination on maintenance and requalification before reactivation |
 | Intel TDX cannot use sole-tenant node groups | [Confidential VM supported configurations](https://cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations) | Prevents C3/TDX from claiming sole-tenancy |
@@ -93,9 +106,9 @@ No comparative price or capacity conclusion is made in this selection contract. 
 
 No GCP action may occur until the following bounded documents are complete. Each document has a scoped responsibility and may remain provisional until the final integration gate.
 
-### 7.1 Provider claim and identity vocabulary
+### 7.1 [Provider claim and identity vocabulary](../canonical-inference-gcp-provider-vocabulary/README.md)
 
-Must freeze the exact official assertion paths, values, supported shapes/zones, status vocabulary, GCP resource names, and dated source evidence used by every later contract.
+The provider vocabulary freezes the exact official assertion paths, values, supported shapes/zones, status vocabulary, GCP resource names, and dated source evidence used by every later contract.
 
 ### 7.2 Runtime object and hash contract
 
@@ -176,13 +189,18 @@ No downstream contract may admit:
 
 Only bounded operational metadata, independently replayable attestation evidence, and signed qualification receipts may be retained under a later explicit retention contract.
 
-## 11. Relationship to Held VBD Work
+## 11. Relationship to VBD Work
 
-This contract does not authorize PR #434 to merge or model-validation execution to begin.
+Clean implementation PR #434 subsequently merged as
+`a0b56323cf942536bedd0f21fb5b8c1d631f8f64`. Its local and GitHub-hosted
+results remain nonauthoritative. Merge completed implementation review; it did
+not establish canonical runtime conformance or authorize governed model
+validation.
 
-PR #434 may continue nonauthoritative local repair and review. Exact conformance remains held until the canonical runtime architecture is resolved and a later authorized runtime produces source-bound conformance evidence for the exact PR head.
-
-PR #432 remains blocked and cannot satisfy this contract.
+Exact conformance remains held until the downstream contracts pass and a later
+qualified, separately authorized runtime produces source-bound evidence for the
+merged implementation identity. Closed PR #432 remains blocked and cannot
+satisfy this contract.
 
 ## 12. Non-Authorization
 
@@ -220,7 +238,10 @@ No GCP action starts from this selection decision.
 
 ## 14. Official GCP References
 
-Retrieved 2026-07-23; revalidate before downstream hardening or implementation:
+Originally retrieved 2026-07-23. The provider-vocabulary source snapshot
+revalidated the mapped provider documentation during
+`2026-07-24T03:07:50Z..2026-07-24T03:08:12Z`; every later contract and action
+still requires fresh revalidation:
 
 - [Compute Engine CPU platforms](https://cloud.google.com/compute/docs/cpu-platforms)
 - [Confidential VM supported configurations](https://cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations)

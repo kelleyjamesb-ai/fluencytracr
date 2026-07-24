@@ -1,0 +1,327 @@
+{
+  "content_retention": "HASH_ONLY_EXTERNAL_SNAPSHOT_UNTRACKED",
+  "external_snapshot_bundle": {
+    "archive_format": "ZIP_DEFLATE_FIXED_METADATA_V1",
+    "builder_python": "3.9.6",
+    "builder_zlib": "1.2.12",
+    "bundle_id": "gcp-provider-vocabulary-source-snapshot-20260724T030000Z",
+    "bytes": 1024767,
+    "compression": "DEFLATE_LEVEL_9",
+    "fixed_member_timestamp": "1980-01-01T00:00:00",
+    "fixed_unix_mode": "0100644",
+    "member_order": [
+      "source-01",
+      "source-02",
+      "source-03",
+      "source-04",
+      "source-05",
+      "source-06",
+      "source-07",
+      "source-08",
+      "source-09",
+      "source-10",
+      "source-11",
+      "source-12",
+      "source-13",
+      "source-14",
+      "source-15",
+      "source-16",
+      "sources.tsv",
+      "items.ndjson"
+    ],
+    "members": [
+      {
+        "archive_name": "source-01",
+        "bytes": 362888,
+        "sha256": "3c4816eb0b3cfb9cce086de0a270281516c2652a89aa3b84ab02773dee1a9d24",
+        "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+      },
+      {
+        "archive_name": "source-02",
+        "bytes": 131379,
+        "sha256": "7d6d8dec476610a8b9aec8b81b69643d03c93be76b63703b0e4d59d9d39834c8",
+        "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      },
+      {
+        "archive_name": "source-03",
+        "bytes": 119046,
+        "sha256": "506c7286cd47030b1e6be56858315e8aabfef79fc73d1b4a6f8c621d5d6e06fc",
+        "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      },
+      {
+        "archive_name": "source-04",
+        "bytes": 111213,
+        "sha256": "4708bb8267237aa9cb724bfbc56805b16fccf74684b13e6e0b331840f9c0ab0d",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+      },
+      {
+        "archive_name": "source-05",
+        "bytes": 137793,
+        "sha256": "8456d1fae9b326ec3bfadd56f93fbd422ee50e8aa867807de67f5af17ee49536",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+      },
+      {
+        "archive_name": "source-06",
+        "bytes": 125417,
+        "sha256": "4ffcbfd39471056d8351ac156f6c0dc44e6a55c61b81f817f6b8847a5808bc92",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+      },
+      {
+        "archive_name": "source-07",
+        "bytes": 103547,
+        "sha256": "7a04415e758469e66d701e7bcfa72a3bde4b9cafb56c96f6823ac81197cfb992",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+      },
+      {
+        "archive_name": "source-08",
+        "bytes": 157489,
+        "sha256": "2fbe26d6a13d54d851d9e8cce9e0aa0948edaa69de191f448828520461f881ee",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+      },
+      {
+        "archive_name": "source-09",
+        "bytes": 122806,
+        "sha256": "fd490925fd1caaf5080b892ff0f49303e936f87a4cec7df41028bf22220563d0",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      },
+      {
+        "archive_name": "source-10",
+        "bytes": 109455,
+        "sha256": "9e637b2b957754e8f96be1824c58075ce167f767722f9d7c7c1ae446b2645f90",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+      },
+      {
+        "archive_name": "source-11",
+        "bytes": 132625,
+        "sha256": "171ffb0b40e301a40f0fef3a796bca3e56780b649dd89a8b05768c6c395b4bb5",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+      },
+      {
+        "archive_name": "source-12",
+        "bytes": 987222,
+        "sha256": "4c47df42a23ed6b41da1b45823bb012ab17e91cffe613d3580c8f3739beda2ba",
+        "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+      },
+      {
+        "archive_name": "source-13",
+        "bytes": 6273829,
+        "sha256": "a241826926be7150e1ee6a4db329fc0f262cc0ccdff0c29d26c29904b2ff771e",
+        "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+      },
+      {
+        "archive_name": "source-14",
+        "bytes": 387126,
+        "sha256": "7128578b48803ce38e0b752187bfd3d87ce4bbb4ac6f5d309e33c448865ea45d",
+        "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+      },
+      {
+        "archive_name": "source-15",
+        "bytes": 354470,
+        "sha256": "7c7c75e2e9ba0153a374aa600cb86d598cf826200a95a069cd6b70dbcb385f88",
+        "source_id": "GCP_HOST_EVENTS_2026_07_24"
+      },
+      {
+        "archive_name": "source-16",
+        "bytes": 687009,
+        "sha256": "41980a65715c073913c2e33cec8c6352b85200427c0fa7e592a2302b36a8c309",
+        "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+      },
+      {
+        "archive_name": "sources.tsv",
+        "bytes": 1987,
+        "sha256": "45dbd0ad2df264f804cc04b77ab752254ac417a7fb55e5a7d2c908cef232a090",
+        "source_id": null
+      },
+      {
+        "archive_name": "items.ndjson",
+        "bytes": 8100,
+        "sha256": "b25b24bd329ca8e0626ef3c8aad1e216b823807e283f6f8599005df4cb908384",
+        "source_id": null
+      }
+    ],
+    "repository_storage": "EXTERNAL_UNTRACKED",
+    "sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+    "storage_locator": "external-recovery://fluencytracr/gcp-provider-vocabulary-source-snapshot-20260724T030000Z.zip"
+  },
+  "retrieval_completed_at": "2026-07-24T03:08:12Z",
+  "retrieval_started_at": "2026-07-24T03:07:50Z",
+  "schema_version": "GCP_PROVIDER_SOURCE_EVIDENCE_V1",
+  "sources": [
+    {
+      "effective_url": "https://docs.cloud.google.com/compute/docs/cpu-platforms",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/cpu-platforms",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:07:51Z",
+      "retrieved_at_start": "2026-07-24T03:07:50Z",
+      "retrieved_bytes": 362888,
+      "sha256": "3c4816eb0b3cfb9cce086de0a270281516c2652a89aa3b84ab02773dee1a9d24",
+      "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:07:53Z",
+      "retrieved_at_start": "2026-07-24T03:07:52Z",
+      "retrieved_bytes": 131379,
+      "sha256": "7d6d8dec476610a8b9aec8b81b69643d03c93be76b63703b0e4d59d9d39834c8",
+      "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-vm/docs/attestation",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-vm/docs/attestation",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:07:55Z",
+      "retrieved_at_start": "2026-07-24T03:07:53Z",
+      "retrieved_bytes": 119046,
+      "sha256": "506c7286cd47030b1e6be56858315e8aabfef79fc73d1b4a6f8c621d5d6e06fc",
+      "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-overview",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-overview",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:07:56Z",
+      "retrieved_at_start": "2026-07-24T03:07:55Z",
+      "retrieved_bytes": 111213,
+      "sha256": "4708bb8267237aa9cb724bfbc56805b16fccf74684b13e6e0b331840f9c0ab0d",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/attestation-assertions",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/attestation-assertions",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:07:57Z",
+      "retrieved_at_start": "2026-07-24T03:07:56Z",
+      "retrieved_bytes": 137793,
+      "sha256": "8456d1fae9b326ec3bfadd56f93fbd422ee50e8aa867807de67f5af17ee49536",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:07:59Z",
+      "retrieved_at_start": "2026-07-24T03:07:57Z",
+      "retrieved_bytes": 125417,
+      "sha256": "4ffcbfd39471056d8351ac156f6c0dc44e6a55c61b81f817f6b8847a5808bc92",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-validation-endpoint-fields",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/token-validation-endpoint-fields",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:00Z",
+      "retrieved_at_start": "2026-07-24T03:07:59Z",
+      "retrieved_bytes": 103547,
+      "sha256": "7a04415e758469e66d701e7bcfa72a3bde4b9cafb56c96f6823ac81197cfb992",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:01Z",
+      "retrieved_at_start": "2026-07-24T03:08:00Z",
+      "retrieved_bytes": 157489,
+      "sha256": "2fbe26d6a13d54d851d9e8cce9e0aa0948edaa69de191f448828520461f881ee",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/metadata-variables",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/metadata-variables",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:02Z",
+      "retrieved_at_start": "2026-07-24T03:08:01Z",
+      "retrieved_bytes": 122806,
+      "sha256": "fd490925fd1caaf5080b892ff0f49303e936f87a4cec7df41028bf22220563d0",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/launch-policies",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/launch-policies",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:04Z",
+      "retrieved_at_start": "2026-07-24T03:08:03Z",
+      "retrieved_bytes": 109455,
+      "sha256": "9e637b2b957754e8f96be1824c58075ce167f767722f9d7c7c1ae446b2645f90",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/create-customize-workloads",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/create-customize-workloads",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:05Z",
+      "retrieved_at_start": "2026-07-24T03:08:04Z",
+      "retrieved_bytes": 132625,
+      "sha256": "171ffb0b40e301a40f0fef3a796bca3e56780b649dd89a8b05768c6c395b4bb5",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/compute/docs/reference/rest/v1/instances",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/reference/rest/v1/instances",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:06Z",
+      "retrieved_at_start": "2026-07-24T03:08:05Z",
+      "retrieved_bytes": 987222,
+      "sha256": "4c47df42a23ed6b41da1b45823bb012ab17e91cffe613d3580c8f3739beda2ba",
+      "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+    },
+    {
+      "effective_url": "https://www.googleapis.com/discovery/v1/apis/compute/v1/rest",
+      "http_status": 200,
+      "official_url": "https://www.googleapis.com/discovery/v1/apis/compute/v1/rest",
+      "provider_revision": "20260709",
+      "retrieved_at_end": "2026-07-24T03:08:07Z",
+      "retrieved_at_start": "2026-07-24T03:08:07Z",
+      "retrieved_bytes": 6273829,
+      "sha256": "a241826926be7150e1ee6a4db329fc0f262cc0ccdff0c29d26c29904b2ff771e",
+      "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:09Z",
+      "retrieved_at_start": "2026-07-24T03:08:08Z",
+      "retrieved_bytes": 387126,
+      "sha256": "7128578b48803ce38e0b752187bfd3d87ce4bbb4ac6f5d309e33c448865ea45d",
+      "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/compute/docs/instances/host-maintenance-overview",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/instances/host-maintenance-overview",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:10Z",
+      "retrieved_at_start": "2026-07-24T03:08:09Z",
+      "retrieved_bytes": 354470,
+      "sha256": "7c7c75e2e9ba0153a374aa600cb86d598cf826200a95a069cd6b70dbcb385f88",
+      "source_id": "GCP_HOST_EVENTS_2026_07_24"
+    },
+    {
+      "effective_url": "https://docs.cloud.google.com/compute/docs/general-purpose-machines",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/general-purpose-machines",
+      "provider_last_updated": "2026-07-17",
+      "retrieved_at_end": "2026-07-24T03:08:11Z",
+      "retrieved_at_start": "2026-07-24T03:08:10Z",
+      "retrieved_bytes": 687009,
+      "sha256": "41980a65715c073913c2e33cec8c6352b85200427c0fa7e592a2302b36a8c309",
+      "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+    }
+  ]
+}

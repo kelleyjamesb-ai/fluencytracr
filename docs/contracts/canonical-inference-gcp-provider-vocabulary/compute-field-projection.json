@@ -1,0 +1,1632 @@
+{
+  "default_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+  "field_count": 257,
+  "fields": [
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "AdvancedMachineFeatures",
+      "path": "advancedMachineFeatures"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "advancedMachineFeatures.enableNestedVirtualization"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "advancedMachineFeatures.enableUefiNetworking"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "ARCHITECTURAL",
+        "ENHANCED",
+        "PERFORMANCE_MONITORING_UNIT_UNSPECIFIED",
+        "STANDARD"
+      ],
+      "json_type": "string",
+      "path": "advancedMachineFeatures.performanceMonitoringUnit"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "advancedMachineFeatures.threadsPerCore"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "advancedMachineFeatures.turboMode"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "advancedMachineFeatures.visibleCoreCount"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "canIpForward"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ConfidentialInstanceConfig",
+      "path": "confidentialInstanceConfig"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "CCA",
+        "CONFIDENTIAL_INSTANCE_TYPE_UNSPECIFIED",
+        "SEV",
+        "SEV_SNP",
+        "TDX"
+      ],
+      "json_type": "string",
+      "path": "confidentialInstanceConfig.confidentialInstanceType"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "confidentialInstanceConfig.enableConfidentialCompute"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "cpuPlatform",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "creationTimestamp",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "deletionProtection"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "description"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "AttachedDisk",
+      "json_type": "array",
+      "path": "disks[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "ARCHITECTURE_UNSPECIFIED",
+        "ARM64",
+        "X86_64"
+      ],
+      "json_type": "string",
+      "path": "disks[].architecture",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "disks[].autoDelete"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "disks[].boot"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].deviceName"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "disks[].diskEncryptionKey"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.kmsKeyName"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.kmsKeyServiceAccount"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.rawKey"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.rsaEncryptedKey"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.sha256"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].diskSizeGb"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "disks[].forceAttach"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "item_ref": "GuestOsFeature",
+      "json_type": "array",
+      "path": "disks[].guestOsFeatures[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "BARE_METAL_LINUX_COMPATIBLE",
+        "CCA_CAPABLE",
+        "FEATURE_TYPE_UNSPECIFIED",
+        "GVNIC",
+        "IDPF",
+        "MULTI_IP_SUBNET",
+        "SECURE_BOOT",
+        "SEV_CAPABLE",
+        "SEV_LIVE_MIGRATABLE",
+        "SEV_LIVE_MIGRATABLE_V2",
+        "SEV_SNP_CAPABLE",
+        "SNP_SVSM_CAPABLE",
+        "TDX_CAPABLE",
+        "UEFI_COMPATIBLE",
+        "VIRTIO_SCSI_MULTIQUEUE",
+        "WINDOWS"
+      ],
+      "json_type": "string",
+      "path": "disks[].guestOsFeatures[].type"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "disks[].index",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "AttachedDiskInitializeParams",
+      "path": "disks[].initializeParams"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "ARCHITECTURE_UNSPECIFIED",
+        "ARM64",
+        "X86_64"
+      ],
+      "json_type": "string",
+      "path": "disks[].initializeParams.architecture"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.description"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].initializeParams.diskName"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].initializeParams.diskSizeGb"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].initializeParams.diskType"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "disks[].initializeParams.enableConfidentialCompute"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "path": "disks[].initializeParams.labels"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].initializeParams.licenses[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "RECREATE_DISK",
+        "RECREATE_DISK_IF_SOURCE_CHANGED",
+        "USE_EXISTING_DISK"
+      ],
+      "json_type": "string",
+      "path": "disks[].initializeParams.onUpdateAction"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].initializeParams.provisionedIops"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].initializeParams.provisionedThroughput"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].initializeParams.replicaZones[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "path": "disks[].initializeParams.resourceManagerTags"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].initializeParams.resourcePolicies[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImage"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.kmsKeyName"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.kmsKeyServiceAccount"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.rawKey"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.rsaEncryptedKey"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.sha256"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshot"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.kmsKeyName"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.kmsKeyServiceAccount"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.rawKey"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.rsaEncryptedKey"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.sha256"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].initializeParams.storagePool"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "NVME",
+        "SCSI"
+      ],
+      "json_type": "string",
+      "path": "disks[].interface"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "disks[].kind",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].licenses[]",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "READ_ONLY",
+        "READ_WRITE"
+      ],
+      "json_type": "string",
+      "path": "disks[].mode"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "DISK_SAVED_STATE_UNSPECIFIED",
+        "PRESERVED"
+      ],
+      "json_type": "string",
+      "path": "disks[].savedState",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "InitialStateConfig",
+      "path": "disks[].shieldedInstanceInitialState",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "item_ref": "FileContentBuffer",
+      "json_type": "array",
+      "path": "disks[].shieldedInstanceInitialState.dbs[]"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbs[].content"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbs[].fileType"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "item_ref": "FileContentBuffer",
+      "json_type": "array",
+      "path": "disks[].shieldedInstanceInitialState.dbxs[]"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbxs[].content"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbxs[].fileType"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "item_ref": "FileContentBuffer",
+      "json_type": "array",
+      "path": "disks[].shieldedInstanceInitialState.keks[]"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.keks[].content"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.keks[].fileType"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "FileContentBuffer",
+      "path": "disks[].shieldedInstanceInitialState.pk"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.pk.content"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.pk.fileType"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "disks[].source"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "PERSISTENT",
+        "SCRATCH"
+      ],
+      "json_type": "string",
+      "path": "disks[].type"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "DisplayDevice",
+      "path": "displayDevice"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "displayDevice.enableDisplay"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "byte",
+      "json_type": "string",
+      "path": "fingerprint"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "AcceleratorConfig",
+      "json_type": "array",
+      "path": "guestAccelerators[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "guestAccelerators[].acceleratorCount"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "guestAccelerators[].acceleratorType"
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "string",
+      "path": "hostname"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "uint64",
+      "json_type": "string",
+      "path": "id",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "instanceEncryptionKey"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "instanceEncryptionKey.kmsKeyName"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "instanceEncryptionKey.kmsKeyServiceAccount"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "instanceEncryptionKey.rawKey"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "instanceEncryptionKey.rsaEncryptedKey"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "instanceEncryptionKey.sha256"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "KEY_REVOCATION_ACTION_TYPE_UNSPECIFIED",
+        "NONE",
+        "STOP"
+      ],
+      "json_type": "string",
+      "path": "keyRevocationActionType"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "kind",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "byte",
+      "json_type": "string",
+      "path": "labelFingerprint"
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "object",
+      "path": "labels"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "lastStartTimestamp",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "lastStopTimestamp",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "lastSuspendedTimestamp",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "EPHEMERAL_KEY_ENCRYPTION",
+        "LOCAL_SSD_ENCRYPTION_MODE_UNSPECIFIED",
+        "STANDARD_ENCRYPTION"
+      ],
+      "json_type": "string",
+      "path": "localSsdEncryptionMode"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "machineType"
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "object",
+      "object_ref": "Metadata",
+      "path": "metadata"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "byte",
+      "json_type": "string",
+      "path": "metadata.fingerprint"
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "item_type": "object",
+      "json_type": "array",
+      "path": "metadata.items[]"
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "string",
+      "path": "metadata.items[].key",
+      "pattern": "[a-zA-Z0-9-_]{1,128}"
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "string",
+      "path": "metadata.items[].value"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "metadata.kind",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "minCpuPlatform"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "name",
+      "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "NetworkInterface",
+      "json_type": "array",
+      "path": "networkInterfaces[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "AccessConfig",
+      "json_type": "array",
+      "path": "networkInterfaces[].accessConfigs[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].externalIpv6"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].accessConfigs[].externalIpv6PrefixLength"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].kind",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].name"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].natIP"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "FIXED_STANDARD",
+        "PREMIUM",
+        "STANDARD",
+        "STANDARD_OVERRIDES_FIXED_STANDARD"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].networkTier"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].publicPtrDomainName"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].securityPolicy"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "boolean",
+      "path": "networkInterfaces[].accessConfigs[].setPublicPtr"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "DIRECT_IPV6",
+        "ONE_TO_ONE_NAT"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].type"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "AliasIpRange",
+      "json_type": "array",
+      "path": "networkInterfaces[].aliasIpRanges[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpRanges[].ipCidrRange"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpRanges[].subnetworkRangeName"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "AliasIpRange",
+      "json_type": "array",
+      "path": "networkInterfaces[].aliasIpv6Ranges[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpv6Ranges[].ipCidrRange"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpv6Ranges[].subnetworkRangeName"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "networkInterfaces[].enableVpcScopedDns"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "byte",
+      "json_type": "string",
+      "path": "networkInterfaces[].fingerprint"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "IGMP_QUERY_DISABLED",
+        "IGMP_QUERY_V2"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].igmpQuery"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].internalIpv6PrefixLength"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "AccessConfig",
+      "json_type": "array",
+      "path": "networkInterfaces[].ipv6AccessConfigs[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].externalIpv6"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].externalIpv6PrefixLength"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].kind",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].name"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].natIP"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "FIXED_STANDARD",
+        "PREMIUM",
+        "STANDARD",
+        "STANDARD_OVERRIDES_FIXED_STANDARD"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].networkTier"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].publicPtrDomainName"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].securityPolicy"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "boolean",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].setPublicPtr"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "enum": [
+        "DIRECT_IPV6",
+        "ONE_TO_ONE_NAT"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].type"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "EXTERNAL",
+        "INTERNAL"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessType",
+      "readOnly": true
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6Address"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "networkInterfaces[].kind",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "networkInterfaces[].name"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "networkInterfaces[].network"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "networkInterfaces[].networkAttachment"
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "string",
+      "path": "networkInterfaces[].networkIP"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "GVNIC",
+        "IDPF",
+        "IRDMA",
+        "MRDMA",
+        "UNSPECIFIED_NIC_TYPE",
+        "VIRTIO_NET"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].nicType"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "networkInterfaces[].parentNicName"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].queueCount"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "networkInterfaces[].serviceClassId"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "IPV4_IPV6",
+        "IPV4_ONLY",
+        "IPV6_ONLY"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].stackType"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "networkInterfaces[].subnetwork"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].vlan"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "NetworkPerformanceConfig",
+      "path": "networkPerformanceConfig"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "DEFAULT",
+        "TIER_1"
+      ],
+      "json_type": "string",
+      "path": "networkPerformanceConfig.totalEgressBandwidthTier"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "InstanceParams",
+      "path": "params"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "Duration",
+      "path": "params.requestValidForDuration"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "params.requestValidForDuration.nanos"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "format": "int64",
+      "json_type": "string",
+      "path": "params.requestValidForDuration.seconds"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "path": "params.resourceManagerTags"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "ENABLE_BIDIRECTIONAL_ACCESS_TO_GOOGLE",
+        "ENABLE_OUTBOUND_VM_ACCESS_TO_GOOGLE",
+        "INHERIT_FROM_SUBNETWORK"
+      ],
+      "json_type": "string",
+      "path": "privateIpv6GoogleAccess"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ReservationAffinity",
+      "path": "reservationAffinity"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "ANY_RESERVATION",
+        "NO_RESERVATION",
+        "SPECIFIC_RESERVATION",
+        "UNSPECIFIED"
+      ],
+      "json_type": "string",
+      "path": "reservationAffinity.consumeReservationType"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "reservationAffinity.key"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "reservationAffinity.values[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "resourcePolicies[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ResourceStatus",
+      "path": "resourceStatus",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ResourceStatusEffectiveInstanceMetadata",
+      "path": "resourceStatus.effectiveInstanceMetadata",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.blockProjectSshKeysMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableGuestAttributesMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableOsInventoryMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableOsconfigMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableOsloginMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.gceContainerDeclarationMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.serialPortEnableMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.serialPortLoggingEnableMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.effectiveInstanceMetadata.vmDnsSettingMetadataValue"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.physicalHost",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "object",
+      "object_ref": "ResourceStatusPhysicalHostTopology",
+      "path": "resourceStatus.physicalHostTopology",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ResourceStatusPhysicalHostTopologyAdditionalAttributes",
+      "path": "resourceStatus.physicalHostTopology.additionalAttributes",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "path": "resourceStatus.physicalHostTopology.additionalAttributes.acceleratorTopologyIds",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.block"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.cluster"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.host"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.subblock"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ResourceStatusReservationConsumptionInfo",
+      "path": "resourceStatus.reservationConsumptionInfo",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "string",
+      "path": "resourceStatus.reservationConsumptionInfo.consumedReservation",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ResourceStatusScheduling",
+      "path": "resourceStatus.scheduling"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "resourceStatus.scheduling.availabilityDomain"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "UpcomingMaintenance",
+      "path": "resourceStatus.upcomingMaintenance",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.upcomingMaintenance.canReschedule"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.latestWindowStartTime"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "resourceStatus.upcomingMaintenance.maintenanceOnShutdown"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_enum": [
+        "FAILURE_DISK",
+        "FAILURE_GPU",
+        "FAILURE_GPU_MULTIPLE_FAULTY_HOSTS_CUSTOMER_REPORTED",
+        "FAILURE_GPU_NVLINK_SWITCH_CUSTOMER_REPORTED",
+        "FAILURE_GPU_TEMPERATURE",
+        "FAILURE_GPU_XID",
+        "FAILURE_INFRA",
+        "FAILURE_INTERFACE",
+        "FAILURE_MEMORY",
+        "FAILURE_NETWORK",
+        "FAILURE_NVLINK",
+        "FAILURE_REDUNDANT_HARDWARE_FAULT",
+        "FAILURE_TPU",
+        "INFRASTRUCTURE_RELOCATION",
+        "MAINTENANCE_REASON_UNKNOWN",
+        "PLANNED_NETWORK_UPDATE",
+        "PLANNED_UPDATE"
+      ],
+      "item_type": "string",
+      "json_type": "array",
+      "path": "resourceStatus.upcomingMaintenance.maintenanceReasons[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "ONGOING",
+        "PENDING",
+        "UNKNOWN"
+      ],
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.maintenanceStatus"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "MULTIPLE",
+        "SCHEDULED",
+        "UNKNOWN_TYPE",
+        "UNSCHEDULED"
+      ],
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.type"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.windowEndTime"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.windowStartTime"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "boolean",
+      "path": "satisfiesPzi",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "boolean",
+      "path": "satisfiesPzs",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "Scheduling",
+      "path": "scheduling"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "scheduling.automaticRestart"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.availabilityDomain"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.hostErrorTimeoutSeconds"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "DELETE",
+        "INSTANCE_TERMINATION_ACTION_UNSPECIFIED",
+        "STOP"
+      ],
+      "json_type": "string",
+      "path": "scheduling.instanceTerminationAction"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "object",
+      "object_ref": "Duration",
+      "path": "scheduling.localSsdRecoveryTimeout"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.localSsdRecoveryTimeout.nanos"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int64",
+      "json_type": "string",
+      "path": "scheduling.localSsdRecoveryTimeout.seconds"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "scheduling.locationHint"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "object",
+      "object_ref": "Duration",
+      "path": "scheduling.maxRunDuration"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.maxRunDuration.nanos"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int64",
+      "json_type": "string",
+      "path": "scheduling.maxRunDuration.seconds"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.minNodeCpus"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "SchedulingNodeAffinity",
+      "json_type": "array",
+      "path": "scheduling.nodeAffinities[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "scheduling.nodeAffinities[].key"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "IN",
+        "NOT_IN",
+        "OPERATOR_UNSPECIFIED"
+      ],
+      "json_type": "string",
+      "path": "scheduling.nodeAffinities[].operator"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "scheduling.nodeAffinities[].values[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "MIGRATE",
+        "TERMINATE"
+      ],
+      "json_type": "string",
+      "path": "scheduling.onHostMaintenance"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "SchedulingOnInstanceStopAction",
+      "path": "scheduling.onInstanceStopAction"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "scheduling.onInstanceStopAction.discardLocalSsd"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "scheduling.preemptible"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "FLEX_START",
+        "RESERVATION_BOUND",
+        "SPOT",
+        "STANDARD"
+      ],
+      "json_type": "string",
+      "path": "scheduling.provisioningModel"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "scheduling.skipGuestOsShutdown"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "scheduling.terminationTime"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "selfLink",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_ref": "ServiceAccount",
+      "json_type": "array",
+      "path": "serviceAccounts[]"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "serviceAccounts[].email"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "serviceAccounts[].scopes[]"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ShieldedInstanceConfig",
+      "path": "shieldedInstanceConfig"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "shieldedInstanceConfig.enableIntegrityMonitoring"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "shieldedInstanceConfig.enableSecureBoot"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "shieldedInstanceConfig.enableVtpm"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "ShieldedInstanceIntegrityPolicy",
+      "path": "shieldedInstanceIntegrityPolicy"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "shieldedInstanceIntegrityPolicy.updateAutoLearnPolicy"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "sourceMachineImage"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "sourceMachineImageEncryptionKey"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.kmsKeyName"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.kmsKeyServiceAccount"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.rawKey"
+    },
+    {
+      "disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.rsaEncryptedKey"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.sha256"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "startRestricted",
+      "readOnly": true
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "enum": [
+        "DEPROVISIONING",
+        "PENDING",
+        "PROVISIONING",
+        "REPAIRING",
+        "RUNNING",
+        "STAGING",
+        "STOPPED",
+        "STOPPING",
+        "SUSPENDED",
+        "SUSPENDING",
+        "TERMINATED"
+      ],
+      "json_type": "string",
+      "path": "status",
+      "readOnly": true
+    },
+    {
+      "disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "json_type": "string",
+      "path": "statusMessage",
+      "readOnly": true
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "Tags",
+      "path": "tags"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "format": "byte",
+      "json_type": "string",
+      "path": "tags.fingerprint"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "item_type": "string",
+      "json_type": "array",
+      "path": "tags.items[]",
+      "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
+    },
+    {
+      "disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "json_type": "object",
+      "object_ref": "WorkloadIdentityConfig",
+      "path": "workloadIdentityConfig"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "workloadIdentityConfig.identity"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "boolean",
+      "path": "workloadIdentityConfig.identityCertificateEnabled"
+    },
+    {
+      "disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "json_type": "string",
+      "path": "zone",
+      "readOnly": true
+    }
+  ],
+  "provider_revision": "20260709",
+  "root_schema": "Instance",
+  "schema_version": "GCP_COMPUTE_FIELD_PROJECTION_V1",
+  "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24",
+  "source_sha256": "a241826926be7150e1ee6a4db329fc0f262cc0ccdff0c29d26c29904b2ff771e"
+}
