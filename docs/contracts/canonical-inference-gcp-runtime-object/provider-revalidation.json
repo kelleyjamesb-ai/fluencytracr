@@ -1,0 +1,2431 @@
+{
+  "authorization_effect": "NONE_DOCS_ONLY",
+  "claim_count": 20,
+  "claims": [
+    {
+      "claim_id": "GCP_C3_CPU_PLATFORM",
+      "frozen_mapping": "C3 uses Intel Sapphire Rapids",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CPU_PLATFORMS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "7988d7fd12238a389eaddf185a5456dabec3707f08a12fcfc1e136d3f133ba0c",
+          "evidence_commitment_sha256": "6e5b260ccfdfb3fad533c720be9c36c1e3c4bae22cbf0554986e337019656c95",
+          "evidence_contexts": [
+            "4N 2.3 3.1 4.0 N4 2.1 2.9 3.3 Intel Xeon Scalable Processor (Sapphire Rapids) 4th generation Intel Xeon Platinum 8490H Processor X4 1.9 2.9 3.5 Intel Xeon Platinum 8481C Processor C3 Z3 H3 2.2 3.0 3.0 Z3 bare metal 2.2 3.0 3.8 A3 Mega A3 High A3 Edge 2.0 3.8 2.9 Intel Xeon Scalable Processor (Ice Lake) 3rd Generation Intel Xeon Platinum 8373C Processor N2 2 M3",
+            "lable Processor (Emerald Rapids) 5th generation Intel Xeon Platinum 8581C Processor A4 A3 Ultra M4 M4N 2.1 2.9 4.0 C4 C4N 2.3 3.1 4.0 N4 2.1 2.9 3.3 Intel Xeon Scalable Processor (Sapphire Rapids) 4th generation Intel Xeon Platinum 8490H Processor X4 1.9 2.9 3.5 Intel Xeon Platinum 8481C Processor C3 Z3 H3 2.2 3.0 3.0 Z3 bare metal 2.2 3.0 3.8 A3 Mega A3 High A3 Edge 2.0 3"
+          ],
+          "evidence_needles": [
+            "C3",
+            "Sapphire Rapids"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_C3_TDX_MACHINE_SUPPORT",
+      "frozen_mapping": "c3-standard-* supports Intel TDX",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+          "evidence_commitment_sha256": "220ef55bad49ad9bc5e958cfc066e4ea2f6faef5bf232a1974af0337e22af27e",
+          "evidence_contexts": [
+            "stances don't support kdump . Instead, use the guest console logs. Confidential VM instances with AMD SEV-SNP don't support reservations . Intel TDX Local SSD is only supported on c3-standard-*-lssd machine types ( Preview ). VM instances take longer to shut down compared to standard VM instances. This delay increases with VM memory size. Only Balanced Persistent Disk vo",
+            "st1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west4-a europe-west4-b europe-west4-c europe-west9-a europe-we"
+          ],
+          "evidence_needles": [
+            "c3-standard-*",
+            "Intel TDX is supported on c3-standard-* machine types"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_C3_STANDARD_4_MACHINE_TYPE",
+      "frozen_mapping": "c3-standard-4 exists with 4 vCPUs and 16 GB and is included by c3-standard-* TDX support",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_C3_MACHINE_TYPES_2026_07_24",
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "1e2ed6632917655bcfeb3a52acd0f623f791ea350c6f9ef9a95ae73da9d9c0f4",
+          "evidence_commitment_sha256": "981f5da73fd5091880b8caa013f3f1b990591941d9e52fa971fbb456d71fc93b",
+          "evidence_contexts": [
+            "tach Local SSD volumes separately. To create a bare metal instance with C3, use one of the following machine types: c3-standard-192-metal c3-highcpu-192-metal c3-highmem-192-metal C3 standard Machine types vCPUs 1 Memory (GB) Local SSD Default egress bandwidth (Gbps) 3 Tier_1 egress bandwidth (Gbps) c3-standard-4 4 16 Not supported Up to 23 N/A c3-standard-8 8 32 Not s",
+            "andard-192-metal c3-highcpu-192-metal c3-highmem-192-metal C3 standard Machine types vCPUs 1 Memory (GB) Local SSD Default egress bandwidth (Gbps) 3 Tier_1 egress bandwidth (Gbps) c3-standard-4 4 16 Not supported Up to 23 N/A c3-standard-8 8 32 Not supported Up to 23 N/A c3-standard-22 22 88 Not supported Up to 23 N/A c3-standard-44 44 176 Not supported Up to 32 Up to 50 c3-standard-88 88 "
+          ],
+          "evidence_needles": [
+            "C3 standard",
+            "c3-standard-4 4 16 Not supported"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+        },
+        {
+          "current_source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+          "evidence_commitment_sha256": "2e9f6d1774cbed03eef0086113674a10374862d10325174f4fac9ca8fa28842c",
+          "evidence_contexts": [
+            "stances don't support kdump . Instead, use the guest console logs. Confidential VM instances with AMD SEV-SNP don't support reservations . Intel TDX Local SSD is only supported on c3-standard-*-lssd machine types ( Preview ). VM instances take longer to shut down compared to standard VM instances. This delay increases with VM memory size. Only Balanced Persistent Disk vo",
+            "st1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west4-a europe-west4-b europe-west4-c europe-west9-a europe-we"
+          ],
+          "evidence_needles": [
+            "c3-standard-*",
+            "Intel TDX is supported on c3-standard-* machine types"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_C3_TDX_ZONE_SET",
+      "frozen_mapping": "us-central1-a, us-central1-b, and us-central1-c are provisionally listed",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+          "evidence_commitment_sha256": "89184d7d501fe692a1e9c57cee64d3ecf5952a2af0e9fd8c51f7af54fa0b0980",
+          "evidence_contexts": [
+            "st1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west4-a europe-west4-b europe-west4-c europe-west9-a europe-we",
+            " type with AMD Milan CPU platforms: asia-southeast1-a asia-southeast1-b asia-southeast1-c europe-west3-a europe-west3-b europe-west3-c europe-west4-a europe-west4-b europe-west4-c us-central1-a us-central1-b us-central1-c Intel TDX c3-standard-* Intel TDX is supported on c3-standard-* machine types in the following zones: asia-northeast1-b asia-south1-b asia-southeast1-a asia-southeast1-b asia-sout"
+          ],
+          "evidence_needles": [
+            "Intel TDX is supported on c3-standard-* machine types",
+            "us-central1-a us-central1-b us-central1-c"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_C3_TDX_LIVE_MIGRATION",
+      "frozen_mapping": "live migration is not supported for Intel TDX",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+          "evidence_commitment_sha256": "6c299b67b4a625490f3a8b34e40104764d1f26b5f03cb8027990fb28e4f85f08",
+          "evidence_contexts": [
+            "hire Rapids Intel TDX See limitations NVIDIA See limitations Not supported Supported C4D View machine type names AMD EPYC Turin AMD SEV See limitations Not supported Not supported c3-standard-* View machine type names Intel Sapphire Rapids Intel TDX See limitations Not supported Not supported c3-standard-*-lssd ( Preview ) View machine type names Intel Sapphire Rapids Intel TDX See limitations Not supported Not supported C3D View machine type names AMD EPYC Genoa AMD S",
+            "M is supported on the following machine types and configurations. For information about the GPU quotas required to create instances with attached GPUs, see GPU quota requirement . Machine type CPU platform Confidential Computing technology Live migration support GPU support a3-highgpu-1g View machine type names Intel Sapphire Rapids Intel TDX See limitations NVIDIA See limitations Not supported Supported C4D View machine type names AMD EPYC Turin AMD",
+            "r boot times for Confidential VM instances with large amounts of memory. Establishing SSH connections takes longer on Confidential VM instances than non-Confidential VM instances. Live migration is only supported on N2D and C3D machine types running AMD SEV. Confidential VM instances might experience lower network bandwidth and higher latency compared to non-Confidential VM instances. Confidential VM instances with Hyperdisk Throughpu"
+          ],
+          "evidence_needles": [
+            "c3-standard-* View machine type names Intel Sapphire Rapids Intel TDX See limitations Not supported Not supported",
+            "Machine type CPU platform Confidential Computing technology Live migration support GPU support",
+            "Live migration is only supported on N2D and C3D machine types running AMD SEV."
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_TDX_SOLE_TENANCY",
+      "frozen_mapping": "sole-tenancy is not supported for Intel TDX",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+          "evidence_commitment_sha256": "4903f3707b9317f46eb83c2225c76a6f68b000fb0be15d7ad5b49ac26474c80a",
+          "evidence_contexts": [
+            "e longer to shut down compared to standard VM instances. This delay increases with VM memory size. Only Balanced Persistent Disk volumes that use the NVMe interface are supported. VM instances can't be provisioned on sole-tenant node groups. Due to additional security constraints, the CPUID instruction might return limited or no CPU architecture details. This might impact the performance of workloads that depend on th"
+          ],
+          "evidence_needles": [
+            "VM instances can't be provisioned on sole-tenant node groups."
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_TDX_ATTESTATION_SOURCE",
+      "frozen_mapping": "Intel TDX module provides hardware and firmware attestation evidence",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "804495174703ef90fa0d5bc324aed5369b328f7a8cdc8881b9f1e6b1e11e5773",
+          "evidence_commitment_sha256": "a0a97f1136405f843cc130b3de4b63c063b9f114b2cf8c4aa262a37c946c4a89",
+          "evidence_contexts": [
+            "tend the RTMR[3] register with user space measurements. Request an attestation report You can request attestation reports from the Google-managed vTPM, AMD's Secure Processor, and Intel's TDX module with the following tools: Go-TPM Go-TPM tools (version 0.4.4 or later is required for AMD SEV-SNP and Intel TDX support) The GceNonHostInfo event in the vTPM attestation event log",
+            "Confidential VM attestation | Google Cloud Documentation Skip to main content Technology areas close AI and ML Application development Application hosting Compute Data analytics and pipelines Databases Distr"
+          ],
+          "evidence_needles": [
+            "Intel's TDX module",
+            "attestation"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_TDX_USERSPACE_MEASUREMENT",
+      "frozen_mapping": "userspace measurement can extend RTMR3",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "804495174703ef90fa0d5bc324aed5369b328f7a8cdc8881b9f1e6b1e11e5773",
+          "evidence_commitment_sha256": "429aad4266042789d53f3621c6ea97775cb8343796cd127b22650ddb335bcfe6",
+          "evidence_contexts": [
+            "nt of the Trust Domain (MRTD), while the remaining boot chain is measured into the Runtime Measurement Registers (RTMR), rooting all measurements in hardware. Users can extend the RTMR[3] register with user space measurements. Request an attestation report You can request attestation reports from the Google-managed vTPM, AMD's Secure Processor, and Intel's TDX module with the following tools: Go-TPM Go-"
+          ],
+          "evidence_needles": [
+            "RTMR[3] register with user space measurements."
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+      "frozen_mapping": "workload author, workload operator, and data collaborator roles are distinct",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "99b30c138e881a618ba25ecf594b5256ca4a27ef89b85b08855f9ed42b153967",
+          "evidence_commitment_sha256": "44fa2306606965380d0a4a3338c7cdaf6e5a0dcbee38265fed270426db0a48e6",
+          "evidence_contexts": [
+            "collaborators can't access each other's data or modify the workload code. See Create and grant access to confidential resources to learn more about the role of data collaborators. Workload author : The person who creates the application that accesses and processes the confidential data. They add the application to a containerized image, for example, using Docker , and uplo",
+            "rkload author has no access to the data or the results, and can't control access to them either. See Create and customize workloads to learn more about the workload author's role. Workload operator : The person who runs the workload. The workload operator typically has full administrative privileges on the project they run the workload in. For example, they can manage resour",
+            "onment or in another cloud), then they can be any resource. Confidential Space roles The components in a Confidential Space system are managed by people with three distinct roles: Data collaborators : The people or organizations who own the protected resources being operated on by the workload. Data collaborators can access their own data, set permissions on that data, and de"
+          ],
+          "evidence_needles": [
+            "Workload author",
+            "Workload operator",
+            "Data collaborators"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+      "frozen_mapping": "Section 6.4 CEL policy paths and INTEL_TDX literal",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "9b16dc2bc76941adde614b6e2ad4fbd40cd792c61ae50c3d5434fb0518e1b676",
+          "evidence_commitment_sha256": "40e925db2461b22580dde81821a5e622d59afbc1be5aaa671e810d3935b85a4c",
+          "evidence_contexts": [
+            "esult. Example The following code verifies that a stable version of the Confidential Space image is being used: \"STABLE\" in assertion.submods.confidential_space.support_attributes assertion.swname Enumeration Verifies the software running on the attesting entity. The value is always CONFIDENTIAL_SPACE . Example assertion.swname == \"CONFIDENTIAL_SPACE\" assertion.swversion Ar",
+            "butes assertion.swname Enumeration Verifies the software running on the attesting entity. The value is always CONFIDENTIAL_SPACE . Example assertion.swname == \"CONFIDENTIAL_SPACE\" assertion.swversion Array of strings Verifies the software version of the Confidential Space image. We recommend using assertion.submods.confidential_space.support_attributes instead to target the la",
+            "he following table. Policies can validate assertions made by the Confidential Space image, the workload container, and the VM instance. Image assertions Assertion Type Description assertion.dbgstat Interacts with: Workload operator : The --image-family value. Enumeration Verifies that the Confidential Space image is the debug or production version. The valid values are the f",
+            " stops. The valid values are the following: Never (default) Always OnFailure Example assertion.submods.container.restart_policy == \"Never\" VM assertions Assertion Type Description assertion.google_service_accounts Interacts with: Workload operator : The tee-impersonate-service-accounts metadata variable, and the --service-account value. Array of strings Verifies that a specified service acc",
+            "ted using tee-impersonate-service-accounts in the VM metadata. Example workload - service - account @ my - project . iam.gserviceaccount.com in assertion . google_service_accounts assertion.hwmodel String Verifies the underlying Confidential Computing technology. The supported platforms are as follows: GCP_AMD_SEV INTEL_TDX Example assertion.hwmodel == \"GCP_AMD_SEV\" assertio",
+            "ed: assertion.dbgstat == \"enable\" The following code verifies that the production version of the Confidential Space image is being used: assertion.dbgstat == \"disabled-since-boot\" assertion.submods.confidential_space.support_attributes Array of strings Verifies the security version of the production Confidential Space image that's running on the Confidential VM instance, using its support attributes. Debug Confi",
+            "nitoring_memory_allow launch policy. Workload operator : The tee-monitoring-memory-enable metadata variable. Boolean Verifies the monitoring state on the attesting entity. Example assertion.submods.confidential_space.monitoring_enabled.memory == true assertion.submods.gce.instance_id String Verifies the VM instance ID. Example assertion.submods.gce.instance_id == \"0000000000000000000\" assertion.submods.gce.instance_nam",
+            "nfidential_space.support_attributes instead to target the latest version of an image. Example int(assertion.swversion[0]) == 230103 Container assertions Assertion Type Description assertion.submods.container.cmd_override Interacts with: Workload author : The allow_cmd_override launch policy. Workload operator : The tee-cmd metadata variable. Array of strings Verifies the CMD commands and parameter",
+            "ion.submods.container.cmd_override) == 0 The following code verifies that program is the only content in the CMD overrides: assertion.submods.container.cmd_override == ['program'] assertion.submods.container.env Interacts with: Workload author : The allow_env_override launch policy. Workload operator : The tee-env- ENVIRONMENT_VARIABLE_NAME metadata variable. JSON object Verifies that env",
+            "onment variable example-env-1 is set to value-1 , and example-env-2 is set to value-2 . assertion.submods.container.env == {\"example-env-1\": \"value-1\", \"example-env-2\": \"value-2\"} assertion.submods.container.env_override Interacts with: Workload author : The allow_env_override launch policy. Workload operator : The tee-env- ENVIRONMENT_VARIABLE_NAME metadata variable. String Verifies if the worklo",
+            "iner.env_override.example) The following code verifies that the workload operator hasn't overwritten any environment variables: size(assertion.submods.container.env_override) == 0 assertion.submods.container.image_digest String Verifies the image digest of the workload container. Specifying this condition lets multiple parties agree on an authorized workload that is allowed to access their data. E",
+            "orized workload that is allowed to access their data. Example assertion.submods.container.image_digest == \"sha256:837ccb607e312b170fac7383d7ccfd61fa5072793f19a25e75fbacb56539b86b\" assertion.submods.container.image_id String Verifies the image ID of the workload container. Example assertion.submods.container.image_id == \"sha256:652a44b0e911271ba07cf2915cd700fdfa50abd62a98f87a57fdebc59843d93f\" a",
+            "d String Verifies the image ID of the workload container. Example assertion.submods.container.image_id == \"sha256:652a44b0e911271ba07cf2915cd700fdfa50abd62a98f87a57fdebc59843d93f\" assertion.submods.container.image_reference Interacts with: Workload operator : The tee-image-reference metadata variable. String Verifies the location of the workload container running on top of the Confidential Space imag",
+            " workload container running on top of the Confidential Space image. Example assertion.submods.container.image_reference == \"us-docker.pkg.dev/PROJECT_ID/WORKLOAD_CONTAINER:latest\" assertion.submods.container.image_signatures Interacts with: Workload operator : The tee-signed-image-repos metadata variable. JSON object Verifies that the image has a certain signature or is signed by a public key and sign",
+            "le ['ECDSA_P256_SHA256: PUBLIC_KEY_FINGERPRINT '].exists(fingerprint, fingerprint in assertion.submods.container.image_signatures.map(sig, sig.signature_algorithm+':'+sig.key_id)) assertion.submods.container.restart_policy Interacts with: Workload operator : The tee-restart-policy metadata variable. Enumeration Verifies the restart policy of the container launcher for when the workload stops. The va",
+            "ring-memory-enable metadata variable. Boolean Verifies the monitoring state on the attesting entity. Example assertion.submods.confidential_space.monitoring_enabled.memory == true assertion.submods.gce.instance_id String Verifies the VM instance ID. Example assertion.submods.gce.instance_id == \"0000000000000000000\" assertion.submods.gce.instance_name String Verifies the name of the VM insta",
+            "al_space.monitoring_enabled.memory == true assertion.submods.gce.instance_id String Verifies the VM instance ID. Example assertion.submods.gce.instance_id == \"0000000000000000000\" assertion.submods.gce.instance_name String Verifies the name of the VM instance. Example assertion . submods . gce . instance_name == \"workload-vm\" assertion.submods.gce.project_id String Verifies that the VM is run",
+            "nce_id == \"0000000000000000000\" assertion.submods.gce.instance_name String Verifies the name of the VM instance. Example assertion . submods . gce . instance_name == \"workload-vm\" assertion.submods.gce.project_id String Verifies that the VM is running a Google Cloud project with the specified project ID. Example assertion.submods.gce.project_id == \"project-id\" assertion.submods.gce.project",
+            "ertion.submods.gce.project_id String Verifies that the VM is running a Google Cloud project with the specified project ID. Example assertion.submods.gce.project_id == \"project-id\" assertion.submods.gce.project_number String Verifies that the VM is running in a Google Cloud project with the specified project number. Example assertion.submods.gce.project_number == \"00000000000\" assertion.submods",
+            "ce.project_number String Verifies that the VM is running in a Google Cloud project with the specified project number. Example assertion.submods.gce.project_number == \"00000000000\" assertion.submods.gce.zone Interacts with: Workload operator : The --zone value. String Verifies that the VM is running in the specified zone. Example assertion.submods.gce.zone == \"us-central1-a\" assertion",
+            ".gce.zone Interacts with: Workload operator : The --zone value. String Verifies that the VM is running in the specified zone. Example assertion.submods.gce.zone == \"us-central1-a\" assertion.submods.nvidia_gpu.cc_feature Interacts with: Workload operator : The tee-install-gpu-driver metadata variable. Enumeration Verifies the Confidential Computing features supported by an NVIDIA GPU. Only single ",
+            "ays SPT . For more information about NVIDIA Confidential Computing support, see NVIDIA Trusted Computing Solutions (PDF) . Example assertion.submods.nvidia_gpu.cc_feature == \"SPT\" assertion.submods.nvidia_gpu.cc_mode Interacts with: Workload operator : The tee-install-gpu-driver metadata variable. Enumeration Verifies the status of NVIDIA's Confidential Computing driver. The valid values are t",
+            " the GPU is in a partial confidential computing mode that matches the workflows of ON mode, but disables security protections. Example assertion.submods.nvidia_gpu.cc_mode == \"ON\" assertion.submods.nvidia_gpu.gpus Interacts with: Workload operator : The tee-install-gpu-driver metadata variable. Array of objects Verifies claims for each attested NVIDIA GPU. Confidential Space only supports a",
+            ".com in assertion . google_service_accounts assertion.hwmodel String Verifies the underlying Confidential Computing technology. The supported platforms are as follows: GCP_AMD_SEV INTEL_TDX Example assertion.hwmodel == \"GCP_AMD_SEV\" assertion.submods.confidential_space.monitoring_enabled Interacts with: Workload author : The monitoring_memory_allow launch policy. Wor"
+          ],
+          "evidence_needles": [
+            "assertion.swname",
+            "assertion.swversion",
+            "assertion.dbgstat",
+            "assertion.google_service_accounts",
+            "assertion.hwmodel",
+            "assertion.submods.confidential_space.support_attributes",
+            "assertion.submods.confidential_space.monitoring_enabled.memory",
+            "assertion.submods.container.cmd_override",
+            "assertion.submods.container.env",
+            "assertion.submods.container.env_override",
+            "assertion.submods.container.image_digest",
+            "assertion.submods.container.image_id",
+            "assertion.submods.container.image_reference",
+            "assertion.submods.container.image_signatures",
+            "assertion.submods.container.restart_policy",
+            "assertion.submods.gce.instance_id",
+            "assertion.submods.gce.instance_name",
+            "assertion.submods.gce.project_id",
+            "assertion.submods.gce.project_number",
+            "assertion.submods.gce.zone",
+            "assertion.submods.nvidia_gpu.cc_feature",
+            "assertion.submods.nvidia_gpu.cc_mode",
+            "assertion.submods.nvidia_gpu.gpus",
+            "INTEL_TDX"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+      "frozen_mapping": "Sections 6.1-6.3 raw JWT header, payload, TDX, submods, and signature structure",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "ba98405bd335a3f019f70a001c6566e4ddba200edcbada51aa242641bdb3ed66",
+          "evidence_commitment_sha256": "666b429a163312cc418f57396d12cae77a7fbaedc1689a7f3149d0a450bf5afc",
+          "evidence_contexts": [
+            "the top-level claims in the attestation token. These items are compliant with the OpenID Connect 1.0 specification . Read more about attestation tokens Key Type Description Header x5c String Only present in PKI tokens. The certificate chain to validate PKI tokens against. You can download the root certificate from the PKI token validation endpoint . JSON data p",
+            " Only present in PKI tokens. The certificate chain to validate PKI tokens against. You can download the root certificate from the PKI token validation endpoint . JSON data payload attester_tcb Array of strings One or more TCB (trusted computing base) components. This claim is to specify the source of attestation evidence. For the hwmodel claim \"GCP_INTEL_TDX\" on Confide",
+            "th is 512 bytes. dbgstat String The debug status for the Confidential Space image. In production images, the value is disabled-since-boot . In debug images, the value is enabled . eat_nonce String, or array of strings One or more nonces for the attestation token. The values are echoed from the token options sent in the custom token request. Each nonce must be between",
+            "ch the token must not be accepted for processing. The value is a JSON number that represents the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the expiry time. google_service_accounts Array of strings The validated service accounts that are running the Confidential Space workload. hwmodel Enumeration The unique identifier for the hardware token. Must be one of ",
+            "data payload attester_tcb Array of strings One or more TCB (trusted computing base) components. This claim is to specify the source of attestation evidence. For the hwmodel claim \"GCP_INTEL_TDX\" on Confidential Space, the value is set to [\"INTEL\"] , indicating that the attestation root of trust originates from Intel-specific hardware technology. aud String The audience. ",
+            " Engine claims . gce.zone Array of strings See Compute Engine claims . Intel TDX claims The following table describes the tdx claims in the attestation token. Key Type Description gcp_attester_tcb_status String A string value that represents the TCB level status of the Google Cloud platform being evaluated. For more information about tcbStatus , see Intel's Provisioning Certificat",
+            "ntel's reference values when Google began its firmware rollout. However, it doesn't guarantee that the Google fleet remains up to date with Intel's real-time TCB reference values. gcp_attester_tcb_date String The TCB date for the attesting Google Cloud platform. The time value is UTC in ISO 8601 format (YYYY-MM-DDThh:mm:ssZ) . Submods claims The following table describes the sub",
+            " claims, in the principal_tags object in the attestation token. To learn about the https://aws.amazon.com/tags claim structure, see AWS principal tag claims . Key Type Description confidential_space.support_attributes Array of strings Derivative claim of support attributes. This is a concatenated string representation of the original claims. For example, if the original claims are Latest , Stab",
+            "e.support_attributes Array of strings The array can contain the values EXPERIMENTAL , USABLE , STABLE , and LATEST . For more information, see Confidential Space image lifecycle . confidential_space.monitoring_enabled Object Shows what kind of system monitoring is enabled. The value can be {\"memory\":false} or {\"memory\":true} . container Object See Workload container claims . gce Object See Comp",
+            "Compute Engine claims . nvidia_gpu Object See NVIDIA GPU claims . Compute Engine claims The following table describes the gce claims in the attestation token. Key Type Description instance_id String The VM instance ID. instance_name String The VM instance name. project_id String The project ID for the project that the VM is running in. project_number String The project",
+            "ct See NVIDIA GPU claims . Compute Engine claims The following table describes the gce claims in the attestation token. Key Type Description instance_id String The VM instance ID. instance_name String The VM instance name. project_id String The project ID for the project that the VM is running in. project_number String The project number for the project that the VM is ru",
+            "ou must remove any references to container.image_digest . For more information about container image signature claims, see AWS policies with container image signature claims . gce.project_id Array of strings See Compute Engine claims . gce.zone Array of strings See Compute Engine claims . Intel TDX claims The following table describes the tdx claims in the attestation",
+            " Key Type Description instance_id String The VM instance ID. instance_name String The VM instance name. project_id String The project ID for the project that the VM is running in. project_number String The project number for the project that the VM is running in. zone String The Compute Engine zone where the Confidential VM instance is running. NVIDIA GPU claims The follo",
+            "ys true . sub String The subject, which is the fully qualified virtual machine ID for the Confidential VM. For example, https://www.googleapis.com/compute/v1/projects/ PROJECT_ID /zones/ ZONE /instances/ INSTANCE_ID . This format is known as the instance's selfLink . submods Object An object containing various claims. See Submods claims . tdx Array of objects An",
+            "iner claims The following table describes the container claims in the attestation token. For more information about these claims, see Attestation assertions . Key Type Description args Array of strings The full argv the container is invoked with. This claim includes the container's entrypoint path and any additional command-line arguments. cmd_override Array of ",
+            " Type Description args Array of strings The full argv the container is invoked with. This claim includes the container's entrypoint path and any additional command-line arguments. cmd_override Array of strings The CMD commands and parameters used in the workload image. env Object The environment variables and their values that have been explicitly passed to the containe",
+            "ray of strings The CMD commands and parameters used in the workload image. env Object The environment variables and their values that have been explicitly passed to the container. env_override Object The overwritten environment variables in the container. image_digest String The image digest of the workload container. image_id String The image ID of the workload contain",
+            "original claims are Latest , Stable , and Usable , this attribute contains LATEST=STABLE=USABLE . If the original claim is only Usable , this attribute contains USABLE . container.image_digest Array of strings See Workload container claims . Container image signatures and digests don't appear together in a single token. If you're using container.image_digest in your AWS",
+            "een explicitly passed to the container. env_override Object The overwritten environment variables in the container. image_digest String The image digest of the workload container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See C",
+            "ect The overwritten environment variables in the container. image_digest String The image digest of the workload container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims . restart_policy Enumeration Th",
+            "est of the workload container. image_id String The image ID of the workload container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims . restart_policy Enumeration The restart policy of the container launcher when the workload stops. Valid values are Always , ",
+            "signatures and digests don't appear together in a single token. If you're using container.image_digest in your AWS policies, you must remove any references to container.signatures.key_ids . container.signatures.key_id Array of strings A concatenated list of container image signature key IDs. This field represents multiple signature key IDs joined into a single str",
+            "EST=STABLE=USABLE . If the original claim is only Usable , this attribute contains USABLE . container.image_digest Array of strings See Workload container claims . Container image signatures and digests don't appear together in a single token. If you're using container.image_digest in your AWS policies, you must remove any references to container.signatures.key_ids .",
+            "your public key in PEM format. signature String The base64-encoded signature for a payload that's associated with the signed container and that follows the Simple Signing format . signature_algorithm Enumeration The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256",
+            " that's associated with the signed container and that follows the Simple Signing format . signature_algorithm Enumeration The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256 digest) ECDSA_P256_SHA256 (ECDSA on the P-256 Curve with a SHA-256 digest) What's next ",
+            " follows the Simple Signing format . signature_algorithm Enumeration The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256 digest) ECDSA_P256_SHA256 (ECDSA on the P-256 Curve with a SHA-256 digest) What's next See the IETF draft for The Entity Attestation Token (EAT) ",
+            "ion The algorithm used to sign the key. One of the following: RSASSA_PSS_SHA256 (RSASSA-PSS with a SHA-256 digest) RSASSA_PKCS1V15_SHA256 (RSASSA-PKCS1 v1_5 with a SHA-256 digest) ECDSA_P256_SHA256 (ECDSA on the P-256 Curve with a SHA-256 digest) What's next See the IETF draft for The Entity Attestation Token (EAT) for more information on attestation claims. See the OpenID C",
+            "ad container. image_reference String The location of the workload container running in Confidential Space. image_signatures Array of objects See Container image signature claims . restart_policy Enumeration The restart policy of the container launcher when the workload stops. Valid values are Always , OnFailure , and Never . Default is Never . Container image signature cl"
+          ],
+          "evidence_needles": [
+            "x5c",
+            "attester_tcb",
+            "eat_nonce",
+            "google_service_accounts",
+            "GCP_INTEL_TDX",
+            "gcp_attester_tcb_status",
+            "gcp_attester_tcb_date",
+            "confidential_space.support_attributes",
+            "confidential_space.monitoring_enabled",
+            "instance_id",
+            "instance_name",
+            "project_id",
+            "project_number",
+            "zone",
+            "args",
+            "cmd_override",
+            "env_override",
+            "image_digest",
+            "image_id",
+            "image_reference",
+            "image_signatures",
+            "key_id",
+            "signature",
+            "signature_algorithm",
+            "RSASSA_PSS_SHA256",
+            "RSASSA_PKCS1V15_SHA256",
+            "ECDSA_P256_SHA256",
+            "restart_policy"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+      "frozen_mapping": "Section 6.5 OIDC and PKI validation endpoint vocabulary",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "03adbf1dbfb0406a0c79715f60d501a832ce5570d44c3009a9a78760f8b1c4cd",
+          "evidence_commitment_sha256": "6acaff1c76f0115c198ebae0e035af6607a2a6b1553bdf353ff40f594d2ef8ac",
+          "evidence_contexts": [
+            "al.trustauthority.intel.com/.well-known/openid-configuration . Key Description claims_supported The keys in the attestation token. For more details, see Attestation token claims . id_token_signing_alg_values_supported The signing algorithms ( alg values) supported by the token. Confidential Space supports the RS256 algorithm. issuer The HTTPS scheme that Confidential Space uses as its issuer id",
+            " The following table describes the high-level fields returned at the PKI token validation endpoint, https://confidentialcomputing.googleapis.com/.well-known/attestation-pki-root . root_ca_uri The path to the root certificate that is used to verify a PKI token type signature. Send feedback Except as otherwise noted, the content of this page is licensed under the Creativ"
+          ],
+          "evidence_needles": [
+            "id_token_signing_alg_values_supported",
+            "root_ca_uri"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+      "frozen_mapping": "Confidential Space TDX deployment, maintenance termination, service-account, metadata, and restart controls are documented",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "9d2dce9159ef06eaee49716063db0f1ab4ccb166c3395e7690bab6d6018f30e4",
+          "evidence_commitment_sha256": "373a836ff42c1daa5631d796ca8df379f336808ab62bf00d73b996f4c55b2b3c",
+          "evidence_contexts": [
+            " Here's an example that creates a Confidential VM, and runs a Docker container called WORKLOAD_CONTAINER_NAME : CPU-based workloads gcloud compute instances create INSTANCE_NAME \\ --confidential-compute-type = CONFIDENTIAL_COMPUTING_TECHNOLOGY \\ --machine-type = MACHINE_TYPE_NAME \\ --maintenance-policy = MAINTENANCE_POLICY \\ --shielded-secure-boot \\ --image-project = confidential-space-images \\ --image-family = IMAGE_FA",
+            "R_NAME : CPU-based workloads gcloud compute instances create INSTANCE_NAME \\ --confidential-compute-type = CONFIDENTIAL_COMPUTING_TECHNOLOGY \\ --machine-type = MACHINE_TYPE_NAME \\ --maintenance-policy = MAINTENANCE_POLICY \\ --shielded-secure-boot \\ --image-project = confidential-space-images \\ --image-family = IMAGE_FAMILY \\ --metadata = \"^~^tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PR",
+            "ome flags have required values that don't change, you still need to make the following choices: Whether to base the VM instance on a production or debug Confidential Space image . Whether to use AMD SEV, Intel TDX, or Intel TDX with NVIDIA Confidential Computing to help keep your workload data private. What VM metadata variables need to be passed, which include details like which workload container image to run, which attestation service ",
+            " chosen, either AMD SEV or Intel TDX. See Machine types, CPUs, and zones . MAINTENANCE_POLICY : For N2D machine types that use SEV, set this to MIGRATE for live migration support. For all other machine types, set this value to TERMINATE , as they don't support live migration . IMAGE_FAMILY_NAME : The family for the Confidential Space images . Choose one of the following: confidential-space for production workloads confidential-space-debug for debug work",
+            "d tee-restart-policy Interacts with: Data collaborators : The container.restart_policy assertion. Enumeration The restart policy of the container launcher when the workload stops. The valid values are: Never (default) Always OnFailure This variable is only supported by the production Confidential Space image. Example tee-restart-policy=OnFailure tee-signed-image-repos Interacts with: Data collaborators : The co"
+          ],
+          "evidence_needles": [
+            "--confidential-compute-type = CONFIDENTIAL_COMPUTING_TECHNOLOGY",
+            "--maintenance-policy = MAINTENANCE_POLICY",
+            "Whether to use AMD SEV, Intel TDX, or Intel TDX with NVIDIA Confidential Computing",
+            "For all other machine types, set this value to TERMINATE , as they don't support live migration .",
+            "The valid values are: Never (default) Always OnFailure"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+      "frozen_mapping": "Section 7 metadata keys and provider domains",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "4b74ec5d42887351cb068238ba7f7103fa4fc6e6e29b18c125f9314930c01a73",
+          "evidence_commitment_sha256": "bd8f564ea225f2504f2e1de9bd3b3474f14c7ab4bb85bf1b7b57618ac94eee7c",
+          "evidence_contexts": [
+            "et the delimiter by prefixing the --metadata value with ^~^ . This sets the delimiter to ~ , as , is used in variable values. For example: metadata=\"^~^tee-restart-policy=Always ~ tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest\" The following table details the metadata variables you can set for your workload",
+            "his points to the location of the workload container. Example tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest ita-api-key String Only required if you're using Intel Trust Authority as your attestation service. Set the value to your Intel Trust Authority API key. See Intel's documentation for how to c",
+            "ity API key. See Intel's documentation for how to create an Intel Trust Authority API key. Intel Trust Authority only supports Intel TDX VM instances. Example ita-api-key= API_KEY ita-region String Only required if you're using Intel Trust Authority as your attestation service. Set the value to the region that you want Intel Trust Authority to run in. The valid region",
+            "S: https://api.trustauthority.intel.com Europe: https://api.eu.trustauthority.intel.com Intel Trust Authority only supports Intel TDX VM instances. Example ita-region= REGION_NAME tee-added-capabilities Interacts with: Workload author : The allow_capabilities launch policy. JSON string array Adds additional Linux capabilities to the workload container. Example tee-added-capabilit",
+            "apabilities launch policy. JSON string array Adds additional Linux capabilities to the workload container. Example tee-added-capabilities=\"[\\\"CAP_SYS_ADMIN\\\", \\\"CAP_SYS_CHROOT\\\"]\" tee-cgroup-ns Interacts with: Workload author : The allow_cgroups launch policy. Boolean Defaults to false . When set to true , enables a namespaced cgroup mount at /sys/fs/cgroup . Example tee",
+            " Workload author : The allow_cgroups launch policy. Boolean Defaults to false . When set to true , enables a namespaced cgroup mount at /sys/fs/cgroup . Example tee-cgroup-ns=true tee-cmd Interacts with: Workload author : The allow_cmd_override launch policy. Data collaborators : The container.cmd_override assertion. JSON string array Overrides the CMD instructions",
+            " container.cmd_override assertion. JSON string array Overrides the CMD instructions specified in the workload container's Dockerfile . Example tee-cmd=\"[\\\"params1\\\", \\\"params2\\\"]\" tee-container-log-redirect Interacts with: Workload author : The log_redirect launch policy. Enumeration Outputs STDOUT and STDERR from the workload container to Cloud Logging or serial console, using the c",
+            "Cloud Logging only. serial : outputs to the serial console only. A high log volume in the serial console might impact workload performance. Example tee-container-log-redirect=true tee-dev-shm-size-kb Integer Sets the size in kB of the /dev/shm shared memory mount. Example tee-dev-shm-size-kb=65536 tee-env- ENVIRONMENT_VARIABLE_NAME Interacts with: Data collaborators : The cont",
+            "erformance. Example tee-container-log-redirect=true tee-dev-shm-size-kb Integer Sets the size in kB of the /dev/shm shared memory mount. Example tee-dev-shm-size-kb=65536 tee-env- ENVIRONMENT_VARIABLE_NAME Interacts with: Data collaborators : The container.env and container.env_override assertions. String Sets environment variables in the workload container. The workload author must",
+            "must also add the environment variable names to the allow_env_override launch policy, or they won't be set. Example tee-env-example-env-1='value-1'~tee-env-example-env-2='value-2' tee-impersonate-service-accounts Interacts with: Data collaborators : The google_service_accounts assertion. String A list of service accounts that can be impersonated by the workload operator. The workload opera",
+            "ervice - accounts = SERVICE_ACCOUNT_NAME_1 @ WORKLOAD_OPERATOR_PROJECT_ID .iam.gserviceaccount.com, SERVICE_ACCOUNT_NAME_2 @ WORKLOAD_OPERATOR_PROJECT_ID . iam.gserviceaccount.com tee-install-gpu-driver Interacts with: Data collaborators : The nvidia_gpu.cc_feature , nvidia_gpu.cc_mode , and nvidia_gpu.gpus assertions. Boolean Whether to install NVIDIA's Confidential Computing GP",
+            "ns. Boolean Whether to install NVIDIA's Confidential Computing GPU driver. Requires a machine type that supports NVIDIA Confidential Computing. Example tee-install-gpu-driver=true tee-monitoring-memory-enable Interacts with: Data collaborators : The instance_memory_monitoring_enabled assertion. Workload author : The monitoring_memory_allow launch policy. Boolean Defaults to false . Whe",
+            "etrics collected by the Confidential VM are of the guest/memory/bytes_used type, and can be viewed in Cloud Logging or Metrics Explorer . Example tee-monitoring-memory-enable=true tee-mount Interacts with: Workload author : The allow_mount_destinations launch policy. String A list of semicolon-separated mount definitions. A mount definition consists of a comma-separa",
+            " multiple variables, first set the delimiter by prefixing the --metadata value with ^~^ . This sets the delimiter to ~ , as , is used in variable values. For example: metadata=\"^~^tee-restart-policy=Always ~ tee-image-reference=us-docker.pkg.dev/ WORKLOAD_AUTHOR_PROJECT_ID / REPOSITORY_NAME / WORKLOAD_CONTAINER_NAME :latest\" The following table details the metadata variables ",
+            "load stops. The valid values are: Never (default) Always OnFailure This variable is only supported by the production Confidential Space image. Example tee-restart-policy=OnFailure tee-signed-image-repos Interacts with: Data collaborators : The container.image_signatures assertion. String A list of comma-separated container repositories that store the signatures that are generated"
+          ],
+          "evidence_needles": [
+            "tee-image-reference",
+            "ita-api-key",
+            "ita-region",
+            "tee-added-capabilities",
+            "tee-cgroup-ns",
+            "tee-cmd",
+            "tee-container-log-redirect",
+            "tee-dev-shm-size-kb",
+            "ENVIRONMENT_VARIABLE_NAME",
+            "tee-impersonate-service-accounts",
+            "tee-install-gpu-driver",
+            "tee-monitoring-memory-enable",
+            "tee-mount",
+            "tee-restart-policy",
+            "tee-signed-image-repos"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_TEE_ENV_SUFFIX_GRAMMAR",
+      "frozen_mapping": "provider does not publish a complete environment-key suffix grammar; dynamic keys are default-deny",
+      "negative_disclosure_review": "NO_COMPLETE_SUFFIX_GRAMMAR_PUBLISHED_DYNAMIC_KEYS_DEFAULT_DENY",
+      "required_for_ready": false,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "4b74ec5d42887351cb068238ba7f7103fa4fc6e6e29b18c125f9314930c01a73",
+          "evidence_commitment_sha256": "53fdb07ed392854984abf30078525b2f18b9e078c8a22032524caf27a93ee17b",
+          "evidence_contexts": [
+            "erformance. Example tee-container-log-redirect=true tee-dev-shm-size-kb Integer Sets the size in kB of the /dev/shm shared memory mount. Example tee-dev-shm-size-kb=65536 tee-env- ENVIRONMENT_VARIABLE_NAME Interacts with: Data collaborators : The container.env and container.env_override assertions. String Sets environment variables in the workload container. The workload author must",
+            "onment variables in the workload container. The workload author must also add the environment variable names to the allow_env_override launch policy, or they won't be set. Example tee-env-example-env-1='value-1'~tee-env-example-env-2='value-2' tee-impersonate-service-accounts Interacts with: Data collaborators : The google_service_accounts assertion. String A list of service accounts that"
+          ],
+          "evidence_needles": [
+            "ENVIRONMENT_VARIABLE_NAME",
+            "tee-env-example-env-1='value-1'"
+          ],
+          "observation": "FIELD_UNAVAILABLE_RECONFIRMED",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+      "frozen_mapping": "Section 8 launch-policy labels, types, defaults, and domains",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "e012b4e62735ba84508783dd0887c85dbee1395488125accd57c9d46f4f55124",
+          "evidence_commitment_sha256": "3f31d0bd76ff85736531ab65d455611095033250d220ae3ecd0d2f8d589260ff",
+          "evidence_contexts": [
+            "zel BUILD file: container_image( ... labels={\"tee.launch_policy.allow_cmd_override\":\"true\"} ... ) The available launch policies are in the following table: Policy Type Description tee.launch_policy.allow_capabilities Interacts with: Workload operator : The tee-added-capabilities metadata variable. Boolean (default is false ) Determines if the workload operator can add additional Linux capabili",
+            "or : The tee-added-capabilities metadata variable. Boolean (default is false ) Determines if the workload operator can add additional Linux capabilities to the workload container. tee.launch_policy.allow_cgroups Interacts with: Workload operator : The tee-cgroup-ns metadata variable. Boolean (default is false ) Determines if workload container is allowed to include a namespaced cgroup mou",
+            " workload operators to restrict malicious actions. A workload author can set policies with a label as part of building their container image. For example, in a Dockerfile : LABEL \"tee.launch_policy.allow_cmd_override\"=\"true\" In a Bazel BUILD file: container_image( ... labels={\"tee.launch_policy.allow_cmd_override\":\"true\"} ... ) The available launch policies are in the following table: Policy T",
+            "rtion. Boolean (default is false ) Determines if the CMD specified in the workload container's Dockerfile can be overridden by a workload operator with the tee-cmd metadata value. tee.launch_policy.allow_env_override Interacts with: Workload operator : The tee-env- ENVIRONMENT_VARIABLE_NAME metadata variable. Data collaborators : The container.env and container.env_override assertions. Comma-s",
+            " string A comma-separated string of permitted environment variable names that are allowed to be set by a workload operator with tee-env- ENVIRONMENT_VARIABLE_NAME metadata values. tee.launch_policy.allow_mount_destinations Interacts with: Workload operator : The tee-mount metadata variable. Colon-separated string A colon-separated string of permitted mount directories the workload operator is allowe",
+            ". Colon-separated string A colon-separated string of permitted mount directories the workload operator is allowed to mount to using tee-mount . For example: /run/tmp:/var/tmp:/tmp tee.launch_policy.log_redirect Interacts with: Workload operator : The tee-container-log-redirect metadata variable. Defined string Determines how logging works if tee-container-log-redirect is set to true by a",
+            "nly (default): Only allow stdout and stderr redirects when using a debug image. always : Always allow stdout and stderr redirects. never : Never allow stdout and stderr redirects. tee.launch_policy.monitoring_memory_allow Interacts with: Data collaborators : The monitoring_enabled.memory assertion. Workload operator : The tee-monitoring-memory-enable metadata variable. Defined string Determines how"
+          ],
+          "evidence_needles": [
+            "tee.launch_policy.allow_capabilities",
+            "tee.launch_policy.allow_cgroups",
+            "tee.launch_policy.allow_cmd_override",
+            "tee.launch_policy.allow_env_override",
+            "tee.launch_policy.allow_mount_destinations",
+            "tee.launch_policy.log_redirect",
+            "tee.launch_policy.monitoring_memory_allow"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET",
+      "frozen_mapping": "signed/reproducible image, disk, memory, ingress, logging, mount, and swap controls are documented",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "ed136728d80bb1869cc593a26c7af89ed4159c8c70e928579e1cf247e562f842",
+          "evidence_commitment_sha256": "cf06ff94bbed8555be63da6897c469a5099f7daba8df0f8c1d83c20f8b14d804",
+          "evidence_contexts": [
+            " VM. You can use tee-dev-shm-size to increase the size of the /dev/shm shared memory mount for the workload. The /dev/shm size is specified in KB. You can use tee-mount to specify tmpfs mounts in the running container using semicolon-separated configurations. The type and source are always tmpfs . The destination is the mountpoint, which interacts with the tee.la",
+            "ly 1% memory overhead for each disk byte. For example, a 100 GB disk requires 1 GB of memory and a 10 TB disk requires 100 GB of memory. Make sure to keep within VM memory limits. Swap memory is disabled on Confidential Space VMs, which means excessive memory use can crash the workload. Verify that your machine selection supports your workload memory usage in addition to the disk integrity overhead. In-mem",
+            "capabilities Disk and memory limits Resources not managed by Google Cloud IAM Inbound ports Launch policies Multiple workload runs Namespaced cgroups Reproducible container images Signed container images Additional Linux capabilities The Confidential Space workload runs in a Linux container using containerd. This container runs using default Linux capabilities . In order to add ca"
+          ],
+          "evidence_needles": [
+            "tmpfs",
+            "Swap memory is disabled on Confidential Space VMs",
+            "Signed container images"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_COMPUTE_INSTANCE_FIELD_SET",
+      "frozen_mapping": "compute-field-projection.json classifies the complete Instance schema from Compute v1 revision 20260709",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+        "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "ccf100e8494775bde57f1cb17ab24f1afa100f35e4d58de6b2c24435d4a20cf4",
+          "evidence_commitment_sha256": "8ebf44d9b56cad00bef5efa096dac2733ebb264e509e0757d7ecd232ea17f75a",
+          "evidence_contexts": [
+            " \"turboMode\" : string } , \"lastStartTimestamp\" : string , \"lastStopTimestamp\" : string , \"lastSuspendedTimestamp\" : string , \"satisfiesPzs\" : boolean , \"satisfiesPzi\" : boolean , \"resourceStatus\" : { \"effectiveInstanceMetadata\" : { \"vmDnsSettingMetadataValue\" : string , \"enableOsloginMetadataValue\" : boolean , \"enableOsconfigMetadataValue\" : boolean , \"enableOsInventoryMe",
+            "boolean } , \"sourceMachineImageEncryptionKey\" : { \"rawKey\" : string , \"rsaEncryptedKey\" : string , \"kmsKeyName\" : string , \"sha256\" : string , \"kmsKeyServiceAccount\" : string } , \"confidentialInstanceConfig\" : { \"enableConfidentialCompute\" : boolean , \"confidentialInstanceType\" : enum } , \"fingerprint\" : string , \"privateIpv6GoogleAccess\" : enum , \"advancedMachineFeatures\" : { \"enabl"
+          ],
+          "evidence_needles": [
+            "resourceStatus",
+            "confidentialInstanceConfig"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+        },
+        {
+          "current_source_sha256": "ed609c29eb3acad756343451ab4ef673b45f7848d32e2be6fa87ba0e615e533d",
+          "evidence_commitment_sha256": "d700ee9598760a6e386ba502c70114bb2385dfcf6582e55c6dd4a7630eb4610b",
+          "evidence_contexts": [
+            "up of densely deployed reservation blocks.\", \"\" ], \"description\": \"Specifies the deployment strategy for this reservation.\", \"enum\": [ \"DENSE\", \"DEPLOYMENT_TYPE_UNSPECIFIED\" ] }, \"resourceStatus\": { \"description\": \"Output only. [Output Only] Status information for Reservation resource.\", \"$ref\": \"AllocationResourceStatus\", \"readOnly\": true }, \"earlyAccessMaintenance\": { \"",
+            " }, \"sourceMachineImageEncryptionKey\": { \"$ref\": \"CustomerEncryptionKey\", \"description\": \"Source machine image encryption key when creating an instance from a\\nmachine image.\" }, \"confidentialInstanceConfig\": { \"$ref\": \"ConfidentialInstanceConfig\" }, \"shieldedInstanceIntegrityPolicy\": { \"$ref\": \"ShieldedInstanceIntegrityPolicy\" }, \"keyRevocationActionType\": { \"description\": \"KeyRevoc"
+          ],
+          "evidence_needles": [
+            "resourceStatus",
+            "confidentialInstanceConfig"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_SOLE_TENANT_SERVER_ID",
+      "frozen_mapping": "physical-server identity is documented for sole-tenant fallback only",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_SOLE_TENANCY_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "483825c6dbb24bb9763b71d9d5f681d72c3c83338d40ff44121c5505910e7218",
+          "evidence_commitment_sha256": "d2509d52f47fddf0e0caea854c6dfdbc6a02fe1c3c8b75051906838a9f38e1c4",
+          "evidence_contexts": [
+            "parent scheduling and block storage, but with an added layer of hardware isolation. To give you full control over the VMs on the physical server, each sole-tenant node maintains a one-to-one mapping to the physical server that is backing the node. Within a sole-tenant node, you can provision multiple VMs on machine types of various sizes, which lets you efficiently use the underlying resources of the dedicated host hardwar"
+          ],
+          "evidence_needles": [
+            "one-to-one mapping to the physical server that is backing the node"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+        }
+      ]
+    },
+    {
+      "claim_id": "GCP_HOST_EVENT_CONTROL_SET",
+      "frozen_mapping": "host maintenance migrate/terminate and automatic-restart behavior are documented",
+      "required_for_ready": true,
+      "revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_HOST_EVENTS_2026_07_24"
+      ],
+      "source_observations": [
+        {
+          "current_source_sha256": "9c3c48dd363fae93d63e589af77fb01caed4e3cccfa0f3718562aee60858ee31",
+          "evidence_commitment_sha256": "e0cb8cf9502c337bd73ca6f7e049cd0c39d185cb0eabf68ee2ae8e96c9e728be",
+          "evidence_contexts": [
+            "ons and to the System Events logs. You can review this event by viewing the Compute Engine operations for a specific zone. Live migration events have the following operation type: compute.instances.migrateOnHostMaintenance Terminate and restart If you don't want your instance to live migrate, or if your instance type doesn't support live migration, then you can instead choose to allow Google Cloud t",
+            "ifferent default wait times. These instance types restart on the same host server after instance termination. To configure automatic restart, set the host maintenance policy field automaticRestart to true . This setting does not apply if the instance is taken offline due to a zonal outage or through manual operation, such as calling sudo shutdown within the guest OS. When C"
+          ],
+          "evidence_needles": [
+            "compute.instances.migrateOnHostMaintenance",
+            "automaticRestart"
+          ],
+          "observation": "MATCHED_FROZEN_MAPPING",
+          "source_id": "GCP_HOST_EVENTS_2026_07_24"
+        }
+      ]
+    }
+  ],
+  "compute_projection_revalidation": {
+    "current_derived_projection": [
+      {
+        "json_type": "object",
+        "object_ref": "AdvancedMachineFeatures",
+        "path": "advancedMachineFeatures"
+      },
+      {
+        "json_type": "boolean",
+        "path": "advancedMachineFeatures.enableNestedVirtualization"
+      },
+      {
+        "json_type": "boolean",
+        "path": "advancedMachineFeatures.enableUefiNetworking"
+      },
+      {
+        "enum": [
+          "ARCHITECTURAL",
+          "ENHANCED",
+          "PERFORMANCE_MONITORING_UNIT_UNSPECIFIED",
+          "STANDARD"
+        ],
+        "json_type": "string",
+        "path": "advancedMachineFeatures.performanceMonitoringUnit"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "advancedMachineFeatures.threadsPerCore"
+      },
+      {
+        "json_type": "string",
+        "path": "advancedMachineFeatures.turboMode"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "advancedMachineFeatures.visibleCoreCount"
+      },
+      {
+        "json_type": "boolean",
+        "path": "canIpForward"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ConfidentialInstanceConfig",
+        "path": "confidentialInstanceConfig"
+      },
+      {
+        "enum": [
+          "CCA",
+          "CONFIDENTIAL_INSTANCE_TYPE_UNSPECIFIED",
+          "SEV",
+          "SEV_SNP",
+          "TDX"
+        ],
+        "json_type": "string",
+        "path": "confidentialInstanceConfig.confidentialInstanceType"
+      },
+      {
+        "json_type": "boolean",
+        "path": "confidentialInstanceConfig.enableConfidentialCompute"
+      },
+      {
+        "json_type": "string",
+        "path": "cpuPlatform",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "creationTimestamp",
+        "readOnly": true
+      },
+      {
+        "json_type": "boolean",
+        "path": "deletionProtection"
+      },
+      {
+        "json_type": "string",
+        "path": "description"
+      },
+      {
+        "item_ref": "AttachedDisk",
+        "json_type": "array",
+        "path": "disks[]"
+      },
+      {
+        "enum": [
+          "ARCHITECTURE_UNSPECIFIED",
+          "ARM64",
+          "X86_64"
+        ],
+        "json_type": "string",
+        "path": "disks[].architecture",
+        "readOnly": true
+      },
+      {
+        "json_type": "boolean",
+        "path": "disks[].autoDelete"
+      },
+      {
+        "json_type": "boolean",
+        "path": "disks[].boot"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].deviceName"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "CustomerEncryptionKey",
+        "path": "disks[].diskEncryptionKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].diskEncryptionKey.kmsKeyName"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].diskEncryptionKey.kmsKeyServiceAccount"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].diskEncryptionKey.rawKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].diskEncryptionKey.rsaEncryptedKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].diskEncryptionKey.sha256"
+      },
+      {
+        "format": "int64",
+        "json_type": "string",
+        "path": "disks[].diskSizeGb"
+      },
+      {
+        "json_type": "boolean",
+        "path": "disks[].forceAttach"
+      },
+      {
+        "item_ref": "GuestOsFeature",
+        "json_type": "array",
+        "path": "disks[].guestOsFeatures[]"
+      },
+      {
+        "enum": [
+          "BARE_METAL_LINUX_COMPATIBLE",
+          "CCA_CAPABLE",
+          "FEATURE_TYPE_UNSPECIFIED",
+          "GVNIC",
+          "IDPF",
+          "MULTI_IP_SUBNET",
+          "SECURE_BOOT",
+          "SEV_CAPABLE",
+          "SEV_LIVE_MIGRATABLE",
+          "SEV_LIVE_MIGRATABLE_V2",
+          "SEV_SNP_CAPABLE",
+          "SNP_SVSM_CAPABLE",
+          "TDX_CAPABLE",
+          "UEFI_COMPATIBLE",
+          "VIRTIO_SCSI_MULTIQUEUE",
+          "WINDOWS"
+        ],
+        "json_type": "string",
+        "path": "disks[].guestOsFeatures[].type"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "disks[].index",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "AttachedDiskInitializeParams",
+        "path": "disks[].initializeParams"
+      },
+      {
+        "enum": [
+          "ARCHITECTURE_UNSPECIFIED",
+          "ARM64",
+          "X86_64"
+        ],
+        "json_type": "string",
+        "path": "disks[].initializeParams.architecture"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.description"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.diskName"
+      },
+      {
+        "format": "int64",
+        "json_type": "string",
+        "path": "disks[].initializeParams.diskSizeGb"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.diskType"
+      },
+      {
+        "json_type": "boolean",
+        "path": "disks[].initializeParams.enableConfidentialCompute"
+      },
+      {
+        "json_type": "object",
+        "path": "disks[].initializeParams.labels"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "disks[].initializeParams.licenses[]"
+      },
+      {
+        "enum": [
+          "RECREATE_DISK",
+          "RECREATE_DISK_IF_SOURCE_CHANGED",
+          "USE_EXISTING_DISK"
+        ],
+        "json_type": "string",
+        "path": "disks[].initializeParams.onUpdateAction"
+      },
+      {
+        "format": "int64",
+        "json_type": "string",
+        "path": "disks[].initializeParams.provisionedIops"
+      },
+      {
+        "format": "int64",
+        "json_type": "string",
+        "path": "disks[].initializeParams.provisionedThroughput"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "disks[].initializeParams.replicaZones[]"
+      },
+      {
+        "json_type": "object",
+        "path": "disks[].initializeParams.resourceManagerTags"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "disks[].initializeParams.resourcePolicies[]"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceImage"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "CustomerEncryptionKey",
+        "path": "disks[].initializeParams.sourceImageEncryptionKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceImageEncryptionKey.kmsKeyName"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceImageEncryptionKey.kmsKeyServiceAccount"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceImageEncryptionKey.rawKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceImageEncryptionKey.rsaEncryptedKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceImageEncryptionKey.sha256"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceSnapshot"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "CustomerEncryptionKey",
+        "path": "disks[].initializeParams.sourceSnapshotEncryptionKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.kmsKeyName"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.kmsKeyServiceAccount"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.rawKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.rsaEncryptedKey"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.sha256"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].initializeParams.storagePool"
+      },
+      {
+        "enum": [
+          "NVME",
+          "SCSI"
+        ],
+        "json_type": "string",
+        "path": "disks[].interface"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].kind",
+        "readOnly": true
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "disks[].licenses[]",
+        "readOnly": true
+      },
+      {
+        "enum": [
+          "READ_ONLY",
+          "READ_WRITE"
+        ],
+        "json_type": "string",
+        "path": "disks[].mode"
+      },
+      {
+        "enum": [
+          "DISK_SAVED_STATE_UNSPECIFIED",
+          "PRESERVED"
+        ],
+        "json_type": "string",
+        "path": "disks[].savedState",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "InitialStateConfig",
+        "path": "disks[].shieldedInstanceInitialState",
+        "readOnly": true
+      },
+      {
+        "item_ref": "FileContentBuffer",
+        "json_type": "array",
+        "path": "disks[].shieldedInstanceInitialState.dbs[]"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.dbs[].content"
+      },
+      {
+        "enum": [
+          "BIN",
+          "UNDEFINED",
+          "X509"
+        ],
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.dbs[].fileType"
+      },
+      {
+        "item_ref": "FileContentBuffer",
+        "json_type": "array",
+        "path": "disks[].shieldedInstanceInitialState.dbxs[]"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.dbxs[].content"
+      },
+      {
+        "enum": [
+          "BIN",
+          "UNDEFINED",
+          "X509"
+        ],
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.dbxs[].fileType"
+      },
+      {
+        "item_ref": "FileContentBuffer",
+        "json_type": "array",
+        "path": "disks[].shieldedInstanceInitialState.keks[]"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.keks[].content"
+      },
+      {
+        "enum": [
+          "BIN",
+          "UNDEFINED",
+          "X509"
+        ],
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.keks[].fileType"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "FileContentBuffer",
+        "path": "disks[].shieldedInstanceInitialState.pk"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.pk.content"
+      },
+      {
+        "enum": [
+          "BIN",
+          "UNDEFINED",
+          "X509"
+        ],
+        "json_type": "string",
+        "path": "disks[].shieldedInstanceInitialState.pk.fileType"
+      },
+      {
+        "json_type": "string",
+        "path": "disks[].source"
+      },
+      {
+        "enum": [
+          "PERSISTENT",
+          "SCRATCH"
+        ],
+        "json_type": "string",
+        "path": "disks[].type"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "DisplayDevice",
+        "path": "displayDevice"
+      },
+      {
+        "json_type": "boolean",
+        "path": "displayDevice.enableDisplay"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "fingerprint"
+      },
+      {
+        "item_ref": "AcceleratorConfig",
+        "json_type": "array",
+        "path": "guestAccelerators[]"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "guestAccelerators[].acceleratorCount"
+      },
+      {
+        "json_type": "string",
+        "path": "guestAccelerators[].acceleratorType"
+      },
+      {
+        "json_type": "string",
+        "path": "hostname"
+      },
+      {
+        "format": "uint64",
+        "json_type": "string",
+        "path": "id",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "CustomerEncryptionKey",
+        "path": "instanceEncryptionKey"
+      },
+      {
+        "json_type": "string",
+        "path": "instanceEncryptionKey.kmsKeyName"
+      },
+      {
+        "json_type": "string",
+        "path": "instanceEncryptionKey.kmsKeyServiceAccount"
+      },
+      {
+        "json_type": "string",
+        "path": "instanceEncryptionKey.rawKey"
+      },
+      {
+        "json_type": "string",
+        "path": "instanceEncryptionKey.rsaEncryptedKey"
+      },
+      {
+        "json_type": "string",
+        "path": "instanceEncryptionKey.sha256"
+      },
+      {
+        "enum": [
+          "KEY_REVOCATION_ACTION_TYPE_UNSPECIFIED",
+          "NONE",
+          "STOP"
+        ],
+        "json_type": "string",
+        "path": "keyRevocationActionType"
+      },
+      {
+        "json_type": "string",
+        "path": "kind",
+        "readOnly": true
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "labelFingerprint"
+      },
+      {
+        "json_type": "object",
+        "path": "labels"
+      },
+      {
+        "json_type": "string",
+        "path": "lastStartTimestamp",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "lastStopTimestamp",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "lastSuspendedTimestamp",
+        "readOnly": true
+      },
+      {
+        "enum": [
+          "EPHEMERAL_KEY_ENCRYPTION",
+          "LOCAL_SSD_ENCRYPTION_MODE_UNSPECIFIED",
+          "STANDARD_ENCRYPTION"
+        ],
+        "json_type": "string",
+        "path": "localSsdEncryptionMode"
+      },
+      {
+        "json_type": "string",
+        "path": "machineType"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "Metadata",
+        "path": "metadata"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "metadata.fingerprint"
+      },
+      {
+        "item_type": "object",
+        "json_type": "array",
+        "path": "metadata.items[]"
+      },
+      {
+        "json_type": "string",
+        "path": "metadata.items[].key",
+        "pattern": "[a-zA-Z0-9-_]{1,128}"
+      },
+      {
+        "json_type": "string",
+        "path": "metadata.items[].value"
+      },
+      {
+        "json_type": "string",
+        "path": "metadata.kind",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "minCpuPlatform"
+      },
+      {
+        "json_type": "string",
+        "path": "name",
+        "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
+      },
+      {
+        "item_ref": "NetworkInterface",
+        "json_type": "array",
+        "path": "networkInterfaces[]"
+      },
+      {
+        "item_ref": "AccessConfig",
+        "json_type": "array",
+        "path": "networkInterfaces[].accessConfigs[]"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].externalIpv6"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "networkInterfaces[].accessConfigs[].externalIpv6PrefixLength"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].kind",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].name"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].natIP"
+      },
+      {
+        "enum": [
+          "FIXED_STANDARD",
+          "PREMIUM",
+          "STANDARD",
+          "STANDARD_OVERRIDES_FIXED_STANDARD"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].networkTier"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].publicPtrDomainName"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].securityPolicy"
+      },
+      {
+        "json_type": "boolean",
+        "path": "networkInterfaces[].accessConfigs[].setPublicPtr"
+      },
+      {
+        "enum": [
+          "DIRECT_IPV6",
+          "ONE_TO_ONE_NAT"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].accessConfigs[].type"
+      },
+      {
+        "item_ref": "AliasIpRange",
+        "json_type": "array",
+        "path": "networkInterfaces[].aliasIpRanges[]"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].aliasIpRanges[].ipCidrRange"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].aliasIpRanges[].subnetworkRangeName"
+      },
+      {
+        "item_ref": "AliasIpRange",
+        "json_type": "array",
+        "path": "networkInterfaces[].aliasIpv6Ranges[]"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].aliasIpv6Ranges[].ipCidrRange"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].aliasIpv6Ranges[].subnetworkRangeName"
+      },
+      {
+        "json_type": "boolean",
+        "path": "networkInterfaces[].enableVpcScopedDns"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "networkInterfaces[].fingerprint"
+      },
+      {
+        "enum": [
+          "IGMP_QUERY_DISABLED",
+          "IGMP_QUERY_V2"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].igmpQuery"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "networkInterfaces[].internalIpv6PrefixLength"
+      },
+      {
+        "item_ref": "AccessConfig",
+        "json_type": "array",
+        "path": "networkInterfaces[].ipv6AccessConfigs[]"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].externalIpv6"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].externalIpv6PrefixLength"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].kind",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].name"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].natIP"
+      },
+      {
+        "enum": [
+          "FIXED_STANDARD",
+          "PREMIUM",
+          "STANDARD",
+          "STANDARD_OVERRIDES_FIXED_STANDARD"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].networkTier"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].publicPtrDomainName"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].securityPolicy"
+      },
+      {
+        "json_type": "boolean",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].setPublicPtr"
+      },
+      {
+        "enum": [
+          "DIRECT_IPV6",
+          "ONE_TO_ONE_NAT"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessConfigs[].type"
+      },
+      {
+        "enum": [
+          "EXTERNAL",
+          "INTERNAL"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6AccessType",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].ipv6Address"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].kind",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].name"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].network"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].networkAttachment"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].networkIP"
+      },
+      {
+        "enum": [
+          "GVNIC",
+          "IDPF",
+          "IRDMA",
+          "MRDMA",
+          "UNSPECIFIED_NIC_TYPE",
+          "VIRTIO_NET"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].nicType"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].parentNicName"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "networkInterfaces[].queueCount"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].serviceClassId"
+      },
+      {
+        "enum": [
+          "IPV4_IPV6",
+          "IPV4_ONLY",
+          "IPV6_ONLY"
+        ],
+        "json_type": "string",
+        "path": "networkInterfaces[].stackType"
+      },
+      {
+        "json_type": "string",
+        "path": "networkInterfaces[].subnetwork"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "networkInterfaces[].vlan"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "NetworkPerformanceConfig",
+        "path": "networkPerformanceConfig"
+      },
+      {
+        "enum": [
+          "DEFAULT",
+          "TIER_1"
+        ],
+        "json_type": "string",
+        "path": "networkPerformanceConfig.totalEgressBandwidthTier"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "InstanceParams",
+        "path": "params"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "Duration",
+        "path": "params.requestValidForDuration"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "params.requestValidForDuration.nanos"
+      },
+      {
+        "format": "int64",
+        "json_type": "string",
+        "path": "params.requestValidForDuration.seconds"
+      },
+      {
+        "json_type": "object",
+        "path": "params.resourceManagerTags"
+      },
+      {
+        "enum": [
+          "ENABLE_BIDIRECTIONAL_ACCESS_TO_GOOGLE",
+          "ENABLE_OUTBOUND_VM_ACCESS_TO_GOOGLE",
+          "INHERIT_FROM_SUBNETWORK"
+        ],
+        "json_type": "string",
+        "path": "privateIpv6GoogleAccess"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ReservationAffinity",
+        "path": "reservationAffinity"
+      },
+      {
+        "enum": [
+          "ANY_RESERVATION",
+          "NO_RESERVATION",
+          "SPECIFIC_RESERVATION",
+          "UNSPECIFIED"
+        ],
+        "json_type": "string",
+        "path": "reservationAffinity.consumeReservationType"
+      },
+      {
+        "json_type": "string",
+        "path": "reservationAffinity.key"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "reservationAffinity.values[]"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "resourcePolicies[]"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ResourceStatus",
+        "path": "resourceStatus",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ResourceStatusEffectiveInstanceMetadata",
+        "path": "resourceStatus.effectiveInstanceMetadata",
+        "readOnly": true
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.blockProjectSshKeysMetadataValue"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.enableGuestAttributesMetadataValue"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.enableOsInventoryMetadataValue"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.enableOsconfigMetadataValue"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.enableOsloginMetadataValue"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.gceContainerDeclarationMetadataValue"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.serialPortEnableMetadataValue"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.effectiveInstanceMetadata.serialPortLoggingEnableMetadataValue"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.effectiveInstanceMetadata.vmDnsSettingMetadataValue"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.physicalHost",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ResourceStatusPhysicalHostTopology",
+        "path": "resourceStatus.physicalHostTopology",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ResourceStatusPhysicalHostTopologyAdditionalAttributes",
+        "path": "resourceStatus.physicalHostTopology.additionalAttributes",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "path": "resourceStatus.physicalHostTopology.additionalAttributes.acceleratorTopologyIds",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.physicalHostTopology.block"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.physicalHostTopology.cluster"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.physicalHostTopology.host"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.physicalHostTopology.subblock"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ResourceStatusReservationConsumptionInfo",
+        "path": "resourceStatus.reservationConsumptionInfo",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.reservationConsumptionInfo.consumedReservation",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ResourceStatusScheduling",
+        "path": "resourceStatus.scheduling"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "resourceStatus.scheduling.availabilityDomain"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "UpcomingMaintenance",
+        "path": "resourceStatus.upcomingMaintenance",
+        "readOnly": true
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.upcomingMaintenance.canReschedule"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.upcomingMaintenance.latestWindowStartTime"
+      },
+      {
+        "json_type": "boolean",
+        "path": "resourceStatus.upcomingMaintenance.maintenanceOnShutdown"
+      },
+      {
+        "item_enum": [
+          "FAILURE_DISK",
+          "FAILURE_GPU",
+          "FAILURE_GPU_MULTIPLE_FAULTY_HOSTS_CUSTOMER_REPORTED",
+          "FAILURE_GPU_NVLINK_SWITCH_CUSTOMER_REPORTED",
+          "FAILURE_GPU_TEMPERATURE",
+          "FAILURE_GPU_XID",
+          "FAILURE_INFRA",
+          "FAILURE_INTERFACE",
+          "FAILURE_MEMORY",
+          "FAILURE_NETWORK",
+          "FAILURE_NVLINK",
+          "FAILURE_REDUNDANT_HARDWARE_FAULT",
+          "FAILURE_TPU",
+          "INFRASTRUCTURE_RELOCATION",
+          "MAINTENANCE_REASON_UNKNOWN",
+          "PLANNED_NETWORK_UPDATE",
+          "PLANNED_UPDATE"
+        ],
+        "item_type": "string",
+        "json_type": "array",
+        "path": "resourceStatus.upcomingMaintenance.maintenanceReasons[]"
+      },
+      {
+        "enum": [
+          "ONGOING",
+          "PENDING",
+          "UNKNOWN"
+        ],
+        "json_type": "string",
+        "path": "resourceStatus.upcomingMaintenance.maintenanceStatus"
+      },
+      {
+        "enum": [
+          "MULTIPLE",
+          "SCHEDULED",
+          "UNKNOWN_TYPE",
+          "UNSCHEDULED"
+        ],
+        "json_type": "string",
+        "path": "resourceStatus.upcomingMaintenance.type"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.upcomingMaintenance.windowEndTime"
+      },
+      {
+        "json_type": "string",
+        "path": "resourceStatus.upcomingMaintenance.windowStartTime"
+      },
+      {
+        "json_type": "boolean",
+        "path": "satisfiesPzi",
+        "readOnly": true
+      },
+      {
+        "json_type": "boolean",
+        "path": "satisfiesPzs",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "Scheduling",
+        "path": "scheduling"
+      },
+      {
+        "json_type": "boolean",
+        "path": "scheduling.automaticRestart"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "scheduling.availabilityDomain"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "scheduling.hostErrorTimeoutSeconds"
+      },
+      {
+        "enum": [
+          "DELETE",
+          "INSTANCE_TERMINATION_ACTION_UNSPECIFIED",
+          "STOP"
+        ],
+        "json_type": "string",
+        "path": "scheduling.instanceTerminationAction"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "Duration",
+        "path": "scheduling.localSsdRecoveryTimeout"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "scheduling.localSsdRecoveryTimeout.nanos"
+      },
+      {
+        "format": "int64",
+        "json_type": "string",
+        "path": "scheduling.localSsdRecoveryTimeout.seconds"
+      },
+      {
+        "json_type": "string",
+        "path": "scheduling.locationHint"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "Duration",
+        "path": "scheduling.maxRunDuration"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "scheduling.maxRunDuration.nanos"
+      },
+      {
+        "format": "int64",
+        "json_type": "string",
+        "path": "scheduling.maxRunDuration.seconds"
+      },
+      {
+        "format": "int32",
+        "json_type": "integer",
+        "path": "scheduling.minNodeCpus"
+      },
+      {
+        "item_ref": "SchedulingNodeAffinity",
+        "json_type": "array",
+        "path": "scheduling.nodeAffinities[]"
+      },
+      {
+        "json_type": "string",
+        "path": "scheduling.nodeAffinities[].key"
+      },
+      {
+        "enum": [
+          "IN",
+          "NOT_IN",
+          "OPERATOR_UNSPECIFIED"
+        ],
+        "json_type": "string",
+        "path": "scheduling.nodeAffinities[].operator"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "scheduling.nodeAffinities[].values[]"
+      },
+      {
+        "enum": [
+          "MIGRATE",
+          "TERMINATE"
+        ],
+        "json_type": "string",
+        "path": "scheduling.onHostMaintenance"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "SchedulingOnInstanceStopAction",
+        "path": "scheduling.onInstanceStopAction"
+      },
+      {
+        "json_type": "boolean",
+        "path": "scheduling.onInstanceStopAction.discardLocalSsd"
+      },
+      {
+        "json_type": "boolean",
+        "path": "scheduling.preemptible"
+      },
+      {
+        "enum": [
+          "FLEX_START",
+          "RESERVATION_BOUND",
+          "SPOT",
+          "STANDARD"
+        ],
+        "json_type": "string",
+        "path": "scheduling.provisioningModel"
+      },
+      {
+        "json_type": "boolean",
+        "path": "scheduling.skipGuestOsShutdown"
+      },
+      {
+        "json_type": "string",
+        "path": "scheduling.terminationTime"
+      },
+      {
+        "json_type": "string",
+        "path": "selfLink",
+        "readOnly": true
+      },
+      {
+        "item_ref": "ServiceAccount",
+        "json_type": "array",
+        "path": "serviceAccounts[]"
+      },
+      {
+        "json_type": "string",
+        "path": "serviceAccounts[].email"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "serviceAccounts[].scopes[]"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ShieldedInstanceConfig",
+        "path": "shieldedInstanceConfig"
+      },
+      {
+        "json_type": "boolean",
+        "path": "shieldedInstanceConfig.enableIntegrityMonitoring"
+      },
+      {
+        "json_type": "boolean",
+        "path": "shieldedInstanceConfig.enableSecureBoot"
+      },
+      {
+        "json_type": "boolean",
+        "path": "shieldedInstanceConfig.enableVtpm"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "ShieldedInstanceIntegrityPolicy",
+        "path": "shieldedInstanceIntegrityPolicy"
+      },
+      {
+        "json_type": "boolean",
+        "path": "shieldedInstanceIntegrityPolicy.updateAutoLearnPolicy"
+      },
+      {
+        "json_type": "string",
+        "path": "sourceMachineImage"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "CustomerEncryptionKey",
+        "path": "sourceMachineImageEncryptionKey"
+      },
+      {
+        "json_type": "string",
+        "path": "sourceMachineImageEncryptionKey.kmsKeyName"
+      },
+      {
+        "json_type": "string",
+        "path": "sourceMachineImageEncryptionKey.kmsKeyServiceAccount"
+      },
+      {
+        "json_type": "string",
+        "path": "sourceMachineImageEncryptionKey.rawKey"
+      },
+      {
+        "json_type": "string",
+        "path": "sourceMachineImageEncryptionKey.rsaEncryptedKey"
+      },
+      {
+        "json_type": "string",
+        "path": "sourceMachineImageEncryptionKey.sha256"
+      },
+      {
+        "json_type": "boolean",
+        "path": "startRestricted",
+        "readOnly": true
+      },
+      {
+        "enum": [
+          "DEPROVISIONING",
+          "PENDING",
+          "PROVISIONING",
+          "REPAIRING",
+          "RUNNING",
+          "STAGING",
+          "STOPPED",
+          "STOPPING",
+          "SUSPENDED",
+          "SUSPENDING",
+          "TERMINATED"
+        ],
+        "json_type": "string",
+        "path": "status",
+        "readOnly": true
+      },
+      {
+        "json_type": "string",
+        "path": "statusMessage",
+        "readOnly": true
+      },
+      {
+        "json_type": "object",
+        "object_ref": "Tags",
+        "path": "tags"
+      },
+      {
+        "format": "byte",
+        "json_type": "string",
+        "path": "tags.fingerprint"
+      },
+      {
+        "item_type": "string",
+        "json_type": "array",
+        "path": "tags.items[]",
+        "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
+      },
+      {
+        "json_type": "object",
+        "object_ref": "WorkloadIdentityConfig",
+        "path": "workloadIdentityConfig"
+      },
+      {
+        "json_type": "string",
+        "path": "workloadIdentityConfig.identity"
+      },
+      {
+        "json_type": "boolean",
+        "path": "workloadIdentityConfig.identityCertificateEnabled"
+      },
+      {
+        "json_type": "string",
+        "path": "zone",
+        "readOnly": true
+      }
+    ],
+    "current_derived_projection_sha256": "65280a504fe2129b5cf597912510426cf6c2b4a6c343f294cdfe985589479854",
+    "derivation": "RECURSIVE_COMPUTE_DISCOVERY_INSTANCE_V1_EXACT_TYPES_FORMATS_ENUMS_PATTERNS_READONLY",
+    "field_count": 257,
+    "frozen_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+    "projection_result": "EXACT_MAPPING_RECONFIRMED",
+    "provider_revision": "20260709",
+    "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+  },
+  "consumer_contract": "GCP_CANONICAL_RUNTIME_OBJECT_AND_HASH_V1",
+  "consumer_section": "7.2",
+  "decision_algorithm": {
+    "exact_requires": {
+      "all_claim_mappings_reconfirmed": true,
+      "all_claim_source_edges_replayed": true,
+      "all_frozen_source_ids_retrieved_http_200": true,
+      "compute_revision_and_257_field_projection_reconfirmed": true,
+      "current_257_field_projection_retained_and_equal": true,
+      "external_current_source_bundle_replayable": true,
+      "unpublished_tee_env_suffix_grammar_remains_default_deny": true
+    },
+    "precedence": [
+      "BOUNDARY_LEAKAGE_DETECTED",
+      "CURRENT_SOURCE_CONFLICT",
+      "SOURCE_OR_PROVENANCE_UNAVAILABLE",
+      "FROZEN_MAPPING_CHANGED",
+      "EXACT_MAPPING_RECONFIRMED"
+    ],
+    "version": "GCP_PROVIDER_DOWNSTREAM_REVALIDATION_DECISION_V1"
+  },
+  "evidence_limitations": [
+    "CURRENT_SOURCE_BYTES_EXTERNAL_UNTRACKED_HASH_BOUND",
+    "PUBLIC_DOCUMENT_REVIEW_NOT_SIGNED_TRANSPORT_RECEIPT",
+    "PUBLIC_DOCUMENT_REVIEW_NOT_TRUSTED_TIMESTAMP",
+    "PUBLIC_DOCUMENT_REVIEW_NOT_RUNTIME_ATTESTATION",
+    "PUBLIC_DOCUMENT_REVIEW_NOT_GCP_RESOURCE_DISCOVERY",
+    "BYTE_EQUALITY_WITH_MUTABLE_PAGE_CHROME_NOT_REQUIRED"
+  ],
+  "external_revalidation_bundle": {
+    "archive_format": "ZIP_DEFLATE_FIXED_METADATA_V1",
+    "builder_python": "3.9.6",
+    "builder_zlib": "1.2.12",
+    "bundle_id": "gcp-runtime-object-revalidation-source-snapshot-20260724T151043Z",
+    "bytes": 1017600,
+    "compression": "DEFLATE_LEVEL_9",
+    "fixed_member_timestamp": "1980-01-01T00:00:00",
+    "fixed_unix_mode": "0100644",
+    "member_order": [
+      "source-01",
+      "source-02",
+      "source-03",
+      "source-04",
+      "source-05",
+      "source-06",
+      "source-07",
+      "source-08",
+      "source-09",
+      "source-10",
+      "source-11",
+      "source-12",
+      "source-13",
+      "source-14",
+      "source-15",
+      "source-16",
+      "sources.tsv",
+      "items.ndjson"
+    ],
+    "members": [
+      {
+        "archive_name": "source-01",
+        "bytes": 363116,
+        "sha256": "7988d7fd12238a389eaddf185a5456dabec3707f08a12fcfc1e136d3f133ba0c",
+        "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+      },
+      {
+        "archive_name": "source-02",
+        "bytes": 131379,
+        "sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+        "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      },
+      {
+        "archive_name": "source-03",
+        "bytes": 119046,
+        "sha256": "804495174703ef90fa0d5bc324aed5369b328f7a8cdc8881b9f1e6b1e11e5773",
+        "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      },
+      {
+        "archive_name": "source-04",
+        "bytes": 111213,
+        "sha256": "99b30c138e881a618ba25ecf594b5256ca4a27ef89b85b08855f9ed42b153967",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+      },
+      {
+        "archive_name": "source-05",
+        "bytes": 137793,
+        "sha256": "9b16dc2bc76941adde614b6e2ad4fbd40cd792c61ae50c3d5434fb0518e1b676",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+      },
+      {
+        "archive_name": "source-06",
+        "bytes": 125421,
+        "sha256": "ba98405bd335a3f019f70a001c6566e4ddba200edcbada51aa242641bdb3ed66",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+      },
+      {
+        "archive_name": "source-07",
+        "bytes": 103543,
+        "sha256": "03adbf1dbfb0406a0c79715f60d501a832ce5570d44c3009a9a78760f8b1c4cd",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+      },
+      {
+        "archive_name": "source-08",
+        "bytes": 157489,
+        "sha256": "9d2dce9159ef06eaee49716063db0f1ab4ccb166c3395e7690bab6d6018f30e4",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+      },
+      {
+        "archive_name": "source-09",
+        "bytes": 122806,
+        "sha256": "4b74ec5d42887351cb068238ba7f7103fa4fc6e6e29b18c125f9314930c01a73",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      },
+      {
+        "archive_name": "source-10",
+        "bytes": 109459,
+        "sha256": "e012b4e62735ba84508783dd0887c85dbee1395488125accd57c9d46f4f55124",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+      },
+      {
+        "archive_name": "source-11",
+        "bytes": 132625,
+        "sha256": "ed136728d80bb1869cc593a26c7af89ed4159c8c70e928579e1cf247e562f842",
+        "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+      },
+      {
+        "archive_name": "source-12",
+        "bytes": 987226,
+        "sha256": "ccf100e8494775bde57f1cb17ab24f1afa100f35e4d58de6b2c24435d4a20cf4",
+        "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+      },
+      {
+        "archive_name": "source-13",
+        "bytes": 6273829,
+        "sha256": "ed609c29eb3acad756343451ab4ef673b45f7848d32e2be6fa87ba0e615e533d",
+        "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+      },
+      {
+        "archive_name": "source-14",
+        "bytes": 387358,
+        "sha256": "483825c6dbb24bb9763b71d9d5f681d72c3c83338d40ff44121c5505910e7218",
+        "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+      },
+      {
+        "archive_name": "source-15",
+        "bytes": 354706,
+        "sha256": "9c3c48dd363fae93d63e589af77fb01caed4e3cccfa0f3718562aee60858ee31",
+        "source_id": "GCP_HOST_EVENTS_2026_07_24"
+      },
+      {
+        "archive_name": "source-16",
+        "bytes": 687245,
+        "sha256": "1e2ed6632917655bcfeb3a52acd0f623f791ea350c6f9ef9a95ae73da9d9c0f4",
+        "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+      },
+      {
+        "archive_name": "sources.tsv",
+        "bytes": 1987,
+        "sha256": "45dbd0ad2df264f804cc04b77ab752254ac417a7fb55e5a7d2c908cef232a090"
+      },
+      {
+        "archive_name": "items.ndjson",
+        "bytes": 9513,
+        "sha256": "45341de13ada7035d07a05e42179c42e702c9aa6d621f1893f72a52905bbf82b"
+      }
+    ],
+    "repository_storage": "EXTERNAL_UNTRACKED",
+    "sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+    "storage_locator": "external-recovery://fluencytracr/gcp-runtime-object-revalidation-source-snapshot-20260724T151043Z.zip"
+  },
+  "recorded_result": "EXACT_MAPPING_RECONFIRMED",
+  "retrieval_completed_at": "2026-07-24T15:15:41Z",
+  "retrieval_method": "PUBLIC_HTTPS_GET_NO_GCP_PROJECT_OR_CREDENTIAL",
+  "retrieval_started_at": "2026-07-24T15:10:43Z",
+  "revalidation_hash": "38aa8151ed391369c3703279bb1172d0e1fef389f6ea4d70e9242d401d578535",
+  "schema_version": "GCP_PROVIDER_REVALIDATION_V1",
+  "source_count": 16,
+  "source_observation_count": 22,
+  "sources": [
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/compute/docs/cpu-platforms",
+      "frozen_snapshot_sha256": "3c4816eb0b3cfb9cce086de0a270281516c2652a89aa3b84ab02773dee1a9d24",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/cpu-platforms",
+      "retrieved_at_end": "2026-07-24T15:10:52Z",
+      "retrieved_at_start": "2026-07-24T15:10:43Z",
+      "retrieved_bytes": 363116,
+      "sha256": "7988d7fd12238a389eaddf185a5456dabec3707f08a12fcfc1e136d3f133ba0c",
+      "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations",
+      "frozen_snapshot_sha256": "7d6d8dec476610a8b9aec8b81b69643d03c93be76b63703b0e4d59d9d39834c8",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-vm/docs/supported-configurations",
+      "retrieved_at_end": "2026-07-24T15:10:46Z",
+      "retrieved_at_start": "2026-07-24T15:10:43Z",
+      "retrieved_bytes": 131379,
+      "sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+      "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-vm/docs/attestation",
+      "frozen_snapshot_sha256": "506c7286cd47030b1e6be56858315e8aabfef79fc73d1b4a6f8c621d5d6e06fc",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-vm/docs/attestation",
+      "retrieved_at_end": "2026-07-24T15:10:53Z",
+      "retrieved_at_start": "2026-07-24T15:10:43Z",
+      "retrieved_bytes": 119046,
+      "sha256": "804495174703ef90fa0d5bc324aed5369b328f7a8cdc8881b9f1e6b1e11e5773",
+      "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-overview",
+      "frozen_snapshot_sha256": "4708bb8267237aa9cb724bfbc56805b16fccf74684b13e6e0b331840f9c0ab0d",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-overview",
+      "retrieved_at_end": "2026-07-24T15:10:48Z",
+      "retrieved_at_start": "2026-07-24T15:10:43Z",
+      "retrieved_bytes": 111213,
+      "sha256": "99b30c138e881a618ba25ecf594b5256ca4a27ef89b85b08855f9ed42b153967",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/attestation-assertions",
+      "frozen_snapshot_sha256": "8456d1fae9b326ec3bfadd56f93fbd422ee50e8aa867807de67f5af17ee49536",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/attestation-assertions",
+      "retrieved_at_end": "2026-07-24T15:11:00Z",
+      "retrieved_at_start": "2026-07-24T15:10:46Z",
+      "retrieved_bytes": 137793,
+      "sha256": "9b16dc2bc76941adde614b6e2ad4fbd40cd792c61ae50c3d5434fb0518e1b676",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "frozen_snapshot_sha256": "4ffcbfd39471056d8351ac156f6c0dc44e6a55c61b81f817f6b8847a5808bc92",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "retrieved_at_end": "2026-07-24T15:10:55Z",
+      "retrieved_at_start": "2026-07-24T15:10:48Z",
+      "retrieved_bytes": 125421,
+      "sha256": "ba98405bd335a3f019f70a001c6566e4ddba200edcbada51aa242641bdb3ed66",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-validation-endpoint-fields",
+      "frozen_snapshot_sha256": "7a04415e758469e66d701e7bcfa72a3bde4b9cafb56c96f6823ac81197cfb992",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/token-validation-endpoint-fields",
+      "retrieved_at_end": "2026-07-24T15:10:57Z",
+      "retrieved_at_start": "2026-07-24T15:10:52Z",
+      "retrieved_bytes": 103543,
+      "sha256": "03adbf1dbfb0406a0c79715f60d501a832ce5570d44c3009a9a78760f8b1c4cd",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads",
+      "frozen_snapshot_sha256": "2fbe26d6a13d54d851d9e8cce9e0aa0948edaa69de191f448828520461f881ee",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/deploy-workloads",
+      "retrieved_at_end": "2026-07-24T15:11:00Z",
+      "retrieved_at_start": "2026-07-24T15:10:53Z",
+      "retrieved_bytes": 157489,
+      "sha256": "9d2dce9159ef06eaee49716063db0f1ab4ccb166c3395e7690bab6d6018f30e4",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/metadata-variables",
+      "frozen_snapshot_sha256": "fd490925fd1caaf5080b892ff0f49303e936f87a4cec7df41028bf22220563d0",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/metadata-variables",
+      "retrieved_at_end": "2026-07-24T15:11:01Z",
+      "retrieved_at_start": "2026-07-24T15:10:55Z",
+      "retrieved_bytes": 122806,
+      "sha256": "4b74ec5d42887351cb068238ba7f7103fa4fc6e6e29b18c125f9314930c01a73",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/launch-policies",
+      "frozen_snapshot_sha256": "9e637b2b957754e8f96be1824c58075ce167f767722f9d7c7c1ae446b2645f90",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/launch-policies",
+      "retrieved_at_end": "2026-07-24T15:11:06Z",
+      "retrieved_at_start": "2026-07-24T15:10:57Z",
+      "retrieved_bytes": 109459,
+      "sha256": "e012b4e62735ba84508783dd0887c85dbee1395488125accd57c9d46f4f55124",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/create-customize-workloads",
+      "frozen_snapshot_sha256": "171ffb0b40e301a40f0fef3a796bca3e56780b649dd89a8b05768c6c395b4bb5",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/create-customize-workloads",
+      "retrieved_at_end": "2026-07-24T15:11:06Z",
+      "retrieved_at_start": "2026-07-24T15:11:00Z",
+      "retrieved_bytes": 132625,
+      "sha256": "ed136728d80bb1869cc593a26c7af89ed4159c8c70e928579e1cf247e562f842",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/compute/docs/reference/rest/v1/instances",
+      "frozen_snapshot_sha256": "4c47df42a23ed6b41da1b45823bb012ab17e91cffe613d3580c8f3739beda2ba",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/reference/rest/v1/instances",
+      "retrieved_at_end": "2026-07-24T15:11:55Z",
+      "retrieved_at_start": "2026-07-24T15:11:00Z",
+      "retrieved_bytes": 987226,
+      "sha256": "ccf100e8494775bde57f1cb17ab24f1afa100f35e4d58de6b2c24435d4a20cf4",
+      "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://www.googleapis.com/discovery/v1/apis/compute/v1/rest",
+      "frozen_snapshot_sha256": "a241826926be7150e1ee6a4db329fc0f262cc0ccdff0c29d26c29904b2ff771e",
+      "http_status": 200,
+      "official_url": "https://www.googleapis.com/discovery/v1/apis/compute/v1/rest",
+      "provider_revision": "20260709",
+      "retrieved_at_end": "2026-07-24T15:15:41Z",
+      "retrieved_at_start": "2026-07-24T15:15:17Z",
+      "retrieved_bytes": 6273829,
+      "sha256": "ed609c29eb3acad756343451ab4ef673b45f7848d32e2be6fa87ba0e615e533d",
+      "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+      "frozen_snapshot_sha256": "7128578b48803ce38e0b752187bfd3d87ce4bbb4ac6f5d309e33c448865ea45d",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+      "retrieved_at_end": "2026-07-24T15:11:24Z",
+      "retrieved_at_start": "2026-07-24T15:11:06Z",
+      "retrieved_bytes": 387358,
+      "sha256": "483825c6dbb24bb9763b71d9d5f681d72c3c83338d40ff44121c5505910e7218",
+      "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/compute/docs/instances/host-maintenance-overview",
+      "frozen_snapshot_sha256": "7c7c75e2e9ba0153a374aa600cb86d598cf826200a95a069cd6b70dbcb385f88",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/instances/host-maintenance-overview",
+      "retrieved_at_end": "2026-07-24T15:11:25Z",
+      "retrieved_at_start": "2026-07-24T15:11:06Z",
+      "retrieved_bytes": 354706,
+      "sha256": "9c3c48dd363fae93d63e589af77fb01caed4e3cccfa0f3718562aee60858ee31",
+      "source_id": "GCP_HOST_EVENTS_2026_07_24"
+    },
+    {
+      "byte_equality_required": false,
+      "effective_url": "https://docs.cloud.google.com/compute/docs/general-purpose-machines",
+      "frozen_snapshot_sha256": "41980a65715c073913c2e33cec8c6352b85200427c0fa7e592a2302b36a8c309",
+      "http_status": 200,
+      "official_url": "https://cloud.google.com/compute/docs/general-purpose-machines",
+      "retrieved_at_end": "2026-07-24T15:11:36Z",
+      "retrieved_at_start": "2026-07-24T15:11:24Z",
+      "retrieved_bytes": 687245,
+      "sha256": "1e2ed6632917655bcfeb3a52acd0f623f791ea350c6f9ef9a95ae73da9d9c0f4",
+      "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+    }
+  ],
+  "vocabulary_bindings": {
+    "claim_evidence_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+    "claim_registry_sha256": "4d9a53791b6f3dc8fec4b0dfe7d7d0ad6ef7fdd502f15193fe35989291fc062c",
+    "compute_field_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+    "external_source_snapshot_bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+    "provider_contract_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+    "source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+  }
+}

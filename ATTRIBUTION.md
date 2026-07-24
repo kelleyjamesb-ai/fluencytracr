@@ -86,7 +86,7 @@ not necessarily reviewed or approved FluencyTracr.
 - Sources: Google Cloud documentation for C3 CPU platforms; Confidential VM supported configurations and attestation; Confidential Space raw token claims, token-validation endpoints, CEL assertions, metadata, launch policies, deployment, and workload controls; Compute Instance REST/discovery schemas; sole-tenancy; and host-maintenance behavior
 - Retrieval evidence: the provider-vocabulary contract binds the public source snapshot interval `2026-07-24T03:07:50Z..2026-07-24T03:08:12Z`, effective URLs, byte counts, and SHA-256 values in `docs/contracts/canonical-inference-gcp-provider-vocabulary/source-evidence.json`; full source bytes remain external and untracked
 - Governance grounding: a C3 Intel TDX profile is only a candidate until exact cross-instance conformance and trust-rooted attestation pass; divergence requires rejection and escalation rather than an alternate oracle
-- Used in: GCP Canonical Runtime Candidate Selection and GCP Provider Claim and Identity Vocabulary contracts
+- Used in: GCP Canonical Runtime Candidate Selection, GCP Provider Claim and Identity Vocabulary, and GCP Canonical Runtime Object and Hash contracts
 
 ### AI Scale Readiness Portfolio
 - Source: James Kelley, scale-readiness portfolio framing for V4 value realization

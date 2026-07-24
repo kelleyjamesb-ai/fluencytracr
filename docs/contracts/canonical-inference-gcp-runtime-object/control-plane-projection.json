@@ -1,0 +1,2976 @@
+{
+  "authorization_effect": "NONE_DOCS_ONLY",
+  "contract_version": "GCP_CANONICAL_RUNTIME_OBJECT_AND_HASH_V1",
+  "control_profile_crosswalk": {
+    "all_paths_exactly_once": true,
+    "derived_posture_bindings": [
+      {
+        "posture_key": "public_address_present",
+        "profile_field_id": "initial_public_ingress",
+        "transform": "EXACT_VALUE"
+      }
+    ],
+    "direct_bindings": [
+      {
+        "path": "advancedMachineFeatures.enableNestedVirtualization",
+        "profile_field_id": "nested_virtualization",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "advancedMachineFeatures.performanceMonitoringUnit",
+        "profile_field_id": "performance_monitoring_unit",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "advancedMachineFeatures.threadsPerCore",
+        "profile_field_id": "threads_per_core",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "advancedMachineFeatures.turboMode",
+        "profile_field_id": "turbo_mode",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "advancedMachineFeatures.visibleCoreCount",
+        "profile_field_id": "visible_core_count",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "confidentialInstanceConfig.confidentialInstanceType",
+        "profile_field_id": "compute_confidential_instance_type",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "confidentialInstanceConfig.enableConfidentialCompute",
+        "profile_field_id": "enable_confidential_compute",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "cpuPlatform",
+        "profile_field_id": "compute_cpu_platform_raw",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "displayDevice.enableDisplay",
+        "profile_field_id": "display_enabled",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "machineType",
+        "profile_field_id": "provisional_machine_type",
+        "required_presence": "PRESENT",
+        "transform": "FINAL_URI_SEGMENT"
+      },
+      {
+        "path": "minCpuPlatform",
+        "profile_field_id": "compute_min_cpu_platform_raw",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "scheduling.automaticRestart",
+        "profile_field_id": "automatic_restart",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "scheduling.onHostMaintenance",
+        "profile_field_id": "on_host_maintenance",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "scheduling.preemptible",
+        "profile_field_id": "preemptible",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "scheduling.provisioningModel",
+        "profile_field_id": "provisioning_model",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "shieldedInstanceConfig.enableIntegrityMonitoring",
+        "profile_field_id": "integrity_monitoring",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "shieldedInstanceConfig.enableSecureBoot",
+        "profile_field_id": "secure_boot",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      },
+      {
+        "path": "shieldedInstanceConfig.enableVtpm",
+        "profile_field_id": "vtpm",
+        "required_presence": "PRESENT",
+        "transform": "EXACT_VALUE"
+      }
+    ],
+    "manifest_bindings": [
+      {
+        "concrete_instance_identity_paths_in_preimage": [],
+        "domain_separator": "FLUENCYTRACR:GCP_PROFILE_BOOT_DISK_CONTROLS:V1",
+        "manifest_id": "BOOT_DISK_CONTROL_MANIFEST_V1",
+        "paths": [
+          "disks[].architecture",
+          "disks[].autoDelete",
+          "disks[].boot",
+          "disks[].diskSizeGb",
+          "disks[].forceAttach",
+          "disks[].guestOsFeatures[].type",
+          "disks[].index",
+          "disks[].initializeParams.architecture",
+          "disks[].initializeParams.diskSizeGb",
+          "disks[].initializeParams.enableConfidentialCompute",
+          "disks[].interface",
+          "disks[].mode",
+          "disks[].type"
+        ],
+        "profile_field_id": "boot_disk_manifest_sha256",
+        "resource_record_id_in_preimage": false,
+        "resource_record_order": "CANONICAL_ASCENDING_BY_FILTERED_FIELDS"
+      },
+      {
+        "concrete_instance_identity_paths_in_preimage": [],
+        "domain_separator": "FLUENCYTRACR:GCP_PROFILE_NETWORK_CONTROLS:V1",
+        "manifest_id": "NETWORK_CONTROL_MANIFEST_V1",
+        "paths": [
+          "canIpForward",
+          "networkInterfaces[].enableVpcScopedDns",
+          "networkInterfaces[].igmpQuery",
+          "networkInterfaces[].internalIpv6PrefixLength",
+          "networkInterfaces[].nicType",
+          "networkInterfaces[].queueCount",
+          "networkInterfaces[].serviceClassId",
+          "networkInterfaces[].stackType",
+          "networkInterfaces[].vlan",
+          "networkPerformanceConfig.totalEgressBandwidthTier",
+          "privateIpv6GoogleAccess",
+          "tags.items[]"
+        ],
+        "profile_field_id": "network_interface_manifest_sha256",
+        "resource_record_id_in_preimage": false,
+        "resource_record_order": "CANONICAL_ASCENDING_BY_FILTERED_FIELDS"
+      },
+      {
+        "concrete_instance_identity_paths_in_preimage": [],
+        "domain_separator": "FLUENCYTRACR:GCP_PROFILE_RESIDUAL_CONTROLS:V1",
+        "manifest_id": "RESIDUAL_CONTROL_MANIFEST_V1",
+        "paths": [
+          "advancedMachineFeatures.enableUefiNetworking",
+          "deletionProtection",
+          "keyRevocationActionType",
+          "localSsdEncryptionMode",
+          "reservationAffinity.consumeReservationType",
+          "scheduling.availabilityDomain",
+          "scheduling.hostErrorTimeoutSeconds",
+          "scheduling.instanceTerminationAction",
+          "scheduling.localSsdRecoveryTimeout.nanos",
+          "scheduling.localSsdRecoveryTimeout.seconds",
+          "scheduling.maxRunDuration.nanos",
+          "scheduling.maxRunDuration.seconds",
+          "scheduling.minNodeCpus",
+          "scheduling.nodeAffinities[].operator",
+          "scheduling.onInstanceStopAction.discardLocalSsd",
+          "scheduling.skipGuestOsShutdown",
+          "shieldedInstanceIntegrityPolicy.updateAutoLearnPolicy",
+          "workloadIdentityConfig.identityCertificateEnabled"
+        ],
+        "profile_field_id": "compute_residual_control_manifest_sha256",
+        "resource_record_id_in_preimage": false,
+        "resource_record_order": "CANONICAL_ASCENDING_BY_FILTERED_FIELDS"
+      }
+    ],
+    "profile_bound_path_count": 63,
+    "profile_bound_paths_sha256": "01bc312983b6046296d3fe0818867a3613e37e56f1d3304615e0072651f68d5c",
+    "resource_cardinality_bindings": [
+      {
+        "profile_field_id": "guest_accelerator_count",
+        "required_cardinality": "EXACTLY_ZERO",
+        "resource_root": "guestAccelerators[]",
+        "transform": "RESOURCE_RECORD_COUNT"
+      }
+    ]
+  },
+  "default_runtime_disposition": "REJECT_IF_PRESENT",
+  "disposition_counts": {
+    "DERIVED_POSTURE_ONLY": 2,
+    "INSTANCE_AND_PROFILE_BINDING": 3,
+    "INSTANCE_IDENTITY_BINDING": 41,
+    "PROFILE_CONTROL_BINDING": 60,
+    "REJECT_IF_PRESENT": 91,
+    "STRUCTURAL_CONTAINER_ONLY": 45,
+    "TRANSIENT_OBSERVATION_NO_RETENTION": 10,
+    "TRANSIENT_POLICY_CHECK_NO_RETENTION": 5
+  },
+  "field_count": 257,
+  "fields": [
+    {
+      "json_type": "object",
+      "object_ref": "AdvancedMachineFeatures",
+      "path": "advancedMachineFeatures",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "advancedMachineFeatures.enableNestedVirtualization",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "advancedMachineFeatures.enableUefiNetworking",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "enum": [
+        "ARCHITECTURAL",
+        "ENHANCED",
+        "PERFORMANCE_MONITORING_UNIT_UNSPECIFIED",
+        "STANDARD"
+      ],
+      "json_type": "string",
+      "path": "advancedMachineFeatures.performanceMonitoringUnit",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "advancedMachineFeatures.threadsPerCore",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "advancedMachineFeatures.turboMode",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "runtime_value_type": "SAFE_TOKEN",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "advancedMachineFeatures.visibleCoreCount",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "canIpForward",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ConfidentialInstanceConfig",
+      "path": "confidentialInstanceConfig",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "CCA",
+        "CONFIDENTIAL_INSTANCE_TYPE_UNSPECIFIED",
+        "SEV",
+        "SEV_SNP",
+        "TDX"
+      ],
+      "json_type": "string",
+      "path": "confidentialInstanceConfig.confidentialInstanceType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "confidentialInstanceConfig.enableConfidentialCompute",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "cpuPlatform",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_AND_PROFILE_BINDING",
+      "runtime_value_type": "SAFE_TOKEN",
+      "target_scope": "PROFILE_AND_INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "creationTimestamp",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "deletionProtection",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "description",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "AttachedDisk",
+      "json_type": "array",
+      "path": "disks[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "ARCHITECTURE_UNSPECIFIED",
+        "ARM64",
+        "X86_64"
+      ],
+      "json_type": "string",
+      "path": "disks[].architecture",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "disks[].autoDelete",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "disks[].boot",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].deviceName",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "OPAQUE_QUALIFICATION_ID",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "disks[].diskEncryptionKey",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.kmsKeyName",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.kmsKeyServiceAccount",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.rawKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.rsaEncryptedKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].diskEncryptionKey.sha256",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].diskSizeGb",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "disks[].forceAttach",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "item_ref": "GuestOsFeature",
+      "json_type": "array",
+      "path": "disks[].guestOsFeatures[]",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "BARE_METAL_LINUX_COMPATIBLE",
+        "CCA_CAPABLE",
+        "FEATURE_TYPE_UNSPECIFIED",
+        "GVNIC",
+        "IDPF",
+        "MULTI_IP_SUBNET",
+        "SECURE_BOOT",
+        "SEV_CAPABLE",
+        "SEV_LIVE_MIGRATABLE",
+        "SEV_LIVE_MIGRATABLE_V2",
+        "SEV_SNP_CAPABLE",
+        "SNP_SVSM_CAPABLE",
+        "TDX_CAPABLE",
+        "UEFI_COMPATIBLE",
+        "VIRTIO_SCSI_MULTIQUEUE",
+        "WINDOWS"
+      ],
+      "json_type": "string",
+      "path": "disks[].guestOsFeatures[].type",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "disks[].index",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "AttachedDiskInitializeParams",
+      "path": "disks[].initializeParams",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "ARCHITECTURE_UNSPECIFIED",
+        "ARM64",
+        "X86_64"
+      ],
+      "json_type": "string",
+      "path": "disks[].initializeParams.architecture",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.description",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.diskName",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "OPAQUE_QUALIFICATION_ID",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].initializeParams.diskSizeGb",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.diskType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "DISK_TYPE",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "disks[].initializeParams.enableConfidentialCompute",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "path": "disks[].initializeParams.labels",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].initializeParams.licenses[]",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "RECREATE_DISK",
+        "RECREATE_DISK_IF_SOURCE_CHANGED",
+        "USE_EXISTING_DISK"
+      ],
+      "json_type": "string",
+      "path": "disks[].initializeParams.onUpdateAction",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].initializeParams.provisionedIops",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int64",
+      "json_type": "string",
+      "path": "disks[].initializeParams.provisionedThroughput",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].initializeParams.replicaZones[]",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "path": "disks[].initializeParams.resourceManagerTags",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].initializeParams.resourcePolicies[]",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImage",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "IMAGE",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.kmsKeyName",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.kmsKeyServiceAccount",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.rawKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.rsaEncryptedKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceImageEncryptionKey.sha256",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshot",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "SNAPSHOT",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.kmsKeyName",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.kmsKeyServiceAccount",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.rawKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.rsaEncryptedKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.sourceSnapshotEncryptionKey.sha256",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].initializeParams.storagePool",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "NVME",
+        "SCSI"
+      ],
+      "json_type": "string",
+      "path": "disks[].interface",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].kind",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "disks[].licenses[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "LICENSE",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "enum": [
+        "READ_ONLY",
+        "READ_WRITE"
+      ],
+      "json_type": "string",
+      "path": "disks[].mode",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "enum": [
+        "DISK_SAVED_STATE_UNSPECIFIED",
+        "PRESERVED"
+      ],
+      "json_type": "string",
+      "path": "disks[].savedState",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "InitialStateConfig",
+      "path": "disks[].shieldedInstanceInitialState",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "FileContentBuffer",
+      "json_type": "array",
+      "path": "disks[].shieldedInstanceInitialState.dbs[]",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbs[].content",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbs[].fileType",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "FileContentBuffer",
+      "json_type": "array",
+      "path": "disks[].shieldedInstanceInitialState.dbxs[]",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbxs[].content",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.dbxs[].fileType",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "FileContentBuffer",
+      "json_type": "array",
+      "path": "disks[].shieldedInstanceInitialState.keks[]",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.keks[].content",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.keks[].fileType",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "FileContentBuffer",
+      "path": "disks[].shieldedInstanceInitialState.pk",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.pk.content",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "BIN",
+        "UNDEFINED",
+        "X509"
+      ],
+      "json_type": "string",
+      "path": "disks[].shieldedInstanceInitialState.pk.fileType",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "disks[].source",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "DISK",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "enum": [
+        "PERSISTENT",
+        "SCRATCH"
+      ],
+      "json_type": "string",
+      "path": "disks[].type",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "DisplayDevice",
+      "path": "displayDevice",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "displayDevice.enableDisplay",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "fingerprint",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "AcceleratorConfig",
+      "json_type": "array",
+      "path": "guestAccelerators[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "guestAccelerators[].acceleratorCount",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "guestAccelerators[].acceleratorType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "runtime_value_type": "SAFE_TOKEN",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "hostname",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_POLICY_CHECK_NO_RETENTION",
+      "target_scope": "CONTROL_POLICY_POSTURE"
+    },
+    {
+      "format": "uint64",
+      "json_type": "string",
+      "path": "id",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "instanceEncryptionKey",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "instanceEncryptionKey.kmsKeyName",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "instanceEncryptionKey.kmsKeyServiceAccount",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "instanceEncryptionKey.rawKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "instanceEncryptionKey.rsaEncryptedKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "instanceEncryptionKey.sha256",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "KEY_REVOCATION_ACTION_TYPE_UNSPECIFIED",
+        "NONE",
+        "STOP"
+      ],
+      "json_type": "string",
+      "path": "keyRevocationActionType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "kind",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "labelFingerprint",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "path": "labels",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_POLICY_CHECK_NO_RETENTION",
+      "target_scope": "CONTROL_POLICY_POSTURE"
+    },
+    {
+      "json_type": "string",
+      "path": "lastStartTimestamp",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "lastStopTimestamp",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "lastSuspendedTimestamp",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "enum": [
+        "EPHEMERAL_KEY_ENCRYPTION",
+        "LOCAL_SSD_ENCRYPTION_MODE_UNSPECIFIED",
+        "STANDARD_ENCRYPTION"
+      ],
+      "json_type": "string",
+      "path": "localSsdEncryptionMode",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "machineType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_AND_PROFILE_BINDING",
+      "runtime_uri_kind": "MACHINE_TYPE",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "PROFILE_AND_INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "Metadata",
+      "path": "metadata",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "metadata.fingerprint",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "object",
+      "json_type": "array",
+      "path": "metadata.items[]",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "metadata.items[].key",
+      "pattern": "[a-zA-Z0-9-_]{1,128}",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_POLICY_CHECK_NO_RETENTION",
+      "target_scope": "METADATA_ALLOWLIST_POSTURE"
+    },
+    {
+      "json_type": "string",
+      "path": "metadata.items[].value",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_POLICY_CHECK_NO_RETENTION",
+      "target_scope": "METADATA_ALLOWLIST_POSTURE"
+    },
+    {
+      "json_type": "string",
+      "path": "metadata.kind",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "minCpuPlatform",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_AND_PROFILE_BINDING",
+      "runtime_value_type": "SAFE_TOKEN",
+      "target_scope": "PROFILE_AND_INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "name",
+      "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "OPAQUE_QUALIFICATION_ID",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "item_ref": "NetworkInterface",
+      "json_type": "array",
+      "path": "networkInterfaces[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "AccessConfig",
+      "json_type": "array",
+      "path": "networkInterfaces[].accessConfigs[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].externalIpv6",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].accessConfigs[].externalIpv6PrefixLength",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].kind",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].name",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].natIP",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "FIXED_STANDARD",
+        "PREMIUM",
+        "STANDARD",
+        "STANDARD_OVERRIDES_FIXED_STANDARD"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].networkTier",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].publicPtrDomainName",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].securityPolicy",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "networkInterfaces[].accessConfigs[].setPublicPtr",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "DIRECT_IPV6",
+        "ONE_TO_ONE_NAT"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].accessConfigs[].type",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "AliasIpRange",
+      "json_type": "array",
+      "path": "networkInterfaces[].aliasIpRanges[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpRanges[].ipCidrRange",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpRanges[].subnetworkRangeName",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_ref": "AliasIpRange",
+      "json_type": "array",
+      "path": "networkInterfaces[].aliasIpv6Ranges[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpv6Ranges[].ipCidrRange",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].aliasIpv6Ranges[].subnetworkRangeName",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "networkInterfaces[].enableVpcScopedDns",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "networkInterfaces[].fingerprint",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "IGMP_QUERY_DISABLED",
+        "IGMP_QUERY_V2"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].igmpQuery",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].internalIpv6PrefixLength",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "item_ref": "AccessConfig",
+      "json_type": "array",
+      "path": "networkInterfaces[].ipv6AccessConfigs[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].externalIpv6",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].externalIpv6PrefixLength",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].kind",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].name",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].natIP",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "FIXED_STANDARD",
+        "PREMIUM",
+        "STANDARD",
+        "STANDARD_OVERRIDES_FIXED_STANDARD"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].networkTier",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].publicPtrDomainName",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].securityPolicy",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].setPublicPtr",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "DIRECT_IPV6",
+        "ONE_TO_ONE_NAT"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessConfigs[].type",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "EXTERNAL",
+        "INTERNAL"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6AccessType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].ipv6Address",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "DERIVED_BOOLEAN_OR_ENUM_ONLY",
+      "runtime_disposition": "DERIVED_POSTURE_ONLY",
+      "target_scope": "RESTRICTED_CONTROL_POSTURE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].kind",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].name",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "OPAQUE_QUALIFICATION_ID",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].network",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "NETWORK",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].networkAttachment",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "NETWORK_ATTACHMENT",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].networkIP",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "retention": "DERIVED_BOOLEAN_OR_ENUM_ONLY",
+      "runtime_disposition": "DERIVED_POSTURE_ONLY",
+      "target_scope": "RESTRICTED_CONTROL_POSTURE"
+    },
+    {
+      "enum": [
+        "GVNIC",
+        "IDPF",
+        "IRDMA",
+        "MRDMA",
+        "UNSPECIFIED_NIC_TYPE",
+        "VIRTIO_NET"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].nicType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].parentNicName",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "OPAQUE_QUALIFICATION_ID",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].queueCount",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].serviceClassId",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "runtime_value_type": "SAFE_TOKEN",
+      "target_scope": "PROFILE"
+    },
+    {
+      "enum": [
+        "IPV4_IPV6",
+        "IPV4_ONLY",
+        "IPV6_ONLY"
+      ],
+      "json_type": "string",
+      "path": "networkInterfaces[].stackType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "networkInterfaces[].subnetwork",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "SUBNETWORK",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "networkInterfaces[].vlan",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "NetworkPerformanceConfig",
+      "path": "networkPerformanceConfig",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "DEFAULT",
+        "TIER_1"
+      ],
+      "json_type": "string",
+      "path": "networkPerformanceConfig.totalEgressBandwidthTier",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "InstanceParams",
+      "path": "params",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "Duration",
+      "path": "params.requestValidForDuration",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "params.requestValidForDuration.nanos",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int64",
+      "json_type": "string",
+      "path": "params.requestValidForDuration.seconds",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "path": "params.resourceManagerTags",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "ENABLE_BIDIRECTIONAL_ACCESS_TO_GOOGLE",
+        "ENABLE_OUTBOUND_VM_ACCESS_TO_GOOGLE",
+        "INHERIT_FROM_SUBNETWORK"
+      ],
+      "json_type": "string",
+      "path": "privateIpv6GoogleAccess",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ReservationAffinity",
+      "path": "reservationAffinity",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "ANY_RESERVATION",
+        "NO_RESERVATION",
+        "SPECIFIC_RESERVATION",
+        "UNSPECIFIED"
+      ],
+      "json_type": "string",
+      "path": "reservationAffinity.consumeReservationType",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "reservationAffinity.key",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "reservationAffinity.values[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "runtime_value_type": "SAFE_TOKEN",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "resourcePolicies[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "RESOURCE_POLICY",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ResourceStatus",
+      "path": "resourceStatus",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ResourceStatusEffectiveInstanceMetadata",
+      "path": "resourceStatus.effectiveInstanceMetadata",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.blockProjectSshKeysMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableGuestAttributesMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableOsInventoryMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableOsconfigMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.enableOsloginMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.gceContainerDeclarationMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.serialPortEnableMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.effectiveInstanceMetadata.serialPortLoggingEnableMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.effectiveInstanceMetadata.vmDnsSettingMetadataValue",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.physicalHost",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ResourceStatusPhysicalHostTopology",
+      "path": "resourceStatus.physicalHostTopology",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ResourceStatusPhysicalHostTopologyAdditionalAttributes",
+      "path": "resourceStatus.physicalHostTopology.additionalAttributes",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "path": "resourceStatus.physicalHostTopology.additionalAttributes.acceleratorTopologyIds",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.block",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.cluster",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.host",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.physicalHostTopology.subblock",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ResourceStatusReservationConsumptionInfo",
+      "path": "resourceStatus.reservationConsumptionInfo",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.reservationConsumptionInfo.consumedReservation",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ResourceStatusScheduling",
+      "path": "resourceStatus.scheduling",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "resourceStatus.scheduling.availabilityDomain",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "UpcomingMaintenance",
+      "path": "resourceStatus.upcomingMaintenance",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.upcomingMaintenance.canReschedule",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.latestWindowStartTime",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "resourceStatus.upcomingMaintenance.maintenanceOnShutdown",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "item_enum": [
+        "FAILURE_DISK",
+        "FAILURE_GPU",
+        "FAILURE_GPU_MULTIPLE_FAULTY_HOSTS_CUSTOMER_REPORTED",
+        "FAILURE_GPU_NVLINK_SWITCH_CUSTOMER_REPORTED",
+        "FAILURE_GPU_TEMPERATURE",
+        "FAILURE_GPU_XID",
+        "FAILURE_INFRA",
+        "FAILURE_INTERFACE",
+        "FAILURE_MEMORY",
+        "FAILURE_NETWORK",
+        "FAILURE_NVLINK",
+        "FAILURE_REDUNDANT_HARDWARE_FAULT",
+        "FAILURE_TPU",
+        "INFRASTRUCTURE_RELOCATION",
+        "MAINTENANCE_REASON_UNKNOWN",
+        "PLANNED_NETWORK_UPDATE",
+        "PLANNED_UPDATE"
+      ],
+      "item_type": "string",
+      "json_type": "array",
+      "path": "resourceStatus.upcomingMaintenance.maintenanceReasons[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "enum": [
+        "ONGOING",
+        "PENDING",
+        "UNKNOWN"
+      ],
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.maintenanceStatus",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "enum": [
+        "MULTIPLE",
+        "SCHEDULED",
+        "UNKNOWN_TYPE",
+        "UNSCHEDULED"
+      ],
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.type",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.windowEndTime",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "resourceStatus.upcomingMaintenance.windowStartTime",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "satisfiesPzi",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "satisfiesPzs",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "readOnly": true,
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "Scheduling",
+      "path": "scheduling",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "scheduling.automaticRestart",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.availabilityDomain",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.hostErrorTimeoutSeconds",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "enum": [
+        "DELETE",
+        "INSTANCE_TERMINATION_ACTION_UNSPECIFIED",
+        "STOP"
+      ],
+      "json_type": "string",
+      "path": "scheduling.instanceTerminationAction",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "Duration",
+      "path": "scheduling.localSsdRecoveryTimeout",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.localSsdRecoveryTimeout.nanos",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int64",
+      "json_type": "string",
+      "path": "scheduling.localSsdRecoveryTimeout.seconds",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "scheduling.locationHint",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "Duration",
+      "path": "scheduling.maxRunDuration",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.maxRunDuration.nanos",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int64",
+      "json_type": "string",
+      "path": "scheduling.maxRunDuration.seconds",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "format": "int32",
+      "json_type": "integer",
+      "path": "scheduling.minNodeCpus",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "item_ref": "SchedulingNodeAffinity",
+      "json_type": "array",
+      "path": "scheduling.nodeAffinities[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "scheduling.nodeAffinities[].key",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "IN",
+        "NOT_IN",
+        "OPERATOR_UNSPECIFIED"
+      ],
+      "json_type": "string",
+      "path": "scheduling.nodeAffinities[].operator",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "scheduling.nodeAffinities[].values[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "MIGRATE",
+        "TERMINATE"
+      ],
+      "json_type": "string",
+      "path": "scheduling.onHostMaintenance",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "SchedulingOnInstanceStopAction",
+      "path": "scheduling.onInstanceStopAction",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "scheduling.onInstanceStopAction.discardLocalSsd",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "scheduling.preemptible",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "enum": [
+        "FLEX_START",
+        "RESERVATION_BOUND",
+        "SPOT",
+        "STANDARD"
+      ],
+      "json_type": "string",
+      "path": "scheduling.provisioningModel",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "scheduling.skipGuestOsShutdown",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "scheduling.terminationTime",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_value_type": "RFC3339",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "selfLink",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "INSTANCE",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "item_ref": "ServiceAccount",
+      "json_type": "array",
+      "path": "serviceAccounts[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "serviceAccounts[].email",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "runtime_value_type": "GCP_SERVICE_ACCOUNT_PRINCIPAL",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "serviceAccounts[].scopes[]",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "runtime_value_type": "GCP_OAUTH_SCOPE",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ShieldedInstanceConfig",
+      "path": "shieldedInstanceConfig",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "shieldedInstanceConfig.enableIntegrityMonitoring",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "shieldedInstanceConfig.enableSecureBoot",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "shieldedInstanceConfig.enableVtpm",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "ShieldedInstanceIntegrityPolicy",
+      "path": "shieldedInstanceIntegrityPolicy",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "shieldedInstanceIntegrityPolicy.updateAutoLearnPolicy",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "sourceMachineImage",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "MACHINE_IMAGE",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "CustomerEncryptionKey",
+      "path": "sourceMachineImageEncryptionKey",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.kmsKeyName",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.kmsKeyServiceAccount",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.rawKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.rsaEncryptedKey",
+      "provider_disposition": "PROHIBITED_SECRET_OR_KEY_MATERIAL",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "sourceMachineImageEncryptionKey.sha256",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "startRestricted",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "enum": [
+        "DEPROVISIONING",
+        "PENDING",
+        "PROVISIONING",
+        "REPAIRING",
+        "RUNNING",
+        "STAGING",
+        "STOPPED",
+        "STOPPING",
+        "SUSPENDED",
+        "SUSPENDING",
+        "TERMINATED"
+      ],
+      "json_type": "string",
+      "path": "status",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "target_scope": "INSTANCE"
+    },
+    {
+      "json_type": "string",
+      "path": "statusMessage",
+      "provider_disposition": "RECOGNIZED_BUT_RUNTIME_PROHIBITED",
+      "readOnly": true,
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_POLICY_CHECK_NO_RETENTION",
+      "target_scope": "CONTROL_POLICY_POSTURE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "Tags",
+      "path": "tags",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "format": "byte",
+      "json_type": "string",
+      "path": "tags.fingerprint",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "TRANSIENT_OBSERVATION_NO_RETENTION",
+      "target_scope": "NONE"
+    },
+    {
+      "item_type": "string",
+      "json_type": "array",
+      "path": "tags.items[]",
+      "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "object",
+      "object_ref": "WorkloadIdentityConfig",
+      "path": "workloadIdentityConfig",
+      "provider_disposition": "NOT_ADMITTED_BY_THIS_VERSION",
+      "retention": "NOT_RETAINED",
+      "runtime_disposition": "STRUCTURAL_CONTAINER_ONLY",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "string",
+      "path": "workloadIdentityConfig.identity",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "PROHIBITED",
+      "runtime_disposition": "REJECT_IF_PRESENT",
+      "target_scope": "NONE"
+    },
+    {
+      "json_type": "boolean",
+      "path": "workloadIdentityConfig.identityCertificateEnabled",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "PROFILE_CONTROL_BINDING",
+      "target_scope": "PROFILE"
+    },
+    {
+      "json_type": "string",
+      "path": "zone",
+      "provider_disposition": "ADMITTED_PROVIDER_VOCABULARY",
+      "readOnly": true,
+      "retention": "RESTRICTED_HASH_PREIMAGE",
+      "runtime_disposition": "INSTANCE_IDENTITY_BINDING",
+      "runtime_uri_kind": "ZONE",
+      "runtime_value_type": "GCP_RESOURCE_URI",
+      "target_scope": "INSTANCE"
+    }
+  ],
+  "hash_preimage_path_count": 104,
+  "hash_preimage_paths": [
+    "advancedMachineFeatures.enableNestedVirtualization",
+    "advancedMachineFeatures.enableUefiNetworking",
+    "advancedMachineFeatures.performanceMonitoringUnit",
+    "advancedMachineFeatures.threadsPerCore",
+    "advancedMachineFeatures.turboMode",
+    "advancedMachineFeatures.visibleCoreCount",
+    "canIpForward",
+    "confidentialInstanceConfig.confidentialInstanceType",
+    "confidentialInstanceConfig.enableConfidentialCompute",
+    "cpuPlatform",
+    "creationTimestamp",
+    "deletionProtection",
+    "disks[].architecture",
+    "disks[].autoDelete",
+    "disks[].boot",
+    "disks[].deviceName",
+    "disks[].diskSizeGb",
+    "disks[].forceAttach",
+    "disks[].guestOsFeatures[].type",
+    "disks[].index",
+    "disks[].initializeParams.architecture",
+    "disks[].initializeParams.diskName",
+    "disks[].initializeParams.diskSizeGb",
+    "disks[].initializeParams.diskType",
+    "disks[].initializeParams.enableConfidentialCompute",
+    "disks[].initializeParams.sourceImage",
+    "disks[].initializeParams.sourceSnapshot",
+    "disks[].interface",
+    "disks[].licenses[]",
+    "disks[].mode",
+    "disks[].source",
+    "disks[].type",
+    "displayDevice.enableDisplay",
+    "guestAccelerators[].acceleratorCount",
+    "guestAccelerators[].acceleratorType",
+    "id",
+    "keyRevocationActionType",
+    "lastStartTimestamp",
+    "lastStopTimestamp",
+    "lastSuspendedTimestamp",
+    "localSsdEncryptionMode",
+    "machineType",
+    "minCpuPlatform",
+    "name",
+    "networkInterfaces[].enableVpcScopedDns",
+    "networkInterfaces[].igmpQuery",
+    "networkInterfaces[].internalIpv6PrefixLength",
+    "networkInterfaces[].name",
+    "networkInterfaces[].network",
+    "networkInterfaces[].networkAttachment",
+    "networkInterfaces[].nicType",
+    "networkInterfaces[].parentNicName",
+    "networkInterfaces[].queueCount",
+    "networkInterfaces[].serviceClassId",
+    "networkInterfaces[].stackType",
+    "networkInterfaces[].subnetwork",
+    "networkInterfaces[].vlan",
+    "networkPerformanceConfig.totalEgressBandwidthTier",
+    "privateIpv6GoogleAccess",
+    "reservationAffinity.consumeReservationType",
+    "resourcePolicies[]",
+    "resourceStatus.effectiveInstanceMetadata.blockProjectSshKeysMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableGuestAttributesMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableOsInventoryMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableOsconfigMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableOsloginMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.gceContainerDeclarationMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.serialPortEnableMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.serialPortLoggingEnableMetadataValue",
+    "resourceStatus.scheduling.availabilityDomain",
+    "resourceStatus.upcomingMaintenance.canReschedule",
+    "resourceStatus.upcomingMaintenance.latestWindowStartTime",
+    "resourceStatus.upcomingMaintenance.maintenanceOnShutdown",
+    "resourceStatus.upcomingMaintenance.maintenanceReasons[]",
+    "resourceStatus.upcomingMaintenance.maintenanceStatus",
+    "resourceStatus.upcomingMaintenance.type",
+    "resourceStatus.upcomingMaintenance.windowEndTime",
+    "resourceStatus.upcomingMaintenance.windowStartTime",
+    "scheduling.automaticRestart",
+    "scheduling.availabilityDomain",
+    "scheduling.hostErrorTimeoutSeconds",
+    "scheduling.instanceTerminationAction",
+    "scheduling.localSsdRecoveryTimeout.nanos",
+    "scheduling.localSsdRecoveryTimeout.seconds",
+    "scheduling.maxRunDuration.nanos",
+    "scheduling.maxRunDuration.seconds",
+    "scheduling.minNodeCpus",
+    "scheduling.nodeAffinities[].operator",
+    "scheduling.onHostMaintenance",
+    "scheduling.onInstanceStopAction.discardLocalSsd",
+    "scheduling.preemptible",
+    "scheduling.provisioningModel",
+    "scheduling.skipGuestOsShutdown",
+    "scheduling.terminationTime",
+    "selfLink",
+    "shieldedInstanceConfig.enableIntegrityMonitoring",
+    "shieldedInstanceConfig.enableSecureBoot",
+    "shieldedInstanceConfig.enableVtpm",
+    "shieldedInstanceIntegrityPolicy.updateAutoLearnPolicy",
+    "sourceMachineImage",
+    "status",
+    "tags.items[]",
+    "workloadIdentityConfig.identityCertificateEnabled",
+    "zone"
+  ],
+  "hash_preimage_paths_sha256": "69f2f170720fa30fda4166dbbe9dda68ca453aeb9d85547c285d6236a7e32b41",
+  "projection_rules": {
+    "derived_values": "RETAIN_ONLY_CLOSED_BOOLEAN_OR_ENUM_POSTURE",
+    "duplicate_path": "REJECT",
+    "every_hash_preimage_path_exactly_once_across_scalar_rows_and_resource_records": true,
+    "instance_values": "EXACT_VALUE_OBSERVED_INDEPENDENTLY_PER_BOOT",
+    "parent_object_never_authorizes_descendants": true,
+    "profile_values": "EXACT_VALUE_OR_EXPLICIT_ABSENCE_FROZEN_BEFORE_QUALIFICATION",
+    "projected_rows_are_leaf_paths_only": true,
+    "raw_compute_response_retention": "PROHIBITED",
+    "reservation_affinity": "SPECIFIC_RESERVATION_REQUIRES_PRESENT_KEY_AND_NONEMPTY_VALUES; ALL_OTHER_OR_ABSENT_TYPES_REQUIRE_KEY_AND_VALUES_ABSENT",
+    "scalar_projected_row_values_are_scalar_or_scalar_set_only": true,
+    "transient_values": "CHECK_THEN_DISCARD_BEFORE_HASH_OR_RETENTION",
+    "unknown_path": "REJECT_IF_PRESENT",
+    "wildcard_resource_paths_use_identity_keyed_records_not_independent_scalar_sets": true
+  },
+  "provider_projection_binding": {
+    "field_count": 257,
+    "provider_revision": "20260709",
+    "schema_version": "GCP_COMPUTE_FIELD_PROJECTION_V1",
+    "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24",
+    "source_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c"
+  },
+  "required_present_scalar_paths": [
+    "advancedMachineFeatures.enableNestedVirtualization",
+    "advancedMachineFeatures.performanceMonitoringUnit",
+    "advancedMachineFeatures.threadsPerCore",
+    "advancedMachineFeatures.turboMode",
+    "advancedMachineFeatures.visibleCoreCount",
+    "confidentialInstanceConfig.confidentialInstanceType",
+    "confidentialInstanceConfig.enableConfidentialCompute",
+    "cpuPlatform",
+    "creationTimestamp",
+    "displayDevice.enableDisplay",
+    "id",
+    "lastStartTimestamp",
+    "machineType",
+    "minCpuPlatform",
+    "name",
+    "scheduling.automaticRestart",
+    "scheduling.onHostMaintenance",
+    "scheduling.preemptible",
+    "scheduling.provisioningModel",
+    "selfLink",
+    "shieldedInstanceConfig.enableIntegrityMonitoring",
+    "shieldedInstanceConfig.enableSecureBoot",
+    "shieldedInstanceConfig.enableVtpm",
+    "status",
+    "zone"
+  ],
+  "resource_root_specs": [
+    {
+      "cardinality": "EXACTLY_ONE",
+      "field_paths": [
+        "disks[].architecture",
+        "disks[].autoDelete",
+        "disks[].boot",
+        "disks[].deviceName",
+        "disks[].diskSizeGb",
+        "disks[].forceAttach",
+        "disks[].guestOsFeatures[].type",
+        "disks[].index",
+        "disks[].initializeParams.architecture",
+        "disks[].initializeParams.diskName",
+        "disks[].initializeParams.diskSizeGb",
+        "disks[].initializeParams.diskType",
+        "disks[].initializeParams.enableConfidentialCompute",
+        "disks[].initializeParams.sourceImage",
+        "disks[].initializeParams.sourceSnapshot",
+        "disks[].interface",
+        "disks[].licenses[]",
+        "disks[].mode",
+        "disks[].source",
+        "disks[].type"
+      ],
+      "identity_paths": [
+        "disks[].deviceName"
+      ],
+      "resource_root": "disks[]"
+    },
+    {
+      "cardinality": "EXACTLY_ZERO",
+      "field_paths": [
+        "guestAccelerators[].acceleratorCount",
+        "guestAccelerators[].acceleratorType"
+      ],
+      "identity_paths": [
+        "guestAccelerators[].acceleratorType"
+      ],
+      "resource_root": "guestAccelerators[]"
+    },
+    {
+      "cardinality": "EXACTLY_ONE",
+      "field_paths": [
+        "networkInterfaces[].enableVpcScopedDns",
+        "networkInterfaces[].igmpQuery",
+        "networkInterfaces[].internalIpv6PrefixLength",
+        "networkInterfaces[].name",
+        "networkInterfaces[].network",
+        "networkInterfaces[].networkAttachment",
+        "networkInterfaces[].nicType",
+        "networkInterfaces[].parentNicName",
+        "networkInterfaces[].queueCount",
+        "networkInterfaces[].serviceClassId",
+        "networkInterfaces[].stackType",
+        "networkInterfaces[].subnetwork",
+        "networkInterfaces[].vlan"
+      ],
+      "identity_paths": [
+        "networkInterfaces[].name"
+      ],
+      "resource_root": "networkInterfaces[]"
+    },
+    {
+      "cardinality": "EXACTLY_ZERO",
+      "field_paths": [
+        "scheduling.nodeAffinities[].operator"
+      ],
+      "identity_paths": [
+        "scheduling.nodeAffinities[].key",
+        "scheduling.nodeAffinities[].operator"
+      ],
+      "resource_root": "scheduling.nodeAffinities[]"
+    }
+  ],
+  "runtime_dispositions": [
+    "STRUCTURAL_CONTAINER_ONLY",
+    "PROFILE_CONTROL_BINDING",
+    "INSTANCE_IDENTITY_BINDING",
+    "INSTANCE_AND_PROFILE_BINDING",
+    "TRANSIENT_OBSERVATION_NO_RETENTION",
+    "TRANSIENT_POLICY_CHECK_NO_RETENTION",
+    "DERIVED_POSTURE_ONLY",
+    "REJECT_IF_PRESENT"
+  ],
+  "scalar_hash_preimage_path_count": 68,
+  "scalar_hash_preimage_paths": [
+    "advancedMachineFeatures.enableNestedVirtualization",
+    "advancedMachineFeatures.enableUefiNetworking",
+    "advancedMachineFeatures.performanceMonitoringUnit",
+    "advancedMachineFeatures.threadsPerCore",
+    "advancedMachineFeatures.turboMode",
+    "advancedMachineFeatures.visibleCoreCount",
+    "canIpForward",
+    "confidentialInstanceConfig.confidentialInstanceType",
+    "confidentialInstanceConfig.enableConfidentialCompute",
+    "cpuPlatform",
+    "creationTimestamp",
+    "deletionProtection",
+    "displayDevice.enableDisplay",
+    "id",
+    "keyRevocationActionType",
+    "lastStartTimestamp",
+    "lastStopTimestamp",
+    "lastSuspendedTimestamp",
+    "localSsdEncryptionMode",
+    "machineType",
+    "minCpuPlatform",
+    "name",
+    "networkPerformanceConfig.totalEgressBandwidthTier",
+    "privateIpv6GoogleAccess",
+    "reservationAffinity.consumeReservationType",
+    "resourcePolicies[]",
+    "resourceStatus.effectiveInstanceMetadata.blockProjectSshKeysMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableGuestAttributesMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableOsInventoryMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableOsconfigMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.enableOsloginMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.gceContainerDeclarationMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.serialPortEnableMetadataValue",
+    "resourceStatus.effectiveInstanceMetadata.serialPortLoggingEnableMetadataValue",
+    "resourceStatus.scheduling.availabilityDomain",
+    "resourceStatus.upcomingMaintenance.canReschedule",
+    "resourceStatus.upcomingMaintenance.latestWindowStartTime",
+    "resourceStatus.upcomingMaintenance.maintenanceOnShutdown",
+    "resourceStatus.upcomingMaintenance.maintenanceReasons[]",
+    "resourceStatus.upcomingMaintenance.maintenanceStatus",
+    "resourceStatus.upcomingMaintenance.type",
+    "resourceStatus.upcomingMaintenance.windowEndTime",
+    "resourceStatus.upcomingMaintenance.windowStartTime",
+    "scheduling.automaticRestart",
+    "scheduling.availabilityDomain",
+    "scheduling.hostErrorTimeoutSeconds",
+    "scheduling.instanceTerminationAction",
+    "scheduling.localSsdRecoveryTimeout.nanos",
+    "scheduling.localSsdRecoveryTimeout.seconds",
+    "scheduling.maxRunDuration.nanos",
+    "scheduling.maxRunDuration.seconds",
+    "scheduling.minNodeCpus",
+    "scheduling.onHostMaintenance",
+    "scheduling.onInstanceStopAction.discardLocalSsd",
+    "scheduling.preemptible",
+    "scheduling.provisioningModel",
+    "scheduling.skipGuestOsShutdown",
+    "scheduling.terminationTime",
+    "selfLink",
+    "shieldedInstanceConfig.enableIntegrityMonitoring",
+    "shieldedInstanceConfig.enableSecureBoot",
+    "shieldedInstanceConfig.enableVtpm",
+    "shieldedInstanceIntegrityPolicy.updateAutoLearnPolicy",
+    "sourceMachineImage",
+    "status",
+    "tags.items[]",
+    "workloadIdentityConfig.identityCertificateEnabled",
+    "zone"
+  ],
+  "schema_version": "GCP_RUNTIME_CONTROL_PLANE_PROJECTION_V1"
+}
