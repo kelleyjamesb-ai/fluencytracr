@@ -1,0 +1,2958 @@
+{
+  "approved_runtime_profile_hashes": [],
+  "canonicalization": {
+    "arrays": {
+      "RESOURCE_SET": "INPUT_MUST_ALREADY_BE_SORTED_BY_SCHEMA_NAMED_IDENTITY_KEY; UNSORTED_OR_DUPLICATE_REJECT",
+      "SEQUENCE": "PRESERVE_ORDER; ORDER_IS_SEMANTIC",
+      "SET": "INPUT_MUST_ALREADY_BE_ASCII_SORTED; UNSORTED_OR_DUPLICATE_REJECT"
+    },
+    "digest_grammar": "LOWERCASE_64_HEX",
+    "encoding": "UTF-8",
+    "floats": "PROHIBITED",
+    "hash_algorithm": "SHA-256",
+    "implicit_defaults": "PROHIBITED",
+    "integers": "SIGNED_64_BIT_DECIMAL_NO_COERCION_NO_BOOLEAN_NO_LEADING_ZERO_NO_NEGATIVE_ZERO",
+    "json_surface": "MINIFIED_NO_TRAILING_NEWLINE",
+    "null": "PROHIBITED; ABSENCE_IS_OMISSION_ONLY_WHEN_SCHEMA_ALLOWS",
+    "object_keys": "ASCII_SCHEMA_KEYS_SORTED_BY_ASCENDING_CODE_POINT",
+    "preimage": "ASCII_DOMAIN_SEPARATOR + 0x00 + CANONICAL_JSON_BYTES_OF_BODY",
+    "self_hash_rule": "OMIT_EXACTLY_THE_NODE_OWN_SELF_HASH_FIELD; NO_OTHER_FIELD_IS_OMITTED",
+    "strings": "VALID_FIELD_GRAMMAR_AND_UNICODE_NFC_ONLY_NO_CONTROL_CHARACTERS",
+    "unknown_fields": "REJECT_RECURSIVELY",
+    "validation_order": [
+      "REJECT_DUPLICATE_JSON_KEYS_BEFORE_OBJECT_CONSTRUCTION",
+      "VALIDATE_EXACT_CLOSED_SCHEMA_AND_FIELD_TYPES",
+      "VALIDATE_FIELD_SPECIFIC_COLLECTION_ORDER_AND_DOMAINS",
+      "SERIALIZE_CANONICAL_BYTES",
+      "APPLY_DOMAIN_SEPARATOR_AND_SHA256"
+    ],
+    "version": "FT_CANONICAL_JSON_V1"
+  },
+  "canonicalization_sha256": "a0726540e83bf7d83c38a1631573b2318baece9e02d5df9019471a6a7c0cf4bf",
+  "contract_version": "GCP_CANONICAL_RUNTIME_OBJECT_AND_HASH_V1",
+  "cross_object_constraints": {
+    "coordinated_rehash_after_mismatch": "REJECT",
+    "copied_control_observation": "REJECT_ON_INSTANCE_PROJECT_ZONE_PROFILE_IMAGE_START_OR_OBSERVATION_MISMATCH",
+    "exact_equalities": [
+      "INSTANCE_FIELD_instance_id == CONTROL_PATH_id",
+      "INSTANCE_FIELD_instance_name == CONTROL_PATH_name",
+      "INSTANCE_FIELD_compute_self_link == CONTROL_PATH_selfLink",
+      "INSTANCE_FIELD_creation_timestamp == CONTROL_PATH_creationTimestamp",
+      "INSTANCE_FIELD_last_start_timestamp == CONTROL_PATH_lastStartTimestamp",
+      "INSTANCE_FIELD_compute_machine_type_uri == CONTROL_PATH_machineType",
+      "INSTANCE_FIELD_compute_cpu_platform_raw == CONTROL_PATH_cpuPlatform",
+      "INSTANCE_FIELD_compute_status == CONTROL_PATH_status == RUNNING",
+      "INSTANCE_FIELD_compute_confidential_instance_type == CONTROL_PATH_confidentialInstanceConfig.confidentialInstanceType == TDX",
+      "INSTANCE_FIELD_zone == FINAL_SEGMENT_OF_CONTROL_PATH_zone_WITH_FULL_URI_RETAINED",
+      "INSTANCE_FIELD_project_id == PROJECT_SEGMENT_OF_CONTROL_PATH_selfLink_zone_AND_machineType",
+      "CONTROL_PATH_zone == LITERAL_https://www.googleapis.com/compute/v1/projects/{INSTANCE_project_id}/zones/{INSTANCE_zone}",
+      "CONTROL_PATH_selfLink == CONTROL_PATH_zone + /instances/{INSTANCE_instance_name}",
+      "CONTROL_PATH_machineType == CONTROL_PATH_zone + /machineTypes/{PROFILE_provisional_machine_type}",
+      "CONTROL_PATH_selfLink_FINAL_INSTANCE_SEGMENT == INSTANCE_FIELD_instance_name",
+      "PROFILE_FIELD_provisional_machine_type == FINAL_SEGMENT_OF_CONTROL_PATH_machineType",
+      "INSTANCE_FIELD_token_hwmodel == GCP_INTEL_TDX",
+      "INSTANCE_FIELD_cel_hwmodel == INTEL_TDX",
+      "INSTANCE_FIELD_container_restart_policy == PROFILE_FIELD_container_restart_policy",
+      "STRIP_LITERAL_sha256_PREFIX_FROM_INSTANCE_container_image_digest == PROFILE_FIELD_service_image_digest",
+      "DIGEST_SUFFIX_OF_INSTANCE_container_image_reference == INSTANCE_FIELD_container_image_digest",
+      "CONTROL_OBJECT_runtime_profile_hash == INSTANCE_OBJECT_runtime_profile_hash == PROFILE_OBJECT_runtime_profile_hash",
+      "INSTANCE_OBJECT_control_plane_observation_hash == CONTROL_OBJECT_control_plane_observation_hash",
+      "CONTROL_PATH_creationTimestamp <= CONTROL_PATH_lastStartTimestamp <= CONTROL_OBJECT_observation_point",
+      "IF_CONTROL_PATH_status_IS_RUNNING_THEN_CONTROL_PATH_creationTimestamp <= PRESENT_lastStopTimestamp_AND_lastSuspendedTimestamp < CONTROL_PATH_lastStartTimestamp",
+      "EVERY_CONTROL_PROFILE_DIRECT_BINDING_AND_MANIFEST_HASH == BOUND_PROFILE_FIELD",
+      "RESOURCE_ROOT_RECORD_COUNT_AND_IDENTITIES == RESOURCE_ROOT_SPEC"
+    ],
+    "full_resource_uri_retention": "REQUIRED_IN_RESTRICTED_INSTANCE_EVIDENCE",
+    "future_control_source_requirement": "SECTION_7_6_CONTROLLER_EVIDENCE_MUST_VERIFY_CONTROL_SOURCE_RESPONSE_HASH_AND_PROJECTED_VALUES_AS_ONE_RESPONSE",
+    "future_measurement_freshness_requirement": "SECTION_7_4_MEASUREMENT_MUST_VERIFY_AND_BIND_RAW_ATTESTATION_TOKEN_HASH_INSTANCE_OBSERVATION_HASH_LAST_START_TIMESTAMP_OBSERVATION_POINT_BOOT_EPOCH_AND_FRESH_NONCE",
+    "provider_layer_aliasing": "PROHIBITED"
+  },
+  "decision_algorithm": {
+    "closed_requires": {
+      "all_257_compute_paths_classified_leaf_only": true,
+      "all_profile_and_instance_fields_classified_and_domain_closed": true,
+      "canonicalization_and_section_7_2_hash_graph_closed": true,
+      "future_hash_preimages_not_claimed_by_section_7_2": true,
+      "no_field_self_promotes_visibility_to_sufficiency": true,
+      "provider_revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+      "runtime_authority": "HELD"
+    },
+    "fixed_physical_escalation_predicates": [
+      "SECTION_7_7_REJECTS_VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+      "ANY_REQUIRED_RUNTIME_IDENTITY_FIELD_IS_UNBINDABLE_OR_PARENT_TREATMENT_CANNOT_DETECT_ITS_DRIFT_BEFORE_MODEL_IMPORT",
+      "ANY_QUALIFICATION_OR_REQUALIFICATION_MATH_RELEVANT_PROFILE_OR_SEMANTIC_BYTES_DIFFER"
+    ],
+    "fixed_physical_escalation_result": "REJECT_C3_TDX_AND_REQUIRE_FIXED_PHYSICAL_CANDIDATE_SELECTION",
+    "precedence": [
+      "REJECT_FOR_RUNTIME_OBJECT_BOUNDARY_LEAKAGE",
+      "REJECT_C3_TDX_FOR_PROVIDER_CONFLICT",
+      "REJECT_C3_TDX_AND_REQUIRE_FIXED_PHYSICAL_CANDIDATE_SELECTION",
+      "HOLD_FOR_PROVIDER_CLAIM_REVALIDATION",
+      "HOLD_FOR_PARENT_RUNTIME_IDENTITY_TREATMENT",
+      "GCP_RUNTIME_OBJECT_HASH_CONTRACT_CLOSED_RUNTIME_AUTHORITY_HELD"
+    ],
+    "provider_result_mapping": {
+      "BOUNDARY_LEAKAGE_DETECTED": "REJECT_FOR_RUNTIME_OBJECT_BOUNDARY_LEAKAGE",
+      "CURRENT_SOURCE_CONFLICT": "REJECT_C3_TDX_FOR_PROVIDER_CONFLICT",
+      "EXACT_MAPPING_RECONFIRMED": "CONTINUE",
+      "FROZEN_MAPPING_CHANGED": "HOLD_FOR_PROVIDER_CLAIM_REVALIDATION",
+      "SOURCE_OR_PROVENANCE_UNAVAILABLE": "HOLD_FOR_PROVIDER_CLAIM_REVALIDATION"
+    },
+    "recorded_decision": "GCP_RUNTIME_OBJECT_HASH_CONTRACT_CLOSED_RUNTIME_AUTHORITY_HELD",
+    "version": "GCP_RUNTIME_OBJECT_CONTRACT_DECISION_V1"
+  },
+  "field_registry": {
+    "instance_fields": [
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "PROVIDER_POLICY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "INTEL_TDX",
+        "field_id": "cel_hwmodel",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "CEL assertion.hwmodel",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "CONTROL_PLANE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "TDX",
+        "field_id": "compute_confidential_instance_type",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "Compute confidentialInstanceType",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "compute_cpu_platform_raw",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "pattern": "^[A-Za-z][A-Za-z0-9 ._()+-]{0,127}$",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "Compute cpuPlatform; no alias to canonical enum",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "compute_machine_type_uri",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "Compute machineType",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "URI"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "compute_self_link",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "Compute selfLink",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "URI"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "LIFECYCLE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "RUNNING",
+        "field_id": "compute_status",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "Compute status observed at pre-execution point",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "WORKLOAD_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "container_image_digest",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.container.image_digest",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "OCI_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "WORKLOAD_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "container_image_id",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.container.image_id",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "OCI_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "authoritative_component": "DIGEST_MUST_EQUAL_container_image_digest",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "WORKLOAD_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "container_image_reference",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.container.image_reference",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "OCI_IMAGE_REFERENCE"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "WORKLOAD_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "Never",
+        "field_id": "container_restart_policy",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.container.restart_policy",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "LIFECYCLE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "creation_timestamp",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "Compute creationTimestamp",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "RFC3339"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "instance_id",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.gce.instance_id + Compute id",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "GCP_UINT64_STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "instance_name",
+        "math_relevant": false,
+        "namespace": "OPAQUE_NONPERSON_QUALIFICATION",
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "pattern": "^ft-qualification-id-[0-9a-f]{8}$",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.gce.instance_name + Compute name",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "LIFECYCLE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "last_start_timestamp",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "Compute lastStartTimestamp",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "RFC3339"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "HIDDEN_HARDWARE_EVIDENCE",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "observed_cpu_family",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "workload observation subject to TDX CPUID limits",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "HIDDEN_HARDWARE_EVIDENCE",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "observed_cpu_microcode",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "workload observation subject to TDX CPUID limits",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "HIDDEN_HARDWARE_EVIDENCE",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "observed_cpu_model",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "workload observation subject to TDX CPUID limits",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "HIDDEN_HARDWARE_EVIDENCE",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "observed_cpu_stepping",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "workload observation subject to TDX CPUID limits",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "NOT_OBSERVED_CONTRACT_ONLY"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "OPTIONAL_HOST_EVIDENCE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "physical_host_identity",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "OPTIONAL_CANNOT_PROMOTE_VIRTUAL_PROFILE",
+        "requirement": "OPTIONAL_NONPROMOTING",
+        "runtime_identity_relevant": false,
+        "source": "Compute resourceStatus.physicalHost population unproven",
+        "sufficiency": "INSUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "project_id",
+        "math_relevant": false,
+        "namespace": "OPAQUE_NONPERSON_QUALIFICATION",
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "pattern": "^ft-qualification-id-[0-9a-f]{8}$",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.gce.project_id",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "project_number",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.gce.project_number",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "GCP_UINT64_STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "SOURCE_COHERENCE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "raw_attestation_token_sha256",
+        "math_relevant": true,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "restricted exact raw attestation token bytes; verification deferred to Section 7.4",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_elements": [
+          "EXPERIMENTAL",
+          "LATEST",
+          "STABLE",
+          "USABLE"
+        ],
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "ATTESTATION_CLAIM",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "support_attributes",
+        "math_relevant": false,
+        "maximum_items": 4,
+        "minimum_items": 1,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "required_elements": [
+          "STABLE"
+        ],
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.confidential_space.support_attributes",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING_SET"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "ATTESTATION_CLAIM",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "tdx_tcb_date",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-5][0-9](\\.[0-9]{1,9})?Z$",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.tdx[].gcp_attester_tcb_date",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "time_zone": "UTC_Z_ONLY",
+        "value_type": "RFC3339"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "ATTESTATION_CLAIM",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "disabled-since-boot",
+        "field_id": "token_dbgstat",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.dbgstat",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "PROVIDER_TOKEN",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "GCP_INTEL_TDX",
+        "field_id": "token_hwmodel",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.hwmodel",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "ATTESTATION_CLAIM",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": true,
+        "field_id": "token_secboot",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.secboot",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "ATTESTATION_CLAIM",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "CONFIDENTIAL_SPACE",
+        "field_id": "token_swname",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.swname",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "ATTESTATION_CLAIM",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "element_pattern": "^(?:[0-9]{6}|[0-9]{8})$",
+        "field_id": "token_swversion",
+        "math_relevant": false,
+        "maximum_items": 16,
+        "minimum_items": 1,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.swversion",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING_SET"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PER_BOOT_BEFORE_MODEL_IMPORT",
+        "category": "GCP_IDENTITY",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "zone",
+        "math_relevant": false,
+        "object_scope": "PER_INSTANCE_PER_BOOT_OBSERVATION",
+        "qualification_treatment": "PER_BOOT_EXACT_BINDING",
+        "requirement": "REQUIRED_EACH_BOOT",
+        "runtime_identity_relevant": true,
+        "source": "raw JWT payload.submods.gce.zone + Compute zone URI",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ZONE"
+      }
+    ],
+    "profile_fields": [
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": [
+          "us-central1-a",
+          "us-central1-b",
+          "us-central1-c"
+        ],
+        "field_id": "approved_zone_set",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §10",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING_SET"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "arviz_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": false,
+        "field_id": "automatic_restart",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute scheduling.automaticRestart",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "boot_disk_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "closed control-plane disk projection",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "compiled_constants_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "TDX",
+        "field_id": "compute_confidential_instance_type",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute confidentialInstanceConfig.confidentialInstanceType",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "compute_cpu_platform_raw",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z][A-Za-z0-9 ._()+-]{0,127}$",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "exact raw Compute cpuPlatform; never aliased to canonical enum",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "compute_min_cpu_platform_raw",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z][A-Za-z0-9 ._()+-]{0,127}$",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "exact raw Compute minCpuPlatform",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "compute_residual_control_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "closed residual profile-bound Compute projection",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "INTEL_TDX",
+        "field_id": "confidential_computing_technology",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "PRODUCTION",
+        "field_id": "confidential_space_image_posture",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "Never",
+        "field_id": "container_restart_policy",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §6.3",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "cpu_family",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE_IF_VISIBLE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "cpu_microcode",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE_IF_VISIBLE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "cpu_model",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE_IF_VISIBLE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "INTEL_SAPPHIRE_RAPIDS",
+        "field_id": "cpu_platform",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2/§10",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "cpu_stepping",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE_IF_VISIBLE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "cpu_vendor",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "dependency_lock_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": false,
+        "field_id": "display_enabled",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute displayDevice.enableDisplay",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "effective_native_dispatch_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": true,
+        "field_id": "enable_confidential_compute",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute confidentialInstanceConfig.enableConfidentialCompute",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "environment_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "CONFIDENTIAL_SPACE",
+        "field_id": "execution_environment",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "QUALIFIED_ATTESTED_VIRTUAL_PROFILE",
+        "field_id": "execution_substrate",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "filesystem_restriction_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "SECTION_7_4_MEASUREMENT_AND_SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "firmware_measurement_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_MEASUREMENT_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "floating_point_control_state_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "ROUND_TO_NEAREST_TIES_TO_EVEN",
+        "field_id": "floating_point_rounding_mode",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": 0,
+        "field_id": "guest_accelerator_count",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute guestAccelerators[]",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "INTEGER"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "SECTION_7_4_MEASUREMENT_AND_SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "hypervisor_measurement_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_MEASUREMENT_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "SYNTHETIC_ONLY",
+        "field_id": "initial_input_mode",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "runtime-candidate §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": false,
+        "field_id": "initial_public_ingress",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "runtime-candidate §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "installed_wheels_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": true,
+        "field_id": "integrity_monitoring",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute shieldedInstanceConfig.enableIntegrityMonitoring",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "kernel_policy_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "kernel_release",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": false,
+        "field_id": "launch_allow_capabilities",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §8",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": false,
+        "field_id": "launch_allow_cgroups",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §8",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": false,
+        "field_id": "launch_allow_cmd_override",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §8",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "DENY_ALL",
+        "field_id": "launch_environment_override_policy",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §8; exact raw empty/absent form deferred",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "never",
+        "field_id": "launch_log_redirect",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §8",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "never",
+        "field_id": "launch_monitoring_memory",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §8",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "DENY_ALL",
+        "field_id": "launch_mount_override_policy",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §8; exact raw empty/absent form deferred",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "libc_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "libm_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "loader_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "locale",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": 17179869184,
+        "field_id": "machine_memory_bytes",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary claim GCP_C3_STANDARD_4_MACHINE_TYPE",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "INTEGER"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "C3",
+        "field_id": "machine_series",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": 4,
+        "field_id": "machine_vcpu_count",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary claim GCP_C3_STANDARD_4_MACHINE_TYPE",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "INTEGER"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "model_plan_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "native_extensions_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": false,
+        "field_id": "nested_virtualization",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute advancedMachineFeatures.enableNestedVirtualization",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "network_interface_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "closed control-plane network projection",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "network_restriction_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "numpy_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "TERMINATE",
+        "field_id": "on_host_maintenance",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute scheduling.onHostMaintenance",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "openblas_core_type",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "openblas_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": 1,
+        "field_id": "openblas_thread_count",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "INTEGER"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "operating_system_image_digest",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "allowed_values": [
+          "ARCHITECTURAL",
+          "ENHANCED",
+          "STANDARD"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "performance_monitoring_unit",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "Compute advancedMachineFeatures.performanceMonitoringUnit",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": false,
+        "field_id": "preemptible",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute scheduling.preemptible",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "process_thread_policy_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "GCP",
+        "field_id": "provider",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT",
+        "category": "PROVIDER_PROFILE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "c3-standard-4",
+        "field_id": "provisional_machine_type",
+        "math_relevant": false,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "provider-vocabulary §2/§10",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": "STANDARD",
+        "field_id": "provisioning_model",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute scheduling.provisioningModel",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "pymc_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "pytensor_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "python_executable_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "python_version",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9 ._+()-]{0,127}$",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PROVIDER_HIDDEN"
+        ],
+        "attestation_visibility": "HIDDEN_BY_TDX",
+        "binding_phase": "SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "HIDDEN_BY_TDX",
+        "field_id": "required_instruction_profile_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "scipy_identity_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "VISIBLE",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": true,
+        "field_id": "secure_boot",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute shieldedInstanceConfig.enableSecureBoot",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_4_MEASUREMENT",
+        "category": "SOFTWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "service_image_digest",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_WORKLOAD_MEASUREMENT_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "source_commit",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "GIT_COMMIT_SHA1"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "source_manifest_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "threads_per_core",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "Compute advancedMachineFeatures.threadsPerCore",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "INTEGER"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+        "category": "SOURCE_AND_RESTRICTIONS",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "exact_value": "UTC",
+        "field_id": "timezone",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6/§7",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "ENUM"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "turbo_mode",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "Compute advancedMachineFeatures.turboMode",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "STRING"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "SECTION_7_4_MEASUREMENT_AND_SECTION_7_7_PARENT_TREATMENT",
+        "category": "HARDWARE_NUMERICAL_IDENTITY",
+        "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+        "field_id": "virtual_machine_measurement_sha256",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "TRUST_ROOTED_MEASUREMENT_AND_EXACT_EQUIVALENCE_V1",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "canonical service §6",
+        "sufficiency": "REQUIRES_PARENT_GOVERNANCE_DECISION",
+        "value_type": "DIGEST_SHA256"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "field_id": "visible_core_count",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "PROFILE_FREEZE_VALUE",
+        "runtime_identity_relevant": true,
+        "source": "Compute advancedMachineFeatures.visibleCoreCount",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "INTEGER"
+      },
+      {
+        "allowed_presence": [
+          "PRESENT"
+        ],
+        "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+        "binding_phase": "CONTRACT_AND_PROFILE_FREEZE",
+        "category": "CONTROL_POSTURE",
+        "control_plane_visibility": "VISIBLE",
+        "exact_value": true,
+        "field_id": "vtpm",
+        "math_relevant": true,
+        "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+        "qualification_treatment": "DIRECT_EXACT_BINDING",
+        "requirement": "EXACT_CONSTANT",
+        "runtime_identity_relevant": true,
+        "source": "Compute shieldedInstanceConfig.enableVtpm",
+        "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+        "value_type": "BOOLEAN"
+      }
+    ]
+  },
+  "field_registry_sha256": "522cba82708ec55771178b53fc8bd7113add5583c846d61620d5a3c76526aa60",
+  "forbidden_hash_dependencies": [
+    "RUNTIME_PROFILE_TO_CONTROL_OR_INSTANCE_OBSERVATION",
+    "CONTROL_OBSERVATION_TO_INSTANCE_OBSERVATION",
+    "SECTION_7_2_NODE_TO_FUTURE_TRUST_MEASUREMENT_QUALIFICATION_RESULT_OR_RECEIPT",
+    "FUTURE_RECEIPT_OR_RESULT_BACK_TO_SECTION_7_2_PREIMAGE",
+    "ANY_NODE_TO_ITS_OWN_HASH"
+  ],
+  "future_dependency_interfaces": {
+    "interfaces": [
+      {
+        "interface_id": "SECTION_7_3_7_4_TRUST_POLICY",
+        "must_bind": [
+          "runtime_profile_hash"
+        ]
+      },
+      {
+        "interface_id": "SECTION_7_4_RUNTIME_MEASUREMENT",
+        "must_bind": [
+          "runtime_profile_hash",
+          "runtime_instance_observation_hash",
+          "raw_attestation_token_sha256",
+          "last_start_timestamp",
+          "observation_point",
+          "boot_epoch_commitment",
+          "fresh_nonce"
+        ]
+      },
+      {
+        "interface_id": "SECTION_7_4_ATTESTED_RUNTIME_IDENTITY",
+        "must_bind": [
+          "runtime_profile_hash",
+          "runtime_instance_observation_hash",
+          "runtime_measurement_hash"
+        ]
+      },
+      {
+        "interface_id": "SECTION_7_4_TERMINAL_RECEIPT",
+        "must_bind": [
+          "runtime_profile_hash",
+          "runtime_instance_observation_hash",
+          "runtime_measurement_hash",
+          "trust_policy_hash",
+          "boot_epoch_commitment",
+          "fresh_nonce"
+        ]
+      },
+      {
+        "interface_id": "SECTION_7_6_REQUALIFICATION_LEDGER_SCHEMA",
+        "must_bind": [
+          "attested_runtime_identity_hash",
+          "source_evidence_envelope_sha256",
+          "raw_provider_source_authentication_reference",
+          "single_use_attempt_claim",
+          "terminal_state"
+        ]
+      },
+      {
+        "interface_id": "SECTION_7_8_QUALIFICATION_PLAN_AND_RESULT",
+        "must_bind": [
+          "runtime_profile_hash",
+          "predeclared_instance_and_zone_plan",
+          "complete_instance_observation_and_attested_identity_set"
+        ]
+      },
+      {
+        "interface_id": "SECTION_7_7_INTEGRATION_GATE",
+        "must_reconcile": [
+          "ALL_SECTION_7_1_THROUGH_7_6_FIELDS_AND_INTERFACES_WITHOUT_INSTANTIATING_7_8_EVIDENCE"
+        ]
+      }
+    ],
+    "no_domain_separator_preimage_or_hash_is_defined_by_section_7_2": true,
+    "status": "NAMES_AND_REQUIRED_BINDINGS_ONLY_NOT_SECTION_7_2_HASH_NODES"
+  },
+  "hash_graph": [
+    {
+      "dependencies": [],
+      "domain_separator": "FLUENCYTRACR:GCP_PROVIDER_REVALIDATION:V1",
+      "node_id": "provider_revalidation_hash",
+      "owner": "SECTION_7_2",
+      "schema_version": "GCP_PROVIDER_REVALIDATION_V1",
+      "self_hash_field": "revalidation_hash"
+    },
+    {
+      "dependencies": [
+        "provider_revalidation_hash"
+      ],
+      "domain_separator": "FLUENCYTRACR:GCP_RUNTIME_PROFILE:V1",
+      "node_id": "runtime_profile_hash",
+      "owner": "SECTION_7_2",
+      "schema_version": "GCP_CANONICAL_NUMERICAL_PROFILE_V1",
+      "self_hash_field": "runtime_profile_hash"
+    },
+    {
+      "dependencies": [
+        "runtime_profile_hash"
+      ],
+      "domain_separator": "FLUENCYTRACR:GCP_CONTROL_OBSERVATION:V1",
+      "node_id": "control_plane_observation_hash",
+      "owner": "SECTION_7_2",
+      "schema_version": "GCP_CONTROL_PLANE_OBSERVATION_V1",
+      "self_hash_field": "control_plane_observation_hash"
+    },
+    {
+      "dependencies": [
+        "runtime_profile_hash",
+        "control_plane_observation_hash"
+      ],
+      "domain_separator": "FLUENCYTRACR:GCP_RUNTIME_INSTANCE_OBSERVATION:V1",
+      "node_id": "runtime_instance_observation_hash",
+      "owner": "SECTION_7_2",
+      "schema_version": "GCP_RUNTIME_INSTANCE_OBSERVATION_V1",
+      "self_hash_field": "runtime_instance_observation_hash"
+    }
+  ],
+  "hash_graph_sha256": "b7e5696250996e2fde6c6ee919d8fff2f1b7be7fc954c6ff0f988d48f0e01c92",
+  "implements_candidate_section": "7.2",
+  "inherited_enums": {
+    "provider_revalidation": [
+      "EXACT_MAPPING_RECONFIRMED",
+      "SOURCE_OR_PROVENANCE_UNAVAILABLE",
+      "FROZEN_MAPPING_CHANGED",
+      "CURRENT_SOURCE_CONFLICT",
+      "BOUNDARY_LEAKAGE_DETECTED"
+    ],
+    "sufficiency": [
+      "SUFFICIENT_FOR_FIELD_BINDING",
+      "INSUFFICIENT_FOR_FIELD_BINDING",
+      "REQUIRES_PARENT_GOVERNANCE_DECISION"
+    ],
+    "visibility": [
+      "VISIBLE",
+      "HIDDEN_BY_TDX",
+      "NOT_EXPOSED_BY_GCP_ATTESTATION",
+      "NOT_EXPOSED_BY_GCP_CONTROL_PLANE"
+    ]
+  },
+  "initial_lifecycle_state": "INACTIVE_UNQUALIFIED_NO_INSTANCE",
+  "maximum_section_7_2_state": "CONTRACT_CLOSED_RUNTIME_AUTHORITY_HELD",
+  "non_authorization": {
+    "customer_input_or_output": false,
+    "deployment": false,
+    "gcp_resource_access": false,
+    "model_execution": false,
+    "provisioning_or_mutation": false,
+    "qualification_execution": false,
+    "runtime_authority": false,
+    "sections_7_3_through_7_8_complete": false
+  },
+  "object_schemas": {
+    "control_observation": {
+      "derived_posture_exact_values": {
+        "metadata_allowlist_match": true,
+        "raw_metadata_retained": false,
+        "raw_network_addresses_retained": false
+      },
+      "derived_posture_required_keys": [
+        "metadata_allowlist_match",
+        "public_address_present",
+        "raw_metadata_retained",
+        "raw_network_addresses_retained"
+      ],
+      "profile_manifest_hashes": "EVERY_CONTROL_PROFILE_CROSSWALK_MANIFEST_ID_EXACTLY_ONCE",
+      "projected_field_presence": [
+        "PRESENT",
+        "EXPLICITLY_ABSENT"
+      ],
+      "projected_field_required_keys": [
+        "path",
+        "presence"
+      ],
+      "projected_fields": "EVERY_SCALAR_HASH_PREIMAGE_PATH_EXACTLY_ONCE_SORTED_ASCII",
+      "projected_resource_sets": "EVERY_RESOURCE_ROOT_EXACTLY_ONCE_WITH_IDENTITY_KEYED_RECORDS_AND_COMPLETE_FIELDS",
+      "projected_scalar_set_value": "ASCII_SORTED_UNIQUE_SCALAR_SET",
+      "raw_compute_response": "NOT_ADMITTED_NOT_HASHED_LATER_SOURCE_AUTHENTICATION_REFERENCE_OWNED_BY_SECTION_7_6",
+      "required_keys": [
+        "schema_version",
+        "runtime_profile_hash",
+        "source_evidence_envelope_sha256",
+        "observation_point",
+        "projected_fields",
+        "projected_resource_sets",
+        "profile_manifest_hashes",
+        "derived_posture",
+        "control_plane_observation_hash"
+      ],
+      "resource_record_required_keys": [
+        "resource_id",
+        "fields"
+      ],
+      "schema_version": "GCP_CONTROL_PLANE_OBSERVATION_V1",
+      "source_evidence_envelope_sha256": "DOMAIN_SEPARATED_HASH_OF_CANONICAL_SANITIZED_observation_point_projected_fields_projected_resource_sets_derived_posture"
+    },
+    "field_value_record": {
+      "presence": [
+        "PRESENT",
+        "EXPLICITLY_ABSENT",
+        "PROVIDER_HIDDEN",
+        "NOT_OBSERVED_CONTRACT_ONLY"
+      ],
+      "required_keys": [
+        "field_id",
+        "presence"
+      ],
+      "unknown_keys": "REJECT",
+      "value_rule": "VALUE_REQUIRED_ONLY_FOR_PRESENT_AND_PROHIBITED_OTHERWISE; NULL_NEVER_ALLOWED"
+    },
+    "instance_observation": {
+      "authority_effect": "NONE_INSTANCE_OBSERVATION_CANNOT_AUTHORIZE",
+      "field_values": "EVERY_REQUIRED_INSTANCE_FIELD_ID_EXACTLY_ONCE_SORTED_ASCII; TYPE_AND_DOMAIN_FROM_REGISTRY",
+      "required_keys": [
+        "schema_version",
+        "runtime_profile_hash",
+        "control_plane_observation_hash",
+        "field_values",
+        "authority_effect",
+        "runtime_instance_observation_hash"
+      ],
+      "schema_version": "GCP_RUNTIME_INSTANCE_OBSERVATION_V1"
+    },
+    "profile": {
+      "authority_effect": "NONE_CONTRACT_OBJECT_CANNOT_AUTHORIZE",
+      "canonicalization_version": "FT_CANONICAL_JSON_V1",
+      "field_values": "EVERY_PROFILE_FIELD_ID_EXACTLY_ONCE_SORTED_ASCII; TYPE_AND_DOMAIN_FROM_REGISTRY",
+      "profile_id": "GCP_C3_TDX_CANONICAL_PROFILE_CANDIDATE_V1",
+      "provider_vocabulary_binding_required_keys": [
+        "provider_contract_sha256",
+        "provider_source_evidence_sha256",
+        "provider_claim_evidence_sha256",
+        "provider_compute_projection_sha256",
+        "provider_claim_registry_sha256"
+      ],
+      "required_keys": [
+        "schema_version",
+        "canonicalization_version",
+        "profile_id",
+        "provider_vocabulary_binding",
+        "provider_revalidation_hash",
+        "control_projection_contract_sha256",
+        "field_registry_sha256",
+        "field_values",
+        "authority_effect",
+        "runtime_profile_hash"
+      ],
+      "schema_version": "GCP_CANONICAL_NUMERICAL_PROFILE_V1"
+    }
+  },
+  "privacy": {
+    "allowed": [
+      "RESTRICTED_INFRASTRUCTURE_IDENTITY",
+      "HASHES",
+      "CLOSED_DERIVED_POSTURE",
+      "SYNTHETIC_GOLDEN_VALUES",
+      "EXTERNAL_RESTRICTED_PUBLIC_PROVIDER_DOCUMENT_RECOVERY_BYTES"
+    ],
+    "customer_or_semantic_projection": "NO_INFRASTRUCTURE_IDENTIFIERS_OR_LOW_ENTROPY_HASHES",
+    "prohibited": [
+      "RAW_GCE",
+      "CUSTOMER_AGGREGATES",
+      "PERSON_USER_EMPLOYEE_ACCOUNT_OR_EMAIL_IDENTIFIERS",
+      "PROMPTS_RESPONSES_TRANSCRIPTS",
+      "RAW_METADATA_VALUES",
+      "IP_ADDRESSES",
+      "STATUS_MESSAGE",
+      "CREDENTIALS_KEY_BYTES",
+      "POSTERIOR_MATERIAL",
+      "ARBITRARY_PAYLOADS"
+    ],
+    "prohibited_scope": "RUNTIME_OBJECTS_MODEL_INPUTS_LOGS_RESULTS_RECEIPTS_AND_CUSTOMER_OUTPUT_EXCEPT_EXPLICIT_RESTRICTED_INFRASTRUCTURE_FIELDS",
+    "public_source_recovery_exception": "PUBLIC_PROVIDER_DOCUMENT_BYTES_MAY_CONTAIN_PUBLIC_EXAMPLE_EMAIL_OR_IP_LITERALS; EXTERNAL_RESTRICTED_PROVENANCE_EVIDENCE_ONLY; NEVER_RUNTIME_OBJECT_MODEL_INPUT_LOG_RESULT_OR_CUSTOMER_OUTPUT",
+    "service_account_rule": "RAW_SERVICE_ACCOUNT_EMAIL_AND_SCOPE_VALUES_ARE_NOT_ADMITTED_OR_HASHED_BY_SECTION_7_2; SECTION_7_3_OWNS_ANY_FUTURE_DERIVED_IDENTITY_POSTURE"
+  },
+  "profile_admission": {
+    "runtime": "REJECT_UNLESS_HASH_IS_IN_approved_runtime_profile_hashes; EMPTY_IN_SECTION_7_2",
+    "synthetic_contract_test": "ALLOW_ONLY_HASHES_IN_synthetic_test_profile_hashes; NO_AUTHORITY_EFFECT"
+  },
+  "requalification_triggers": [
+    {
+      "prior_identity_reusable": false,
+      "required_action": "FULL_PER_BOOT_REQUALIFICATION_BEFORE_MODEL_IMPORT",
+      "transition": "INVALIDATE",
+      "trigger": "EVERY_VM_BOOT_OR_RESTART"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "DOWNTIME_UNTIL_FRESH_INSTANCE_REQUALIFIES",
+      "transition": "INVALIDATE",
+      "trigger": "HOST_REPLACEMENT_FAILOVER_OR_MAINTENANCE_TERMINATION"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_PROFILE_REVIEW_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "CPU_MICROCODE_FIRMWARE_HYPERVISOR_TDX_OR_VM_MEASUREMENT_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_PROFILE_REVIEW_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "CONFIDENTIAL_SPACE_IMAGE_SWVERSION_OR_SUPPORT_ATTRIBUTE_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_CANDIDATE_IDENTITY_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "OS_KERNEL_OR_SERVICE_IMAGE_REBUILD_OR_DIGEST_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_PROFILE_VERSION_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "PYTHON_DEPENDENCY_WHEEL_NATIVE_LIBRARY_OR_LOADER_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_PROFILE_VERSION_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "NUMPY_SCIPY_NATIVE_DISPATCH_OPENBLAS_CORE_OR_THREAD_STATE_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_PROFILE_VERSION_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "FLOATING_POINT_ROUNDING_OR_CONTROL_STATE_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_PROFILE_VERSION_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "SOURCE_COMMIT_MANIFEST_MODEL_PLAN_OR_COMPILED_CONSTANT_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_PROFILE_VERSION_AND_FULL_QUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "NETWORK_FILESYSTEM_LOCALE_ENVIRONMENT_OR_PROCESS_POLICY_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_CANDIDATE_SELECTION_DECISION_REQUIRED",
+      "transition": "REJECT",
+      "trigger": "MACHINE_TYPE_OR_ZONE_SUBSTITUTION"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "NEW_SECTION_7_1_VOCABULARY_OR_EXACT_REVALIDATION_REQUIRED",
+      "transition": "HOLD",
+      "trigger": "PROVIDER_MAPPING_OR_COMPUTE_DISCOVERY_REVISION_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "SECTIONS_7_3_7_4_REVIEW_AND_FULL_REQUALIFICATION",
+      "transition": "INVALIDATE",
+      "trigger": "ATTESTATION_TRUST_POLICY_SIGNER_KEY_OR_REVOCATION_CHANGE"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "REJECT_C3_TDX_REQUIRE_FIXED_PHYSICAL_CANDIDATE_SELECTION",
+      "transition": "REJECT",
+      "trigger": "REQUIRED_FIELD_UNBINDABLE_OR_TREATMENT_CANNOT_DETECT_PREEXECUTION_DRIFT"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "REJECT_C3_TDX_REQUIRE_FIXED_PHYSICAL_CANDIDATE_SELECTION",
+      "transition": "REJECT",
+      "trigger": "SECTION_7_7_REJECTS_VIRTUAL_PROFILE_TREATMENT"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "DO_NOT_IMPORT_MODEL_OR_EXECUTE",
+      "transition": "REJECT",
+      "trigger": "UNKNOWN_STALE_REPLAYED_REVOKED_OR_MISMATCHED_MEASUREMENT"
+    },
+    {
+      "prior_identity_reusable": false,
+      "required_action": "REJECT_C3_TDX_REQUIRE_FIXED_PHYSICAL_CANDIDATE_SELECTION_WITHOUT_FAVORABLE_RERUN",
+      "transition": "REJECT",
+      "trigger": "EXACT_CROSS_INSTANCE_OR_SAME_PROFILE_SEMANTIC_MISMATCH"
+    }
+  ],
+  "runtime_escalation_algorithm": {
+    "fixed_physical_when": [
+      "parent_treatment_decision == REJECTED",
+      "ANY field_binding_results.status == UNBINDABLE",
+      "qualification_exactness == MISMATCH"
+    ],
+    "held_when": "NO_FIXED_PHYSICAL_PREDICATE_AND_RUNTIME_AUTHORITY_NOT_SEPARATELY_ACTIVATED",
+    "precedence": [
+      "REJECT_FOR_RUNTIME_OBJECT_BOUNDARY_LEAKAGE",
+      "REJECT_C3_TDX_FOR_PROVIDER_CONFLICT",
+      "REJECT_C3_TDX_AND_REQUIRE_FIXED_PHYSICAL_CANDIDATE_SELECTION",
+      "HOLD_FOR_PROVIDER_CLAIM_REVALIDATION",
+      "RUNTIME_AUTHORITY_HELD_NO_ESCALATION_EVIDENCE"
+    ],
+    "version": "GCP_RUNTIME_ESCALATION_DECISION_V1"
+  },
+  "runtime_escalation_input_schema": {
+    "field_binding_status": [
+      "BINDABLE",
+      "PENDING",
+      "UNBINDABLE"
+    ],
+    "optional_nonpromoting_field_ids": [
+      "INSTANCE:physical_host_identity"
+    ],
+    "parent_treatment_decision": [
+      "NOT_REVIEWED",
+      "ACCEPTED",
+      "REJECTED"
+    ],
+    "provider_revalidation_result": [
+      "EXACT_MAPPING_RECONFIRMED",
+      "SOURCE_OR_PROVENANCE_UNAVAILABLE",
+      "FROZEN_MAPPING_CHANGED",
+      "CURRENT_SOURCE_CONFLICT",
+      "BOUNDARY_LEAKAGE_DETECTED"
+    ],
+    "qualification_exactness": [
+      "NOT_RUN",
+      "EXACT",
+      "MISMATCH"
+    ],
+    "required_identity_field_ids": [
+      "PROFILE:approved_zone_set",
+      "PROFILE:arviz_identity_sha256",
+      "PROFILE:automatic_restart",
+      "PROFILE:boot_disk_manifest_sha256",
+      "PROFILE:compiled_constants_sha256",
+      "PROFILE:compute_confidential_instance_type",
+      "PROFILE:compute_cpu_platform_raw",
+      "PROFILE:compute_min_cpu_platform_raw",
+      "PROFILE:compute_residual_control_manifest_sha256",
+      "PROFILE:confidential_computing_technology",
+      "PROFILE:confidential_space_image_posture",
+      "PROFILE:container_restart_policy",
+      "PROFILE:cpu_family",
+      "PROFILE:cpu_microcode",
+      "PROFILE:cpu_model",
+      "PROFILE:cpu_platform",
+      "PROFILE:cpu_stepping",
+      "PROFILE:cpu_vendor",
+      "PROFILE:dependency_lock_sha256",
+      "PROFILE:display_enabled",
+      "PROFILE:effective_native_dispatch_sha256",
+      "PROFILE:enable_confidential_compute",
+      "PROFILE:environment_manifest_sha256",
+      "PROFILE:execution_environment",
+      "PROFILE:execution_substrate",
+      "PROFILE:filesystem_restriction_manifest_sha256",
+      "PROFILE:firmware_measurement_sha256",
+      "PROFILE:floating_point_control_state_sha256",
+      "PROFILE:floating_point_rounding_mode",
+      "PROFILE:guest_accelerator_count",
+      "PROFILE:hypervisor_measurement_sha256",
+      "PROFILE:initial_input_mode",
+      "PROFILE:initial_public_ingress",
+      "PROFILE:installed_wheels_manifest_sha256",
+      "PROFILE:integrity_monitoring",
+      "PROFILE:kernel_policy_sha256",
+      "PROFILE:kernel_release",
+      "PROFILE:launch_allow_capabilities",
+      "PROFILE:launch_allow_cgroups",
+      "PROFILE:launch_allow_cmd_override",
+      "PROFILE:launch_environment_override_policy",
+      "PROFILE:launch_log_redirect",
+      "PROFILE:launch_monitoring_memory",
+      "PROFILE:launch_mount_override_policy",
+      "PROFILE:libc_identity_sha256",
+      "PROFILE:libm_identity_sha256",
+      "PROFILE:loader_identity_sha256",
+      "PROFILE:locale",
+      "PROFILE:machine_memory_bytes",
+      "PROFILE:machine_series",
+      "PROFILE:machine_vcpu_count",
+      "PROFILE:model_plan_sha256",
+      "PROFILE:native_extensions_manifest_sha256",
+      "PROFILE:nested_virtualization",
+      "PROFILE:network_interface_manifest_sha256",
+      "PROFILE:network_restriction_manifest_sha256",
+      "PROFILE:numpy_identity_sha256",
+      "PROFILE:on_host_maintenance",
+      "PROFILE:openblas_core_type",
+      "PROFILE:openblas_identity_sha256",
+      "PROFILE:openblas_thread_count",
+      "PROFILE:operating_system_image_digest",
+      "PROFILE:performance_monitoring_unit",
+      "PROFILE:preemptible",
+      "PROFILE:process_thread_policy_sha256",
+      "PROFILE:provider",
+      "PROFILE:provisional_machine_type",
+      "PROFILE:provisioning_model",
+      "PROFILE:pymc_identity_sha256",
+      "PROFILE:pytensor_identity_sha256",
+      "PROFILE:python_executable_sha256",
+      "PROFILE:python_version",
+      "PROFILE:required_instruction_profile_sha256",
+      "PROFILE:scipy_identity_sha256",
+      "PROFILE:secure_boot",
+      "PROFILE:service_image_digest",
+      "PROFILE:source_commit",
+      "PROFILE:source_manifest_sha256",
+      "PROFILE:threads_per_core",
+      "PROFILE:timezone",
+      "PROFILE:turbo_mode",
+      "PROFILE:virtual_machine_measurement_sha256",
+      "PROFILE:visible_core_count",
+      "PROFILE:vtpm",
+      "INSTANCE:cel_hwmodel",
+      "INSTANCE:compute_confidential_instance_type",
+      "INSTANCE:compute_cpu_platform_raw",
+      "INSTANCE:compute_machine_type_uri",
+      "INSTANCE:compute_self_link",
+      "INSTANCE:compute_status",
+      "INSTANCE:container_image_digest",
+      "INSTANCE:container_image_id",
+      "INSTANCE:container_image_reference",
+      "INSTANCE:container_restart_policy",
+      "INSTANCE:creation_timestamp",
+      "INSTANCE:instance_id",
+      "INSTANCE:instance_name",
+      "INSTANCE:last_start_timestamp",
+      "INSTANCE:observed_cpu_family",
+      "INSTANCE:observed_cpu_microcode",
+      "INSTANCE:observed_cpu_model",
+      "INSTANCE:observed_cpu_stepping",
+      "INSTANCE:project_id",
+      "INSTANCE:project_number",
+      "INSTANCE:raw_attestation_token_sha256",
+      "INSTANCE:support_attributes",
+      "INSTANCE:tdx_tcb_date",
+      "INSTANCE:token_dbgstat",
+      "INSTANCE:token_hwmodel",
+      "INSTANCE:token_secboot",
+      "INSTANCE:token_swname",
+      "INSTANCE:token_swversion",
+      "INSTANCE:zone"
+    ],
+    "required_keys": [
+      "schema_version",
+      "boundary_leakage",
+      "provider_revalidation_result",
+      "parent_treatment_decision",
+      "field_binding_results",
+      "qualification_exactness"
+    ],
+    "schema_version": "GCP_RUNTIME_ESCALATION_INPUT_V1",
+    "unknown_or_missing": "REJECT_FOR_RUNTIME_OBJECT_BOUNDARY_LEAKAGE"
+  },
+  "runtime_identity_sufficiency": {
+    "contract_field_inventory": "COMPLETE_FOR_SECTION_7_2",
+    "current_runtime_identity": "INSUFFICIENT_NO_OBSERVED_INSTANCE_ATTESTATION_OR_QUALIFICATION",
+    "physical_host_identity": "OPTIONAL_INSUFFICIENT_AND_NONPROMOTING_FOR_C3_TDX",
+    "provider_hidden_field_treatment": "PREDECLARED_PENDING_PARENT_GOVERNANCE_DECISION",
+    "runtime_authority": "HELD",
+    "treatment_id": "VIRTUAL_PROFILE_EFFECTIVE_STATE_AND_EXACT_EQUIVALENCE_V1",
+    "treatment_requirements": [
+      "TRUST_ROOTED_PROVIDER_AND_WORKLOAD_MEASUREMENTS",
+      "EXACT_EFFECTIVE_INSTRUCTION_DISPATCH_BLAS_AND_FLOATING_POINT_STATE",
+      "PREDECLARED_FRESH_HOST_AND_ZONE_EXACT_CONFORMANCE",
+      "COMPLETE_NO_SELECTION_ATTEMPT_EVIDENCE",
+      "FULL_PER_BOOT_REQUALIFICATION_BEFORE_MODEL_IMPORT",
+      "REJECT_AND_ESCALATE_IF_DRIFT_CANNOT_BE_DETECTED"
+    ]
+  },
+  "schema_version": "GCP_RUNTIME_OBJECT_CONTRACT_V1",
+  "source_evidence_envelope": {
+    "canonicalization_version": "FT_CANONICAL_JSON_V1",
+    "domain_separator": "FLUENCYTRACR:GCP_SANITIZED_CONTROL_EVIDENCE:V1",
+    "raw_provider_response_bytes_or_hash": "PROHIBITED",
+    "required_keys": [
+      "schema_version",
+      "observation_point",
+      "projected_fields",
+      "projected_resource_sets",
+      "derived_posture"
+    ],
+    "schema_version": "GCP_SANITIZED_CONTROL_EVIDENCE_ENVELOPE_V1",
+    "source_authenticity": "DEFERRED_TO_SECTION_7_6_EXTERNAL_REFERENCE_NOT_SECTION_7_2_PREIMAGE"
+  },
+  "synthetic_test_profile_hashes": [
+    "cb37e1bcaac15df0a82a377184bc7f78c429d6d3e87fa6bba77461ca1e041af7"
+  ],
+  "upstream_bindings": {
+    "control_plane_projection_sha256": "010551be219b38cc8aed25102824406bfb6a8bc3806d04b93e831f1933ae8455",
+    "provider_claim_evidence_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+    "provider_claim_registry_sha256": "4d9a53791b6f3dc8fec4b0dfe7d7d0ad6ef7fdd502f15193fe35989291fc062c",
+    "provider_compute_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+    "provider_contract_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+    "provider_revalidation_artifact_sha256": "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc",
+    "provider_revalidation_hash": "38aa8151ed391369c3703279bb1172d0e1fef389f6ea4d70e9242d401d578535",
+    "provider_revalidation_result": "EXACT_MAPPING_RECONFIRMED",
+    "provider_source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+  },
+  "value_type_contracts": {
+    "BOOLEAN": {
+      "boolean_is_not_integer": true,
+      "json_type": "boolean"
+    },
+    "DIGEST_SHA256": {
+      "json_type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ENUM": {
+      "domain_source": "FIELD_EXACT_VALUE_OR_ALLOWED_VALUES",
+      "json_type": "string"
+    },
+    "GCP_OAUTH_SCOPE": {
+      "allowed_values": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ],
+      "json_type": "string",
+      "maximum_total_utf8_bytes": 55
+    },
+    "GCP_RESOURCE_URI": {
+      "authority": "EXACT_www.googleapis.com",
+      "json_type": "string",
+      "maximum_total_utf8_bytes": 512,
+      "path": "FIELD_SPECIFIC_CANONICAL_COMPUTE_V1_PROJECT_RESOURCE_WITH_OPAQUE_NONPERSON_NAMESPACE",
+      "pattern": "^https://www\\.googleapis\\.com/compute/v1/projects/ft-qualification-id-[0-9a-f]{8}/[A-Za-z0-9._~/-]+$"
+    },
+    "GCP_SERVICE_ACCOUNT_PRINCIPAL": {
+      "json_type": "string",
+      "pattern": "^qualification-sa-[0-9a-f]{8}@ft-qualification-id-[0-9a-f]{8}\\.iam\\.gserviceaccount\\.com$"
+    },
+    "GCP_UINT64_STRING": {
+      "json_type": "string",
+      "maximum_decimal": "18446744073709551615",
+      "numeric_coercion": "REJECT",
+      "pattern": "^[0-9]{1,20}$"
+    },
+    "GIT_COMMIT_SHA1": {
+      "json_type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "HASH_REFERENCE": {
+      "json_type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "INTEGER": {
+      "json_type": "integer",
+      "maximum": 9223372036854775807,
+      "minimum": -9223372036854775808,
+      "negative_zero": "REJECT"
+    },
+    "OCI_IMAGE_REFERENCE": {
+      "authority": "EXACT_us-docker.pkg.dev_NO_PORT",
+      "json_type": "string",
+      "maximum_total_utf8_bytes": 512,
+      "pattern": "^[^\\s@]+@sha256:[0-9a-f]{64}$",
+      "repository": "EXACT_ft-qualification-id-HEX8/ft-runtime/image-HEX8",
+      "tag": "PROHIBITED"
+    },
+    "OCI_SHA256": {
+      "json_type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "OPAQUE_QUALIFICATION_ID": {
+      "json_type": "string",
+      "pattern": "^ft-qualification-id-[0-9a-f]{8}$",
+      "person_or_customer_meaning": "STRUCTURALLY_PROHIBITED_BY_OPAQUE_FIXED_GRAMMAR"
+    },
+    "RFC3339": {
+      "json_type": "string",
+      "leap_second": "PROHIBITED_FAIL_CLOSED_NO_FROZEN_AUTHORITATIVE_TABLE",
+      "offset": "Z_OR_KNOWN_NUMERIC_OFFSET_PRESERVE_RAW_BYTES",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-5][0-9](\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
+      "precision": "NANOSECOND",
+      "unknown_offset_minus_zero": "PROHIBITED"
+    },
+    "SAFE_TOKEN": {
+      "email_json_or_ip_shape": "REJECT",
+      "json_type": "string",
+      "leading_or_trailing_whitespace_or_punctuation": "REJECT",
+      "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9 ._+:/()-]{0,509}[A-Za-z0-9])?$"
+    },
+    "STRING": {
+      "email_or_json_payload_shape": "REJECT",
+      "json_type": "string",
+      "maximum_utf8_bytes": 512,
+      "minimum_length": 1
+    },
+    "STRING_SET": {
+      "duplicates": "REJECT",
+      "item_type": "string",
+      "json_type": "array",
+      "maximum_items": 64,
+      "order": "ASCII_SORTED"
+    },
+    "URI": {
+      "dot_empty_repeated_or_trailing_path_segment": "PROHIBITED",
+      "json_type": "string",
+      "maximum_path_segments": 32,
+      "maximum_segment_utf8_bytes": 128,
+      "maximum_total_utf8_bytes": 512,
+      "pattern": "^https://[a-z0-9.-]+(?:/[A-Za-z0-9._~-]+)+$",
+      "percent_backslash_semicolon_params_query_fragment_nonascii": "PROHIBITED",
+      "scheme": "EXACT_LOWERCASE_HTTPS"
+    },
+    "ZONE": {
+      "allowed_values": [
+        "us-central1-a",
+        "us-central1-b",
+        "us-central1-c"
+      ],
+      "json_type": "string"
+    }
+  },
+  "value_type_contracts_sha256": "c4d8060aa922ebc0ef56c43c4b0a3eec6273418dbea5feb1961e27c317221e0f"
+}

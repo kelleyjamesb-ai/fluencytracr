@@ -110,9 +110,9 @@ No GCP action may occur until the following bounded documents are complete. Each
 
 The provider vocabulary freezes the exact official assertion paths, values, supported shapes/zones, status vocabulary, GCP resource names, and dated source evidence used by every later contract.
 
-### 7.2 Runtime object and hash contract
+### 7.2 [Runtime object and hash contract](../canonical-inference-gcp-runtime-object/README.md)
 
-Depends on 7.1. Must close deterministic numerical-profile fields, per-instance fields, control-plane projection, canonical serialization, acyclic hash preimages, visibility statuses, and runtime-identity sufficiency. It references only the frozen provider vocabulary from 7.1.
+Depends on 7.1. The contract closes deterministic numerical-profile fields, per-instance fields, the total control-plane projection, canonical serialization, acyclic hash preimages, visibility statuses, and the explicit `INSUFFICIENT_NO_OBSERVED_INSTANCE_ATTESTATION_OR_QUALIFICATION` runtime-identity posture. It references only the frozen provider vocabulary from 7.1 and keeps runtime authority held.
 
 ### 7.3 HSM, WIF, IAM, and role-separation contract
 
