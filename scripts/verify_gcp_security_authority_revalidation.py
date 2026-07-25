@@ -21,6 +21,23 @@ EVIDENCE = (
     / "provider-source-evidence.json"
 )
 DOMAIN = b"FLUENCYTRACR:GCP_SECURITY_AUTHORITY_PROVIDER_REVALIDATION:V1\x00"
+EXPECTED_PROVIDER_SOURCE_EVIDENCE_SHA256 = (
+    "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577"
+)
+EXPECTED_SOURCE_REGISTRY_SHA256 = (
+    "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062"
+)
+EXPECTED_CLAIM_REGISTRY_SHA256 = (
+    "d824bdd1753145992f8be94639303fc11c87ed584ddfa317cb15ce8d0cc9420c"
+)
+EXPECTED_PROVIDER_REVALIDATION_HASH = (
+    "9d2f21c49c5bfa6d498387a7d7a30a13c6c09d3b6bc7ae4a496f8e4e58f88ef6"
+)
+EXPECTED_SOURCE_BUNDLE_SHA256 = (
+    "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3"
+)
+EXPECTED_SOURCE_COUNT = 23
+EXPECTED_CLAIM_COUNT = 42
 
 
 def canonical(value: Any) -> bytes:
@@ -104,7 +121,10 @@ def validate_zip_member(name: str) -> None:
 
 
 def replay(bundle: Path) -> dict[str, Any]:
-    evidence = load_json_bytes(EVIDENCE.read_bytes())
+    evidence_bytes = EVIDENCE.read_bytes()
+    if digest(evidence_bytes) != EXPECTED_PROVIDER_SOURCE_EVIDENCE_SHA256:
+        raise ValueError("provider source evidence compile pin mismatch")
+    evidence = load_json_bytes(evidence_bytes)
     if set(evidence) != {
         "schema_version",
         "contract_scope",
@@ -124,6 +144,13 @@ def replay(bundle: Path) -> dict[str, Any]:
     }:
         raise ValueError("provider source evidence root keys mismatch")
     bundle_contract = evidence["source_bundle"]
+    if bundle_contract["sha256"] != EXPECTED_SOURCE_BUNDLE_SHA256:
+        raise ValueError("provider source bundle compile pin mismatch")
+    if (
+        len(evidence["sources"]) != EXPECTED_SOURCE_COUNT
+        or len(evidence["claims"]) != EXPECTED_CLAIM_COUNT
+    ):
+        raise ValueError("provider registry compile-pinned count mismatch")
     if set(bundle_contract) != {
         "external_locator",
         "sha256",
@@ -223,10 +250,14 @@ def replay(bundle: Path) -> dict[str, Any]:
         "EXACT_SANITIZED_SNAPSHOT_RECORDS_IN_RECOVERY_BUNDLE"
     ):
         raise ValueError("source registry hash basis mismatch")
+    if evidence["source_registry_sha256"] != EXPECTED_SOURCE_REGISTRY_SHA256:
+        raise ValueError("source registry compile pin mismatch")
     if digest(canonical(evidence["sources"])) != evidence[
         "source_registry_sha256"
     ]:
         raise ValueError("source registry hash mismatch")
+    if evidence["claim_registry_sha256"] != EXPECTED_CLAIM_REGISTRY_SHA256:
+        raise ValueError("claim registry compile pin mismatch")
     if digest(canonical(evidence["claims"])) != evidence["claim_registry_sha256"]:
         raise ValueError("claim registry hash mismatch")
 
@@ -286,6 +317,8 @@ def replay(bundle: Path) -> dict[str, Any]:
     recorded = evidence["provider_revalidation"]
     if set(recorded) != set(expected_body) | {"provider_revalidation_hash"}:
         raise ValueError("provider revalidation record keys mismatch")
+    if expected_hash != EXPECTED_PROVIDER_REVALIDATION_HASH:
+        raise ValueError("provider revalidation compile pin mismatch")
     if recorded["provider_revalidation_hash"] != expected_hash:
         raise ValueError("provider revalidation hash mismatch")
     for key, value in expected_body.items():

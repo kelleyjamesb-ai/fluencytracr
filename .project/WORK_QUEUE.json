@@ -315,7 +315,7 @@
       "bound": "Section 7.3 docs/contracts, OpenSpec, offline verifiers, tests, attribution, and progress only; no live GCP, credentials, deployment, qualification, model execution, or Sections 7.4-7.8",
       "status": "done",
       "risk": "high",
-      "last_note": "Done 2026-07-25: Section 7.2 PR #439 and Section 7.3 PR #440 merged to main; main tree e4934e4730cf0b7789e230acfe6fc0e6fc5c820a exactly matches the reviewed candidate. Post-merge Agent CI, CI, governance, assurance, and enforcement workflows passed. Runtime authority remains held; no GCP action or Section 7.4 work is authorized."
+      "last_note": "Done 2026-07-25: PRs #439/#440 merged; PR #441 closeout hardens compile-pinned literal claims and externally approved per-record controller dispositions, closing Codex P2 feedback. Final CODE/ADVERSARIAL reviews and the disclosed exact-candidate fallback BUG pass returned GO; 340 tests passed with 3 expected skips. Runtime authority remains held; no GCP action or Section 7.4 work is authorized."
     }
   ]
 }

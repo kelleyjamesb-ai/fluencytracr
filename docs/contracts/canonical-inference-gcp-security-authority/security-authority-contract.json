@@ -743,6 +743,7 @@
       "values_pairwise_distinct": true
     },
     "approval_domains": {
+      "runtime_approved_credential_control_disposition_manifest_hashes": [],
       "runtime_approved_deployment_gate_policy_hashes": [],
       "runtime_approved_privacy_boundary_policy_hashes": [],
       "runtime_approved_provenance_verifier_policy_hashes": [],
@@ -839,7 +840,12 @@
       "authority_source_record_required_keys": [
         "source_type",
         "record_count",
-        "snapshot_sha256"
+        "external_mutator_record_count",
+        "snapshot_sha256",
+        "credential_control_dispositions",
+        "credential_control_disposition_manifest_sha256",
+        "credential_control_edge_count",
+        "credential_control_edge_output_sha256"
       ],
       "authority_source_records_exactly_one_per_source_type": true,
       "completeness_witness_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:CONTROLLER_COMPLETENESS:V1",
@@ -862,14 +868,53 @@
         "SECURITY_AUDITOR",
         "WIF_PROVIDER_ADMIN"
       ],
+      "credential_control_disposition_domain": [
+        "EDGES_ENUMERATED",
+        "NO_CREDENTIAL_CONTROL_EDGE"
+      ],
+      "credential_control_disposition_manifest_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:CREDENTIAL_CONTROL_DISPOSITION_MANIFEST:V1",
+      "credential_control_disposition_manifest_fields": [
+        "source_type",
+        "record_count",
+        "external_mutator_record_count",
+        "snapshot_sha256",
+        "credential_control_dispositions"
+      ],
+      "credential_control_disposition_required_keys": [
+        "source_record_ordinal",
+        "disposition",
+        "edge_source_link_sha256s",
+        "disposition_evidence_sha256"
+      ],
+      "credential_control_dispositions_exactly_one_per_source_record_ordinal": true,
       "credential_control_edge_required_keys": [
+        "source_type",
+        "source_record_ordinal",
+        "edge_type",
         "controller_alias",
         "controlled_alias",
-        "evidence_sha256"
+        "evidence_sha256",
+        "source_link_sha256"
       ],
+      "credential_control_edge_source_link_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:CREDENTIAL_CONTROL_EDGE_SOURCE_LINK:V1",
+      "credential_control_edge_type_by_source_type": {
+        "ALLOW": "POLICY_BINDING_CONTROL",
+        "ANCESTOR_BINDING": "ANCESTOR_IAM_CONTROL",
+        "ATTACHED_IDENTITY": "ATTACHED_IDENTITY_CONTROL",
+        "AUDIT_MUTATOR": "AUDIT_CONFIG_CONTROL",
+        "CUSTOM_ROLE_DEFINITION": "CUSTOM_ROLE_CONTROL",
+        "DENY": "POLICY_BINDING_CONTROL",
+        "GROUP_DOMAIN": "GROUP_MEMBERSHIP_CONTROL",
+        "OWNER_EDITOR": "OWNER_EDITOR_CONTROL",
+        "PRINCIPAL_ACCESS_BOUNDARY": "POLICY_BINDING_CONTROL",
+        "SERVICE_AGENT": "SERVICE_AGENT_CONTROL",
+        "WIF_PROVIDER": "WIF_PROVIDER_CONTROL"
+      },
       "credential_control_edges_sorted_unique": true,
+      "credential_control_source_output_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:CREDENTIAL_CONTROL_SOURCE_OUTPUT:V1",
       "cycle_records": [],
       "cycle_set_sha256": "SHA256_CANONICAL_EMPTY_ARRAY",
+      "every_auxiliary_credential_controller_alias_must_reach_a_role": true,
       "external_authority_mutator_record_required_keys": [
         "mutator_alias",
         "mutator_type",
@@ -898,6 +943,8 @@
       },
       "fixed_point_reached": true,
       "forbidden_intersection_count": 0,
+      "fully_coordinated_source_edge_alias_omission": "LIVE_HOLD_UNLESS_EXACT_DISPOSITION_MANIFEST_EXTERNALLY_APPROVED",
+      "live_disposition_manifest_requires_external_runtime_approval": true,
       "missing_source_count": 0,
       "mutator_influence_graph_separate_from_credential_controller_sets": true,
       "mutator_relevant_source_types": [
@@ -939,7 +986,8 @@
         "PRINCIPAL_ACCESS_BOUNDARY",
         "SERVICE_AGENT",
         "WIF_PROVIDER"
-      ]
+      ],
+      "structural_validation_limit": "INTERNAL_COMPOSITION_ONLY_EXTERNAL_SOURCE_COMPLETENESS_AND_AUTHENTICITY_NOT_PROVEN"
     },
     "credential_controller_aliases": {
       "globally_disjoint_from_all_OTHER_alias_domains": true,

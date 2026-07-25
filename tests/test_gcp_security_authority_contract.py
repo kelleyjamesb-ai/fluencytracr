@@ -47,15 +47,15 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 # Updated only after all normative bytes are final.
 PINNED_ARTIFACTS = {
-    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "2874af72d70c44651052fa890885768de861232f11bee769c295c1edc8284326",
+    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "4d8d8a45cf4ab7782f7c4b5f7e69bf19c4190f897d6ba34ddc1922d0579e0c75",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-revalidation.json": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
     "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
-    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "d9c46b1c576f75b435418ff220bf20a365c9ed78d200512bd4db3672dabb938d",
-    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "4e355727c59114c3c32ba0b101e4b13be5733d32a375f7233045d990940d9573",
-    "scripts/verify_gcp_security_authority_revalidation.py": "e606060b02a27c327c34f238821908b10a2ec47fe5347d80cdaf5f023eade68a",
-    "scripts/gcp_security_authority_contract_validation.py": "c22fd6cbf17415f2c079f88f683dd27ce6a8242905b523616ef3ab79839df3e7",
-    "scripts/verify_gcp_security_authority_contract.py": "62f4029e2be804635fa0affe493815fec659c908f8f2af4f26fb0eb426d4b970",
+    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "1ff04885d6080393a50da1a92b67389189558fde03484d6f503de91175a99aff",
+    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "8e5f4d4c4aad801700b68d9c1e84deb0c745e4c08353fe065422a502c7196801",
+    "scripts/verify_gcp_security_authority_revalidation.py": "ecf35b27a96c862f1c5cad144d5a0861b12f42f9b51b65edb2810e56983a8dc0",
+    "scripts/gcp_security_authority_contract_validation.py": "8d1a465beb67e9db059e4451239516943b931714768535b830891d5dc15d768c",
+    "scripts/verify_gcp_security_authority_contract.py": "4f1a2ab1ba127f8ac58b99a5641fea00c2dfe67c4d097f33ef3f45f827f46cac",
 }
 
 
@@ -348,6 +348,9 @@ def test_source_verifier_rejects_unknown_evidence_fields(tmp_path: Path) -> None
     changed = tmp_path / "provider-source-evidence.json"
     changed.write_text(json.dumps(evidence, sort_keys=True) + "\n")
     module.EVIDENCE = changed
+    module.EXPECTED_PROVIDER_SOURCE_EVIDENCE_SHA256 = _sha(
+        changed.read_bytes()
+    )
     with pytest.raises(ValueError, match="root keys mismatch"):
         module.replay(BUNDLE)
 
@@ -897,20 +900,84 @@ def _synthetic_live_evidence_fixture(contract: dict[str, Any]) -> dict[str, Any]
     mutator_relevant = set(
         live_schema["controller_closure"]["mutator_relevant_source_types"]
     )
-    source_records = [
-        {
+    source_records = []
+    source_output_domain = live_schema["controller_closure"][
+        "credential_control_source_output_domain_separator"
+    ].encode("ascii")
+    for source_type in live_schema["controller_closure"]["source_types_exact"]:
+        record_count = (
+            1
+            if source_type == "OWNER_EDITOR"
+            else 0
+            if source_type in mutator_relevant
+            else 1
+        )
+        snapshot_sha256 = _sha(source_type.encode("ascii"))
+        source_edges = [
+            edge
+            for edge in credential_control_edges
+            if edge["source_type"] == source_type
+        ]
+        dispositions = []
+        for ordinal in range(record_count):
+            links = sorted(
+                edge["source_link_sha256"]
+                for edge in source_edges
+                if edge["source_record_ordinal"] == ordinal
+            )
+            dispositions.append(
+                {
+                    "source_record_ordinal": ordinal,
+                    "disposition": (
+                        "EDGES_ENUMERATED"
+                        if links
+                        else "NO_CREDENTIAL_CONTROL_EDGE"
+                    ),
+                    "edge_source_link_sha256s": links,
+                    "disposition_evidence_sha256": _sha(
+                        f"{source_type}:{ordinal}:disposition".encode("ascii")
+                    ),
+                }
+            )
+        external_mutator_record_count = (
+            1 if source_type == "OWNER_EDITOR" else 0
+        )
+        disposition_material = {
             "source_type": source_type,
-            "record_count": (
-                1
-                if source_type == "OWNER_EDITOR"
-                else 0
-                if source_type in mutator_relevant
-                else 1
-            ),
-            "snapshot_sha256": _sha(source_type.encode("ascii")),
+            "record_count": record_count,
+            "external_mutator_record_count": external_mutator_record_count,
+            "snapshot_sha256": snapshot_sha256,
+            "credential_control_dispositions": dispositions,
         }
-        for source_type in live_schema["controller_closure"]["source_types_exact"]
-    ]
+        disposition_manifest_sha256 = _sha(
+            live_schema["controller_closure"][
+                "credential_control_disposition_manifest_domain_separator"
+            ].encode("ascii")
+            + b"\x00"
+            + _canonical(disposition_material)
+        )
+        output_material = {
+            "source_type": source_type,
+            "record_count": record_count,
+            "snapshot_sha256": snapshot_sha256,
+            "credential_control_edges": source_edges,
+        }
+        source_records.append(
+            {
+                "source_type": source_type,
+                "record_count": record_count,
+                "external_mutator_record_count": external_mutator_record_count,
+                "snapshot_sha256": snapshot_sha256,
+                "credential_control_dispositions": dispositions,
+                "credential_control_disposition_manifest_sha256": (
+                    disposition_manifest_sha256
+                ),
+                "credential_control_edge_count": len(source_edges),
+                "credential_control_edge_output_sha256": _sha(
+                    source_output_domain + b"\x00" + _canonical(output_material)
+                ),
+            }
+        )
     mutator_states = {role: "DORMANT" for role in mutator_roles}
     edge_inventory = {
         "credential_control_edges": credential_control_edges,
@@ -1001,6 +1068,344 @@ def _synthetic_live_evidence_fixture(contract: dict[str, Any]) -> dict[str, Any]
         "security_authority_evidence_snapshot_hash",
     )
     return stored
+
+
+def _make_credential_control_edge(
+    stored: dict[str, Any],
+    contract: dict[str, Any],
+    *,
+    source_type: str,
+    source_record_ordinal: int,
+    controller_alias: str,
+    controlled_alias: str,
+    evidence_sha256: str,
+) -> dict[str, Any]:
+    schema = contract["live_evidence_contract"]["controller_closure"]
+    source_record = next(
+        item
+        for item in stored["controller_closure"]["authority_source_records"]
+        if item["source_type"] == source_type
+    )
+    edge = {
+        "source_type": source_type,
+        "source_record_ordinal": source_record_ordinal,
+        "edge_type": schema["credential_control_edge_type_by_source_type"][
+            source_type
+        ],
+        "controller_alias": controller_alias,
+        "controlled_alias": controlled_alias,
+        "evidence_sha256": evidence_sha256,
+    }
+    source_link_material = {
+        "source_type": source_type,
+        "source_snapshot_sha256": source_record["snapshot_sha256"],
+        "source_record_ordinal": source_record_ordinal,
+        "edge_type": edge["edge_type"],
+        "controller_alias": controller_alias,
+        "controlled_alias": controlled_alias,
+        "evidence_sha256": evidence_sha256,
+    }
+    edge["source_link_sha256"] = _sha(
+        schema["credential_control_edge_source_link_domain_separator"].encode(
+            "ascii"
+        )
+        + b"\x00"
+        + _canonical(source_link_material)
+    )
+    return edge
+
+
+def _reseal_controller_closure(
+    stored: dict[str, Any], contract: dict[str, Any]
+) -> None:
+    schema = contract["live_evidence_contract"]["controller_closure"]
+    closure = stored["controller_closure"]
+    edges = closure["credential_control_edges"]
+    edges.sort(
+        key=lambda edge: (
+            edge["source_type"],
+            edge["source_record_ordinal"],
+            edge["edge_type"],
+            edge["controller_alias"],
+            edge["controlled_alias"],
+        )
+    )
+    source_output_domain = schema[
+        "credential_control_source_output_domain_separator"
+    ].encode("ascii")
+    for source_record in closure["authority_source_records"]:
+        source_edges = [
+            edge
+            for edge in edges
+            if edge["source_type"] == source_record["source_type"]
+        ]
+        dispositions = []
+        for ordinal in range(source_record["record_count"]):
+            links = sorted(
+                edge["source_link_sha256"]
+                for edge in source_edges
+                if edge["source_record_ordinal"] == ordinal
+            )
+            dispositions.append(
+                {
+                    "source_record_ordinal": ordinal,
+                    "disposition": (
+                        "EDGES_ENUMERATED"
+                        if links
+                        else "NO_CREDENTIAL_CONTROL_EDGE"
+                    ),
+                    "edge_source_link_sha256s": links,
+                    "disposition_evidence_sha256": _sha(
+                        (
+                            f"{source_record['source_type']}:{ordinal}:disposition"
+                        ).encode("ascii")
+                    ),
+                }
+            )
+        source_record["credential_control_dispositions"] = dispositions
+        disposition_material = {
+            "source_type": source_record["source_type"],
+            "record_count": source_record["record_count"],
+            "external_mutator_record_count": source_record[
+                "external_mutator_record_count"
+            ],
+            "snapshot_sha256": source_record["snapshot_sha256"],
+            "credential_control_dispositions": dispositions,
+        }
+        source_record[
+            "credential_control_disposition_manifest_sha256"
+        ] = _sha(
+            schema[
+                "credential_control_disposition_manifest_domain_separator"
+            ].encode("ascii")
+            + b"\x00"
+            + _canonical(disposition_material)
+        )
+        source_record["credential_control_edge_count"] = len(source_edges)
+        output_material = {
+            "source_type": source_record["source_type"],
+            "record_count": source_record["record_count"],
+            "snapshot_sha256": source_record["snapshot_sha256"],
+            "credential_control_edges": source_edges,
+        }
+        source_record["credential_control_edge_output_sha256"] = _sha(
+            source_output_domain + b"\x00" + _canonical(output_material)
+        )
+    closure["source_inventory_sha256"] = _sha(
+        _canonical(closure["authority_source_records"])
+    )
+    nodes = set(stored["principal_role_aliases"].values()) | set(
+        stored["credential_controller_aliases"]
+    )
+    parents = {node: set() for node in nodes}
+    for edge in edges:
+        parents[edge["controlled_alias"]].add(edge["controller_alias"])
+
+    def upstream(node: str) -> list[str]:
+        reached = {node}
+        pending = list(parents[node])
+        while pending:
+            parent = pending.pop()
+            if parent in reached:
+                continue
+            reached.add(parent)
+            pending.extend(parents[parent])
+        return sorted(reached)
+
+    closure["controller_sets"] = {
+        role: upstream(alias)
+        for role, alias in stored["principal_role_aliases"].items()
+    }
+    closure["credential_controller_sets_sha256"] = _sha(
+        _canonical(closure["controller_sets"])
+    )
+    edge_inventory = {
+        "credential_control_edges": edges,
+        "credential_controller_sets": closure["controller_sets"],
+        "internal_authority_mutator_edges": closure[
+            "authority_mutator_influence_edges"
+        ],
+        "external_authority_mutator_records": closure[
+            "external_authority_mutator_records"
+        ],
+    }
+    closure["edge_inventory_sha256"] = _sha(_canonical(edge_inventory))
+    completeness_material = {
+        "authority_source_records": closure["authority_source_records"],
+        "credential_control_edges": edges,
+        "credential_controller_sets": closure["controller_sets"],
+        "cycle_records": closure["cycle_records"],
+        "external_authority_mutator_records": closure[
+            "external_authority_mutator_records"
+        ],
+        "authority_mutator_states": closure["authority_mutator_states"],
+        "missing_source_count": closure["missing_source_count"],
+        "fixed_point_reached": closure["fixed_point_reached"],
+        "forbidden_intersection_count": closure[
+            "forbidden_intersection_count"
+        ],
+        "active_authority_mutator_count": closure[
+            "active_authority_mutator_count"
+        ],
+    }
+    closure["completeness_witness_sha256"] = _sha(
+        schema["completeness_witness_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(completeness_material)
+    )
+    alias_material = {
+        "alias_context_id": stored["alias_context_id"],
+        "alias_generation_method": stored["alias_generation_method"],
+        "alias_generation_attestation_sha256": stored[
+            "alias_generation_attestation_sha256"
+        ],
+        "project_role_aliases": stored["project_role_aliases"],
+        "principal_role_aliases": stored["principal_role_aliases"],
+        "alternate_route_aliases": stored["alternate_route_aliases"],
+        "credential_controller_aliases": stored[
+            "credential_controller_aliases"
+        ],
+    }
+    stored["alias_assignment_sha256"] = _sha(_canonical(alias_material))
+    _seal(
+        stored,
+        _nodes(contract)["security_authority_evidence_snapshot_hash"],
+        "security_authority_evidence_snapshot_hash",
+    )
+
+
+def test_typed_source_linked_multihop_controller_edges_are_exact() -> None:
+    contract = _json(CONTRACT)
+    stored = _synthetic_live_evidence_fixture(contract)
+    first_controller = f"{901:032x}"
+    second_controller = f"{902:032x}"
+    stored["credential_controller_aliases"] = [
+        first_controller,
+        second_controller,
+    ]
+    records = {
+        item["source_type"]: item
+        for item in stored["controller_closure"]["authority_source_records"]
+    }
+    records["ALLOW"]["record_count"] = 1
+    records["ANCESTOR_BINDING"]["record_count"] = 1
+    runtime_alias = stored["principal_role_aliases"]["RUNTIME_SIGNER"]
+    stored["controller_closure"]["credential_control_edges"] = [
+        _make_credential_control_edge(
+            stored,
+            contract,
+            source_type="ALLOW",
+            source_record_ordinal=0,
+            controller_alias=first_controller,
+            controlled_alias=runtime_alias,
+            evidence_sha256="1" * 64,
+        ),
+        _make_credential_control_edge(
+            stored,
+            contract,
+            source_type="ANCESTOR_BINDING",
+            source_record_ordinal=0,
+            controller_alias=second_controller,
+            controlled_alias=first_controller,
+            evidence_sha256="2" * 64,
+        ),
+    ]
+    _reseal_controller_closure(stored, contract)
+    _validate_live_evidence_shape(stored, contract)
+    assert stored["controller_closure"]["controller_sets"][
+        "RUNTIME_SIGNER"
+    ] == sorted([runtime_alias, first_controller, second_controller])
+
+    omitted = copy.deepcopy(stored)
+    omitted["controller_closure"]["credential_control_edges"].pop()
+    _reseal_controller_closure(omitted, contract)
+    with pytest.raises(ValueError, match="orphaned or unlisted"):
+        _validate_live_evidence_shape(omitted, contract)
+
+    retagged = copy.deepcopy(stored)
+    retagged["controller_closure"]["credential_control_edges"][0][
+        "source_type"
+    ] = "DENY"
+    retagged["controller_closure"]["credential_control_edges"][0][
+        "edge_type"
+    ] = contract["live_evidence_contract"]["controller_closure"][
+        "credential_control_edge_type_by_source_type"
+    ]["DENY"]
+    _reseal_controller_closure(retagged, contract)
+    with pytest.raises(ValueError, match="source link mismatch"):
+        _validate_live_evidence_shape(retagged, contract)
+
+    source_splice = copy.deepcopy(stored)
+    source_splice_record = next(
+        item
+        for item in source_splice["controller_closure"][
+            "authority_source_records"
+        ]
+        if item["source_type"] == "ALLOW"
+    )
+    source_splice_record["snapshot_sha256"] = "f" * 64
+    _reseal_controller_closure(source_splice, contract)
+    with pytest.raises(ValueError, match="source link mismatch"):
+        _validate_live_evidence_shape(source_splice, contract)
+
+    orphan = copy.deepcopy(
+        _synthetic_live_evidence_fixture(contract)
+    )
+    orphan["credential_controller_aliases"] = [f"{903:032x}"]
+    _reseal_controller_closure(orphan, contract)
+    with pytest.raises(ValueError, match="orphaned or unlisted"):
+        _validate_live_evidence_shape(orphan, contract)
+
+    unmapped_mutator_count = copy.deepcopy(
+        _synthetic_live_evidence_fixture(contract)
+    )
+    allow_record = next(
+        item
+        for item in unmapped_mutator_count["controller_closure"][
+            "authority_source_records"
+        ]
+        if item["source_type"] == "ALLOW"
+    )
+    allow_record["external_mutator_record_count"] = 1
+    _reseal_controller_closure(unmapped_mutator_count, contract)
+    with pytest.raises(
+        ValueError, match="external mutator/source inventory count mismatch"
+    ):
+        _validate_live_evidence_shape(unmapped_mutator_count, contract)
+
+    coordinated_omission = copy.deepcopy(stored)
+    coordinated_omission["controller_closure"][
+        "credential_control_edges"
+    ].pop()
+    coordinated_omission["credential_controller_aliases"].remove(
+        second_controller
+    )
+    _reseal_controller_closure(coordinated_omission, contract)
+    _validate_live_evidence_shape(coordinated_omission, contract)
+    observed_contract = copy.deepcopy(contract)
+    observed_omission = copy.deepcopy(coordinated_omission)
+    observed_omission["evidence_state"] = (
+        "OBSERVED_COMPLETE_FRESH_ALL_PROOFS_PASS"
+    )
+    observed_omission["authority_effect"] = (
+        "NONE_LIVE_EVIDENCE_CANNOT_AUTHORIZE_ALONE"
+    )
+    observed_contract["policy_schema"]["runtime_approved_hashes"] = [
+        observed_omission["security_authority_policy_hash"]
+    ]
+    approval_domains = observed_contract["live_evidence_contract"][
+        "approval_domains"
+    ]
+    approval_domains[
+        "runtime_approved_privacy_boundary_policy_hashes"
+    ] = approval_domains["synthetic_test_privacy_boundary_policy_hashes"]
+    _seal(
+        observed_omission,
+        _nodes(contract)["security_authority_evidence_snapshot_hash"],
+        "security_authority_evidence_snapshot_hash",
+    )
+    with pytest.raises(ValueError, match="manifest is not runtime-approved"):
+        _validate_live_evidence_shape(observed_omission, observed_contract)
 
 
 def test_live_evidence_schema_is_closed_typed_and_fails_common_bypasses() -> None:
@@ -1269,6 +1674,12 @@ def test_live_evidence_schema_is_closed_typed_and_fails_common_bypasses() -> Non
     approvals["runtime_approved_section_7_5_binding_hashes"] = [
         observed["audit_interface_evidence"]["section_7_5_approval_binding_sha256"]
     ]
+    approvals[
+        "runtime_approved_credential_control_disposition_manifest_hashes"
+    ] = [
+        record["credential_control_disposition_manifest_sha256"]
+        for record in observed["controller_closure"]["authority_source_records"]
+    ]
     _seal(observed, node, "security_authority_evidence_snapshot_hash")
     with pytest.raises(ValueError, match="evidence snapshot hash is not runtime-approved"):
         _validate_live_evidence_shape(observed, observed_contract)
@@ -1447,7 +1858,7 @@ def test_current_contract_cli_rejects_semantically_conflicting_revalidation(
     )
 
 
-def test_current_contract_cli_recomputes_provider_claim_registry(
+def test_current_contract_cli_rejects_resealed_provider_claim_statement(
     tmp_path: Path,
 ) -> None:
     scripts = tmp_path / "scripts"
@@ -1469,13 +1880,38 @@ def test_current_contract_cli_recomputes_provider_claim_registry(
         shutil.copyfile(source, contract_dir / source.name)
 
     source_evidence = _strict_loads((contract_dir / SOURCES.name).read_text())
-    source_evidence["claims"][0]["statement"] += " coordinated-splice"
+    source_evidence["claims"][0]["statement"] = (
+        "ATTACKER CLAIM: Cloud HSM plaintext private-key export is supported."
+    )
+    source_evidence["claim_registry_sha256"] = _sha(
+        _canonical(source_evidence["claims"])
+    )
+    revalidation_body = {
+        key: value
+        for key, value in source_evidence["provider_revalidation"].items()
+        if key != "provider_revalidation_hash"
+    }
+    revalidation_body["claim_registry_sha256"] = source_evidence[
+        "claim_registry_sha256"
+    ]
+    provider_revalidation_hash = _sha(
+        b"FLUENCYTRACR:GCP_SECURITY_AUTHORITY_PROVIDER_REVALIDATION:V1\x00"
+        + _canonical(revalidation_body)
+    )
+    source_evidence["provider_revalidation"] = {
+        **revalidation_body,
+        "provider_revalidation_hash": provider_revalidation_hash,
+    }
     (contract_dir / SOURCES.name).write_text(
         json.dumps(source_evidence, indent=2, sort_keys=True) + "\n"
     )
     source_evidence_sha = _sha((contract_dir / SOURCES.name).read_bytes())
 
     revalidation = _strict_loads((contract_dir / REVALIDATION.name).read_text())
+    revalidation["claim_registry_sha256"] = source_evidence[
+        "claim_registry_sha256"
+    ]
+    revalidation["provider_revalidation_hash"] = provider_revalidation_hash
     revalidation["provider_source_evidence_sha256"] = source_evidence_sha
     (contract_dir / REVALIDATION.name).write_text(
         json.dumps(revalidation, indent=2, sort_keys=True) + "\n"
@@ -1485,6 +1921,9 @@ def test_current_contract_cli_recomputes_provider_claim_registry(
     contract["semantic_dependency"][
         "provider_source_evidence_sha256"
     ] = source_evidence_sha
+    contract["semantic_dependency"][
+        "provider_revalidation_hash"
+    ] = provider_revalidation_hash
     (contract_dir / CONTRACT.name).write_text(
         json.dumps(contract, indent=2, sort_keys=True) + "\n"
     )

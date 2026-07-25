@@ -25,6 +25,20 @@ MATRIX = DIR / "role-capability-matrix.json"
 REVALIDATION = DIR / "provider-revalidation.json"
 SOURCES = DIR / "provider-source-evidence.json"
 SECTION71 = ROOT / "docs/contracts/canonical-inference-gcp-provider-vocabulary"
+EXPECTED_PROVIDER_SOURCE_EVIDENCE_SHA256 = (
+    "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577"
+)
+EXPECTED_SOURCE_REGISTRY_SHA256 = (
+    "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062"
+)
+EXPECTED_CLAIM_REGISTRY_SHA256 = (
+    "d824bdd1753145992f8be94639303fc11c87ed584ddfa317cb15ce8d0cc9420c"
+)
+EXPECTED_PROVIDER_REVALIDATION_HASH = (
+    "9d2f21c49c5bfa6d498387a7d7a30a13c6c09d3b6bc7ae4a496f8e4e58f88ef6"
+)
+EXPECTED_SOURCE_COUNT = 23
+EXPECTED_CLAIM_COUNT = 42
 
 
 def digest(data: bytes) -> str:
@@ -102,7 +116,10 @@ def verify_current_contract() -> dict[str, Any]:
     if vectors["provider_revalidation_sha256"] != digest(REVALIDATION.read_bytes()):
         raise ValueError("revalidation artifact hash mismatch")
     revalidation = strict_load_json_bytes(REVALIDATION.read_bytes())
-    source_evidence = strict_load_json_bytes(SOURCES.read_bytes())
+    source_evidence_bytes = SOURCES.read_bytes()
+    if digest(source_evidence_bytes) != EXPECTED_PROVIDER_SOURCE_EVIDENCE_SHA256:
+        raise ValueError("provider source evidence compile pin mismatch")
+    source_evidence = strict_load_json_bytes(source_evidence_bytes)
     expected_revalidation_keys = {
         "schema_version",
         "source_bundle_sha256",
@@ -187,10 +204,19 @@ def verify_current_contract() -> dict[str, Any]:
         "EXACT_SANITIZED_SNAPSHOT_RECORDS_IN_RECOVERY_BUNDLE"
     ):
         raise ValueError("source registry hash basis mismatch")
+    if (
+        len(source_evidence["sources"]) != EXPECTED_SOURCE_COUNT
+        or len(source_evidence["claims"]) != EXPECTED_CLAIM_COUNT
+    ):
+        raise ValueError("provider registry compile-pinned count mismatch")
+    if source_evidence["source_registry_sha256"] != EXPECTED_SOURCE_REGISTRY_SHA256:
+        raise ValueError("source registry compile pin mismatch")
     if digest(_canonical(source_evidence["sources"])) != source_evidence[
         "source_registry_sha256"
     ]:
         raise ValueError("source registry hash mismatch")
+    if source_evidence["claim_registry_sha256"] != EXPECTED_CLAIM_REGISTRY_SHA256:
+        raise ValueError("claim registry compile pin mismatch")
     if digest(_canonical(source_evidence["claims"])) != source_evidence[
         "claim_registry_sha256"
     ]:
@@ -236,6 +262,8 @@ def verify_current_contract() -> dict[str, Any]:
     for key, expected in expected_revalidation_body.items():
         if revalidation[key] != expected:
             raise ValueError(f"provider revalidation field mismatch: {key}")
+    if expected_revalidation_hash != EXPECTED_PROVIDER_REVALIDATION_HASH:
+        raise ValueError("provider revalidation compile pin mismatch")
     if revalidation["provider_revalidation_hash"] != expected_revalidation_hash:
         raise ValueError("provider revalidation self-hash mismatch")
     expected_embedded = {
