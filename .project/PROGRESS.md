@@ -6,19 +6,21 @@
   merged to `main`: Section 7.2 PR #439 as `16d11fcf205f568ae14e3baf8be911c4c650f779`
   and Section 7.3 PR #440 as `df47d54f643ad7ba66b65b2ff9713a6f7f079e86`.
   Post-merge Agent CI, CI, governance, Assurance Harness, and enforcement
-  workflows passed. Closeout PR #441 incorporates Codex P2 feedback rather than
+  workflows passed. Closeout PR #441 incorporates Codex feedback rather than
   bypassing it: both verifiers compile-pin the literal 23-source/42-claim
   registry and provider revalidation, typed credential edges bind exact source
   records, every source ordinal has an explicit disposition, exact disposition
   manifests require external live approval, and external-mutator counts compose
   over every source class. The structural validator claims internal composition
   only, never provider-source authenticity or completeness. Final CODE and
-  ADVERSARIAL reviews returned GO; the BUG subagent repeatedly cancelled, so a
-  separately framed exact-candidate failure-mode pass returned GO under the
-  documented fallback policy after the immediately preceding independent BUG
-  review had returned GO. The full Python suite passed 340 tests with 3 expected
-  skips; strict OpenSpec, source replay, contract verification, docs, and
-  governance checks passed. Runtime authority remains held. No GCP access,
+  ADVERSARIAL reviews returned GO. The BUG subagent repeatedly cancelled and
+  local fallback passes do not satisfy OpenSpec task 3.2; a fresh independent
+  GitHub Codex exact-head review is required. That review also found and blocked
+  a one-mutator-per-source-record assumption; the count is now independent, one
+  source record may emit multiple mutators, and focused regression coverage is
+  included. The previous full suite passed 340 tests with 3 expected skips;
+  full verification will rerun on the corrected head before closeout. Runtime
+  authority remains held. No GCP access,
   credentials, provisioning, signing, deployment, qualification, model
   execution, customer/live data, or Section 7.4-7.8 implementation occurred or
   is authorized.
@@ -3478,10 +3480,11 @@
 
 ## Blockers
 
-- No unresolved Section 7.3 technical finding remains after the PR #441
-  closeout remediation and disclosed BUG-review fallback. Runtime qualification
-  and Section 7.4 remain separately held and require a new human-created queue
-  item plus fresh authorization.
+- PR #441 remains open pending fresh exact-head checks and an independent GitHub
+  Codex BUG review after the external-mutator cardinality correction. OpenSpec
+  task 3.2 and the Section 7.3 queue item remain open. Runtime qualification and
+  Section 7.4 remain separately held and require a new human-created queue item
+  plus fresh authorization.
 - No current blocker for the PR review gate repair slice. Full backend CI passed locally on 2026-06-12.
 
 ## Next Step

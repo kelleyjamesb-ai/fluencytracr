@@ -159,7 +159,9 @@ credential controller. Every edge carries an exact provider source type, mapped
 edge type, source-record ordinal, evidence commitment, and domain-separated link
 to its source snapshot. Each source-class record independently commits its raw
 record count, external-mutator count, derived edge count, and exact sorted edge
-output; those outputs must compose the global edge inventory exactly. Every raw
+output; those outputs must compose the global edge inventory exactly. External
+mutator count is an independent derived cardinality: one raw binding or policy
+record may emit multiple mutators, so it is not capped by raw record count. Every raw
 source ordinal also has exactly one explicit `EDGES_ENUMERATED` or
 `NO_CREDENTIAL_CONTROL_EDGE` disposition bound to the source snapshot. An exact
 per-source disposition-manifest hash must be externally runtime-approved for

@@ -47,14 +47,14 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 # Updated only after all normative bytes are final.
 PINNED_ARTIFACTS = {
-    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "4d8d8a45cf4ab7782f7c4b5f7e69bf19c4190f897d6ba34ddc1922d0579e0c75",
+    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "44aa8eade440b97695a0bc394738152c811522c3243b47d61d5eb11ab1166fbf",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-revalidation.json": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
     "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
-    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "1ff04885d6080393a50da1a92b67389189558fde03484d6f503de91175a99aff",
-    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "8e5f4d4c4aad801700b68d9c1e84deb0c745e4c08353fe065422a502c7196801",
+    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "11ddf99f609c496a4c7ce1b74e3de3a705f7f07710c564e74943c421616d2878",
+    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "6ea103ef60251265ed39673368e16eabfae8fcc19dd553dcd8345b33b57eaa62",
     "scripts/verify_gcp_security_authority_revalidation.py": "ecf35b27a96c862f1c5cad144d5a0861b12f42f9b51b65edb2810e56983a8dc0",
-    "scripts/gcp_security_authority_contract_validation.py": "8d1a465beb67e9db059e4451239516943b931714768535b830891d5dc15d768c",
+    "scripts/gcp_security_authority_contract_validation.py": "c787e4b9a50f88edce64c99054a06238d4217728732dfb853e3a6716a7863789",
     "scripts/verify_gcp_security_authority_contract.py": "4f1a2ab1ba127f8ac58b99a5641fea00c2dfe67c4d097f33ef3f45f827f46cac",
 }
 
@@ -1355,6 +1355,42 @@ def test_typed_source_linked_multihop_controller_edges_are_exact() -> None:
     _reseal_controller_closure(orphan, contract)
     with pytest.raises(ValueError, match="orphaned or unlisted"):
         _validate_live_evidence_shape(orphan, contract)
+
+    multiple_mutators_per_source = copy.deepcopy(
+        _synthetic_live_evidence_fixture(contract)
+    )
+    multi_closure = multiple_mutators_per_source["controller_closure"]
+    multi_closure["external_authority_mutator_records"].append(
+        {
+            "mutator_alias": f"{802:032x}",
+            "mutator_type": "OWNER_EDITOR",
+            "influenced_roles": ["RUNTIME_SIGNER"],
+            "state": "DORMANT",
+            "evidence_sha256": "e" * 64,
+        }
+    )
+    owner_record = next(
+        item
+        for item in multi_closure["authority_source_records"]
+        if item["source_type"] == "OWNER_EDITOR"
+    )
+    owner_record["external_mutator_record_count"] = 2
+    multi_closure["authority_mutator_influence_edges_sha256"] = _sha(
+        _canonical(
+            {
+                "internal_edges": multi_closure[
+                    "authority_mutator_influence_edges"
+                ],
+                "external_mutator_records": multi_closure[
+                    "external_authority_mutator_records"
+                ],
+            }
+        )
+    )
+    _reseal_controller_closure(multiple_mutators_per_source, contract)
+    _validate_live_evidence_shape(multiple_mutators_per_source, contract)
+    assert owner_record["record_count"] == 1
+    assert owner_record["external_mutator_record_count"] == 2
 
     unmapped_mutator_count = copy.deepcopy(
         _synthetic_live_evidence_fixture(contract)

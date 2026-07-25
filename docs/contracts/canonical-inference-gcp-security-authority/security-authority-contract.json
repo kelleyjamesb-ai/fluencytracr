@@ -932,6 +932,7 @@
         "RECOVERY_ADMIN",
         "SERVICE_AGENT_CONTROLLER"
       ],
+      "external_mutator_record_count_independent_of_source_record_count": true,
       "external_mutator_source_type_map": {
         "CUSTOM_ROLE_ADMIN": "CUSTOM_ROLE_DEFINITION",
         "GROUP_OWNER": "GROUP_DOMAIN",
@@ -954,6 +955,7 @@
         "OWNER_EDITOR",
         "SERVICE_AGENT"
       ],
+      "one_source_record_may_emit_multiple_external_mutators": true,
       "required_keys": [
         "authority_source_records",
         "source_inventory_sha256",

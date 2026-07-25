@@ -313,9 +313,9 @@
       "id": "gcp-security-authority-section-7-3",
       "title": "Section 7.3 — docs-only GCP HSM, WIF, IAM, and role-separation contract",
       "bound": "Section 7.3 docs/contracts, OpenSpec, offline verifiers, tests, attribution, and progress only; no live GCP, credentials, deployment, qualification, model execution, or Sections 7.4-7.8",
-      "status": "done",
+      "status": "in_progress",
       "risk": "high",
-      "last_note": "Done 2026-07-25: PRs #439/#440 merged; PR #441 closeout hardens compile-pinned literal claims and externally approved per-record controller dispositions, closing Codex P2 feedback. Final CODE/ADVERSARIAL reviews and the disclosed exact-candidate fallback BUG pass returned GO; 340 tests passed with 3 expected skips. Runtime authority remains held; no GCP action or Section 7.4 work is authorized."
+      "last_note": "PR #441 remediation is active. Fresh Codex review correctly kept OpenSpec 3.2 open and found a one-mutator-per-source cardinality assumption; the count model and regression are fixed locally. Queue closeout awaits green checks plus independent exact-head BUG review. Runtime authority remains held; no GCP action or Section 7.4 work is authorized."
     }
   ]
 }

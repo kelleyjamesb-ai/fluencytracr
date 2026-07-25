@@ -15,14 +15,13 @@
 ## 3. Verification
 
 - [x] 3.1 Add canonical vectors and strict mutation/contract tests.
-- [x] 3.2 Obtain independent CODE/BUG/ADVERSARIAL GO on the final exact candidate.
+- [ ] 3.2 Obtain independent CODE/BUG/ADVERSARIAL GO on the final exact candidate.
 - [x] 3.3 Commit, push, and open a separate draft PR after fresh human authorization.
 
 Review note: final-candidate CODE and ADVERSARIAL reviewers returned GO. The BUG
-reviewer repeatedly cancelled because of its tooling environment; per the review
-fallback policy, a separately framed exact-candidate failure-mode pass returned
-GO after the immediately preceding independent BUG review had returned GO. The
-cancellation is disclosed and is not represented as an independent BUG review.
+subagent repeatedly cancelled because of its tooling environment; local fallback
+passes are disclosed but do not satisfy task 3.2. A fresh independent GitHub
+Codex exact-head review is required before this task or the queue item may close.
 
 ## 4. Explicitly deferred
 
