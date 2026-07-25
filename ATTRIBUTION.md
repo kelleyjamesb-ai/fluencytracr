@@ -88,6 +88,12 @@ not necessarily reviewed or approved FluencyTracr.
 - Governance grounding: a C3 Intel TDX profile is only a candidate until exact cross-instance conformance and trust-rooted attestation pass; divergence requires rejection and escalation rather than an alternate oracle
 - Used in: GCP Canonical Runtime Candidate Selection, GCP Provider Claim and Identity Vocabulary, and GCP Canonical Runtime Object and Hash contracts
 
+### GCP security-authority qualification
+- Sources: Google Cloud documentation for Confidential Space WIF/resource access and token claims; workload-identity pool/provider lifecycle; federated-service support; Cloud HSM, key resources, algorithms, attestations, asymmetric signing, rotation, permissions, and separation of duties; IAM deny and Policy Troubleshooter; Cloud KMS/Cloud Audit Logs and log-bucket locking; Binary Authorization attestations; and the Sigstore Simple Signing specification
+- Retrieval evidence: `docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json` binds 23 sanitized public snapshots and 42 claim windows to `external-recovery://fluencytracr/gcp-security-authority-source-snapshot-20260724T232044Z.zip` with SHA-256 `6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3`; public example identifiers remain restricted provenance only
+- Governance grounding: direct digest-based WIF, distinct non-exportable HSM keys, transitive controller closure, same-context denial proof, held rollover, and an immutable audit interface are contract requirements only; all live policy/evidence admission lists remain empty and no GCP or signing action is authorized
+- Used in: GCP HSM, WIF, IAM, and Role-Separation Security Authority contract
+
 ### AI Scale Readiness Portfolio
 - Source: James Kelley, scale-readiness portfolio framing for V4 value realization
 - Governance grounding: aggregate readiness zones should guide where to scale, coach, redesign, calibrate trust, expand adoption, or hold without becoming a scorecard, ranking, ROI claim, or productivity measure
