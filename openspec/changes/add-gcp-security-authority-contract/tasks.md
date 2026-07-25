@@ -15,13 +15,15 @@
 ## 3. Verification
 
 - [x] 3.1 Add canonical vectors and strict mutation/contract tests.
-- [ ] 3.2 Obtain independent CODE/BUG/ADVERSARIAL GO on the final exact candidate.
+- [x] 3.2 Obtain independent CODE/BUG/ADVERSARIAL GO on the final exact candidate.
 - [x] 3.3 Commit, push, and open a separate draft PR after fresh human authorization.
 
-Review note: final-candidate CODE and ADVERSARIAL reviewers returned GO. The BUG
-subagent repeatedly cancelled because of its tooling environment; local fallback
-passes are disclosed but do not satisfy task 3.2. A fresh independent GitHub
-Codex exact-head review is required before this task or the queue item may close.
+Review note: fresh read-only reviewers inspected the exact remediated head and
+falsified the claim-pin, source-link, disposition-manifest, coordinated-omission,
+and all-source mutator-composition boundaries. The BUG review returned GO after
+proving that one source record may emit multiple mutators while a positive
+mutator count with zero source records rejects. Final exact-tree CODE, BUG, and
+ADVERSARIAL closeout reviews returned GO. Runtime authority remains held.
 
 ## 4. Explicitly deferred
 

@@ -5,25 +5,26 @@
 - Sections 7.2 and 7.3 of the canonical GCP runtime qualification plan are
   merged to `main`: Section 7.2 PR #439 as `16d11fcf205f568ae14e3baf8be911c4c650f779`
   and Section 7.3 PR #440 as `df47d54f643ad7ba66b65b2ff9713a6f7f079e86`.
-  Post-merge Agent CI, CI, governance, Assurance Harness, and enforcement
-  workflows passed. Closeout PR #441 incorporates Codex feedback rather than
-  bypassing it: both verifiers compile-pin the literal 23-source/42-claim
-  registry and provider revalidation, typed credential edges bind exact source
-  records, every source ordinal has an explicit disposition, exact disposition
-  manifests require external live approval, and external-mutator counts compose
-  over every source class. The structural validator claims internal composition
-  only, never provider-source authenticity or completeness. Final CODE and
-  ADVERSARIAL reviews returned GO. The BUG subagent repeatedly cancelled and
-  local fallback passes do not satisfy OpenSpec task 3.2; a fresh independent
-  GitHub Codex exact-head review is required. That review also found and blocked
-  a one-mutator-per-source-record assumption; the count is now independent, one
-  source record may emit multiple mutators, and focused regression coverage is
-  included. The previous full suite passed 340 tests with 3 expected skips;
-  full verification will rerun on the corrected head before closeout. Runtime
-  authority remains held. No GCP access,
-  credentials, provisioning, signing, deployment, qualification, model
-  execution, customer/live data, or Section 7.4-7.8 implementation occurred or
-  is authorized.
+  Closeout PR #441 incorporates every valid review finding without bypass:
+  both verifiers compile-pin the literal 23-source/42-claim registry and
+  provider revalidation, typed credential edges bind exact source records,
+  every source ordinal has an explicit disposition, exact disposition manifests
+  require external live approval, and external-mutator counts compose over
+  every source class. One source record may emit multiple mutators, while any
+  positive mutator count requires at least one raw source record. The structural
+  validator claims internal composition only, never provider-source authenticity
+  or completeness. A fresh independent exact-head BUG review falsified the
+  claim-pin, source-link, disposition-manifest, coordinated-omission, and
+  all-source composition boundaries and returned GO. Final exact-tree CODE,
+  BUG, and ADVERSARIAL closeout reviews returned GO. Focused Section 7.1-7.3
+  tests passed 64; the Section 7.3 suite passed 26; exact replay reconfirmed 23
+  sources and 42 claims; strict OpenSpec and V1 governance passed, and all PR
+  checks on the remediated implementation head were green. The closeout-only
+  head must rerun required checks before merge. Runtime authority remains held.
+  No GCP access, credentials,
+  provisioning, signing, deployment, qualification, model execution,
+  customer/live data, or Section 7.4-7.8 implementation occurred or is
+  authorized.
 
 - James Kelley explicitly authorized the sequential bounded VBD synthetic
   implementation, concordance, full-evidence, and exact-byte acceptance queue
@@ -3480,11 +3481,10 @@
 
 ## Blockers
 
-- PR #441 remains open pending fresh exact-head checks and an independent GitHub
-  Codex BUG review after the external-mutator cardinality correction. OpenSpec
-  task 3.2 and the Section 7.3 queue item remain open. Runtime qualification and
-  Section 7.4 remain separately held and require a new human-created queue item
-  plus fresh authorization.
+- No remaining Section 7.3 contract or review blocker. PR #441 closeout-only
+  checks and normal branch-policy merge remain to complete repository closeout.
+  Runtime qualification and Section 7.4 remain separately held and require a
+  new human-created queue item plus fresh authorization.
 - No current blocker for the PR review gate repair slice. Full backend CI passed locally on 2026-06-12.
 
 ## Next Step
