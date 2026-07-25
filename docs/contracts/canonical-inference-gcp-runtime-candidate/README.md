@@ -114,9 +114,9 @@ The provider vocabulary freezes the exact official assertion paths, values, supp
 
 Depends on 7.1. The contract closes deterministic numerical-profile fields, per-instance fields, the total control-plane projection, canonical serialization, acyclic hash preimages, visibility statuses, and the explicit `INSUFFICIENT_NO_OBSERVED_INSTANCE_ATTESTATION_OR_QUALIFICATION` runtime-identity posture. It references only the frozen provider vocabulary from 7.1 and keeps runtime authority held.
 
-### 7.3 HSM, WIF, IAM, and role-separation contract
+### 7.3 [HSM, WIF, IAM, and role-separation contract](../canonical-inference-gcp-security-authority/README.md)
 
-Depends on 7.1. Must close distinct projects/principals, HSM key origin/non-exportability, WIF-to-KMS admission, effective-access/deny proof, image signing, lifecycle, and immutable audit evidence.
+Depends semantically on 7.1; Section 7.2 remains compatibility-only. The docs-only contract closes distinct project/principal roles, Cloud HSM key generation/non-exportability, digest-based direct WIF-to-KMS admission, transitive effective-access/deny proof, detached image provenance, held rollover, and the authority-audit evidence interface. Live policy/evidence admission lists remain empty and the recorded state is `GCP_SECURITY_AUTHORITY_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD`.
 
 ### 7.4 Attestation and receipt contract
 

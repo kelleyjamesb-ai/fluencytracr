@@ -1,0 +1,862 @@
+{
+  "authorization_effect": "NONE_DOCS_ONLY",
+  "capabilities": [
+    {
+      "binding_kind": "EXACT_GCP_PERMISSION",
+      "capability_id": "SIGN_RUNTIME_RECEIPT_DIGEST",
+      "provider_bindings": [
+        "cloudkms.cryptoKeyVersions.useToSign"
+      ],
+      "resource_scope": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY"
+    },
+    {
+      "binding_kind": "EXACT_GCP_PERMISSION",
+      "capability_id": "SIGN_IMAGE_PROVENANCE_DIGEST",
+      "provider_bindings": [
+        "cloudkms.cryptoKeyVersions.useToSign"
+      ],
+      "resource_scope": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY"
+    },
+    {
+      "binding_kind": "EXACT_GCP_PERMISSION",
+      "capability_id": "VIEW_RUNTIME_PUBLIC_KEY",
+      "provider_bindings": [
+        "cloudkms.cryptoKeyVersions.viewPublicKey"
+      ],
+      "resource_scope": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY"
+    },
+    {
+      "binding_kind": "EXACT_GCP_PERMISSION",
+      "capability_id": "VIEW_IMAGE_PUBLIC_KEY",
+      "provider_bindings": [
+        "cloudkms.cryptoKeyVersions.viewPublicKey"
+      ],
+      "resource_scope": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY"
+    },
+    {
+      "binding_kind": "EXACT_GCP_METHOD_SET",
+      "capability_id": "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+      "provider_bindings": [
+        "CreateCryptoKey",
+        "CreateCryptoKeyVersion",
+        "UpdateCryptoKey",
+        "UpdateCryptoKeyVersion"
+      ],
+      "resource_scope": "KEY_CUSTODY_PROJECT"
+    },
+    {
+      "binding_kind": "CONTRACT_APPROVAL_CAPABILITY_NO_GCP_PERMISSION",
+      "capability_id": "APPROVE_KEY_DESTRUCTION_RESTORE",
+      "provider_bindings": [],
+      "resource_scope": "KEY_CUSTODY_PROJECT"
+    },
+    {
+      "binding_kind": "EXACT_GCP_METHOD_SET",
+      "capability_id": "EXECUTE_KEY_DESTRUCTION_RESTORE",
+      "provider_bindings": [
+        "DestroyCryptoKeyVersion",
+        "RestoreCryptoKeyVersion"
+      ],
+      "resource_scope": "KEY_CUSTODY_PROJECT"
+    },
+    {
+      "binding_kind": "EXACT_GCP_PERMISSION_SET",
+      "capability_id": "MUTATE_KMS_IAM",
+      "provider_bindings": [
+        "cloudkms.cryptoKeys.getIamPolicy",
+        "cloudkms.cryptoKeys.setIamPolicy"
+      ],
+      "resource_scope": "SIGNING_CRYPTOKEYS"
+    },
+    {
+      "binding_kind": "EXACT_GCP_REST_METHOD_SET",
+      "capability_id": "MUTATE_WIF_PROVIDER",
+      "provider_bindings": [
+        "workloadIdentityPools.create",
+        "workloadIdentityPools.delete",
+        "workloadIdentityPools.patch",
+        "workloadIdentityPools.undelete",
+        "workloadIdentityPools.providers.create",
+        "workloadIdentityPools.providers.delete",
+        "workloadIdentityPools.providers.patch",
+        "workloadIdentityPools.providers.undelete"
+      ],
+      "resource_scope": "SECURITY_POLICY_PROJECT"
+    },
+    {
+      "binding_kind": "EXTERNAL_NON_GCP_CAPABILITY_NO_PERMISSION_AUTHORIZED_BY_SECTION_7_3",
+      "capability_id": "BUILD_IMAGE",
+      "provider_bindings": [],
+      "resource_scope": "BUILD_PROJECT"
+    },
+    {
+      "binding_kind": "EXTERNAL_NON_GCP_CAPABILITY_NO_PERMISSION_AUTHORIZED_BY_SECTION_7_3",
+      "capability_id": "PUBLISH_IMAGE",
+      "provider_bindings": [],
+      "resource_scope": "BUILD_PROJECT"
+    },
+    {
+      "binding_kind": "EXTERNAL_NON_GCP_CAPABILITY_NO_PERMISSION_AUTHORIZED_BY_SECTION_7_3",
+      "capability_id": "DEPLOY_RUNTIME",
+      "provider_bindings": [],
+      "resource_scope": "RUNTIME_PROJECT"
+    },
+    {
+      "binding_kind": "LOCAL_PUBLIC_KEY_VERIFICATION_NO_GCP_PERMISSION",
+      "capability_id": "VERIFY_IMAGE_PROVENANCE",
+      "provider_bindings": [],
+      "resource_scope": "IMMUTABLE_IMAGE_DIGEST"
+    },
+    {
+      "binding_kind": "RESTRICTED_EXTERNAL_READ_CAPABILITY_NO_GCP_PERMISSION_AUTHORIZED_BY_SECTION_7_3",
+      "capability_id": "READ_SECURITY_EVIDENCE",
+      "provider_bindings": [],
+      "resource_scope": "ALL_SECURITY_PROJECTS"
+    },
+    {
+      "binding_kind": "SECTION_7_5_INTERFACE_CAPABILITY_NO_PROVIDER_PERMISSION_SELECTED",
+      "capability_id": "MUTATE_AUDIT_ROUTING_INTERFACE",
+      "provider_bindings": [],
+      "resource_scope": "AUDIT_INTERFACE_SECTION_7_5"
+    },
+    {
+      "binding_kind": "SECTION_7_5_INTERFACE_CAPABILITY_NO_PROVIDER_PERMISSION_SELECTED",
+      "capability_id": "MUTATE_AUDIT_RETENTION_INTERFACE",
+      "provider_bindings": [],
+      "resource_scope": "AUDIT_INTERFACE_SECTION_7_5"
+    }
+  ],
+  "controller_semantics": {
+    "authority_mutator_influence_graph": "SEPARATE_COMPLETE_GRAPH_ALL_MUTATORS_MUST_BE_DORMANT_FOR_LIVE_EVIDENCE",
+    "caller_asserted_completeness": "REJECT",
+    "credential_controller_algorithm": "LEAST_FIXED_POINT_OVER_COMPLETE_PROVIDER_OWNED_CREDENTIAL_CONTROL_EDGE_INVENTORY",
+    "cycles": "RETAIN_CYCLE_SET_AND_CONTINUE_TO_FIXED_POINT; UNRESOLVED_EXTERNAL_CONTROLLER_HOLD",
+    "intersection_check": "EVERY_ROLE_PAIR_DISJOINT_OVER_TRANSITIVE_CREDENTIAL_CONTROLLER_SETS",
+    "unknown_or_unviewable_edge": "HOLD"
+  },
+  "forbidden_controller_intersections": [
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "AUDIT_ROUTER_ADMIN"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "DEPLOYER"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "IMAGE_BUILDER"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "IMAGE_PUBLISHER"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "IMAGE_SIGNER"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "KEY_DESTRUCTION_APPROVER"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "KEY_DESTRUCTION_EXECUTOR"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "DEPLOYER"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "IMAGE_BUILDER"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "IMAGE_PUBLISHER"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "IMAGE_SIGNER"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "KEY_DESTRUCTION_APPROVER"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "KEY_DESTRUCTION_EXECUTOR"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "AUDIT_ROUTER_ADMIN",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "DEPLOYER",
+      "IMAGE_BUILDER"
+    ],
+    [
+      "DEPLOYER",
+      "IMAGE_PUBLISHER"
+    ],
+    [
+      "DEPLOYER",
+      "IMAGE_SIGNER"
+    ],
+    [
+      "DEPLOYER",
+      "KEY_DESTRUCTION_APPROVER"
+    ],
+    [
+      "DEPLOYER",
+      "KEY_DESTRUCTION_EXECUTOR"
+    ],
+    [
+      "DEPLOYER",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "DEPLOYER",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "DEPLOYER",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "DEPLOYER",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "DEPLOYER",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "DEPLOYER",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "IMAGE_PUBLISHER"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "IMAGE_SIGNER"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "KEY_DESTRUCTION_APPROVER"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "KEY_DESTRUCTION_EXECUTOR"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "IMAGE_BUILDER",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "IMAGE_SIGNER"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "KEY_DESTRUCTION_APPROVER"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "KEY_DESTRUCTION_EXECUTOR"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "IMAGE_PUBLISHER",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "KEY_DESTRUCTION_APPROVER"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "KEY_DESTRUCTION_EXECUTOR"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "IMAGE_SIGNER",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "KEY_DESTRUCTION_APPROVER",
+      "KEY_DESTRUCTION_EXECUTOR"
+    ],
+    [
+      "KEY_DESTRUCTION_APPROVER",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "KEY_DESTRUCTION_APPROVER",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "KEY_DESTRUCTION_APPROVER",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "KEY_DESTRUCTION_APPROVER",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "KEY_DESTRUCTION_APPROVER",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "KEY_DESTRUCTION_APPROVER",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "KEY_DESTRUCTION_EXECUTOR",
+      "KEY_LIFECYCLE_ADMIN"
+    ],
+    [
+      "KEY_DESTRUCTION_EXECUTOR",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "KEY_DESTRUCTION_EXECUTOR",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "KEY_DESTRUCTION_EXECUTOR",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "KEY_DESTRUCTION_EXECUTOR",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "KEY_DESTRUCTION_EXECUTOR",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "KEY_LIFECYCLE_ADMIN",
+      "KMS_IAM_ADMIN"
+    ],
+    [
+      "KEY_LIFECYCLE_ADMIN",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "KEY_LIFECYCLE_ADMIN",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "KEY_LIFECYCLE_ADMIN",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "KEY_LIFECYCLE_ADMIN",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "KMS_IAM_ADMIN",
+      "PUBLIC_KEY_VERIFIER"
+    ],
+    [
+      "KMS_IAM_ADMIN",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "KMS_IAM_ADMIN",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "KMS_IAM_ADMIN",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "PUBLIC_KEY_VERIFIER",
+      "RUNTIME_SIGNER"
+    ],
+    [
+      "PUBLIC_KEY_VERIFIER",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "PUBLIC_KEY_VERIFIER",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "RUNTIME_SIGNER",
+      "SECURITY_AUDITOR"
+    ],
+    [
+      "RUNTIME_SIGNER",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    [
+      "SECURITY_AUDITOR",
+      "WIF_PROVIDER_ADMIN"
+    ]
+  ],
+  "provider_permission_boundary": {
+    "exact_bindings_only_where_source_claimed": true,
+    "external_capability_provider_permissions": "NOT_AUTHORIZED_OR_SELECTED_BY_SECTION_7_3",
+    "unknown_security_sensitive_permission": "REJECT"
+  },
+  "roles": [
+    {
+      "allowed_capability_ids": [
+        "MUTATE_AUDIT_RETENTION_INTERFACE"
+      ],
+      "authority_class": "AUDIT_MUTATOR",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "AUDIT_RETENTION_CUSTODIAN"
+    },
+    {
+      "allowed_capability_ids": [
+        "MUTATE_AUDIT_ROUTING_INTERFACE"
+      ],
+      "authority_class": "AUDIT_MUTATOR",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "AUDIT_ROUTER_ADMIN"
+    },
+    {
+      "allowed_capability_ids": [
+        "DEPLOY_RUNTIME"
+      ],
+      "authority_class": "DEPLOYMENT_PLANE",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "DEPLOYER"
+    },
+    {
+      "allowed_capability_ids": [
+        "BUILD_IMAGE"
+      ],
+      "authority_class": "BUILD_PLANE",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "IMAGE_BUILDER"
+    },
+    {
+      "allowed_capability_ids": [
+        "PUBLISH_IMAGE"
+      ],
+      "authority_class": "BUILD_PLANE",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "IMAGE_PUBLISHER"
+    },
+    {
+      "allowed_capability_ids": [
+        "SIGN_IMAGE_PROVENANCE_DIGEST"
+      ],
+      "authority_class": "STANDING_CRYPTO_USE",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "IMAGE_SIGNER"
+    },
+    {
+      "allowed_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE"
+      ],
+      "authority_class": "APPROVAL_ONLY",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "KEY_DESTRUCTION_APPROVER"
+    },
+    {
+      "allowed_capability_ids": [
+        "EXECUTE_KEY_DESTRUCTION_RESTORE"
+      ],
+      "authority_class": "AUTHORITY_MUTATOR",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "KEY_DESTRUCTION_EXECUTOR"
+    },
+    {
+      "allowed_capability_ids": [
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE"
+      ],
+      "authority_class": "AUTHORITY_MUTATOR",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "KEY_LIFECYCLE_ADMIN"
+    },
+    {
+      "allowed_capability_ids": [
+        "MUTATE_KMS_IAM"
+      ],
+      "authority_class": "AUTHORITY_MUTATOR",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "KMS_IAM_ADMIN"
+    },
+    {
+      "allowed_capability_ids": [
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "authority_class": "READ_ONLY_VERIFIER",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST"
+      ],
+      "role_id": "PUBLIC_KEY_VERIFIER"
+    },
+    {
+      "allowed_capability_ids": [
+        "SIGN_RUNTIME_RECEIPT_DIGEST"
+      ],
+      "authority_class": "STANDING_CRYPTO_USE",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "RUNTIME_SIGNER"
+    },
+    {
+      "allowed_capability_ids": [
+        "READ_SECURITY_EVIDENCE"
+      ],
+      "authority_class": "READ_ONLY_AUDITOR",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "PUBLISH_IMAGE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "SECURITY_AUDITOR"
+    },
+    {
+      "allowed_capability_ids": [
+        "MUTATE_WIF_PROVIDER"
+      ],
+      "authority_class": "AUTHORITY_MUTATOR",
+      "default": "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION",
+      "forbidden_capability_ids": [
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "BUILD_IMAGE",
+        "DEPLOY_RUNTIME",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_KMS_IAM",
+        "PUBLISH_IMAGE",
+        "READ_SECURITY_EVIDENCE",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "VERIFY_IMAGE_PROVENANCE",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "VIEW_RUNTIME_PUBLIC_KEY"
+      ],
+      "role_id": "WIF_PROVIDER_ADMIN"
+    }
+  ],
+  "schema_version": "GCP_SECURITY_AUTHORITY_ROLE_CAPABILITY_MATRIX_V1",
+  "unlisted_role_or_capability": "REJECT"
+}

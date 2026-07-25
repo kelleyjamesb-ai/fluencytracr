@@ -1,0 +1,2624 @@
+{
+  "audit_evidence_interface": {
+    "kms_asymmetric_sign_data_access": "SOURCE_CLOSED_MUST_BE_ENABLED_NO_EXEMPTIONS_BEFORE_LATER_EXECUTION",
+    "other_operation_auditability": "UNPROVEN_UNTIL_SECTION_7_5_EXACT_METHOD_MAPPING",
+    "owner": "SECTION_7_3_AUTHORITY_OPERATION_INVENTORY_SECTION_7_5_PROVIDER_METHOD_AND_PERSISTENCE_MAPPING",
+    "persistence_mechanism": "DEFERRED_TO_SECTION_7_5",
+    "policy_denied_exclusions": "PROHIBITED_IF_SECTION_7_5_MAPS_REQUIRED_POLICY_DENIED_EVIDENCE",
+    "raw_logs_in_fluencytracr": "PROHIBITED",
+    "required_authority_operation_ids": [
+      "TOKEN_EXCHANGE",
+      "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "KMS_IAM_MUTATION",
+      "ASYMMETRIC_SIGN_ALLOW_DENY",
+      "PUBLIC_KEY_RETRIEVAL",
+      "IMAGE_PROVENANCE_PUBLICATION",
+      "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION"
+    ],
+    "section_7_5_provider_method_mapping": "REQUIRED_EXACT_SOURCE_REVALIDATION_NOT_SELECTED_BY_SECTION_7_3"
+  },
+  "canonicalization": {
+    "arrays": "SCHEMA_ORDER_OR_DECLARED_SORTED_SET",
+    "encoding": "UTF-8",
+    "numbers": "INTEGER_ONLY_BOOLEAN_NOT_INTEGER_NEGATIVE_ZERO_REJECT",
+    "object_keys": "LEXICOGRAPHIC_CODE_POINT_ORDER",
+    "separators": "MINIFIED_COMMA_COLON",
+    "unicode": "NFC_NO_CONTROL_OR_SURROGATE",
+    "unknown_null_float_duplicate_keys": "REJECT_BEFORE_HASHING",
+    "version": "FT_CANONICAL_JSON_V1"
+  },
+  "contract_version": "GCP_HSM_WIF_IAM_ROLE_SEPARATION_V1",
+  "decision_algorithm": {
+    "maximum_state": "CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+    "no_additive_authority_under_composition": true,
+    "precedence": [
+      "REJECT_FOR_PRIVACY_OR_BOUNDARY_LEAKAGE",
+      "REJECT_FOR_PROVIDER_CONFLICT_OR_UNSUPPORTED_CLAIM",
+      "HOLD_FOR_PROVIDER_SOURCE_UNAVAILABLE_OR_DRIFT",
+      "REJECT_FOR_ROLE_OR_CONTROLLER_COLLISION",
+      "REJECT_FOR_KEY_WIF_POLICY_OR_DIGEST_MODE_MISMATCH",
+      "HOLD_FOR_INCOMPLETE_STALE_OR_AMBIGUOUS_EVIDENCE",
+      "GCP_SECURITY_AUTHORITY_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD"
+    ],
+    "recorded_decision": "GCP_SECURITY_AUTHORITY_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+    "unknown_or_missing": "REJECT_FOR_PRIVACY_OR_BOUNDARY_LEAKAGE"
+  },
+  "effective_access_evidence_schema": {
+    "alternate_credential_routes": [
+      "ATTACHED_VM_IDENTITY_KMS_ACCESS",
+      "METADATA_SERVER_ACCESS_TOKEN_KMS_ACCESS",
+      "USER_MANAGED_SERVICE_ACCOUNT_KEY",
+      "iam.serviceAccounts.actAs",
+      "iam.serviceAccounts.getAccessToken",
+      "iam.serviceAccounts.getOpenIdToken",
+      "iam.serviceAccounts.signBlob",
+      "roles/iam.serviceAccountTokenCreator",
+      "SERVICE_ACCOUNT_IMPERSONATION"
+    ],
+    "ambiguous_failure": "HOLD",
+    "negative_tuple_count": 52,
+    "positive_tuple_count": 4,
+    "same_context_required_within_context_group": true,
+    "tuple_universe": [
+      {
+        "context_group_id": "AUDIT_RETENTION_CUSTODIAN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_RETENTION_CUSTODIAN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "AUDIT_RETENTION_CUSTODIAN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_RETENTION_CUSTODIAN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "AUDIT_RETENTION_CUSTODIAN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_RETENTION_CUSTODIAN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "AUDIT_RETENTION_CUSTODIAN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_RETENTION_CUSTODIAN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "AUDIT_ROUTER_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "AUDIT_ROUTER_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_ROUTER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "AUDIT_ROUTER_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "AUDIT_ROUTER_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_ROUTER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "AUDIT_ROUTER_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "AUDIT_ROUTER_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_ROUTER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "AUDIT_ROUTER_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "AUDIT_ROUTER_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "AUDIT_ROUTER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "DEPLOYER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "DEPLOYER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "DEPLOYER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "DEPLOYER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "DEPLOYER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "DEPLOYER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "DEPLOYER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "DEPLOYER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "DEPLOYER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "DEPLOYER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "DEPLOYER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "DEPLOYER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "IMAGE_BUILDER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "IMAGE_BUILDER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_BUILDER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "IMAGE_BUILDER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "IMAGE_BUILDER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_BUILDER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "IMAGE_BUILDER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "IMAGE_BUILDER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_BUILDER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "IMAGE_BUILDER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "IMAGE_BUILDER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_BUILDER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "IMAGE_PUBLISHER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "IMAGE_PUBLISHER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_PUBLISHER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "IMAGE_PUBLISHER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "IMAGE_PUBLISHER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_PUBLISHER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "IMAGE_PUBLISHER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "IMAGE_PUBLISHER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_PUBLISHER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "IMAGE_PUBLISHER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "IMAGE_PUBLISHER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_PUBLISHER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "IMAGE_SIGNER__USE_TO_SIGN",
+        "expected": "ALLOW",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "IMAGE_SIGNER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "IMAGE_SIGNER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "IMAGE_SIGNER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "IMAGE_SIGNER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "IMAGE_SIGNER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "IMAGE_SIGNER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "IMAGE_SIGNER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "IMAGE_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_APPROVER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KEY_DESTRUCTION_APPROVER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_APPROVER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_APPROVER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KEY_DESTRUCTION_APPROVER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_APPROVER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_APPROVER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KEY_DESTRUCTION_APPROVER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_APPROVER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_APPROVER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KEY_DESTRUCTION_APPROVER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_APPROVER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_EXECUTOR__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_EXECUTOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_EXECUTOR__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_EXECUTOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_EXECUTOR__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_EXECUTOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KEY_DESTRUCTION_EXECUTOR__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_DESTRUCTION_EXECUTOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KEY_LIFECYCLE_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KEY_LIFECYCLE_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_LIFECYCLE_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KEY_LIFECYCLE_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KEY_LIFECYCLE_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_LIFECYCLE_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KEY_LIFECYCLE_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KEY_LIFECYCLE_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_LIFECYCLE_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KEY_LIFECYCLE_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KEY_LIFECYCLE_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KEY_LIFECYCLE_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KMS_IAM_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KMS_IAM_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KMS_IAM_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KMS_IAM_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KMS_IAM_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "KMS_IAM_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "KMS_IAM_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "KMS_IAM_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KMS_IAM_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "KMS_IAM_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "KMS_IAM_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "KMS_IAM_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "PUBLIC_KEY_VERIFIER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "PUBLIC_KEY_VERIFIER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "PUBLIC_KEY_VERIFIER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "PUBLIC_KEY_VERIFIER__VIEW_PUBLIC_KEY",
+        "expected": "ALLOW",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "PUBLIC_KEY_VERIFIER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "PUBLIC_KEY_VERIFIER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "PUBLIC_KEY_VERIFIER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "PUBLIC_KEY_VERIFIER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "PUBLIC_KEY_VERIFIER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "PUBLIC_KEY_VERIFIER__VIEW_PUBLIC_KEY",
+        "expected": "ALLOW",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "PUBLIC_KEY_VERIFIER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "PUBLIC_KEY_VERIFIER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "RUNTIME_SIGNER__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "RUNTIME_SIGNER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "RUNTIME_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "RUNTIME_SIGNER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "RUNTIME_SIGNER",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "RUNTIME_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "RUNTIME_SIGNER__USE_TO_SIGN",
+        "expected": "ALLOW",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "RUNTIME_SIGNER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "RUNTIME_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "RUNTIME_SIGNER__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "RUNTIME_SIGNER",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "RUNTIME_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "SECURITY_AUDITOR__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "SECURITY_AUDITOR",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "SECURITY_AUDITOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "SECURITY_AUDITOR__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "SECURITY_AUDITOR",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "SECURITY_AUDITOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "SECURITY_AUDITOR__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "SECURITY_AUDITOR",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "SECURITY_AUDITOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "SECURITY_AUDITOR__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "SECURITY_AUDITOR",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "SECURITY_AUDITOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "WIF_PROVIDER_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "WIF_PROVIDER_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "WIF_PROVIDER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "WIF_PROVIDER_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "WIF_PROVIDER_ADMIN",
+        "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "tuple_id": "WIF_PROVIDER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      },
+      {
+        "context_group_id": "WIF_PROVIDER_ADMIN__USE_TO_SIGN",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "principal_role": "WIF_PROVIDER_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "WIF_PROVIDER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+      },
+      {
+        "context_group_id": "WIF_PROVIDER_ADMIN__VIEW_PUBLIC_KEY",
+        "expected": "DENY",
+        "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+        "principal_role": "WIF_PROVIDER_ADMIN",
+        "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "tuple_id": "WIF_PROVIDER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+      }
+    ],
+    "tuple_universe_sha256": "e5fcccfa72059b014304602d5004be279379ae52eae16110d14147066b412ef2",
+    "unknown_policy_or_controller": "HOLD"
+  },
+  "evidence_snapshot_schema": {
+    "hash_field": "security_authority_evidence_snapshot_hash",
+    "live_required_state": "OBSERVED_COMPLETE_FRESH_ALL_PROOFS_PASS",
+    "required_top_level_keys": [
+      "alternate_credential_evidence",
+      "audit_interface_evidence",
+      "authority_effect",
+      "canonicalization_version",
+      "controller_fixed_point",
+      "effective_access_evidence",
+      "evidence_state",
+      "freshness",
+      "hsm_key_generation_evidence",
+      "observation_window",
+      "principal_alias_bundle",
+      "project_alias_bundle",
+      "rollover_evidence",
+      "schema_version",
+      "security_authority_policy_hash",
+      "wif_pool_provider_evidence"
+    ],
+    "runtime_approved_hashes": [],
+    "schema_version": "GCP_SECURITY_AUTHORITY_EVIDENCE_SNAPSHOT_V1",
+    "section_7_3_current_state": "NOT_OBSERVED_NO_GCP_ACCESS",
+    "synthetic_test_hashes": [
+      "ad47690365b5724d9f720547f6f2042fe7a0ffe188a30a218e0239f0b414f1d6"
+    ]
+  },
+  "future_interfaces": [
+    {
+      "interface_id": "ATTESTATION_RECEIPT_TRUST_BINDING",
+      "must_bind": [
+        "APPROVED_LIVE_security_authority_policy_hash",
+        "APPROVED_LIVE_security_authority_evidence_snapshot_hash",
+        "KEY_PURPOSE_ID",
+        "CRYPTO_KEY_GENERATION_OPAQUE_ALIAS",
+        "KEY_VERSION_1",
+        "SPKI_DER_SHA256",
+        "EC_SIGN_P256_SHA256"
+      ],
+      "owner": "SECTION_7_4",
+      "section_7_3_defines_receipt_preimage": false
+    },
+    {
+      "interface_id": "IMMUTABLE_AUTHORITY_AUDIT_PERSISTENCE",
+      "must_satisfy": [
+        "AUDIT_INVENTORY_COMPLETE",
+        "RETENTION_LOCKED",
+        "NO_REQUIRED_EXCLUSIONS",
+        "ROUTER_AND_CUSTODIAN_SEPARATED"
+      ],
+      "owner": "SECTION_7_5"
+    },
+    {
+      "interface_id": "AUTHORITY_MUTATION_AND_ATTEMPT_LEDGER",
+      "must_bind": [
+        "POLICY_ETAGS",
+        "EVIDENCE_SNAPSHOT_HASH",
+        "CANARY_ATTEMPT_REFERENCES",
+        "TERMINAL_STATE"
+      ],
+      "owner": "SECTION_7_6"
+    },
+    {
+      "interface_id": "WHOLE_SYSTEM_AUTHORITY_GATE",
+      "must_reconcile": [
+        "SECTIONS_7_1_THROUGH_7_6_WITH_NO_SYNTHETIC_OR_PLACEHOLDER_ADMISSION"
+      ],
+      "owner": "SECTION_7_7"
+    },
+    {
+      "interface_id": "QUALIFICATION_EXECUTION_AUTHORITY",
+      "must_require": [
+        "SECTION_7_7_GO",
+        "FRESH_HUMAN_EXECUTION_AUTHORIZATION"
+      ],
+      "owner": "SECTION_7_8"
+    }
+  ],
+  "hash_graph": [
+    {
+      "dependencies": [],
+      "domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY_PROVIDER_REVALIDATION:V1",
+      "node_id": "provider_revalidation_hash",
+      "owner": "SECTION_7_3_PUBLIC_SOURCE_REVALIDATION"
+    },
+    {
+      "dependencies": [
+        "provider_revalidation_hash"
+      ],
+      "domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY_POLICY:V1",
+      "node_id": "security_authority_policy_hash",
+      "owner": "SECTION_7_3"
+    },
+    {
+      "dependencies": [
+        "security_authority_policy_hash"
+      ],
+      "domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY_EVIDENCE_SNAPSHOT:V1",
+      "node_id": "security_authority_evidence_snapshot_hash",
+      "owner": "SECTION_7_3"
+    }
+  ],
+  "live_evidence_contract": {
+    "additional_properties": false,
+    "alternate_credential_record": {
+      "all_routes_present_once": true,
+      "denial_cause": "AUTHORIZATION_PERMISSION_DENIED",
+      "observed": "DENY",
+      "record_universe": [
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "ATTACHED_VM_IDENTITY_KMS_ACCESS"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "ATTACHED_VM_IDENTITY_KMS_ACCESS"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "METADATA_SERVER_ACCESS_TOKEN_KMS_ACCESS"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "METADATA_SERVER_ACCESS_TOKEN_KMS_ACCESS"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "USER_MANAGED_SERVICE_ACCOUNT_KEY"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "USER_MANAGED_SERVICE_ACCOUNT_KEY"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.actAs"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.actAs"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.getAccessToken"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.getAccessToken"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.getOpenIdToken"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.getOpenIdToken"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.signBlob"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "iam.serviceAccounts.signBlob"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "roles/iam.serviceAccountTokenCreator"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "roles/iam.serviceAccountTokenCreator"
+        },
+        {
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "route_id": "SERVICE_ACCOUNT_IMPERSONATION"
+        },
+        {
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "route_id": "SERVICE_ACCOUNT_IMPERSONATION"
+        }
+      ],
+      "required_keys": [
+        "route_id",
+        "principal_alias",
+        "resource_purpose",
+        "key_generation_alias",
+        "observed",
+        "observed_at",
+        "same_context_sha256",
+        "policy_snapshot_sha256",
+        "audit_correlation_sha256",
+        "denial_cause",
+        "alternate_record_binding_sha256"
+      ],
+      "resource_purposes_exact": [
+        "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+        "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY"
+      ],
+      "route_ids_exact": [
+        "ATTACHED_VM_IDENTITY_KMS_ACCESS",
+        "METADATA_SERVER_ACCESS_TOKEN_KMS_ACCESS",
+        "USER_MANAGED_SERVICE_ACCOUNT_KEY",
+        "iam.serviceAccounts.actAs",
+        "iam.serviceAccounts.getAccessToken",
+        "iam.serviceAccounts.getOpenIdToken",
+        "iam.serviceAccounts.signBlob",
+        "roles/iam.serviceAccountTokenCreator",
+        "SERVICE_ACCOUNT_IMPERSONATION"
+      ]
+    },
+    "alternate_route_aliases": {
+      "required_keys": [
+        "ATTACHED_VM_IDENTITY_KMS_ACCESS",
+        "METADATA_SERVER_ACCESS_TOKEN_KMS_ACCESS",
+        "USER_MANAGED_SERVICE_ACCOUNT_KEY",
+        "iam.serviceAccounts.actAs",
+        "iam.serviceAccounts.getAccessToken",
+        "iam.serviceAccounts.getOpenIdToken",
+        "iam.serviceAccounts.signBlob",
+        "roles/iam.serviceAccountTokenCreator",
+        "SERVICE_ACCOUNT_IMPERSONATION"
+      ],
+      "value_domain": "CONTEXT_BOUND_RANDOM_ALIAS",
+      "values_pairwise_distinct": true
+    },
+    "approval_domains": {
+      "runtime_approved_deployment_gate_policy_hashes": [],
+      "runtime_approved_privacy_boundary_policy_hashes": [],
+      "runtime_approved_provenance_verifier_policy_hashes": [],
+      "runtime_approved_section_7_5_binding_hashes": [],
+      "synthetic_test_deployment_gate_policy_hashes": [
+        "3333333333333333333333333333333333333333333333333333333333333333"
+      ],
+      "synthetic_test_privacy_boundary_policy_hashes": [
+        "1111111111111111111111111111111111111111111111111111111111111111"
+      ],
+      "synthetic_test_provenance_verifier_policy_hashes": [
+        "2222222222222222222222222222222222222222222222222222222222222222"
+      ]
+    },
+    "audit_interface_evidence": {
+      "missing_operation_count": 0,
+      "operation_inventory_sha256_expected": "2ff6be48499639bcb939ba33fc374f47c1ec0a0cad2fae297ff466b89bae9f5e",
+      "raw_logs_retained_in_fluencytracr": false,
+      "required_keys": [
+        "operation_inventory_sha256",
+        "section_7_5_contract_sha256",
+        "section_7_5_decision",
+        "section_7_5_method_mapping_sha256",
+        "section_7_5_approval_binding_sha256",
+        "completeness_window_start",
+        "completeness_window_end",
+        "missing_operation_count",
+        "raw_logs_retained_in_fluencytracr",
+        "audit_interface_binding_sha256"
+      ],
+      "section_7_5_approval_binding_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "section_7_5_decision": "SECTION_7_5_APPROVED_IMMUTABLE_AUDIT_MAPPING",
+      "section_7_5_method_mapping_required": true
+    },
+    "controller_closure": {
+      "active_authority_mutator_count": 0,
+      "any_credential_control_cycle": "HOLD",
+      "authority_mutator_influence_edges_exact": [
+        {
+          "influence": "CAN_CHANGE_KEY_IAM",
+          "influenced_role": "IMAGE_SIGNER",
+          "mutator_role": "KMS_IAM_ADMIN"
+        },
+        {
+          "influence": "CAN_CHANGE_KEY_IAM",
+          "influenced_role": "RUNTIME_SIGNER",
+          "mutator_role": "KMS_IAM_ADMIN"
+        },
+        {
+          "influence": "CAN_CHANGE_FEDERATED_ADMISSION",
+          "influenced_role": "RUNTIME_SIGNER",
+          "mutator_role": "WIF_PROVIDER_ADMIN"
+        },
+        {
+          "influence": "CAN_CHANGE_KEY_STATE_OR_GENERATION",
+          "influenced_role": "IMAGE_SIGNER",
+          "mutator_role": "KEY_LIFECYCLE_ADMIN"
+        },
+        {
+          "influence": "CAN_CHANGE_KEY_STATE_OR_GENERATION",
+          "influenced_role": "RUNTIME_SIGNER",
+          "mutator_role": "KEY_LIFECYCLE_ADMIN"
+        },
+        {
+          "influence": "CAN_DESTROY_OR_RESTORE_KEY",
+          "influenced_role": "IMAGE_SIGNER",
+          "mutator_role": "KEY_DESTRUCTION_EXECUTOR"
+        },
+        {
+          "influence": "CAN_DESTROY_OR_RESTORE_KEY",
+          "influenced_role": "RUNTIME_SIGNER",
+          "mutator_role": "KEY_DESTRUCTION_EXECUTOR"
+        },
+        {
+          "influence": "CAN_CHANGE_EVIDENCE_ROUTING",
+          "influenced_role": "SECURITY_AUDITOR",
+          "mutator_role": "AUDIT_ROUTER_ADMIN"
+        },
+        {
+          "influence": "CAN_CHANGE_EVIDENCE_RETENTION",
+          "influenced_role": "SECURITY_AUDITOR",
+          "mutator_role": "AUDIT_RETENTION_CUSTODIAN"
+        }
+      ],
+      "authority_mutator_required_state": "DORMANT",
+      "authority_mutator_roles": [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "AUDIT_ROUTER_ADMIN",
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KEY_LIFECYCLE_ADMIN",
+        "KMS_IAM_ADMIN",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      "authority_source_record_required_keys": [
+        "source_type",
+        "record_count",
+        "snapshot_sha256"
+      ],
+      "authority_source_records_exactly_one_per_source_type": true,
+      "completeness_witness_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:CONTROLLER_COMPLETENESS:V1",
+      "controller_alias_domain": "CONTEXT_BOUND_RANDOM_ALIAS",
+      "controller_sets_derived_as_transitive_upstream_closure_including_role_alias": true,
+      "controller_sets_each_sorted_unique_and_include_role_alias": true,
+      "controller_sets_required_roles": [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "AUDIT_ROUTER_ADMIN",
+        "DEPLOYER",
+        "IMAGE_BUILDER",
+        "IMAGE_PUBLISHER",
+        "IMAGE_SIGNER",
+        "KEY_DESTRUCTION_APPROVER",
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KEY_LIFECYCLE_ADMIN",
+        "KMS_IAM_ADMIN",
+        "PUBLIC_KEY_VERIFIER",
+        "RUNTIME_SIGNER",
+        "SECURITY_AUDITOR",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      "credential_control_edge_required_keys": [
+        "controller_alias",
+        "controlled_alias",
+        "evidence_sha256"
+      ],
+      "credential_control_edges_sorted_unique": true,
+      "cycle_records": [],
+      "cycle_set_sha256": "SHA256_CANONICAL_EMPTY_ARRAY",
+      "external_authority_mutator_record_required_keys": [
+        "mutator_alias",
+        "mutator_type",
+        "influenced_roles",
+        "state",
+        "evidence_sha256"
+      ],
+      "external_authority_mutator_state": "DORMANT",
+      "external_authority_mutator_type_domain": [
+        "CUSTOM_ROLE_ADMIN",
+        "GROUP_OWNER",
+        "IDENTITY_PROVIDER_ADMIN",
+        "ORG_FOLDER_PROJECT_IAM_ADMIN",
+        "OWNER_EDITOR",
+        "RECOVERY_ADMIN",
+        "SERVICE_AGENT_CONTROLLER"
+      ],
+      "external_mutator_source_type_map": {
+        "CUSTOM_ROLE_ADMIN": "CUSTOM_ROLE_DEFINITION",
+        "GROUP_OWNER": "GROUP_DOMAIN",
+        "IDENTITY_PROVIDER_ADMIN": "ANCESTOR_BINDING",
+        "ORG_FOLDER_PROJECT_IAM_ADMIN": "ANCESTOR_BINDING",
+        "OWNER_EDITOR": "OWNER_EDITOR",
+        "RECOVERY_ADMIN": "ANCESTOR_BINDING",
+        "SERVICE_AGENT_CONTROLLER": "SERVICE_AGENT"
+      },
+      "fixed_point_reached": true,
+      "forbidden_intersection_count": 0,
+      "missing_source_count": 0,
+      "mutator_influence_graph_separate_from_credential_controller_sets": true,
+      "mutator_relevant_source_types": [
+        "ANCESTOR_BINDING",
+        "CUSTOM_ROLE_DEFINITION",
+        "GROUP_DOMAIN",
+        "OWNER_EDITOR",
+        "SERVICE_AGENT"
+      ],
+      "required_keys": [
+        "authority_source_records",
+        "source_inventory_sha256",
+        "credential_control_edges",
+        "edge_inventory_sha256",
+        "completeness_witness_sha256",
+        "cycle_records",
+        "cycle_set_sha256",
+        "credential_controller_sets_sha256",
+        "authority_mutator_influence_edges",
+        "external_authority_mutator_records",
+        "authority_mutator_influence_edges_sha256",
+        "source_types",
+        "missing_source_count",
+        "fixed_point_reached",
+        "controller_sets",
+        "forbidden_intersection_count",
+        "authority_mutator_states",
+        "active_authority_mutator_count"
+      ],
+      "source_types_exact": [
+        "ALLOW",
+        "ANCESTOR_BINDING",
+        "ATTACHED_IDENTITY",
+        "AUDIT_MUTATOR",
+        "CUSTOM_ROLE_DEFINITION",
+        "DENY",
+        "GROUP_DOMAIN",
+        "OWNER_EDITOR",
+        "PRINCIPAL_ACCESS_BOUNDARY",
+        "SERVICE_AGENT",
+        "WIF_PROVIDER"
+      ]
+    },
+    "credential_controller_aliases": {
+      "globally_disjoint_from_all_OTHER_alias_domains": true,
+      "may_be_empty": true,
+      "type": "SORTED_UNIQUE_ARRAY_OF_CONTEXT_BOUND_RANDOM_ALIASES"
+    },
+    "domains": {
+      "alias_generation_method": [
+        "CSPRNG_128_CONTEXT_BOUND_IN_RESTRICTED_EVIDENCE_BOUNDARY"
+      ],
+      "alias_pattern": "^[0-9a-f]{32}$",
+      "authority_effect": [
+        "NONE_LIVE_EVIDENCE_CANNOT_AUTHORIZE_ALONE",
+        "NONE_SYNTHETIC_SCHEMA_EXERCISE"
+      ],
+      "canonicalization_version": [
+        "FT_CANONICAL_JSON_V1"
+      ],
+      "evidence_state": [
+        "OBSERVED_COMPLETE_FRESH_ALL_PROOFS_PASS",
+        "SYNTHETIC_COMPLETE_SCHEMA_EXERCISE_NO_AUTHORITY"
+      ],
+      "mutation_counter": "NONNEGATIVE_INTEGER_BOOLEAN_REJECT",
+      "rfc3339_utc_pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-5][0-9](?:\\.[0-9]{1,9})?Z$",
+      "schema_version": [
+        "GCP_SECURITY_AUTHORITY_EVIDENCE_SNAPSHOT_V1"
+      ],
+      "sha256_pattern": "^[0-9a-f]{64}$",
+      "state_authority_pairs": {
+        "OBSERVED_COMPLETE_FRESH_ALL_PROOFS_PASS": "NONE_LIVE_EVIDENCE_CANNOT_AUTHORIZE_ALONE",
+        "SYNTHETIC_COMPLETE_SCHEMA_EXERCISE_NO_AUTHORITY": "NONE_SYNTHETIC_SCHEMA_EXERCISE"
+      }
+    },
+    "effective_access_record": {
+      "all_generated_tuples_present_once": true,
+      "denial_cause_domain": [
+        "NOT_APPLICABLE_ALLOWED",
+        "AUTHORIZATION_PERMISSION_DENIED"
+      ],
+      "expected_domain": [
+        "ALLOW",
+        "DENY"
+      ],
+      "observed_domain": [
+        "ALLOW",
+        "DENY"
+      ],
+      "required_keys": [
+        "tuple_id",
+        "principal_role",
+        "principal_alias",
+        "resource_purpose",
+        "key_generation_alias",
+        "permission",
+        "expected",
+        "observed",
+        "observed_at",
+        "context_group_id",
+        "same_context_sha256",
+        "policy_snapshot_sha256",
+        "wif_policy_binding_sha256",
+        "audit_correlation_sha256",
+        "denial_cause",
+        "access_record_binding_sha256"
+      ],
+      "same_context_hash_equal_within_context_group": true,
+      "tuple_id_pattern": "^[A-Z0-9_]+$",
+      "tuple_universe": [
+        {
+          "context_group_id": "AUDIT_RETENTION_CUSTODIAN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_RETENTION_CUSTODIAN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "AUDIT_RETENTION_CUSTODIAN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_RETENTION_CUSTODIAN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "AUDIT_RETENTION_CUSTODIAN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_RETENTION_CUSTODIAN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "AUDIT_RETENTION_CUSTODIAN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "AUDIT_RETENTION_CUSTODIAN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_RETENTION_CUSTODIAN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "AUDIT_ROUTER_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "AUDIT_ROUTER_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_ROUTER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "AUDIT_ROUTER_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "AUDIT_ROUTER_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_ROUTER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "AUDIT_ROUTER_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "AUDIT_ROUTER_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_ROUTER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "AUDIT_ROUTER_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "AUDIT_ROUTER_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "AUDIT_ROUTER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "DEPLOYER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "DEPLOYER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "DEPLOYER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "DEPLOYER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "DEPLOYER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "DEPLOYER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "DEPLOYER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "DEPLOYER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "DEPLOYER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "DEPLOYER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "DEPLOYER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "DEPLOYER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "IMAGE_BUILDER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "IMAGE_BUILDER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_BUILDER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "IMAGE_BUILDER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "IMAGE_BUILDER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_BUILDER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "IMAGE_BUILDER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "IMAGE_BUILDER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_BUILDER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "IMAGE_BUILDER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "IMAGE_BUILDER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_BUILDER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "IMAGE_PUBLISHER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "IMAGE_PUBLISHER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_PUBLISHER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "IMAGE_PUBLISHER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "IMAGE_PUBLISHER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_PUBLISHER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "IMAGE_PUBLISHER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "IMAGE_PUBLISHER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_PUBLISHER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "IMAGE_PUBLISHER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "IMAGE_PUBLISHER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_PUBLISHER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "IMAGE_SIGNER__USE_TO_SIGN",
+          "expected": "ALLOW",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "IMAGE_SIGNER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "IMAGE_SIGNER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "IMAGE_SIGNER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "IMAGE_SIGNER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "IMAGE_SIGNER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "IMAGE_SIGNER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "IMAGE_SIGNER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "IMAGE_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_APPROVER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KEY_DESTRUCTION_APPROVER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_APPROVER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_APPROVER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KEY_DESTRUCTION_APPROVER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_APPROVER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_APPROVER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KEY_DESTRUCTION_APPROVER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_APPROVER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_APPROVER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KEY_DESTRUCTION_APPROVER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_APPROVER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_EXECUTOR__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_EXECUTOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_EXECUTOR__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_EXECUTOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_EXECUTOR__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_EXECUTOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KEY_DESTRUCTION_EXECUTOR__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KEY_DESTRUCTION_EXECUTOR",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_DESTRUCTION_EXECUTOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KEY_LIFECYCLE_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KEY_LIFECYCLE_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_LIFECYCLE_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KEY_LIFECYCLE_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KEY_LIFECYCLE_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_LIFECYCLE_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KEY_LIFECYCLE_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KEY_LIFECYCLE_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_LIFECYCLE_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KEY_LIFECYCLE_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KEY_LIFECYCLE_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KEY_LIFECYCLE_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KMS_IAM_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KMS_IAM_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KMS_IAM_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KMS_IAM_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KMS_IAM_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "KMS_IAM_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "KMS_IAM_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "KMS_IAM_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KMS_IAM_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "KMS_IAM_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "KMS_IAM_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "KMS_IAM_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "PUBLIC_KEY_VERIFIER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "PUBLIC_KEY_VERIFIER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "PUBLIC_KEY_VERIFIER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "PUBLIC_KEY_VERIFIER__VIEW_PUBLIC_KEY",
+          "expected": "ALLOW",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "PUBLIC_KEY_VERIFIER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "PUBLIC_KEY_VERIFIER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "PUBLIC_KEY_VERIFIER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "PUBLIC_KEY_VERIFIER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "PUBLIC_KEY_VERIFIER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "PUBLIC_KEY_VERIFIER__VIEW_PUBLIC_KEY",
+          "expected": "ALLOW",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "PUBLIC_KEY_VERIFIER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "PUBLIC_KEY_VERIFIER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "RUNTIME_SIGNER__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "RUNTIME_SIGNER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "RUNTIME_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "RUNTIME_SIGNER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "RUNTIME_SIGNER",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "RUNTIME_SIGNER__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "RUNTIME_SIGNER__USE_TO_SIGN",
+          "expected": "ALLOW",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "RUNTIME_SIGNER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "RUNTIME_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "RUNTIME_SIGNER__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "RUNTIME_SIGNER",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "RUNTIME_SIGNER__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "SECURITY_AUDITOR__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "SECURITY_AUDITOR",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "SECURITY_AUDITOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "SECURITY_AUDITOR__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "SECURITY_AUDITOR",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "SECURITY_AUDITOR__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "SECURITY_AUDITOR__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "SECURITY_AUDITOR",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "SECURITY_AUDITOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "SECURITY_AUDITOR__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "SECURITY_AUDITOR",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "SECURITY_AUDITOR__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "WIF_PROVIDER_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "WIF_PROVIDER_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "WIF_PROVIDER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "WIF_PROVIDER_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "WIF_PROVIDER_ADMIN",
+          "resource_purpose": "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
+          "tuple_id": "WIF_PROVIDER_ADMIN__IMAGE_PROVENANCE_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        },
+        {
+          "context_group_id": "WIF_PROVIDER_ADMIN__USE_TO_SIGN",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.useToSign",
+          "principal_role": "WIF_PROVIDER_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "WIF_PROVIDER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__USE_TO_SIGN"
+        },
+        {
+          "context_group_id": "WIF_PROVIDER_ADMIN__VIEW_PUBLIC_KEY",
+          "expected": "DENY",
+          "permission": "cloudkms.cryptoKeyVersions.viewPublicKey",
+          "principal_role": "WIF_PROVIDER_ADMIN",
+          "resource_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+          "tuple_id": "WIF_PROVIDER_ADMIN__RUNTIME_RECEIPT_SIGNING_CRYPTOKEY__VIEW_PUBLIC_KEY"
+        }
+      ],
+      "tuple_universe_sha256": "e5fcccfa72059b014304602d5004be279379ae52eae16110d14147066b412ef2"
+    },
+    "image_provenance_evidence": {
+      "deployment_gate_consumption_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:DEPLOYMENT_GATE_CONSUMPTION:V1",
+      "exact": {
+        "algorithm": "EC_SIGN_P256_SHA256",
+        "deployment_gate_result": "DETACHED_PROVENANCE_VALID_FOR_EXACT_OCI_DIGEST",
+        "key_purpose_id": "IMAGE_PROVENANCE_SIGNING_KEY",
+        "verification_result": "VALID",
+        "version_id": "1"
+      },
+      "generation_alias_must_match_key_record": true,
+      "oci_manifest_digest_pattern": "^sha256:[0-9a-f]{64}$",
+      "payload_binding_receipt_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:PAYLOAD_BINDING_RECEIPT:V1",
+      "payload_schema_sha256_must_match_policy": true,
+      "required_keys": [
+        "oci_manifest_digest",
+        "oci_reference_keyed_commitment_sha256",
+        "key_purpose_id",
+        "generation_alias",
+        "version_id",
+        "algorithm",
+        "spki_der_sha256",
+        "payload_schema_sha256",
+        "canonical_payload_sha256",
+        "signature_sha256",
+        "provenance_verifier_policy_hash",
+        "deployment_gate_policy_hash",
+        "verification_receipt_sha256",
+        "payload_binding_receipt_sha256",
+        "identifier_commitment_verification_receipt_sha256",
+        "verifier_alias",
+        "verification_timestamp",
+        "deployment_candidate_sha256",
+        "deployment_attempt_alias",
+        "deployment_gate_consumption_sha256",
+        "verification_result",
+        "deployment_gate_result",
+        "provenance_binding_sha256"
+      ],
+      "spki_digest_must_match_key_record": true,
+      "verification_receipt_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:PROVENANCE_VERIFICATION_RECEIPT:V1"
+    },
+    "key_generation_record": {
+      "exact": {
+        "algorithm": "EC_SIGN_P256_SHA256",
+        "generated_in_hsm": true,
+        "hsm_nonextractable": true,
+        "protection_level": "HSM",
+        "purpose": "ASYMMETRIC_SIGN",
+        "version_ids": [
+          "1"
+        ],
+        "version_state": "ENABLED"
+      },
+      "exactly_one_per_purpose": true,
+      "required_key_purpose_ids": [
+        "IMAGE_PROVENANCE_SIGNING_KEY",
+        "RUNTIME_RECEIPT_SIGNING_KEY"
+      ],
+      "required_keys": [
+        "key_purpose_id",
+        "generation_alias",
+        "version_ids",
+        "version_state",
+        "protection_level",
+        "purpose",
+        "algorithm",
+        "spki_der_sha256",
+        "hsm_attestation_sha256",
+        "certificate_chain_sha256",
+        "hsm_nonextractable",
+        "generated_in_hsm"
+      ]
+    },
+    "principal_role_aliases": {
+      "required_keys": [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "AUDIT_ROUTER_ADMIN",
+        "DEPLOYER",
+        "IMAGE_BUILDER",
+        "IMAGE_PUBLISHER",
+        "IMAGE_SIGNER",
+        "KEY_DESTRUCTION_APPROVER",
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KEY_LIFECYCLE_ADMIN",
+        "KMS_IAM_ADMIN",
+        "PUBLIC_KEY_VERIFIER",
+        "RUNTIME_SIGNER",
+        "SECURITY_AUDITOR",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      "value_domain": "CONTEXT_BOUND_RANDOM_ALIAS",
+      "values_pairwise_distinct": true
+    },
+    "privacy_boundary_evidence": {
+      "exact": {
+        "identifier_commitment_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:IDENTIFIER_COMMITMENT:V1",
+        "identifier_commitment_scheme": "HMAC_SHA256"
+      },
+      "identifier_commitment_receipt_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:IDENTIFIER_COMMITMENT_RECEIPT:V1",
+      "required_keys": [
+        "privacy_boundary_policy_hash",
+        "alias_generation_attestation_sha256",
+        "alias_mapping_evidence_sha256",
+        "identifier_commitment_scheme",
+        "identifier_commitment_domain",
+        "identifier_commitment_verification_receipt_sha256"
+      ]
+    },
+    "project_role_aliases": {
+      "required_keys": [
+        "AUDIT_PROJECT",
+        "BUILD_PROJECT",
+        "KEY_CUSTODY_PROJECT",
+        "RUNTIME_PROJECT",
+        "SECURITY_POLICY_PROJECT"
+      ],
+      "value_domain": "CONTEXT_BOUND_RANDOM_ALIAS",
+      "values_pairwise_distinct": true
+    },
+    "required_top_level_keys": [
+      "schema_version",
+      "canonicalization_version",
+      "security_authority_policy_hash",
+      "evidence_state",
+      "observation_point",
+      "alias_context_id",
+      "alias_generation_method",
+      "alias_generation_attestation_sha256",
+      "alias_assignment_sha256",
+      "privacy_alias_mapping_evidence_sha256",
+      "project_role_aliases",
+      "principal_role_aliases",
+      "alternate_route_aliases",
+      "credential_controller_aliases",
+      "privacy_boundary_evidence",
+      "effective_policy_snapshot_sha256",
+      "controller_closure",
+      "wif_evidence",
+      "key_generation_evidence",
+      "image_provenance_evidence",
+      "effective_access_records",
+      "alternate_credential_records",
+      "rollover_evidence",
+      "audit_interface_evidence",
+      "mutation_counter",
+      "authority_effect",
+      "security_authority_evidence_snapshot_hash"
+    ],
+    "rollover_evidence": {
+      "approver_executor_aliases_must_match_principal_role_aliases": true,
+      "approver_role": "KEY_DESTRUCTION_APPROVER",
+      "event_record_required_keys": [
+        "state",
+        "observed_at",
+        "evidence_sha256"
+      ],
+      "event_times_strictly_increasing": true,
+      "events_must_equal_state_prefix_through_current_state": true,
+      "executor_role": "KEY_DESTRUCTION_EXECUTOR",
+      "key_purpose_domain": [
+        "IMAGE_PROVENANCE_SIGNING_KEY",
+        "RUNTIME_RECEIPT_SIGNING_KEY"
+      ],
+      "new_generation_alias_must_match_key_record_for_purpose": true,
+      "old_and_new_generation_aliases_distinct": true,
+      "required_keys": [
+        "state",
+        "key_purpose_id",
+        "old_generation_alias",
+        "new_generation_alias",
+        "events",
+        "old_denial_sha256",
+        "new_allow_sha256",
+        "cross_key_denial_sha256",
+        "same_context_sha256",
+        "policy_snapshot_sha256",
+        "approver_alias",
+        "executor_alias",
+        "two_approved_generations",
+        "rollover_binding_sha256"
+      ],
+      "state_domain": [
+        "HOLD_PREPARE",
+        "HOLD_VERIFY_NEW_HSM_ATTESTATION_AND_PUBLIC_KEY",
+        "HOLD_FREEZE_NEW_POLICY",
+        "HOLD_REVOKE_OLD_SIGNER_GRANT",
+        "HOLD_PROVE_OLD_DENIAL",
+        "HOLD_GRANT_NEW_SIGNER",
+        "HOLD_PROVE_NEW_ALLOW_AND_CROSS_KEY_DENIAL",
+        "HOLD_FREEZE_NEW_EVIDENCE",
+        "HELD_PENDING_SECTION_7_7_AND_7_8"
+      ],
+      "two_approved_generations": false
+    },
+    "schema_version": "GCP_SECURITY_AUTHORITY_LIVE_EVIDENCE_CONTRACT_V1",
+    "unknown_missing_duplicate_stale_or_identifier_bearing": "REJECT_OR_HOLD_PER_DECISION_PRECEDENCE",
+    "wif_evidence": {
+      "exact": {
+        "existing_token_denial_cause": "AUTHORIZATION_PERMISSION_DENIED",
+        "existing_token_denial_proved": true,
+        "pool_deleted": false,
+        "pool_disabled": false,
+        "pool_state": "ACTIVE",
+        "provider_deleted": false,
+        "provider_disabled": false,
+        "provider_state": "ACTIVE"
+      },
+      "required_keys": [
+        "pool_state",
+        "pool_disabled",
+        "pool_deleted",
+        "provider_state",
+        "provider_disabled",
+        "provider_deleted",
+        "pool_etag_sha256",
+        "provider_etag_sha256",
+        "mapping_ast_sha256",
+        "condition_ast_sha256",
+        "sts_endpoint_binding_sha256",
+        "sts_exchange_audience_binding_sha256",
+        "wif_policy_binding_sha256",
+        "existing_token_denial_proved",
+        "existing_token_denial_observed_at",
+        "existing_token_denial_same_context_sha256",
+        "existing_token_denial_audit_correlation_sha256",
+        "existing_token_denial_cause",
+        "existing_token_denial_binding_sha256"
+      ]
+    }
+  },
+  "non_authorization": {
+    "canary_or_rollover_execution": false,
+    "customer_input_or_output": false,
+    "gcp_access": false,
+    "iam_wif_kms_logging_mutation": false,
+    "image_build_push_or_deploy": false,
+    "qualification_or_model_execution": false,
+    "runtime_authority": false,
+    "sections_7_4_through_7_8_complete": false,
+    "signing": false
+  },
+  "policy_schema": {
+    "hash_field": "security_authority_policy_hash",
+    "required_top_level_keys": [
+      "alternate_credentials",
+      "audit_interface",
+      "authority_effect",
+      "authority_universe",
+      "canonicalization_version",
+      "digest_mode",
+      "effective_access",
+      "hsm_key_profiles",
+      "identity_alias_contract",
+      "image_provenance",
+      "policy_id",
+      "principal_roles",
+      "privacy",
+      "project_roles",
+      "provider_revalidation_hash",
+      "role_capability_matrix_sha256",
+      "rollover",
+      "schema_version",
+      "section_7_1_bindings",
+      "section_7_1_claim_ids",
+      "section_7_2_compatibility_only_not_hash_dependency",
+      "semantic_dependency",
+      "wif"
+    ],
+    "runtime_approved_hashes": [],
+    "schema_version": "GCP_SECURITY_AUTHORITY_POLICY_V1",
+    "synthetic_test_hashes": [
+      "974792c1532950110aef9be919e901bd2dac53eb1d39220c0383e250d4bcffd9"
+    ]
+  },
+  "policy_template": {
+    "alternate_credentials": {
+      "evidence": "SAME_VALID_CONTEXT_NEGATIVE_CANARY_REQUIRED_FOR_EACH_PATH",
+      "prohibited_paths": [
+        "ATTACHED_VM_IDENTITY_KMS_ACCESS",
+        "METADATA_SERVER_ACCESS_TOKEN_KMS_ACCESS",
+        "USER_MANAGED_SERVICE_ACCOUNT_KEY",
+        "iam.serviceAccounts.actAs",
+        "iam.serviceAccounts.getAccessToken",
+        "iam.serviceAccounts.getOpenIdToken",
+        "iam.serviceAccounts.signBlob",
+        "roles/iam.serviceAccountTokenCreator",
+        "SERVICE_ACCOUNT_IMPERSONATION"
+      ],
+      "retained_identity_values": "NONE"
+    },
+    "audit_interface": {
+      "kms_asymmetric_sign_data_access": "SOURCE_CLOSED_MUST_BE_ENABLED_NO_EXEMPTIONS_BEFORE_LATER_EXECUTION",
+      "other_operation_auditability": "UNPROVEN_UNTIL_SECTION_7_5_EXACT_METHOD_MAPPING",
+      "owner": "SECTION_7_3_AUTHORITY_OPERATION_INVENTORY_SECTION_7_5_PROVIDER_METHOD_AND_PERSISTENCE_MAPPING",
+      "persistence_mechanism": "DEFERRED_TO_SECTION_7_5",
+      "policy_denied_exclusions": "PROHIBITED_IF_SECTION_7_5_MAPS_REQUIRED_POLICY_DENIED_EVIDENCE",
+      "raw_logs_in_fluencytracr": "PROHIBITED",
+      "required_authority_operation_ids": [
+        "TOKEN_EXCHANGE",
+        "WIF_POOL_PROVIDER_POLICY_MUTATION",
+        "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+        "KEY_CREATE_STATE_DESTROY_RESTORE",
+        "KMS_IAM_MUTATION",
+        "ASYMMETRIC_SIGN_ALLOW_DENY",
+        "PUBLIC_KEY_RETRIEVAL",
+        "IMAGE_PROVENANCE_PUBLICATION",
+        "ALTERNATE_CREDENTIAL_ATTEMPT",
+        "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION"
+      ],
+      "section_7_5_provider_method_mapping": "REQUIRED_EXACT_SOURCE_REVALIDATION_NOT_SELECTED_BY_SECTION_7_3"
+    },
+    "authority_effect": "NONE_POLICY_TEMPLATE_CANNOT_AUTHORIZE",
+    "authority_universe": {
+      "authority_mutator_influence_graph": "SEPARATE_COMPLETE_GRAPH_ALL_MUTATORS_MUST_BE_DORMANT_FOR_LIVE_EVIDENCE",
+      "caller_asserted_completeness": "REJECT",
+      "credential_controller_algorithm": "LEAST_FIXED_POINT_OVER_COMPLETE_PROVIDER_OWNED_CREDENTIAL_CONTROL_EDGE_INVENTORY",
+      "cycles": "RETAIN_CYCLE_SET_AND_CONTINUE_TO_FIXED_POINT; UNRESOLVED_EXTERNAL_CONTROLLER_HOLD",
+      "intersection_check": "EVERY_ROLE_PAIR_DISJOINT_OVER_TRANSITIVE_CREDENTIAL_CONTROLLER_SETS",
+      "unknown_or_unviewable_edge": "HOLD"
+    },
+    "canonicalization_version": "FT_CANONICAL_JSON_V1",
+    "digest_mode": {
+      "detached_provenance": "DEFINED_NOT_EXECUTED",
+      "image_signature_claim_admission": "PROHIBITED",
+      "signed_image_launch_mode": "PROHIBITED",
+      "tee_signed_image_repos": "PROHIBITED",
+      "wif_admission_mode": "CONTAINER_IMAGE_DIGEST"
+    },
+    "effective_access": {
+      "ambiguous_failure": "HOLD",
+      "canary_context": "SAME_VALID_TOKEN_NETWORK_ENABLED_KEY_AND_REQUEST_SHAPE",
+      "complete_policy_types": [
+        "ALLOW",
+        "DENY",
+        "PRINCIPAL_ACCESS_BOUNDARY",
+        "CUSTOM_ROLE_DEFINITION",
+        "ANCESTOR_BINDING",
+        "SERVICE_AGENT",
+        "ATTACHED_IDENTITY",
+        "WIF_PROVIDER",
+        "AUDIT_MUTATOR"
+      ],
+      "group_or_domain_in_signing_path": "REJECT",
+      "policy_troubleshooter_for_workload_identity": "NOT_AUTHORITATIVE_UNSUPPORTED_PRINCIPAL_TYPE",
+      "required_outcomes": [
+        "INTENDED_ALLOW_SUCCESS",
+        "CROSS_KEY_PERMISSION_DENIED",
+        "ALTERNATE_CREDENTIAL_PERMISSION_DENIED",
+        "ADMIN_SIGN_PERMISSION_DENIED",
+        "DEPLOYER_SIGN_PERMISSION_DENIED"
+      ],
+      "unknown_or_unviewable": "HOLD",
+      "unproven_deny_support_for_use_to_sign": "DO_NOT_RELY"
+    },
+    "hsm_key_profiles": [
+      {
+        "algorithm": "EC_SIGN_P256_SHA256",
+        "automatic_rotation_fields": "PROHIBITED",
+        "cross_key_access": "DENY",
+        "generation_model": "DISTINCT_CRYPTOKEY_PER_GENERATION",
+        "key_material_origin": "GENERATED_IN_CLOUD_HSM_NEVER_UNENCRYPTED_OUTSIDE_HSM",
+        "key_purpose_id": "IMAGE_PROVENANCE_SIGNING_KEY",
+        "protection_level": "HSM",
+        "purpose": "ASYMMETRIC_SIGN",
+        "required_commitments": [
+          "CRYPTO_KEY_GENERATION_OPAQUE_ALIAS",
+          "SPKI_DER_SHA256",
+          "HSM_ATTESTATION_SHA256",
+          "HSM_CERTIFICATE_CHAIN_SHA256"
+        ],
+        "signer_role": "IMAGE_SIGNER",
+        "version_ids": [
+          "1"
+        ],
+        "version_state": "ENABLED"
+      },
+      {
+        "algorithm": "EC_SIGN_P256_SHA256",
+        "automatic_rotation_fields": "PROHIBITED",
+        "cross_key_access": "DENY",
+        "generation_model": "DISTINCT_CRYPTOKEY_PER_GENERATION",
+        "key_material_origin": "GENERATED_IN_CLOUD_HSM_NEVER_UNENCRYPTED_OUTSIDE_HSM",
+        "key_purpose_id": "RUNTIME_RECEIPT_SIGNING_KEY",
+        "protection_level": "HSM",
+        "purpose": "ASYMMETRIC_SIGN",
+        "required_commitments": [
+          "CRYPTO_KEY_GENERATION_OPAQUE_ALIAS",
+          "SPKI_DER_SHA256",
+          "HSM_ATTESTATION_SHA256",
+          "HSM_CERTIFICATE_CHAIN_SHA256"
+        ],
+        "signer_role": "RUNTIME_SIGNER",
+        "version_ids": [
+          "1"
+        ],
+        "version_state": "ENABLED"
+      }
+    ],
+    "identity_alias_contract": {
+      "cross_bundle_reuse": "PROHIBITED",
+      "derived_from_identifier": false,
+      "format": "CONTEXT_BOUND_CSPRNG_128_BIT_LOWERCASE_HEX",
+      "mapping_location": "RESTRICTED_EXTERNAL_EVIDENCE_ONLY",
+      "pattern": "^[0-9a-f]{32}$",
+      "plain_hash_or_identifier_bearing_locator": "REJECT"
+    },
+    "image_provenance": {
+      "binary_authorization_compute_enforcement": "NOT_CLAIMED",
+      "cosign_interoperability": "UNPROVEN_REQUIRES_SEPARATE_CONFORMANCE",
+      "deployment_gate": {
+        "missing_or_mismatch": "REJECT_DEPLOYMENT_CANDIDATE",
+        "required_before_deploy": true,
+        "required_result": "DETACHED_PROVENANCE_VALID_FOR_EXACT_OCI_DIGEST",
+        "result_commitment": "REQUIRED_EXTERNAL_RESTRICTED_EVIDENCE",
+        "verifier_role": "PUBLIC_KEY_VERIFIER"
+      },
+      "identifier_commitment_contract": {
+        "algorithm": "HMAC_SHA256",
+        "domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:IDENTIFIER_COMMITMENT:V1",
+        "key_location": "RESTRICTED_EXTERNAL_PRIVACY_BOUNDARY_ONLY",
+        "raw_or_plain_sha256_identifier_commitment": "PROHIBITED"
+      },
+      "mode": "DETACHED_PREDEPLOYMENT_PROVENANCE_ONLY",
+      "payload_schema_sha256": "b53907d8e51b4df3666e9e8dba27d23e8be4f9f73fa8ee613304a70ef0e60e93",
+      "signature_algorithm_mapping": {
+        "confidential_space_claim": "ECDSA_P256_SHA256",
+        "kms": "EC_SIGN_P256_SHA256"
+      },
+      "signing_composition": {
+        "digest_to_sign": "SHA256_OF_EXACT_CANONICAL_PAYLOAD_BYTES",
+        "kms_request_field": "digest.sha256",
+        "payload_bytes": "FT_CANONICAL_JSON_V1_OF_RESOLVED_SIMPLE_SIGNING_OBJECT",
+        "required_bindings": [
+          "OCI_MANIFEST_DIGEST",
+          "OCI_REFERENCE_COMMITMENT",
+          "IMAGE_PROVENANCE_SIGNING_KEY",
+          "GENERATION_ALIAS",
+          "KEY_VERSION_1",
+          "EC_SIGN_P256_SHA256",
+          "SPKI_DER_SHA256",
+          "PAYLOAD_SCHEMA_SHA256"
+        ],
+        "signature_encoding": "DER_ECDSA_EXTERNAL_RESTRICTED_NOT_RETAINED"
+      },
+      "simple_signing_schema": {
+        "canonicalization": "FT_CANONICAL_JSON_V1",
+        "critical.type": "cosign container image signature",
+        "docker_reference_source": "EXTERNAL_RESTRICTED_IMMUTABLE_OCI_REFERENCE_KEYED_COMMITMENT",
+        "manifest_digest_source": "EXTERNAL_RESTRICTED_IMMUTABLE_IMAGE_DIGEST_BINDING",
+        "optional": {},
+        "required_paths": [
+          "critical.identity.docker-reference",
+          "critical.image.Docker-manifest-digest",
+          "critical.type",
+          "optional"
+        ]
+      }
+    },
+    "policy_id": "GCP_C3_TDX_SECURITY_AUTHORITY_POLICY_CANDIDATE_V1",
+    "principal_roles": [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "AUDIT_ROUTER_ADMIN",
+      "DEPLOYER",
+      "IMAGE_BUILDER",
+      "IMAGE_PUBLISHER",
+      "IMAGE_SIGNER",
+      "KEY_DESTRUCTION_APPROVER",
+      "KEY_DESTRUCTION_EXECUTOR",
+      "KEY_LIFECYCLE_ADMIN",
+      "KMS_IAM_ADMIN",
+      "PUBLIC_KEY_VERIFIER",
+      "RUNTIME_SIGNER",
+      "SECURITY_AUDITOR",
+      "WIF_PROVIDER_ADMIN"
+    ],
+    "privacy": {
+      "allowed": [
+        "PUBLIC_PROVIDER_SOURCE_COMMITMENTS",
+        "SYNTHETIC_TEST_VALUES",
+        "CONTEXT_BOUND_RANDOM_ALIASES",
+        "PUBLIC_KEY_SPki_COMMITMENTS",
+        "HSM_ATTESTATION_COMMITMENTS",
+        "CLOSED_COUNTS_AND_WINDOWS"
+      ],
+      "prohibited": [
+        "PERSON_USER_EMPLOYEE_ACCOUNT_EMAIL_GROUP_DOMAIN_IDENTIFIERS",
+        "RAW_PRINCIPAL_PROJECT_POLICY_LOG_OR_TOKEN_BYTES",
+        "PLAIN_OR_DICTIONARYABLE_IDENTIFIER_HASHES",
+        "PRIVATE_RAW_WRAPPED_KEY_BYTES",
+        "REAL_SIGNATURE_BYTES",
+        "CREDENTIALS",
+        "CUSTOMER_OR_MODEL_DATA",
+        "ARBITRARY_PAYLOADS"
+      ],
+      "public_source_recovery_exception": "PUBLIC_DOCUMENTATION_MAY_CONTAIN_PUBLIC_EXAMPLE_IDENTIFIERS_EXTERNAL_RESTRICTED_PROVENANCE_ONLY"
+    },
+    "project_roles": [
+      "AUDIT_PROJECT",
+      "BUILD_PROJECT",
+      "KEY_CUSTODY_PROJECT",
+      "RUNTIME_PROJECT",
+      "SECURITY_POLICY_PROJECT"
+    ],
+    "provider_revalidation_hash": "9d2f21c49c5bfa6d498387a7d7a30a13c6c09d3b6bc7ae4a496f8e4e58f88ef6",
+    "role_capability_matrix_sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
+    "rollover": {
+      "automatic_rotation": "PROHIBITED",
+      "compromise": "IMMEDIATE_HOLD_AND_REVOKE_SKIP_NORMAL_CUTOVER",
+      "destroy_restore": {
+        "approver_role": "KEY_DESTRUCTION_APPROVER",
+        "controller_sets_pairwise_disjoint": true,
+        "early_destruction": "PROHIBITED",
+        "executor_role": "KEY_DESTRUCTION_EXECUTOR"
+      },
+      "old_public_key_commitment": "RETAIN_FOR_RECEIPT_RETENTION",
+      "propagation_delay_timer": "PROHIBITED_USE_OBSERVED_CANARIES",
+      "states": [
+        "HOLD_PREPARE",
+        "HOLD_VERIFY_NEW_HSM_ATTESTATION_AND_PUBLIC_KEY",
+        "HOLD_FREEZE_NEW_POLICY",
+        "HOLD_REVOKE_OLD_SIGNER_GRANT",
+        "HOLD_PROVE_OLD_DENIAL",
+        "HOLD_GRANT_NEW_SIGNER",
+        "HOLD_PROVE_NEW_ALLOW_AND_CROSS_KEY_DENIAL",
+        "HOLD_FREEZE_NEW_EVIDENCE",
+        "HELD_PENDING_SECTION_7_7_AND_7_8"
+      ],
+      "two_approved_generations": "PROHIBITED"
+    },
+    "schema_version": "GCP_SECURITY_AUTHORITY_POLICY_V1",
+    "section_7_1_bindings": {
+      "provider_claim_evidence_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+      "provider_compute_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+      "provider_readme_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+      "provider_source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+    },
+    "section_7_1_claim_ids": [
+      "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+      "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+      "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+      "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+      "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+      "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+      "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+      "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET"
+    ],
+    "section_7_2_compatibility_only_not_hash_dependency": true,
+    "semantic_dependency": "SECTION_7_1_PROVIDER_VOCABULARY_ONLY",
+    "wif": {
+      "access_mode": "DIRECT_FEDERATED_RESOURCE_ACCESS",
+      "allowed_audiences": [
+        "https://sts.googleapis.com"
+      ],
+      "attribute_mapping_ast": [
+        {
+          "expression": {
+            "op": "CLAIM",
+            "path": "submods.container.image_digest"
+          },
+          "target": "attribute.image_digest"
+        },
+        {
+          "expression": {
+            "op": "CONCAT",
+            "operands": [
+              "gcpcs::",
+              {
+                "claim": "submods.container.image_digest"
+              },
+              "::",
+              {
+                "claim": "submods.gce.project_number"
+              },
+              "::",
+              {
+                "claim": "submods.gce.instance_id"
+              }
+            ]
+          },
+          "maximum_utf8_bytes": 127,
+          "target": "google.subject"
+        }
+      ],
+      "condition_ast": [
+        {
+          "claim": "aud",
+          "condition_id": "AUD_EXACT",
+          "expected": "https://sts.googleapis.com",
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "submods.container.cmd_override",
+          "condition_id": "CMD_OVERRIDE_EMPTY",
+          "expected": 0,
+          "operator": "SIZE_EQUALS"
+        },
+        {
+          "claim": "dbgstat",
+          "condition_id": "DBGSTAT_PRODUCTION",
+          "expected": "disabled-since-boot",
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "submods.container.env_override",
+          "condition_id": "ENV_OVERRIDE_EMPTY",
+          "expected": 0,
+          "operator": "SIZE_EQUALS"
+        },
+        {
+          "claim": "hwmodel",
+          "condition_id": "HWMODEL_TDX",
+          "expected": "GCP_INTEL_TDX",
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "submods.container.image_digest",
+          "condition_id": "IMAGE_DIGEST_EXACT",
+          "expected_binding": "IMMUTABLE_IMAGE_DIGEST_BINDING",
+          "operator": "EQUALS_EXTERNAL_BINDING"
+        },
+        {
+          "claim": "iss",
+          "condition_id": "ISSUER_EXACT",
+          "expected": "https://confidentialcomputing.googleapis.com",
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "submods.confidential_space.monitoring_enabled.memory",
+          "condition_id": "MONITORING_MEMORY_DISABLED",
+          "expected": false,
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "submods.gce.project_id",
+          "condition_id": "PROJECT_EXACT",
+          "expected_project_role": "RUNTIME_PROJECT",
+          "operator": "EQUALS_RESTRICTED_EXTERNAL_ALIAS_MAPPING"
+        },
+        {
+          "claim": "submods.container.restart_policy",
+          "condition_id": "RESTART_NEVER",
+          "expected": "Never",
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "secboot",
+          "condition_id": "SECURE_BOOT",
+          "expected": true,
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "submods.confidential_space.support_attributes",
+          "condition_id": "STABLE_SUPPORT",
+          "expected": "STABLE",
+          "operator": "CONTAINS"
+        },
+        {
+          "claim": "swname",
+          "condition_id": "SWNAME_EXACT",
+          "expected": "CONFIDENTIAL_SPACE",
+          "operator": "EQUALS"
+        },
+        {
+          "claim": "submods.gce.zone",
+          "condition_id": "ZONE_MEMBER",
+          "expected_binding": "QUALIFICATION_ZONE_SET",
+          "operator": "MEMBER_OF_EXTERNAL_FROZEN_SET"
+        }
+      ],
+      "google_service_accounts_claim": "NOT_ADMITTED_OR_RETAINED",
+      "issuer_uri": "https://confidentialcomputing.googleapis.com",
+      "missing_unknown_type_alias": "REJECT",
+      "pool": {
+        "deleted": false,
+        "disabled": false,
+        "required_state": "ACTIVE"
+      },
+      "provider": {
+        "deleted": false,
+        "disabled": false,
+        "required_state": "ACTIVE",
+        "type": "OIDC"
+      },
+      "runtime_permission": {
+        "permission": "cloudkms.cryptoKeyVersions.useToSign",
+        "resource_scope": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY_ONLY"
+      },
+      "service_account_impersonation": "PROHIBITED",
+      "sts_endpoint_binding": "EXTERNAL_RESTRICTED_ENDPOINT_COMMITMENT_REQUIRES_FRESH_SOURCE_REVALIDATION",
+      "sts_exchange_audience_binding": "EXTERNAL_RESTRICTED_PROVIDER_RESOURCE_NAME_COMMITMENT",
+      "subject_token_audience": "https://sts.googleapis.com"
+    }
+  },
+  "principal_role_contract": {
+    "actual_aliases": "ABSENT_RESTRICTED_EXTERNAL_EVIDENCE_REQUIRED",
+    "controller_fixed_point_required": true,
+    "forbidden_controller_intersections": [
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "AUDIT_ROUTER_ADMIN"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "DEPLOYER"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "IMAGE_BUILDER"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "IMAGE_PUBLISHER"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "IMAGE_SIGNER"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "KEY_DESTRUCTION_APPROVER"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "KEY_DESTRUCTION_EXECUTOR"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "DEPLOYER"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "IMAGE_BUILDER"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "IMAGE_PUBLISHER"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "IMAGE_SIGNER"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "KEY_DESTRUCTION_APPROVER"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "KEY_DESTRUCTION_EXECUTOR"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "AUDIT_ROUTER_ADMIN",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "DEPLOYER",
+        "IMAGE_BUILDER"
+      ],
+      [
+        "DEPLOYER",
+        "IMAGE_PUBLISHER"
+      ],
+      [
+        "DEPLOYER",
+        "IMAGE_SIGNER"
+      ],
+      [
+        "DEPLOYER",
+        "KEY_DESTRUCTION_APPROVER"
+      ],
+      [
+        "DEPLOYER",
+        "KEY_DESTRUCTION_EXECUTOR"
+      ],
+      [
+        "DEPLOYER",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "DEPLOYER",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "DEPLOYER",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "DEPLOYER",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "DEPLOYER",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "DEPLOYER",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "IMAGE_PUBLISHER"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "IMAGE_SIGNER"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "KEY_DESTRUCTION_APPROVER"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "KEY_DESTRUCTION_EXECUTOR"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "IMAGE_BUILDER",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "IMAGE_SIGNER"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "KEY_DESTRUCTION_APPROVER"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "KEY_DESTRUCTION_EXECUTOR"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "IMAGE_PUBLISHER",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "KEY_DESTRUCTION_APPROVER"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "KEY_DESTRUCTION_EXECUTOR"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "IMAGE_SIGNER",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "KEY_DESTRUCTION_APPROVER",
+        "KEY_DESTRUCTION_EXECUTOR"
+      ],
+      [
+        "KEY_DESTRUCTION_APPROVER",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "KEY_DESTRUCTION_APPROVER",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "KEY_DESTRUCTION_APPROVER",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "KEY_DESTRUCTION_APPROVER",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "KEY_DESTRUCTION_APPROVER",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "KEY_DESTRUCTION_APPROVER",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KEY_LIFECYCLE_ADMIN"
+      ],
+      [
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "KEY_DESTRUCTION_EXECUTOR",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "KEY_DESTRUCTION_EXECUTOR",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "KEY_DESTRUCTION_EXECUTOR",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "KEY_DESTRUCTION_EXECUTOR",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "KEY_LIFECYCLE_ADMIN",
+        "KMS_IAM_ADMIN"
+      ],
+      [
+        "KEY_LIFECYCLE_ADMIN",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "KEY_LIFECYCLE_ADMIN",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "KEY_LIFECYCLE_ADMIN",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "KEY_LIFECYCLE_ADMIN",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "KMS_IAM_ADMIN",
+        "PUBLIC_KEY_VERIFIER"
+      ],
+      [
+        "KMS_IAM_ADMIN",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "KMS_IAM_ADMIN",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "KMS_IAM_ADMIN",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "PUBLIC_KEY_VERIFIER",
+        "RUNTIME_SIGNER"
+      ],
+      [
+        "PUBLIC_KEY_VERIFIER",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "PUBLIC_KEY_VERIFIER",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "RUNTIME_SIGNER",
+        "SECURITY_AUDITOR"
+      ],
+      [
+        "RUNTIME_SIGNER",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      [
+        "SECURITY_AUDITOR",
+        "WIF_PROVIDER_ADMIN"
+      ]
+    ],
+    "pairwise_distinct_aliases": true,
+    "role_ids": [
+      "AUDIT_RETENTION_CUSTODIAN",
+      "AUDIT_ROUTER_ADMIN",
+      "DEPLOYER",
+      "IMAGE_BUILDER",
+      "IMAGE_PUBLISHER",
+      "IMAGE_SIGNER",
+      "KEY_DESTRUCTION_APPROVER",
+      "KEY_DESTRUCTION_EXECUTOR",
+      "KEY_LIFECYCLE_ADMIN",
+      "KMS_IAM_ADMIN",
+      "PUBLIC_KEY_VERIFIER",
+      "RUNTIME_SIGNER",
+      "SECURITY_AUDITOR",
+      "WIF_PROVIDER_ADMIN"
+    ]
+  },
+  "privacy": {
+    "allowed": [
+      "PUBLIC_PROVIDER_SOURCE_COMMITMENTS",
+      "SYNTHETIC_TEST_VALUES",
+      "CONTEXT_BOUND_RANDOM_ALIASES",
+      "PUBLIC_KEY_SPki_COMMITMENTS",
+      "HSM_ATTESTATION_COMMITMENTS",
+      "CLOSED_COUNTS_AND_WINDOWS"
+    ],
+    "prohibited": [
+      "PERSON_USER_EMPLOYEE_ACCOUNT_EMAIL_GROUP_DOMAIN_IDENTIFIERS",
+      "RAW_PRINCIPAL_PROJECT_POLICY_LOG_OR_TOKEN_BYTES",
+      "PLAIN_OR_DICTIONARYABLE_IDENTIFIER_HASHES",
+      "PRIVATE_RAW_WRAPPED_KEY_BYTES",
+      "REAL_SIGNATURE_BYTES",
+      "CREDENTIALS",
+      "CUSTOMER_OR_MODEL_DATA",
+      "ARBITRARY_PAYLOADS"
+    ],
+    "public_source_recovery_exception": "PUBLIC_DOCUMENTATION_MAY_CONTAIN_PUBLIC_EXAMPLE_IDENTIFIERS_EXTERNAL_RESTRICTED_PROVENANCE_ONLY"
+  },
+  "project_role_contract": {
+    "actual_aliases": "ABSENT_RESTRICTED_EXTERNAL_EVIDENCE_REQUIRED",
+    "pairwise_distinct": true,
+    "provider_requirement": false,
+    "role_ids": [
+      "AUDIT_PROJECT",
+      "BUILD_PROJECT",
+      "KEY_CUSTODY_PROJECT",
+      "RUNTIME_PROJECT",
+      "SECURITY_POLICY_PROJECT"
+    ]
+  },
+  "role_capability_matrix_sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
+  "rollover_state_machine": {
+    "automatic_rotation": "PROHIBITED",
+    "compromise": "IMMEDIATE_HOLD_AND_REVOKE_SKIP_NORMAL_CUTOVER",
+    "destroy_restore": {
+      "approver_role": "KEY_DESTRUCTION_APPROVER",
+      "controller_sets_pairwise_disjoint": true,
+      "early_destruction": "PROHIBITED",
+      "executor_role": "KEY_DESTRUCTION_EXECUTOR"
+    },
+    "old_public_key_commitment": "RETAIN_FOR_RECEIPT_RETENTION",
+    "propagation_delay_timer": "PROHIBITED_USE_OBSERVED_CANARIES",
+    "states": [
+      "HOLD_PREPARE",
+      "HOLD_VERIFY_NEW_HSM_ATTESTATION_AND_PUBLIC_KEY",
+      "HOLD_FREEZE_NEW_POLICY",
+      "HOLD_REVOKE_OLD_SIGNER_GRANT",
+      "HOLD_PROVE_OLD_DENIAL",
+      "HOLD_GRANT_NEW_SIGNER",
+      "HOLD_PROVE_NEW_ALLOW_AND_CROSS_KEY_DENIAL",
+      "HOLD_FREEZE_NEW_EVIDENCE",
+      "HELD_PENDING_SECTION_7_7_AND_7_8"
+    ],
+    "two_approved_generations": "PROHIBITED"
+  },
+  "schema_version": "GCP_SECURITY_AUTHORITY_CONTRACT_V1",
+  "scope": "SECTION_7_3_DOCS_ONLY",
+  "semantic_dependency": {
+    "provider_revalidation_hash": "9d2f21c49c5bfa6d498387a7d7a30a13c6c09d3b6bc7ae4a496f8e4e58f88ef6",
+    "provider_source_evidence_sha256": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
+    "section_7_1_bindings": {
+      "provider_claim_evidence_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+      "provider_compute_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+      "provider_readme_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+      "provider_source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+    },
+    "section_7_1_claim_ids": [
+      "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+      "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+      "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+      "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+      "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+      "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+      "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+      "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET"
+    ],
+    "section_7_1_only": true,
+    "section_7_2": "COMPATIBILITY_ONLY_NOT_HASH_DEPENDENCY"
+  }
+}

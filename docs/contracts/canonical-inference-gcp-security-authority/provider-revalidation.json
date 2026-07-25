@@ -1,0 +1,31 @@
+{
+  "authority_effect": "NONE_PUBLIC_SOURCE_REVALIDATION_ONLY",
+  "authorization_effect": "NONE_DOCS_ONLY",
+  "claim_count": 42,
+  "claim_registry_sha256": "d824bdd1753145992f8be94639303fc11c87ed584ddfa317cb15ce8d0cc9420c",
+  "decision": "EXACT_SECURITY_AUTHORITY_MAPPING_RECONFIRMED",
+  "provider_revalidation_hash": "9d2f21c49c5bfa6d498387a7d7a30a13c6c09d3b6bc7ae4a496f8e4e58f88ef6",
+  "provider_source_evidence_sha256": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
+  "recorded_state": "EXACT_SECURITY_AUTHORITY_MAPPING_RECONFIRMED",
+  "schema_version": "GCP_SECURITY_AUTHORITY_PROVIDER_REVALIDATION_V1",
+  "section_7_1_bindings": {
+    "provider_claim_evidence_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+    "provider_compute_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+    "provider_readme_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+    "provider_source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+  },
+  "section_7_1_claim_ids": [
+    "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+    "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+    "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+    "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+    "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+    "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+    "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+    "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET"
+  ],
+  "source_bundle_locator": "external-recovery://fluencytracr/gcp-security-authority-source-snapshot-20260724T232044Z.zip",
+  "source_bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+  "source_count": 23,
+  "source_registry_sha256": "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062"
+}

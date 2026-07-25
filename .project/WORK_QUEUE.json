@@ -308,6 +308,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-18: V1 remains permanent uninterpretable HOLD. V2 freezes disjoint seeds, exact-set/name-based projection, natural-order full-shape conformance, and exact non-resumable checkpoint chaining. Four-role GO and governance checks passed. Task 1.9 complete; no implementation, claim, sampler, canary, concordance, or evidence ran."
+    },
+    {
+      "id": "gcp-security-authority-section-7-3",
+      "title": "Section 7.3 — docs-only GCP HSM, WIF, IAM, and role-separation contract",
+      "bound": "Section 7.3 docs/contracts, OpenSpec, offline verifiers, tests, attribution, and progress only; no live GCP, credentials, deployment, qualification, model execution, or Sections 7.4-7.8",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "CODE, BUG, and ADVERSARIAL technical reviews returned GO; 339 full tests passed with 3 expected skips. Commit, push, and PR remain unauthorized pending final confirmation."
     }
   ]
 }

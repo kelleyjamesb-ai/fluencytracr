@@ -2,6 +2,21 @@
 
 ## Current Session
 
+- Section 7.3 docs-only GCP security-authority contract hardening is active on
+  `codex/gcp-hsm-wif-iam-role-separation` from reviewed Section 7.2 commit
+  `f9db14dc4530266e95b4c7f3176a2eca6b9c72a6`. The candidate defines HSM,
+  direct WIF, IAM, transitive controller/mutator separation, provenance,
+  rollover, audit-interface, privacy, and fail-closed policy/evidence hash
+  contracts with runtime authority held. Provider replay covers 23 public
+  sources and 42 claims from external bundle SHA-256
+  `6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3`.
+  No GCP access, credentials, provisioning, signing, deployment, qualification,
+  model execution, customer/live data, Section 7.4-7.8 implementation, commit,
+  push, or PR is authorized. CODE, BUG, and ADVERSARIAL technical reviews
+  returned GO; the full Python suite passed 339 tests with 3 expected skips.
+  Fresh action-specific authorization remains required before Git or GitHub
+  mutation.
+
 - James Kelley explicitly authorized the sequential bounded VBD synthetic
   implementation, concordance, full-evidence, and exact-byte acceptance queue
   items on 2026-07-15. The first item,
@@ -3457,6 +3472,10 @@
 
 ## Blockers
 
+- No current Section 7.3 queue blocker: the human-created bounded item
+  `gcp-security-authority-section-7-3` is the sole active queue item. Commit,
+  push, and PR actions remain separately gated by fresh action-specific
+  authorization.
 - No current blocker for the PR review gate repair slice. Full backend CI passed locally on 2026-06-12.
 
 ## Next Step

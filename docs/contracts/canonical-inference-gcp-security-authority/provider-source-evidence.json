@@ -1,0 +1,747 @@
+{
+  "authorization_effect": "NONE_DOCS_ONLY",
+  "claim_registry_sha256": "d824bdd1753145992f8be94639303fc11c87ed584ddfa317cb15ce8d0cc9420c",
+  "claims": [
+    {
+      "claim_id": "WIF_DIRECT_RESOURCE_ACCESS_RECOMMENDED",
+      "max_span_chars": 2600,
+      "needles": [
+        "We recommend the direct resource access method for workloads",
+        "more secure than the service account impersonation method"
+      ],
+      "observed_span_chars": 700,
+      "source_id": "CONFIDENTIAL_SPACE_RESOURCE_ACCESS",
+      "statement": "Confidential Space recommends direct resource access for workloads instead of service-account impersonation."
+    },
+    {
+      "claim_id": "WIF_PROVIDER_HAS_THREE_CONTROL_CLASSES",
+      "max_span_chars": 4800,
+      "needles": [
+        "An attestation service",
+        "Attribute mappings",
+        "An attestation policy"
+      ],
+      "observed_span_chars": 944,
+      "source_id": "CONFIDENTIAL_SPACE_RESOURCE_ACCESS",
+      "statement": "A Confidential Space WIF provider closes attestation service, attribute mappings, and attestation policy conditions."
+    },
+    {
+      "claim_id": "WIF_DEFAULT_SUBJECT_TOKEN_AUDIENCE",
+      "max_span_chars": 240,
+      "needles": [
+        "For the default token used with a workload identity pool, the audience is",
+        "https://sts.googleapis.com"
+      ],
+      "observed_span_chars": 100,
+      "source_id": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS",
+      "statement": "The default Confidential Space token used with a workload identity pool has audience https://sts.googleapis.com."
+    },
+    {
+      "claim_id": "WIF_GOOGLE_ATTESTATION_ISSUER",
+      "max_span_chars": 220,
+      "needles": [
+        "Google Cloud Attestation:",
+        "https://confidentialcomputing.googleapis.com"
+      ],
+      "observed_span_chars": 70,
+      "source_id": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS",
+      "statement": "The Google Cloud Attestation issuer is https://confidentialcomputing.googleapis.com."
+    },
+    {
+      "claim_id": "WIF_DIRECT_KMS_API_SUPPORTED",
+      "max_span_chars": 180,
+      "needles": [
+        "Cloud Key Management Service GA",
+        "Google Cloud API:",
+        "No known limitations"
+      ],
+      "observed_span_chars": 112,
+      "source_id": "FEDERATED_SERVICE_SUPPORT",
+      "statement": "Cloud Key Management Service supports federated Google Cloud API access with no documented API limitation on the reviewed page."
+    },
+    {
+      "claim_id": "WIF_AVOIDS_SERVICE_ACCOUNT_KEYS",
+      "max_span_chars": 100,
+      "needles": [
+        "using federated identities instead of a service account key"
+      ],
+      "observed_span_chars": 59,
+      "source_id": "WIF_OVERVIEW",
+      "statement": "Workload Identity Federation supports federated identities instead of a service-account key."
+    },
+    {
+      "claim_id": "WIF_POOL_ACTIVE_STATE",
+      "max_span_chars": 220,
+      "needles": [
+        "ACTIVE The pool is active, and may be used in Google Cloud policies",
+        "DELETED The pool is soft-deleted"
+      ],
+      "observed_span_chars": 101,
+      "source_id": "WIF_POOL_API",
+      "statement": "ACTIVE is the workload identity pool state usable in Google Cloud policies; DELETED is soft-deleted."
+    },
+    {
+      "claim_id": "WIF_POOL_DISABLED_SEMANTICS",
+      "max_span_chars": 240,
+      "needles": [
+        "Whether the pool is disabled",
+        "You cannot use a disabled pool to exchange tokens, or use existing tokens to access resources"
+      ],
+      "observed_span_chars": 123,
+      "source_id": "WIF_POOL_API",
+      "statement": "A disabled workload identity pool cannot exchange tokens or use existing tokens."
+    },
+    {
+      "claim_id": "WIF_PROVIDER_ACTIVE_STATE",
+      "max_span_chars": 230,
+      "needles": [
+        "ACTIVE The provider is active, and may be used to validate authentication credentials",
+        "DELETED The provider is soft-deleted"
+      ],
+      "observed_span_chars": 123,
+      "source_id": "WIF_PROVIDER_API",
+      "statement": "ACTIVE is the provider state usable to validate credentials; DELETED is soft-deleted."
+    },
+    {
+      "claim_id": "WIF_PROVIDER_DISABLED_SEMANTICS",
+      "max_span_chars": 260,
+      "needles": [
+        "Whether the provider is disabled",
+        "You cannot use a disabled provider to exchange tokens",
+        "existing tokens still grant access"
+      ],
+      "observed_span_chars": 132,
+      "source_id": "WIF_PROVIDER_API",
+      "statement": "A disabled provider cannot exchange new tokens, while existing tokens can still grant access."
+    },
+    {
+      "claim_id": "CLOUD_HSM_ASYMMETRIC_SIGNING_SUPPORT",
+      "max_span_chars": 420,
+      "needles": [
+        "asymmetric key with the protection level of HSM for elliptic curve signing",
+        "Create the key with protection level HSM"
+      ],
+      "observed_span_chars": 270,
+      "source_id": "CLOUD_HSM",
+      "statement": "Cloud HSM supports asymmetric HSM keys for elliptic-curve signing through the Cloud KMS signature flow."
+    },
+    {
+      "claim_id": "CLOUD_HSM_HARDWARE_LEVEL",
+      "max_span_chars": 100,
+      "needles": [
+        "FIPS 140-2 Level 3 certified HSMs"
+      ],
+      "observed_span_chars": 33,
+      "source_id": "CLOUD_HSM",
+      "statement": "Cloud HSM performs operations in FIPS 140-2 Level 3 certified HSMs."
+    },
+    {
+      "claim_id": "KMS_RAW_KEY_MATERIAL_NONEXPORTABLE",
+      "max_span_chars": 180,
+      "needles": [
+        "no Google Cloud principal can view or export the raw cryptographic key material represented by a key version"
+      ],
+      "observed_span_chars": 108,
+      "source_id": "KMS_RESOURCE_HIERARCHY",
+      "statement": "No Google Cloud principal can view or export raw key-version material."
+    },
+    {
+      "claim_id": "KMS_ACCESS_APPLIES_TO_ALL_ENABLED_VERSIONS",
+      "max_span_chars": 4000,
+      "needles": [
+        "You can't manage access to a key version",
+        "Granting access to a key grants access to all of that key's enabled versions"
+      ],
+      "observed_span_chars": 3271,
+      "source_id": "KMS_RESOURCE_HIERARCHY",
+      "statement": "KMS IAM access is on a key, not an individual version, and grants access to all enabled versions."
+    },
+    {
+      "claim_id": "HSM_KEYS_NOT_EXTRACTABLE",
+      "max_span_chars": 100,
+      "needles": [
+        "Cloud HSM keys are not extractable"
+      ],
+      "observed_span_chars": 34,
+      "source_id": "HSM_ATTESTATION",
+      "statement": "Cloud HSM key attestations expose that Cloud HSM keys are not extractable."
+    },
+    {
+      "claim_id": "HSM_GENERATED_KEY_NEVER_OUTSIDE_HSM",
+      "max_span_chars": 260,
+      "needles": [
+        "If the key was created in Cloud HSM",
+        "never been stored unencrypted outside of an HSM"
+      ],
+      "observed_span_chars": 107,
+      "source_id": "HSM_ATTESTATION",
+      "statement": "A key created in Cloud HSM has never been stored unencrypted outside an HSM."
+    },
+    {
+      "claim_id": "KMS_ASYMMETRIC_SIGN_PURPOSE",
+      "max_span_chars": 300,
+      "needles": [
+        "Asymmetric signing",
+        "ASYMMETRIC_SIGN",
+        "cryptoKeyVersions.asymmetricSign",
+        "cryptoKeyVersions.getPublicKey"
+      ],
+      "observed_span_chars": 119,
+      "source_id": "KMS_ALGORITHMS",
+      "statement": "Asymmetric signing uses ASYMMETRIC_SIGN and supports asymmetricSign/getPublicKey."
+    },
+    {
+      "claim_id": "KMS_EC_P256_SHA256_ALGORITHM",
+      "max_span_chars": 250,
+      "needles": [
+        "ec-sign-p256-sha256",
+        "(recommended)",
+        "EC_SIGN_P256_SHA256",
+        "ECDSA on the P-256 Curve with a SHA-256 digest"
+      ],
+      "observed_span_chars": 104,
+      "source_id": "KMS_ALGORITHMS",
+      "statement": "EC_SIGN_P256_SHA256 is ECDSA P-256 with SHA-256 and is recommended in the reviewed algorithm table."
+    },
+    {
+      "claim_id": "KMS_ENABLED_VERSION_CAN_SIGN",
+      "max_span_chars": 120,
+      "needles": [
+        "An ENABLED version can be used for cryptographic operations"
+      ],
+      "observed_span_chars": 59,
+      "source_id": "KMS_KEY_VERSION_API",
+      "statement": "An ENABLED CryptoKeyVersion can be used for cryptographic operations."
+    },
+    {
+      "claim_id": "KMS_SIGN_PERMISSION",
+      "max_span_chars": 100,
+      "needles": [
+        "cloudkms.cryptoKeyVersions.useToSign"
+      ],
+      "observed_span_chars": 36,
+      "source_id": "KMS_DIGITAL_SIGNATURES",
+      "statement": "Asymmetric signing requires cloudkms.cryptoKeyVersions.useToSign."
+    },
+    {
+      "claim_id": "KMS_PUBLIC_KEY_PERMISSION",
+      "max_span_chars": 100,
+      "needles": [
+        "cloudkms.cryptoKeyVersions.viewPublicKey"
+      ],
+      "observed_span_chars": 40,
+      "source_id": "KMS_DIGITAL_SIGNATURES",
+      "statement": "Public-key retrieval requires cloudkms.cryptoKeyVersions.viewPublicKey."
+    },
+    {
+      "claim_id": "KMS_ASYMMETRIC_AUTOMATIC_ROTATION_UNSUPPORTED",
+      "max_span_chars": 120,
+      "needles": [
+        "Cloud KMS does not support automatic rotation for asymmetric keys"
+      ],
+      "observed_span_chars": 65,
+      "source_id": "KMS_KEY_ROTATION",
+      "statement": "Cloud KMS does not support automatic rotation of asymmetric keys."
+    },
+    {
+      "claim_id": "KMS_ASYMMETRIC_ROLLOVER_REQUIRES_PUBLIC_KEY_DISTRIBUTION",
+      "max_span_chars": 450,
+      "needles": [
+        "For asymmetric keys used for signing",
+        "distribute the public key portion of the new key version",
+        "specify the new key version"
+      ],
+      "observed_span_chars": 152,
+      "source_id": "KMS_KEY_ROTATION",
+      "statement": "Asymmetric signing rollover requires distributing the new public key before selecting the new version."
+    },
+    {
+      "claim_id": "KMS_SEPARATION_KEY_ADMIN_AND_KEY_USER",
+      "max_span_chars": 650,
+      "needles": [
+        "Key administrators",
+        "Key user",
+        "signing, or signature verification"
+      ],
+      "observed_span_chars": 305,
+      "source_id": "KMS_SEPARATION_OF_DUTIES",
+      "statement": "Cloud KMS separation of duties distinguishes key administrators from key users including signers."
+    },
+    {
+      "claim_id": "IAM_DENY_PRECEDES_ALLOW",
+      "max_span_chars": 120,
+      "needles": [
+        "IAM always checks relevant deny policies before checking relevant allow policies"
+      ],
+      "observed_span_chars": 80,
+      "source_id": "IAM_DENY_OVERVIEW",
+      "statement": "IAM evaluates relevant deny policies before allow policies."
+    },
+    {
+      "claim_id": "IAM_DENY_UNKNOWN_FAILS_DENIED",
+      "max_span_chars": 100,
+      "needles": [
+        "cannot be evaluated, the deny rule applies"
+      ],
+      "observed_span_chars": 42,
+      "source_id": "IAM_DENY_OVERVIEW",
+      "statement": "A deny condition that cannot be evaluated applies the deny rule."
+    },
+    {
+      "claim_id": "POLICY_TROUBLESHOOTER_WORKLOAD_IDENTITY_LIMIT",
+      "max_span_chars": 180,
+      "needles": [
+        "Other types of principals, including groups, domains, workforce identities, and workload identities, are not supported"
+      ],
+      "observed_span_chars": 118,
+      "source_id": "POLICY_TROUBLESHOOTER",
+      "statement": "Policy Troubleshooter manual principal checks do not support workload identities."
+    },
+    {
+      "claim_id": "KMS_IAM_GET_POLICY_METHOD",
+      "max_span_chars": 260,
+      "needles": [
+        "GetIamPolicy Method : GetIamPolicy",
+        "Audit log type : Data access",
+        "cloudkms.cryptoKeys.getIamPolicy - ADMIN_READ"
+      ],
+      "observed_span_chars": 123,
+      "source_id": "KMS_AUDIT_LOGGING",
+      "statement": "Cloud KMS GetIamPolicy is Data Access/ADMIN_READ and requires cloudkms.cryptoKeys.getIamPolicy on CryptoKeys."
+    },
+    {
+      "claim_id": "KMS_IAM_SET_POLICY_METHOD",
+      "max_span_chars": 260,
+      "needles": [
+        "SetIamPolicy Method : SetIamPolicy",
+        "Audit log type : Admin activity",
+        "cloudkms.cryptoKeys.setIamPolicy - ADMIN_WRITE"
+      ],
+      "observed_span_chars": 127,
+      "source_id": "KMS_AUDIT_LOGGING",
+      "statement": "Cloud KMS SetIamPolicy is Admin Activity/ADMIN_WRITE and requires cloudkms.cryptoKeys.setIamPolicy on CryptoKeys."
+    },
+    {
+      "claim_id": "WIF_PROVIDER_LIFECYCLE_METHODS",
+      "max_span_chars": 1600,
+      "needles": [
+        "Methods create",
+        "delete Deletes",
+        "patch Updates",
+        "undelete Undeletes"
+      ],
+      "observed_span_chars": 349,
+      "source_id": "WIF_PROVIDER_API",
+      "statement": "The reviewed WIF provider API exposes update, delete, and undelete lifecycle methods."
+    },
+    {
+      "claim_id": "WIF_POOL_LIFECYCLE_METHODS",
+      "max_span_chars": 1600,
+      "needles": [
+        "Methods create",
+        "delete Deletes",
+        "patch Updates",
+        "undelete Undeletes"
+      ],
+      "observed_span_chars": 469,
+      "source_id": "WIF_POOL_API",
+      "statement": "The reviewed WIF pool API exposes update, delete, and undelete lifecycle methods."
+    },
+    {
+      "claim_id": "KMS_KEY_LIFECYCLE_METHODS",
+      "max_span_chars": 650,
+      "needles": [
+        "CreateCryptoKey",
+        "CreateCryptoKeyVersion",
+        "DestroyCryptoKeyVersion",
+        "RestoreCryptoKeyVersion",
+        "UpdateCryptoKey",
+        "UpdateCryptoKeyVersion"
+      ],
+      "observed_span_chars": 247,
+      "source_id": "KMS_AUDIT_LOGGING",
+      "statement": "The reviewed Cloud KMS audit method inventory includes key/version create, update, destroy, and restore operations."
+    },
+    {
+      "claim_id": "KMS_ASYMMETRIC_SIGN_IS_DATA_ACCESS",
+      "max_span_chars": 3500,
+      "needles": [
+        "Methods by permission type",
+        "DATA_READ",
+        "AsymmetricDecrypt",
+        "AsymmetricSign"
+      ],
+      "observed_span_chars": 2866,
+      "source_id": "KMS_AUDIT_LOGGING",
+      "statement": "Cloud KMS classifies AsymmetricSign under DATA_READ methods that generate Data Access logs."
+    },
+    {
+      "claim_id": "AUDIT_DATA_ACCESS_DISABLED_BY_DEFAULT",
+      "max_span_chars": 450,
+      "needles": [
+        "Data Access audit logs—except for BigQuery Data Access audit logs—are disabled by default",
+        "must explicitly enable them"
+      ],
+      "observed_span_chars": 256,
+      "source_id": "CLOUD_AUDIT_LOGS",
+      "statement": "Non-BigQuery Data Access logs are disabled by default and require explicit enablement."
+    },
+    {
+      "claim_id": "AUDIT_ADMIN_ACTIVITY_ALWAYS_WRITTEN",
+      "max_span_chars": 220,
+      "needles": [
+        "Admin Activity audit logs are always written",
+        "can't configure, exclude, or disable them"
+      ],
+      "observed_span_chars": 91,
+      "source_id": "CLOUD_AUDIT_LOGS",
+      "statement": "Admin Activity logs are always written and cannot be disabled or excluded."
+    },
+    {
+      "claim_id": "AUDIT_POLICY_DENIED_EXCLUDABLE",
+      "max_span_chars": 420,
+      "needles": [
+        "Policy Denied audit logs are generated by default",
+        "use exclusion filters to prevent Policy Denied audit logs from being stored"
+      ],
+      "observed_span_chars": 244,
+      "source_id": "CLOUD_AUDIT_LOGS",
+      "statement": "Policy Denied logs are generated by default but exclusion filters can prevent storage."
+    },
+    {
+      "claim_id": "LOG_BUCKET_LOCK_IRREVERSIBLE",
+      "max_span_chars": 180,
+      "needles": [
+        "Locking a log bucket is irreversible",
+        "you also lock the bucket's retention policy"
+      ],
+      "observed_span_chars": 121,
+      "source_id": "LOG_BUCKETS",
+      "statement": "Locking a log bucket and its retention policy is irreversible."
+    },
+    {
+      "claim_id": "LOG_BUCKET_LOCKED_RETENTION_IMMUTABLE",
+      "max_span_chars": 260,
+      "needles": [
+        "Whether the bucket is locked",
+        "The retention period on a locked bucket cannot be changed"
+      ],
+      "observed_span_chars": 87,
+      "source_id": "LOG_BUCKET_API",
+      "statement": "The retention period on a locked log bucket cannot be changed."
+    },
+    {
+      "claim_id": "CONFIDENTIAL_SPACE_DIGEST_SIGNATURE_MODE_NONCOEXISTENCE",
+      "max_span_chars": 120,
+      "needles": [
+        "Container image signatures and digests don't appear together in a single token"
+      ],
+      "observed_span_chars": 78,
+      "source_id": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS",
+      "statement": "Confidential Space image signature and digest claims do not coexist in one token."
+    },
+    {
+      "claim_id": "CONFIDENTIAL_SPACE_IMAGE_SIGNATURE_ALGORITHM",
+      "max_span_chars": 180,
+      "needles": [
+        "ECDSA_P256_SHA256",
+        "ECDSA on the P-256 Curve with a SHA-256 digest"
+      ],
+      "observed_span_chars": 65,
+      "source_id": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS",
+      "statement": "Confidential Space recognizes ECDSA_P256_SHA256 image-signature claims."
+    },
+    {
+      "claim_id": "BINARY_AUTH_SIGNS_UNIQUE_IMAGE_DIGEST",
+      "max_span_chars": 120,
+      "needles": [
+        "The attestation is created by signing the image's unique digest"
+      ],
+      "observed_span_chars": 63,
+      "source_id": "BINARY_AUTH_ATTESTATIONS",
+      "statement": "Binary Authorization attestations are created by signing an image's unique digest."
+    },
+    {
+      "claim_id": "SIMPLE_SIGNING_REQUIRED_FIELDS",
+      "max_span_chars": 900,
+      "needles": [
+        "\"critical\"",
+        "\"identity\"",
+        "\"docker-reference\"",
+        "\"Docker-manifest-digest\"",
+        "\"type\": \"cosign container image signature\"",
+        "\"optional\""
+      ],
+      "observed_span_chars": 187,
+      "source_id": "SIGSTORE_SIMPLE_SIGNING",
+      "statement": "The reviewed Simple Signing example includes critical identity, Docker-manifest-digest, exact cosign type, and an optional object; Section 7.3 independently restricts optional to empty."
+    }
+  ],
+  "contract_scope": "SECTION_7_3_DOCS_ONLY",
+  "decision": "EXACT_SECURITY_AUTHORITY_MAPPING_RECONFIRMED",
+  "provider_revalidation": {
+    "authority_effect": "NONE_PUBLIC_SOURCE_REVALIDATION_ONLY",
+    "claim_count": 42,
+    "claim_registry_sha256": "d824bdd1753145992f8be94639303fc11c87ed584ddfa317cb15ce8d0cc9420c",
+    "decision": "EXACT_SECURITY_AUTHORITY_MAPPING_RECONFIRMED",
+    "provider_revalidation_hash": "9d2f21c49c5bfa6d498387a7d7a30a13c6c09d3b6bc7ae4a496f8e4e58f88ef6",
+    "schema_version": "GCP_SECURITY_AUTHORITY_PROVIDER_REVALIDATION_V1",
+    "section_7_1_bindings": {
+      "provider_claim_evidence_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+      "provider_compute_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+      "provider_readme_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+      "provider_source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+    },
+    "section_7_1_claim_ids": [
+      "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+      "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+      "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+      "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+      "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+      "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+      "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+      "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET"
+    ],
+    "source_bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+    "source_count": 23,
+    "source_registry_sha256": "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062"
+  },
+  "retrieved_at": "2026-07-24T22:36:53Z",
+  "revalidated_at": "2026-07-24T22:36:53Z",
+  "schema_version": "GCP_SECURITY_AUTHORITY_PROVIDER_SOURCE_EVIDENCE_V1",
+  "section_7_1_bindings": {
+    "provider_claim_evidence_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+    "provider_compute_projection_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+    "provider_readme_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+    "provider_source_evidence_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743"
+  },
+  "section_7_1_claim_ids": [
+    "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+    "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+    "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+    "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+    "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+    "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+    "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+    "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET"
+  ],
+  "source_bundle": {
+    "byte_count": 173399,
+    "contains_public_example_identifiers": true,
+    "external_locator": "external-recovery://fluencytracr/gcp-security-authority-source-snapshot-20260724T232044Z.zip",
+    "repo_committed": false,
+    "runtime_admission": "PROHIBITED",
+    "sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3"
+  },
+  "source_registry_hash_basis": "EXACT_SANITIZED_SNAPSHOT_RECORDS_IN_RECOVERY_BUNDLE",
+  "source_registry_sha256": "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062",
+  "sources": [
+    {
+      "bundle_path": "CONFIDENTIAL_SPACE_RESOURCE_ACCESS.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/create-grant-access-confidential-resources",
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/create-grant-access-confidential-resources",
+      "snapshot_byte_count": 30318,
+      "snapshot_sha256": "613966170fde78e7b4ed5aafda456f48fd3f6c56f86a5c82baf753da28d42d5b",
+      "source_id": "CONFIDENTIAL_SPACE_RESOURCE_ACCESS"
+    },
+    {
+      "bundle_path": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "snapshot_byte_count": 14145,
+      "snapshot_sha256": "1607f7619adb0111cce778a44a2bbabaa7f475ded429652dd480897e8dac1b16",
+      "source_id": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+    },
+    {
+      "bundle_path": "WIF_OVERVIEW.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/iam/docs/workload-identity-federation",
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/workload-identity-federation",
+      "snapshot_byte_count": 20121,
+      "snapshot_sha256": "7752c53ff8b54b3abca2113960889b470182a581d21517ea65eaebecb9e05c2d",
+      "source_id": "WIF_OVERVIEW"
+    },
+    {
+      "bundle_path": "WIF_POOL_API.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/iam/docs/reference/rest/v1/projects.locations.workloadIdentityPools",
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/reference/rest/v1/projects.locations.workloadIdentityPools",
+      "snapshot_byte_count": 27301,
+      "snapshot_sha256": "560a25d37e34c5acaa949d80edafe8e3249012827a4e92cb53bb37145687e52d",
+      "source_id": "WIF_POOL_API"
+    },
+    {
+      "bundle_path": "WIF_PROVIDER_API.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/iam/docs/reference/rest/v1/projects.locations.workloadIdentityPools.providers",
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/reference/rest/v1/projects.locations.workloadIdentityPools.providers",
+      "snapshot_byte_count": 29399,
+      "snapshot_sha256": "5b732ae31e14da09407198ca17f41589632f6a37e0d5368934f57b8dd94f0351",
+      "source_id": "WIF_PROVIDER_API"
+    },
+    {
+      "bundle_path": "FEDERATED_SERVICE_SUPPORT.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/iam/docs/federated-identity-supported-services",
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/federated-identity-supported-services",
+      "snapshot_byte_count": 61506,
+      "snapshot_sha256": "b998d60e620eedb37a03765f8a92e5bb7c1e2cf11208c25fc10eee22bc450bd6",
+      "source_id": "FEDERATED_SERVICE_SUPPORT"
+    },
+    {
+      "bundle_path": "CLOUD_HSM.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/hsm",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/hsm",
+      "snapshot_byte_count": 57257,
+      "snapshot_sha256": "6959cf9b97c69bdb86ca962506ecaf8306267abe24ba20414fcf794541672985",
+      "source_id": "CLOUD_HSM"
+    },
+    {
+      "bundle_path": "KMS_RESOURCE_HIERARCHY.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/resource-hierarchy",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/resource-hierarchy",
+      "snapshot_byte_count": 14892,
+      "snapshot_sha256": "b8dda79f68ba73a624289c5e96395939d6dd356fd0aa1d6976cf01bfa1da7eeb",
+      "source_id": "KMS_RESOURCE_HIERARCHY"
+    },
+    {
+      "bundle_path": "KMS_ALGORITHMS.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/algorithms",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/algorithms",
+      "snapshot_byte_count": 18982,
+      "snapshot_sha256": "475845749954148916003ab3da937119ed0593be5678c9f6be3e4f86261f0523",
+      "source_id": "KMS_ALGORITHMS"
+    },
+    {
+      "bundle_path": "KMS_KEY_VERSION_API.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions",
+      "snapshot_byte_count": 14513,
+      "snapshot_sha256": "2feaddf0492b302da8e776d2ab54856f1c3a4134a36535bc452b7aa3754c96f7",
+      "source_id": "KMS_KEY_VERSION_API"
+    },
+    {
+      "bundle_path": "HSM_ATTESTATION.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/attest-key",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/attest-key",
+      "snapshot_byte_count": 14998,
+      "snapshot_sha256": "ff059478f182b3b9225dfd4035a85d1cd6a906b4e381975b46b85c867af53350",
+      "source_id": "HSM_ATTESTATION"
+    },
+    {
+      "bundle_path": "KMS_DIGITAL_SIGNATURES.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/create-validate-signatures",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/create-validate-signatures",
+      "snapshot_byte_count": 52016,
+      "snapshot_sha256": "47d21967f7b4a678ee887f754495987cd83fad06ed1d9b46abf5f3d3b0728ef5",
+      "source_id": "KMS_DIGITAL_SIGNATURES"
+    },
+    {
+      "bundle_path": "KMS_KEY_ROTATION.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/key-rotation",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/key-rotation",
+      "snapshot_byte_count": 10230,
+      "snapshot_sha256": "e86bcaefa23c8d7c0080b87968bc2eb20f957947fff94c5c5b22de92acb9e7da",
+      "source_id": "KMS_KEY_ROTATION"
+    },
+    {
+      "bundle_path": "KMS_SEPARATION_OF_DUTIES.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/separation-of-duties",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/separation-of-duties",
+      "snapshot_byte_count": 10865,
+      "snapshot_sha256": "e952d02d260415277652345bf2ed500d12484a3fd732ca0fc48798c6bf5c5c6c",
+      "source_id": "KMS_SEPARATION_OF_DUTIES"
+    },
+    {
+      "bundle_path": "KMS_PERMISSIONS_ROLES.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/reference/permissions-and-roles",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/reference/permissions-and-roles",
+      "snapshot_byte_count": 26389,
+      "snapshot_sha256": "fad26d275d6ff06985da88ef118fb366db4fbe29049c2d0170e7cc2e5f143e6c",
+      "source_id": "KMS_PERMISSIONS_ROLES"
+    },
+    {
+      "bundle_path": "IAM_DENY_OVERVIEW.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/iam/docs/deny-overview",
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/deny-overview",
+      "snapshot_byte_count": 27217,
+      "snapshot_sha256": "f7909ca7c3e59f42e0c86b7c9e8dbf9b7fde3a1d51e99054431e94942eb12cbe",
+      "source_id": "IAM_DENY_OVERVIEW"
+    },
+    {
+      "bundle_path": "POLICY_TROUBLESHOOTER.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/policy-intelligence/docs/troubleshoot-access",
+      "resolved_url": "https://docs.cloud.google.com/policy-intelligence/docs/troubleshoot-access",
+      "snapshot_byte_count": 78197,
+      "snapshot_sha256": "eabdb15cdd29601ec46689486a564a750d8c37e480dcae7ce661487de1ddbda1",
+      "source_id": "POLICY_TROUBLESHOOTER"
+    },
+    {
+      "bundle_path": "KMS_AUDIT_LOGGING.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/kms/docs/audit-logging",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/audit-logging",
+      "snapshot_byte_count": 29695,
+      "snapshot_sha256": "b876ee0cbd334cdc2f1580dae21bca8fd95bb62019de54fba65fe6c92f818c19",
+      "source_id": "KMS_AUDIT_LOGGING"
+    },
+    {
+      "bundle_path": "CLOUD_AUDIT_LOGS.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/logging/docs/audit",
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/audit",
+      "snapshot_byte_count": 27704,
+      "snapshot_sha256": "3e43a1fff9b8a95cbd28f4d52bc1a0923efe3c019c1e17510e07bf3a361570df",
+      "source_id": "CLOUD_AUDIT_LOGS"
+    },
+    {
+      "bundle_path": "LOG_BUCKETS.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/logging/docs/buckets",
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/buckets",
+      "snapshot_byte_count": 49548,
+      "snapshot_sha256": "bb2f178abad58465018efffe139aef1ad594e13083363580786659988bca65fd",
+      "source_id": "LOG_BUCKETS"
+    },
+    {
+      "bundle_path": "LOG_BUCKET_API.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/projects.locations.buckets",
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/projects.locations.buckets",
+      "snapshot_byte_count": 11245,
+      "snapshot_sha256": "36559154e4bfccebefaf66b77a1a1832a68c9b2ebbf96485e858432e7df98efb",
+      "source_id": "LOG_BUCKET_API"
+    },
+    {
+      "bundle_path": "BINARY_AUTH_ATTESTATIONS.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://docs.cloud.google.com/binary-authorization/docs/attestations",
+      "resolved_url": "https://docs.cloud.google.com/binary-authorization/docs/attestations",
+      "snapshot_byte_count": 8522,
+      "snapshot_sha256": "379f92dd14c86ee4d4323778dd6257c61ab3a8fa53f5b52d86ea7cfc272d9836",
+      "source_id": "BINARY_AUTH_ATTESTATIONS"
+    },
+    {
+      "bundle_path": "SIGSTORE_SIMPLE_SIGNING.txt",
+      "classification": "PUBLIC_PROVIDER_OR_OPEN_SPECIFICATION_DOCUMENTATION_RESTRICTED_RECOVERY_EVIDENCE",
+      "requested_url": "https://raw.githubusercontent.com/sigstore/cosign/main/specs/SIGNATURE_SPEC.md",
+      "resolved_url": "https://raw.githubusercontent.com/sigstore/cosign/main/specs/SIGNATURE_SPEC.md",
+      "snapshot_byte_count": 20329,
+      "snapshot_sha256": "7e5f17e6932d24b791dc2dfcbc41e7b9865e35a9c6509e4aa4ea2a919595ecfb",
+      "source_id": "SIGSTORE_SIMPLE_SIGNING"
+    }
+  ]
+}
