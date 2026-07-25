@@ -308,6 +308,10 @@ def validate_live_evidence_shape(
             "one_source_record_may_emit_multiple_external_mutators"
         ]
         is not True
+        or closure_schema[
+            "positive_external_mutator_count_requires_at_least_one_source_record"
+        ]
+        is not True
     ):
         raise ValueError("external mutator count cardinality contract mismatch")
     if closure_schema["credential_control_disposition_manifest_fields"] != [
@@ -327,6 +331,10 @@ def validate_live_evidence_shape(
         if (
             type(record["external_mutator_record_count"]) is not int
             or record["external_mutator_record_count"] < 0
+            or (
+                record["external_mutator_record_count"] > 0
+                and record["record_count"] == 0
+            )
         ):
             raise ValueError("authority source external mutator count malformed")
         if (

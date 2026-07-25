@@ -956,6 +956,7 @@
         "SERVICE_AGENT"
       ],
       "one_source_record_may_emit_multiple_external_mutators": true,
+      "positive_external_mutator_count_requires_at_least_one_source_record": true,
       "required_keys": [
         "authority_source_records",
         "source_inventory_sha256",

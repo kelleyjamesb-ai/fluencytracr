@@ -47,14 +47,14 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 # Updated only after all normative bytes are final.
 PINNED_ARTIFACTS = {
-    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "44aa8eade440b97695a0bc394738152c811522c3243b47d61d5eb11ab1166fbf",
+    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "05f153b012f453ea9c289632b55905327988a068a7b101394479aa5ba199744e",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-revalidation.json": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
     "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
-    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "11ddf99f609c496a4c7ce1b74e3de3a705f7f07710c564e74943c421616d2878",
-    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "6ea103ef60251265ed39673368e16eabfae8fcc19dd553dcd8345b33b57eaa62",
+    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841",
+    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "7fc57bf6d241399dc858667602d8eb8f6264c5f6d90322131d02ea415288eed1",
     "scripts/verify_gcp_security_authority_revalidation.py": "ecf35b27a96c862f1c5cad144d5a0861b12f42f9b51b65edb2810e56983a8dc0",
-    "scripts/gcp_security_authority_contract_validation.py": "c787e4b9a50f88edce64c99054a06238d4217728732dfb853e3a6716a7863789",
+    "scripts/gcp_security_authority_contract_validation.py": "0e4d51d03bf177e9a0de190f058a22a4bfb8f19a11ecbf926bab4af498936074",
     "scripts/verify_gcp_security_authority_contract.py": "4f1a2ab1ba127f8ac58b99a5641fea00c2dfe67c4d097f33ef3f45f827f46cac",
 }
 
@@ -1391,6 +1391,23 @@ def test_typed_source_linked_multihop_controller_edges_are_exact() -> None:
     _validate_live_evidence_shape(multiple_mutators_per_source, contract)
     assert owner_record["record_count"] == 1
     assert owner_record["external_mutator_record_count"] == 2
+
+    mutator_without_source = copy.deepcopy(
+        _synthetic_live_evidence_fixture(contract)
+    )
+    missing_owner_source = next(
+        item
+        for item in mutator_without_source["controller_closure"][
+            "authority_source_records"
+        ]
+        if item["source_type"] == "OWNER_EDITOR"
+    )
+    missing_owner_source["record_count"] = 0
+    _reseal_controller_closure(mutator_without_source, contract)
+    with pytest.raises(
+        ValueError, match="authority source external mutator count malformed"
+    ):
+        _validate_live_evidence_shape(mutator_without_source, contract)
 
     unmapped_mutator_count = copy.deepcopy(
         _synthetic_live_evidence_fixture(contract)
