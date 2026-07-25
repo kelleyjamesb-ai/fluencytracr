@@ -108,7 +108,13 @@ or source drift HOLDs. Conflicting current documentation or unsupported claims
 reject. The offline byte-replay verifier classifies absence, hash failure, or an
 unreplayable compiled evidence window as source drift and emits the HOLD; the
 REJECT branch requires reviewed current documentation establishing contradiction
-or lack of provider support rather than a byte-replay guess.
+or lack of provider support rather than a byte-replay guess. Both executable
+verifiers compile-pin the exact source-registry hash, claim-registry hash,
+provider-revalidation hash, source-evidence artifact hash, and counts. Claim
+statements are reviewed literal registry content—not semantics inferred from
+needles—and a statement change cannot be admitted by resealing mutable registries
+or downstream contract/vector hashes without also changing reviewed verifier code
+and its exact-byte test pin.
 
 ## 5. Project and Identity Model
 
@@ -149,9 +155,26 @@ A random alias is not itself role-separation proof. Live evidence must compute a
 least fixed point over the complete provider-owned credential-control graph:
 ancestor policies, direct/inherited/conditional bindings, custom roles,
 groups/domains, service agents, attached identities, and every direct/indirect
-credential controller. Caller-asserted completeness rejects. Unknown or
-unviewable edges HOLD. Every pair of role credential-controller sets must remain
-disjoint across the full transitive closure. A separate complete authority-
+credential controller. Every edge carries an exact provider source type, mapped
+edge type, source-record ordinal, evidence commitment, and domain-separated link
+to its source snapshot. Each source-class record independently commits its raw
+record count, external-mutator count, derived edge count, and exact sorted edge
+output; those outputs must compose the global edge inventory exactly. External
+mutator count is an independent derived cardinality: one raw binding or policy
+record may emit multiple mutators, so it is not capped by raw record count; a
+positive mutator count still requires at least one raw source record. Every raw
+source ordinal also has exactly one explicit `EDGES_ENUMERATED` or
+`NO_CREDENTIAL_CONTROL_EDGE` disposition bound to the source snapshot. An exact
+per-source disposition-manifest hash must be externally runtime-approved for
+live admission; that approval list remains empty. Auxiliary controller aliases
+must reach at least one governed role and cannot be orphaned. These checks prove
+internal composition, not provider-source authenticity or completeness. A fully
+coordinated source/edge/alias omission can remain structurally consistent in a
+synthetic exercise, but it cannot satisfy live admission without the exact
+externally approved disposition manifest. A caller-provided `fixed_point` flag
+alone proves nothing. Unknown or unviewable edges HOLD. Every pair of role
+credential-controller sets must remain disjoint across the full
+transitive closure. A separate complete authority-
 mutator influence graph covers WIF, key/IAM, audit, owner/editor, and role
 mutation power; every mutator must be externally proven dormant, and any
 activation invalidates evidence. Credential-controller fixed-point sets and

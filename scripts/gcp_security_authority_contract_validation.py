@@ -299,15 +299,128 @@ def validate_live_evidence_shape(
         != set(closure_schema["source_types_exact"])
     ):
         raise ValueError("authority source record coverage mismatch")
+    if (
+        closure_schema[
+            "external_mutator_record_count_independent_of_source_record_count"
+        ]
+        is not True
+        or closure_schema[
+            "one_source_record_may_emit_multiple_external_mutators"
+        ]
+        is not True
+        or closure_schema[
+            "positive_external_mutator_count_requires_at_least_one_source_record"
+        ]
+        is not True
+    ):
+        raise ValueError("external mutator count cardinality contract mismatch")
+    if closure_schema["credential_control_disposition_manifest_fields"] != [
+        "source_type",
+        "record_count",
+        "external_mutator_record_count",
+        "snapshot_sha256",
+        "credential_control_dispositions",
+    ]:
+        raise ValueError("credential disposition manifest field contract mismatch")
+    source_records_by_type: dict[str, dict[str, Any]] = {}
     for record in source_records:
         if set(record) != source_record_schema:
             raise ValueError("authority source record keys mismatch")
         if type(record["record_count"]) is not int or record["record_count"] < 0:
             raise ValueError("authority source record count malformed")
+        if (
+            type(record["external_mutator_record_count"]) is not int
+            or record["external_mutator_record_count"] < 0
+            or (
+                record["external_mutator_record_count"] > 0
+                and record["record_count"] == 0
+            )
+        ):
+            raise ValueError("authority source external mutator count malformed")
+        if (
+            type(record["credential_control_edge_count"]) is not int
+            or record["credential_control_edge_count"] < 0
+        ):
+            raise ValueError("authority source credential edge count malformed")
         if not isinstance(record["snapshot_sha256"], str) or not HEX64.fullmatch(
             record["snapshot_sha256"]
         ):
             raise ValueError("authority source snapshot malformed")
+        if not isinstance(
+            record["credential_control_edge_output_sha256"], str
+        ) or not HEX64.fullmatch(
+            record["credential_control_edge_output_sha256"]
+        ):
+            raise ValueError("authority source credential edge output malformed")
+        dispositions = record["credential_control_dispositions"]
+        disposition_key_set = set(
+            closure_schema["credential_control_disposition_required_keys"]
+        )
+        if (
+            not isinstance(dispositions, list)
+            or len(dispositions) != record["record_count"]
+            or [item.get("source_record_ordinal") for item in dispositions]
+            != list(range(record["record_count"]))
+        ):
+            raise ValueError("credential control disposition coverage mismatch")
+        for disposition in dispositions:
+            if set(disposition) != disposition_key_set:
+                raise ValueError("credential control disposition keys mismatch")
+            links = disposition["edge_source_link_sha256s"]
+            if (
+                disposition["disposition"]
+                not in closure_schema["credential_control_disposition_domain"]
+                or not isinstance(links, list)
+                or links != sorted(links)
+                or len(links) != len(set(links))
+                or any(
+                    not isinstance(link, str) or not HEX64.fullmatch(link)
+                    for link in links
+                )
+                or not isinstance(disposition["disposition_evidence_sha256"], str)
+                or not HEX64.fullmatch(
+                    disposition["disposition_evidence_sha256"]
+                )
+            ):
+                raise ValueError("credential control disposition malformed")
+            expected_disposition = (
+                "EDGES_ENUMERATED"
+                if links
+                else "NO_CREDENTIAL_CONTROL_EDGE"
+            )
+            if disposition["disposition"] != expected_disposition:
+                raise ValueError("credential control disposition/edge mismatch")
+        manifest_material = {
+            "source_type": record["source_type"],
+            "record_count": record["record_count"],
+            "external_mutator_record_count": record[
+                "external_mutator_record_count"
+            ],
+            "snapshot_sha256": record["snapshot_sha256"],
+            "credential_control_dispositions": dispositions,
+        }
+        expected_manifest_hash = _sha(
+            closure_schema[
+                "credential_control_disposition_manifest_domain_separator"
+            ].encode("ascii")
+            + b"\x00"
+            + _canonical(manifest_material)
+        )
+        if record["credential_control_disposition_manifest_sha256"] != (
+            expected_manifest_hash
+        ):
+            raise ValueError("credential control disposition manifest mismatch")
+        if (
+            not synthetic_mode
+            and expected_manifest_hash
+            not in approval_domains[
+                "runtime_approved_credential_control_disposition_manifest_hashes"
+            ]
+        ):
+            raise ValueError(
+                "credential control disposition manifest is not runtime-approved"
+            )
+        source_records_by_type[record["source_type"]] = record
     if closure["source_inventory_sha256"] != _sha(_canonical(source_records)):
         raise ValueError("authority source inventory commitment mismatch")
     cycles = closure["cycle_records"]
@@ -321,24 +434,86 @@ def validate_live_evidence_shape(
     if not isinstance(edges, list):
         raise ValueError("credential control edges malformed")
     edge_tuples: list[tuple[str, str]] = []
+    edge_sort_keys: list[tuple[str, int, str, str, str]] = []
+    edge_type_map = closure_schema["credential_control_edge_type_by_source_type"]
+    source_link_domain = closure_schema[
+        "credential_control_edge_source_link_domain_separator"
+    ].encode("ascii")
     for edge in edges:
         if set(edge) != edge_key_set:
             raise ValueError("credential control edge keys mismatch")
         controller = edge["controller_alias"]
         controlled = edge["controlled_alias"]
+        source_type = edge["source_type"]
+        source_record = source_records_by_type.get(source_type)
         if (
-            controller not in all_credential_nodes
+            source_record is None
+            or edge["edge_type"] != edge_type_map.get(source_type)
+            or type(edge["source_record_ordinal"]) is not int
+            or edge["source_record_ordinal"] < 0
+            or edge["source_record_ordinal"] >= source_record["record_count"]
+            or controller not in all_credential_nodes
             or controlled not in all_credential_nodes
             or controller == controlled
             or not isinstance(edge["evidence_sha256"], str)
             or not HEX64.fullmatch(edge["evidence_sha256"])
+            or not isinstance(edge["source_link_sha256"], str)
+            or not HEX64.fullmatch(edge["source_link_sha256"])
         ):
             raise ValueError("credential control edge domain mismatch")
+        source_link_material = {
+            "source_type": source_type,
+            "source_snapshot_sha256": source_record["snapshot_sha256"],
+            "source_record_ordinal": edge["source_record_ordinal"],
+            "edge_type": edge["edge_type"],
+            "controller_alias": controller,
+            "controlled_alias": controlled,
+            "evidence_sha256": edge["evidence_sha256"],
+        }
+        if edge["source_link_sha256"] != _sha(
+            source_link_domain + b"\x00" + _canonical(source_link_material)
+        ):
+            raise ValueError("credential control edge source link mismatch")
         edge_tuples.append((controller, controlled))
-    if edge_tuples != sorted(edge_tuples) or len(edge_tuples) != len(
-        set(edge_tuples)
+        edge_sort_keys.append(
+            (
+                source_type,
+                edge["source_record_ordinal"],
+                edge["edge_type"],
+                controller,
+                controlled,
+            )
+        )
+    if edge_sort_keys != sorted(edge_sort_keys) or len(edge_sort_keys) != len(
+        set(edge_sort_keys)
     ):
         raise ValueError("credential control edges not sorted unique")
+    source_output_domain = closure_schema[
+        "credential_control_source_output_domain_separator"
+    ].encode("ascii")
+    for source_type, source_record in source_records_by_type.items():
+        source_edges = [edge for edge in edges if edge["source_type"] == source_type]
+        if source_record["credential_control_edge_count"] != len(source_edges):
+            raise ValueError("credential edge/source count mismatch")
+        for disposition in source_record["credential_control_dispositions"]:
+            actual_links = sorted(
+                edge["source_link_sha256"]
+                for edge in source_edges
+                if edge["source_record_ordinal"]
+                == disposition["source_record_ordinal"]
+            )
+            if disposition["edge_source_link_sha256s"] != actual_links:
+                raise ValueError("credential disposition/global edge mismatch")
+        source_output_material = {
+            "source_type": source_type,
+            "record_count": source_record["record_count"],
+            "snapshot_sha256": source_record["snapshot_sha256"],
+            "credential_control_edges": source_edges,
+        }
+        if source_record["credential_control_edge_output_sha256"] != _sha(
+            source_output_domain + b"\x00" + _canonical(source_output_material)
+        ):
+            raise ValueError("credential edge/source output mismatch")
     parents: dict[str, set[str]] = {node: set() for node in all_credential_nodes}
     for controller, controlled in edge_tuples:
         parents[controlled].add(controller)
@@ -375,6 +550,11 @@ def validate_live_evidence_shape(
         role: sorted(upstream(alias))
         for role, alias in stored["principal_role_aliases"].items()
     }
+    derived_auxiliary_aliases = set().union(
+        *(set(aliases) for aliases in derived_controller_map.values())
+    ) - set(stored["principal_role_aliases"].values())
+    if set(credential_controller_aliases) != derived_auxiliary_aliases:
+        raise ValueError("credential controller alias is orphaned or unlisted")
     external_mutators = closure["external_authority_mutator_records"]
     if not isinstance(external_mutators, list):
         raise ValueError("external mutator records malformed")
@@ -411,17 +591,16 @@ def validate_live_evidence_shape(
         raise ValueError("external mutator alias collision")
     if set(external_aliases).intersection(set(all_aliases)):
         raise ValueError("external mutator collides with role/project/route alias")
-    source_counts = {
-        record["source_type"]: record["record_count"] for record in source_records
-    }
     mapped_external_counts = {
-        source_type: 0 for source_type in closure_schema["mutator_relevant_source_types"]
+        source_type: 0 for source_type in closure_schema["source_types_exact"]
     }
     source_map = closure_schema["external_mutator_source_type_map"]
     for record in external_mutators:
         mapped_external_counts[source_map[record["mutator_type"]]] += 1
     for source_type, observed_count in mapped_external_counts.items():
-        if source_counts[source_type] != observed_count:
+        if source_records_by_type[source_type][
+            "external_mutator_record_count"
+        ] != observed_count:
             raise ValueError("external mutator/source inventory count mismatch")
     if type(closure["missing_source_count"]) is not int or closure[
         "missing_source_count"

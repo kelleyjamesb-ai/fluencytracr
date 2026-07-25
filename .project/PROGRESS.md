@@ -2,20 +2,29 @@
 
 ## Current Session
 
-- Section 7.3 docs-only GCP security-authority contract hardening is active on
-  `codex/gcp-hsm-wif-iam-role-separation` from reviewed Section 7.2 commit
-  `f9db14dc4530266e95b4c7f3176a2eca6b9c72a6`. The candidate defines HSM,
-  direct WIF, IAM, transitive controller/mutator separation, provenance,
-  rollover, audit-interface, privacy, and fail-closed policy/evidence hash
-  contracts with runtime authority held. Provider replay covers 23 public
-  sources and 42 claims from external bundle SHA-256
-  `6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3`.
-  No GCP access, credentials, provisioning, signing, deployment, qualification,
-  model execution, customer/live data, Section 7.4-7.8 implementation, commit,
-  push, or PR is authorized. CODE, BUG, and ADVERSARIAL technical reviews
-  returned GO; the full Python suite passed 339 tests with 3 expected skips.
-  Fresh action-specific authorization remains required before Git or GitHub
-  mutation.
+- Sections 7.2 and 7.3 of the canonical GCP runtime qualification plan are
+  merged to `main`: Section 7.2 PR #439 as `16d11fcf205f568ae14e3baf8be911c4c650f779`
+  and Section 7.3 PR #440 as `df47d54f643ad7ba66b65b2ff9713a6f7f079e86`.
+  Closeout PR #441 incorporates every valid review finding without bypass:
+  both verifiers compile-pin the literal 23-source/42-claim registry and
+  provider revalidation, typed credential edges bind exact source records,
+  every source ordinal has an explicit disposition, exact disposition manifests
+  require external live approval, and external-mutator counts compose over
+  every source class. One source record may emit multiple mutators, while any
+  positive mutator count requires at least one raw source record. The structural
+  validator claims internal composition only, never provider-source authenticity
+  or completeness. A fresh independent exact-head BUG review falsified the
+  claim-pin, source-link, disposition-manifest, coordinated-omission, and
+  all-source composition boundaries and returned GO. Final exact-tree CODE,
+  BUG, and ADVERSARIAL closeout reviews returned GO. Focused Section 7.1-7.3
+  tests passed 64; the Section 7.3 suite passed 26; exact replay reconfirmed 23
+  sources and 42 claims; strict OpenSpec and V1 governance passed, and all PR
+  checks on the remediated implementation head were green. The closeout-only
+  head must rerun required checks before merge. Runtime authority remains held.
+  No GCP access, credentials,
+  provisioning, signing, deployment, qualification, model execution,
+  customer/live data, or Section 7.4-7.8 implementation occurred or is
+  authorized.
 
 - James Kelley explicitly authorized the sequential bounded VBD synthetic
   implementation, concordance, full-evidence, and exact-byte acceptance queue
@@ -3472,10 +3481,10 @@
 
 ## Blockers
 
-- No current Section 7.3 queue blocker: the human-created bounded item
-  `gcp-security-authority-section-7-3` is the sole active queue item. Commit,
-  push, and PR actions remain separately gated by fresh action-specific
-  authorization.
+- No remaining Section 7.3 contract or review blocker. PR #441 closeout-only
+  checks and normal branch-policy merge remain to complete repository closeout.
+  Runtime qualification and Section 7.4 remain separately held and require a
+  new human-created queue item plus fresh authorization.
 - No current blocker for the PR review gate repair slice. Full backend CI passed locally on 2026-06-12.
 
 ## Next Step
