@@ -313,9 +313,9 @@
       "id": "gcp-security-authority-section-7-3",
       "title": "Section 7.3 — docs-only GCP HSM, WIF, IAM, and role-separation contract",
       "bound": "Section 7.3 docs/contracts, OpenSpec, offline verifiers, tests, attribution, and progress only; no live GCP, credentials, deployment, qualification, model execution, or Sections 7.4-7.8",
-      "status": "in_progress",
+      "status": "done",
       "risk": "high",
-      "last_note": "CODE, BUG, and ADVERSARIAL technical reviews returned GO; 339 full tests passed with 3 expected skips. Commit, push, and PR remain unauthorized pending final confirmation."
+      "last_note": "Done 2026-07-25: Section 7.2 PR #439 and Section 7.3 PR #440 merged to main; main tree e4934e4730cf0b7789e230acfe6fc0e6fc5c820a exactly matches the reviewed candidate. Post-merge Agent CI, CI, governance, assurance, and enforcement workflows passed. Runtime authority remains held; no GCP action or Section 7.4 work is authorized."
     }
   ]
 }

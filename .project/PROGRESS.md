@@ -2,20 +2,20 @@
 
 ## Current Session
 
-- Section 7.3 docs-only GCP security-authority contract hardening is active on
-  `codex/gcp-hsm-wif-iam-role-separation` from reviewed Section 7.2 commit
-  `f9db14dc4530266e95b4c7f3176a2eca6b9c72a6`. The candidate defines HSM,
-  direct WIF, IAM, transitive controller/mutator separation, provenance,
-  rollover, audit-interface, privacy, and fail-closed policy/evidence hash
-  contracts with runtime authority held. Provider replay covers 23 public
-  sources and 42 claims from external bundle SHA-256
+- Sections 7.2 and 7.3 of the canonical GCP runtime qualification plan are
+  merged to `main`. Section 7.2 PR #439 merged as `16d11fcf205f568ae14e3baf8be911c4c650f779`;
+  Section 7.3 PR #440 merged as `df47d54f643ad7ba66b65b2ff9713a6f7f079e86`.
+  The resulting `main` tree is exactly the reviewed Section 7.3 candidate
+  `e4934e4730cf0b7789e230acfe6fc0e6fc5c820a`, with reviewed commits
+  `f9db14dc4530266e95b4c7f3176a2eca6b9c72a6` and
+  `48f62cd54a37bb38c37107c8921dc0acd04f4054` preserved as ancestors. Provider
+  replay covers 23 public sources and 42 claims from external bundle SHA-256
   `6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3`.
-  No GCP access, credentials, provisioning, signing, deployment, qualification,
-  model execution, customer/live data, Section 7.4-7.8 implementation, commit,
-  push, or PR is authorized. CODE, BUG, and ADVERSARIAL technical reviews
-  returned GO; the full Python suite passed 339 tests with 3 expected skips.
-  Fresh action-specific authorization remains required before Git or GitHub
-  mutation.
+  Post-merge Agent CI, CI, governance, Assurance Harness, and enforcement
+  workflows passed. Runtime authority remains held. No GCP access, credentials,
+  provisioning, signing, deployment, qualification, model execution,
+  customer/live data, or Section 7.4-7.8 implementation occurred or is
+  authorized.
 
 - James Kelley explicitly authorized the sequential bounded VBD synthetic
   implementation, concordance, full-evidence, and exact-byte acceptance queue
@@ -3472,10 +3472,11 @@
 
 ## Blockers
 
-- No current Section 7.3 queue blocker: the human-created bounded item
-  `gcp-security-authority-section-7-3` is the sole active queue item. Commit,
-  push, and PR actions remain separately gated by fresh action-specific
-  authorization.
+- No current Section 7.3 blocker: the bounded queue item
+  `gcp-security-authority-section-7-3` is complete after PRs #439 and #440
+  merged with all post-merge workflows green. Runtime qualification and
+  Section 7.4 remain separately held and require a new human-created queue item
+  plus fresh authorization.
 - No current blocker for the PR review gate repair slice. Full backend CI passed locally on 2026-06-12.
 
 ## Next Step
