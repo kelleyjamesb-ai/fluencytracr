@@ -36,6 +36,10 @@ Use when `.project/WORK_QUEUE.json` has items you are meant to execute, or the h
 
 **Rules (summary):** exactly **one** queue item `in_progress` at a time; agents change **status** (and optional `last_note`) only — **humans** add/remove/rename tasks. **Stop after one bounded unit:** implement → verify → update `PROGRESS.md` + queue → commit.
 
+#### Canonical runtime readiness gate
+
+Before system-under-test work on any human-authorized, high-risk canonical-runtime qualification slice beginning with Section 7.5, follow [`CANONICAL_RUNTIME_PHASE_READINESS.md`](CANONICAL_RUNTIME_PHASE_READINESS.md). Complete the queue-bound attack-to-oracle packet, run its phase-specific mechanical evidence, then obtain exact-packet CODE/BUG/ADVERSARIAL `READINESS_GO` before implementation. A readiness result has `authority_effect: NONE`; it never creates a queue item or authorizes GCP, credentials, signing, deployment, qualification, persistence, model execution, or a Git/PR action.
+
 ### Track B — **Harness** (checklist, verification, multi-session handoff)
 
 Use for checklist-driven work, repo-wide verification gates, or when the human points you at `harness/`.
