@@ -315,7 +315,15 @@
       "bound": "Section 7.3 docs/contracts, OpenSpec, offline verifiers, tests, attribution, and progress only; no live GCP, credentials, deployment, qualification, model execution, or Sections 7.4-7.8",
       "status": "done",
       "risk": "high",
-      "last_note": "Done 2026-07-25: PR #441 pins 23 sources/42 claims, typed source-linked edges, exact ordinal dispositions/manifests, and all-source external-mutator composition. Fresh exact-head BUG and final exact-tree CODE/BUG/ADVERSARIAL reviews returned GO; focused Section 7.1-7.3 tests passed 64. PR checks on the implementation head were green; closeout-only checks must pass before merge. Runtime authority remains held; no GCP action or Section 7.4 work is authorized."
+      "last_note": "Done 2026-07-25: PR #441 pins 23 sources/42 claims, typed source-linked edges, exact ordinal dispositions/manifests, and all-source external-mutator composition. Exact-head BUG and final-tree CODE/BUG/ADVERSARIAL reviews returned GO; 64 focused tests passed. PR #441 merged normally as 4b39b30e; merge tree matched the reviewed tree and post-merge workflows passed. Runtime authority remains held."
+    },
+    {
+      "id": "gcp-attestation-receipt-section-7-4",
+      "title": "Section 7.4 — docs-only attestation and receipt-verification contract",
+      "bound": "Section 7.4 docs/contracts, OpenSpec, offline verifiers, tests, attribution, and progress only; define attestation verification, receipt signature preimages, signer acceptance, freshness/nonces, and receipt verification; no live GCP, credentials, signing, deployment, qualification, persistence, model execution, or Sections 7.5-7.8",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "Corrective Section 7.4 tree verified; final review pending. Passed 44 dedicated, 108 focused, 384 full tests (3 skips), clean-CI simulation (3 pass/1 archive skip), local source replay, OpenSpec, governance, docs, compile, and diff. PR #442 still points to the earlier commit; corrective Git authorization follows final GO. Approvals/authority remain empty/held; no live GCP, credentials, signing, deployment, persistence, qualification, model execution, or Sections 7.5-7.8 work."
     }
   ]
 }

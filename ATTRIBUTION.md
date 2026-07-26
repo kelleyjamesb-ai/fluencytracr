@@ -94,6 +94,12 @@ not necessarily reviewed or approved FluencyTracr.
 - Governance grounding: direct digest-based WIF, distinct non-exportable HSM keys, transitive controller closure, same-context denial proof, held rollover, and an immutable audit interface are contract requirements only; all live policy/evidence admission lists remain empty and no GCP or signing action is authorized
 - Used in: GCP HSM, WIF, IAM, and Role-Separation Security Authority contract
 
+### GCP attestation and receipt verification
+- Sources: Google Cloud documentation for Confidential Space token claims, custom-audience/nonces, OIDC discovery/JWKS validation, TLS exported-key-material binding, Confidential VM MRTD/RTMR attestation, Cloud KMS algorithms/signing/public-key/data-integrity interfaces, and Cloud KMS/Cloud Audit logging; immutable source at reviewed commits from `google/go-tpm-tools`, `GoogleCloudPlatform/confidential-space`, and `google/go-tdx-guest`
+- Retrieval evidence: `docs/contracts/canonical-inference-gcp-attestation-receipt/provider-source-evidence.json` binds 29 exact snapshots and 42 claim windows to `external-recovery://fluencytracr/gcp-attestation-receipt-source-snapshot-20260726T072745Z.zip` with SHA-256 `6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a`; public examples and all replay/model-plan bytes remain restricted provenance only
+- Governance grounding: source-code presence does not prove runtime capability; nil-extra-data applicability, quote continuity, strict collateral/CRL/TCB policy, bounded audit claims, empty approvals, no public receipt projection, and `authority_effect=NONE` preserve the held runtime boundary
+- Used in: GCP Canonical Attestation and Receipt-Verification contract (Section 7.4)
+
 ### AI Scale Readiness Portfolio
 - Source: James Kelley, scale-readiness portfolio framing for V4 value realization
 - Governance grounding: aggregate readiness zones should guide where to scale, coach, redesign, calibrate trust, expand adoption, or hold without becoming a scorecard, ranking, ROI claim, or productivity measure

@@ -1,0 +1,1927 @@
+{
+  "applicability_registry_sha256": "4127243f164ce5fbcf35df31069fa593f12dd2a935a5a748b3140a27aaf7c675",
+  "applicability_reviews": [
+    {
+      "capability_effect": "SOURCE_CODE_ONLY_RUNTIME_UNOBSERVED",
+      "disposition": "PROVEN_NIL_EXECUTABLE_PATH_GENERIC_PROTO_NON_APPLICABLE",
+      "review_id": "NIL_EXTRA_DATA_SELECTED_ENDPOINT",
+      "source_ids": [
+        "GO_TPM_TEE_SERVER",
+        "GO_TPM_AGENT",
+        "GO_TPM_AGENT_TEST",
+        "CS_ATTESTATION_PROTO"
+      ]
+    },
+    {
+      "capability_effect": "LIVE_R7_HOLD",
+      "disposition": "SOURCE_CODE_INTERFACE_TEST_ONLY_RUNTIME_CAPABILITY_UNOBSERVED",
+      "review_id": "EVIDENCE_ENDPOINT_CAPABILITY",
+      "source_ids": [
+        "GO_TPM_TEE_SERVER",
+        "GO_TPM_AGENT",
+        "GO_TPM_BC_EXPERIMENT"
+      ]
+    },
+    {
+      "capability_effect": "PERMISSIVE_DEFAULTS_REJECT",
+      "disposition": "STRICT_EXPLICIT_COLLATERAL_CRL_ROOT_TCB_EXPECTATIONS_REQUIRED",
+      "review_id": "TDX_VERIFIER_DEFAULTS",
+      "source_ids": [
+        "TDX_VERIFY",
+        "TDX_VALIDATE"
+      ]
+    },
+    {
+      "capability_effect": "HOLD_SELECTED_IMAGE_MODE_UNPROVEN",
+      "disposition": "PACKAGED_BC_EVIDENCE_ENABLEMENT_CONFLICTS_WITH_BC_TOKEN_UNSUPPORTED",
+      "review_id": "BC_OIDC_DIRECT_QUOTE_COMPOSITION",
+      "source_ids": [
+        "GO_TPM_BC_EXPERIMENT",
+        "GO_TPM_AGENT"
+      ]
+    },
+    {
+      "capability_effect": "HOLD_UNTIL_LATER_INTERFACE_APPROVED",
+      "disposition": "FULL_REPLAY_REQUIRES_SEPARATELY_AUTHENTICATED_TABLE_SOURCE",
+      "review_id": "CCEL_TABLE_BOUNDARY",
+      "source_ids": [
+        "GO_TPM_AGENT",
+        "TDX_CCEL"
+      ]
+    },
+    {
+      "capability_effect": "NO_SAME_BOOT_CLAIM_FROM_AUDIT",
+      "disposition": "METHOD_RESOURCE_PRINCIPAL_TIME_STATUS_ONLY_NO_DIGEST_ATTEMPT_PROOF",
+      "review_id": "KMS_AUDIT_LIMIT",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING",
+        "CLOUD_AUDIT_LOGS"
+      ]
+    }
+  ],
+  "authority_effect": "NONE_DOCS_ONLY",
+  "authorization_effect": "NONE_DOCS_ONLY",
+  "claim_registry_sha256": "45b178a04d866b5ba7c8fe49528b00765d779564b342cc268e16f2e9f636f16e",
+  "claims": [
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "TOKEN_NONCE_RANGE_8_88",
+      "max_span_chars": 315,
+      "needles": [
+        "Each nonce must be",
+        "between 8 and 88 bytes inclusive"
+      ],
+      "observed_span_chars": 59,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TOKEN_CLAIMS",
+      "statement": "Custom attestation-token nonce values are 8 through 88 bytes inclusive."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "TOKEN_NONCE_MAX_SIX",
+      "max_span_chars": 291,
+      "needles": [
+        "A maximum of six nonces are allowed"
+      ],
+      "observed_span_chars": 35,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TOKEN_CLAIMS",
+      "statement": "The token claim permits at most six nonces."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "TOKEN_CUSTOM_AUDIENCE_ECHO",
+      "max_span_chars": 394,
+      "needles": [
+        "For tokens with custom audiences",
+        "maximum length is 512 bytes"
+      ],
+      "observed_span_chars": 138,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TOKEN_CLAIMS",
+      "statement": "Custom-audience values are echoed and bounded."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "CUSTOM_REQUEST_NONCE_RANGE_10_74",
+      "max_span_chars": 309,
+      "needles": [
+        "Each nonce must be between 10 and",
+        "74 bytes, inclusive"
+      ],
+      "observed_span_chars": 53,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "EXTERNAL_RESOURCES",
+      "statement": "Custom token requests document 10 through 74 bytes per nonce."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "CUSTOM_REQUEST_NONCE_ECHO_REJECT",
+      "max_span_chars": 360,
+      "needles": [
+        "same as the nonces",
+        "must reject the token"
+      ],
+      "observed_span_chars": 104,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "EXTERNAL_RESOURCES",
+      "statement": "A relying party must reject returned nonces that differ from requested nonces."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "TLS_EKM_NONCE_BINDING",
+      "max_span_chars": 387,
+      "needles": [
+        "TLS exported key material",
+        "binds the attestation to the TLS",
+        "session and confirms"
+      ],
+      "observed_span_chars": 131,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "EXTERNAL_RESOURCES",
+      "statement": "Google documents TLS exported key material as a nonce binding to the TLS session."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "OIDC_DISCOVERY_RS256_JWKS",
+      "max_span_chars": 2251,
+      "needles": [
+        "openid-configuration",
+        "id_token_signing_alg_values_supported",
+        "RS256",
+        "jwks_uri"
+      ],
+      "observed_span_chars": 1995,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TOKEN_VALIDATION_FIELDS",
+      "statement": "OIDC discovery publishes RS256 and JWKS verification metadata."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "TDX_MRTD_RTMR3",
+      "max_span_chars": 460,
+      "needles": [
+        "Measurement of the Trust Domain",
+        "Runtime Measurement Registers",
+        "RTMR[3]"
+      ],
+      "observed_span_chars": 204,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "CVM_ATTESTATION",
+      "statement": "TDX launch and runtime measurements use MRTD and RTMR including RTMR[3]."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "TDX_GUEST_REFERENCE",
+      "max_span_chars": 333,
+      "needles": [
+        "For Intel TDX, use",
+        "TDX Guest"
+      ],
+      "observed_span_chars": 77,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "CVM_ATTESTATION",
+      "statement": "Google points Intel TDX users to TDX Guest attestation tooling."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "KMS_P256_SHA256_ALGORITHM",
+      "max_span_chars": 344,
+      "needles": [
+        "EC_SIGN_P256_SHA256",
+        "P-256",
+        "SHA-256 digest"
+      ],
+      "observed_span_chars": 88,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "KMS_ALGORITHMS",
+      "statement": "Cloud KMS defines EC_SIGN_P256_SHA256 as P-256 with SHA-256."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "KMS_DER_SIGNATURE",
+      "max_span_chars": 267,
+      "needles": [
+        "DER-encoded"
+      ],
+      "observed_span_chars": 11,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "KMS_SIGNATURES",
+      "statement": "Cloud KMS asymmetric signatures are DER encoded."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "KMS_PARSE_PUBLIC_KEY",
+      "max_span_chars": 274,
+      "needles": [
+        "ParsePKIXPublicKey"
+      ],
+      "observed_span_chars": 18,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "KMS_SIGNATURES",
+      "statement": "The documented verification flow parses a PKIX public key."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "KMS_ASYMMETRIC_SIGN_INTEGRITY_FIELDS",
+      "max_span_chars": 8499,
+      "needles": [
+        "digestCrc32c",
+        "verifiedDigestCrc32c",
+        "signatureCrc32c"
+      ],
+      "observed_span_chars": 8243,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "KMS_ASYMMETRIC_SIGN_REST",
+      "statement": "AsymmetricSign exposes digest and signature CRC integrity fields."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "KMS_PUBLIC_KEY_PROTECTION_LEVEL",
+      "max_span_chars": 8272,
+      "needles": [
+        "GetPublicKey",
+        "protectionLevel"
+      ],
+      "observed_span_chars": 8016,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "KMS_GET_PUBLIC_KEY_REST",
+      "statement": "GetPublicKey returns public-key metadata including protection level."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "KMS_DATA_INTEGRITY_CRC32C",
+      "max_span_chars": 577,
+      "needles": [
+        "AsymmetricSignRequest.digest_crc32c",
+        "AsymmetricSignResponse.verified_digest_crc32c",
+        "verified_signature_crc32c"
+      ],
+      "observed_span_chars": 321,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "KMS_DATA_INTEGRITY",
+      "statement": "Cloud KMS data-integrity guidance maps request and response CRC32C fields."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "KMS_AUDIT_ASYMMETRIC_SIGN",
+      "max_span_chars": 25619,
+      "needles": [
+        "AsymmetricSign",
+        "Data access",
+        "useToSign"
+      ],
+      "observed_span_chars": 25363,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "KMS_AUDIT_LOGGING",
+      "statement": "AsymmetricSign is a Data Access audit operation using useToSign."
+    },
+    {
+      "authority": "PUBLIC_PROVIDER_DOCUMENTATION",
+      "claim_id": "DATA_ACCESS_DEFAULT_DISABLED",
+      "max_span_chars": 38279,
+      "needles": [
+        "Data Access audit logs",
+        "disabled by default"
+      ],
+      "observed_span_chars": 38023,
+      "polarity": "LIMITATION",
+      "source_id": "CLOUD_AUDIT_LOGS",
+      "statement": "Data Access audit logs other than BigQuery are disabled by default."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVIDENCE_ENDPOINT_POST",
+      "max_span_chars": 8139,
+      "needles": [
+        "evidenceEndpoint          = \"/v1/evidence\"",
+        "r.Method != http.MethodPost"
+      ],
+      "observed_span_chars": 7883,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_TEE_SERVER",
+      "statement": "The launcher exposes a POST /v1/evidence endpoint."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVIDENCE_ENDPOINT_NIL_EXTRA_DATA",
+      "max_span_chars": 301,
+      "needles": [
+        "AttestationEvidence(a.ctx, req.Challenge, nil"
+      ],
+      "observed_span_chars": 45,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_TEE_SERVER",
+      "statement": "The endpoint invokes attestation evidence with nil extraData."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVIDENCE_REQUEST_CHALLENGE_ONLY",
+      "max_span_chars": 386,
+      "needles": [
+        "message GetAttestationEvidenceRequest",
+        "bytes challenge = 1"
+      ],
+      "observed_span_chars": 130,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_TEE_PROTO",
+      "statement": "The evidence request protobuf contains a challenge field."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVIDENCE_EXPERIMENT_GATE",
+      "max_span_chars": 360,
+      "needles": [
+        "if !a.experiments.EnableAttestationEvidence",
+        "attestation evidence is disabled"
+      ],
+      "observed_span_chars": 104,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_AGENT",
+      "statement": "AttestationEvidence rejects when its experiment is disabled."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TDX_NESTED_SHA512_NIL_BRANCH",
+      "max_span_chars": 7136,
+      "needles": [
+        "func (t *tdxAttestRoot) ComputeNonce",
+        "if extraData != nil",
+        "sha512.Sum512",
+        "labels.WorkloadAttestation"
+      ],
+      "observed_span_chars": 6880,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_AGENT",
+      "statement": "TDX ComputeNonce performs nested SHA-512 and includes extraData only when non-nil."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVIDENCE_RETURNS_QUOTE_CCEL_CEL",
+      "max_span_chars": 337,
+      "needles": [
+        "CcelBootEventLog",
+        "CelLaunchEventLog",
+        "TdQuote"
+      ],
+      "observed_span_chars": 81,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_AGENT",
+      "statement": "AttestationEvidence returns quote plus CCEL and CEL fields."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "NIL_EXTRA_DATA_TESTED",
+      "max_span_chars": 1113,
+      "needles": [
+        "nil extraData",
+        "ComputeNonce(challenge, nil)"
+      ],
+      "observed_span_chars": 857,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_AGENT_TEST",
+      "statement": "An exact test covers nil extraData challenge-only derivation."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TRANSITIVE_MODULE_PINS",
+      "max_span_chars": 3644,
+      "needles": [
+        "db25840c8cf6",
+        "ffb0869e6f4d"
+      ],
+      "observed_span_chars": 3388,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_LAUNCHER_GO_MOD",
+      "statement": "The launcher pins confidential-space and go-tdx-guest commits used by the interface."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TRANSITIVE_EVENTLOG_CONFIGFS_PINS",
+      "max_span_chars": 2912,
+      "needles": [
+        "af9e78c4d692",
+        "b4b5b84fdcbc"
+      ],
+      "observed_span_chars": 2656,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_LAUNCHER_GO_MOD",
+      "statement": "The launcher pins go-eventlog and go-configfs-tsm revisions."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EXPERIMENT_DEFAULT_EMPTY",
+      "max_span_chars": 1086,
+      "needles": [
+        "empty object",
+        "return Experiments{}, err"
+      ],
+      "observed_span_chars": 830,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_EXPERIMENTS",
+      "statement": "Experiment read failure returns the empty default object."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "PACKAGED_BC_EXPERIMENT_ENABLED",
+      "max_span_chars": 289,
+      "needles": [
+        "\"EnableAttestationEvidence\": true"
+      ],
+      "observed_span_chars": 33,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_BC_EXPERIMENT",
+      "statement": "The reviewed BC source configuration enables attestation evidence."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "BC_MODE_TOKEN_UNSUPPORTED",
+      "max_span_chars": 443,
+      "needles": [
+        "Attest is not supported in BC mode",
+        "attestation token is not supported in BC mode"
+      ],
+      "observed_span_chars": 187,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "GO_TPM_AGENT",
+      "statement": "The reviewed agent rejects attestation tokens in BC mode."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "WORKLOAD_ATTESTATION_LABEL",
+      "max_span_chars": 361,
+      "needles": [
+        "WorkloadAttestation",
+        "WORKLOAD_ATTESTATION"
+      ],
+      "observed_span_chars": 105,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "CS_LABELS",
+      "statement": "The source label is exactly WORKLOAD_ATTESTATION."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "GENERIC_PROTO_REPORT_DATA_FORMULA",
+      "max_span_chars": 300,
+      "needles": [
+        "extra_data",
+        "report_data is",
+        "SHA512"
+      ],
+      "observed_span_chars": 44,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "CS_ATTESTATION_PROTO",
+      "statement": "The generic proto comment documents nested label/challenge/extra_data report data."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "PROTO_CCEL_CEL_QUOTE_FIELDS",
+      "max_span_chars": 575,
+      "needles": [
+        "ccel_boot_event_log",
+        "cel_launch_event_log",
+        "td_quote"
+      ],
+      "observed_span_chars": 319,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "CS_ATTESTATION_PROTO",
+      "statement": "The attestation proto carries CCEL, CEL, and TDX quote fields."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TDX_VERIFY_COLLATERAL_OPTIONS",
+      "max_span_chars": 3492,
+      "needles": [
+        "CheckRevocations",
+        "GetCollateral",
+        "TrustedRoots"
+      ],
+      "observed_span_chars": 3236,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TDX_VERIFY",
+      "statement": "The TDX verification library exposes collateral, revocation, and trusted-root controls."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TDX_VALIDATE_OMITTED_FIELDS_SKIP",
+      "max_span_chars": 316,
+      "needles": [
+        "len(required) == 0",
+        "Skipping validation"
+      ],
+      "observed_span_chars": 60,
+      "polarity": "LIMITATION",
+      "source_id": "TDX_VALIDATE",
+      "statement": "Omitted expected validation values can skip checks and therefore require stricter policy."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TDX_VALIDATE_REPORT_DATA",
+      "max_span_chars": 294,
+      "needles": [
+        "ReportData",
+        "REPORT_DATA"
+      ],
+      "observed_span_chars": 38,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TDX_VALIDATE",
+      "statement": "TDX validation contains an explicit ReportData check."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TDX_CCEL_REPLAY",
+      "max_span_chars": 1665,
+      "needles": [
+        "ParseCcelWithTdQuote",
+        "RTMR"
+      ],
+      "observed_span_chars": 1409,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TDX_CCEL",
+      "statement": "The TDX library exposes CCEL replay against quoted RTMRs."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "TDX_CONFIGFS_64_BYTE_REPORT_DATA",
+      "max_span_chars": 3368,
+      "needles": [
+        "GetRawQuote",
+        "reportData [64]byte",
+        "configfs"
+      ],
+      "observed_span_chars": 3112,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "TDX_CLIENT_LINUX",
+      "statement": "TDX quote retrieval accepts exactly a 64-byte report-data input."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVENTLOG_CEL_TYPED_TLV",
+      "max_span_chars": 2045,
+      "needles": [
+        "Package cel contains",
+        "TopLevelEventType",
+        "MarshalBinary",
+        "UnmarshalBinary"
+      ],
+      "observed_span_chars": 1789,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "EVENTLOG_CEL",
+      "statement": "The pinned eventlog source defines typed Canonical Event Log TLV encoding and decoding."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVENTLOG_RTMR_INDEX_MAPPING",
+      "max_span_chars": 1509,
+      "needles": [
+        "RTMR0 => PCR1,7",
+        "RTMR3 => N/A",
+        "return r.Index + 1",
+        "return crypto.SHA384"
+      ],
+      "observed_span_chars": 1253,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "EVENTLOG_RTMR",
+      "statement": "The pinned eventlog source defines RTMR to CC measurement-register index mapping and SHA-384."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "EVENTLOG_CCEL_REPLAY_TRUST_BOUNDARY",
+      "max_span_chars": 1688,
+      "needles": [
+        "ReplayAndExtract",
+        "parseCCELACPITable",
+        "ParseAndReplay",
+        "verifying the values via a RTMR quote"
+      ],
+      "observed_span_chars": 1432,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "EVENTLOG_CCEL_REPLAY",
+      "statement": "CCEL replay parses the ACPI table and event log against RTMR values whose trust must come from a quote."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "CONFIGFS_REPORT_IN_OUT_BLOB",
+      "max_span_chars": 805,
+      "needles": [
+        "InBlob",
+        "OutBlob",
+        "AuxBlob",
+        "expectedGeneration"
+      ],
+      "observed_span_chars": 549,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "CONFIGFS_REPORT",
+      "statement": "The pinned configfs report API writes an input blob and retrieves report output and auxiliary blobs with generation checks."
+    },
+    {
+      "authority": "IMMUTABLE_OPEN_SOURCE_IMPLEMENTATION",
+      "claim_id": "CONFIGFS_LINUX_REPORT_SUBSYSTEM",
+      "max_span_chars": 1303,
+      "needles": [
+        "/sys/kernel/config/tsm",
+        "ReadFile",
+        "WriteFile",
+        "MakeClient"
+      ],
+      "observed_span_chars": 1047,
+      "polarity": "AFFIRMATIVE",
+      "source_id": "CONFIGFS_LINUXTSM",
+      "statement": "The pinned Linux TSM client uses the configfs report subsystem and exact file operations."
+    }
+  ],
+  "contract_scope": "SECTION_7_4_DOCS_ONLY",
+  "decision": "GCP_ATTESTATION_RECEIPT_SOURCE_CONTRACT_CLOSED_RUNTIME_EVIDENCE_ABSENT",
+  "inherited_registry_manifest": {
+    "dependency_artifacts": [
+      {
+        "owner_section": "SECTION_7_1",
+        "raw_file_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
+        "repository_path": "docs/contracts/canonical-inference-gcp-provider-vocabulary/README.md"
+      },
+      {
+        "owner_section": "SECTION_7_1",
+        "raw_file_sha256": "b6e5b878de67efbabbda699332e608af7c112d20c62910ea6ebd033bdb75e422",
+        "repository_path": "docs/contracts/canonical-inference-gcp-provider-vocabulary/claim-evidence.json"
+      },
+      {
+        "owner_section": "SECTION_7_1",
+        "raw_file_sha256": "f161f131530ec5e978ff4a86cd965b92088617efd21f2810b0ab4e1e41f5815c",
+        "repository_path": "docs/contracts/canonical-inference-gcp-provider-vocabulary/compute-field-projection.json"
+      },
+      {
+        "owner_section": "SECTION_7_1",
+        "raw_file_sha256": "939ebe94f73754caa0e05ed5f740e5d0fcc5e3f136b265ea5fbc5579cfd09743",
+        "repository_path": "docs/contracts/canonical-inference-gcp-provider-vocabulary/source-evidence.json"
+      },
+      {
+        "owner_section": "SECTION_7_2",
+        "raw_file_sha256": "5335a4afe28cd347b85be0fc83bb935dd4ac6e04fbe152b078733fc5a9dde7ab",
+        "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/README.md"
+      },
+      {
+        "owner_section": "SECTION_7_2",
+        "raw_file_sha256": "d09e4db3f9cab19e87aeec9ffcba632e39a9d0654861acbaf3d4945ce914d067",
+        "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/canonicalization-vectors.json"
+      },
+      {
+        "owner_section": "SECTION_7_2",
+        "raw_file_sha256": "010551be219b38cc8aed25102824406bfb6a8bc3806d04b93e831f1933ae8455",
+        "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/control-plane-projection.json"
+      },
+      {
+        "owner_section": "SECTION_7_2",
+        "raw_file_sha256": "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc",
+        "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/provider-revalidation.json"
+      },
+      {
+        "owner_section": "SECTION_7_2",
+        "raw_file_sha256": "0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125",
+        "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json"
+      },
+      {
+        "owner_section": "SECTION_7_3",
+        "raw_file_sha256": "05f153b012f453ea9c289632b55905327988a068a7b101394479aa5ba199744e",
+        "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/README.md"
+      },
+      {
+        "owner_section": "SECTION_7_3",
+        "raw_file_sha256": "7fc57bf6d241399dc858667602d8eb8f6264c5f6d90322131d02ea415288eed1",
+        "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json"
+      },
+      {
+        "owner_section": "SECTION_7_3",
+        "raw_file_sha256": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
+        "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/provider-revalidation.json"
+      },
+      {
+        "owner_section": "SECTION_7_3",
+        "raw_file_sha256": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
+        "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json"
+      },
+      {
+        "owner_section": "SECTION_7_3",
+        "raw_file_sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
+        "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json"
+      },
+      {
+        "owner_section": "SECTION_7_3",
+        "raw_file_sha256": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841",
+        "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json"
+      }
+    ],
+    "manifest_sha256": "1acaaca7519829aa7fe45a7decdfa272eac9ba7d65d815226853cf883d20c308",
+    "owner_registries": {
+      "SECTION_7_1": {
+        "claim_count": 20,
+        "claim_entries": [
+          {
+            "claim_id": "GCP_C3_CPU_PLATFORM",
+            "source_ids": [
+              "GCP_CPU_PLATFORMS_2026_07_24"
+            ],
+            "statement_sha256": "6868cc4b52127da2c36e7801105101c477637fe815a2a0340820b6736c13a4b7"
+          },
+          {
+            "claim_id": "GCP_C3_STANDARD_4_MACHINE_TYPE",
+            "source_ids": [
+              "GCP_C3_MACHINE_TYPES_2026_07_24",
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "4001ef2eeb9ffd752b364f0b471c3689eeb43deb849b7000cd24cd55f1edf9c7"
+          },
+          {
+            "claim_id": "GCP_C3_TDX_LIVE_MIGRATION",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "b91ec672b8dc06271e08a5e4ab5788a7c3f08e2d5795d0199a6bc900ae0852ac"
+          },
+          {
+            "claim_id": "GCP_C3_TDX_MACHINE_SUPPORT",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "a563ef9eb5a4fae8a099829702d588f6d9b96db3e4020a59aaadd4f87ef839f0"
+          },
+          {
+            "claim_id": "GCP_C3_TDX_ZONE_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "0d362355764a87b730c47957421495eb7a916c6d43a4b68470e2fd89fa60c162"
+          },
+          {
+            "claim_id": "GCP_COMPUTE_INSTANCE_FIELD_SET",
+            "source_ids": [
+              "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+              "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+            ],
+            "statement_sha256": "7768b636f836fc0918d493a9d081887a7e78a0cb004f4bfc7d748337555872c1"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+            ],
+            "statement_sha256": "2a1f6d1c0b64436d95cc7fb4007c247b2b67914f00cfe78c48592eb18c355205"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+            ],
+            "statement_sha256": "d75a1e55b8c62ffe504e4bbac157af625570ec5ac64bb745f3c741ace7b70d8a"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+            ],
+            "statement_sha256": "a39c52160494c82f2a4778ee64ddfc3254b633f0e8874f5c7ee9d7af6f90f141"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+            ],
+            "statement_sha256": "32deb445f413179da9a40bc91ffb5f990b7558b2821c0cfea5087400aa215336"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+            ],
+            "statement_sha256": "98f128180073e3b89e7f75050940ad3f79866160cedecc0b2935376f7f8fb811"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+            ],
+            "statement_sha256": "99bfec5170e08e7efa666c46908d9dd59c28daaef8386cf3cb3fb68d76646015"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+            ],
+            "statement_sha256": "a5d2a22a1d03b6b9902fdf90c4a5b9c287cc325fd7aabbc6b0f82d04343845e2"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+            ],
+            "statement_sha256": "b7490c1e9d609a148b421dd83eb28e4fac072ec49602f8784d6298cfb7743120"
+          },
+          {
+            "claim_id": "GCP_HOST_EVENT_CONTROL_SET",
+            "source_ids": [
+              "GCP_HOST_EVENTS_2026_07_24"
+            ],
+            "statement_sha256": "e779bfd968ff8e002b06953e9c77ffabe9feda133cd6faeea424b22500efa660"
+          },
+          {
+            "claim_id": "GCP_SOLE_TENANT_SERVER_ID",
+            "source_ids": [
+              "GCP_SOLE_TENANCY_2026_07_24"
+            ],
+            "statement_sha256": "a28c7007c842a0dcccaf8f12e6a35f9f9b2fcfd76149539fba6ff7722b179895"
+          },
+          {
+            "claim_id": "GCP_TDX_ATTESTATION_SOURCE",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+            ],
+            "statement_sha256": "a72af6154cc1d7d09fd57091c28026c48adab982938676e88d60284f21aa1de0"
+          },
+          {
+            "claim_id": "GCP_TDX_SOLE_TENANCY",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "1f305605c88cfdf63126ebda83159946d6f806a97a519e02309c4fcd5cbd5488"
+          },
+          {
+            "claim_id": "GCP_TDX_USERSPACE_MEASUREMENT",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+            ],
+            "statement_sha256": "e0a86d6d1add0633dbc66288856b7b8e98d93347363db4495b021f6c6608709e"
+          },
+          {
+            "claim_id": "GCP_TEE_ENV_SUFFIX_GRAMMAR",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+            ],
+            "statement_sha256": "3dca91b757b5cc353eeb2ae541d2236670cee078d098f931475c9452c2f9c9f0"
+          }
+        ],
+        "claim_keyset_sha256": "f358f5ce25d98f85f74aa84804c30f8f20f6b621ced631650d8c358098dd118f",
+        "registry_sha256": "c5d7f66c6c2aec3f295f1417e4d4c10f07f19726eb9ee63f36869f57defb0715",
+        "source_bundle_locator": "external-recovery://fluencytracr/gcp-provider-vocabulary-source-snapshot-20260724T030000Z.zip",
+        "source_bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+        "source_count": 16,
+        "source_entries": [
+          {
+            "expected_source_sha256": "41980a65715c073913c2e33cec8c6352b85200427c0fa7e592a2302b36a8c309",
+            "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "a241826926be7150e1ee6a4db329fc0f262cc0ccdff0c29d26c29904b2ff771e",
+            "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "4c47df42a23ed6b41da1b45823bb012ab17e91cffe613d3580c8f3739beda2ba",
+            "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "8456d1fae9b326ec3bfadd56f93fbd422ee50e8aa867807de67f5af17ee49536",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "2fbe26d6a13d54d851d9e8cce9e0aa0948edaa69de191f448828520461f881ee",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "9e637b2b957754e8f96be1824c58075ce167f767722f9d7c7c1ae446b2645f90",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "fd490925fd1caaf5080b892ff0f49303e936f87a4cec7df41028bf22220563d0",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "4708bb8267237aa9cb724bfbc56805b16fccf74684b13e6e0b331840f9c0ab0d",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "4ffcbfd39471056d8351ac156f6c0dc44e6a55c61b81f817f6b8847a5808bc92",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "7a04415e758469e66d701e7bcfa72a3bde4b9cafb56c96f6823ac81197cfb992",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "171ffb0b40e301a40f0fef3a796bca3e56780b649dd89a8b05768c6c395b4bb5",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "506c7286cd47030b1e6be56858315e8aabfef79fc73d1b4a6f8c621d5d6e06fc",
+            "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "7d6d8dec476610a8b9aec8b81b69643d03c93be76b63703b0e4d59d9d39834c8",
+            "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "3c4816eb0b3cfb9cce086de0a270281516c2652a89aa3b84ab02773dee1a9d24",
+            "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "7c7c75e2e9ba0153a374aa600cb86d598cf826200a95a069cd6b70dbcb385f88",
+            "source_id": "GCP_HOST_EVENTS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "7128578b48803ce38e0b752187bfd3d87ce4bbb4ac6f5d309e33c448865ea45d",
+            "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+          }
+        ],
+        "source_keyset_sha256": "64e319c048b00e5bd288d883ab0e1ca6f6533a7ea64959565b85b01b0d5017bb"
+      },
+      "SECTION_7_2": {
+        "claim_count": 20,
+        "claim_entries": [
+          {
+            "claim_id": "GCP_C3_CPU_PLATFORM",
+            "source_ids": [
+              "GCP_CPU_PLATFORMS_2026_07_24"
+            ],
+            "statement_sha256": "6868cc4b52127da2c36e7801105101c477637fe815a2a0340820b6736c13a4b7"
+          },
+          {
+            "claim_id": "GCP_C3_STANDARD_4_MACHINE_TYPE",
+            "source_ids": [
+              "GCP_C3_MACHINE_TYPES_2026_07_24",
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "4001ef2eeb9ffd752b364f0b471c3689eeb43deb849b7000cd24cd55f1edf9c7"
+          },
+          {
+            "claim_id": "GCP_C3_TDX_LIVE_MIGRATION",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "b91ec672b8dc06271e08a5e4ab5788a7c3f08e2d5795d0199a6bc900ae0852ac"
+          },
+          {
+            "claim_id": "GCP_C3_TDX_MACHINE_SUPPORT",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "a563ef9eb5a4fae8a099829702d588f6d9b96db3e4020a59aaadd4f87ef839f0"
+          },
+          {
+            "claim_id": "GCP_C3_TDX_ZONE_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "0d362355764a87b730c47957421495eb7a916c6d43a4b68470e2fd89fa60c162"
+          },
+          {
+            "claim_id": "GCP_COMPUTE_INSTANCE_FIELD_SET",
+            "source_ids": [
+              "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+              "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+            ],
+            "statement_sha256": "7768b636f836fc0918d493a9d081887a7e78a0cb004f4bfc7d748337555872c1"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+            ],
+            "statement_sha256": "2a1f6d1c0b64436d95cc7fb4007c247b2b67914f00cfe78c48592eb18c355205"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+            ],
+            "statement_sha256": "d75a1e55b8c62ffe504e4bbac157af625570ec5ac64bb745f3c741ace7b70d8a"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+            ],
+            "statement_sha256": "a39c52160494c82f2a4778ee64ddfc3254b633f0e8874f5c7ee9d7af6f90f141"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+            ],
+            "statement_sha256": "32deb445f413179da9a40bc91ffb5f990b7558b2821c0cfea5087400aa215336"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+            ],
+            "statement_sha256": "98f128180073e3b89e7f75050940ad3f79866160cedecc0b2935376f7f8fb811"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+            ],
+            "statement_sha256": "99bfec5170e08e7efa666c46908d9dd59c28daaef8386cf3cb3fb68d76646015"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+            ],
+            "statement_sha256": "a5d2a22a1d03b6b9902fdf90c4a5b9c287cc325fd7aabbc6b0f82d04343845e2"
+          },
+          {
+            "claim_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+            ],
+            "statement_sha256": "b7490c1e9d609a148b421dd83eb28e4fac072ec49602f8784d6298cfb7743120"
+          },
+          {
+            "claim_id": "GCP_HOST_EVENT_CONTROL_SET",
+            "source_ids": [
+              "GCP_HOST_EVENTS_2026_07_24"
+            ],
+            "statement_sha256": "e779bfd968ff8e002b06953e9c77ffabe9feda133cd6faeea424b22500efa660"
+          },
+          {
+            "claim_id": "GCP_SOLE_TENANT_SERVER_ID",
+            "source_ids": [
+              "GCP_SOLE_TENANCY_2026_07_24"
+            ],
+            "statement_sha256": "a28c7007c842a0dcccaf8f12e6a35f9f9b2fcfd76149539fba6ff7722b179895"
+          },
+          {
+            "claim_id": "GCP_TDX_ATTESTATION_SOURCE",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+            ],
+            "statement_sha256": "a72af6154cc1d7d09fd57091c28026c48adab982938676e88d60284f21aa1de0"
+          },
+          {
+            "claim_id": "GCP_TDX_SOLE_TENANCY",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+            ],
+            "statement_sha256": "1f305605c88cfdf63126ebda83159946d6f806a97a519e02309c4fcd5cbd5488"
+          },
+          {
+            "claim_id": "GCP_TDX_USERSPACE_MEASUREMENT",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+            ],
+            "statement_sha256": "e0a86d6d1add0633dbc66288856b7b8e98d93347363db4495b021f6c6608709e"
+          },
+          {
+            "claim_id": "GCP_TEE_ENV_SUFFIX_GRAMMAR",
+            "source_ids": [
+              "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+            ],
+            "statement_sha256": "3dca91b757b5cc353eeb2ae541d2236670cee078d098f931475c9452c2f9c9f0"
+          }
+        ],
+        "claim_keyset_sha256": "f358f5ce25d98f85f74aa84804c30f8f20f6b621ced631650d8c358098dd118f",
+        "registry_sha256": "ce7819f672a2859ef1a6148c1a019dbaa4979b10275c7940b0e3f1e601819046",
+        "source_bundle_locator": "external-recovery://fluencytracr/gcp-runtime-object-revalidation-source-snapshot-20260724T151043Z.zip",
+        "source_bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+        "source_count": 16,
+        "source_entries": [
+          {
+            "expected_source_sha256": "1e2ed6632917655bcfeb3a52acd0f623f791ea350c6f9ef9a95ae73da9d9c0f4",
+            "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "ed609c29eb3acad756343451ab4ef673b45f7848d32e2be6fa87ba0e615e533d",
+            "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "ccf100e8494775bde57f1cb17ab24f1afa100f35e4d58de6b2c24435d4a20cf4",
+            "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "9b16dc2bc76941adde614b6e2ad4fbd40cd792c61ae50c3d5434fb0518e1b676",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "9d2dce9159ef06eaee49716063db0f1ab4ccb166c3395e7690bab6d6018f30e4",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "e012b4e62735ba84508783dd0887c85dbee1395488125accd57c9d46f4f55124",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "4b74ec5d42887351cb068238ba7f7103fa4fc6e6e29b18c125f9314930c01a73",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "99b30c138e881a618ba25ecf594b5256ca4a27ef89b85b08855f9ed42b153967",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "ba98405bd335a3f019f70a001c6566e4ddba200edcbada51aa242641bdb3ed66",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "03adbf1dbfb0406a0c79715f60d501a832ce5570d44c3009a9a78760f8b1c4cd",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "ed136728d80bb1869cc593a26c7af89ed4159c8c70e928579e1cf247e562f842",
+            "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "804495174703ef90fa0d5bc324aed5369b328f7a8cdc8881b9f1e6b1e11e5773",
+            "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+            "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "7988d7fd12238a389eaddf185a5456dabec3707f08a12fcfc1e136d3f133ba0c",
+            "source_id": "GCP_CPU_PLATFORMS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "9c3c48dd363fae93d63e589af77fb01caed4e3cccfa0f3718562aee60858ee31",
+            "source_id": "GCP_HOST_EVENTS_2026_07_24"
+          },
+          {
+            "expected_source_sha256": "483825c6dbb24bb9763b71d9d5f681d72c3c83338d40ff44121c5505910e7218",
+            "source_id": "GCP_SOLE_TENANCY_2026_07_24"
+          }
+        ],
+        "source_keyset_sha256": "64e319c048b00e5bd288d883ab0e1ca6f6533a7ea64959565b85b01b0d5017bb"
+      },
+      "SECTION_7_3": {
+        "claim_count": 42,
+        "claim_entries": [
+          {
+            "claim_id": "AUDIT_ADMIN_ACTIVITY_ALWAYS_WRITTEN",
+            "source_ids": [
+              "CLOUD_AUDIT_LOGS"
+            ],
+            "statement_sha256": "6b60545e28fb1843e957df3ca30cdc79fa0d5eed2abd9d0c3c8cefab40531f7e"
+          },
+          {
+            "claim_id": "AUDIT_DATA_ACCESS_DISABLED_BY_DEFAULT",
+            "source_ids": [
+              "CLOUD_AUDIT_LOGS"
+            ],
+            "statement_sha256": "bcf47bbd15b5847e7601040052f8f9b4c4234f2e4a736c4c6040405d82ecbeae"
+          },
+          {
+            "claim_id": "AUDIT_POLICY_DENIED_EXCLUDABLE",
+            "source_ids": [
+              "CLOUD_AUDIT_LOGS"
+            ],
+            "statement_sha256": "7ebc5d6f61a01e337a7ebc061c4c128f3c3f2f3e0bfb13cd97e1cac72fe9c736"
+          },
+          {
+            "claim_id": "BINARY_AUTH_SIGNS_UNIQUE_IMAGE_DIGEST",
+            "source_ids": [
+              "BINARY_AUTH_ATTESTATIONS"
+            ],
+            "statement_sha256": "a4924276d46bcccb327a148ce2deda8024d4f9091e9cd30890706dfc93eb087c"
+          },
+          {
+            "claim_id": "CLOUD_HSM_ASYMMETRIC_SIGNING_SUPPORT",
+            "source_ids": [
+              "CLOUD_HSM"
+            ],
+            "statement_sha256": "97bb907ac6d17a3cbd03a3416179595d18658efc1c37cc994cbe2eaa97065a83"
+          },
+          {
+            "claim_id": "CLOUD_HSM_HARDWARE_LEVEL",
+            "source_ids": [
+              "CLOUD_HSM"
+            ],
+            "statement_sha256": "81547c47667a405d8ec85e8fb4ce9022ed55a876ef92c7deb693c9d30c0bc7f4"
+          },
+          {
+            "claim_id": "CONFIDENTIAL_SPACE_DIGEST_SIGNATURE_MODE_NONCOEXISTENCE",
+            "source_ids": [
+              "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+            ],
+            "statement_sha256": "d2cf538074b34607567f8d25478525d3703f71cd32814ef52aeed65930d58eb3"
+          },
+          {
+            "claim_id": "CONFIDENTIAL_SPACE_IMAGE_SIGNATURE_ALGORITHM",
+            "source_ids": [
+              "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+            ],
+            "statement_sha256": "ad3bd816df8172a5b555aebc1a3b16cc251233eb16263b8fcc16dcbb754ad3cd"
+          },
+          {
+            "claim_id": "HSM_GENERATED_KEY_NEVER_OUTSIDE_HSM",
+            "source_ids": [
+              "HSM_ATTESTATION"
+            ],
+            "statement_sha256": "e8280c7b74d12c043339c92ed2a64d56095ff426e921abe83e7f2735384ca636"
+          },
+          {
+            "claim_id": "HSM_KEYS_NOT_EXTRACTABLE",
+            "source_ids": [
+              "HSM_ATTESTATION"
+            ],
+            "statement_sha256": "1670027094d0e366872921610b5332f0121dac5e12b085ce7f4cbdf681a4d968"
+          },
+          {
+            "claim_id": "IAM_DENY_PRECEDES_ALLOW",
+            "source_ids": [
+              "IAM_DENY_OVERVIEW"
+            ],
+            "statement_sha256": "fcb3173771428eede6662afdbe64ab77fffe8fd42f546c86391f1e7fa735f7c7"
+          },
+          {
+            "claim_id": "IAM_DENY_UNKNOWN_FAILS_DENIED",
+            "source_ids": [
+              "IAM_DENY_OVERVIEW"
+            ],
+            "statement_sha256": "beb542f19de525598e5af28f8f6eadf2cb308f9d2f3cddb72d80a6a04fc78c91"
+          },
+          {
+            "claim_id": "KMS_ACCESS_APPLIES_TO_ALL_ENABLED_VERSIONS",
+            "source_ids": [
+              "KMS_RESOURCE_HIERARCHY"
+            ],
+            "statement_sha256": "a21ffb51d5534e8a89f6bd12ac8669850f4684048a7a8bb676a96a0ebe12f1eb"
+          },
+          {
+            "claim_id": "KMS_ASYMMETRIC_AUTOMATIC_ROTATION_UNSUPPORTED",
+            "source_ids": [
+              "KMS_KEY_ROTATION"
+            ],
+            "statement_sha256": "15d52649837f516140a7c9aa443e1a8def1cab356c95fd2a1f7f62f69a86c3f5"
+          },
+          {
+            "claim_id": "KMS_ASYMMETRIC_ROLLOVER_REQUIRES_PUBLIC_KEY_DISTRIBUTION",
+            "source_ids": [
+              "KMS_KEY_ROTATION"
+            ],
+            "statement_sha256": "51729f8a0c9eb6d6d370ae2366e9f77bb45a8d69b72efa0da76a031b6833a3f6"
+          },
+          {
+            "claim_id": "KMS_ASYMMETRIC_SIGN_IS_DATA_ACCESS",
+            "source_ids": [
+              "KMS_AUDIT_LOGGING"
+            ],
+            "statement_sha256": "5527b0915c0620768dfc1e8a91701ba8fc20ee4d57507185b35370b9546a4cc3"
+          },
+          {
+            "claim_id": "KMS_ASYMMETRIC_SIGN_PURPOSE",
+            "source_ids": [
+              "KMS_ALGORITHMS"
+            ],
+            "statement_sha256": "289d82c7bd753b7cf7d805f1c06279dc4e73ade295e49582a35dcf1d807d872f"
+          },
+          {
+            "claim_id": "KMS_EC_P256_SHA256_ALGORITHM",
+            "source_ids": [
+              "KMS_ALGORITHMS"
+            ],
+            "statement_sha256": "56518cab16f939771e420422d22e7146e6e31d0656aa877308f789abfe8767be"
+          },
+          {
+            "claim_id": "KMS_ENABLED_VERSION_CAN_SIGN",
+            "source_ids": [
+              "KMS_KEY_VERSION_API"
+            ],
+            "statement_sha256": "aaa8e747077d091d7435d72e1d3dbad0384e4432638e21c52cb3cdac47587878"
+          },
+          {
+            "claim_id": "KMS_IAM_GET_POLICY_METHOD",
+            "source_ids": [
+              "KMS_AUDIT_LOGGING"
+            ],
+            "statement_sha256": "4d7ad7b6fab1209f7086184d4d2f8f6fe203f8673cf4bd56dd34f6a0412fefa3"
+          },
+          {
+            "claim_id": "KMS_IAM_SET_POLICY_METHOD",
+            "source_ids": [
+              "KMS_AUDIT_LOGGING"
+            ],
+            "statement_sha256": "a5a6156097d91e2f728e086c477c8dbb48274e471f745d37d93fb9352117a943"
+          },
+          {
+            "claim_id": "KMS_KEY_LIFECYCLE_METHODS",
+            "source_ids": [
+              "KMS_AUDIT_LOGGING"
+            ],
+            "statement_sha256": "d5c2e4af7b17664bc60f5243ebc7da99ac71a5b6db409ca047971a677ebf6608"
+          },
+          {
+            "claim_id": "KMS_PUBLIC_KEY_PERMISSION",
+            "source_ids": [
+              "KMS_DIGITAL_SIGNATURES"
+            ],
+            "statement_sha256": "a29ad2ab0b86c3281d176d73285277b231e7434b26ba85d49d16a49cfdb9556d"
+          },
+          {
+            "claim_id": "KMS_RAW_KEY_MATERIAL_NONEXPORTABLE",
+            "source_ids": [
+              "KMS_RESOURCE_HIERARCHY"
+            ],
+            "statement_sha256": "ec98ae9ca6d3d4b23f450558f5f526c15a26f0ac8dfe064db9ab2176e3574db1"
+          },
+          {
+            "claim_id": "KMS_SEPARATION_KEY_ADMIN_AND_KEY_USER",
+            "source_ids": [
+              "KMS_SEPARATION_OF_DUTIES"
+            ],
+            "statement_sha256": "5a1b76d8841231dcb5a166850685ce8c6f195334aae19076bed4da33e192eb14"
+          },
+          {
+            "claim_id": "KMS_SIGN_PERMISSION",
+            "source_ids": [
+              "KMS_DIGITAL_SIGNATURES"
+            ],
+            "statement_sha256": "e504bee0798770956489ed63f91ca2463aeb426c24e817aa45a330857458d00c"
+          },
+          {
+            "claim_id": "LOG_BUCKET_LOCKED_RETENTION_IMMUTABLE",
+            "source_ids": [
+              "LOG_BUCKET_API"
+            ],
+            "statement_sha256": "e791f379c8b662e7b09649e563d24fec99c51a0e7aa3a44135b274b12e017524"
+          },
+          {
+            "claim_id": "LOG_BUCKET_LOCK_IRREVERSIBLE",
+            "source_ids": [
+              "LOG_BUCKETS"
+            ],
+            "statement_sha256": "2cc9ec4d6a6ccd4aba1fca30304c6d1952a1405eb75dcfcd0296744ceb481e6a"
+          },
+          {
+            "claim_id": "POLICY_TROUBLESHOOTER_WORKLOAD_IDENTITY_LIMIT",
+            "source_ids": [
+              "POLICY_TROUBLESHOOTER"
+            ],
+            "statement_sha256": "64d85c608d805afcc4947a8f0ce247fd0b91a7c028716c4079b8a59b432b8f4c"
+          },
+          {
+            "claim_id": "SIMPLE_SIGNING_REQUIRED_FIELDS",
+            "source_ids": [
+              "SIGSTORE_SIMPLE_SIGNING"
+            ],
+            "statement_sha256": "f439dfa39c28ac2f7e10b8e1675c81112f160b120c2a32b2df07aa3a4678f16f"
+          },
+          {
+            "claim_id": "WIF_AVOIDS_SERVICE_ACCOUNT_KEYS",
+            "source_ids": [
+              "WIF_OVERVIEW"
+            ],
+            "statement_sha256": "1b7465aad8412ecb27bba996a10f8d77cbf88816bd6f149be60dea77c92ba008"
+          },
+          {
+            "claim_id": "WIF_DEFAULT_SUBJECT_TOKEN_AUDIENCE",
+            "source_ids": [
+              "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+            ],
+            "statement_sha256": "ed5054cd983d785a4040f0b3a8dda0c82a0dc1309889b0292c389a1701154410"
+          },
+          {
+            "claim_id": "WIF_DIRECT_KMS_API_SUPPORTED",
+            "source_ids": [
+              "FEDERATED_SERVICE_SUPPORT"
+            ],
+            "statement_sha256": "bfef3e3f1eb8a675976d56c09fb0fa3938918f32ea5690b7d35b6830a7043ede"
+          },
+          {
+            "claim_id": "WIF_DIRECT_RESOURCE_ACCESS_RECOMMENDED",
+            "source_ids": [
+              "CONFIDENTIAL_SPACE_RESOURCE_ACCESS"
+            ],
+            "statement_sha256": "0416320e616a24f81c71ff8a581d8697dae81a5def4b96a5e90a7b6aaf47a92b"
+          },
+          {
+            "claim_id": "WIF_GOOGLE_ATTESTATION_ISSUER",
+            "source_ids": [
+              "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+            ],
+            "statement_sha256": "4df9f320ae5d48c4a23cd5737907318c466ecf906320a70ead8f24ee7b552dce"
+          },
+          {
+            "claim_id": "WIF_POOL_ACTIVE_STATE",
+            "source_ids": [
+              "WIF_POOL_API"
+            ],
+            "statement_sha256": "267c7f2a3facfbd8f59b8e39317b3df91ed99b12d879b34f14c0d2456ef0043f"
+          },
+          {
+            "claim_id": "WIF_POOL_DISABLED_SEMANTICS",
+            "source_ids": [
+              "WIF_POOL_API"
+            ],
+            "statement_sha256": "2aaa245293201c0eb93d1e02d2b72fc762f9a5c67792da8f1a8431616efdcb6e"
+          },
+          {
+            "claim_id": "WIF_POOL_LIFECYCLE_METHODS",
+            "source_ids": [
+              "WIF_POOL_API"
+            ],
+            "statement_sha256": "7eed49d159c421da76a87725247273da76fb71e15a4ed343889cbacd38d528dc"
+          },
+          {
+            "claim_id": "WIF_PROVIDER_ACTIVE_STATE",
+            "source_ids": [
+              "WIF_PROVIDER_API"
+            ],
+            "statement_sha256": "8070323e80fa3d9f66a42e6306ead294b8fa903cb237e2f7537de96e39daffe3"
+          },
+          {
+            "claim_id": "WIF_PROVIDER_DISABLED_SEMANTICS",
+            "source_ids": [
+              "WIF_PROVIDER_API"
+            ],
+            "statement_sha256": "b506c315deaecf33a2da669260d7d51481e4847a7570303efbc1e9309a725371"
+          },
+          {
+            "claim_id": "WIF_PROVIDER_HAS_THREE_CONTROL_CLASSES",
+            "source_ids": [
+              "CONFIDENTIAL_SPACE_RESOURCE_ACCESS"
+            ],
+            "statement_sha256": "3411479078a67433d40124fe5e40cbf6a6be03842b9f51a25e520533a3d6eb70"
+          },
+          {
+            "claim_id": "WIF_PROVIDER_LIFECYCLE_METHODS",
+            "source_ids": [
+              "WIF_PROVIDER_API"
+            ],
+            "statement_sha256": "6c5e22f7cf24ec84da7af6f9f2effc5ce4512c2775d2feac4cbaf3ae7afa699c"
+          }
+        ],
+        "claim_keyset_sha256": "48643257a2bf0be14d7142ea2c16c11706f12681fa861400d3fb24620f9b7fbc",
+        "registry_sha256": "e3920af1668e1faed6b1a5331dde8907fe40f5add5b920e2e96d86fc5711bad2",
+        "source_bundle_locator": "external-recovery://fluencytracr/gcp-security-authority-source-snapshot-20260724T232044Z.zip",
+        "source_bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+        "source_count": 23,
+        "source_entries": [
+          {
+            "expected_source_sha256": "379f92dd14c86ee4d4323778dd6257c61ab3a8fa53f5b52d86ea7cfc272d9836",
+            "source_id": "BINARY_AUTH_ATTESTATIONS"
+          },
+          {
+            "expected_source_sha256": "3e43a1fff9b8a95cbd28f4d52bc1a0923efe3c019c1e17510e07bf3a361570df",
+            "source_id": "CLOUD_AUDIT_LOGS"
+          },
+          {
+            "expected_source_sha256": "6959cf9b97c69bdb86ca962506ecaf8306267abe24ba20414fcf794541672985",
+            "source_id": "CLOUD_HSM"
+          },
+          {
+            "expected_source_sha256": "613966170fde78e7b4ed5aafda456f48fd3f6c56f86a5c82baf753da28d42d5b",
+            "source_id": "CONFIDENTIAL_SPACE_RESOURCE_ACCESS"
+          },
+          {
+            "expected_source_sha256": "1607f7619adb0111cce778a44a2bbabaa7f475ded429652dd480897e8dac1b16",
+            "source_id": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+          },
+          {
+            "expected_source_sha256": "b998d60e620eedb37a03765f8a92e5bb7c1e2cf11208c25fc10eee22bc450bd6",
+            "source_id": "FEDERATED_SERVICE_SUPPORT"
+          },
+          {
+            "expected_source_sha256": "ff059478f182b3b9225dfd4035a85d1cd6a906b4e381975b46b85c867af53350",
+            "source_id": "HSM_ATTESTATION"
+          },
+          {
+            "expected_source_sha256": "f7909ca7c3e59f42e0c86b7c9e8dbf9b7fde3a1d51e99054431e94942eb12cbe",
+            "source_id": "IAM_DENY_OVERVIEW"
+          },
+          {
+            "expected_source_sha256": "475845749954148916003ab3da937119ed0593be5678c9f6be3e4f86261f0523",
+            "source_id": "KMS_ALGORITHMS"
+          },
+          {
+            "expected_source_sha256": "b876ee0cbd334cdc2f1580dae21bca8fd95bb62019de54fba65fe6c92f818c19",
+            "source_id": "KMS_AUDIT_LOGGING"
+          },
+          {
+            "expected_source_sha256": "47d21967f7b4a678ee887f754495987cd83fad06ed1d9b46abf5f3d3b0728ef5",
+            "source_id": "KMS_DIGITAL_SIGNATURES"
+          },
+          {
+            "expected_source_sha256": "e86bcaefa23c8d7c0080b87968bc2eb20f957947fff94c5c5b22de92acb9e7da",
+            "source_id": "KMS_KEY_ROTATION"
+          },
+          {
+            "expected_source_sha256": "2feaddf0492b302da8e776d2ab54856f1c3a4134a36535bc452b7aa3754c96f7",
+            "source_id": "KMS_KEY_VERSION_API"
+          },
+          {
+            "expected_source_sha256": "fad26d275d6ff06985da88ef118fb366db4fbe29049c2d0170e7cc2e5f143e6c",
+            "source_id": "KMS_PERMISSIONS_ROLES"
+          },
+          {
+            "expected_source_sha256": "b8dda79f68ba73a624289c5e96395939d6dd356fd0aa1d6976cf01bfa1da7eeb",
+            "source_id": "KMS_RESOURCE_HIERARCHY"
+          },
+          {
+            "expected_source_sha256": "e952d02d260415277652345bf2ed500d12484a3fd732ca0fc48798c6bf5c5c6c",
+            "source_id": "KMS_SEPARATION_OF_DUTIES"
+          },
+          {
+            "expected_source_sha256": "bb2f178abad58465018efffe139aef1ad594e13083363580786659988bca65fd",
+            "source_id": "LOG_BUCKETS"
+          },
+          {
+            "expected_source_sha256": "36559154e4bfccebefaf66b77a1a1832a68c9b2ebbf96485e858432e7df98efb",
+            "source_id": "LOG_BUCKET_API"
+          },
+          {
+            "expected_source_sha256": "eabdb15cdd29601ec46689486a564a750d8c37e480dcae7ce661487de1ddbda1",
+            "source_id": "POLICY_TROUBLESHOOTER"
+          },
+          {
+            "expected_source_sha256": "7e5f17e6932d24b791dc2dfcbc41e7b9865e35a9c6509e4aa4ea2a919595ecfb",
+            "source_id": "SIGSTORE_SIMPLE_SIGNING"
+          },
+          {
+            "expected_source_sha256": "7752c53ff8b54b3abca2113960889b470182a581d21517ea65eaebecb9e05c2d",
+            "source_id": "WIF_OVERVIEW"
+          },
+          {
+            "expected_source_sha256": "560a25d37e34c5acaa949d80edafe8e3249012827a4e92cb53bb37145687e52d",
+            "source_id": "WIF_POOL_API"
+          },
+          {
+            "expected_source_sha256": "5b732ae31e14da09407198ca17f41589632f6a37e0d5368934f57b8dd94f0351",
+            "source_id": "WIF_PROVIDER_API"
+          }
+        ],
+        "source_keyset_sha256": "dff0a7aecd1ce400d084202000aad1fa534b5d3f6dc8844acee5a3cc767c5f0e"
+      }
+    },
+    "revalidation_challenge": {
+      "challenge_id": "SECTION_7_4_INITIAL_COMPILE_SOURCE_REPLAY_20260726T072745Z",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "consuming_action_id": "SECTION_7_4_CONTRACT_COMPILATION",
+      "consuming_action_started_at": 1785050987,
+      "every_parent_and_section_7_4_entry_bound_to_challenge": true,
+      "expires_at": 1785051165,
+      "issued_at": 1785050865,
+      "retrieval_authentication": "HTTPS_SYSTEM_TRUST_AT_RETRIEVAL_PLUS_IMMUTABLE_GIT_COMMIT_PINS",
+      "retrieval_finished_at": 1785050985,
+      "retrieval_started_at": 1785050866,
+      "revalidation_finished_at": 1785050986,
+      "runtime_evidence": false
+    }
+  },
+  "recorded_source_state": "EXACT_PUBLIC_SOURCE_BYTES_REPLAYED_CAPABILITY_UNOBSERVED",
+  "retrieved_at": "2026-07-26T07:27:45Z",
+  "revalidated_at": "2026-07-26T07:29:46Z",
+  "schema_version": "GCP_ATTESTATION_RECEIPT_PROVIDER_SOURCE_EVIDENCE_V1",
+  "source_bundle": {
+    "byte_count": 2295351,
+    "contains_public_example_identifiers": true,
+    "external_locator": "external-recovery://fluencytracr/gcp-attestation-receipt-source-snapshot-20260726T072745Z.zip",
+    "repo_committed": false,
+    "runtime_admission": "PROHIBITED",
+    "sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a"
+  },
+  "source_registry_sha256": "fda800e66800833486b69bd2fcf6a3e94057a98e554e76f00e47c64c97468e35",
+  "sources": [
+    {
+      "bundle_path": "sources/01-TOKEN_CLAIMS.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-claims",
+      "snapshot_byte_count": 125421,
+      "snapshot_sha256": "2a3db56db9a5e0a38b73a23a4e3f469509cd61a2cd403326dbd270c47479ab5d",
+      "source_id": "TOKEN_CLAIMS",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/02-EXTERNAL_RESOURCES.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/connect-external-resources",
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/connect-external-resources",
+      "snapshot_byte_count": 293481,
+      "snapshot_sha256": "f6a169874f2eedde79881d2687386bf3fcb9b755be1a6b2a992b2de998e727f8",
+      "source_id": "EXTERNAL_RESOURCES",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/03-TOKEN_VALIDATION_FIELDS.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/confidential-computing/confidential-space/docs/reference/token-validation-endpoint-fields",
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/token-validation-endpoint-fields",
+      "snapshot_byte_count": 103543,
+      "snapshot_sha256": "969ff0268d9dc45f8b53bf0a00f0069c418c881faf66e57fae62d12955aa846d",
+      "source_id": "TOKEN_VALIDATION_FIELDS",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/04-CVM_ATTESTATION.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/confidential-computing/confidential-vm/docs/attestation",
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-vm/docs/attestation",
+      "snapshot_byte_count": 119050,
+      "snapshot_sha256": "0017e58c02305b5a3d2d4a8de5f1258ebbfbfca71783053ae76e082c35835464",
+      "source_id": "CVM_ATTESTATION",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/05-KMS_SIGNATURES.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/kms/docs/create-validate-signatures",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/create-validate-signatures",
+      "snapshot_byte_count": 455998,
+      "snapshot_sha256": "81658e155f5eb7c192067e684dc6efd6b53d0ff0ef01feb4ba8a4b454ade8198",
+      "source_id": "KMS_SIGNATURES",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/06-KMS_ALGORITHMS.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/kms/docs/algorithms",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/algorithms",
+      "snapshot_byte_count": 146773,
+      "snapshot_sha256": "8e994d44b7e7e08baef01689104ce3de973663dacba7b4296cb5fc2eea61e159",
+      "source_id": "KMS_ALGORITHMS",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/07-KMS_ASYMMETRIC_SIGN_REST.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/asymmetricSign",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/asymmetricSign",
+      "snapshot_byte_count": 158616,
+      "snapshot_sha256": "57de7a191799cc2c7520442345aa1f9ab39893f402a2ac16b54011e575e8ba1d",
+      "source_id": "KMS_ASYMMETRIC_SIGN_REST",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/08-KMS_GET_PUBLIC_KEY_REST.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/getPublicKey",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/getPublicKey",
+      "snapshot_byte_count": 156585,
+      "snapshot_sha256": "08699634782de45b9e913123235a6c8b8297a71fbb11e02df511c3f559387ee2",
+      "source_id": "KMS_GET_PUBLIC_KEY_REST",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/09-KMS_DATA_INTEGRITY.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/kms/docs/data-integrity-guidelines",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/data-integrity-guidelines",
+      "snapshot_byte_count": 136725,
+      "snapshot_sha256": "259a1d618d744a2a4df195d639ee774261f1028c4e2a78dba55014b1a29269ad",
+      "source_id": "KMS_DATA_INTEGRITY",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/10-KMS_AUDIT_LOGGING.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/kms/docs/audit-logging",
+      "resolved_url": "https://docs.cloud.google.com/kms/docs/audit-logging",
+      "snapshot_byte_count": 176778,
+      "snapshot_sha256": "d539557608d7cd3c0a48d4ec5d6ec2e54c8815c7ec5f1a09a458b319033460f8",
+      "source_id": "KMS_AUDIT_LOGGING",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/11-CLOUD_AUDIT_LOGS.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "requested_url": "https://cloud.google.com/logging/docs/audit",
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/audit",
+      "snapshot_byte_count": 189847,
+      "snapshot_sha256": "1f9a656a20b17bc54a8df053fb4f3be2290c62c8f389b98be8b186a4bebd1419",
+      "source_id": "CLOUD_AUDIT_LOGS",
+      "source_type": "PUBLIC_DOCUMENT_SNAPSHOT"
+    },
+    {
+      "bundle_path": "sources/12-GO_TPM_TEE_SERVER.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe",
+      "repository": "google/go-tpm-tools",
+      "repository_path": "launcher/teeserver/tee_server.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/teeserver/tee_server.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/teeserver/tee_server.go",
+      "snapshot_byte_count": 19859,
+      "snapshot_sha256": "bcb3b7f0bded9e47680e27b0492c1d38110e6f2e363bbc01d58404bb89a8ff6c",
+      "source_id": "GO_TPM_TEE_SERVER",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/13-GO_TPM_TEE_PROTO.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe",
+      "repository": "google/go-tpm-tools",
+      "repository_path": "launcher/teeserver/proto/teeserver.proto",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/teeserver/proto/teeserver.proto",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/teeserver/proto/teeserver.proto",
+      "snapshot_byte_count": 448,
+      "snapshot_sha256": "ed7210957c992e53b77d2afc01262926603408fb0c4092433e728bb385a45584",
+      "source_id": "GO_TPM_TEE_PROTO",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/14-GO_TPM_AGENT.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe",
+      "repository": "google/go-tpm-tools",
+      "repository_path": "agent/agent.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/agent/agent.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/agent/agent.go",
+      "snapshot_byte_count": 25733,
+      "snapshot_sha256": "6ff53523a9fea85c4a3e55413337685b02a143df7d67a1d670d30030744e6e0d",
+      "source_id": "GO_TPM_AGENT",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/15-GO_TPM_AGENT_TEST.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe",
+      "repository": "google/go-tpm-tools",
+      "repository_path": "agent/agent_test.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/agent/agent_test.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/agent/agent_test.go",
+      "snapshot_byte_count": 36851,
+      "snapshot_sha256": "e1ab46fa31e5aa233d98d0fdd0f5743fcd20d60a375a34be3f77fb99151bbe94",
+      "source_id": "GO_TPM_AGENT_TEST",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/16-GO_TPM_LAUNCHER_GO_MOD.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe",
+      "repository": "google/go-tpm-tools",
+      "repository_path": "launcher/go.mod",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/go.mod",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/go.mod",
+      "snapshot_byte_count": 5745,
+      "snapshot_sha256": "be5b93a92348b0d1947ba7562d67294ee4fcaa29a0add696e8cc14d880931278",
+      "source_id": "GO_TPM_LAUNCHER_GO_MOD",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/17-GO_TPM_EXPERIMENTS.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe",
+      "repository": "google/go-tpm-tools",
+      "repository_path": "launcher/internal/experiments/experiments.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/internal/experiments/experiments.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/internal/experiments/experiments.go",
+      "snapshot_byte_count": 1627,
+      "snapshot_sha256": "85138182e101e5c4cf6b2ce8587414c9ce166d754252ad0b8aab9101fa995430",
+      "source_id": "GO_TPM_EXPERIMENTS",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/18-GO_TPM_BC_EXPERIMENT.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe",
+      "repository": "google/go-tpm-tools",
+      "repository_path": "launcher/image/bc-guest/bcexperiment.json",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/image/bc-guest/bcexperiment.json",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tpm-tools/f6ae2007b74b38db68bb9b7d3c2a9e5378366fbe/launcher/image/bc-guest/bcexperiment.json",
+      "snapshot_byte_count": 160,
+      "snapshot_sha256": "063284a045c3b389012b6df5fa0bb4bfbc7fdfd4c787d7054fbfcae2331a163d",
+      "source_id": "GO_TPM_BC_EXPERIMENT",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/19-CS_LABELS.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "db25840c8cf6740cf26d286070077e7071631caf",
+      "repository": "GoogleCloudPlatform/confidential-space",
+      "repository_path": "server/labels/labels.go",
+      "requested_url": "https://raw.githubusercontent.com/GoogleCloudPlatform/confidential-space/db25840c8cf6740cf26d286070077e7071631caf/server/labels/labels.go",
+      "resolved_url": "https://raw.githubusercontent.com/GoogleCloudPlatform/confidential-space/db25840c8cf6740cf26d286070077e7071631caf/server/labels/labels.go",
+      "snapshot_byte_count": 415,
+      "snapshot_sha256": "5bc0baa4fea21a4a0b73768715aaecae857feb56041be35f1d8568df42ab9d2c",
+      "source_id": "CS_LABELS",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/20-CS_ATTESTATION_PROTO.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "db25840c8cf6740cf26d286070077e7071631caf",
+      "repository": "GoogleCloudPlatform/confidential-space",
+      "repository_path": "server/proto/attestation.proto",
+      "requested_url": "https://raw.githubusercontent.com/GoogleCloudPlatform/confidential-space/db25840c8cf6740cf26d286070077e7071631caf/server/proto/attestation.proto",
+      "resolved_url": "https://raw.githubusercontent.com/GoogleCloudPlatform/confidential-space/db25840c8cf6740cf26d286070077e7071631caf/server/proto/attestation.proto",
+      "snapshot_byte_count": 8126,
+      "snapshot_sha256": "6ff219d09d01371198c4e936b8713c93ec13425f17ff6c32a0a0aabb400cba24",
+      "source_id": "CS_ATTESTATION_PROTO",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/21-TDX_VERIFY.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b",
+      "repository": "google/go-tdx-guest",
+      "repository_path": "verify/verify.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/verify/verify.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/verify/verify.go",
+      "snapshot_byte_count": 64322,
+      "snapshot_sha256": "5b40f4b70df35a98de8a716d3bdea812fed5e5fcbedae790dfcd8c525da3b467",
+      "source_id": "TDX_VERIFY",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/22-TDX_VALIDATE.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b",
+      "repository": "google/go-tdx-guest",
+      "repository_path": "validate/validate.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/validate/validate.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/validate/validate.go",
+      "snapshot_byte_count": 15189,
+      "snapshot_sha256": "7b2216443ef55fef3b92ada6db72b2fd260349c818f0abaef0bc2e7adf953252",
+      "source_id": "TDX_VALIDATE",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/23-TDX_CCEL.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b",
+      "repository": "google/go-tdx-guest",
+      "repository_path": "rtmr/ccel.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/rtmr/ccel.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/rtmr/ccel.go",
+      "snapshot_byte_count": 3919,
+      "snapshot_sha256": "3753722629b2055de238361bde566da2554486bb3a532f8945777f7d39f5b4db",
+      "source_id": "TDX_CCEL",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/24-TDX_CLIENT_LINUX.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b",
+      "repository": "google/go-tdx-guest",
+      "repository_path": "client/client_linux.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/client/client_linux.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-tdx-guest/ffb0869e6f4d355dd34ccfdff8e989c94cf7a59b/client/client_linux.go",
+      "snapshot_byte_count": 4266,
+      "snapshot_sha256": "650f707d152f5dc39bcb64fa18aff33b38ba6abff3859381dc64f2fa8400761b",
+      "source_id": "TDX_CLIENT_LINUX",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/25-EVENTLOG_CEL.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "af9e78c4d692fea3173c07517cf06aa40422643d",
+      "repository": "google/go-eventlog",
+      "repository_path": "cel/canonical_eventlog.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-eventlog/af9e78c4d692fea3173c07517cf06aa40422643d/cel/canonical_eventlog.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-eventlog/af9e78c4d692fea3173c07517cf06aa40422643d/cel/canonical_eventlog.go",
+      "snapshot_byte_count": 14246,
+      "snapshot_sha256": "e28bc01e63c714edc98ba05a8e621d6dcedb444e644c5ede52d04aef1c3a514c",
+      "source_id": "EVENTLOG_CEL",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/26-EVENTLOG_RTMR.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "af9e78c4d692fea3173c07517cf06aa40422643d",
+      "repository": "google/go-eventlog",
+      "repository_path": "register/rtmr.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-eventlog/af9e78c4d692fea3173c07517cf06aa40422643d/register/rtmr.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-eventlog/af9e78c4d692fea3173c07517cf06aa40422643d/register/rtmr.go",
+      "snapshot_byte_count": 2092,
+      "snapshot_sha256": "632875a186071f6999d9f34be502c2ebda2ac79dcfb389bc58ef5a22cb4ff6fb",
+      "source_id": "EVENTLOG_RTMR",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/27-EVENTLOG_CCEL_REPLAY.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "af9e78c4d692fea3173c07517cf06aa40422643d",
+      "repository": "google/go-eventlog",
+      "repository_path": "ccel/replay.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-eventlog/af9e78c4d692fea3173c07517cf06aa40422643d/ccel/replay.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-eventlog/af9e78c4d692fea3173c07517cf06aa40422643d/ccel/replay.go",
+      "snapshot_byte_count": 2417,
+      "snapshot_sha256": "252c15e487bc0cb17612e1421bb1e441d91f173489121a16a1c7204a0adc73d0",
+      "source_id": "EVENTLOG_CCEL_REPLAY",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/28-CONFIGFS_REPORT.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "b4b5b84fdcbc0a84e0272c48ab39a32906898d3c",
+      "repository": "google/go-configfs-tsm",
+      "repository_path": "report/report.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-configfs-tsm/b4b5b84fdcbc0a84e0272c48ab39a32906898d3c/report/report.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-configfs-tsm/b4b5b84fdcbc0a84e0272c48ab39a32906898d3c/report/report.go",
+      "snapshot_byte_count": 7318,
+      "snapshot_sha256": "32f883aaf751f6d364517a25fe192db1e09b332bd4ac5325ebe6d30eaccda990",
+      "source_id": "CONFIGFS_REPORT",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    },
+    {
+      "bundle_path": "sources/29-CONFIGFS_LINUXTSM.snapshot",
+      "classification": "PUBLIC_SOURCE_NOT_RUNTIME_EVIDENCE",
+      "commit": "b4b5b84fdcbc0a84e0272c48ab39a32906898d3c",
+      "repository": "google/go-configfs-tsm",
+      "repository_path": "configfs/linuxtsm/linuxtsm.go",
+      "requested_url": "https://raw.githubusercontent.com/google/go-configfs-tsm/b4b5b84fdcbc0a84e0272c48ab39a32906898d3c/configfs/linuxtsm/linuxtsm.go",
+      "resolved_url": "https://raw.githubusercontent.com/google/go-configfs-tsm/b4b5b84fdcbc0a84e0272c48ab39a32906898d3c/configfs/linuxtsm/linuxtsm.go",
+      "snapshot_byte_count": 2276,
+      "snapshot_sha256": "2959613c5184299f9d0f3971706faeded34ba10b9c092fdb6ae29ffb78db9125",
+      "source_id": "CONFIGFS_LINUXTSM",
+      "source_type": "IMMUTABLE_GIT_BLOB"
+    }
+  ]
+}
