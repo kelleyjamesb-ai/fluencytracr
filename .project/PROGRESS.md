@@ -2,32 +2,24 @@
 
 ## Current Session
 
-- Section 7.4 implementation completed locally on 2026-07-25 from merged
-  `main` commit `4b39b30e7afeacdb034f9cba02ed4604ee7f5929` on branch
-  `codex/gcp-attestation-receipt-section-7-4-clean`. PR #442 currently points
-  to earlier commit `335d7892c2429eb538a1a6a4a3829963b4d32c41`; a corrective
-  local tree closes replay-receipt provenance and clean-CI structural coverage,
-  has passed verification, and awaits renewed exact-tree review before fresh
-  commit/push authorization. The
-  human-created queue item `gcp-attestation-receipt-section-7-4` remains the
-  sole active item. The approved OpenSpec now produces a docs-only 116-node,
-  9-selector, 64-composition machine contract; 42 exact replay kinds; 29
-  Section 7.4 public/immutable sources and 42 claim windows; inherited replay
-  of 55 sources and 82 claims; per-entry 84-source/124-claim revalidation;
-  strict canonicalization, OIDC RS256, TDX quote-policy/continuity, KMS
-  P-256/CRC/name/HSM/DER, opaque-interface, expected-context, terminal,
-  retention, replay, privacy, and no-authority validators; and 44 dedicated
-  tests. Verification passed 108 focused Section 7.1-7.4 tests, 384 full tests
-  with 3 expected skips, clean-CI simulation with 3 pass/1 expected archive
-  skip, exact local source replay, strict OpenSpec, V1 governance,
-  docs sweep, bootstrap, Python compilation, and diff checks. Exact source
-  replay is bounded to archived bytes/claim windows plus
-  pinned reviewed interpretation; the launcher capability remains
-  source-code/test-only and runtime-unobserved. Prior implementation reviews
-  returned GO; the corrective tree requires renewed final review. Every approval list
-  remains empty and runtime authority remains held. No live GCP, credentials,
-  signing, deployment, qualification, persistence, model execution, customer
-  data, or Sections 7.5-7.8 implementation occurred or is authorized.
+- Section 7.4 closed on 2026-07-26. Corrective commit
+  `637e84f9e45f7cf31345eb7f316e5056a01e0cdd` and PR #442 merged normally as
+  `72bc5f36227af3752fa5ab3a14cf588eeb44a271`; the merge tree exactly matched
+  final CODE/BUG/ADVERSARIAL-reviewed tree
+  `defc07330eeb3d8fe32f13c4f2f322b0e3376e19`, and every current-head PR check
+  passed. The docs-only contract contains 116 nodes, 9 selectors, 64
+  compositions, 42 exact replay kinds, 29 Section 7.4 sources/42 claims,
+  inherited replay of 55 sources/82 claims, and per-entry 84-source/124-claim
+  revalidation. Final verification passed 44 dedicated tests, 108 focused
+  Section 7.1-7.4 tests, 384 full tests with 3 expected skips, clean-CI
+  simulation with 3 pass/1 expected archive skip, exact local source replay,
+  strict OpenSpec, V1 governance, docs sweep, bootstrap, Python compilation,
+  and diff checks. Exact source replay remains bounded to archived bytes and
+  reviewed claim windows; the launcher capability remains source-code/test-only
+  and runtime-unobserved. Every approval list remains empty and runtime
+  authority remains held. No live GCP, credentials, signing, deployment,
+  qualification, persistence, model execution, customer data, or Sections
+  7.5-7.8 implementation occurred or is authorized. No queue item is active.
 - Sections 7.2 and 7.3 of the canonical GCP runtime qualification plan are
   merged to `main`: Section 7.2 PR #439 as `16d11fcf205f568ae14e3baf8be911c4c650f779`
   and Section 7.3 PR #440 as `df47d54f643ad7ba66b65b2ff9713a6f7f079e86`.
@@ -3507,20 +3499,23 @@
 
 ## Blockers
 
-- No Section 7.3 closeout blocker remains: PR #441 merged normally as
-  `4b39b30e7afeacdb034f9cba02ed4604ee7f5929`, and all post-merge workflows
-  passed. Section 7.4 is now active as a docs-only contract slice; runtime
-  qualification and authority remain held.
+- No Section 7.4 closeout blocker remains: PR #442 merged normally as
+  `72bc5f36227af3752fa5ab3a14cf588eeb44a271`, its merge tree exactly matched
+  reviewed tree `defc07330eeb3d8fe32f13c4f2f322b0e3376e19`, and all current-head
+  checks passed. Runtime qualification and authority remain held.
 - No current blocker for the PR review gate repair slice. Full backend CI passed locally on 2026-06-12.
 
 ## Next Step
 
-- Complete renewed exact-tree CODE/BUG/ADVERSARIAL review for the corrective
-  Section 7.4 tree, then request fresh authorization to commit and push it to
-  PR #442. Follow normal branch policy without bypass. Keep runtime
-  authority held; do not perform
-  live GCP access, credentials, signing, deployment, qualification, persistence,
-  model execution, or Sections 7.5-7.8 work.
+- Before any Section 7.5 implementation, prepare a bounded readiness packet:
+  freeze scope/non-goals, classify every trust root and derived field, map the
+  dependency/hash graph, enumerate clean/archive/live environments, define the
+  adversarial mutation and coordinated-reseal matrix, bind each requirement to
+  a deterministic test, estimate cost, and state redesign stop conditions.
+  Review that packet before coding. A human must create the Section 7.5 queue
+  item before activation. Keep runtime authority held; do not perform live GCP,
+  credentials, signing, deployment, qualification, persistence, model
+  execution, or Sections 7.5-7.8 implementation.
 - Review/commit/PR the Glean dogfood BigQuery adapter slice. Next bounded step should be an operator path that posts the generated aggregate payloads into a running local backend and opens the Workspace on the refreshed evidence, still without raw rows, identifiers, customer-facing economics, ROI proof, causality, or person-level analysis.
 - AI Value Platform North Star: the VBD canon was amended 2026-06-11 with human approval — Depth = embeddedness of AI in repeatable workflow behavior (aggregate integration signals only); the tool/surface repertoire construct is renamed Repertoire and lives under Breadth's coverage views. Canon lives in `docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md` (decision note included) and `docs/agent/CLAUDE_AI_VALUE_NORTH_STAR_PROMPT.md`; the data boundary schema/fixture/validator/tests are aligned. FluencyTracr core's V4 Depth Repertoire contract is intentionally untouched. Do not "correct" Depth back to repertoire.
 - AI Value Platform North Star: the Value Evidence Case contract slice is complete (TDD, contract before UI) — schema `value-evidence-case.schema.json`, seeded Customer Support fixture, engine validator/builder `shared/src/aiValueEngine/valueEvidenceCase.ts` with fail-closed evidence-ladder gating (missing/rejected outcome evidence holds value language; SUBMITTED stays directional pending human acceptance; SUPPORTED stays caveated and non-causal; STRONG fails closed pending a governed evidence design), CLI `validate_ai_value_evidence_case.mjs`, tests, and package scripts. Next prescribed work per `docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md`: backend object-type registration/persistence for `value_evidence_case` and client-facing Workspace presentation, or the retest-result object — choose from observed review gaps; no ROI proof, causality, person-level data, or customer-facing economic output.

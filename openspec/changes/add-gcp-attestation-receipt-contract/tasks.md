@@ -23,8 +23,8 @@
 - [x] 4.1 Complete contract/source/vector/verifier/test work, then update `ATTRIBUTION.md`, queue, and progress; runtime authority and Sections 7.5–7.8 remain held.
 - [x] 4.2 Verify that no live token/JWKS/quote/collateral/key/signature/receipt/audit/GCP evidence, no 7.5 transport/storage implementation, no 7.6 ledger implementation, and no 7.7/7.8 reconciliation/qualification was performed.
 - [x] 4.3 After every file mutation, run focused Section 7.1–7.4 tests, strict OpenSpec, docs/governance gates, full applicable suite, compile checks, and diff checks on the exact final tree.
-- [ ] 4.4 Obtain independent exact-final-tree CODE/BUG/ADVERSARIAL GO after 4.3 and resolve every material finding; any fix requires renewed affected checks/review.
-- [ ] 4.5 Commit, push, open a separate PR, and merge only with fresh action-specific authorization and normal branch policy.
+- [x] 4.4 Obtain independent exact-final-tree CODE/BUG/ADVERSARIAL GO after 4.3 and resolve every material finding; any fix requires renewed affected checks/review.
+- [x] 4.5 Commit, push, open a separate PR, and merge only with fresh action-specific authorization and normal branch policy.
 
 ## Explicitly deferred scope (not completion tasks)
 
