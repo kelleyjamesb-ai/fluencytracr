@@ -1,0 +1,2256 @@
+{
+  "applicability_registry_sha256": "4127243f164ce5fbcf35df31069fa593f12dd2a935a5a748b3140a27aaf7c675",
+  "authority_effect": "NONE",
+  "authorization_effect": "NONE_DOCS_ONLY",
+  "claim_count": 42,
+  "claim_registry_sha256": "45b178a04d866b5ba7c8fe49528b00765d779564b342cc268e16f2e9f636f16e",
+  "claim_revalidation_entries": [
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "406fc920d5f8a97fe8a201cfe704a5671db0f5cfbfaf74f2db8fb852a1336830",
+      "claim_id": "GCP_C3_CPU_PLATFORM",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CPU_PLATFORMS_2026_07_24"
+      ],
+      "statement_sha256": "6868cc4b52127da2c36e7801105101c477637fe815a2a0340820b6736c13a4b7"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "fa412f4fb8208ee877c0d96afc15cbe128c6441a78be625d8c6c11d36f3e891d",
+      "claim_id": "GCP_C3_STANDARD_4_MACHINE_TYPE",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_C3_MACHINE_TYPES_2026_07_24",
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "4001ef2eeb9ffd752b364f0b471c3689eeb43deb849b7000cd24cd55f1edf9c7"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f0121737d83801bd8945554ca39fdf166c6b62a8907e49a260502688edb8fecd",
+      "claim_id": "GCP_C3_TDX_LIVE_MIGRATION",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "b91ec672b8dc06271e08a5e4ab5788a7c3f08e2d5795d0199a6bc900ae0852ac"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "d9e192cc0531b2b3bc6665901d0ac861d0a3c283dbb63f4808aef47a4be0637c",
+      "claim_id": "GCP_C3_TDX_MACHINE_SUPPORT",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "a563ef9eb5a4fae8a099829702d588f6d9b96db3e4020a59aaadd4f87ef839f0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "8df7e526cf9eab6165d978f315970f9a33a5f4d813dc1f447e0309ae1c0f64c5",
+      "claim_id": "GCP_C3_TDX_ZONE_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "0d362355764a87b730c47957421495eb7a916c6d43a4b68470e2fd89fa60c162"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f84c84044b443906a7783a52a6c492b835d0f5a78672ba0c009e1e123e429816",
+      "claim_id": "GCP_COMPUTE_INSTANCE_FIELD_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+        "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+      ],
+      "statement_sha256": "7768b636f836fc0918d493a9d081887a7e78a0cb004f4bfc7d748337555872c1"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "7a4dbdc318fb994a43c1fea7c8aa93ffc20207c07b11d7dcb9b2b1f146ad4f18",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+      ],
+      "statement_sha256": "2a1f6d1c0b64436d95cc7fb4007c247b2b67914f00cfe78c48592eb18c355205"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "08f2ff82150dbbada3b0fce25492cf135e2c8d78782812f72bad769a9c1773fc",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+      ],
+      "statement_sha256": "d75a1e55b8c62ffe504e4bbac157af625570ec5ac64bb745f3c741ace7b70d8a"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "6dae8f9b4f48fa0b7913a8576072fcee3d29d277737ad0aeaf10bee97132ca62",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+      ],
+      "statement_sha256": "a39c52160494c82f2a4778ee64ddfc3254b633f0e8874f5c7ee9d7af6f90f141"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "763f4a01f40b8184c2b1d3914f9e0b47a6c09bdf4dad80bc96040923e97e1f9e",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "statement_sha256": "32deb445f413179da9a40bc91ffb5f990b7558b2821c0cfea5087400aa215336"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3c02e7acc9642b82c384c23433e51bfc576707c3f72c5ef7fa5b0d7e8b2a8f90",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+      ],
+      "statement_sha256": "98f128180073e3b89e7f75050940ad3f79866160cedecc0b2935376f7f8fb811"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "7c0412b204ba755146eb63757b237a9d57a53144f559f61bd5c4e4808ea8d31c",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+      ],
+      "statement_sha256": "99bfec5170e08e7efa666c46908d9dd59c28daaef8386cf3cb3fb68d76646015"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3fc36f855b4672e3064e421a59a7ce836c9ef51b56297ec43d7459088d6c8593",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+      ],
+      "statement_sha256": "a5d2a22a1d03b6b9902fdf90c4a5b9c287cc325fd7aabbc6b0f82d04343845e2"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3b5e02d2aacc79b09dee282bb9a09bfedbb2fc1fa6ee70829cfd2b3809f5503b",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+      ],
+      "statement_sha256": "b7490c1e9d609a148b421dd83eb28e4fac072ec49602f8784d6298cfb7743120"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "e0a6753a5e729b07bc17f2e7b0ce59020ea4c6b9788b06afc7f9cca3416e4584",
+      "claim_id": "GCP_HOST_EVENT_CONTROL_SET",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_HOST_EVENTS_2026_07_24"
+      ],
+      "statement_sha256": "e779bfd968ff8e002b06953e9c77ffabe9feda133cd6faeea424b22500efa660"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "766fbcef92709903fd076e093781dcc0a5eb225fe480ecc45684acb6e218647d",
+      "claim_id": "GCP_SOLE_TENANT_SERVER_ID",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_SOLE_TENANCY_2026_07_24"
+      ],
+      "statement_sha256": "a28c7007c842a0dcccaf8f12e6a35f9f9b2fcfd76149539fba6ff7722b179895"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "ab913c1da29cfcc3e24216938d207fe20d55b0da57cef84b7cd67a5bcd4ed230",
+      "claim_id": "GCP_TDX_ATTESTATION_SOURCE",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "statement_sha256": "a72af6154cc1d7d09fd57091c28026c48adab982938676e88d60284f21aa1de0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "040caacb333e7cee418cf9354cbe55ae026afe5d4f79fe95797468369fdde0e0",
+      "claim_id": "GCP_TDX_SOLE_TENANCY",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "1f305605c88cfdf63126ebda83159946d6f806a97a519e02309c4fcd5cbd5488"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "a91a2a06b87628e0a2f5328047de4ab57c43cb7e555027d0b21a160945217c6c",
+      "claim_id": "GCP_TDX_USERSPACE_MEASUREMENT",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "statement_sha256": "e0a86d6d1add0633dbc66288856b7b8e98d93347363db4495b021f6c6608709e"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "98102ebb2a9dc306ac847115c81b9663879f8870d436d073fd0e9edd82d82cd4",
+      "claim_id": "GCP_TEE_ENV_SUFFIX_GRAMMAR",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "statement_sha256": "3dca91b757b5cc353eeb2ae541d2236670cee078d098f931475c9452c2f9c9f0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "29cb40a1ed2107ca4900514751fa99ebfb71136a6521d5d0460913920e57993d",
+      "claim_id": "GCP_C3_CPU_PLATFORM",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CPU_PLATFORMS_2026_07_24"
+      ],
+      "statement_sha256": "6868cc4b52127da2c36e7801105101c477637fe815a2a0340820b6736c13a4b7"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "204bf855e3518114b6a3d2877503f4bc0ce079651b9fa1e5f212908c44cc787e",
+      "claim_id": "GCP_C3_STANDARD_4_MACHINE_TYPE",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_C3_MACHINE_TYPES_2026_07_24",
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "4001ef2eeb9ffd752b364f0b471c3689eeb43deb849b7000cd24cd55f1edf9c7"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "ad205c6ac373e7c0563083430cdbb394c9f450ff29ac2ae056600f9ad8c78c08",
+      "claim_id": "GCP_C3_TDX_LIVE_MIGRATION",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "b91ec672b8dc06271e08a5e4ab5788a7c3f08e2d5795d0199a6bc900ae0852ac"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "9a77e9c3ce7d6fb55837d55e96c648bb7a9ea3fd7ad5ae026714ef1204c0fc76",
+      "claim_id": "GCP_C3_TDX_MACHINE_SUPPORT",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "a563ef9eb5a4fae8a099829702d588f6d9b96db3e4020a59aaadd4f87ef839f0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "87733a625c1a1b23bce872fcd8becae4c9c47ade663e08d479ef4c32455513ba",
+      "claim_id": "GCP_C3_TDX_ZONE_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "0d362355764a87b730c47957421495eb7a916c6d43a4b68470e2fd89fa60c162"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "d97d6b399beeb572af010916e99ba64406506e21dcf76a36c41b2b7be69387ac",
+      "claim_id": "GCP_COMPUTE_INSTANCE_FIELD_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+        "GCP_COMPUTE_DISCOVERY_V1_2026_07_24"
+      ],
+      "statement_sha256": "7768b636f836fc0918d493a9d081887a7e78a0cb004f4bfc7d748337555872c1"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "c7563e49d429f22d3500c6840fdd374a4a69e381780fd8f684177130a927d598",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_CEL_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24"
+      ],
+      "statement_sha256": "2a1f6d1c0b64436d95cc7fb4007c247b2b67914f00cfe78c48592eb18c355205"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "e9b4ed7bbaa4bb8842e8914b16fbfab831d0642ee7359607d8d8ad4fb537faef",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_DEPLOYMENT_CONTROL_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24"
+      ],
+      "statement_sha256": "d75a1e55b8c62ffe504e4bbac157af625570ec5ac64bb745f3c741ace7b70d8a"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "abfba8af0629a9f4750d26ab0b3764b52bc75499f4af5b6d7ccb286652fd1b70",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24"
+      ],
+      "statement_sha256": "a39c52160494c82f2a4778ee64ddfc3254b633f0e8874f5c7ee9d7af6f90f141"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "13ef44afac1d9ededa84a74aaa8d0900f6d03242aac0db84c660556748c7169a",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_METADATA_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "statement_sha256": "32deb445f413179da9a40bc91ffb5f990b7558b2821c0cfea5087400aa215336"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "8ae56f4346ef6e441b33311a60a8d0acd679e0010ca9b6ecec1fff1f5a993c87",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_RAW_TOKEN_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24"
+      ],
+      "statement_sha256": "98f128180073e3b89e7f75050940ad3f79866160cedecc0b2935376f7f8fb811"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "6cef7fa06fae18b10c4de0180fd28493f578ef316423af056c78b44c13b0901a",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_ROLE_MODEL",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24"
+      ],
+      "statement_sha256": "99bfec5170e08e7efa666c46908d9dd59c28daaef8386cf3cb3fb68d76646015"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "fa94cda9d39d077759f4690da40a74a303f94e4eca48a704ab2075c9903371ab",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24"
+      ],
+      "statement_sha256": "a5d2a22a1d03b6b9902fdf90c4a5b9c287cc325fd7aabbc6b0f82d04343845e2"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "811b0bcd3bf306bf9d65746c40897deef1acbed4f3bc308c95c85f3e3126abce",
+      "claim_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_CONTROL_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24"
+      ],
+      "statement_sha256": "b7490c1e9d609a148b421dd83eb28e4fac072ec49602f8784d6298cfb7743120"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3061f59d628a75cb01bf8f69b5fcecd24e2985089688d2d8fc76c40687c29353",
+      "claim_id": "GCP_HOST_EVENT_CONTROL_SET",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_HOST_EVENTS_2026_07_24"
+      ],
+      "statement_sha256": "e779bfd968ff8e002b06953e9c77ffabe9feda133cd6faeea424b22500efa660"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "0cbd2b6ca15f67f822c49b508742628ed3a2edb77e8ffc7399de363ec44eab0e",
+      "claim_id": "GCP_SOLE_TENANT_SERVER_ID",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_SOLE_TENANCY_2026_07_24"
+      ],
+      "statement_sha256": "a28c7007c842a0dcccaf8f12e6a35f9f9b2fcfd76149539fba6ff7722b179895"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "43eb20a4c910809a2cc02c40ba551a9f1027c40a9675ba8164650221dac9e915",
+      "claim_id": "GCP_TDX_ATTESTATION_SOURCE",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "statement_sha256": "a72af6154cc1d7d09fd57091c28026c48adab982938676e88d60284f21aa1de0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "581afbba08d1bae11d0bc100423be7ad350f5040cbae9a0082f0d549fadd85cc",
+      "claim_id": "GCP_TDX_SOLE_TENANCY",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24"
+      ],
+      "statement_sha256": "1f305605c88cfdf63126ebda83159946d6f806a97a519e02309c4fcd5cbd5488"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "105fc44fbf607b3706faf8554e63e0166b530925f03ce7c89b2e9ea4417a4f24",
+      "claim_id": "GCP_TDX_USERSPACE_MEASUREMENT",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24"
+      ],
+      "statement_sha256": "e0a86d6d1add0633dbc66288856b7b8e98d93347363db4495b021f6c6608709e"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "994f24f97045b424b9402d3ee74800b94ca5ceb5784e754912e20c99ed0bf5b2",
+      "claim_id": "GCP_TEE_ENV_SUFFIX_GRAMMAR",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24"
+      ],
+      "statement_sha256": "3dca91b757b5cc353eeb2ae541d2236670cee078d098f931475c9452c2f9c9f0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f80b29c074fb68e6d8d558f84ed7550d62df8e7c8e2c3b4419806d1ff710d7f4",
+      "claim_id": "AUDIT_ADMIN_ACTIVITY_ALWAYS_WRITTEN",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CLOUD_AUDIT_LOGS"
+      ],
+      "statement_sha256": "6b60545e28fb1843e957df3ca30cdc79fa0d5eed2abd9d0c3c8cefab40531f7e"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "909cb7ad198488d921a464f02dfbba0126097d91f0e2ffaca68032175b14ad7f",
+      "claim_id": "AUDIT_DATA_ACCESS_DISABLED_BY_DEFAULT",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CLOUD_AUDIT_LOGS"
+      ],
+      "statement_sha256": "bcf47bbd15b5847e7601040052f8f9b4c4234f2e4a736c4c6040405d82ecbeae"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3aebecf34acd7d0ee8dccb3578facf3aab7507a27f2a54ea0a174a72388fc02d",
+      "claim_id": "AUDIT_POLICY_DENIED_EXCLUDABLE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CLOUD_AUDIT_LOGS"
+      ],
+      "statement_sha256": "7ebc5d6f61a01e337a7ebc061c4c128f3c3f2f3e0bfb13cd97e1cac72fe9c736"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "4d263bedc53c9332118f968890a1694dbbec7a53ceb12dd2ffc926be057fbef0",
+      "claim_id": "BINARY_AUTH_SIGNS_UNIQUE_IMAGE_DIGEST",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "BINARY_AUTH_ATTESTATIONS"
+      ],
+      "statement_sha256": "a4924276d46bcccb327a148ce2deda8024d4f9091e9cd30890706dfc93eb087c"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "cef262bc606724c9c3aa372af541a8fadf436d0cbd25504b5d28b231eee916f6",
+      "claim_id": "CLOUD_HSM_ASYMMETRIC_SIGNING_SUPPORT",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CLOUD_HSM"
+      ],
+      "statement_sha256": "97bb907ac6d17a3cbd03a3416179595d18658efc1c37cc994cbe2eaa97065a83"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "5accf11c6e9a4e97262dab24f281a04a8c15c0faa2cbc5c592c136f3b8cf6c94",
+      "claim_id": "CLOUD_HSM_HARDWARE_LEVEL",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CLOUD_HSM"
+      ],
+      "statement_sha256": "81547c47667a405d8ec85e8fb4ce9022ed55a876ef92c7deb693c9d30c0bc7f4"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f292a84b483e2962cc6ae1a44296e28f1e6e065953349b1e279301b79841a820",
+      "claim_id": "CONFIDENTIAL_SPACE_DIGEST_SIGNATURE_MODE_NONCOEXISTENCE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+      ],
+      "statement_sha256": "d2cf538074b34607567f8d25478525d3703f71cd32814ef52aeed65930d58eb3"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3632394d65defd5b19298600885921e1b6fbe3f3c54290b5456b0f63bb47a979",
+      "claim_id": "CONFIDENTIAL_SPACE_IMAGE_SIGNATURE_ALGORITHM",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+      ],
+      "statement_sha256": "ad3bd816df8172a5b555aebc1a3b16cc251233eb16263b8fcc16dcbb754ad3cd"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f79de1d1d77ac58c8c3da1e96023b80525d033f1117816483974757c719f08db",
+      "claim_id": "HSM_GENERATED_KEY_NEVER_OUTSIDE_HSM",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "HSM_ATTESTATION"
+      ],
+      "statement_sha256": "e8280c7b74d12c043339c92ed2a64d56095ff426e921abe83e7f2735384ca636"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "29fe3bccd8ce8fb10f189c142bb875eb9a1d2064ac448eda26f45c04e75a6ad2",
+      "claim_id": "HSM_KEYS_NOT_EXTRACTABLE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "HSM_ATTESTATION"
+      ],
+      "statement_sha256": "1670027094d0e366872921610b5332f0121dac5e12b085ce7f4cbdf681a4d968"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3cec62b28574c22c6072d02637d389b64305d9f37b6a36ad774fd8642dc5ad85",
+      "claim_id": "IAM_DENY_PRECEDES_ALLOW",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "IAM_DENY_OVERVIEW"
+      ],
+      "statement_sha256": "fcb3173771428eede6662afdbe64ab77fffe8fd42f546c86391f1e7fa735f7c7"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f0084430e871b88a0405d9966beee7781a159625fa2676bcff5b4863bff34093",
+      "claim_id": "IAM_DENY_UNKNOWN_FAILS_DENIED",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "IAM_DENY_OVERVIEW"
+      ],
+      "statement_sha256": "beb542f19de525598e5af28f8f6eadf2cb308f9d2f3cddb72d80a6a04fc78c91"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "2475ad3bbc67c86dab2eadc04a96ba0ecd112e166bf2397a0330fb600855662a",
+      "claim_id": "KMS_ACCESS_APPLIES_TO_ALL_ENABLED_VERSIONS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_RESOURCE_HIERARCHY"
+      ],
+      "statement_sha256": "a21ffb51d5534e8a89f6bd12ac8669850f4684048a7a8bb676a96a0ebe12f1eb"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "b6bfd39f1944686899f1ab9cdebab2027d5d822c05cdc7d059635c565284a221",
+      "claim_id": "KMS_ASYMMETRIC_AUTOMATIC_ROTATION_UNSUPPORTED",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_KEY_ROTATION"
+      ],
+      "statement_sha256": "15d52649837f516140a7c9aa443e1a8def1cab356c95fd2a1f7f62f69a86c3f5"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "5b7f4e0ed61778e017a609406d20c403eb68a1290565c8a11cca89ccf0289145",
+      "claim_id": "KMS_ASYMMETRIC_ROLLOVER_REQUIRES_PUBLIC_KEY_DISTRIBUTION",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_KEY_ROTATION"
+      ],
+      "statement_sha256": "51729f8a0c9eb6d6d370ae2366e9f77bb45a8d69b72efa0da76a031b6833a3f6"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3470c86c787cac156c6510e089fa64d597a17dea38988278e98b7dbe1e48b60d",
+      "claim_id": "KMS_ASYMMETRIC_SIGN_IS_DATA_ACCESS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement_sha256": "5527b0915c0620768dfc1e8a91701ba8fc20ee4d57507185b35370b9546a4cc3"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "0ef310fa8b226ae5accf2da58bf2967e35de7fd936679d3fd30f36bf69237ad7",
+      "claim_id": "KMS_ASYMMETRIC_SIGN_PURPOSE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_ALGORITHMS"
+      ],
+      "statement_sha256": "289d82c7bd753b7cf7d805f1c06279dc4e73ade295e49582a35dcf1d807d872f"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3ffb12aa0f2ec7e0ae75aa4e6703a5a36fec2636f9c4754a9dc9f667ff74d287",
+      "claim_id": "KMS_EC_P256_SHA256_ALGORITHM",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_ALGORITHMS"
+      ],
+      "statement_sha256": "56518cab16f939771e420422d22e7146e6e31d0656aa877308f789abfe8767be"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "b23be432ecbaf52e054caff506d29f8992534b0d60e1f41516fa9fd1236419d0",
+      "claim_id": "KMS_ENABLED_VERSION_CAN_SIGN",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_KEY_VERSION_API"
+      ],
+      "statement_sha256": "aaa8e747077d091d7435d72e1d3dbad0384e4432638e21c52cb3cdac47587878"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "14fea4b697eecff19abb6eb2236716f2e65452775442c9446417e8fae9088a5c",
+      "claim_id": "KMS_IAM_GET_POLICY_METHOD",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement_sha256": "4d7ad7b6fab1209f7086184d4d2f8f6fe203f8673cf4bd56dd34f6a0412fefa3"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "8161dfccc4cf0c3d368b9bff3977d652e364b6f07172fe00e02b9c1e887a0925",
+      "claim_id": "KMS_IAM_SET_POLICY_METHOD",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement_sha256": "a5a6156097d91e2f728e086c477c8dbb48274e471f745d37d93fb9352117a943"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "50a9bdc6dbe4a13bf94de735c1a8684e76e5122de3474beed098bb35af717545",
+      "claim_id": "KMS_KEY_LIFECYCLE_METHODS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement_sha256": "d5c2e4af7b17664bc60f5243ebc7da99ac71a5b6db409ca047971a677ebf6608"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "ba97ac226c2c55d3b52104ea5dbcddbdedc33a2a82343b1919f9ae0307263562",
+      "claim_id": "KMS_PUBLIC_KEY_PERMISSION",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_DIGITAL_SIGNATURES"
+      ],
+      "statement_sha256": "a29ad2ab0b86c3281d176d73285277b231e7434b26ba85d49d16a49cfdb9556d"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "27eb3bb7f8092cf1222b3b17813bc2240b4f847e2fc6be15fddc13077fc23d46",
+      "claim_id": "KMS_RAW_KEY_MATERIAL_NONEXPORTABLE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_RESOURCE_HIERARCHY"
+      ],
+      "statement_sha256": "ec98ae9ca6d3d4b23f450558f5f526c15a26f0ac8dfe064db9ab2176e3574db1"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "002fa2e3df23b49821fa1e4b2322f27663ecb9954ef4df49460a71b789aa0e42",
+      "claim_id": "KMS_SEPARATION_KEY_ADMIN_AND_KEY_USER",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_SEPARATION_OF_DUTIES"
+      ],
+      "statement_sha256": "5a1b76d8841231dcb5a166850685ce8c6f195334aae19076bed4da33e192eb14"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "016c89ae37cf7ed373aaf9337e35a2708f2d2c35887c1e7614b15d3c6b84f5d0",
+      "claim_id": "KMS_SIGN_PERMISSION",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_DIGITAL_SIGNATURES"
+      ],
+      "statement_sha256": "e504bee0798770956489ed63f91ca2463aeb426c24e817aa45a330857458d00c"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "1000d37220183dd7727feafcc05ea61185028ee172d68057e36beca066ae2bd9",
+      "claim_id": "LOG_BUCKET_LOCKED_RETENTION_IMMUTABLE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "LOG_BUCKET_API"
+      ],
+      "statement_sha256": "e791f379c8b662e7b09649e563d24fec99c51a0e7aa3a44135b274b12e017524"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "d990f43cdf42fb693cd1533a8b93aeda1a27eab855f5fe7912aa9cfcb5ebeff4",
+      "claim_id": "LOG_BUCKET_LOCK_IRREVERSIBLE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "LOG_BUCKETS"
+      ],
+      "statement_sha256": "2cc9ec4d6a6ccd4aba1fca30304c6d1952a1405eb75dcfcd0296744ceb481e6a"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "b27453bd5dd72aceb5121347116fc91dc2294cd379469e8e53478c0f3ea9731b",
+      "claim_id": "POLICY_TROUBLESHOOTER_WORKLOAD_IDENTITY_LIMIT",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "POLICY_TROUBLESHOOTER"
+      ],
+      "statement_sha256": "64d85c608d805afcc4947a8f0ce247fd0b91a7c028716c4079b8a59b432b8f4c"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "a394eea8881fe5572190ca68ab57ceacf6e7aefeea3dc0c2297018b74c4fe459",
+      "claim_id": "SIMPLE_SIGNING_REQUIRED_FIELDS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "SIGSTORE_SIMPLE_SIGNING"
+      ],
+      "statement_sha256": "f439dfa39c28ac2f7e10b8e1675c81112f160b120c2a32b2df07aa3a4678f16f"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "e4c59804034c18bb9a4d9f9b532e575d50b794f540055b1bca1598d4b5d621bf",
+      "claim_id": "WIF_AVOIDS_SERVICE_ACCOUNT_KEYS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "WIF_OVERVIEW"
+      ],
+      "statement_sha256": "1b7465aad8412ecb27bba996a10f8d77cbf88816bd6f149be60dea77c92ba008"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "231385044b5e1eb4e0c05168626c1d3c03a91b2a2fcb8fb209950a319b6a7918",
+      "claim_id": "WIF_DEFAULT_SUBJECT_TOKEN_AUDIENCE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+      ],
+      "statement_sha256": "ed5054cd983d785a4040f0b3a8dda0c82a0dc1309889b0292c389a1701154410"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "0a9adaed0942560255fc42f755a0ada378d4e7b83f724c3f505eac2dd1ce81a5",
+      "claim_id": "WIF_DIRECT_KMS_API_SUPPORTED",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "FEDERATED_SERVICE_SUPPORT"
+      ],
+      "statement_sha256": "bfef3e3f1eb8a675976d56c09fb0fa3938918f32ea5690b7d35b6830a7043ede"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "99a81f0c9246c22b7246c1f9fe50abae758be30334ec998f460b670c26eff18f",
+      "claim_id": "WIF_DIRECT_RESOURCE_ACCESS_RECOMMENDED",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIDENTIAL_SPACE_RESOURCE_ACCESS"
+      ],
+      "statement_sha256": "0416320e616a24f81c71ff8a581d8697dae81a5def4b96a5e90a7b6aaf47a92b"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "b818e45b977451965f464ee2a445a4d98c99d35436a2a461b8531d4f3b1a913a",
+      "claim_id": "WIF_GOOGLE_ATTESTATION_ISSUER",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIDENTIAL_SPACE_TOKEN_CLAIMS"
+      ],
+      "statement_sha256": "4df9f320ae5d48c4a23cd5737907318c466ecf906320a70ead8f24ee7b552dce"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "ee147ed7ed4b25dcac93fa1c46c3366fd0ca75b9b58d1139ed51fa0933d6b456",
+      "claim_id": "WIF_POOL_ACTIVE_STATE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "WIF_POOL_API"
+      ],
+      "statement_sha256": "267c7f2a3facfbd8f59b8e39317b3df91ed99b12d879b34f14c0d2456ef0043f"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "994cce236689deb63c8d959811477f5fd42686446f56ff82ac51b544a183a049",
+      "claim_id": "WIF_POOL_DISABLED_SEMANTICS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "WIF_POOL_API"
+      ],
+      "statement_sha256": "2aaa245293201c0eb93d1e02d2b72fc762f9a5c67792da8f1a8431616efdcb6e"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "c3d578778e81dd857ee6e67943cc0987822db8cf51bee4ac146d5d88c094e6f6",
+      "claim_id": "WIF_POOL_LIFECYCLE_METHODS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "WIF_POOL_API"
+      ],
+      "statement_sha256": "7eed49d159c421da76a87725247273da76fb71e15a4ed343889cbacd38d528dc"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "2c18ced5d87c1f025bee59cd6723e1199d73133a734596506b44950af21d9e59",
+      "claim_id": "WIF_PROVIDER_ACTIVE_STATE",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "WIF_PROVIDER_API"
+      ],
+      "statement_sha256": "8070323e80fa3d9f66a42e6306ead294b8fa903cb237e2f7537de96e39daffe3"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "1063701f74263881a1968be004afc3df3500862d77d734c8b5b1f6656cfd8a16",
+      "claim_id": "WIF_PROVIDER_DISABLED_SEMANTICS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "WIF_PROVIDER_API"
+      ],
+      "statement_sha256": "b506c315deaecf33a2da669260d7d51481e4847a7570303efbc1e9309a725371"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "9eb9a345ca5461da824d876d8ee2606cb0dafb50f7c8c5383dc6be63211f7ed5",
+      "claim_id": "WIF_PROVIDER_HAS_THREE_CONTROL_CLASSES",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIDENTIAL_SPACE_RESOURCE_ACCESS"
+      ],
+      "statement_sha256": "3411479078a67433d40124fe5e40cbf6a6be03842b9f51a25e520533a3d6eb70"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "d2fea3d8d484367589cd7119211692838fcc5f1f9f00c7a84f8c6c3e3f411b3f",
+      "claim_id": "WIF_PROVIDER_LIFECYCLE_METHODS",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "WIF_PROVIDER_API"
+      ],
+      "statement_sha256": "6c5e22f7cf24ec84da7af6f9f2effc5ce4512c2775d2feac4cbaf3ae7afa699c"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "77741f522221d7f762273e69b7bddb36983c34e210cb35aa24e81431a20b1a19",
+      "claim_id": "BC_MODE_TOKEN_UNSUPPORTED",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_AGENT"
+      ],
+      "statement_sha256": "90475a093657099a3577196b3f36d7df2081d2442d2c77a9a0f1c1b6cc4b0fa3"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "2eef974c2d30368d270e8faf0e9445e21b843f636cfdcc7e916142122f91f68d",
+      "claim_id": "CONFIGFS_LINUX_REPORT_SUBSYSTEM",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIGFS_LINUXTSM"
+      ],
+      "statement_sha256": "30cfab4e3a73748c21c592ceac2db899bc301fc93cd88aeea5237785d31b7251"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f1f3387cfd1d369d82559e1f3c967ef9cb6d1ad1dfced92f848bc17405fe9790",
+      "claim_id": "CONFIGFS_REPORT_IN_OUT_BLOB",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CONFIGFS_REPORT"
+      ],
+      "statement_sha256": "ba66b07725e029c8de7d1bcb3969dd4c2585100373a499b06a820ac43ea04690"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "de8f40562343a8ee32e9d3b96b87f6be3f4dffc96d95fbf21b67a98f570daf40",
+      "claim_id": "CUSTOM_REQUEST_NONCE_ECHO_REJECT",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "EXTERNAL_RESOURCES"
+      ],
+      "statement_sha256": "f8c2c9d467f156d34c8e7e16b2d40caf4e219426e18bee271fdc8138cc476543"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "e3e8f3a2c1ba0407ecac8e01ba4d8e1ff2a4bb97884598dccd9bb9741e4b3f62",
+      "claim_id": "CUSTOM_REQUEST_NONCE_RANGE_10_74",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "EXTERNAL_RESOURCES"
+      ],
+      "statement_sha256": "09853c12fb78f9e851363fab6875a2892e8495fb9b7759aa53094a80fd5332d4"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "6537a61f29758bf181aa28c327c6f1a563d7f80b8a35c4fcd6b059a4b677f7fb",
+      "claim_id": "DATA_ACCESS_DEFAULT_DISABLED",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CLOUD_AUDIT_LOGS"
+      ],
+      "statement_sha256": "da080824a980d66d8a105eebf5b3c2e18787b31804e80b5965cdf6f7b5102e04"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "193ca3ab7d64ae9dedd8292b6f20c248efa3a4ec9186c217407ba8b0f0ebd9b2",
+      "claim_id": "EVENTLOG_CCEL_REPLAY_TRUST_BOUNDARY",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "EVENTLOG_CCEL_REPLAY"
+      ],
+      "statement_sha256": "af77bc5474030ddec94dbb779c030ac0adc5ce50fc9fd954c7edd862e6749681"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "514ec5600d8c9b76bb51439cd1a14ea654a08a26ff9196648ca13f8bef814586",
+      "claim_id": "EVENTLOG_CEL_TYPED_TLV",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "EVENTLOG_CEL"
+      ],
+      "statement_sha256": "238c1fb867e383dfe73c2aa593bf5abe42ce4a394d185900bc99a7834365c760"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "2872becad015a9cf6b9b7f20ba707d0da9351c52eb629bcda3708464cb8cba8b",
+      "claim_id": "EVENTLOG_RTMR_INDEX_MAPPING",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "EVENTLOG_RTMR"
+      ],
+      "statement_sha256": "57775c1b503e21192b97722f53ba0160c0d81c64ecffa22b0a79382ee6b5cd5b"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "36c6e5bc92b0a96e7a640f871c7ef47735831bcbb01394820b770d4526820e6e",
+      "claim_id": "EVIDENCE_ENDPOINT_NIL_EXTRA_DATA",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_TEE_SERVER"
+      ],
+      "statement_sha256": "5c69f797530dae6c3ebee4ad52c2218fb294b559244f9569f67d5bd341f06a53"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "a82beebd809890db4b6bec0b76fb580fdc007a852a32ab0ffd24760320cb628a",
+      "claim_id": "EVIDENCE_ENDPOINT_POST",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_TEE_SERVER"
+      ],
+      "statement_sha256": "4ae7822b8f011ba98f495cf9461ec927b17694790fe91903850f1d0f98606c85"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "6cc078754445b2ecba76727a53ec10577cee4b7e9b2b45a58884d47a55246350",
+      "claim_id": "EVIDENCE_EXPERIMENT_GATE",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_AGENT"
+      ],
+      "statement_sha256": "f469a5f0ccbc4cdebf2932c7b62cd1dab8a3c6098e76d599ceb094834f37539d"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "d80545b7f941e1de1fd354e9c42f704f1e2de5eac4082fce51632dcdb6ca4f53",
+      "claim_id": "EVIDENCE_REQUEST_CHALLENGE_ONLY",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_TEE_PROTO"
+      ],
+      "statement_sha256": "b994ada531e947419c06c38eb1d8e5df45f681bf8d93d9259f294193e6a6112a"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "3d44840b789f7d6f99a390e500b846fb86dc7e8a4d8e94ebcbbc4d5cb6d6a33c",
+      "claim_id": "EVIDENCE_RETURNS_QUOTE_CCEL_CEL",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_AGENT"
+      ],
+      "statement_sha256": "988e2aee689e8d37b0ad5d63052e5824a7ed94968f456ec6fb90168f75815dae"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "cad115f4de3df0e40aa59665093a682598e118f2a99cbef2c29aebb3e54d3390",
+      "claim_id": "EXPERIMENT_DEFAULT_EMPTY",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_EXPERIMENTS"
+      ],
+      "statement_sha256": "c1e6a4bec930918b7c071e3109266dee41766187b9d1231bdef45b405628fcf1"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f785d6b30f2827717393de2a7e60094ed3b0f570b935b3a8efc6d7a2073fee6a",
+      "claim_id": "GENERIC_PROTO_REPORT_DATA_FORMULA",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CS_ATTESTATION_PROTO"
+      ],
+      "statement_sha256": "7f4104bdee9cbfc634f2cc881080c7710a2323281b6dd5673e902a2be0a08822"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "bac4651725ae19cee5d149efc974906c801b5bea6ac2932db2e2e397ca8b3662",
+      "claim_id": "KMS_ASYMMETRIC_SIGN_INTEGRITY_FIELDS",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_ASYMMETRIC_SIGN_REST"
+      ],
+      "statement_sha256": "eab4ac4b20f781f009de89a83b72723395023d82b82cff6315e46e7ded385853"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "75a89f598d597cfb24ca4b691bbfc7a2c64fc06cd5b5c4096d30347c20b0072a",
+      "claim_id": "KMS_AUDIT_ASYMMETRIC_SIGN",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement_sha256": "987d2aa9dad8756d499c2baeea3284b64bcd43d4649a4476767f9d06abb225a7"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "074391f08a3b87612ca8fc0722c817eef5ef2f6865473fb7a4a6b5459ee86bf9",
+      "claim_id": "KMS_DATA_INTEGRITY_CRC32C",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_DATA_INTEGRITY"
+      ],
+      "statement_sha256": "4ab5611a9c87f3cd55d49d84bd11eb5b9cdb88ec43df0c15240db0afbdd79f27"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "106f4f0354954d202600183c641d974a79a54728ea4e524afd3f19a045a6e334",
+      "claim_id": "KMS_DER_SIGNATURE",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_SIGNATURES"
+      ],
+      "statement_sha256": "0f16f19b7d735a55d318115ed1427be7734255f048d257bbcdff4d7ab48e4cc0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "813f08ae656d22e9a7fea35d4a6078f4f01f443880ba83ad771cc912cec53c33",
+      "claim_id": "KMS_P256_SHA256_ALGORITHM",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_ALGORITHMS"
+      ],
+      "statement_sha256": "f47b61100248dd2d3c2313d7a38eda1439968b87c33562e85dac310a28fde980"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "53344100505cf1deb0eb1bc72857072b57c7e57ba62a54791be53a88873f533e",
+      "claim_id": "KMS_PARSE_PUBLIC_KEY",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_SIGNATURES"
+      ],
+      "statement_sha256": "e073032755bcb976db0236e8af193091c8e526db79a02d124df1ccb10ee6685d"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "7366e04fca0ceba1bc4dcfbf83e45115dcc6ad8163fa35ea876b0d60477ce6b6",
+      "claim_id": "KMS_PUBLIC_KEY_PROTECTION_LEVEL",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "KMS_GET_PUBLIC_KEY_REST"
+      ],
+      "statement_sha256": "c1f7f28755c71c4a45f2d63d9ce77b769d715a2c53635c664a9f8bb0b4930473"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "1b58792ef785ebffe112617f2b947c1f15dd79ad37fbee49dc63172df5c31d03",
+      "claim_id": "NIL_EXTRA_DATA_TESTED",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_AGENT_TEST"
+      ],
+      "statement_sha256": "ccb5ac1ee4488a63cc5b6dbc87fcf962104e01098c8c459f464f6c7d95dab9a3"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "ec6424fd99a6402ad9ff26e4730429c2db46df635c6cf8bbc4452fefe191cf41",
+      "claim_id": "OIDC_DISCOVERY_RS256_JWKS",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TOKEN_VALIDATION_FIELDS"
+      ],
+      "statement_sha256": "cb2afbe78109cd202dd43097769f75bd57a2ffc1d04fd78f81e021f9057ce615"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "0afa22a690431279e1573a9bcefea851bd74898ef01b8b90089f95d32d91313e",
+      "claim_id": "PACKAGED_BC_EXPERIMENT_ENABLED",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_BC_EXPERIMENT"
+      ],
+      "statement_sha256": "345ed9a261fbe933f8739a52844f1daf2a2e833084aab4114603c0ceee978bba"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "2fca2861aa86d6bb1b0fd135a7dad898bb2e9d6c1add8f7773b646a3704d45bb",
+      "claim_id": "PROTO_CCEL_CEL_QUOTE_FIELDS",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CS_ATTESTATION_PROTO"
+      ],
+      "statement_sha256": "a33917ad07e60df5a5604e07a70e9f717532012ef1244bfc5bcf3fe261c5c2f8"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "7c08a2aaab8d7c6d1fa1783dc513418538ffdea987fb13ae1ed6aa839802b228",
+      "claim_id": "TDX_CCEL_REPLAY",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TDX_CCEL"
+      ],
+      "statement_sha256": "54fd5d8b2e05a48e72c9ac045250587f54d3cdd0a217c4d0455f3ed1536bddd0"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "878ba34634a193eff680b298e571ca3984d4cdef777502a004170d5effdbc64e",
+      "claim_id": "TDX_CONFIGFS_64_BYTE_REPORT_DATA",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TDX_CLIENT_LINUX"
+      ],
+      "statement_sha256": "1fc0136ce5472f1837f2722c357d9da78e036164f289bfd8950cab0ee21a7257"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "a8c3ef70425d4c60053362ce1053682a26cbe50ba907133ba34ab9b72cd2a6b2",
+      "claim_id": "TDX_GUEST_REFERENCE",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CVM_ATTESTATION"
+      ],
+      "statement_sha256": "ce4e231cab5c9bb9ecb8c44e3de44f11a0cd86832bb64c88d808db76ee5f1609"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "1eb901a47d4e468035e2a53bab74055adb08cc63a98e062d7a587a7d93c30156",
+      "claim_id": "TDX_MRTD_RTMR3",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CVM_ATTESTATION"
+      ],
+      "statement_sha256": "f7d56c34c4595b5b425a2d219b5ef6def7b412e84c9ce24e189eb4025f3f4561"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "15a84ac0029e1f21ce4cd5486a404100e1895fc72da0bd46df64f65f904b4726",
+      "claim_id": "TDX_NESTED_SHA512_NIL_BRANCH",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_AGENT"
+      ],
+      "statement_sha256": "2a49153bd767a5d095316c1eee8f2e510540c9b4fe2f01dd33a8c0fdfd928695"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "7cebcbcb3d5a9d608a8d2996fc3c0aae07088be69bece38c7888f71de19d355f",
+      "claim_id": "TDX_VALIDATE_OMITTED_FIELDS_SKIP",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TDX_VALIDATE"
+      ],
+      "statement_sha256": "c74ea95d67a2682c01ee35012366ad1578325cf7531f1a224d90d7901f8d49c3"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "56f66af6a9eb84e9f3e3241b46862df0d4d0443c56b7b3356a334bd3602e0cbc",
+      "claim_id": "TDX_VALIDATE_REPORT_DATA",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TDX_VALIDATE"
+      ],
+      "statement_sha256": "8e49a978fa3e4eb588ea46ded08b65ca8befe59bb198d522370ff2830dca63df"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "1cab395578d3ae71c179f76845713ff444b8748e12bb5460c63fec9edcbe3a6d",
+      "claim_id": "TDX_VERIFY_COLLATERAL_OPTIONS",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TDX_VERIFY"
+      ],
+      "statement_sha256": "a5a9ded59e86fb7fe3f61c57b217f2e43659654abc2fd4146ae5351377eb0f1a"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "a9447a157960bd06e4be94585de8a9584086eb1d91196d434f02a8d84427094c",
+      "claim_id": "TLS_EKM_NONCE_BINDING",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "EXTERNAL_RESOURCES"
+      ],
+      "statement_sha256": "edc4529746c30870ba8448f0eb0083400512813cd8c7374159473b7788752e17"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "a8f655c7c7810f0fe9e5e14c105874eb6fe8714b0a8b797ac045b3b9ba923b9f",
+      "claim_id": "TOKEN_CUSTOM_AUDIENCE_ECHO",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TOKEN_CLAIMS"
+      ],
+      "statement_sha256": "7ed7d45badbf735e8e077962f846bb251ae41bcf0283b15b141a332b2e512558"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "f7460970b6fd34403aa22e44084c893948e2e872cb6cd6bbef41f762e95c7822",
+      "claim_id": "TOKEN_NONCE_MAX_SIX",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TOKEN_CLAIMS"
+      ],
+      "statement_sha256": "ac073a1b084c570845cf0a01f5e4df8ae7f0a4277a48e66e1b9f4af046733013"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "459d05e6c9e7f01a33675e5ed14ce4e6bdc9a81724d3ccdfa7d84a04c807432d",
+      "claim_id": "TOKEN_NONCE_RANGE_8_88",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "TOKEN_CLAIMS"
+      ],
+      "statement_sha256": "8b64578a49cd155c31d8cf3c8a90815bc977d401b262c506714a1c6f07976695"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "33eee90edd1f2a863dbcb48397977cb5ffe7dcaccdc16a2d0542ef83a45aa715",
+      "claim_id": "TRANSITIVE_EVENTLOG_CONFIGFS_PINS",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_LAUNCHER_GO_MOD"
+      ],
+      "statement_sha256": "d86002010aef8b6a26572bfd8ca864b0aaeab83efec83ec7f99d1bb805c7d469"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "af8253d49c4b24f28b365fe7ee776872c24e1fef476f8ac0b693abe0e6a741a8",
+      "claim_id": "TRANSITIVE_MODULE_PINS",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "GO_TPM_LAUNCHER_GO_MOD"
+      ],
+      "statement_sha256": "9898c6a1f57c5b1b0f8eed5e24d01ac78b3698ea3621a37399ab405bc514a76b"
+    },
+    {
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "claim_evidence_hash": "c73796faada491f7f1c825769ee2817d0b884ef9ce191d9e8bbf993f07b130f2",
+      "claim_id": "WORKLOAD_ATTESTATION_LABEL",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_CLAIM_MAPPING_RECONFIRMED",
+      "source_ids": [
+        "CS_LABELS"
+      ],
+      "statement_sha256": "0b3ee28a00f7738c1b34894aced86d6129061d331e466932231eb0d9f94e6411"
+    }
+  ],
+  "compile_revalidation_result": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
+  "contract_scope": "SECTION_7_4_DOCS_ONLY",
+  "decision": "GCP_ATTESTATION_RECEIPT_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+  "inherited_bundle_sha256_by_owner": {
+    "SECTION_7_1": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+    "SECTION_7_2": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+    "SECTION_7_3": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3"
+  },
+  "inherited_claim_entry_count": 82,
+  "inherited_dependency_artifact_count": 15,
+  "inherited_registry_manifest_sha256": "1acaaca7519829aa7fe45a7decdfa272eac9ba7d65d815226853cf883d20c308",
+  "inherited_revalidation_result": "EXACT_PARENT_SOURCE_AND_CLAIM_SETS_REPLAYED",
+  "inherited_source_entry_count": 55,
+  "live_revalidation_state": "NOT_CREATED_NO_RUNTIME_ACTION",
+  "provider_revalidation_hash": "e0f390f45624d8d712f4d16b3de8ab51a639eee12053807b6240fd3d75bf5716",
+  "provider_source_evidence_sha256": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
+  "replay_procedure_hash": "3ebbbd58032d2872a147d6c64fa687337e4aca62c8325939c0df5992d0e41110",
+  "revalidation_challenge": {
+    "challenge_id": "SECTION_7_4_INITIAL_COMPILE_SOURCE_REPLAY_20260726T072745Z",
+    "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+    "consuming_action_id": "SECTION_7_4_CONTRACT_COMPILATION",
+    "consuming_action_started_at": 1785050987,
+    "every_parent_and_section_7_4_entry_bound_to_challenge": true,
+    "expires_at": 1785051165,
+    "issued_at": 1785050865,
+    "retrieval_authentication": "HTTPS_SYSTEM_TRUST_AT_RETRIEVAL_PLUS_IMMUTABLE_GIT_COMMIT_PINS",
+    "retrieval_finished_at": 1785050985,
+    "retrieval_started_at": 1785050866,
+    "revalidation_finished_at": 1785050986,
+    "runtime_evidence": false
+  },
+  "revalidation_verifier_identity_hash": "3299296931dd1d1388f41a569333ac8ad6fe96dd2b38b97e6448df3e1602ecbd",
+  "schema_version": "GCP_ATTESTATION_RECEIPT_PROVIDER_REVALIDATION_V1",
+  "source_bundle_byte_count": 2295351,
+  "source_bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+  "source_count": 29,
+  "source_registry_sha256": "fda800e66800833486b69bd2fcf6a3e94057a98e554e76f00e47c64c97468e35",
+  "source_revalidation_entries": [
+    {
+      "authenticated_retrieval_evidence_hash": "b6c423d7da777894dd67e39aa4fbfef6ab0bc47f78732560f2319627750cc128",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "41980a65715c073913c2e33cec8c6352b85200427c0fa7e592a2302b36a8c309",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24",
+      "source_sha256": "41980a65715c073913c2e33cec8c6352b85200427c0fa7e592a2302b36a8c309"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "3b004509e3aefbc343b6b585ac4bce7599c05d447ddd47583179f4c26555ce06",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "a241826926be7150e1ee6a4db329fc0f262cc0ccdff0c29d26c29904b2ff771e",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24",
+      "source_sha256": "a241826926be7150e1ee6a4db329fc0f262cc0ccdff0c29d26c29904b2ff771e"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "e8c008e91a6e6f9d89fd6ff49983c24756d39639a409b0fef1f182adeee6271d",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "4c47df42a23ed6b41da1b45823bb012ab17e91cffe613d3580c8f3739beda2ba",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+      "source_sha256": "4c47df42a23ed6b41da1b45823bb012ab17e91cffe613d3580c8f3739beda2ba"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "c5b71b052d0877b4bcb354c92319271f0c2a2f09c36bb35c0869c761fb465279",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "8456d1fae9b326ec3bfadd56f93fbd422ee50e8aa867807de67f5af17ee49536",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24",
+      "source_sha256": "8456d1fae9b326ec3bfadd56f93fbd422ee50e8aa867807de67f5af17ee49536"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "5ece19cc95ad8a2cb7ce6cc4ece036fce0914a67b7f89c9bccaf63eb77b0a239",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "2fbe26d6a13d54d851d9e8cce9e0aa0948edaa69de191f448828520461f881ee",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24",
+      "source_sha256": "2fbe26d6a13d54d851d9e8cce9e0aa0948edaa69de191f448828520461f881ee"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "09b0d8db84ecfaaa087d3f2aaefb68cde17444bd230a43dcf8b3738872b20952",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "9e637b2b957754e8f96be1824c58075ce167f767722f9d7c7c1ae446b2645f90",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24",
+      "source_sha256": "9e637b2b957754e8f96be1824c58075ce167f767722f9d7c7c1ae446b2645f90"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "2e2bfc808e514cf3b827f9038195e61c3e6674ce52631cf4ee3768057dc969dc",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "fd490925fd1caaf5080b892ff0f49303e936f87a4cec7df41028bf22220563d0",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24",
+      "source_sha256": "fd490925fd1caaf5080b892ff0f49303e936f87a4cec7df41028bf22220563d0"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "28ed5d667724a1bba124acdd191faf165203a515df2798995ef29cb42874c8c4",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "4708bb8267237aa9cb724bfbc56805b16fccf74684b13e6e0b331840f9c0ab0d",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24",
+      "source_sha256": "4708bb8267237aa9cb724bfbc56805b16fccf74684b13e6e0b331840f9c0ab0d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b1af9d9eb6001561488dcd5a73658dd7664b7ad168c90e8b14620c524002203f",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "4ffcbfd39471056d8351ac156f6c0dc44e6a55c61b81f817f6b8847a5808bc92",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24",
+      "source_sha256": "4ffcbfd39471056d8351ac156f6c0dc44e6a55c61b81f817f6b8847a5808bc92"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b712a37bdb2b669aca5e14bd523e9d8b51a7884ef94a005660c4af50291aa078",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7a04415e758469e66d701e7bcfa72a3bde4b9cafb56c96f6823ac81197cfb992",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24",
+      "source_sha256": "7a04415e758469e66d701e7bcfa72a3bde4b9cafb56c96f6823ac81197cfb992"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "5ce219ca1bcf196d26fc32aa8cbbb52081b8405ac4dbf732c1deb6089b6b4964",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "171ffb0b40e301a40f0fef3a796bca3e56780b649dd89a8b05768c6c395b4bb5",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24",
+      "source_sha256": "171ffb0b40e301a40f0fef3a796bca3e56780b649dd89a8b05768c6c395b4bb5"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "fa2003d071c68d30b02cf9f0d026af264f7c4b49f89d0dee976c4377960d482f",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "506c7286cd47030b1e6be56858315e8aabfef79fc73d1b4a6f8c621d5d6e06fc",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24",
+      "source_sha256": "506c7286cd47030b1e6be56858315e8aabfef79fc73d1b4a6f8c621d5d6e06fc"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "6123a88e62876f148e61af2d6625fd214f03920d2e2475db1f77ec7e2223532d",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7d6d8dec476610a8b9aec8b81b69643d03c93be76b63703b0e4d59d9d39834c8",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24",
+      "source_sha256": "7d6d8dec476610a8b9aec8b81b69643d03c93be76b63703b0e4d59d9d39834c8"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "d30fbeeaae109db57d6c368415ed13da0ee74c306c148851f28207776003f0b6",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "3c4816eb0b3cfb9cce086de0a270281516c2652a89aa3b84ab02773dee1a9d24",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CPU_PLATFORMS_2026_07_24",
+      "source_sha256": "3c4816eb0b3cfb9cce086de0a270281516c2652a89aa3b84ab02773dee1a9d24"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "3bfc1aa47f1733fa8213bf71c637ff8cfecd64356d85d5399eaf91dfaca2870c",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7c7c75e2e9ba0153a374aa600cb86d598cf826200a95a069cd6b70dbcb385f88",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_HOST_EVENTS_2026_07_24",
+      "source_sha256": "7c7c75e2e9ba0153a374aa600cb86d598cf826200a95a069cd6b70dbcb385f88"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "10ec11fdfe70ae3262f8326ddf283ca39fd475ce3cb4aeac0ffe2b66198910a7",
+      "bundle_sha256": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7128578b48803ce38e0b752187bfd3d87ce4bbb4ac6f5d309e33c448865ea45d",
+      "owner_section": "SECTION_7_1",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_SOLE_TENANCY_2026_07_24",
+      "source_sha256": "7128578b48803ce38e0b752187bfd3d87ce4bbb4ac6f5d309e33c448865ea45d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "59913872cf334f665e4355cdfd95b2c4b3e01837b9c7957d6202720f21956b07",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "1e2ed6632917655bcfeb3a52acd0f623f791ea350c6f9ef9a95ae73da9d9c0f4",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_C3_MACHINE_TYPES_2026_07_24",
+      "source_sha256": "1e2ed6632917655bcfeb3a52acd0f623f791ea350c6f9ef9a95ae73da9d9c0f4"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "4ceca9f3762f16743d6032618f0b5d67bed16865d799d98f6c30b6e77dd3be2f",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "ed609c29eb3acad756343451ab4ef673b45f7848d32e2be6fa87ba0e615e533d",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_COMPUTE_DISCOVERY_V1_2026_07_24",
+      "source_sha256": "ed609c29eb3acad756343451ab4ef673b45f7848d32e2be6fa87ba0e615e533d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "a888fcc8744526b07569440c5fa935e9379a273873420907032ce4f064f401a8",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "ccf100e8494775bde57f1cb17ab24f1afa100f35e4d58de6b2c24435d4a20cf4",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_COMPUTE_INSTANCES_REST_2026_07_24",
+      "source_sha256": "ccf100e8494775bde57f1cb17ab24f1afa100f35e4d58de6b2c24435d4a20cf4"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "bf8e14f8c7377651ad6cd91f247a83794f7b8a170568d53ddd6851cc70a96af1",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "9b16dc2bc76941adde614b6e2ad4fbd40cd792c61ae50c3d5434fb0518e1b676",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_ASSERTIONS_2026_07_24",
+      "source_sha256": "9b16dc2bc76941adde614b6e2ad4fbd40cd792c61ae50c3d5434fb0518e1b676"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "4656103e17bbb2d13b440ff728a1e12c49c4957d42a55e20a8e90a1614a492b7",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "9d2dce9159ef06eaee49716063db0f1ab4ccb166c3395e7690bab6d6018f30e4",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_DEPLOY_2026_07_24",
+      "source_sha256": "9d2dce9159ef06eaee49716063db0f1ab4ccb166c3395e7690bab6d6018f30e4"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "3e025061523f4002f01b4525f93edcf108d71db37cb5de3ded9eebe65644564c",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "e012b4e62735ba84508783dd0887c85dbee1395488125accd57c9d46f4f55124",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_LAUNCH_POLICY_2026_07_24",
+      "source_sha256": "e012b4e62735ba84508783dd0887c85dbee1395488125accd57c9d46f4f55124"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "e72f84523d693df864b66541752cd6899fd4d85f4a24bdb5271eeefb2fb39487",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "4b74ec5d42887351cb068238ba7f7103fa4fc6e6e29b18c125f9314930c01a73",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_METADATA_2026_07_24",
+      "source_sha256": "4b74ec5d42887351cb068238ba7f7103fa4fc6e6e29b18c125f9314930c01a73"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b2b8a9069d5f6b0d6f9420dc0871db65bdc4730e5ba5d87508e7fb2805a75d05",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "99b30c138e881a618ba25ecf594b5256ca4a27ef89b85b08855f9ed42b153967",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_OVERVIEW_2026_07_24",
+      "source_sha256": "99b30c138e881a618ba25ecf594b5256ca4a27ef89b85b08855f9ed42b153967"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "bad202c32924b282ab8e5536cb3f4f46d3dc556ad7b6d9dd81d760d3c03945a1",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "ba98405bd335a3f019f70a001c6566e4ddba200edcbada51aa242641bdb3ed66",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_CLAIMS_2026_07_24",
+      "source_sha256": "ba98405bd335a3f019f70a001c6566e4ddba200edcbada51aa242641bdb3ed66"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "4477cc6b9404854cff7745b1c5789166f28f34c01c7210d8d68a6ae67a898327",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "03adbf1dbfb0406a0c79715f60d501a832ce5570d44c3009a9a78760f8b1c4cd",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_TOKEN_VALIDATION_2026_07_24",
+      "source_sha256": "03adbf1dbfb0406a0c79715f60d501a832ce5570d44c3009a9a78760f8b1c4cd"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "29aa62a307b8d0115679ef705338c9ccbff459e6d694b70da82a2652bfa60f71",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "ed136728d80bb1869cc593a26c7af89ed4159c8c70e928579e1cf247e562f842",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_SPACE_WORKLOAD_2026_07_24",
+      "source_sha256": "ed136728d80bb1869cc593a26c7af89ed4159c8c70e928579e1cf247e562f842"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "725f3d3ce478b49b58129b74e77834acebf7d15a6586c05e4e1bb9d9844b968d",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "804495174703ef90fa0d5bc324aed5369b328f7a8cdc8881b9f1e6b1e11e5773",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_VM_ATTESTATION_2026_07_24",
+      "source_sha256": "804495174703ef90fa0d5bc324aed5369b328f7a8cdc8881b9f1e6b1e11e5773"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "e260e1605de54187bbbcfc0473655a63349bfe3b152f59534ccbd04460d77bcd",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CONFIDENTIAL_VM_CONFIG_2026_07_24",
+      "source_sha256": "e1b731e3712003bfcc43e54ec7886a11f4e3c872b8cae050543a696525b6ad9d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "306c6950947f184ccca14c14f5f893f7ef4aa0c24a6a8ac3423943bcb9432f6e",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7988d7fd12238a389eaddf185a5456dabec3707f08a12fcfc1e136d3f133ba0c",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_CPU_PLATFORMS_2026_07_24",
+      "source_sha256": "7988d7fd12238a389eaddf185a5456dabec3707f08a12fcfc1e136d3f133ba0c"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "59e41e254187cace9043c91b80cde843a822fa31a16e6f631c0bc9d6b75ba781",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "9c3c48dd363fae93d63e589af77fb01caed4e3cccfa0f3718562aee60858ee31",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_HOST_EVENTS_2026_07_24",
+      "source_sha256": "9c3c48dd363fae93d63e589af77fb01caed4e3cccfa0f3718562aee60858ee31"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b9440b3c175b1a7219b6e697205599319aa21ec0e8bdbb94982b5487a4cb79b7",
+      "bundle_sha256": "99f2387fa1bed1b491dfd34a5b5c365f37822af4a26cb96a3d29fc649b0372b9",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "483825c6dbb24bb9763b71d9d5f681d72c3c83338d40ff44121c5505910e7218",
+      "owner_section": "SECTION_7_2",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GCP_SOLE_TENANCY_2026_07_24",
+      "source_sha256": "483825c6dbb24bb9763b71d9d5f681d72c3c83338d40ff44121c5505910e7218"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "20ed5e5678a6cb841f2d0d16d8c242c99eb8a031c137a1d7b8d58741a9d398ce",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "379f92dd14c86ee4d4323778dd6257c61ab3a8fa53f5b52d86ea7cfc272d9836",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "BINARY_AUTH_ATTESTATIONS",
+      "source_sha256": "379f92dd14c86ee4d4323778dd6257c61ab3a8fa53f5b52d86ea7cfc272d9836"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "c77e55e2682081c4ae4ab6231bc7a10f67733d7763ffddac36df5b1e64f8d058",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "3e43a1fff9b8a95cbd28f4d52bc1a0923efe3c019c1e17510e07bf3a361570df",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CLOUD_AUDIT_LOGS",
+      "source_sha256": "3e43a1fff9b8a95cbd28f4d52bc1a0923efe3c019c1e17510e07bf3a361570df"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "7548029ad3f6072e196d2ed920f0892784b0ba716bfde893e15f2b86b3c756b1",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "6959cf9b97c69bdb86ca962506ecaf8306267abe24ba20414fcf794541672985",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CLOUD_HSM",
+      "source_sha256": "6959cf9b97c69bdb86ca962506ecaf8306267abe24ba20414fcf794541672985"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "9204d487d3e0d6f9e92384977beb1e8577aca4604dc3665d436ed13e62587fd6",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "613966170fde78e7b4ed5aafda456f48fd3f6c56f86a5c82baf753da28d42d5b",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CONFIDENTIAL_SPACE_RESOURCE_ACCESS",
+      "source_sha256": "613966170fde78e7b4ed5aafda456f48fd3f6c56f86a5c82baf753da28d42d5b"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "26267651bb030590ce797975fa6f6089f5527ba28d3c68bacc2de5afff54af25",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "1607f7619adb0111cce778a44a2bbabaa7f475ded429652dd480897e8dac1b16",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CONFIDENTIAL_SPACE_TOKEN_CLAIMS",
+      "source_sha256": "1607f7619adb0111cce778a44a2bbabaa7f475ded429652dd480897e8dac1b16"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "665c94627b7df47268db336056b05bb322eeb04bf1f402691a012cb223bf72a4",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "b998d60e620eedb37a03765f8a92e5bb7c1e2cf11208c25fc10eee22bc450bd6",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "FEDERATED_SERVICE_SUPPORT",
+      "source_sha256": "b998d60e620eedb37a03765f8a92e5bb7c1e2cf11208c25fc10eee22bc450bd6"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "37c42bfc3d1fda17aacd4b7f8e50dd5aa33f2b838e8dcd44cc50965cb38e2ede",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "ff059478f182b3b9225dfd4035a85d1cd6a906b4e381975b46b85c867af53350",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "HSM_ATTESTATION",
+      "source_sha256": "ff059478f182b3b9225dfd4035a85d1cd6a906b4e381975b46b85c867af53350"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "8d2caef089082d417721eb838bab838cc792c2547b7c7a88cc81e9aeb24347a1",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "f7909ca7c3e59f42e0c86b7c9e8dbf9b7fde3a1d51e99054431e94942eb12cbe",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "IAM_DENY_OVERVIEW",
+      "source_sha256": "f7909ca7c3e59f42e0c86b7c9e8dbf9b7fde3a1d51e99054431e94942eb12cbe"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "52f6fe047e6072ca5125af0ae8a35b3194613aea3817d9f7deed2872a98474df",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "475845749954148916003ab3da937119ed0593be5678c9f6be3e4f86261f0523",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_ALGORITHMS",
+      "source_sha256": "475845749954148916003ab3da937119ed0593be5678c9f6be3e4f86261f0523"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "74515b12064db23397c2a7ede7d3381f5e86760c854982d15addac1c0e43f93f",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "b876ee0cbd334cdc2f1580dae21bca8fd95bb62019de54fba65fe6c92f818c19",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_AUDIT_LOGGING",
+      "source_sha256": "b876ee0cbd334cdc2f1580dae21bca8fd95bb62019de54fba65fe6c92f818c19"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "86d6fad6a964a9154e69e3ab0979b80595e960138070ae1754fb1b14f2687b82",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "47d21967f7b4a678ee887f754495987cd83fad06ed1d9b46abf5f3d3b0728ef5",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_DIGITAL_SIGNATURES",
+      "source_sha256": "47d21967f7b4a678ee887f754495987cd83fad06ed1d9b46abf5f3d3b0728ef5"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "0ef096a88aaa825305fb88226b33f7b5a52d00a7005ce6235f8b8cdfa22f00b3",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "e86bcaefa23c8d7c0080b87968bc2eb20f957947fff94c5c5b22de92acb9e7da",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_KEY_ROTATION",
+      "source_sha256": "e86bcaefa23c8d7c0080b87968bc2eb20f957947fff94c5c5b22de92acb9e7da"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "d5457f751f3f1a39b7f8a3b96cee01be533b5100c98f804413e4aaaf226fa0aa",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "2feaddf0492b302da8e776d2ab54856f1c3a4134a36535bc452b7aa3754c96f7",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_KEY_VERSION_API",
+      "source_sha256": "2feaddf0492b302da8e776d2ab54856f1c3a4134a36535bc452b7aa3754c96f7"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "9ba3f592ec64c92956d11e52fb33332ba28d7cfe6917c8fec94401331f06738a",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "fad26d275d6ff06985da88ef118fb366db4fbe29049c2d0170e7cc2e5f143e6c",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_PERMISSIONS_ROLES",
+      "source_sha256": "fad26d275d6ff06985da88ef118fb366db4fbe29049c2d0170e7cc2e5f143e6c"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "6615693ecf6a75a6a71f0e364a4a6a6e079af2c449ddb247f366a4c844e784f6",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "b8dda79f68ba73a624289c5e96395939d6dd356fd0aa1d6976cf01bfa1da7eeb",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_RESOURCE_HIERARCHY",
+      "source_sha256": "b8dda79f68ba73a624289c5e96395939d6dd356fd0aa1d6976cf01bfa1da7eeb"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "6a0c22898d6e1534472e34301287086ff629c5b8bbb42f4acd70e1b563a69e3b",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "e952d02d260415277652345bf2ed500d12484a3fd732ca0fc48798c6bf5c5c6c",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_SEPARATION_OF_DUTIES",
+      "source_sha256": "e952d02d260415277652345bf2ed500d12484a3fd732ca0fc48798c6bf5c5c6c"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "82c970ae8a999f538e3b3d14a774e7da84b384151e4a6cbe2bddea27dc2a1d17",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "bb2f178abad58465018efffe139aef1ad594e13083363580786659988bca65fd",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "LOG_BUCKETS",
+      "source_sha256": "bb2f178abad58465018efffe139aef1ad594e13083363580786659988bca65fd"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "3c836cc2b10b404cfd1af9b3d72c2279480dadd99c7f7392222383c6d36f06c8",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "36559154e4bfccebefaf66b77a1a1832a68c9b2ebbf96485e858432e7df98efb",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "LOG_BUCKET_API",
+      "source_sha256": "36559154e4bfccebefaf66b77a1a1832a68c9b2ebbf96485e858432e7df98efb"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "602db47cf24d617b5860e688735fc2af2679a373cb7531cf9ae913fd393447c6",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "eabdb15cdd29601ec46689486a564a750d8c37e480dcae7ce661487de1ddbda1",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "POLICY_TROUBLESHOOTER",
+      "source_sha256": "eabdb15cdd29601ec46689486a564a750d8c37e480dcae7ce661487de1ddbda1"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "47ccd7e93139148efd3d3aef42a510746a32ab2131c181a6bbbbb83a057b22ad",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7e5f17e6932d24b791dc2dfcbc41e7b9865e35a9c6509e4aa4ea2a919595ecfb",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "SIGSTORE_SIMPLE_SIGNING",
+      "source_sha256": "7e5f17e6932d24b791dc2dfcbc41e7b9865e35a9c6509e4aa4ea2a919595ecfb"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "9751c8f5083029e32f5ddcd8e6d0181c078e8612e347e76593628eda8e272040",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7752c53ff8b54b3abca2113960889b470182a581d21517ea65eaebecb9e05c2d",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "WIF_OVERVIEW",
+      "source_sha256": "7752c53ff8b54b3abca2113960889b470182a581d21517ea65eaebecb9e05c2d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "23597f4dcb017800e89f0f834b5ad60ebd8d6c1b494ac1adf16dd947b4f1e780",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "560a25d37e34c5acaa949d80edafe8e3249012827a4e92cb53bb37145687e52d",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "WIF_POOL_API",
+      "source_sha256": "560a25d37e34c5acaa949d80edafe8e3249012827a4e92cb53bb37145687e52d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "e3f12859c0d3ba37f12d5191275cbf05ba57a832b0eda98adcc713da6e2f1574",
+      "bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "5b732ae31e14da09407198ca17f41589632f6a37e0d5368934f57b8dd94f0351",
+      "owner_section": "SECTION_7_3",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "WIF_PROVIDER_API",
+      "source_sha256": "5b732ae31e14da09407198ca17f41589632f6a37e0d5368934f57b8dd94f0351"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "880d752c34825b6da40095e1c9c9b97c8f7facb82d1e6da53d50e03103e43a0d",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "1f9a656a20b17bc54a8df053fb4f3be2290c62c8f389b98be8b186a4bebd1419",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CLOUD_AUDIT_LOGS",
+      "source_sha256": "1f9a656a20b17bc54a8df053fb4f3be2290c62c8f389b98be8b186a4bebd1419"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "0d5dac4ccc862e02c3abe18053a0294ccd6b6ac784d8c5403a08944c9bce8228",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "2959613c5184299f9d0f3971706faeded34ba10b9c092fdb6ae29ffb78db9125",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CONFIGFS_LINUXTSM",
+      "source_sha256": "2959613c5184299f9d0f3971706faeded34ba10b9c092fdb6ae29ffb78db9125"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "35cc1e73a1b0ae95a8d40bc43d2f6f57002f0b5d4c8dba822d4c2d3b35c232b7",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "32f883aaf751f6d364517a25fe192db1e09b332bd4ac5325ebe6d30eaccda990",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CONFIGFS_REPORT",
+      "source_sha256": "32f883aaf751f6d364517a25fe192db1e09b332bd4ac5325ebe6d30eaccda990"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "92bb33d2d2cf735ffe90d4f5393dee5cd0d07835152e6dd3ade4fadad8df47f3",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "6ff219d09d01371198c4e936b8713c93ec13425f17ff6c32a0a0aabb400cba24",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CS_ATTESTATION_PROTO",
+      "source_sha256": "6ff219d09d01371198c4e936b8713c93ec13425f17ff6c32a0a0aabb400cba24"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "04895568c2f6f3689a8c90c39893e0cacffc008d1ba6ced91b123256083b6097",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "5bc0baa4fea21a4a0b73768715aaecae857feb56041be35f1d8568df42ab9d2c",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CS_LABELS",
+      "source_sha256": "5bc0baa4fea21a4a0b73768715aaecae857feb56041be35f1d8568df42ab9d2c"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "05c6fff40f91bc76b0ade563b4cdd4a9ac5e992c4294f340bbf8e59e99595eed",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "0017e58c02305b5a3d2d4a8de5f1258ebbfbfca71783053ae76e082c35835464",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "CVM_ATTESTATION",
+      "source_sha256": "0017e58c02305b5a3d2d4a8de5f1258ebbfbfca71783053ae76e082c35835464"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b1455d4629511cf068c5ca68c51894c4674dcba90c7e1cdc799ca4a850563b8e",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "252c15e487bc0cb17612e1421bb1e441d91f173489121a16a1c7204a0adc73d0",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "EVENTLOG_CCEL_REPLAY",
+      "source_sha256": "252c15e487bc0cb17612e1421bb1e441d91f173489121a16a1c7204a0adc73d0"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "4faaa609d5788e87dee200b17c3828fda909544128ea056917e9bc4c14d776eb",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "e28bc01e63c714edc98ba05a8e621d6dcedb444e644c5ede52d04aef1c3a514c",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "EVENTLOG_CEL",
+      "source_sha256": "e28bc01e63c714edc98ba05a8e621d6dcedb444e644c5ede52d04aef1c3a514c"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "f1eb62e7eebd85e6d82666eb55f0141019989cd587a42fb255bf33bd363aa2c5",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "632875a186071f6999d9f34be502c2ebda2ac79dcfb389bc58ef5a22cb4ff6fb",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "EVENTLOG_RTMR",
+      "source_sha256": "632875a186071f6999d9f34be502c2ebda2ac79dcfb389bc58ef5a22cb4ff6fb"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b12ddf740b57a05d4d259af87ec243461c8f342d80474b54199908cc87260099",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "f6a169874f2eedde79881d2687386bf3fcb9b755be1a6b2a992b2de998e727f8",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "EXTERNAL_RESOURCES",
+      "source_sha256": "f6a169874f2eedde79881d2687386bf3fcb9b755be1a6b2a992b2de998e727f8"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b2e1d76a6773ebe285397aaf636438b3a14c19af3e425a241d7254a43e1551f8",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "6ff53523a9fea85c4a3e55413337685b02a143df7d67a1d670d30030744e6e0d",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GO_TPM_AGENT",
+      "source_sha256": "6ff53523a9fea85c4a3e55413337685b02a143df7d67a1d670d30030744e6e0d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "7d35262a08d0edeec986d44884da2145df0cd83984445cecb180f4e10170984e",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "e1ab46fa31e5aa233d98d0fdd0f5743fcd20d60a375a34be3f77fb99151bbe94",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GO_TPM_AGENT_TEST",
+      "source_sha256": "e1ab46fa31e5aa233d98d0fdd0f5743fcd20d60a375a34be3f77fb99151bbe94"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "0ed7d69f37515849276a37f6f3cdbb22d0f5843e97cb2b8df372e1f49b6b0995",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "063284a045c3b389012b6df5fa0bb4bfbc7fdfd4c787d7054fbfcae2331a163d",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GO_TPM_BC_EXPERIMENT",
+      "source_sha256": "063284a045c3b389012b6df5fa0bb4bfbc7fdfd4c787d7054fbfcae2331a163d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "88017d99ccb76186964a504b0ef990bb86a6138713b1d032a275672bbdb01940",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "85138182e101e5c4cf6b2ce8587414c9ce166d754252ad0b8aab9101fa995430",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GO_TPM_EXPERIMENTS",
+      "source_sha256": "85138182e101e5c4cf6b2ce8587414c9ce166d754252ad0b8aab9101fa995430"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "c85ebb6c74a6223c9aa79ac1ec06275f0740e13dd76ed22f8825a929450565a5",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "be5b93a92348b0d1947ba7562d67294ee4fcaa29a0add696e8cc14d880931278",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GO_TPM_LAUNCHER_GO_MOD",
+      "source_sha256": "be5b93a92348b0d1947ba7562d67294ee4fcaa29a0add696e8cc14d880931278"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "b41d140121fa4bceb56488e04788051e6f55535fc7298ecc59b61c3deb1a92e0",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "ed7210957c992e53b77d2afc01262926603408fb0c4092433e728bb385a45584",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GO_TPM_TEE_PROTO",
+      "source_sha256": "ed7210957c992e53b77d2afc01262926603408fb0c4092433e728bb385a45584"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "34701d602872d769d66aa02a1600fac6616ff6bcc796281269a0f7305536d954",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "bcb3b7f0bded9e47680e27b0492c1d38110e6f2e363bbc01d58404bb89a8ff6c",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "GO_TPM_TEE_SERVER",
+      "source_sha256": "bcb3b7f0bded9e47680e27b0492c1d38110e6f2e363bbc01d58404bb89a8ff6c"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "c5f13fd64997436c3515b82adec3458e32121df2cfde29256b69f35f2389ee4a",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "8e994d44b7e7e08baef01689104ce3de973663dacba7b4296cb5fc2eea61e159",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_ALGORITHMS",
+      "source_sha256": "8e994d44b7e7e08baef01689104ce3de973663dacba7b4296cb5fc2eea61e159"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "1391aba9ff69d37d72b68c801a8b4a5a67b26d918d5c8a12e910ccf31a40c442",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "57de7a191799cc2c7520442345aa1f9ab39893f402a2ac16b54011e575e8ba1d",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_ASYMMETRIC_SIGN_REST",
+      "source_sha256": "57de7a191799cc2c7520442345aa1f9ab39893f402a2ac16b54011e575e8ba1d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "87d894a3242e2960cfb77f41d8e92808efd0b53b5b006cea5d0406b8880a61f3",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "d539557608d7cd3c0a48d4ec5d6ec2e54c8815c7ec5f1a09a458b319033460f8",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_AUDIT_LOGGING",
+      "source_sha256": "d539557608d7cd3c0a48d4ec5d6ec2e54c8815c7ec5f1a09a458b319033460f8"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "2a16fe7d5c7dfc7724ae46c89a64e184c7595067be214d4315800be26193d64b",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "259a1d618d744a2a4df195d639ee774261f1028c4e2a78dba55014b1a29269ad",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_DATA_INTEGRITY",
+      "source_sha256": "259a1d618d744a2a4df195d639ee774261f1028c4e2a78dba55014b1a29269ad"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "dbd938d6489e2044466a153f1b5e339740f850520d1596f1df706325ad46ed6e",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "08699634782de45b9e913123235a6c8b8297a71fbb11e02df511c3f559387ee2",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_GET_PUBLIC_KEY_REST",
+      "source_sha256": "08699634782de45b9e913123235a6c8b8297a71fbb11e02df511c3f559387ee2"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "a888110a52400d84514ebfa39126336214652ddc46b7cc0456571416bc2e6d7b",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "81658e155f5eb7c192067e684dc6efd6b53d0ff0ef01feb4ba8a4b454ade8198",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "KMS_SIGNATURES",
+      "source_sha256": "81658e155f5eb7c192067e684dc6efd6b53d0ff0ef01feb4ba8a4b454ade8198"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "fb4c2e29e3313d69be123f1bb8ec1f1e4d64907fe5a8bff2bd871d523767376d",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "3753722629b2055de238361bde566da2554486bb3a532f8945777f7d39f5b4db",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "TDX_CCEL",
+      "source_sha256": "3753722629b2055de238361bde566da2554486bb3a532f8945777f7d39f5b4db"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "d3f735187717aea423623a4fb0dc70b80242f7207496c80b3c2420bd123985ca",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "650f707d152f5dc39bcb64fa18aff33b38ba6abff3859381dc64f2fa8400761b",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "TDX_CLIENT_LINUX",
+      "source_sha256": "650f707d152f5dc39bcb64fa18aff33b38ba6abff3859381dc64f2fa8400761b"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "0a3ac5c6c2f55b0a9faf1bb5099eb0f54e865490cc75e8c4241c0d1f4294ff24",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "7b2216443ef55fef3b92ada6db72b2fd260349c818f0abaef0bc2e7adf953252",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "TDX_VALIDATE",
+      "source_sha256": "7b2216443ef55fef3b92ada6db72b2fd260349c818f0abaef0bc2e7adf953252"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "00bba6cc9a02de685ca6299b47584aeccd9eb6699030280e320125f491a841a0",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "5b40f4b70df35a98de8a716d3bdea812fed5e5fcbedae790dfcd8c525da3b467",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "TDX_VERIFY",
+      "source_sha256": "5b40f4b70df35a98de8a716d3bdea812fed5e5fcbedae790dfcd8c525da3b467"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "d7fa1d0b3d456467995329a202653d0b2f6ba25f795cb967f8d0c55e4546c4b1",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "2a3db56db9a5e0a38b73a23a4e3f469509cd61a2cd403326dbd270c47479ab5d",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "TOKEN_CLAIMS",
+      "source_sha256": "2a3db56db9a5e0a38b73a23a4e3f469509cd61a2cd403326dbd270c47479ab5d"
+    },
+    {
+      "authenticated_retrieval_evidence_hash": "9cee9766786b1dcffa46549aa79d4ea9fe4c4111fc60b78dbcb9dfafb9e18076",
+      "bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+      "challenge_secret_sha256": "6df60eeec67eb4b5e029ed95bc78504330939b2277307bd339826f77ced2822e",
+      "observed_source_sha256": "969ff0268d9dc45f8b53bf0a00f0069c418c881faf66e57fae62d12955aa846d",
+      "owner_section": "SECTION_7_4",
+      "result": "EXACT_BYTES_RECONFIRMED",
+      "source_id": "TOKEN_VALIDATION_FIELDS",
+      "source_sha256": "969ff0268d9dc45f8b53bf0a00f0069c418c881faf66e57fae62d12955aa846d"
+    }
+  ]
+}

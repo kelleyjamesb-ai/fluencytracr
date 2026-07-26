@@ -118,13 +118,13 @@ Depends on 7.1. The contract closes deterministic numerical-profile fields, per-
 
 Depends semantically on 7.1; Section 7.2 remains compatibility-only. The docs-only contract closes distinct project/principal roles, Cloud HSM key generation/non-exportability, digest-based direct WIF-to-KMS admission, transitive effective-access/deny proof, detached image provenance, held rollover, and the authority-audit evidence interface. Live policy/evidence admission lists remain empty and the recorded state is `GCP_SECURITY_AUTHORITY_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD`.
 
-### 7.4 Attestation and receipt contract
+### 7.4 [Attestation and receipt-verification contract](../canonical-inference-gcp-attestation-receipt/README.md)
 
-Depends on 7.1, 7.2, and 7.3. Must close quote/token/certificate verification, workload-bound signature preimages using the fixed key algorithm/version, terminal receipt schemas, consumer verification, replay/revocation, and independently replayable evidence retention.
+Depends on 7.1, 7.2, and 7.3. The docs-only contract closes purpose-separated custom OIDC identity, pre/terminal TDX quote verification, same-boot/channel continuity, exact nonce and receipt/signature preimages, Cloud HSM response and canonical ECDSA checks, expected-context consumer verification, and challenge-bound replay. Exact public/source-code bytes are replayable, but the launcher interface remains source-code/test-only and runtime-unobserved; every approval list remains empty and the recorded state is `GCP_ATTESTATION_RECEIPT_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD`.
 
 ### 7.5 Network, logging, disk, and persistence contract
 
-Depends on 7.1 and 7.3. Must close ingress/egress, private endpoints, DNS/firewall/routes, logging/serial/APM/crash controls, immutable boot posture, tmpfs/swap/disk rules, receipt storage, and pre/during/post evidence.
+Depends on 7.1, 7.3, and the Section 7.4 transport/trust/retention acceptance interfaces. Must close ingress/egress, private endpoints, DNS/firewall/routes, logging/serial/APM/crash controls, immutable boot posture, tmpfs/swap/disk rules, receipt storage, and pre/during/post evidence.
 
 ### 7.6 Pre-registered attempt-ledger contract
 
