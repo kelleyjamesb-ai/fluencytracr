@@ -35,6 +35,8 @@ from gcp_attestation_receipt_contract_validation import (
     validate_replay_manifest,
     validate_replay_semantic_bindings,
     validate_runtime_profile_and_signer_projection,
+    validate_structural_replay_chain_commitments,
+    validate_structural_replay_chain_shape,
     validate_synthetic_cross_bindings,
     validate_terminal_coherence,
     validate_terminal_payload,
@@ -43,10 +45,10 @@ from gcp_attestation_receipt_contract_validation import (
 )
 
 EXPECTED_ARTIFACT_SHA256 = {
-    "README.md": "f006950908a6c29bdc7cdef602415283a1983cb1131948ca65ce8e12b8ff16a3",
+    "README.md": "7cbef6fed6b332808b08af468937b12e092ed0e5edb793caafdf7736b513f519",
     "attestation-receipt-contract.json": "88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200",
-    "canonicalization-vectors.json": "f8ef43df1f9ffb93d48e99210d91c0e0d710c491b7ff37c1c4831cee8972edda",
-    "provider-revalidation.json": "ea2f9aee988612e909a487aba33556ef5fc2414494dbfdbd8c09787f579df654",
+    "canonicalization-vectors.json": "744f22d70788bd47b680f73ab8745670e00d3f54d3e13099ef7d57d146c4f63c",
+    "provider-revalidation.json": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "provider-source-evidence.json": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
 }
 EXPECTED_SOURCE_IDS = ('TOKEN_CLAIMS', 'EXTERNAL_RESOURCES', 'TOKEN_VALIDATION_FIELDS', 'CVM_ATTESTATION', 'KMS_SIGNATURES', 'KMS_ALGORITHMS', 'KMS_ASYMMETRIC_SIGN_REST', 'KMS_GET_PUBLIC_KEY_REST', 'KMS_DATA_INTEGRITY', 'KMS_AUDIT_LOGGING', 'CLOUD_AUDIT_LOGS', 'GO_TPM_TEE_SERVER', 'GO_TPM_TEE_PROTO', 'GO_TPM_AGENT', 'GO_TPM_AGENT_TEST', 'GO_TPM_LAUNCHER_GO_MOD', 'GO_TPM_EXPERIMENTS', 'GO_TPM_BC_EXPERIMENT', 'CS_LABELS', 'CS_ATTESTATION_PROTO', 'TDX_VERIFY', 'TDX_VALIDATE', 'TDX_CCEL', 'TDX_CLIENT_LINUX', 'EVENTLOG_CEL', 'EVENTLOG_RTMR', 'EVENTLOG_CCEL_REPLAY', 'CONFIGFS_REPORT', 'CONFIGFS_LINUXTSM')
@@ -214,6 +216,31 @@ def _candidate(
     provider_revalidation_bytes = bytes.fromhex(
         candidate["replay_manifest"][33]["member_manifest"][0]["raw_content_hex"]
     )
+    validate_structural_replay_chain_commitments(
+        candidate["replay_chain"],
+        execution_manifest_hash=replay_manifest_hash(candidate["replay_manifest"]),
+        candidate_graph_hash=graph_hash,
+        initial_retention_acceptance_hash=candidate[
+            "initial_retention_acceptance"
+        ]["acceptance_hash"],
+        provider_revalidation_artifact_sha256=digest(
+            provider_revalidation_bytes
+        ),
+    )
+    replay_modes = {
+        current_source_replay_receipt["replay_mode"],
+        final_source_replay_receipt["replay_mode"],
+    }
+    if replay_modes == {"CONTRACT_ONLY_NO_ARCHIVE"}:
+        validate_structural_replay_chain_shape(candidate["replay_chain"])
+        if candidate["authority_effect"] != "NONE":
+            raise ContractValidationError("candidate attempted authority")
+        return derive_live_disposition(
+            contract=contract,
+            facts=derive_validated_candidate_facts(contract, source_evidence),
+        )
+    if replay_modes != {"EXACT_ARCHIVE_REPLAY"}:
+        raise ContractValidationError("mixed replay modes prohibited")
     trusted_replay_chain = rebind_replay_chain_source_results(
         candidate["replay_chain"],
         execution_manifest_hash=replay_manifest_hash(candidate["replay_manifest"]),
@@ -260,8 +287,14 @@ def _candidate(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", type=Path)
+    parser.add_argument("--require-archives", action="store_true")
     args = parser.parse_args()
+    structural_ci_only = False
     try:
+        if args.require_archives and not args.candidate:
+            raise ContractValidationError(
+                "--require-archives requires --candidate"
+            )
         verify_artifact_pins()
         artifacts = validate_current_artifacts()
         verify_literal_registries(artifacts)
@@ -271,6 +304,7 @@ def main() -> int:
                 DEFAULT_SECTION72_BUNDLE,
                 DEFAULT_SECTION73_BUNDLE,
                 replay_bound as replay_sources_bound,
+                replay_bound_contract_only,
                 verify_replay_receipt,
             )
 
@@ -278,23 +312,37 @@ def main() -> int:
                 "~/.glean/recovery/fluencytracr/"
                 "gcp-attestation-receipt-source-snapshot-20260726T072745Z.zip"
             ).expanduser()
-            current_source_result = replay_sources_bound(
+            bundles = (
                 section74_bundle,
                 DEFAULT_SECTION71_BUNDLE,
                 DEFAULT_SECTION72_BUNDLE,
                 DEFAULT_SECTION73_BUNDLE,
-                action_id="CURRENT_SECTION_7_4_REPLAY",
-                challenge_hex=bytes(range(64, 96)).hex(),
             )
-            final_source_result = replay_sources_bound(
-                section74_bundle,
-                DEFAULT_SECTION71_BUNDLE,
-                DEFAULT_SECTION72_BUNDLE,
-                DEFAULT_SECTION73_BUNDLE,
-                action_id="FINAL_CONSUMER_REPLAY",
-                challenge_hex=bytes(range(96, 128)).hex(),
-                not_before=current_source_result["observed_at"],
-            )
+            if all(path.is_file() for path in bundles):
+                current_source_result = replay_sources_bound(
+                    *bundles,
+                    action_id="CURRENT_SECTION_7_4_REPLAY",
+                    challenge_hex=bytes(range(64, 96)).hex(),
+                )
+                final_source_result = replay_sources_bound(
+                    *bundles,
+                    action_id="FINAL_CONSUMER_REPLAY",
+                    challenge_hex=bytes(range(96, 128)).hex(),
+                    not_before=current_source_result["observed_at"],
+                )
+            else:
+                if args.require_archives:
+                    raise ContractValidationError("required source archives unavailable")
+                structural_ci_only = True
+                current_source_result = replay_bound_contract_only(
+                    action_id="CURRENT_SECTION_7_4_REPLAY",
+                    challenge_hex=bytes(range(64, 96)).hex(),
+                )
+                final_source_result = replay_bound_contract_only(
+                    action_id="FINAL_CONSUMER_REPLAY",
+                    challenge_hex=bytes(range(96, 128)).hex(),
+                    not_before=current_source_result["observed_at"],
+                )
             verify_replay_receipt(current_source_result, consume=True)
             verify_replay_receipt(final_source_result, consume=True)
             result = _candidate(
@@ -309,10 +357,16 @@ def main() -> int:
     except (OSError, ContractValidationError, TypeError, ValueError):
         print("GCP_ATTESTATION_RECEIPT_CONTRACT_VERIFICATION_FAILED", file=sys.stderr)
         return 1
-    print(
-        "GCP_ATTESTATION_RECEIPT_CONTRACT_CLOSED_EVIDENCE_ABSENT_"
-        "RUNTIME_AUTHORITY_HELD"
-    )
+    if structural_ci_only:
+        print(
+            "GCP_ATTESTATION_RECEIPT_STRUCTURAL_CI_ONLY_"
+            "EXTERNAL_ARCHIVES_UNAVAILABLE_RUNTIME_AUTHORITY_HELD"
+        )
+    else:
+        print(
+            "GCP_ATTESTATION_RECEIPT_CONTRACT_CLOSED_EVIDENCE_ABSENT_"
+            "RUNTIME_AUTHORITY_HELD"
+        )
     return 0
 
 

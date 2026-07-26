@@ -323,7 +323,7 @@
       "bound": "Section 7.4 docs/contracts, OpenSpec, offline verifiers, tests, attribution, and progress only; define attestation verification, receipt signature preimages, signer acceptance, freshness/nonces, and receipt verification; no live GCP, credentials, signing, deployment, qualification, persistence, model execution, or Sections 7.5-7.8",
       "status": "in_progress",
       "risk": "high",
-      "last_note": "Section 7.4 implementation, verification, and exact-tree review complete on tree 14bd513385d8750ec68bd909b9d08cc6b150ea9e; CODE/BUG/ADVERSARIAL returned GO. Passed 43 dedicated, 107 focused GCP, 383 full tests (3 expected skips), source replay, OpenSpec, governance, docs, compile, and diff. Awaiting authorization for commit/push/PR. Approvals/runtime authority remain empty/held; no live GCP, credentials, signing, deployment, persistence, qualification, model execution, or Sections 7.5-7.8 work."
+      "last_note": "Corrective Section 7.4 tree verified; final review pending. Passed 44 dedicated, 108 focused, 384 full tests (3 skips), clean-CI simulation (3 pass/1 archive skip), local source replay, OpenSpec, governance, docs, compile, and diff. PR #442 still points to the earlier commit; corrective Git authorization follows final GO. Approvals/authority remain empty/held; no live GCP, credentials, signing, deployment, persistence, qualification, model execution, or Sections 7.5-7.8 work."
     }
   ]
 }

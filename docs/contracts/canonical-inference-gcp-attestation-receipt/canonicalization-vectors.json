@@ -45,7 +45,7 @@
   ],
   "artifact_bindings": {
     "attestation_receipt_contract_sha256": "88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200",
-    "provider_revalidation_sha256": "ea2f9aee988612e909a487aba33556ef5fc2414494dbfdbd8c09787f579df654",
+    "provider_revalidation_sha256": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "provider_source_evidence_sha256": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12"
   },
   "authorization_effect": "NONE",

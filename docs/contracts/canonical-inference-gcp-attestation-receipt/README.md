@@ -42,6 +42,8 @@ python3 -m pytest -q tests/test_gcp_attestation_receipt_contract.py
 OPENSPEC_TELEMETRY=0 npx openspec validate add-gcp-attestation-receipt-contract --strict
 ```
 
+When a synthetic `--candidate` is checked in an ordinary clean CI checkout without the four restricted recovery archives, the verifier runs only the checked-in structural path and emits `GCP_ATTESTATION_RECEIPT_STRUCTURAL_CI_ONLY_EXTERNAL_ARCHIVES_UNAVAILABLE_RUNTIME_AUTHORITY_HELD`. That result is never archive-replay or closeout evidence. `--require-archives` makes archive absence fail. Closeout always requires the separate exact source-replay command above.
+
 Expected closed result:
 
 ```text

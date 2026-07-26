@@ -124,6 +124,7 @@ def _source_replay_base_result() -> dict[str, Any]:
         "inherited_source_count": 55,
         "inherited_claim_count": 82,
         "decision": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
+        "replay_mode": "EXACT_ARCHIVE_REPLAY",
         "authority_effect": "NONE",
     }
 
@@ -1103,6 +1104,7 @@ def test_source_bundle_paths_and_git_pins_are_exact() -> None:
         "inherited_source_count": 55,
         "inherited_claim_count": 82,
         "decision": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
+        "replay_mode": "EXACT_ARCHIVE_REPLAY",
         "authority_effect": "NONE",
     }
     current_receipt = _source_module.replay_bound(
@@ -1764,13 +1766,11 @@ def test_full_candidate_coordinated_cross_object_splices_reject(tmp_path: Path) 
             "GCP_ATTESTATION_RECEIPT_CONTRACT_VERIFICATION_FAILED"
         )
 
-    # Candidate-derived replay-result hashes are deliberately ignored and
-    # rebuilt from process-authenticated replay_bound receipts.
-    ignored = copy.deepcopy(baseline)
-    ignored["replay_chain"]["final_replay_result_hash"] = _h(
+    malformed_commitment = copy.deepcopy(baseline)
+    malformed_commitment["replay_chain"]["final_replay_result_hash"] = _h(
         "candidate-controlled-replay-result"
     )
-    assert _run_candidate_cli(tmp_path, ignored).returncode == 0
+    assert _run_candidate_cli(tmp_path, malformed_commitment).returncode == 1
 
 
 def test_object_and_composition_envelopes_bind_actual_candidate_root() -> None:
@@ -1832,6 +1832,125 @@ def test_candidate_cli_accepts_structure_but_cannot_escape_r7(tmp_path: Path) ->
     )
 
 
+def test_candidate_cli_contract_only_mode_is_distinct_and_non_closeout(
+    tmp_path: Path,
+) -> None:
+    candidate_path = tmp_path / "candidate-contract-only.json"
+    candidate_path.write_text(json.dumps(_candidate(), sort_keys=True))
+    isolated_home = tmp_path / "isolated-home"
+    isolated_home.mkdir()
+    env = dict(os.environ)
+    env["HOME"] = str(isolated_home)
+    env["GCP_ATTESTATION_RECEIPT_SOURCE_BUNDLE"] = str(
+        isolated_home / "missing.zip"
+    )
+    result = subprocess.run(
+        [sys.executable, str(CONTRACT_VERIFIER), "--candidate", str(candidate_path)],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == (
+        "GCP_ATTESTATION_RECEIPT_STRUCTURAL_CI_ONLY_"
+        "EXTERNAL_ARCHIVES_UNAVAILABLE_RUNTIME_AUTHORITY_HELD"
+    )
+    malformed_candidates = []
+    unknown = _candidate()
+    unknown["replay_chain"]["unknown_attacker_field"] = "x"
+    malformed_candidates.append(unknown)
+    missing = _candidate()
+    missing["replay_chain"].pop("final_replay_result_hash")
+    malformed_candidates.append(missing)
+    wrong_type = _candidate()
+    wrong_type["replay_chain"]["current_issued_at"] = "1000"
+    malformed_candidates.append(wrong_type)
+    wrong_roots = _candidate()
+    wrong_roots["replay_chain"]["current_source_revalidation_hash"] = _h(
+        "wrong-current-source-root"
+    )
+    wrong_roots["replay_chain"]["final_source_revalidation_hash"] = _h(
+        "wrong-final-source-root"
+    )
+    malformed_candidates.append(wrong_roots)
+    shifted_times = _candidate()
+    for prefix in ("current", "final"):
+        shifted_times["replay_chain"][f"{prefix}_issued_at"] += 10
+        shifted_times["replay_chain"][f"{prefix}_verified_at"] += 10
+        shifted_times["replay_chain"][f"{prefix}_expires_at"] += 10
+        shifted_times["replay_chain"][
+            f"{prefix}_retention_guaranteed_until"
+        ] += 10
+    malformed_candidates.append(shifted_times)
+    wrong_commitments = _candidate()
+    for field in (        "execution_manifest_hash",
+        "initial_retention_acceptance_hash",
+        "current_replay_result_hash",
+        "final_replay_result_hash",
+    ):
+        wrong_commitments["replay_chain"][field] = _h("wrong-" + field)
+    malformed_candidates.append(wrong_commitments)
+    truncated = _candidate()
+    truncated["replay_chain"] = {
+        key: truncated["replay_chain"][key]
+        for key in (
+            "current_action_id",
+            "final_action_id",
+            "current_challenge_hex",
+            "final_challenge_hex",
+        )
+    }
+    malformed_candidates.append(truncated)
+    for malformed in malformed_candidates:
+        candidate_path.write_text(json.dumps(malformed, sort_keys=True))
+        rejected = subprocess.run(
+            [sys.executable, str(CONTRACT_VERIFIER), "--candidate", str(candidate_path)],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert rejected.returncode == 1
+        assert rejected.stderr.strip() == (
+            "GCP_ATTESTATION_RECEIPT_CONTRACT_VERIFICATION_FAILED"
+        )
+
+    candidate_path.write_text(json.dumps(_candidate(), sort_keys=True))
+    required = subprocess.run(
+        [
+            sys.executable,
+            str(CONTRACT_VERIFIER),
+            "--candidate",
+            str(candidate_path),
+            "--require-archives",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert required.returncode == 1
+    assert required.stderr.strip() == (
+        "GCP_ATTESTATION_RECEIPT_CONTRACT_VERIFICATION_FAILED"
+    )
+    invalid_combination = subprocess.run(
+        [sys.executable, str(CONTRACT_VERIFIER), "--require-archives"],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert invalid_combination.returncode == 1
+    assert invalid_combination.stderr.strip() == (
+        "GCP_ATTESTATION_RECEIPT_CONTRACT_VERIFICATION_FAILED"
+    )
+
+
 def test_privacy_and_no_public_receipt_projection() -> None:
     contract = load_json(CONTRACT)
     assert contract["privacy"] == {
@@ -1855,14 +1974,14 @@ def test_all_checked_in_json_is_strict_and_null_free() -> None:
 # Filled only after the implementation is final. This intentionally excludes
 # this test file to avoid self-reference.
 PINNED_ARTIFACTS: dict[str, str] = {
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/README.md": "f006950908a6c29bdc7cdef602415283a1983cb1131948ca65ce8e12b8ff16a3",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/README.md": "7cbef6fed6b332808b08af468937b12e092ed0e5edb793caafdf7736b513f519",
     "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json": "88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200",
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/canonicalization-vectors.json": "f8ef43df1f9ffb93d48e99210d91c0e0d710c491b7ff37c1c4831cee8972edda",
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-revalidation.json": "ea2f9aee988612e909a487aba33556ef5fc2414494dbfdbd8c09787f579df654",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/canonicalization-vectors.json": "744f22d70788bd47b680f73ab8745670e00d3f54d3e13099ef7d57d146c4f63c",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-revalidation.json": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-source-evidence.json": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
-    "scripts/gcp_attestation_receipt_contract_validation.py": "d2de446627a83b7518489c12342afe108fa578b0e595b61fe8c77bc5992cc699",
-    "scripts/verify_gcp_attestation_receipt_contract.py": "202651fe9b66b57d8001e756e253a96da8e1289bd7662adc4af41ccc70fddd9b",
-    "scripts/verify_gcp_attestation_receipt_revalidation.py": "3299296931dd1d1388f41a569333ac8ad6fe96dd2b38b97e6448df3e1602ecbd",
+    "scripts/gcp_attestation_receipt_contract_validation.py": "f4bbaaf0b325cd6b8eaa54774151e6120db65524b282fc3d5e8889ac4fbb3ae3",
+    "scripts/verify_gcp_attestation_receipt_contract.py": "0ae573ab5b727930ba703d8f146a245c15f4ee5f6d5d4c5568bc0fbff45506c2",
+    "scripts/verify_gcp_attestation_receipt_revalidation.py": "d49120a1cece5e3e5d5e0b3ce24248b23de8580b86995859d18d428d199ff5d0",
     "openspec/changes/add-gcp-attestation-receipt-contract/proposal.md": "c7bbb75ed949439301f2259fe541a66a82a943b88800401c9756899fa8cc0c91",
     "openspec/changes/add-gcp-attestation-receipt-contract/design.md": "b16ac89583fda9e3603c4f4037a7016e9c7ab4f76411f3b0941899ad461e9659",
     "openspec/changes/add-gcp-attestation-receipt-contract/specs/gcp-attestation-receipt/spec.md": "eff27b0d176a3d221a103bdbaf328daa9d68f4cb6a520368ac13d8d4752673e7",

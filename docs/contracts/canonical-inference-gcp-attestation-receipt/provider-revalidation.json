@@ -1376,6 +1376,7 @@
   ],
   "compile_revalidation_result": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
   "contract_scope": "SECTION_7_4_DOCS_ONLY",
+  "current_replay_verifier_identity_hash": "d49120a1cece5e3e5d5e0b3ce24248b23de8580b86995859d18d428d199ff5d0",
   "decision": "GCP_ATTESTATION_RECEIPT_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
   "inherited_bundle_sha256_by_owner": {
     "SECTION_7_1": "ceed3461f1e95305f4182eda6ffc9a1093f524704afd7b0f8ee71dc223359f21",
@@ -1388,7 +1389,8 @@
   "inherited_revalidation_result": "EXACT_PARENT_SOURCE_AND_CLAIM_SETS_REPLAYED",
   "inherited_source_entry_count": 55,
   "live_revalidation_state": "NOT_CREATED_NO_RUNTIME_ACTION",
-  "provider_revalidation_hash": "e0f390f45624d8d712f4d16b3de8ab51a639eee12053807b6240fd3d75bf5716",
+  "producing_revalidation_verifier_identity_hash": "3299296931dd1d1388f41a569333ac8ad6fe96dd2b38b97e6448df3e1602ecbd",
+  "provider_revalidation_hash": "5b7de55284e9465f9c3f19d037377a1f6fe439f57ab7a781adddfb447a55a3ec",
   "provider_source_evidence_sha256": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
   "replay_procedure_hash": "3ebbbd58032d2872a147d6c64fa687337e4aca62c8325939c0df5992d0e41110",
   "revalidation_challenge": {
@@ -1405,7 +1407,6 @@
     "revalidation_finished_at": 1785050986,
     "runtime_evidence": false
   },
-  "revalidation_verifier_identity_hash": "3299296931dd1d1388f41a569333ac8ad6fe96dd2b38b97e6448df3e1602ecbd",
   "schema_version": "GCP_ATTESTATION_RECEIPT_PROVIDER_REVALIDATION_V1",
   "source_bundle_byte_count": 2295351,
   "source_bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",

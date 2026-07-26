@@ -4,11 +4,11 @@
 
 - Section 7.4 implementation completed locally on 2026-07-25 from merged
   `main` commit `4b39b30e7afeacdb034f9cba02ed4604ee7f5929` on branch
-  `codex/gcp-attestation-receipt-section-7-4-clean`. Exact-tree CODE, BUG, and
-  ADVERSARIAL closeout reviews returned GO on implementation tree
-  `14bd513385d8750ec68bd909b9d08cc6b150ea9e`; this metadata-only closeout tree
-  is re-reviewed before handoff. Action-specific commit/push/PR authorization
-  remains pending. The
+  `codex/gcp-attestation-receipt-section-7-4-clean`. PR #442 currently points
+  to earlier commit `335d7892c2429eb538a1a6a4a3829963b4d32c41`; a corrective
+  local tree closes replay-receipt provenance and clean-CI structural coverage,
+  has passed verification, and awaits renewed exact-tree review before fresh
+  commit/push authorization. The
   human-created queue item `gcp-attestation-receipt-section-7-4` remains the
   sole active item. The approved OpenSpec now produces a docs-only 116-node,
   9-selector, 64-composition machine contract; 42 exact replay kinds; 29
@@ -16,14 +16,15 @@
   of 55 sources and 82 claims; per-entry 84-source/124-claim revalidation;
   strict canonicalization, OIDC RS256, TDX quote-policy/continuity, KMS
   P-256/CRC/name/HSM/DER, opaque-interface, expected-context, terminal,
-  retention, replay, privacy, and no-authority validators; and 43 dedicated
-  tests. Verification passed 107 focused Section 7.1-7.4 tests, 383 full tests
-  with 3 expected skips, exact source replay, strict OpenSpec, V1 governance,
+  retention, replay, privacy, and no-authority validators; and 44 dedicated
+  tests. Verification passed 108 focused Section 7.1-7.4 tests, 384 full tests
+  with 3 expected skips, clean-CI simulation with 3 pass/1 expected archive
+  skip, exact local source replay, strict OpenSpec, V1 governance,
   docs sweep, bootstrap, Python compilation, and diff checks. Exact source
   replay is bounded to archived bytes/claim windows plus
   pinned reviewed interpretation; the launcher capability remains
-  source-code/test-only and runtime-unobserved. Intermediate exact-tree CODE,
-  BUG, and ADVERSARIAL implementation reviews returned GO. Every approval list
+  source-code/test-only and runtime-unobserved. Prior implementation reviews
+  returned GO; the corrective tree requires renewed final review. Every approval list
   remains empty and runtime authority remains held. No live GCP, credentials,
   signing, deployment, qualification, persistence, model execution, customer
   data, or Sections 7.5-7.8 implementation occurred or is authorized.
@@ -3514,8 +3515,9 @@
 
 ## Next Step
 
-- Request fresh action-specific authorization for Section 7.4 commit, push, and
-  a separate PR; then follow normal branch policy without bypass. Keep runtime
+- Complete renewed exact-tree CODE/BUG/ADVERSARIAL review for the corrective
+  Section 7.4 tree, then request fresh authorization to commit and push it to
+  PR #442. Follow normal branch policy without bypass. Keep runtime
   authority held; do not perform
   live GCP access, credentials, signing, deployment, qualification, persistence,
   model execution, or Sections 7.5-7.8 work.

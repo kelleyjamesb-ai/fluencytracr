@@ -21,6 +21,7 @@ from gcp_attestation_receipt_contract_validation import (
     domain_hash,
     load_json,
     strict_load_json_bytes,
+    validate_current_artifacts,
     validate_revalidation,
     validate_source_evidence,
 )
@@ -254,21 +255,14 @@ def replay(
         "inherited_source_count": 55,
         "inherited_claim_count": 82,
         "decision": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
+        "replay_mode": "EXACT_ARCHIVE_REPLAY",
         "authority_effect": "NONE",
     }
 
 
-def replay_bound(
-    bundle: Path,
-    section71_bundle: Path,
-    section72_bundle: Path,
-    section73_bundle: Path,
-    *,
-    action_id: str,
-    challenge_hex: str,
-    not_before: int | None = None,
-) -> dict[str, Any]:
-    """Perform the full replay inside one compile-pinned invocation context."""
+def _validate_bound_context(
+    action_id: str, challenge_hex: str, not_before: int | None
+) -> None:
     expected_challenge = {
         "CURRENT_SECTION_7_4_REPLAY": bytes(range(64, 96)).hex(),
         "FINAL_CONSUMER_REPLAY": bytes(range(96, 128)).hex(),
@@ -280,13 +274,18 @@ def replay_bound(
             raise ContractValidationError("source replay not-before time malformed")
         while int(time.time()) <= not_before:
             time.sleep(0.01)
-    issued_at = int(time.time())
-    retrieval_started_at = int(time.time())
-    base_result = replay(
-        bundle, section71_bundle, section72_bundle, section73_bundle
-    )
-    retrieval_finished_at = int(time.time())
-    observed_at = int(time.time())
+
+
+def _issue_bound_receipt(
+    base_result: dict[str, Any],
+    *,
+    action_id: str,
+    challenge_hex: str,
+    issued_at: int,
+    retrieval_started_at: int,
+    retrieval_finished_at: int,
+    observed_at: int,
+) -> dict[str, Any]:
     invocation_body = {
         "base_result": base_result,
         "action_id": action_id,
@@ -320,6 +319,75 @@ def replay_bound(
             hashlib.sha256,
         ).hexdigest(),
     }
+
+
+def replay_bound(
+    bundle: Path,
+    section71_bundle: Path,
+    section72_bundle: Path,
+    section73_bundle: Path,
+    *,
+    action_id: str,
+    challenge_hex: str,
+    not_before: int | None = None,
+) -> dict[str, Any]:
+    """Perform the full archive replay inside one bound invocation."""
+    _validate_bound_context(action_id, challenge_hex, not_before)
+    issued_at = int(time.time())
+    retrieval_started_at = int(time.time())
+    base_result = replay(
+        bundle, section71_bundle, section72_bundle, section73_bundle
+    )
+    retrieval_finished_at = int(time.time())
+    observed_at = int(time.time())
+    return _issue_bound_receipt(
+        base_result,
+        action_id=action_id,
+        challenge_hex=challenge_hex,
+        issued_at=issued_at,
+        retrieval_started_at=retrieval_started_at,
+        retrieval_finished_at=retrieval_finished_at,
+        observed_at=observed_at,
+    )
+
+
+def replay_bound_contract_only(
+    *,
+    action_id: str,
+    challenge_hex: str,
+    not_before: int | None = None,
+) -> dict[str, Any]:
+    """Bind checked-in contract evidence when restricted archives are absent.
+
+    This mode never claims archive replay and can only feed the synthetic R7/HOLD
+    candidate path. Local closeout still requires replay_bound with all archives.
+    """
+    _validate_bound_context(action_id, challenge_hex, not_before)
+    issued_at = int(time.time())
+    retrieval_started_at = int(time.time())
+    artifacts = validate_current_artifacts()
+    source = artifacts["source"]
+    retrieval_finished_at = int(time.time())
+    observed_at = int(time.time())
+    base_result = {
+        "source_count": len(source["sources"]),
+        "claim_count": len(source["claims"]),
+        "source_bundle_sha256": source["source_bundle"]["sha256"],
+        "inherited_source_count": 55,
+        "inherited_claim_count": 82,
+        "decision": "CONTRACT_ONLY_EXTERNAL_BUNDLES_UNAVAILABLE",
+        "replay_mode": "CONTRACT_ONLY_NO_ARCHIVE",
+        "authority_effect": "NONE",
+    }
+    return _issue_bound_receipt(
+        base_result,
+        action_id=action_id,
+        challenge_hex=challenge_hex,
+        issued_at=issued_at,
+        retrieval_started_at=retrieval_started_at,
+        retrieval_finished_at=retrieval_finished_at,
+        observed_at=observed_at,
+    )
 
 
 def verify_replay_receipt(receipt: dict[str, Any], *, consume: bool) -> None:

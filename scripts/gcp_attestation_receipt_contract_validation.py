@@ -28,7 +28,7 @@ SOURCE_PATH = CONTRACT_DIR / "provider-source-evidence.json"
 REVALIDATION_PATH = CONTRACT_DIR / "provider-revalidation.json"
 VECTORS_PATH = CONTRACT_DIR / "canonicalization-vectors.json"
 EXPECTED_EMBEDDED_SOURCE_EVIDENCE_SHA256 = "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12"
-EXPECTED_EMBEDDED_REVALIDATION_SHA256 = "ea2f9aee988612e909a487aba33556ef5fc2414494dbfdbd8c09787f579df654"
+EXPECTED_EMBEDDED_REVALIDATION_SHA256 = "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead"
 
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 HEX128 = re.compile(r"^[0-9a-f]{128}$")
@@ -1002,7 +1002,8 @@ def validate_revalidation(revalidation: dict[str, Any], source: dict[str, Any]) 
         "revalidation_challenge",
         "source_revalidation_entries",
         "claim_revalidation_entries",
-        "revalidation_verifier_identity_hash",
+        "producing_revalidation_verifier_identity_hash",
+        "current_replay_verifier_identity_hash",
         "replay_procedure_hash",
         "compile_revalidation_result",
         "live_revalidation_state",
@@ -1146,10 +1147,14 @@ def validate_revalidation(revalidation: dict[str, Any], source: dict[str, Any]) 
     if len(observed_claim_entries) != len(claim_entries) or observed_claim_entries != expected_claim_entries:
         raise ContractValidationError("claim revalidation exact set mismatch")
 
-    if revalidation["revalidation_verifier_identity_hash"] != digest(
+    if revalidation["producing_revalidation_verifier_identity_hash"] != (
+        "3299296931dd1d1388f41a569333ac8ad6fe96dd2b38b97e6448df3e1602ecbd"
+    ):
+        raise ContractValidationError("source producing verifier identity mismatch")
+    if revalidation["current_replay_verifier_identity_hash"] != digest(
         (ROOT / "scripts/verify_gcp_attestation_receipt_revalidation.py").read_bytes()
     ):
-        raise ContractValidationError("source revalidation verifier identity mismatch")
+        raise ContractValidationError("current source replay verifier identity mismatch")
     if revalidation["replay_procedure_hash"] != digest(
         b"GCP_ATTESTATION_RECEIPT_SOURCE_REPLAY_PROCEDURE_V1"
     ):
@@ -2730,16 +2735,27 @@ def source_replay_result_hash(result: dict[str, Any]) -> str:
     base_keys = {
         "source_count", "claim_count", "source_bundle_sha256",
         "inherited_source_count", "inherited_claim_count", "decision",
-        "authority_effect",
+        "replay_mode", "authority_effect",
     }
-    base_expected = {
+    common = {
         "source_count": 29,
         "claim_count": 42,
         "source_bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
         "inherited_source_count": 55,
         "inherited_claim_count": 82,
-        "decision": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
         "authority_effect": "NONE",
+    }
+    base_expected_by_mode = {
+        "EXACT_ARCHIVE_REPLAY": {
+            **common,
+            "decision": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
+            "replay_mode": "EXACT_ARCHIVE_REPLAY",
+        },
+        "CONTRACT_ONLY_NO_ARCHIVE": {
+            **common,
+            "decision": "CONTRACT_ONLY_EXTERNAL_BUNDLES_UNAVAILABLE",
+            "replay_mode": "CONTRACT_ONLY_NO_ARCHIVE",
+        },
     }
     context_keys = {
         "action_id", "challenge_hex", "issued_at", "retrieval_started_at",
@@ -2749,7 +2765,7 @@ def source_replay_result_hash(result: dict[str, Any]) -> str:
     if not isinstance(result, dict) or set(result) != base_keys | context_keys:
         raise ContractValidationError("source replay receipt keys mismatch")
     base_result = {key: result[key] for key in base_keys}
-    if base_result != base_expected:
+    if base_result != base_expected_by_mode.get(base_result.get("replay_mode")):
         raise ContractValidationError("source replay base result mismatch")
     fixed_challenges = {
         "CURRENT_SECTION_7_4_REPLAY": bytes(range(64, 96)).hex(),
@@ -2797,8 +2813,272 @@ def source_replay_result_hash(result: dict[str, Any]) -> str:
     return domain_hash("FLUENCYTRACR:GCP_SOURCE_REPLAY_RESULT:V1", result)
 
 
+def synthetic_structural_source_replay_receipt(action_id: str) -> dict[str, Any]:
+    context = {
+        "CURRENT_SECTION_7_4_REPLAY": {
+            "challenge_hex": bytes(range(64, 96)).hex(),
+            "issued_at": 1000,
+            "retrieval_started_at": 1001,
+            "retrieval_finished_at": 1099,
+            "observed_at": 1100,
+            "expires_at": 1300,
+        },
+        "FINAL_CONSUMER_REPLAY": {
+            "challenge_hex": bytes(range(96, 128)).hex(),
+            "issued_at": 2000,
+            "retrieval_started_at": 2001,
+            "retrieval_finished_at": 2099,
+            "observed_at": 2100,
+            "expires_at": 2300,
+        },
+    }
+    if action_id not in context:
+        raise ContractValidationError("synthetic source replay action mismatch")
+    base = {
+        "source_count": 29,
+        "claim_count": 42,
+        "source_bundle_sha256": "6f7ea9cb42afba261f859a257d879a088ed0ab473756a1994ba941be13b3204a",
+        "inherited_source_count": 55,
+        "inherited_claim_count": 82,
+        "decision": "EXACT_SOURCE_BYTES_AND_CLAIM_WINDOWS_REPLAYED_REVIEWED_INTERPRETATION_PINNED_CAPABILITY_UNOBSERVED",
+        "replay_mode": "EXACT_ARCHIVE_REPLAY",
+        "authority_effect": "NONE",
+    }
+    invocation_body = {"base_result": base, "action_id": action_id, **context[action_id]}
+    return {
+        **base,
+        "action_id": action_id,
+        **context[action_id],
+        "invocation_id": domain_hash(
+            "FLUENCYTRACR:GCP_SOURCE_REPLAY_INVOCATION:V1", invocation_body
+        ),
+        "producer_identity_hash": digest(b"synthetic-replay-producer"),
+        "producer_mac": digest(
+            ("synthetic-replay-producer-mac-" + action_id).encode("utf-8")
+        ),
+    }
+
+
 SYNTHETIC_CURRENT_REPLAY_CHALLENGE_HEX = bytes(range(64, 96)).hex()
 SYNTHETIC_FINAL_REPLAY_CHALLENGE_HEX = bytes(range(96, 128)).hex()
+
+
+REPLAY_CHAIN_KEYS = {
+    "current_action_id", "final_action_id", "current_challenge_hex",
+    "final_challenge_hex", "current_issued_at", "current_verified_at",
+    "current_expires_at", "current_retention_guaranteed_until",
+    "final_issued_at", "final_verified_at", "final_expires_at",
+    "final_retention_guaranteed_until", "execution_manifest_hash",
+    "initial_retention_acceptance_hash", "current_source_revalidation_hash",
+    "final_source_revalidation_hash", "current_retention_authentication_hash",
+    "current_retention_acceptance_hash", "current_replay_result_hash",
+    "verified_historical_manifest_hash", "final_consumer_manifest_hash",
+    "final_retention_authentication_hash", "final_retention_acceptance_hash",
+    "final_replay_result_hash",
+}
+
+
+def validate_structural_replay_chain_shape(chain: dict[str, Any]) -> None:
+    if not isinstance(chain, dict) or set(chain) != REPLAY_CHAIN_KEYS:
+        raise ContractValidationError("replay chain keys mismatch")
+    if (
+        chain["current_action_id"] != "CURRENT_SECTION_7_4_REPLAY"
+        or chain["final_action_id"] != "FINAL_CONSUMER_REPLAY"
+        or chain["current_challenge_hex"]
+        != SYNTHETIC_CURRENT_REPLAY_CHALLENGE_HEX
+        or chain["final_challenge_hex"] != SYNTHETIC_FINAL_REPLAY_CHALLENGE_HEX
+    ):
+        raise ContractValidationError("replay chain action/challenge mismatch")
+    time_keys = (
+        "current_issued_at", "current_verified_at", "current_expires_at",
+        "current_retention_guaranteed_until", "final_issued_at",
+        "final_verified_at", "final_expires_at",
+        "final_retention_guaranteed_until",
+    )
+    if any(type(chain[key]) is not int for key in time_keys):
+        raise ContractValidationError("replay chain timestamp type mismatch")
+    if not (
+        chain["current_issued_at"]
+        <= chain["current_verified_at"]
+        < chain["current_expires_at"]
+        and chain["current_verified_at"]
+        < chain["final_issued_at"]
+        <= chain["final_verified_at"]
+        < chain["final_expires_at"]
+        and chain["current_expires_at"] - chain["current_issued_at"] == 300
+        and chain["final_expires_at"] - chain["final_issued_at"] == 300
+        and chain["current_retention_guaranteed_until"]
+        == chain["current_verified_at"] + 31536000
+        and chain["final_retention_guaranteed_until"]
+        == chain["final_verified_at"] + 31536000
+    ):
+        raise ContractValidationError("replay chain ordering or retention mismatch")
+    hash_keys = REPLAY_CHAIN_KEYS - set(time_keys) - {
+        "current_action_id", "final_action_id", "current_challenge_hex",
+        "final_challenge_hex",
+    }
+    if any(
+        not isinstance(chain[key], str) or not HEX64.fullmatch(chain[key])
+        for key in hash_keys
+    ):
+        raise ContractValidationError("replay chain hash encoding mismatch")
+
+
+def validate_structural_replay_chain_commitments(
+    chain: dict[str, Any],
+    *,
+    execution_manifest_hash: str,
+    candidate_graph_hash: str,
+    initial_retention_acceptance_hash: str,
+    provider_revalidation_artifact_sha256: str,
+) -> None:
+    validate_structural_replay_chain_shape(chain)
+    if (
+        chain["execution_manifest_hash"] != execution_manifest_hash
+        or chain["initial_retention_acceptance_hash"]
+        != initial_retention_acceptance_hash
+    ):
+        raise ContractValidationError("structural replay root commitment mismatch")
+    current_structural_receipt = synthetic_structural_source_replay_receipt(
+        "CURRENT_SECTION_7_4_REPLAY"
+    )
+    final_structural_receipt = synthetic_structural_source_replay_receipt(
+        "FINAL_CONSUMER_REPLAY"
+    )
+    if (
+        chain["current_issued_at"] != current_structural_receipt["issued_at"]
+        or chain["current_verified_at"]
+        != current_structural_receipt["observed_at"]
+        or chain["current_expires_at"] != current_structural_receipt["expires_at"]
+        or chain["current_retention_guaranteed_until"]
+        != current_structural_receipt["observed_at"] + 31536000
+        or chain["final_issued_at"] != final_structural_receipt["issued_at"]
+        or chain["final_verified_at"] != final_structural_receipt["observed_at"]
+        or chain["final_expires_at"] != final_structural_receipt["expires_at"]
+        or chain["final_retention_guaranteed_until"]
+        != final_structural_receipt["observed_at"] + 31536000
+    ):
+        raise ContractValidationError("structural replay receipt timeline mismatch")
+    expected_current_source_root = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_CURRENT_SOURCE_REVALIDATION:V1",
+        {
+            "action_id": chain["current_action_id"],
+            "challenge_hex": chain["current_challenge_hex"],
+            "provider_revalidation_artifact_sha256": provider_revalidation_artifact_sha256,
+            "source_replay_result_hash": source_replay_result_hash(
+                current_structural_receipt
+            ),
+        },
+    )
+    expected_final_source_root = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_FINAL_SOURCE_REVALIDATION:V1",
+        {
+            "action_id": chain["final_action_id"],
+            "challenge_hex": chain["final_challenge_hex"],
+            "provider_revalidation_artifact_sha256": provider_revalidation_artifact_sha256,
+            "source_replay_result_hash": source_replay_result_hash(
+                final_structural_receipt
+            ),
+        },
+    )
+    if (
+        chain["current_source_revalidation_hash"] != expected_current_source_root
+        or chain["final_source_revalidation_hash"] != expected_final_source_root
+    ):
+        raise ContractValidationError("structural source revalidation root mismatch")
+    current_authentication = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_CURRENT_RETENTION_AUTHENTICATION:V1",
+        {
+            "action_id": chain["current_action_id"],
+            "challenge_hex": chain["current_challenge_hex"],
+            "execution_manifest_hash": execution_manifest_hash,
+            "initial_retention_acceptance_hash": initial_retention_acceptance_hash,
+            "current_source_revalidation_hash": chain[
+                "current_source_revalidation_hash"
+            ],
+            "verifier_identity": _synthetic_verifier_identity("current"),
+        },
+    )
+    current_acceptance = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_CURRENT_RETENTION_ACCEPTANCE:V1",
+        {
+            "authentication_hash": current_authentication,
+            "issued_at": chain["current_issued_at"],
+            "verified_at": chain["current_verified_at"],
+            "expires_at": chain["current_expires_at"],
+            "retention_guaranteed_until": chain[
+                "current_retention_guaranteed_until"
+            ],
+        },
+    )
+    current_result = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_CURRENT_REPLAY_RESULT:V1",
+        {
+            "retention_acceptance_hash": current_acceptance,
+            "execution_manifest_hash": execution_manifest_hash,
+            "candidate_graph_hash": candidate_graph_hash,
+        },
+    )
+    historical = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_VERIFIED_HISTORICAL_MANIFEST:V1",
+        {
+            "current_replay_result_hash": current_result,
+            "execution_manifest_hash": execution_manifest_hash,
+            "candidate_graph_hash": candidate_graph_hash,
+        },
+    )
+    final_manifest = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_FINAL_CONSUMER_MANIFEST:V1",
+        {
+            "verified_historical_manifest_hash": historical,
+            "final_source_revalidation_hash": chain[
+                "final_source_revalidation_hash"
+            ],
+            "current_verifier_identity": _synthetic_verifier_identity("current"),
+            "final_verifier_identity": _synthetic_verifier_identity("final"),
+        },
+    )
+    final_authentication = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_FINAL_RETENTION_AUTHENTICATION:V1",
+        {
+            "action_id": chain["final_action_id"],
+            "challenge_hex": chain["final_challenge_hex"],
+            "final_consumer_manifest_hash": final_manifest,
+            "verifier_identity": _synthetic_verifier_identity("final"),
+        },
+    )
+    final_acceptance = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_FINAL_RETENTION_ACCEPTANCE:V1",
+        {
+            "authentication_hash": final_authentication,
+            "issued_at": chain["final_issued_at"],
+            "verified_at": chain["final_verified_at"],
+            "expires_at": chain["final_expires_at"],
+            "retention_guaranteed_until": chain[
+                "final_retention_guaranteed_until"
+            ],
+        },
+    )
+    final_result = domain_hash(
+        "FLUENCYTRACR:GCP_SYNTHETIC_FINAL_REPLAY_RESULT:V1",
+        {
+            "retention_acceptance_hash": final_acceptance,
+            "final_consumer_manifest_hash": final_manifest,
+            "candidate_graph_hash": candidate_graph_hash,
+        },
+    )
+    expected = {
+        "current_retention_authentication_hash": current_authentication,
+        "current_retention_acceptance_hash": current_acceptance,
+        "current_replay_result_hash": current_result,
+        "verified_historical_manifest_hash": historical,
+        "final_consumer_manifest_hash": final_manifest,
+        "final_retention_authentication_hash": final_authentication,
+        "final_retention_acceptance_hash": final_acceptance,
+        "final_replay_result_hash": final_result,
+    }
+    if any(chain[key] != value for key, value in expected.items()):
+        raise ContractValidationError("structural replay commitment mismatch")
 
 
 def rebind_replay_chain_source_results(
@@ -2811,6 +3091,14 @@ def rebind_replay_chain_source_results(
     current_source_replay_receipt: dict[str, Any],
     final_source_replay_receipt: dict[str, Any],
 ) -> dict[str, Any]:
+    validate_structural_replay_chain_shape(chain)
+    if (
+        current_source_replay_receipt.get("replay_mode") != "EXACT_ARCHIVE_REPLAY"
+        or final_source_replay_receipt.get("replay_mode") != "EXACT_ARCHIVE_REPLAY"
+    ):
+        raise ContractValidationError(
+            "contract-only receipt cannot enter archive replay chain"
+        )
     current_source_replay_result_hash = source_replay_result_hash(
         current_source_replay_receipt
     )
@@ -2969,6 +3257,14 @@ def validate_replay_chain(
     current_source_replay_receipt: dict[str, Any],
     final_source_replay_receipt: dict[str, Any],
 ) -> None:
+    validate_structural_replay_chain_shape(chain)
+    if (
+        current_source_replay_receipt.get("replay_mode") != "EXACT_ARCHIVE_REPLAY"
+        or final_source_replay_receipt.get("replay_mode") != "EXACT_ARCHIVE_REPLAY"
+    ):
+        raise ContractValidationError(
+            "contract-only receipt cannot enter archive replay chain"
+        )
     current_source_replay_result_hash = source_replay_result_hash(
         current_source_replay_receipt
     )
