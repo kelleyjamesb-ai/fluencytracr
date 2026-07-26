@@ -22,6 +22,12 @@ If two sources conflict, **stop** and record the conflict in `PROGRESS.md` → `
 - **Humans** add/rename/remove items and edit `title` / `bound` / `risk`; humans may edit root **`blueprint_ref`** and the **`schema`** documentation object. If a validator consumes this file, it must allow those root keys (see `schema.document` in the JSON).
 - Tasks must be **small and bounded** (explicit paths or acceptance criteria in `title` / `bound`).
 
+## Canonical runtime readiness-first gate
+
+Every human-authorized, `risk: high` canonical-runtime qualification item beginning with Section 7.5 must follow [`docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md`](../docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md) before system-under-test implementation. A filled packet is queue-bound reference evidence, never a second active-state source. Its phase-specific mechanical evidence and exact packet must receive CODE/BUG/ADVERSARIAL design review; generic structural validation alone cannot declare readiness. `READINESS_GO` has `authority_effect: NONE` and grants no queue creation, implementation, GCP, credential, signing, deployment, qualification, persistence, model-execution, commit, push, PR, or merge authority.
+
+After one implementation remediation batch, any material blocker in the replacement exact-tree panel requires `STOP_REARCHITECT`; return the item to pending/HOLD, record the blocker in `PROGRESS.md`, and do not start another repair loop under the same packet. Time or cost ceilings never weaken evidence or review gates.
+
 ## Session memory
 
 - Long-term intent lives in **queue + PROGRESS + git commits**.

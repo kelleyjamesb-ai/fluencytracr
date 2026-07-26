@@ -324,6 +324,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-26: corrective commit 637e84f9 and PR #442 merged normally as 72bc5f36 with exact reviewed tree defc0733. Final CODE/BUG/ADVERSARIAL reviews returned GO; all current-head CI passed. Approvals remain empty and runtime authority held. No live GCP, credentials, signing, deployment, persistence, qualification, model execution, or Sections 7.5-7.8 work occurred."
+    },
+    {
+      "id": "canonical-runtime-readiness-first-protocol",
+      "title": "Canonical runtime \u2014 readiness-first protocol before Section 7.5",
+      "bound": "docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md and reusable template, docs/agent/SESSION_START.md, .project/GOVERNANCE.md, progress, and focused validation only; codify trust/dependency graph, environment and adversarial matrices, deterministic oracle, cost/checkpoint, remediation-stop, and review sequencing; no Sections 7.5-7.8 implementation, live GCP, credentials, signing, deployment, qualification, persistence, or model execution",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "Reactivated 2026-07-26 with human authorization for one narrow correction only: bind a preimplementation evidence commit, verify implementation-commit ancestry and exact packet/test blob IDs, and remove two external-identity rows from the immutable packet. One final exact-tree clearance follows; any material HOLD stops. No Sections 7.5-7.8 implementation or runtime authority."
     }
   ]
 }
