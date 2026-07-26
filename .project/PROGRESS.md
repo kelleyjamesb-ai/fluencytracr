@@ -2,23 +2,24 @@
 
 ## Current Session
 
-- The human-created `canonical-runtime-readiness-first-protocol` item is the
-  sole active queue item. Upfront design review rejected both prose-only
-  readiness and a generic 2,597-line manifest/validator candidate that could
-  mistake structural completeness for semantic trust; that uncommitted
-  subsystem was removed rather than patched. The compact replacement binds
-  scope, trust/dependency ownership, 12 environment cells, 19 adversarial
-  classes with ledger reconciliation, phase-specific/Bayesian oracles, role-
-  specific review evidence, cost controls, one remediation batch, and
-  `STOP_REARCHITECT`. After CODE/quality and BUG correctly found that Git trees
-  have no ancestry, the human authorized one narrow correction: the protocol
-  now records a preimplementation evidence commit/tree, requires implementation
-  commit ancestry, compares exact readiness-packet/adversarial-test/fixture blob
-  IDs, and removes external identity rows from the immutable packet. One final
-  exact-tree design clearance is pending. The slice implements no Sections
-  7.5-7.8 work and authorizes no live GCP, credentials, signing, deployment,
-  qualification, persistence, or model execution; runtime authority remains
-  held.
+- The `canonical-runtime-readiness-first-protocol` item closed on 2026-07-26.
+  Upfront review rejected prose-only readiness and an uncommitted generic
+  2,597-line manifest/validator that could mistake structural completeness for
+  semantic trust. The compact replacement merged through PR #444 as
+  `6e1dd42b52f393295e92d1f0b33d0fbc017d8b7e`; its merge tree exactly matched
+  CODE/BUG/ADVERSARIAL-reviewed tree
+  `2c43039a42f39ea10bde5d4c5fc0ef97c2c8da6c`. It requires a preimplementation
+  evidence commit, implementation-commit ancestry, identical readiness-packet/
+  adversarial-test/fixture blobs, exhaustive trust-to-attack reconciliation,
+  12 environment cells, 19 attack classes, phase-specific/Bayesian oracles,
+  role-specific review evidence, cost checkpoints, one remediation batch, and
+  `STOP_REARCHITECT` after any replacement-panel blocker. The completed full
+  verification run reported 384 passed and 3 expected skips; V1 governance,
+  docs sweep, scoped link
+  checks, queue/diff invariants, and all current-head CI. No queue item is
+  active. No Sections 7.5-7.8 implementation, live GCP, credentials, signing,
+  deployment, qualification, persistence, or model execution occurred or is
+  authorized; runtime authority remains held.
 - Section 7.4 closed on 2026-07-26. Corrective commit
   `637e84f9e45f7cf31345eb7f316e5056a01e0cdd` and PR #442 merged normally as
   `72bc5f36227af3752fa5ab3a14cf588eeb44a271`; the merge tree exactly matched
@@ -3516,9 +3517,10 @@
 
 ## Blockers
 
-- Final exact-tree design clearance remains pending for the authorized narrow
-  readiness-protocol correction. No implementation or runtime authority is
-  permitted unless that clearance returns GO.
+- No readiness-protocol blocker remains: PR #444 merged normally as
+  `6e1dd42b52f393295e92d1f0b33d0fbc017d8b7e`, its merge tree exactly matched
+  reviewed tree `2c43039a42f39ea10bde5d4c5fc0ef97c2c8da6c`, and all current-head
+  checks passed. Section 7.5 and runtime authority remain unactivated.
 - No Section 7.4 closeout blocker remains: PR #442 merged normally as
   `72bc5f36227af3752fa5ab3a14cf588eeb44a271`, its merge tree exactly matched
   reviewed tree `defc07330eeb3d8fe32f13c4f2f322b0e3376e19`, and all current-head
@@ -3527,12 +3529,13 @@
 
 ## Next Step
 
-- Complete one final exact-tree design clearance for the authorized Git-lineage
-  and template correction. Any material HOLD stops the slice; GO permits only
-  local protocol verification and closeout, not Section 7.5. Keep runtime
-  authority held; do not perform live GCP, credentials, signing, deployment,
-  qualification, persistence, model execution, or Sections 7.5-7.8
-  implementation.
+- Before Section 7.5, a human must create its bounded high-risk queue item.
+  Then copy the readiness template into that item’s OpenSpec change, add the
+  adversarial tests/fixtures without system-under-test implementation, create a
+  preimplementation evidence commit, and obtain exact-packet CODE/BUG/
+  ADVERSARIAL `READINESS_GO`. Keep runtime authority held; do not perform live
+  GCP, credentials, signing, deployment, qualification, persistence, model
+  execution, or Sections 7.5-7.8 implementation.
 - Review/commit/PR the Glean dogfood BigQuery adapter slice. Next bounded step should be an operator path that posts the generated aggregate payloads into a running local backend and opens the Workspace on the refreshed evidence, still without raw rows, identifiers, customer-facing economics, ROI proof, causality, or person-level analysis.
 - AI Value Platform North Star: the VBD canon was amended 2026-06-11 with human approval — Depth = embeddedness of AI in repeatable workflow behavior (aggregate integration signals only); the tool/surface repertoire construct is renamed Repertoire and lives under Breadth's coverage views. Canon lives in `docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md` (decision note included) and `docs/agent/CLAUDE_AI_VALUE_NORTH_STAR_PROMPT.md`; the data boundary schema/fixture/validator/tests are aligned. FluencyTracr core's V4 Depth Repertoire contract is intentionally untouched. Do not "correct" Depth back to repertoire.
 - AI Value Platform North Star: the Value Evidence Case contract slice is complete (TDD, contract before UI) — schema `value-evidence-case.schema.json`, seeded Customer Support fixture, engine validator/builder `shared/src/aiValueEngine/valueEvidenceCase.ts` with fail-closed evidence-ladder gating (missing/rejected outcome evidence holds value language; SUBMITTED stays directional pending human acceptance; SUPPORTED stays caveated and non-causal; STRONG fails closed pending a governed evidence design), CLI `validate_ai_value_evidence_case.mjs`, tests, and package scripts. Next prescribed work per `docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md`: backend object-type registration/persistence for `value_evidence_case` and client-facing Workspace presentation, or the retest-result object — choose from observed review gaps; no ROI proof, causality, person-level data, or customer-facing economic output.
