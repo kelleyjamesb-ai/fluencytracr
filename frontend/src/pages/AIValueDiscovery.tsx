@@ -11,6 +11,7 @@ import {
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import { AiValueJourneyRail } from "../components/AiValueJourneyRail";
 import { AIValueReportLayout } from "../components/AIValueReportLayout";
+import { getFrontendSessionContext } from "../auth";
 
 const steps = [
   "Client & Objective",
@@ -223,8 +224,8 @@ const csv = (value: string) =>
 const withFallback = (items: string[], fallback: string) =>
   items.length > 0 ? items : [fallback];
 
-const sessionRole = () => (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
-const sessionOrgId = () => (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
+const sessionRole = () => getFrontendSessionContext().role;
+const sessionOrgId = () => getFrontendSessionContext().orgId;
 
 const EXAMPLE = {
   clientName: "Northstar Enterprise",

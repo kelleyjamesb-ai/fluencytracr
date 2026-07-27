@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AUTH_TOKEN_STORAGE_KEY } from "../auth";
+import { applyAuthToken, clearAuthSession } from "../auth";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 const renderWithRoutes = () =>
@@ -42,22 +42,33 @@ describe("ProtectedRoute", () => {
     expect(screen.queryByText("protected-content")).not.toBeInTheDocument();
   });
 
-  it("renders children when session flag is true", () => {
+  it("redirects when only the legacy session flag is true", () => {
     vi.stubEnv("VITE_REQUIRE_AUTH", "true");
     localStorage.setItem("isAuthenticated", "true");
 
     renderWithRoutes();
 
-    expect(screen.getByText("protected-content")).toBeInTheDocument();
+    expect(screen.getByText("login-page")).toBeInTheDocument();
   });
 
   it("renders children when bearer token exists", () => {
     vi.stubEnv("VITE_REQUIRE_AUTH", "true");
-    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, " token-value ");
+    applyAuthToken(" token-value ");
 
     renderWithRoutes();
 
     expect(screen.getByText("protected-content")).toBeInTheDocument();
     expect(screen.queryByText("login-page")).not.toBeInTheDocument();
+  });
+
+  it("reacts to same-tab auth invalidation", () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    applyAuthToken("token-value");
+    renderWithRoutes();
+
+    act(() => clearAuthSession());
+
+    expect(screen.getByText("login-page")).toBeInTheDocument();
+    expect(screen.queryByText("protected-content")).not.toBeInTheDocument();
   });
 });

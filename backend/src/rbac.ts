@@ -1,7 +1,11 @@
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
 import { Role, RoleSchema } from "@fluencytracr/shared";
-import { isAuthLockdownRequired, resolveJwtSecret } from "./auth_secret";
+import {
+  isAuthLockdownRequired,
+  isStrictRuntimeAuthenticationRequired,
+  resolveJwtSecret
+} from "./auth_secret";
 
 declare global {
   namespace Express {
@@ -45,9 +49,13 @@ const verifyHs256Jwt = (token: string, secret: string) => {
     return null;
   }
   try {
+    const header = JSON.parse(decodeBase64Url(headerB64).toString("utf8")) as Record<string, unknown>;
+    if (header.alg !== "HS256" || header.typ !== "JWT") {
+      return null;
+    }
     const payload = JSON.parse(decodeBase64Url(payloadB64).toString("utf8")) as Record<string, unknown>;
-    const exp = typeof payload.exp === "number" ? payload.exp : null;
-    if (exp !== null && Date.now() >= exp * 1000) {
+    const exp = payload.exp;
+    if (typeof exp !== "number" || !Number.isFinite(exp) || Date.now() >= exp * 1000) {
       return null;
     }
     return payload;
@@ -56,13 +64,31 @@ const verifyHs256Jwt = (token: string, secret: string) => {
   }
 };
 
+const authorizationHeaderCount = (req: Request) => {
+  let count = 0;
+  for (let index = 0; index < req.rawHeaders.length; index += 2) {
+    if (req.rawHeaders[index]?.toLowerCase() === "authorization") {
+      count += 1;
+    }
+  }
+  return count;
+};
+
 export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFunction) => {
   const isTestEnv = process.env.NODE_ENV === "test";
   const isDevHeaderAuthEnabled = process.env.DEV_HEADER_AUTH === "1" || process.env.DEV_HEADER_AUTH === "true";
-  const authHeader = req.header("authorization") ?? "";
-  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : "";
+  const authHeaderCount = authorizationHeaderCount(req);
+  const authHeader = req.header("authorization");
+  if (authHeaderCount > 0) {
+    if (
+      authHeaderCount !== 1 ||
+      !authHeader ||
+      !/^Bearer [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(authHeader)
+    ) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
 
-  if (bearer) {
+    const bearer = authHeader.slice("Bearer ".length);
     const { secret, isFallback } = resolveJwtSecret();
     if (!secret) {
       return res.status(500).json({ error: "Server auth misconfigured" });
@@ -78,7 +104,7 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
     if (!roleParsed.success) {
       return res.status(401).json({ error: "Invalid token role" });
     }
-    const orgId = typeof payload.org_id === "string" ? payload.org_id : null;
+    const orgId = typeof payload.org_id === "string" ? payload.org_id.trim() : "";
     if (!orgId) {
       return res.status(401).json({ error: "Invalid token org_id" });
     }
@@ -90,7 +116,10 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
     return next();
   }
 
-  if (isTestEnv || isDevHeaderAuthEnabled) {
+  if (
+    !isStrictRuntimeAuthenticationRequired() &&
+    (isTestEnv || isDevHeaderAuthEnabled)
+  ) {
     const rawRole = req.header("x-role");
     const rawOrgId = req.header("x-org-id");
     if (rawRole) {

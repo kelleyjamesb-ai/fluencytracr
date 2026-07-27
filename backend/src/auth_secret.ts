@@ -4,11 +4,14 @@ const PREVIEW_FALLBACK_SECRET = "preview_jwt_secret_for_testing_only";
 
 export const isAuthLockdownRequired = () => process.env.REQUIRE_AUTH_LOCKDOWN === "1";
 
-const canUseFallbackSecret = () => {
-  if (process.env.ALLOW_INSECURE_AUTH_FALLBACK === "1") {
+const isManagedRuntime = () =>
+  process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV?.trim());
+
+export const isStrictRuntimeAuthenticationRequired = () => {
+  if (isAuthLockdownRequired() || isManagedRuntime()) {
     return true;
   }
-  return process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
+  return process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development";
 };
 
 export const resolveJwtSecret = () => {
@@ -16,19 +19,14 @@ export const resolveJwtSecret = () => {
   if (configured) {
     return { secret: configured, isFallback: false };
   }
-  if (canUseFallbackSecret()) {
+  if (!isStrictRuntimeAuthenticationRequired()) {
     return { secret: PREVIEW_FALLBACK_SECRET, isFallback: true };
   }
   return { secret: null, isFallback: false };
 };
 
 export const assertJwtSecretConfigured = () => {
-  const isManagedRuntime = process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
-  if (
-    process.env.NODE_ENV !== "production" &&
-    !isManagedRuntime &&
-    !isAuthLockdownRequired()
-  ) {
+  if (!isStrictRuntimeAuthenticationRequired()) {
     return;
   }
   const { secret } = resolveJwtSecret();
@@ -36,16 +34,12 @@ export const assertJwtSecretConfigured = () => {
     return;
   }
   throw new Error(
-    "JWT_SECRET must be configured for this runtime. Set JWT_SECRET or explicitly allow insecure fallback for local development."
+    "JWT_SECRET must be configured for this runtime."
   );
 };
 
-const canMintTokensWithoutIssuerSecret = () => {
-  return process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
-};
-
 export const isAuthTokenIssuerAuthorized = (providedSecret: string | undefined) => {
-  if (canMintTokensWithoutIssuerSecret()) {
+  if (!isStrictRuntimeAuthenticationRequired()) {
     return true;
   }
 

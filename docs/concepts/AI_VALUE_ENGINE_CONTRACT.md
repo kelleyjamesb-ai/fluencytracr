@@ -131,3 +131,32 @@ prove:
 - no production connector, runtime service, storage layer, ROI calculation,
   causality claim, productivity measurement, HR analytics, individual scoring,
   ranking surface, or customer-facing economic output is introduced.
+
+## Existing Workspace Adapter Containment
+
+The existing local API and Workspace adapters do not expand the engine boundary.
+They may request an in-memory run only with `persist: false`. The Workspace must
+not seed missing objects, persist generated stages, select a separately stored
+packet, or open a legacy HTML readout as if it were the result of the current
+request.
+
+A live Workspace report is eligible only when the exact response:
+
+- reports no persisted objects, no halted stage, the exact
+  `READY_FOR_EXECUTIVE_VALIDATION` decision, and
+  `customer_facing_economic_output: false`;
+- carries valid Blueprint and Metrics stages plus valid generated Scenario,
+  Evidence Readiness, Claim Boundary, and Executive Packet stages;
+- binds every stage identifier, source reference, workflow identity, value
+  route, decision, and claim state through that same response; and
+- projects no internal identifiers or source references into rendered output.
+
+The only accurate label for that projection is **internal, request-bound
+preview**. It is not source-bound, canonical, customer-facing, or audit-ready.
+Illustrative example content must remain visibly illustrative. Loading, error,
+held, and live modes must never substitute illustrative or previously loaded
+report content.
+
+This section restores fail-closed behavior in existing adapters. It does not
+authorize a new runtime service, storage contract, schema, customer-facing
+report, or economic output.

@@ -1,7 +1,8 @@
 # AI Value Platform - end-to-end demo runbook
 
 This is the path from a clean checkout to a clickable, fully populated AI Value
-chain in the app (Discovery -> Workshop -> Journey -> in-app executive readout).
+chain in the app (Discovery -> Workshop -> Journey -> request-bound internal
+Workspace preview).
 
 There are three ways to see the platform. Pick based on what you need.
 
@@ -9,7 +10,7 @@ There are three ways to see the platform. Pick based on what you need.
 
 ## Option A - zero-setup sponsor readout (no database)
 
-If you only need the **sponsor-ready executive readout artifact**, you do not
+If you only need the **illustrative sponsor readout artifact**, you do not
 need Postgres, the backend, or the frontend:
 
 ```bash
@@ -150,6 +151,17 @@ npm run dev --workspace backend     # sets DEV_HEADER_AUTH=true, serves on :4000
 automatically; if you launch the backend another way, set it yourself (it is
 documented in `backend/.env.example`). **Never enable it outside local dev.**
 
+Header identity is accepted only in an unmanaged, unlocked local development
+runtime or the test harness. Production, Vercel/managed runtimes, auth lockdown,
+and missing or unknown environments are JWT-only even if `DEV_HEADER_AUTH` or
+an insecure fallback flag is set.
+
+Strict runtimes require `JWT_SECRET` at startup. `/auth/token` also requires the
+issuer secret there; the browser never responds to a 401 by minting a token or
+retrying the request. With `VITE_REQUIRE_AUTH=true`, `/login` accepts only a
+provisioned bearer token. Organization and role selectors are local-example
+controls and are not shown as authenticated identity in strict mode.
+
 ### 4. Seed the demo chain
 
 With the backend running:
@@ -178,9 +190,23 @@ pages, either way:
 - Visit `/login` and enter Organization ID `org-northstar-enterprise`, **or**
 - In the browser console: `localStorage.setItem("orgId", "org-northstar-enterprise")`
 
-Then open **`/ai-value`** (Value Journey). You should see every stage populated;
-click into Discovery/Workshop, and use **Open executive readout** to view the
-sponsor HTML rendered from the seeded packet.
+Then open **`/ai-value`** (Value Journey) to inspect the seeded stages, or
+**`/ai-value-workspace/decisions`** for the report surface. Choose **Review
+aggregate evidence status** to make a new non-persistent engine request.
+
+The Workspace does not seed missing objects. It sends `persist: false`, clears
+prior live content while the request is loading, and renders a live report only
+when the exact response is non-held and contains a valid generated Executive
+Packet bound to the same Blueprint, Metrics, Scenario, Evidence Readiness, and
+Claim Boundary stages. A qualifying result is labeled **internal,
+request-bound preview** and explicitly not source-bound, canonical,
+customer-facing, or audit-ready. It exposes no internal identifiers or source
+references.
+
+The default example remains visibly **Illustrative example, not live evidence**.
+Loading, error, and held states show their own empty report state; they do not
+fall back to the example, a previously loaded report, an independently selected
+Journey packet, or the legacy HTML readout.
 
 ---
 
@@ -188,6 +214,12 @@ sponsor HTML rendered from the seeded packet.
 
 - **Pages are empty / "Sign in with an organization session":** the browser org
   doesn't match the seeded org. Redo step 5.
+- **Strict-mode login shows only Access token:** supply a provisioned bearer
+  token. Organization and role are verified by the backend JWT path, not chosen
+  in the browser.
+- **Live report is held:** inspect the held message and the exact engine
+  response. The Workspace will not seed, persist, select another packet, or
+  substitute illustrative content.
 - **Seeder prints `HTTP 0` / connection error:** the backend isn't running or
   `DEV_HEADER_AUTH` is off. Redo step 3.
 - **`P3005` on `migrate deploy`:** use `npm run db:baseline` (step 2).

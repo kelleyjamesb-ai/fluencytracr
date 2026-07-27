@@ -126,6 +126,8 @@ jobs:
 
       - name: Start backend
         if: steps.lmsys-credentials.outputs.available == 'true'
+        env:
+          NODE_ENV: development
         run: |
           npm run dev --workspace backend > backend.log 2>&1 &
           echo $! > backend.pid

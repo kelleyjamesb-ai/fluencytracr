@@ -10,7 +10,6 @@ import {
   type FunctionMetricPlan
 } from "../components/ClientQuestionMetricBridgePanel";
 import { AiContributionReportingSpinePanel } from "../components/AiContributionReportingSpinePanel";
-import { ExecutiveReadoutPreviewPanel } from "../components/ExecutiveReadoutPreviewPanel";
 import { SponsorDecisionLoopPanel } from "../components/SponsorDecisionLoopPanel";
 import { ValueEvidenceCasePanel } from "../components/ValueEvidenceCasePanel";
 import { applyReviewerMetricSelectionDraftIntake } from "../lib/aiValueContributionReportingSpine";
@@ -20,6 +19,8 @@ import {
   type CustomerDataModelProjectionResponse
 } from "../lib/aiValueApi";
 import type { SelectedOutcomeMetricSelection } from "../lib/aiValueMetricSelection";
+import type { RequestBoundLiveReport } from "../lib/aiValueLiveReport";
+import { getFrontendSessionContext } from "../auth";
 
 const workspacePages = [
   {
@@ -1125,13 +1126,6 @@ const displayPilotUses = (uses: unknown, labels: Record<string, string>) =>
     ? uses.map((use) => labelFromToken(use, labels)).filter(Boolean)
     : [];
 
-const reportDisplayCopy = (value: string) =>
-  value
-    .replace(/Executive Readout/g, "Executive Report")
-    .replace(/executive readout/g, "executive report")
-    .replace(/Readout/g, "Report")
-    .replace(/readout/g, "report");
-
 const sampleExecutiveReport = {
   currentPosture: [
     ["Hypothesis status", "Customer-approved"],
@@ -1206,7 +1200,7 @@ const sampleExecutiveReport = {
 } as const;
 
 const customerProjectionRole = () =>
-  (localStorage.getItem("role") ?? "EXEC_VIEWER").trim() || "EXEC_VIEWER";
+  getFrontendSessionContext().role;
 
 const customerProjectionMeasurementPlanId = () => {
   const query = new URLSearchParams(window.location.search);
@@ -1387,7 +1381,7 @@ const reportSidebarLinks: Array<{ label: string; path: string; slug?: WorkspaceP
 const reportBoundaryLabels = [
   "Claim boundaries",
   "Reviewer approvals",
-  "Audit-ready notes"
+  "Not audit-ready"
 ];
 
 const WorkspaceReportSidebar = ({ activePageSlug }: { activePageSlug: WorkspacePageSlug }) => (
@@ -1423,7 +1417,8 @@ const WorkspaceReportSidebar = ({ activePageSlug }: { activePageSlug: WorkspaceP
 export const AIValueWorkspace = () => {
   const location = useLocation();
   const activePageSlug = currentPageFromPath(location.pathname);
-  const { mode, live, errorMessage, connectLiveEvidence } = useAiValueWorkspace();
+  const { mode, live, liveReport, errorMessage, connectLiveEvidence } =
+    useAiValueWorkspace();
   const journey = useAiValueJourney();
 
   const workflowName =
@@ -1473,24 +1468,26 @@ export const AIValueWorkspace = () => {
               <StatusPill label={`Step ${activeStepNumber} of ${workspacePages.length}`} tone="neutral" />
             </section>
 
-            <section className="ai-value-context-bar" aria-label="Current client value thread">
-              <div>
-                <span className="ai-value-map-label">Workflow</span>
-                <strong>{workflowName}</strong>
-              </div>
-              <div>
-                <span className="ai-value-map-label">Value route</span>
-                <strong>{valueRouteLabel}</strong>
-              </div>
-              <div>
-                <span className="ai-value-map-label">Current decision</span>
-                <strong>{decisionLabel}</strong>
-              </div>
-              <div>
-                <span className="ai-value-map-label">Value language</span>
-                <strong>{claimModeLabel}</strong>
-              </div>
-            </section>
+            {(mode === "example" || (mode === "live" && live !== null)) && (
+              <section className="ai-value-context-bar" aria-label="Current client value thread">
+                <div>
+                  <span className="ai-value-map-label">Workflow</span>
+                  <strong>{workflowName}</strong>
+                </div>
+                <div>
+                  <span className="ai-value-map-label">Value route</span>
+                  <strong>{valueRouteLabel}</strong>
+                </div>
+                <div>
+                  <span className="ai-value-map-label">Current decision</span>
+                  <strong>{decisionLabel}</strong>
+                </div>
+                <div>
+                  <span className="ai-value-map-label">Value language</span>
+                  <strong>{claimModeLabel}</strong>
+                </div>
+              </section>
+            )}
 
             {journey.errorMessage && (
               <p role="alert" aria-live="polite" className="ai-value-inline-alert">
@@ -1529,7 +1526,11 @@ export const AIValueWorkspace = () => {
                 {activePageSlug === "case" && <EvidenceCheckpointPage journey={journey} />}
 
                 {activePageSlug === "decisions" && (
-                  <DecisionsPage journey={journey} />
+                  <DecisionsPage
+                    journey={journey}
+                    mode={mode}
+                    liveReport={liveReport}
+                  />
                 )}
 
                 <WorkspacePageHandoff currentSlug={activePageSlug} />
@@ -3142,28 +3143,86 @@ const ValueImprovementLoopPanel = ({ journey }: { journey: Journey }) => {
   );
 };
 
-const DecisionsPage = ({ journey }: { journey: Journey }) => (
+const DecisionsPage = ({
+  journey,
+  mode,
+  liveReport
+}: {
+  journey: Journey;
+  mode: ReturnType<typeof useAiValueWorkspace>["mode"];
+  liveReport: RequestBoundLiveReport | null;
+}) => (
   <section className="ai-value-focused-stack" aria-label="Executive Report workspace">
-    <ExecutiveReportPackagePanel journey={journey} />
+    <ExecutiveReportPackagePanel mode={mode} liveReport={liveReport} />
 
     <ValueRoiAccessPanel journey={journey} />
 
     <SponsorDecisionLoopPanel loop={journey.sponsorDecisionLoop} />
 
     <ValueImprovementLoopPanel journey={journey} />
-
-    <ExecutiveReadoutPreviewPanel
-      preview={journey.executiveReadoutPreview}
-      packetIds={journey.packetIds}
-      onOpenReadout={(packetId) => void journey.openReadout(packetId)}
-    />
   </section>
 );
 
-const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
-  const preview = journey.executiveReadoutPreview;
-  const canShare = preview.canOpen && journey.packetIds.length > 0;
-  const previewPacketId = journey.packetIds[0];
+const ExecutiveReportPackagePanel = ({
+  mode,
+  liveReport
+}: {
+  mode: ReturnType<typeof useAiValueWorkspace>["mode"];
+  liveReport: RequestBoundLiveReport | null;
+}) => {
+  if (mode === "loading" || mode === "held" || mode === "error") {
+    const title =
+      mode === "loading"
+        ? "Live report request is loading"
+        : mode === "held"
+          ? "Live report is held"
+          : "Live report could not be loaded";
+    const detail =
+      mode === "loading"
+        ? "Prior live state has been cleared while this request is evaluated."
+        : mode === "held"
+          ? "The exact engine response did not clear every request-binding and governance gate."
+          : "No illustrative or previously loaded report is being substituted.";
+    return (
+      <section
+        className="ai-value-panel ai-value-report-package-panel"
+        aria-label="Value Evidence Report"
+      >
+        <p className="eyebrow">Value Evidence Report</p>
+        <h2>{title}</h2>
+        <p>{detail}</p>
+        <StatusPill label={mode === "loading" ? "Loading" : "Held"} tone="neutral" />
+      </section>
+    );
+  }
+
+  if (mode === "live" && !liveReport) {
+    return (
+      <section
+        className="ai-value-panel ai-value-report-package-panel"
+        aria-label="Value Evidence Report"
+      >
+        <p className="eyebrow">Value Evidence Report</p>
+        <h2>Live report is held</h2>
+        <p>The request did not produce an eligible request-bound projection.</p>
+      </section>
+    );
+  }
+
+  const isLive = mode === "live" && liveReport !== null;
+  const currentPosture = isLive
+    ? liveReport.currentPosture
+    : [...sampleExecutiveReport.currentPosture];
+  const layers = isLive ? liveReport.layers : [...sampleExecutiveReport.layers];
+  const recommendations = isLive
+    ? liveReport.recommendations
+    : [...sampleExecutiveReport.recommendations];
+  const governanceNotes = isLive
+    ? liveReport.governanceNotes
+    : [...sampleExecutiveReport.governanceNotes];
+  const reportSummary = isLive
+    ? liveReport.summary
+    : "For Customer Support case resolution, evidence suggests AI-enabled work is beginning to become more durable, but the value case is not fully closed yet. Behavior evidence is strongest: support teams are showing higher reuse, more verification, and deeper workflow integration across the approved Day 0 to Day 60 windows. Business metric evidence is still emerging because the customer-owned resolution-time export has not yet cleared review.";
 
   return (
     <section className="ai-value-panel ai-value-report-package-panel" aria-label="Value Evidence Report">
@@ -3176,28 +3235,31 @@ const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
             behavior, stronger workflow capability, meaningful metric movement,
             and better spend judgment.
           </p>
+          <p>
+            {isLive
+              ? liveReport.boundaryLabel
+              : "Illustrative example, not live evidence"}
+          </p>
         </div>
-        <StatusPill label={reportDisplayCopy(preview.statusLabel)} tone={preview.statusTone} />
+        <StatusPill
+          label={isLive ? "Request-bound" : "Illustrative only"}
+          tone={isLive ? "good" : "neutral"}
+        />
       </div>
 
       <p className="ai-value-report-action-caveat">
-        Caveated report actions only: this package does not claim ROI, causality,
-        productivity lift, financial impact, or individual performance. Blocked
-        and internal-only evidence stays out of shared report materials.
+        {isLive
+          ? liveReport.boundaryStatement
+          : "Caveated report actions only: this illustrative package does not claim ROI, causality, productivity lift, financial impact, or individual performance. Blocked and internal-only evidence stays out of shared report materials."}
       </p>
 
       <div className="ai-value-report-actions" role="group" aria-label="Report actions">
         <button
           type="button"
           className="ai-value-step active"
-          disabled={!canShare}
-          onClick={() => {
-            if (previewPacketId) {
-              void journey.openReadout(previewPacketId);
-            }
-          }}
+          disabled
         >
-          Open internal preview
+          {isLive ? "Internal request-bound preview" : "Open internal preview"}
         </button>
         <button type="button" className="ai-value-step" disabled>
           Export not authorized
@@ -3212,24 +3274,19 @@ const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
 
       <section className="ai-value-report-executive-read" aria-label="Executive read">
         <h3>Executive Read</h3>
-        <p>
-          For Customer Support case resolution, evidence suggests AI-enabled work is
-          beginning to become more durable, but the value case is not fully closed yet.
-          Behavior evidence is strongest: support teams are showing higher reuse, more
-          verification, and deeper workflow integration across the approved Day 0 to
-          Day 60 windows. Business metric evidence is still emerging because the
-          customer-owned resolution-time export has not yet cleared review.
-        </p>
-        <p>
-          This does not mean the organization is simply using Glean more. The early
-          signal is that support work is starting to change: teams are retrieving
-          knowledge, reusing prior answers, verifying outputs, and reducing repeated
-          manual search loops.
-        </p>
+        <p>{reportSummary}</p>
+        {!isLive && (
+          <p>
+            This does not mean the organization is simply using Glean more. The early
+            signal is that support work is starting to change: teams are retrieving
+            knowledge, reusing prior answers, verifying outputs, and reducing repeated
+            manual search loops.
+          </p>
+        )}
       </section>
 
       <div className="ai-value-report-posture-grid" aria-label="Current posture">
-        {sampleExecutiveReport.currentPosture.map(([label, value]) => (
+        {currentPosture.map(([label, value]) => (
           <article key={label}>
             <span className="ai-value-map-label">{label}</span>
             <strong>{value}</strong>
@@ -3238,7 +3295,7 @@ const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
       </div>
 
       <section className="ai-value-report-layer-grid" aria-label="Report evidence layers">
-        {sampleExecutiveReport.layers.map((layer) => (
+        {layers.map((layer) => (
           <article key={layer.title}>
             <h3>{layer.title}</h3>
             <p>{layer.summary}</p>
@@ -3257,7 +3314,7 @@ const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
           <p>What leadership should do next</p>
         </div>
         <ol>
-          {sampleExecutiveReport.recommendations.map((recommendation) => (
+          {recommendations.map((recommendation) => (
             <li key={recommendation}>{recommendation}</li>
           ))}
         </ol>
@@ -3269,16 +3326,16 @@ const ExecutiveReportPackagePanel = ({ journey }: { journey: Journey }) => {
           <p>What the report can and cannot say</p>
         </div>
         <ul>
-          {sampleExecutiveReport.governanceNotes.map((note) => (
+          {governanceNotes.map((note) => (
             <li key={note}>{note}</li>
           ))}
         </ul>
       </section>
 
       <p className="ai-value-report-final-sentence">
-        The strongest current conclusion is that AI-enabled work is beginning to
-        form in Customer Support, but business metric evidence must clear review
-        before Glean can support stronger value language.
+        {isLive
+          ? "This conclusion is limited to the exact successful engine response that produced this preview."
+          : "The strongest current conclusion is that AI-enabled work is beginning to form in Customer Support, but business metric evidence must clear review before Glean can support stronger value language."}
       </p>
     </section>
   );

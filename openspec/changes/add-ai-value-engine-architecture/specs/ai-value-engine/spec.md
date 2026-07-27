@@ -80,3 +80,50 @@ pre-existing tests pass unchanged against the engine-backed path.
 - **THEN** its CLI invocation, exit codes, and output contract are unchanged
 - **AND** `scripts/validate_ai_value_blueprint.test.mjs` passes without test
   modifications
+
+### Requirement: Existing Workspace Adapter Fails Closed
+
+The existing Workspace adapter SHALL invoke the engine with persistence
+disabled, SHALL NOT seed missing objects, and SHALL clear prior live report
+state during loading, error, or held outcomes. This requirement restores the
+existing engine boundary and does not authorize a new API, runtime service,
+schema, storage contract, or customer-facing output.
+
+#### Scenario: Required objects are missing
+
+- **WHEN** the Workspace cannot select a validated Blueprint and Metrics Library
+- **THEN** it reports a held state
+- **AND** performs no seed or persistence write
+- **AND** displays no illustrative or previously loaded report as live evidence
+
+#### Scenario: Overlapping requests finish out of order
+
+- **WHEN** an older engine request finishes after a newer request
+- **THEN** the older result cannot replace the newer Workspace state
+
+### Requirement: Request-Bound Internal Report Projection
+
+The Workspace SHALL render a live report only from the generated Executive
+Packet in the exact non-persistent engine response that cleared every stage and
+returned `READY_FOR_EXECUTIVE_VALIDATION`. It SHALL bind the packet source
+references, stage identities, workflow identity, value route, decision, and
+claim state to that response and SHALL expose no internal identifiers or source
+references.
+
+#### Scenario: Packet lineage does not match the response
+
+- **WHEN** any packet reference or identity differs from the corresponding
+  stage in the same engine response
+- **THEN** the Workspace reports a held state
+- **AND** does not select another stored or Journey packet
+
+#### Scenario: Exact response clears every gate
+
+- **WHEN** a non-persistent response has no halt, reports no persisted objects,
+  has the exact ready decision, and contains valid bound stages plus a valid
+  generated Executive Packet
+- **THEN** the Workspace may render an **internal, request-bound preview**
+- **AND** states that it is not source-bound, canonical, customer-facing, or
+  audit-ready
+- **AND** does not expose identifiers, source references, or a legacy HTML
+  readout

@@ -178,6 +178,7 @@ describe("AIValueWorkspace executive spine", () => {
     const { container } = renderWorkspace("/ai-value-workspace/decisions");
 
     const report = screen.getByRole("region", { name: /Value Evidence Report/i });
+    expect(within(report).getByText(/Illustrative example, not live evidence/i)).toBeInTheDocument();
     expect(within(report).getByRole("heading", { name: /Is enterprise AI becoming valuable work/i })).toBeInTheDocument();
     expect(within(report).getByText(/For Customer Support case resolution/i)).toBeInTheDocument();
     expect(within(report).getByText(/Hypothesis status/i)).toBeInTheDocument();
@@ -211,6 +212,64 @@ describe("AIValueWorkspace executive spine", () => {
       within(report).getAllByText(/does not claim ROI, causality, productivity lift, financial impact/i).length
     ).toBeGreaterThan(0);
     expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("shows no illustrative report while a live request is loading", async () => {
+    vi.mocked(fetch).mockImplementation(
+      () => new Promise<Response>(() => undefined)
+    );
+    renderWorkspace("/ai-value-workspace/decisions");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Review aggregate evidence status/i })
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText(/Live report request is loading/i)).toBeInTheDocument()
+    );
+    expect(
+      screen.queryByRole("region", { name: /Current client value thread/i })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
+  });
+
+  it("holds with no illustrative fallback when no workshop objects exist", async () => {
+    renderWorkspace("/ai-value-workspace/decisions");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Review aggregate evidence status/i })
+    );
+
+    await waitFor(() =>
+      expect(screen.getAllByText(/Live report is held/i).length).toBeGreaterThan(0)
+    );
+    expect(
+      screen.queryByRole("region", { name: /Current client value thread/i })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
+    expect(
+      vi.mocked(fetch).mock.calls.every(([, init]) => (init?.method ?? "GET") === "GET")
+    ).toBe(true);
+  });
+
+  it("shows no illustrative fallback after a live request error", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
+    renderWorkspace("/ai-value-workspace/decisions");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Review aggregate evidence status/i })
+    );
+
+    await waitFor(() =>
+      expect(screen.getAllByText(/Live report could not be loaded/i).length).toBeGreaterThan(0)
+    );
+    expect(
+      screen.queryByRole("region", { name: /Current client value thread/i })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
   });
 
   it("uses the sidebar and toolbar instead of a duplicate step-card row", () => {
@@ -1841,91 +1900,24 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(activeHandoff.metrics).toEqual([]);
   });
 
-  it.each([
-    {
-      state: "ACCEPTED" as const,
-      status: /Caveated sponsor review/i,
-      included: /accepted aggregate Median resolution time evidence/i,
-      held: /Realized ROI, causality, productivity, and individual scoring stay out/i,
-      owner: /Support Operations and the sponsor/i,
-      action: /Review the caveated report with accepted evidence/i,
-      caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i,
-      canOpen: true
-    },
-    {
-      state: "SUBMITTED" as const,
-      status: /Review pending/i,
-      included: /preview stays held until the submitted evidence is accepted or rejected/i,
-      held: /Stronger value language stays held until Support Operations accepts or rejects the export/i,
-      owner: /Support Operations/i,
-      action: /Accept the export only if the metric, source, export level, baseline window, and comparison window match the request/i,
-      caveat: /Submitted evidence does not validate value yet/i,
-      canOpen: false
-    },
-    {
-      state: "REJECTED" as const,
-      status: /Corrected export needed/i,
-      included: /preview stays held until a corrected aggregate export is accepted/i,
-      held: /Validated value language stays held until a corrected aggregate export is accepted/i,
-      owner: /Support Operations/i,
-      action: /Keep stronger value language blocked until a corrected export is accepted/i,
-      caveat: /Rejected evidence cannot support value claims/i,
-      canOpen: false
-    },
-    {
-      state: "MISSING" as const,
-      status: /Data owner request needed/i,
-      included: /preview stays held until the aggregate export arrives and passes review/i,
-      held: /Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review/i,
-      owner: /Support Operations/i,
-      action: /Ask Support Operations for an aggregate Median resolution time export/i,
-      caveat: /Missing evidence keeps the report in planning status/i,
-      canOpen: false
-    }
-  ])("carries $state evidence into the Executive Report preview", async ({
-    state,
-    status,
-    included,
-    held,
-    owner,
-    action,
-    caveat,
-    canOpen
-  }) => {
+  it.each(["ACCEPTED", "SUBMITTED", "REJECTED", "MISSING"] as const)(
+    "does not use an independently selected %s journey packet as the workspace report",
+    async (state) => {
     const fixture = withOutcomeReviewState(state);
     stubJourneyFetch(fixture.objects, fixture.details);
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: vi.fn(() => "blob:workspace-readout-preview")
-    });
     const { container } = renderWorkspace("/ai-value-workspace/decisions");
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /Executive Report Preview/i })).toBeInTheDocument();
+      expect(
+        screen.getByText(/Illustrative example, not live evidence/i)
+      ).toBeInTheDocument();
     });
 
-    const preview = screen.getByRole("region", { name: /Executive report preview/i });
-    expect(within(preview).getByText(status)).toBeInTheDocument();
-    expect(within(preview).getByText(included)).toBeInTheDocument();
-    expect(within(preview).getByText(held)).toBeInTheDocument();
-    expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
-    expect(within(preview).getByText(action)).toBeInTheDocument();
-    expect(within(preview).getByText(caveat)).toBeInTheDocument();
-
-    if (canOpen) {
-      fireEvent.click(within(preview).getByRole("button", { name: /Open caveated internal preview/i }));
-      await waitFor(() => {
-        expect(open).toHaveBeenCalledWith("blob:workspace-readout-preview", "_blank", "noopener");
-      });
-    } else {
-      expect(
-        within(preview).queryByRole("button", { name: /Open caveated internal preview/i })
-      ).not.toBeInTheDocument();
-      expect(within(preview).getByText(/Preview held for evidence review/i)).toBeInTheDocument();
-      expect(open).not.toHaveBeenCalled();
-    }
-
+    expect(
+      screen.queryByRole("region", { name: /Executive report preview/i })
+    ).not.toBeInTheDocument();
+    expect(open).not.toHaveBeenCalled();
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("workflow", "_", "family"),
       uiTerm("metric", "_", "id"),
@@ -1934,7 +1926,6 @@ describe("AIValueWorkspace journey continuity", () => {
       uiTerm("executive", "_", "packet"),
       "export_v1"
     ]);
-    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
   });
 
   it("redirects the old ROI route into Evidence Checkpoint without exposing ROI modeling UI", async () => {

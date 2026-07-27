@@ -89,6 +89,8 @@ jobs:
         run: npm run test:seed
 
       - name: Start backend
+        env:
+          NODE_ENV: development
         run: |
           npm run dev --workspace backend > backend.log 2>&1 &
           echo $! > backend.pid
