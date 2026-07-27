@@ -30,7 +30,11 @@ import { runSpine, SpineRunInput, SpineRunResult, SpineStageResult } from "./spi
 
 export const VALUE_CHAIN_RESULT_SCHEMA_VERSION = "FT_AI_VALUE_CHAIN_RUN_2026_06";
 
-export interface ValueChainRunInput extends SpineRunInput {
+export interface ValueChainRunInput
+  extends Omit<
+    SpineRunInput,
+    "sourceCoverageOverrides" | "evidenceRefs" | "packetContextRefs"
+  > {
   /** Optional upstream engagement context (client/objective/workstream/use cases). */
   engagement?: any;
   /** Optional aggregate kickoff fluency baseline. */
@@ -181,7 +185,7 @@ export function runValueChain(input: ValueChainRunInput): ValueChainRunResult {
             ? "export is awaiting human review"
             : validation.review_state === "REJECTED"
               ? "export was rejected in review"
-              : "cross-check gaps block evidence attachment",
+              : "authoritative exact-slice admission is required",
       attached
     };
     if (!validation.valid) {

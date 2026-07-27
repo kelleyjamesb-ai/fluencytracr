@@ -76,3 +76,22 @@ test("rejects aggregate push packages that contain raw or identifying fields", (
     true
   );
 });
+
+test("keeps legacy packages without join keys storage-only and non-admissive", () => {
+  const legacy = packageFixture();
+  delete legacy.jbtd_id;
+  delete legacy.persona_id;
+
+  const validation = validateAggregateApiPushPackage(legacy);
+  const plan = buildAggregateApiPushPlan(legacy);
+
+  assert.equal(validation.valid, true);
+  assert.equal(plan.valid, true);
+  assert.equal(plan.materializer_request, null);
+  assert.equal(plan.outcome_evidence.every((record) =>
+    record.jbtd_id === undefined && record.persona_id === undefined
+  ), true);
+  assert.equal(plan.api_push_sequence.some((step) =>
+    step.endpoint === "/api/v1/ai-value/materialize/real-evidence"
+  ), false);
+});

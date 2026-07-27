@@ -349,8 +349,6 @@ components:
         - aggregate_value
         - cohort_size
         - source_system
-        - jbtd_id
-        - persona_id
       properties:
         workflow_id:
           type: string

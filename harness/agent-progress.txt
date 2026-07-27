@@ -581,3 +581,66 @@
   two addressed GitHub review threads were explicitly resolved.
 - Boundary: Slice A is the sole `done` queue item; PR #450 remains open pending
   the authorized normal merge. No deploy or live proof.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice A merge and Slice B activation)
+
+- Merged: PR #450 merged normally as `05c18f9`; the two-parent merge tree
+  exactly matches reviewed head `8baa242`, whose 16 checks passed with one
+  expected Supabase Preview skip.
+- Activated: after James's explicit instruction, created
+  `codex/mcii-slice-b-outcome-admission` from merged `origin/main` and made
+  `mcii-outcome-evidence-admission-slice-b` the sole `in_progress` queue item.
+- Next: inventory Outcome Evidence admission paths and define fail-first
+  exact workflow/JBTD/persona/window acceptance evidence. No Slice B
+  implementation, deploy, publication, or live proof yet.
+- Initial inventory found separate storage API/schema/repository, AI Value
+  materializer/review, and downstream readiness/claim-consumer boundaries;
+  authority mapping and fail-first tests remain next.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice B candidate)
+
+- Local implementation routes all materialized Outcome Evidence pairing through
+  one exact workflow/JBTD/persona/window evaluator and stores a bounded
+  server-authoritative admission receipt.
+- Direct export uploads remain storage/review-only. ACCEPTED review alone
+  cannot attach evidence through value-chain, evidence-case, or readout paths.
+- Verified: focused backend and aggregate-push tests, engine tests, shared and
+  backend builds, full backend `968/968`, repo Python `377 passed, 10 skipped`,
+  V1 governance, strict OpenSpec, JSON, and diff checks.
+- Local wrapper limits: Harness dependency install targets externally managed
+  system Python; LMSYS assurance requires a running Postgres-backed backend.
+- Next: exact CODE/BUG/ADVERSARIAL review and fresh human confirmation before
+  commit/push to draft PR #451. Slice C remains blocked until Slice B merges.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice B review remediation)
+
+- Initial CODE/BUG/ADVERSARIAL review returned NO-GO on receipt privacy,
+  collision/terminal reuse, missing server-owned expected-slice context,
+  evidence-case acceptance, and aggregate-package compatibility.
+- Remediation now binds export and readiness receipts server-side across all
+  consumers, requires acceptance for case attachment, uses collision-free exact
+  IDs with terminal receipt comparison, restricts receipt strings to opaque
+  forms, and preserves legacy packages as storage-only.
+- Repaired checks: focused backend `78/78`, engine `43/43`, aggregate plan
+  `3/3`, shared/backend builds, full backend `972/972`, V1 governance, strict
+  OpenSpec, JSON, and diff checks.
+- Next: exact remediation CODE/BUG/ADVERSARIAL re-review and human confirmation
+  before commit/push. Draft PR #451 still contains only activation state.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice B exact candidate)
+
+- Final exact-tree CODE/BUG/ADVERSARIAL review returned GO/GO/GO after the
+  public value-chain input stopped advertising caller authority fields and the
+  lower-level shared spine was explicitly bounded as a non-authoritative
+  calculation whose result is never accepted by backend persistence.
+- Exact-slice admission remains backend-owned: matching authoritative export
+  and readiness receipts, the stored export reference, structural alignment,
+  and human ACCEPTED review are all required before the backend reruns the
+  outcome lane. Direct uploads remain non-authoritative and review-only.
+- Exact candidate verification: backend build; focused backend `78/78`; engine
+  `43/43`; aggregate plan `3/3`; full backend `972/972`; V1 governance; strict
+  OpenSpec; JSON and diff checks. Repo Python remains `377 passed, 10 skipped`
+  from the earlier candidate with no Python changes afterward.
+- Boundary: local implementation is ready for fresh human commit confirmation.
+  Draft PR #451 still contains only activation state. No implementation commit,
+  push, merge, deploy, live proof, or Slice C activation has occurred.

@@ -1,4 +1,9 @@
-import { aiValueEngine } from "@fluencytracr/shared";
+import {
+  aiValueEngine,
+  evaluateOutcomeEvidenceAdmission,
+  outcomeEvidenceAdmissionReceiptsMatch,
+  type OutcomeEvidenceAdmissionResult
+} from "@fluencytracr/shared";
 
 import {
   getAiValueObject,
@@ -12,6 +17,10 @@ import type {
   FluencyTracrVerdictRecord,
   OutcomeEvidenceStoredRecord
 } from "./store";
+import {
+  authoritativeOutcomeEvidenceReceipt,
+  exactOutcomeEvidenceSliceSegment
+} from "./outcome_evidence_admission_authority";
 import {
   ForwardedDistributionLegacyCompatibleSchema,
   forwardedDistributionMatchesSlice
@@ -32,7 +41,9 @@ export interface RealEvidenceMaterializerInput {
   metricsLibraryId: string;
   cohortId: string;
   workflowId: string;
-  outcomeWorkflowId?: string;
+  outcomeWorkflowId: string;
+  jbtdId: string;
+  personaId: string;
 }
 
 export interface RealEvidenceMaterializerResult {
@@ -113,15 +124,6 @@ const windowToRange = (
   };
 };
 
-const dateToken = (iso: string): string => new Date(iso).toISOString().slice(0, 10);
-
-const recordMatchesWindow = (
-  record: OutcomeEvidenceStoredRecord,
-  range: { start: string; end: string }
-): boolean =>
-  dateToken(record.period_start) === dateToken(range.start) &&
-  dateToken(record.period_end) === dateToken(range.end);
-
 const metricDefinitions = (metricsLibrary: Record<string, unknown>): any[] =>
   Array.isArray(metricsLibrary.metrics) ? metricsLibrary.metrics : [];
 
@@ -141,24 +143,13 @@ const matchingMetricDefinition = (
   return null;
 };
 
-const pairedOutcomeMetrics = (
+const admittedOutcomeMetrics = (
   metricsLibrary: Record<string, unknown>,
-  records: OutcomeEvidenceStoredRecord[],
-  baselineRange: { start: string; end: string },
-  comparisonRange: { start: string; end: string }
+  admission: OutcomeEvidenceAdmissionResult
 ): Array<{ metric: any; baseline: OutcomeEvidenceStoredRecord; comparison: OutcomeEvidenceStoredRecord }> => {
   const pairs: Array<{ metric: any; baseline: OutcomeEvidenceStoredRecord; comparison: OutcomeEvidenceStoredRecord }> = [];
-  const baselineRecords = records.filter((record) => recordMatchesWindow(record, baselineRange));
-  const comparisonRecords = records.filter((record) => recordMatchesWindow(record, comparisonRange));
 
-  for (const baseline of baselineRecords) {
-    const comparison = comparisonRecords.find(
-      (record) =>
-        record.outcome_metric === baseline.outcome_metric &&
-        record.outcome_unit === baseline.outcome_unit &&
-        record.source_system === baseline.source_system
-    );
-    if (!comparison) continue;
+  for (const { baseline, comparison } of admission.admitted_pairs) {
     const metric = matchingMetricDefinition(metricsLibrary, baseline);
     if (!metric) continue;
     pairs.push({ metric, baseline, comparison });
@@ -171,8 +162,8 @@ const buildOutcomeEvidenceExport = (
   orgId: string,
   blueprint: Record<string, unknown>,
   metricsLibrary: Record<string, unknown>,
-  outcomeWorkflowId: string | undefined,
-  evidenceRecords: OutcomeEvidenceStoredRecord[],
+  outcomeWorkflowId: string,
+  admission: OutcomeEvidenceAdmissionResult | null,
   heldReasons: string[]
 ): Record<string, unknown> | null => {
   const windows = blueprint.windows as Record<string, unknown> | undefined;
@@ -183,11 +174,20 @@ const buildOutcomeEvidenceExport = (
     return null;
   }
 
-  const workflowFamily = workflowFamilyOf(blueprint, String(outcomeWorkflowId ?? ""));
-  const scopedRecords = evidenceRecords.filter(
-    (record) => !outcomeWorkflowId || record.workflow_id === outcomeWorkflowId
-  );
-  const pairs = pairedOutcomeMetrics(metricsLibrary, scopedRecords, baseline, comparison);
+  const workflowFamily = workflowFamilyOf(blueprint, outcomeWorkflowId);
+  if (workflowFamily !== outcomeWorkflowId) {
+    heldReasons.push(
+      "Outcome evidence export held: outcome workflow does not match blueprint workflow family"
+    );
+    return null;
+  }
+  if (!admission || admission.decision !== "ADMITTED" || !admission.receipt) {
+    heldReasons.push(
+      `Outcome evidence export held: ${admission?.reason_codes.join(",") || "MISSING_EVIDENCE_PAIR"}`
+    );
+    return null;
+  }
+  const pairs = admittedOutcomeMetrics(metricsLibrary, admission);
   if (pairs.length === 0) {
     heldReasons.push(
       "Outcome evidence export held: no paired baseline/comparison evidence aligned to the metrics library"
@@ -196,10 +196,16 @@ const buildOutcomeEvidenceExport = (
   }
 
   const firstMetric = pairs[0].metric;
-  const familySegment = sanitizeIdSegment(workflowFamily);
+  const sliceSegment = exactOutcomeEvidenceSliceSegment({
+    workflowId: workflowFamily,
+    jbtdId: admission.receipt.jbtd_id,
+    personaId: admission.receipt.persona_id,
+    baselineWindow: baseline.token,
+    comparisonWindow: comparison.token
+  });
   const exportObject = {
     schema_version: aiValueEngine.OUTCOME_EVIDENCE_EXPORT_SCHEMA_VERSION,
-    export_id: `outcome_export_${familySegment}_real_evidence_v1`,
+    export_id: `outcome_export_${sliceSegment}_real_evidence_v1`,
     org_id: orgId,
     workflow_family: workflowFamily,
     source_system: {
@@ -218,6 +224,7 @@ const buildOutcomeEvidenceExport = (
       baseline: baseline.token,
       comparison: comparison.token
     },
+    admission: admission.receipt,
     metrics: pairs.map(({ metric, baseline: baselineRecord, comparison: comparisonRecord }) => ({
       metric_id: metric.metric_id,
       measurement_unit: metric.measurement_unit,
@@ -256,6 +263,19 @@ const materializeOutcomeEvidenceExport = async (
   const existing = await getAiValueObject(orgId, "outcome_evidence_export", exportId);
   const existingState = aiValueEngine.reviewStateOf(existing?.payload);
   if (existingState === "ACCEPTED" || existingState === "REJECTED") {
+    const existingReceipt = authoritativeOutcomeEvidenceReceipt(existing);
+    if (
+      !existingReceipt ||
+      !outcomeEvidenceAdmissionReceiptsMatch(
+        existingReceipt,
+        exportObject.admission
+      )
+    ) {
+      heldReasons.push(
+        `Outcome evidence export ${exportId} is terminal but does not match the current exact slice`
+      );
+      return undefined;
+    }
     heldReasons.push(
       `Outcome evidence export ${exportId} is ${existingState} and was not overwritten`
     );
@@ -270,7 +290,11 @@ const materializeOutcomeEvidenceExport = async (
     schemaVersion: String(exportObject.schema_version),
     workflowFamily: workflowFamilyOf(exportObject, exportId),
     payload: exportObject,
-    validation: validation as unknown as Record<string, unknown>,
+    validation: {
+      ...(validation as unknown as Record<string, unknown>),
+      admission_authoritative: true,
+      admission_receipt: exportObject.admission
+    },
     valid: validation.valid
   });
   materialized.push({ object_type: "outcome_evidence_export", object_id: exportId });
@@ -337,7 +361,9 @@ const evidenceCoverageFromVerdict = (
 const persistReadiness = async (
   orgId: string,
   readiness: Record<string, unknown>,
-  materialized: Array<{ object_type: string; object_id: string }>
+  materialized: Array<{ object_type: string; object_id: string }>,
+  outcomeAdmission: OutcomeEvidenceAdmissionResult | null,
+  outcomeExport: Record<string, unknown> | undefined
 ) => {
   const validation = aiValueEngine.validateEvidenceReadiness(readiness);
   if (!validation.valid) {
@@ -354,7 +380,18 @@ const persistReadiness = async (
     schemaVersion: String(readiness.schema_version),
     workflowFamily: workflowFamilyOf(readiness, readinessId),
     payload: readiness,
-    validation: validation as unknown as Record<string, unknown>,
+    validation: {
+      ...(validation as unknown as Record<string, unknown>),
+      ...(outcomeAdmission?.decision === "ADMITTED" &&
+      outcomeAdmission.receipt &&
+      outcomeExport?.export_id
+        ? {
+            outcome_evidence_admission_authoritative: true,
+            outcome_evidence_admission_receipt: outcomeAdmission.receipt,
+            outcome_evidence_export_id: outcomeExport.export_id
+          }
+        : {})
+    },
     valid: true
   });
   materialized.push({ object_type: "evidence_readiness", object_id: readinessId });
@@ -382,12 +419,22 @@ export async function materializeRealEvidence(
     );
   }
 
+  const comparisonRange = windowToRange(
+    (blueprint.windows as Record<string, unknown> | undefined)?.comparison
+  );
   const verdict = latestVerdict(
-    await listFluencyTracrVerdicts({
+    (await listFluencyTracrVerdicts({
       orgId: input.orgId,
       cohortId: input.cohortId,
       workflowId: input.workflowId
-    })
+    })).filter(
+      (candidate) =>
+        candidate.jbtd_id === input.jbtdId &&
+        candidate.persona_id === input.personaId &&
+        (!comparisonRange ||
+          (candidate.window_start === comparisonRange.start &&
+            candidate.window_end === comparisonRange.end))
+    )
   );
   const velocityObservations = await listVelocityDistributions({
     orgId: input.orgId,
@@ -400,13 +447,33 @@ export async function materializeRealEvidence(
   const windows = blueprint.windows as Record<string, unknown> | undefined;
   const baseline = windowToRange(windows?.baseline);
   const comparison = windowToRange(windows?.comparison);
-  const outcomeRecords = baseline && comparison && input.outcomeWorkflowId
+  const outcomeRecords = baseline && comparison
     ? await listOutcomeEvidence(input.orgId, {
         workflow_id: input.outcomeWorkflowId,
         period_start: baseline.start,
-        period_end: comparison.end
+        period_end: comparison.end,
+        jbtd_id: input.jbtdId,
+        persona_id: input.personaId
       })
     : [];
+  const outcomeAdmission = baseline && comparison
+    ? evaluateOutcomeEvidenceAdmission({
+        expected: {
+          workflow_id: input.outcomeWorkflowId,
+          jbtd_id: input.jbtdId,
+          persona_id: input.personaId,
+          baseline_window: {
+            period_start: baseline.start,
+            period_end: baseline.end
+          },
+          comparison_window: {
+            period_start: comparison.start,
+            period_end: comparison.end
+          }
+        },
+        records: outcomeRecords
+      })
+    : null;
 
   const outcomeExport = await materializeOutcomeEvidenceExport(
     input.orgId,
@@ -415,16 +482,22 @@ export async function materializeRealEvidence(
       blueprint,
       metricsLibrary,
       input.outcomeWorkflowId,
-      outcomeRecords,
+      outcomeAdmission,
       heldReasons
     ),
     materialized,
     heldReasons
   );
 
-  const familySegment = sanitizeIdSegment(
-    workflowFamilyOf(blueprint, input.blueprintId)
-  );
+  const familySegment = baseline && comparison
+    ? exactOutcomeEvidenceSliceSegment({
+        workflowId: input.outcomeWorkflowId,
+        jbtdId: input.jbtdId,
+        personaId: input.personaId,
+        baselineWindow: baseline.token,
+        comparisonWindow: comparison.token
+      })
+    : sanitizeIdSegment(workflowFamilyOf(blueprint, input.blueprintId));
   const evidenceRefs = {
     ...coverage.evidenceRefs,
     velocity_observations_ref: `velocity_observations:${velocityObservations.length}`,
@@ -448,7 +521,13 @@ export async function materializeRealEvidence(
       [spine.stages.readiness.hold_reason ?? spine.decision]
     );
   }
-  await persistReadiness(input.orgId, readiness, materialized);
+  await persistReadiness(
+    input.orgId,
+    readiness,
+    materialized,
+    outcomeAdmission,
+    outcomeExport
+  );
 
   return {
     customer_facing_economic_output: false,

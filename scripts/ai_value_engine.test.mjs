@@ -30,6 +30,9 @@ import {
   buildPlaybookMeasurementPlanDraft,
   MEASUREMENT_PLAN_SCHEMA_VERSION
 } from "../shared/dist/aiValueEngine/index.js";
+import {
+  evaluateOutcomeEvidenceAdmission
+} from "../shared/dist/index.js";
 
 function readExample(name) {
   return JSON.parse(
@@ -41,6 +44,58 @@ function readExample(name) {
       "utf8"
     )
   );
+}
+
+function withAuthoritativeAdmission(exportObject) {
+  const exactWindow = (token) => {
+    const [startDate, endDate] = token.split("_to_");
+    return {
+      period_start: `${startDate}T00:00:00.000Z`,
+      period_end: `${endDate}T00:00:00.000Z`
+    };
+  };
+  const expected = {
+    workflow_id: exportObject.workflow_family,
+    jbtd_id: "fixture_jbtd",
+    persona_id: "fixture_persona",
+    baseline_window: exactWindow(exportObject.windows.baseline),
+    comparison_window: exactWindow(exportObject.windows.comparison)
+  };
+  const record = (window, evidenceId, aggregateValue) => ({
+    org_id: exportObject.org_id,
+    evidence_id: evidenceId,
+    workflow_id: expected.workflow_id,
+    jbtd_id: expected.jbtd_id,
+    persona_id: expected.persona_id,
+    outcome_metric: exportObject.metrics[0].metric_id,
+    outcome_unit: exportObject.metrics[0].measurement_unit,
+    period_start: window.period_start,
+    period_end: window.period_end,
+    aggregate_value: aggregateValue,
+    cohort_size: exportObject.metrics[0].eligible_population,
+    source_system: exportObject.source_system.source_name,
+    ingested_at: "2026-06-01T00:00:00.000Z"
+  });
+  const admission = evaluateOutcomeEvidenceAdmission({
+    expected,
+    records: [
+      record(
+        expected.baseline_window,
+        `${exportObject.export_id}_baseline`,
+        exportObject.metrics[0].baseline_value
+      ),
+      record(
+        expected.comparison_window,
+        `${exportObject.export_id}_comparison`,
+        exportObject.metrics[0].comparison_value
+      )
+    ]
+  });
+  assert.equal(admission.decision, "ADMITTED");
+  return {
+    ...exportObject,
+    admission: admission.receipt
+  };
 }
 
 const blueprint = readExample("customer-support-blueprint.json");
@@ -248,7 +303,9 @@ test("the synthetic 50-person Customer Success motion runs from intake through v
   const csEngagement = readExample("customer-success-50-synthetic-engagement.json");
   const csBaseline = readExample("customer-success-50-synthetic-fluency-baseline.json");
   const csFollowup = readExample("customer-success-50-synthetic-fluency-followup.json");
-  const csOutcomeExport = readExample("customer-success-50-synthetic-outcome-evidence-export.json");
+  const csOutcomeExport = withAuthoritativeAdmission(
+    readExample("customer-success-50-synthetic-outcome-evidence-export.json")
+  );
   const { blueprint: csBlueprint, blueprint_validation } =
     buildBlueprintDraftFromWorkshopIntake(intake);
 
@@ -306,8 +363,8 @@ test("the synthetic 50-person Customer Success motion runs from intake through v
   assert.equal(run.engagement.status, "VALID");
   assert.equal(run.engagement.covers_workflow_family, true);
   assert.equal(run.fluency_baseline.status, "VALID");
-  assert.equal(run.outcome_evidence.status, "VALID");
-  assert.equal(run.outcome_evidence.attached, true);
+  assert.equal(run.outcome_evidence.status, "HELD");
+  assert.equal(run.outcome_evidence.attached, false);
   assert.equal(run.outcome_evidence.validation.metric_count, 11);
   assert.equal(run.spine.halted_at, null);
   assert.equal(run.decision, "READY_FOR_EXECUTIVE_VALIDATION");
@@ -602,7 +659,7 @@ test("outcome evidence export rejects raw content, identifiers, and window drift
   );
 });
 
-test("review lifecycle: only SUBMITTED exports can be reviewed, accept attaches", () => {
+test("review lifecycle: acceptance remains non-authorizing in the shared validator", () => {
   const accepted = applyOutcomeEvidenceReview(
     outcomeExport,
     "ACCEPTED",
@@ -610,11 +667,12 @@ test("review lifecycle: only SUBMITTED exports can be reviewed, accept attaches"
     "2026-06-10T17:00:00.000Z"
   );
   assert.equal(accepted.error, null);
-  const validation = validateOutcomeEvidenceExport(accepted.exportObject, {
+  const admittedAccepted = withAuthoritativeAdmission(accepted.exportObject);
+  const validation = validateOutcomeEvidenceExport(admittedAccepted, {
     metricsLibrary,
     blueprint
   });
-  assert.equal(validation.feeds.evidence_attachment, true);
+  assert.equal(validation.feeds.evidence_attachment, false);
 
   const noContextValidation = validateOutcomeEvidenceExport(accepted.exportObject);
   assert.equal(noContextValidation.valid, true);
@@ -694,7 +752,7 @@ test("outcome evidence cross-checks workflow and source metadata", () => {
   );
 });
 
-test("accepted evidence upgrades the outcome lane in the value chain", () => {
+test("shared callers cannot self-authorize accepted evidence attachment", () => {
   const evidenceGapBlueprint = JSON.parse(JSON.stringify(blueprint));
   evidenceGapBlueprint.source_requirements.source_coverage.outcome = "MISSING";
 
@@ -713,14 +771,18 @@ test("accepted evidence upgrades the outcome lane in the value chain", () => {
   const withEvidence = runValueChain({
     blueprint: evidenceGapBlueprint,
     metricsLibrary,
-    outcomeEvidenceExport: accepted
+    outcomeEvidenceExport: withAuthoritativeAdmission(accepted),
+    sourceCoverageOverrides: { outcome: "PRESENT" },
+    evidenceRefs: {
+      outcome_evidence_export_id: "caller_fabricated_export"
+    }
   });
-  assert.equal(withEvidence.outcome_evidence.status, "VALID");
-  assert.equal(withEvidence.outcome_evidence.attached, true);
-  assert.equal(withEvidence.decision, "HOLD_FOR_ASSUMPTIONS");
+  assert.equal(withEvidence.outcome_evidence.status, "HELD");
+  assert.equal(withEvidence.outcome_evidence.attached, false);
+  assert.equal(withEvidence.decision, "HOLD_FOR_SOURCE_COVERAGE");
   assert.equal(
     withEvidence.spine.stages.readiness.object.source_refs.outcome_evidence_export_id,
-    outcomeExport.export_id
+    undefined
   );
 });
 

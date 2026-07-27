@@ -7,6 +7,8 @@
   "cohort_id": "cohort-real-evidence",
   "workflow_id": "workflow:CHAT",
   "outcome_workflow_id": "customer_support_case_resolution",
+  "jbtd_id": "resolve_support_case",
+  "persona_id": "support_specialist",
   "calibration_id": "scio-prod-60d-2026-05",
   "source_boundary": {
     "transform_location": "customer_or_glean_boundary",

@@ -12,9 +12,7 @@
     "period_end",
     "aggregate_value",
     "cohort_size",
-    "source_system",
-    "jbtd_id",
-    "persona_id"
+    "source_system"
   ],
   "properties": {
     "workflow_id": { "type": "string", "minLength": 1, "maxLength": 180 },

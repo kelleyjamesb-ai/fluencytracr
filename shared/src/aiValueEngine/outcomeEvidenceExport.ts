@@ -19,6 +19,8 @@
  *   and grounds scenario baselines, nothing more.
  */
 
+import { outcomeEvidenceAdmissionReceiptGaps } from "../outcomeEvidenceAdmission";
+
 const RESULT_SCHEMA_VERSION = "FT_AI_VALUE_OUTCOME_EVIDENCE_EXPORT_VALIDATION_2026_06";
 
 export const OUTCOME_EVIDENCE_EXPORT_SCHEMA_VERSION =
@@ -143,6 +145,9 @@ function collectForbiddenFields(value: any, fields: Set<string> = new Set()): Se
       }
       continue;
     }
+    if (key === "admission") {
+      continue;
+    }
     if (isForbiddenKey(key)) fields.add(key);
     collectForbiddenFields(nested, fields);
   }
@@ -214,6 +219,9 @@ function collectBaseGaps(exportObject: any): string[] {
 
   if (!exportObject?.windows?.baseline) gaps.push("windows.baseline is missing");
   if (!exportObject?.windows?.comparison) gaps.push("windows.comparison is missing");
+  if (exportObject?.admission !== undefined) {
+    gaps.push(...outcomeEvidenceAdmissionReceiptGaps(exportObject.admission));
+  }
 
   const metrics = exportObject?.metrics;
   if (exportObject?.metrics !== undefined) {
@@ -269,7 +277,33 @@ function collectCrossCheckGaps(
   context: OutcomeEvidenceCrossCheckContext
 ): string[] {
   const gaps: string[] = [];
-
+  const admission = exportObject?.admission;
+  if (admission) {
+    if (admission.workflow_id !== exportObject?.workflow_family) {
+      gaps.push(
+        `admission workflow_id ${admission.workflow_id} does not match export ${exportObject?.workflow_family}`
+      );
+    }
+    for (const [receiptField, exportField] of [
+      ["baseline_window", "baseline"],
+      ["comparison_window", "comparison"]
+    ] as const) {
+      const token = exportObject?.windows?.[exportField];
+      const [startDate, endDate] =
+        typeof token === "string" ? token.split("_to_") : [];
+      if (
+        !startDate ||
+        !endDate ||
+        admission?.[receiptField]?.period_start !==
+          `${startDate}T00:00:00.000Z` ||
+        admission?.[receiptField]?.period_end !== `${endDate}T00:00:00.000Z`
+      ) {
+        gaps.push(
+          `admission ${receiptField} does not exactly match export ${exportField} window`
+        );
+      }
+    }
+  }
   const library = context.metricsLibrary;
   if (!library) {
     gaps.push("metrics library context is required before evidence attachment");
@@ -368,7 +402,7 @@ export function validateOutcomeEvidenceExport(
     cross_check_gaps: crossCheckGaps,
     feeds: {
       evidence_attachment:
-        valid && crossCheckGaps.length === 0 && reviewState === "ACCEPTED",
+        false,
       roi_proof: false,
       causality_claim: false,
       customer_facing_economic_output: false

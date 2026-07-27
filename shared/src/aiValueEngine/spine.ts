@@ -61,9 +61,19 @@ export interface SpineRunInput {
     claimBoundaryId?: string;
     packetId?: string;
   };
-  /** Evidence-backed lane upgrades, forwarded to the readiness builder. */
+  /**
+   * Host-derived lane context forwarded to the readiness builder.
+   *
+   * `runSpine` is a pure calculation helper, not an admission authority. Its
+   * result reflects these caller inputs but does not prove that they came from
+   * stored or reviewed evidence. A persisting host must independently verify
+   * evidence authority before supplying an upgrade.
+   */
   sourceCoverageOverrides?: Record<string, string>;
-  /** Evidence provenance, recorded on the readiness object's source refs. */
+  /**
+   * Host-derived provenance recorded on the readiness object's source refs.
+   * References in a standalone `runSpine` result are non-authoritative.
+   */
   evidenceRefs?: Record<string, string>;
   /** Compact upstream context refs, recorded on the executive packet only. */
   packetContextRefs?: Record<string, string>;
@@ -88,6 +98,14 @@ function notRun(): SpineStageResult {
   return { status: "NOT_RUN", validation: null, object: null, generated: false, hold_reason: null };
 }
 
+/**
+ * Calculate the governed spine from the supplied objects and host context.
+ *
+ * This exported helper does not authenticate evidence, load server records, or
+ * confer Outcome Evidence admission. Backend persistence paths must derive
+ * overrides and references from server-verified records and never accept a
+ * caller-provided SpineRunResult as authorization.
+ */
 export function runSpine(input: SpineRunInput): SpineRunResult {
   const stages: SpineRunResult["stages"] = {
     blueprint: notRun(),

@@ -3888,9 +3888,9 @@
   0 rationale, bounded A-F architecture sequence, descriptive
   `OBSERVED_NON_ATTRIBUTABLE` ceiling, final acceptance, and stable governed
   execution protocol. It carries no mutable status or authority.
-- Active state: `mcii-live-example-auth-containment-slice-a` is the sole
-  `done` item on PR #450 over canonical `main` merge base
-  `5cae9eda44a68dd63f76b970299560c280f3f558`; no later slice is active.
+- Completed Slice A: PR #450 merged normally as
+  `05c18f9135f943b099e9869b3d15df26c9a87ce0`; its two-parent merge tree
+  exactly matches reviewed head `8baa242fe05004da7d23b9dd6013f034fcbe7418`.
 - The four recorded design blockers are implemented: one fail-closed runtime
   predicate governs authentication paths; JWT parsing requires one strict
   finite-future Bearer credential; browser 401 and session races are contained
@@ -3905,7 +3905,102 @@
   Review-remediation head `bbf2675` passed the focused/full verification,
   exact CODE/BUG/ADVERSARIAL review, and 16 current-head checks with one expected
   skip; both addressed GitHub review threads are resolved.
-- Next action: perform the authorized normal merge of PR #450. Deployment and
-  publication remain unauthorized.
-  Later slices remain inactive until Slice A merges and a human creates the
-  next bounded queue item.
+- Active state: after James's explicit instruction to move to Slice B,
+  `mcii-outcome-evidence-admission-slice-b` is the sole `in_progress` item on
+  `codex/mcii-slice-b-outcome-admission`, created from canonical main merge
+  `05c18f9135f943b099e9869b3d15df26c9a87ce0`.
+- Next action: inventory existing Outcome Evidence admission paths and define
+  fail-first acceptance evidence for exact workflow/JBTD/persona/window binding
+  before implementation. Slices C-F, deployment, and publication remain
+  unauthorized.
+- Initial inventory identifies three distinct boundaries to reconcile: the
+  storage API/schema/repository path (`shared/src/outcomeEvidenceSchemas.ts`,
+  `backend/src/app.ts`, and `backend/src/repositories/outcome-evidence.repository.ts`);
+  the AI Value materializer and human-review path
+  (`backend/src/ai_value_real_evidence_materializer.ts`,
+  `shared/src/aiValueEngine/outcomeEvidenceExport.ts`, and
+  `backend/src/ai_value_routes.ts`); and downstream readiness/claim consumers.
+  This is discovery only, not an admission-policy decision.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice B exact-slice admission candidate)
+
+- Implemented locally: a pure exact-slice evaluator requires one unambiguous
+  baseline/comparison pair per metric for the same `workflow_id`, `jbtd_id`,
+  `persona_id`, and canonical non-overlapping windows. Missing, shifted,
+  conflicting, duplicate, and cross-slice candidates HOLD.
+- Authority: only the real-evidence materializer stores
+  `admission_authoritative: true` with a bounded receipt. Generic export PUT
+  remains storage/review-only, and human ACCEPTED review cannot manufacture
+  admission. Value-chain, evidence-case, and legacy-readout consumers verify
+  the stored server marker and receipt before attachment.
+- Compatibility: Outcome Evidence POST/GET keeps optional legacy join keys;
+  missing keys are retained but non-admissible. The aggregate API-push package
+  now propagates its exact JBTD/persona keys through V3 ingest, outcome
+  evidence, and materialization. No DB migration, event, suppression reason,
+  threshold, score, ROI, causal claim, prediction, or customer-facing output
+  was added.
+- Verification passed: shared/backend builds; focused backend `73/73` plus
+  aggregate-push E2E; engine `43/43`; aggregate-plan `2/2`; full backend
+  `968/968`; repo `.venv` Python `377 passed, 10 skipped`; V1 governance;
+  strict OpenSpec; JSON parse; and `git diff --check`.
+- Environment boundary: `./harness/scripts/verify.sh` cannot install into this
+  Mac's externally managed system Python, though its exact pytest body passed
+  in the repository `.venv`. `npm run verify:assurance` requires the CI
+  Postgres-backed backend and failed locally at `POST http://localhost:4000/orgs`.
+  Draft PR #451 is open on the activation commit; the implementation candidate
+  is not committed or pushed yet.
+- Next: exact-candidate CODE/BUG/ADVERSARIAL review, resolve findings, obtain
+  fresh human commit confirmation, then push the reviewed commit to draft PR
+  #451 for CI. Slice C remains blocked until Slice B merges and canonical state
+  closes.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice B review remediation)
+
+- Initial exact-candidate CODE, BUG, and ADVERSARIAL review returned `NO-GO`.
+  The reviewers reproduced identifying strings inside skipped receipt
+  validation, hyphen/underscore export-ID collisions and terminal squatting,
+  accepted/submitted evidence-case promotion without the full gate, and
+  authoritative slice-A exports attaching to value-chain/evidence-case/readout
+  consumers that lacked a server-owned expected JBTD/persona context. They also
+  found the unchanged aggregate-package version had become breaking.
+- Repaired authority: materialized export and readiness records now carry the
+  same server-owned exact receipt and export reference. Value-chain,
+  evidence-case, and readout attachment compares those two server records;
+  callers cannot establish the expected slice with an export ID or receipt.
+  Evidence-case attachment also requires `ACCEPTED`.
+- Repaired identity/privacy: exact slice/window object IDs use a reversible
+  collision-free lowercase encoding; terminal reuse requires an exact
+  authoritative receipt match; direct terminal squatting holds. Workflow,
+  JBTD, persona, and evidence-reference receipt strings accept only bounded
+  opaque machine-safe forms.
+- Repaired compatibility: OpenAPI now matches optional storage join keys.
+  Legacy aggregate-push packages with neither JBTD nor persona remain valid,
+  produce V3/Outcome Evidence storage payloads, and omit materialization.
+- Added regressions for identifying receipt values, punctuation collisions,
+  terminal direct-upload squatting, authoritative same-family/different-slice
+  value-chain/evidence-case/readout attempts, and legacy storage-only plans.
+- Repaired verification passed: shared/backend builds; focused backend `78/78`;
+  engine `43/43`; aggregate plan `3/3`; full backend `972/972`; V1 governance;
+  strict OpenSpec; JSON; and `git diff --check`. The earlier repo `.venv`
+  Python result remains `377 passed, 10 skipped`; remediation changed no Python.
+- Next: exact remediation CODE/BUG/ADVERSARIAL re-review, resolve any remaining
+  finding, then obtain fresh human confirmation before commit/push to draft PR
+  #451. Slice C remains blocked until Slice B merges.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice B exact candidate)
+
+- Final exact-tree CODE/BUG/ADVERSARIAL review returned GO/GO/GO after the
+  public value-chain input stopped advertising caller authority fields and the
+  lower-level shared spine was explicitly bounded as a non-authoritative
+  calculation whose result is never accepted by backend persistence.
+- Exact-slice admission remains backend-owned: matching authoritative export
+  and readiness receipts, the stored export reference, structural alignment,
+  and human ACCEPTED review are all required before the backend reruns the
+  outcome lane. Direct uploads remain non-authoritative and review-only.
+- Exact candidate verification: backend build; focused backend `78/78`; engine
+  `43/43`; aggregate plan `3/3`; full backend `972/972`; V1 governance; strict
+  OpenSpec; JSON and diff checks. Repo Python remains `377 passed, 10 skipped`
+  from the earlier candidate with no Python changes afterward.
+- Boundary: local implementation is ready for fresh human commit confirmation.
+  Draft PR #451 still contains only activation state. No implementation commit,
+  push, merge, deploy, live proof, or Slice C activation has occurred.
