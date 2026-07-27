@@ -4004,3 +4004,16 @@
 - Boundary: local implementation is ready for fresh human commit confirmation.
   Draft PR #451 still contains only activation state. No implementation commit,
   push, merge, deploy, live proof, or Slice C activation has occurred.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice B integration closeout)
+
+- PR #451 merged normally as `d0ac82c`; its two-parent merge tree exactly
+  matches reviewed Slice B head `26531ec`.
+- All current-head checks passed before merge, including Assurance, both Agent
+  CI runs, both Node and Python runs, governance, enforcement, lint, dogfood,
+  and Vercel. The expected Supabase Preview check was skipped.
+- Slice B is now canonically `done`. The human-created Slice C queue item is
+  present as `pending`; it is not active and authorizes no implementation yet.
+- Boundary: no deployment or live proof occurred. Slice C activation requires
+  this closeout and queue-addition PR to merge first, followed by a fresh branch
+  from canonical `main`.
