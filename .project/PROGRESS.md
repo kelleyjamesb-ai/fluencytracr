@@ -3888,9 +3888,9 @@
   0 rationale, bounded A-F architecture sequence, descriptive
   `OBSERVED_NON_ATTRIBUTABLE` ceiling, final acceptance, and stable governed
   execution protocol. It carries no mutable status or authority.
-- Active state: `mcii-live-example-auth-containment-slice-a` is the sole
-  `done` item on PR #450 over canonical `main` merge base
-  `5cae9eda44a68dd63f76b970299560c280f3f558`; no later slice is active.
+- Completed Slice A: PR #450 merged normally as
+  `05c18f9135f943b099e9869b3d15df26c9a87ce0`; its two-parent merge tree
+  exactly matches reviewed head `8baa242fe05004da7d23b9dd6013f034fcbe7418`.
 - The four recorded design blockers are implemented: one fail-closed runtime
   predicate governs authentication paths; JWT parsing requires one strict
   finite-future Bearer credential; browser 401 and session races are contained
@@ -3905,7 +3905,19 @@
   Review-remediation head `bbf2675` passed the focused/full verification,
   exact CODE/BUG/ADVERSARIAL review, and 16 current-head checks with one expected
   skip; both addressed GitHub review threads are resolved.
-- Next action: perform the authorized normal merge of PR #450. Deployment and
-  publication remain unauthorized.
-  Later slices remain inactive until Slice A merges and a human creates the
-  next bounded queue item.
+- Active state: after James's explicit instruction to move to Slice B,
+  `mcii-outcome-evidence-admission-slice-b` is the sole `in_progress` item on
+  `codex/mcii-slice-b-outcome-admission`, created from canonical main merge
+  `05c18f9135f943b099e9869b3d15df26c9a87ce0`.
+- Next action: inventory existing Outcome Evidence admission paths and define
+  fail-first acceptance evidence for exact workflow/JBTD/persona/window binding
+  before implementation. Slices C-F, deployment, and publication remain
+  unauthorized.
+- Initial inventory identifies three distinct boundaries to reconcile: the
+  storage API/schema/repository path (`shared/src/outcomeEvidenceSchemas.ts`,
+  `backend/src/app.ts`, and `backend/src/repositories/outcome-evidence.repository.ts`);
+  the AI Value materializer and human-review path
+  (`backend/src/ai_value_real_evidence_materializer.ts`,
+  `shared/src/aiValueEngine/outcomeEvidenceExport.ts`, and
+  `backend/src/ai_value_routes.ts`); and downstream readiness/claim consumers.
+  This is discovery only, not an admission-policy decision.

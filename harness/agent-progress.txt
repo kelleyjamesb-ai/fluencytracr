@@ -581,3 +581,18 @@
   two addressed GitHub review threads were explicitly resolved.
 - Boundary: Slice A is the sole `done` queue item; PR #450 remains open pending
   the authorized normal merge. No deploy or live proof.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice A merge and Slice B activation)
+
+- Merged: PR #450 merged normally as `05c18f9`; the two-parent merge tree
+  exactly matches reviewed head `8baa242`, whose 16 checks passed with one
+  expected Supabase Preview skip.
+- Activated: after James's explicit instruction, created
+  `codex/mcii-slice-b-outcome-admission` from merged `origin/main` and made
+  `mcii-outcome-evidence-admission-slice-b` the sole `in_progress` queue item.
+- Next: inventory Outcome Evidence admission paths and define fail-first
+  exact workflow/JBTD/persona/window acceptance evidence. No Slice B
+  implementation, deploy, publication, or live proof yet.
+- Initial inventory found separate storage API/schema/repository, AI Value
+  materializer/review, and downstream readiness/claim-consumer boundaries;
+  authority mapping and fail-first tests remain next.
