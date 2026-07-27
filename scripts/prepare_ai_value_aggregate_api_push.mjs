@@ -132,6 +132,12 @@ export function validateAggregateApiPushPackage(input) {
   ]) {
     addRequiredStringGap(gaps, input, field);
   }
+  const hasJbtd = typeof input.jbtd_id === "string" && input.jbtd_id.trim().length > 0;
+  const hasPersona =
+    typeof input.persona_id === "string" && input.persona_id.trim().length > 0;
+  if (hasJbtd !== hasPersona) {
+    gaps.push("jbtd_id and persona_id must either both be present or both be absent");
+  }
 
   if (!isObject(input.source_boundary)) {
     gaps.push("source_boundary is missing");
@@ -244,7 +250,7 @@ export function validateAggregateApiPushPackage(input) {
 const withoutUndefined = (value) =>
   Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined));
 
-const outcomePayload = (record) =>
+const outcomePayload = (record, input) =>
   withoutUndefined({
     workflow_id: record.workflow_id,
     outcome_metric: record.outcome_metric,
@@ -254,8 +260,8 @@ const outcomePayload = (record) =>
     aggregate_value: record.aggregate_value,
     cohort_size: record.cohort_size,
     source_system: record.source_system,
-    jbtd_id: record.jbtd_id ?? undefined,
-    persona_id: record.persona_id ?? undefined,
+    jbtd_id: record.jbtd_id ?? input.jbtd_id,
+    persona_id: record.persona_id ?? input.persona_id,
     aggregate_kind: record.aggregate_kind ?? undefined,
     source_attestation: record.source_attestation ?? undefined
   });
@@ -291,14 +297,20 @@ export function buildAggregateApiPushPlan(input) {
       person_level_fields_included: false
     }
   });
-  const outcomeEvidence = input.outcome_evidence.map(outcomePayload);
-  const materializerRequest = {
-    blueprint_id: input.blueprint_id,
-    metrics_library_id: input.metrics_library_id,
-    cohort_id: input.cohort_id,
-    workflow_id: input.workflow_id,
-    outcome_workflow_id: input.outcome_workflow_id
-  };
+  const outcomeEvidence = input.outcome_evidence.map((record) =>
+    outcomePayload(record, input)
+  );
+  const materializerRequest = input.jbtd_id && input.persona_id
+    ? {
+        blueprint_id: input.blueprint_id,
+        metrics_library_id: input.metrics_library_id,
+        cohort_id: input.cohort_id,
+        workflow_id: input.workflow_id,
+        outcome_workflow_id: input.outcome_workflow_id,
+        jbtd_id: input.jbtd_id,
+        persona_id: input.persona_id
+      }
+    : null;
 
   return {
     valid: true,
@@ -320,11 +332,13 @@ export function buildAggregateApiPushPlan(input) {
         endpoint: "/api/v1/outcome-evidence",
         body
       })),
-      {
-        method: "POST",
-        endpoint: "/api/v1/ai-value/materialize/real-evidence",
-        body: materializerRequest
-      }
+      ...(materializerRequest
+        ? [{
+            method: "POST",
+            endpoint: "/api/v1/ai-value/materialize/real-evidence",
+            body: materializerRequest
+          }]
+        : [])
     ]
   };
 }

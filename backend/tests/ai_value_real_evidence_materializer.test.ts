@@ -7,8 +7,11 @@ import { app } from "../src/app";
 import { store } from "../src/store";
 
 const ORG_ID = "org-northstar-enterprise";
+const JBTD_ID = "resolve_support_case";
+const PERSONA_ID = "support_specialist";
 const writeAuth = { "x-role": "ADMIN", "x-org-id": ORG_ID };
 const readAuth = { "x-role": "EXEC_VIEWER", "x-org-id": ORG_ID };
+const readoutAuth = { "x-role": "ENABLEMENT_LEAD", "x-org-id": ORG_ID };
 
 const readExample = (name: string): Record<string, any> =>
   JSON.parse(
@@ -53,6 +56,8 @@ const v3Payload = (overrides: Record<string, any> = {}) => ({
   schema_version: "FT_V3_2026_05",
   cohort_id: "cohort-real-evidence",
   workflow_id: "workflow:CHAT",
+  jbtd_id: JBTD_ID,
+  persona_id: PERSONA_ID,
   window_start: "2026-04-01T00:00:00.000Z",
   window_end: "2026-05-31T00:00:00.000Z",
   cohort_size: 50,
@@ -81,13 +86,18 @@ const postV3Aggregate = (payload: Record<string, any>) =>
     .set(writeAuth)
     .send(payload);
 
-const postOutcomeEvidencePair = async () => {
+const postOutcomeEvidencePair = async (
+  jbtdId = JBTD_ID,
+  personaId = PERSONA_ID
+) => {
   const base = {
     workflow_id: "customer_support_case_resolution",
     outcome_metric: "support_median_resolution_hours",
     outcome_unit: "hours",
     cohort_size: 2300,
-    source_system: "Support case management system"
+    source_system: "Support case management system",
+    jbtd_id: jbtdId,
+    persona_id: personaId
   };
   await request(app)
     .post("/api/v1/outcome-evidence")
@@ -111,7 +121,7 @@ const postOutcomeEvidencePair = async () => {
     .expect(201);
 };
 
-const materialize = () =>
+const materialize = (overrides: Record<string, unknown> = {}) =>
   request(app)
     .post("/api/v1/ai-value/materialize/real-evidence")
     .set(writeAuth)
@@ -120,7 +130,10 @@ const materialize = () =>
       metrics_library_id: metricsLibraryId,
       cohort_id: "cohort-real-evidence",
       workflow_id: "workflow:CHAT",
-      outcome_workflow_id: "customer_support_case_resolution"
+      outcome_workflow_id: "customer_support_case_resolution",
+      jbtd_id: JBTD_ID,
+      persona_id: PERSONA_ID,
+      ...overrides
     });
 
 beforeEach(() => {
@@ -171,6 +184,19 @@ describe("AI Value real evidence materializer", () => {
 
     expect(outcomeExport.status).toBe(200);
     expect(outcomeExport.body.payload.review.review_state).toBe("SUBMITTED");
+    expect(outcomeExport.body.validation.admission_authoritative).toBe(true);
+    expect(outcomeExport.body.payload.admission).toMatchObject({
+      policy_version: "FT_OUTCOME_EVIDENCE_EXACT_SLICE_ADMISSION_2026_07",
+      workflow_id: "customer_support_case_resolution",
+      jbtd_id: JBTD_ID,
+      persona_id: PERSONA_ID,
+      baseline_window: {
+        evidence_ids: [expect.any(String)]
+      },
+      comparison_window: {
+        evidence_ids: [expect.any(String)]
+      }
+    });
     expect(outcomeExport.body.payload.metrics[0]).toMatchObject({
       metric_id: "support_median_resolution_hours",
       baseline_value: 18.4,
@@ -186,6 +212,107 @@ describe("AI Value real evidence materializer", () => {
     for (const forbidden of ["user_id", "prompt", "transcript", "skill_name", "raw_rows"]) {
       expect(serialized).not.toContain(forbidden);
     }
+
+    await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${exportId}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED", reviewer_role: "ADMIN" })
+      .expect(200);
+
+    const acceptedRun = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        outcome_evidence_export_id: exportId,
+        outcome_evidence_readiness_id: readinessId
+      });
+
+    expect(acceptedRun.status).toBe(200);
+    expect(acceptedRun.body.run.outcome_evidence.attached).toBe(true);
+    expect(
+      acceptedRun.body.run.spine.stages.readiness.object.source_refs
+        .outcome_evidence_export_id
+    ).toBe(exportId);
+
+    await request(app)
+      .put(`/api/v1/ai-value/objects/blueprint/${blueprintId}`)
+      .set(writeAuth)
+      .send(blueprint)
+      .expect(201);
+    const spineRun = await request(app)
+      .post("/api/v1/ai-value/spine/run")
+      .set(writeAuth)
+      .send({
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId
+      })
+      .expect(200);
+    const packetId =
+      spineRun.body.run.stages.executive_packet.object.packet_id;
+    const storedPacket = store.aiValueObjects.get(
+      `${ORG_ID}:executive_packet:${packetId}`
+    );
+    expect(storedPacket).toBeDefined();
+    if (!storedPacket) return;
+    storedPacket.payload = {
+      ...storedPacket.payload,
+      source_refs: {
+        ...(storedPacket.payload.source_refs as Record<string, unknown>),
+        readiness_id: readinessId
+      }
+    };
+    const acceptedReadout = await request(app)
+      .get(`/api/v1/ai-value/readout/${packetId}/html`)
+      .set(readoutAuth)
+      .expect(200);
+    expect(acceptedReadout.text).toContain(
+      "Customer export accepted for caveated review"
+    );
+
+    const storedReadiness = store.aiValueObjects.get(
+      `${ORG_ID}:evidence_readiness:${readinessId}`
+    );
+    expect(storedReadiness).toBeDefined();
+    if (!storedReadiness) return;
+    storedReadiness.validation = {
+      ...storedReadiness.validation,
+      outcome_evidence_admission_receipt: {
+        ...(storedReadiness.validation
+          .outcome_evidence_admission_receipt as Record<string, unknown>),
+        persona_id: "different_persona"
+      }
+    };
+
+    const crossSliceRun = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        outcome_evidence_export_id: exportId,
+        outcome_evidence_readiness_id: readinessId,
+        persist: false
+      })
+      .expect(200);
+    expect(crossSliceRun.body.run.outcome_evidence.attached).toBe(false);
+    expect(crossSliceRun.body.run.outcome_evidence.hold_reason).toContain(
+      "authoritative exact-slice admission"
+    );
+
+    const crossSliceReadout = await request(app)
+      .get(`/api/v1/ai-value/readout/${packetId}/html`)
+      .set(readoutAuth)
+      .expect(200);
+    expect(crossSliceReadout.text).toContain(
+      "Customer outcome evidence needed"
+    );
+    expect(crossSliceReadout.text).not.toContain(
+      "Customer export accepted for caveated review"
+    );
   });
 
   it("materializes legacy surfaced aggregate evidence without surface taxonomy ids", async () => {
@@ -375,7 +502,9 @@ describe("AI Value real evidence materializer", () => {
       outcome_metric: "support_median_resolution_hours",
       outcome_unit: "hours",
       cohort_size: 2300,
-      source_system: "Unapproved support extract"
+      source_system: "Unapproved support extract",
+      jbtd_id: JBTD_ID,
+      persona_id: PERSONA_ID
     };
     await request(app)
       .post("/api/v1/outcome-evidence")
@@ -413,5 +542,186 @@ describe("AI Value real evidence materializer", () => {
       ])
     );
     expect(response.body.objects.evidence_readiness.source_coverage.outcome).toBe("MISSING");
+  });
+
+  it("requires an exact JBTD and persona selector before outcome evidence admission", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+    await postOutcomeEvidencePair();
+
+    const response = await request(app)
+      .post("/api/v1/ai-value/materialize/real-evidence")
+      .set(writeAuth)
+      .send({
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        cohort_id: "cohort-real-evidence",
+        workflow_id: "workflow:CHAT",
+        outcome_workflow_id: "customer_support_case_resolution"
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.reason).toBe("INVALID_REAL_EVIDENCE_MATERIALIZER_REQUEST");
+  });
+
+  it("keeps hyphen and underscore slices on distinct terminal export identities", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+    await postOutcomeEvidencePair("resolve-case", PERSONA_ID);
+    await postOutcomeEvidencePair("resolve_case", PERSONA_ID);
+
+    const first = await materialize({ jbtd_id: "resolve-case" });
+    expect(first.status).toBe(200);
+    const firstId = first.body.objects.outcome_evidence_export.export_id;
+    await request(app)
+      .post(`/api/v1/ai-value/objects/outcome_evidence_export/${firstId}/review`)
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED", reviewer_role: "ADMIN" })
+      .expect(200);
+
+    const second = await materialize({ jbtd_id: "resolve_case" });
+    expect(second.status).toBe(200);
+    const secondId = second.body.objects.outcome_evidence_export.export_id;
+
+    expect(secondId).not.toBe(firstId);
+    expect(second.body.objects.outcome_evidence_export.admission.jbtd_id).toBe(
+      "resolve_case"
+    );
+  });
+
+  it("holds when a terminal direct upload squats the exact materializer identity", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+    await postOutcomeEvidencePair();
+
+    const first = await materialize();
+    const exportObject = first.body.objects.outcome_evidence_export;
+    const exportId = exportObject.export_id;
+    await request(app)
+      .put(`/api/v1/ai-value/objects/outcome_evidence_export/${exportId}`)
+      .set(writeAuth)
+      .send(exportObject)
+      .expect(201);
+    const squatted = await request(app)
+      .get(`/api/v1/ai-value/objects/outcome_evidence_export/${exportId}`)
+      .set(readAuth)
+      .expect(200);
+    expect(squatted.body.payload.admission).toBeUndefined();
+    expect(squatted.body.validation.admission_authoritative).toBe(false);
+    await request(app)
+      .post(`/api/v1/ai-value/objects/outcome_evidence_export/${exportId}/review`)
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED", reviewer_role: "ADMIN" })
+      .expect(200);
+
+    const rerun = await materialize();
+
+    expect(rerun.status).toBe(200);
+    expect(rerun.body.objects.outcome_evidence_export).toBeUndefined();
+    expect(rerun.body.evidence_summary.outcome_evidence_export_id).toBeNull();
+    expect(rerun.body.held_reasons).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "terminal but does not match the current exact slice"
+        )
+      ])
+    );
+  });
+
+  it("holds baseline and comparison evidence that cross exact slices", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+
+    const base = {
+      workflow_id: "customer_support_case_resolution",
+      outcome_metric: "support_median_resolution_hours",
+      outcome_unit: "hours",
+      cohort_size: 2300,
+      source_system: "Support case management system"
+    };
+    await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set(writeAuth)
+      .send({
+        ...base,
+        jbtd_id: JBTD_ID,
+        persona_id: PERSONA_ID,
+        period_start: "2026-02-01T00:00:00.000Z",
+        period_end: "2026-03-31T00:00:00.000Z",
+        aggregate_value: 18.4
+      })
+      .expect(201);
+    await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set(writeAuth)
+      .send({
+        ...base,
+        jbtd_id: "triage_support_case",
+        persona_id: "support_manager",
+        period_start: "2026-04-01T00:00:00.000Z",
+        period_end: "2026-05-31T00:00:00.000Z",
+        aggregate_value: 15.1
+      })
+      .expect(201);
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.objects.outcome_evidence_export).toBeUndefined();
+    expect(response.body.held_reasons).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("MISSING_EVIDENCE_PAIR")
+      ])
+    );
+  });
+
+  it("holds ambiguous duplicate evidence instead of selecting by insertion order", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+    await postOutcomeEvidencePair();
+
+    await request(app)
+      .post("/api/v1/outcome-evidence")
+      .set(writeAuth)
+      .send({
+        workflow_id: "customer_support_case_resolution",
+        outcome_metric: "support_median_resolution_hours",
+        outcome_unit: "hours",
+        cohort_size: 2300,
+        source_system: "Support case management system",
+        jbtd_id: JBTD_ID,
+        persona_id: PERSONA_ID,
+        period_start: "2026-04-01T00:00:00.000Z",
+        period_end: "2026-05-31T00:00:00.000Z",
+        aggregate_value: 99
+      })
+      .expect(201);
+
+    const response = await materialize();
+
+    expect(response.status).toBe(200);
+    expect(response.body.objects.outcome_evidence_export).toBeUndefined();
+    expect(response.body.held_reasons).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("AMBIGUOUS_EVIDENCE_PAIR")
+      ])
+    );
+  });
+
+  it("holds an outcome workflow alias that conflicts with the blueprint family", async () => {
+    await postUpstreamObjects();
+    await postV3Aggregate(v3Payload()).expect(202);
+
+    const response = await materialize({
+      outcome_workflow_id: "finance_close"
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.objects.outcome_evidence_export).toBeUndefined();
+    expect(response.body.held_reasons).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("outcome workflow does not match blueprint workflow family")
+      ])
+    );
   });
 });

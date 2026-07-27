@@ -8,7 +8,10 @@
  * only persist stage objects that validated cleanly.
  */
 import type { Express, Response } from "express";
-import { aiValueEngine } from "@fluencytracr/shared";
+import {
+  aiValueEngine,
+  outcomeEvidenceAdmissionReceiptsMatch
+} from "@fluencytracr/shared";
 import { z } from "zod";
 
 import { rbacMiddleware, type RequestWithRole } from "./rbac";
@@ -20,12 +23,22 @@ import {
 import {
   listAiValueCustomerDataModelSnapshots
 } from "./repositories/ai-value-minimal-persistence.repository";
-import type { AiValueCustomerDataModelSnapshotStoredRecord } from "./store";
+import type {
+  AiValueCustomerDataModelSnapshotStoredRecord,
+  AiValueObjectStoredRecord
+} from "./store";
 import {
   AiValueMaterializerNotFoundError,
   AiValueMaterializerValidationError,
   materializeRealEvidence
 } from "./ai_value_real_evidence_materializer";
+import {
+  acceptedReadinessBoundOutcomeEvidence,
+  authoritativeOutcomeEvidenceReceipt,
+  authoritativeReadinessOutcomeEvidenceReceipt,
+  exactOutcomeEvidenceSliceSegment,
+  readinessAuthorizesOutcomeEvidence
+} from "./outcome_evidence_admission_authority";
 
 type StageValidation = {
   valid: boolean;
@@ -556,18 +569,24 @@ export function registerAiValueRoutes(app: Express): void {
         metrics_library_id: metricsLibraryId,
         cohort_id: cohortId,
         workflow_id: workflowId,
-        outcome_workflow_id: outcomeWorkflowId
+        outcome_workflow_id: outcomeWorkflowId,
+        jbtd_id: jbtdId,
+        persona_id: personaId
       } = body;
       if (
         typeof blueprintId !== "string" ||
         typeof metricsLibraryId !== "string" ||
         typeof cohortId !== "string" ||
         typeof workflowId !== "string" ||
-        (outcomeWorkflowId !== undefined && typeof outcomeWorkflowId !== "string")
+        typeof outcomeWorkflowId !== "string" ||
+        typeof jbtdId !== "string" ||
+        jbtdId.trim().length === 0 ||
+        typeof personaId !== "string" ||
+        personaId.trim().length === 0
       ) {
         return res.status(400).json({
           error:
-            "blueprint_id, metrics_library_id, cohort_id, and workflow_id are required",
+            "blueprint_id, metrics_library_id, cohort_id, workflow_id, outcome_workflow_id, jbtd_id, and persona_id are required",
           reason: "INVALID_REAL_EVIDENCE_MATERIALIZER_REQUEST"
         });
       }
@@ -579,7 +598,9 @@ export function registerAiValueRoutes(app: Express): void {
           metricsLibraryId,
           cohortId,
           workflowId,
-          outcomeWorkflowId
+          outcomeWorkflowId,
+          jbtdId,
+          personaId
         });
         return res.json(result);
       } catch (error) {
@@ -631,6 +652,7 @@ export function registerAiValueRoutes(app: Express): void {
         ["evidence_readiness", readinessId, "evidence readiness"]
       ];
       const loaded: Record<string, Record<string, unknown>> = {};
+      const loadedRecords: Record<string, AiValueObjectStoredRecord> = {};
       for (const [objectType, objectId, label] of required) {
         const record = await getAiValueObject(orgId, objectType, objectId);
         if (!record) {
@@ -640,10 +662,24 @@ export function registerAiValueRoutes(app: Express): void {
           });
         }
         loaded[objectType] = record.payload as Record<string, unknown>;
+        loadedRecords[objectType] = record;
       }
-      const outcomeExport = outcomeExportId
-        ? (await getAiValueObject(orgId, "outcome_evidence_export", outcomeExportId))
-            ?.payload ?? null
+      const outcomeExportRecord = outcomeExportId
+        ? await getAiValueObject(orgId, "outcome_evidence_export", outcomeExportId)
+        : null;
+      const outcomeReceipt =
+        authoritativeOutcomeEvidenceReceipt(outcomeExportRecord);
+      const roiWorkflow = objectRef(loaded.roi_scenario.workflow);
+      const roiSourceRefs = objectRef(loaded.roi_scenario.source_refs);
+      const outcomeExport =
+        acceptedReadinessBoundOutcomeEvidence(
+          loadedRecords.evidence_readiness,
+          outcomeExportRecord
+        ) &&
+        outcomeReceipt &&
+        roiWorkflow?.workflow_family === outcomeReceipt.workflow_id &&
+        roiSourceRefs?.readiness_id === readinessId
+        ? outcomeExportRecord?.payload ?? null
         : null;
       const improvementLoop = improvementLoopId
         ? (await getAiValueObject(orgId, "value_improvement_loop", improvementLoopId))
@@ -751,6 +787,9 @@ export function registerAiValueRoutes(app: Express): void {
         }
         // Uploads always enter as SUBMITTED; acceptance is reviewer-only.
         payload.review = { review_state: "SUBMITTED" };
+        // Admission receipts are materializer-owned server state. Direct
+        // uploads may be reviewed, but caller receipt values are not stored.
+        delete payload.admission;
       }
 
       if (payload[config.idField] !== objectId) {
@@ -765,13 +804,20 @@ export function registerAiValueRoutes(app: Express): void {
         objectType === "executive_packet"
           ? legacyExecutivePacketIsolationGaps(payload)
           : [];
-      const validation = legacyIsolationGaps.length > 0
+      const validated = legacyIsolationGaps.length > 0
         ? {
             ...baseValidation,
             valid: false,
             gaps: [...baseValidation.gaps, ...legacyIsolationGaps]
           }
         : baseValidation;
+      const validation =
+        objectType === "outcome_evidence_export"
+          ? {
+              ...validated,
+              admission_authoritative: false
+            }
+          : validated;
       if (!validation.valid) {
         // Fail closed: invalid objects are rejected, never stored.
         return res.status(422).json({
@@ -962,17 +1008,26 @@ export function registerAiValueRoutes(app: Express): void {
         aiValueEngine.validateMetricsLibrary(metricsContextRecord.payload).valid
           ? metricsContextRecord.payload
           : undefined;
-      const validateEvidenceForReadout = (payload: Record<string, unknown>) =>
-        aiValueEngine.validateOutcomeEvidenceExport(payload, {
+      const validateEvidenceForReadout = (
+        record: AiValueObjectStoredRecord
+      ) =>
+        aiValueEngine.validateOutcomeEvidenceExport(record.payload, {
           blueprint: blueprintContext,
           metricsLibrary: metricsContext
         });
-      const canUseEvidenceForReadout = (payload: Record<string, unknown>) => {
-        const validation = validateEvidenceForReadout(payload);
-        return validation.feeds.evidence_attachment;
+      const canUseEvidenceForReadout = (
+        record: AiValueObjectStoredRecord,
+        readinessRecord: AiValueObjectStoredRecord
+      ) => {
+        if (!acceptedReadinessBoundOutcomeEvidence(readinessRecord, record)) {
+          return false;
+        }
+        const validation = validateEvidenceForReadout(record);
+        return validation.valid && validation.cross_check_gaps.length === 0;
       };
 
       let outcomeEvidenceRef: string | null = null;
+      let matchedReadinessRecord: AiValueObjectStoredRecord | null = null;
       if (readinessRef) {
         const readinessRecord = await getAiValueObject(
           orgId,
@@ -984,6 +1039,7 @@ export function registerAiValueRoutes(app: Express): void {
           aiValueEngine.validateEvidenceReadiness(readinessRecord.payload).valid &&
           readinessMatchesPacket(readinessRecord.payload, packet, sourceRefs)
         ) {
+          matchedReadinessRecord = readinessRecord;
           const readinessSourceRefs = objectRef(readinessRecord.payload.source_refs);
           outcomeEvidenceRef = stringRef(readinessSourceRefs?.outcome_evidence_export_id);
         }
@@ -998,7 +1054,11 @@ export function registerAiValueRoutes(app: Express): void {
         );
         if (
           outcomeEvidenceRecord &&
-          canUseEvidenceForReadout(outcomeEvidenceRecord.payload)
+          matchedReadinessRecord &&
+          canUseEvidenceForReadout(
+            outcomeEvidenceRecord,
+            matchedReadinessRecord
+          )
         ) {
           outcomeEvidencePayload = outcomeEvidenceRecord.payload;
         }
@@ -1074,7 +1134,20 @@ export function registerAiValueRoutes(app: Express): void {
         });
       }
 
-      const validation = aiValueEngine.validateOutcomeEvidenceExport(reviewed.exportObject);
+      const admissionAuthoritative = Boolean(
+        authoritativeOutcomeEvidenceReceipt(record) &&
+          outcomeEvidenceAdmissionReceiptsMatch(
+            record.validation.admission_receipt,
+            reviewed.exportObject.admission
+          )
+      );
+      const validation = {
+        ...aiValueEngine.validateOutcomeEvidenceExport(reviewed.exportObject),
+        admission_authoritative: admissionAuthoritative,
+        ...(admissionAuthoritative
+          ? { admission_receipt: record.validation.admission_receipt }
+          : {})
+      };
       if (!validation.valid) {
         return res.status(422).json({
           error: "reviewed export failed engine validation",
@@ -1114,6 +1187,7 @@ export function registerAiValueRoutes(app: Express): void {
       const engagementId = body.engagement_id;
       const fluencyBaselineId = body.fluency_baseline_id;
       const outcomeEvidenceExportId = body.outcome_evidence_export_id;
+      const outcomeEvidenceReadinessId = body.outcome_evidence_readiness_id;
       const scenarioId = body.scenario_id;
       const persist = body.persist !== false;
 
@@ -1145,18 +1219,81 @@ export function registerAiValueRoutes(app: Express): void {
       if (engagementPayload === null) return;
       const fluencyPayload = await load("fluency_baseline", fluencyBaselineId);
       if (fluencyPayload === null) return;
-      const outcomeEvidencePayload = await load(
-        "outcome_evidence_export",
-        outcomeEvidenceExportId
-      );
-      if (outcomeEvidencePayload === null) return;
+      const outcomeEvidenceRecord =
+        typeof outcomeEvidenceExportId === "string"
+          ? await getAiValueObject(
+              orgId,
+              "outcome_evidence_export",
+              outcomeEvidenceExportId
+            )
+          : undefined;
+      if (typeof outcomeEvidenceExportId === "string" && !outcomeEvidenceRecord) {
+        return res.status(404).json({
+          error: `outcome_evidence_export ${outcomeEvidenceExportId} not found`,
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+      const outcomeEvidenceReadinessRecord =
+        typeof outcomeEvidenceReadinessId === "string"
+          ? await getAiValueObject(
+              orgId,
+              "evidence_readiness",
+              outcomeEvidenceReadinessId
+            )
+          : undefined;
+      if (
+        typeof outcomeEvidenceReadinessId === "string" &&
+        !outcomeEvidenceReadinessRecord
+      ) {
+        return res.status(404).json({
+          error: `evidence_readiness ${outcomeEvidenceReadinessId} not found`,
+          reason: "OBJECT_NOT_FOUND"
+        });
+      }
+      const outcomeEvidencePayload = outcomeEvidenceRecord?.payload;
+      const serverExpectedOutcomeEvidenceAdmission =
+        readinessAuthorizesOutcomeEvidence(
+          outcomeEvidenceReadinessRecord,
+          outcomeEvidenceRecord
+        )
+          ? authoritativeReadinessOutcomeEvidenceReceipt(
+              outcomeEvidenceReadinessRecord
+            ) ?? undefined
+          : undefined;
       const scenarioPayload = await load("value_scenario", scenarioId);
       if (scenarioPayload === null) return;
 
-      const familySegment = sanitizeIdSegment(
-        (blueprintPayload as Record<string, unknown>).workflow_family as string ??
-          (blueprintId as string)
-      );
+      const blueprintRecord = blueprintPayload as Record<string, unknown>;
+      const blueprintWindows = objectRef(blueprintRecord.windows);
+      const familySegment = serverExpectedOutcomeEvidenceAdmission
+        ? exactOutcomeEvidenceSliceSegment({
+            workflowId: serverExpectedOutcomeEvidenceAdmission.workflow_id,
+            jbtdId: serverExpectedOutcomeEvidenceAdmission.jbtd_id,
+            personaId: serverExpectedOutcomeEvidenceAdmission.persona_id,
+            baselineWindow: String(blueprintWindows?.baseline ?? ""),
+            comparisonWindow: String(blueprintWindows?.comparison ?? "")
+          })
+        : sanitizeIdSegment(
+            blueprintRecord.workflow_family as string ?? (blueprintId as string)
+          );
+      const outcomeEvidenceValidation = outcomeEvidencePayload
+        ? aiValueEngine.validateOutcomeEvidenceExport(outcomeEvidencePayload, {
+            blueprint: blueprintPayload,
+            metricsLibrary: metricsPayload
+          })
+        : null;
+      const outcomeEvidenceContractEligible =
+        acceptedReadinessBoundOutcomeEvidence(
+          outcomeEvidenceReadinessRecord,
+          outcomeEvidenceRecord
+        ) &&
+        outcomeEvidenceValidation?.valid === true &&
+        outcomeEvidenceValidation.cross_check_gaps.length === 0;
+      const runIds = {
+        readinessId: `readiness_${familySegment}_v1`,
+        claimBoundaryId: `claim_boundary_${familySegment}_v1`,
+        packetId: `executive_packet_${familySegment}_v1`
+      };
       const run = aiValueEngine.runValueChain({
         engagement: engagementPayload,
         fluencyBaseline: fluencyPayload,
@@ -1164,12 +1301,59 @@ export function registerAiValueRoutes(app: Express): void {
         blueprint: blueprintPayload,
         metricsLibrary: metricsPayload,
         scenario: scenarioPayload,
-        ids: {
-          readinessId: `readiness_${familySegment}_v1`,
-          claimBoundaryId: `claim_boundary_${familySegment}_v1`,
-          packetId: `executive_packet_${familySegment}_v1`
-        }
+        ids: runIds
       });
+      if (
+        outcomeEvidenceContractEligible &&
+        outcomeEvidenceValidation &&
+        outcomeEvidencePayload &&
+        outcomeEvidenceRecord
+      ) {
+        const fluencyBaselineRef =
+          typeof (fluencyPayload as Record<string, unknown> | undefined)
+            ?.baseline_id === "string"
+            ? String(
+                (fluencyPayload as Record<string, unknown>).baseline_id
+              )
+            : undefined;
+        const engagementRef =
+          typeof (engagementPayload as Record<string, unknown> | undefined)
+            ?.engagement_id === "string"
+            ? String(
+                (engagementPayload as Record<string, unknown>).engagement_id
+              )
+            : undefined;
+        const authorizedSpine = aiValueEngine.runSpine({
+          blueprint: blueprintPayload,
+          metricsLibrary: metricsPayload,
+          scenario: scenarioPayload,
+          ids: runIds,
+          sourceCoverageOverrides: { outcome: "PRESENT" },
+          evidenceRefs: {
+            ...(fluencyBaselineRef
+              ? { fluency_baseline_id: fluencyBaselineRef }
+              : {}),
+            outcome_evidence_export_id: outcomeEvidenceRecord.object_id
+          },
+          packetContextRefs: {
+            ...(engagementRef ? { engagement_id: engagementRef } : {}),
+            ...(fluencyBaselineRef
+              ? { fluency_baseline_id: fluencyBaselineRef }
+              : {})
+          }
+        });
+        run.spine = authorizedSpine;
+        run.decision = authorizedSpine.decision;
+        run.halted_at = authorizedSpine.halted_at;
+        run.outcome_evidence = {
+          status: "VALID",
+          validation: outcomeEvidenceValidation,
+          object: outcomeEvidencePayload,
+          generated: false,
+          hold_reason: null,
+          attached: true
+        };
+      }
 
       const persisted: Array<{ object_type: string; object_id: string }> = [];
       if (persist && run.spine) {
@@ -1186,6 +1370,18 @@ export function registerAiValueRoutes(app: Express): void {
           }
           const objectPayload = stageResult.object as Record<string, unknown>;
           const objectId = String(objectPayload[idField]);
+          const validation =
+            stage === "readiness" &&
+            serverExpectedOutcomeEvidenceAdmission &&
+            outcomeEvidenceRecord
+              ? {
+                  ...(stageResult.validation as unknown as Record<string, unknown>),
+                  outcome_evidence_admission_authoritative: true,
+                  outcome_evidence_admission_receipt:
+                    serverExpectedOutcomeEvidenceAdmission,
+                  outcome_evidence_export_id: outcomeEvidenceRecord.object_id
+                }
+              : stageResult.validation as unknown as Record<string, unknown>;
           await upsertAiValueObject({
             orgId,
             objectType,
@@ -1193,7 +1389,7 @@ export function registerAiValueRoutes(app: Express): void {
             schemaVersion: String(objectPayload.schema_version ?? "UNKNOWN"),
             workflowFamily: workflowFamilyOf(objectPayload),
             payload: objectPayload,
-            validation: stageResult.validation as unknown as Record<string, unknown>,
+            validation,
             valid: true
           });
           persisted.push({ object_type: objectType, object_id: objectId });

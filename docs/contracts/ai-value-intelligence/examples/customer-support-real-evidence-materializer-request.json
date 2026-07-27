@@ -3,5 +3,7 @@
   "metrics_library_id": "metrics_customer_support_v1",
   "cohort_id": "cohort-real-evidence",
   "workflow_id": "workflow:CHAT",
-  "outcome_workflow_id": "customer_support_case_resolution"
+  "outcome_workflow_id": "customer_support_case_resolution",
+  "jbtd_id": "resolve_support_case",
+  "persona_id": "support_specialist"
 }

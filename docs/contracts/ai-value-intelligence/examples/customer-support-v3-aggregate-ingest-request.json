@@ -2,6 +2,8 @@
   "schema_version": "FT_V3_2026_05",
   "cohort_id": "cohort-real-evidence",
   "workflow_id": "workflow:CHAT",
+  "jbtd_id": "resolve_support_case",
+  "persona_id": "support_specialist",
   "window_start": "2026-04-01T00:00:00.000Z",
   "window_end": "2026-05-31T00:00:00.000Z",
   "cohort_size": 50,

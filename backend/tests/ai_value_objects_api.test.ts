@@ -568,7 +568,7 @@ describe("AI value spine run API", () => {
     ).toBe(true);
   });
 
-  it("runs the evidence lifecycle: submit, accept, attach to the chain", async () => {
+  it("keeps direct export uploads reviewable but non-admissive", async () => {
     const evidenceGapBlueprint = JSON.parse(JSON.stringify(blueprint));
     evidenceGapBlueprint.source_requirements.source_coverage.outcome = "MISSING";
     await request(app)
@@ -596,6 +596,7 @@ describe("AI value spine run API", () => {
       .send(selfAccepted);
     expect(submitted.status).toBe(201);
     expect(submitted.body.validation.review_state).toBe("SUBMITTED");
+    expect(submitted.body.validation.admission_authoritative).toBe(false);
 
     // Without acceptance, evidence is pending and the chain holds for coverage.
     const pendingRun = await request(app)
@@ -611,7 +612,7 @@ describe("AI value spine run API", () => {
     expect(pendingRun.body.run.outcome_evidence.status).toBe("HELD");
     expect(pendingRun.body.run.decision).toBe("HOLD_FOR_SOURCE_COVERAGE");
 
-    // Accept, then the chain attaches the evidence and upgrades the lane.
+    // Human acceptance records review state but does not manufacture admission.
     const review = await request(app)
       .post(
         `/api/v1/ai-value/objects/outcome_evidence_export/${outcomeExport.export_id}/review`
@@ -630,12 +631,15 @@ describe("AI value spine run API", () => {
         outcome_evidence_export_id: outcomeExport.export_id
       });
     expect(acceptedRun.status).toBe(200);
-    expect(acceptedRun.body.run.outcome_evidence.attached).toBe(true);
-    expect(acceptedRun.body.run.decision).toBe("HOLD_FOR_ASSUMPTIONS");
+    expect(acceptedRun.body.run.outcome_evidence.attached).toBe(false);
+    expect(acceptedRun.body.run.outcome_evidence.hold_reason).toContain(
+      "authoritative exact-slice admission"
+    );
+    expect(acceptedRun.body.run.decision).toBe("HOLD_FOR_SOURCE_COVERAGE");
     expect(
       acceptedRun.body.run.spine.stages.readiness.object.source_refs
         .outcome_evidence_export_id
-    ).toBe(outcomeExport.export_id);
+    ).toBeUndefined();
 
     // Terminal review: a second decision is rejected.
     const secondReview = await request(app)
@@ -948,9 +952,9 @@ describe("AI value spine run API", () => {
     [
       "accepted",
       "ACCEPTED",
-      "Customer export accepted for caveated review",
-      "Prepare the caveated sponsor readout with accepted evidence",
-      "Accepted aggregate evidence supports only caveated value review. It is not ROI proof and does not establish causality."
+      "Customer outcome evidence needed",
+      "Ask the data owner for the approved aggregate export",
+      "Stronger value language stays held until source, window, and metric evidence are attached."
     ],
     [
       "rejected",

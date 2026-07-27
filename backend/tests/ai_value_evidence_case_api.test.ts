@@ -102,12 +102,12 @@ describe("AI value evidence case API", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.object_type).toBe("value_evidence_case");
-    // Uploaded outcome evidence is forced to SUBMITTED, so the assembled case
-    // must stay directional until a human accepts the evidence.
-    expect(response.body.payload.outcome_evidence_status.review_state).toBe("SUBMITTED");
-    expect(response.body.payload.evidence_quality.evidence_level).toBe("DIRECTIONAL");
+    // A direct upload remains storage-only until the materializer supplies an
+    // authoritative exact-slice admission receipt.
+    expect(response.body.payload.outcome_evidence_status.review_state).toBe("MISSING");
+    expect(response.body.payload.evidence_quality.evidence_level).toBe("MISSING");
     expect(response.body.payload.safe_value_language.allowed_claim_level).toBe(
-      "INTERNAL_HYPOTHESIS_ONLY"
+      "OBSERVED_AI_ACTIVITY_ONLY"
     );
     expect(response.body.payload.vbd_summary.depth.definition).toBe(
       "workflow_integration_embeddedness"
@@ -142,7 +142,125 @@ describe("AI value evidence case API", () => {
     );
   });
 
-  it("assembles an approved-design case without losing the causality gate state", async () => {
+  it("does not assemble evidence from an authoritative export bound to a different exact slice", async () => {
+    const receipt = {
+      policy_version: "FT_OUTCOME_EVIDENCE_EXACT_SLICE_ADMISSION_2026_07",
+      workflow_id: "customer_support_case_resolution",
+      jbtd_id: "resolve_support_case",
+      persona_id: "support_specialist",
+      baseline_window: {
+        period_start: "2026-02-01T00:00:00.000Z",
+        period_end: "2026-03-31T00:00:00.000Z",
+        evidence_ids: ["evidence_baseline"]
+      },
+      comparison_window: {
+        period_start: "2026-04-01T00:00:00.000Z",
+        period_end: "2026-05-31T00:00:00.000Z",
+        evidence_ids: ["evidence_comparison"]
+      }
+    };
+    const admittedExport = {
+      ...outcomeExport,
+      admission: receipt
+    };
+    const sliceBoundReadiness = JSON.parse(JSON.stringify(readiness));
+    sliceBoundReadiness.source_refs.outcome_evidence_export_id =
+      admittedExport.export_id;
+
+    await putObject("data_boundary", dataBoundary.contract_id as string, dataBoundary);
+    await putObject("roi_scenario", roiScenario.roi_scenario_id as string, roiScenario);
+    await putObject(
+      "evidence_readiness",
+      sliceBoundReadiness.readiness_id as string,
+      sliceBoundReadiness
+    );
+    await putObject(
+      "outcome_evidence_export",
+      admittedExport.export_id as string,
+      admittedExport
+    );
+
+    const outcomeRecord = store.aiValueObjects.get(
+      `${ORG_ID}:outcome_evidence_export:${admittedExport.export_id}`
+    );
+    const readinessRecord = store.aiValueObjects.get(
+      `${ORG_ID}:evidence_readiness:${sliceBoundReadiness.readiness_id}`
+    );
+    expect(outcomeRecord).toBeDefined();
+    expect(readinessRecord).toBeDefined();
+    if (!outcomeRecord || !readinessRecord) return;
+    outcomeRecord.validation = {
+      ...outcomeRecord.validation,
+      admission_authoritative: true,
+      admission_receipt: receipt
+    };
+    readinessRecord.validation = {
+      ...readinessRecord.validation,
+      outcome_evidence_admission_authoritative: true,
+      outcome_evidence_admission_receipt: {
+        ...receipt,
+        jbtd_id: "triage_support_case"
+      },
+      outcome_evidence_export_id: admittedExport.export_id
+    };
+
+    await request(app)
+      .post(
+        `/api/v1/ai-value/objects/outcome_evidence_export/${admittedExport.export_id}/review`
+      )
+      .set(writeAuth)
+      .send({ decision: "ACCEPTED", reviewer_role: "ADMIN" })
+      .expect(200);
+
+    const response = await request(app)
+      .post("/api/v1/ai-value/evidence-case/assemble")
+      .set(writeAuth)
+      .send({
+        data_boundary_contract_id: dataBoundary.contract_id,
+        roi_scenario_id: roiScenario.roi_scenario_id,
+        readiness_id: sliceBoundReadiness.readiness_id,
+        outcome_export_id: admittedExport.export_id
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.payload.evidence_quality.evidence_level).toBe("MISSING");
+    expect(response.body.payload.source_refs.outcome_export_id).toBeNull();
+
+    readinessRecord.validation = {
+      ...readinessRecord.validation,
+      outcome_evidence_admission_receipt: receipt
+    };
+    const roiRecord = store.aiValueObjects.get(
+      `${ORG_ID}:roi_scenario:${roiScenario.roi_scenario_id}`
+    );
+    expect(roiRecord).toBeDefined();
+    if (!roiRecord) return;
+    roiRecord.payload = {
+      ...roiRecord.payload,
+      workflow: {
+        ...(roiRecord.payload.workflow as Record<string, unknown>),
+        workflow_family: "sales_pipeline_hygiene"
+      }
+    };
+
+    const crossWorkflow = await request(app)
+      .post("/api/v1/ai-value/evidence-case/assemble")
+      .set(writeAuth)
+      .send({
+        data_boundary_contract_id: dataBoundary.contract_id,
+        roi_scenario_id: roiScenario.roi_scenario_id,
+        readiness_id: sliceBoundReadiness.readiness_id,
+        outcome_export_id: admittedExport.export_id
+      });
+
+    expect(crossWorkflow.status).toBe(201);
+    expect(crossWorkflow.body.payload.evidence_quality.evidence_level).toBe(
+      "MISSING"
+    );
+    expect(crossWorkflow.body.payload.source_refs.outcome_export_id).toBeNull();
+  });
+
+  it("keeps an approved-design case locked when accepted evidence lacks authoritative admission", async () => {
     const resolvedScenario = JSON.parse(JSON.stringify(roiScenario));
     resolvedScenario.customer_owned_assumptions =
       resolvedScenario.customer_owned_assumptions.map((assumption: Record<string, unknown>) => ({
@@ -188,7 +306,10 @@ describe("AI value evidence case API", () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.payload.evidence_quality.evidence_level).toBe("STRONG");
+    expect(response.body.payload.evidence_quality.evidence_level).toBe("MISSING");
+    expect(response.body.payload.outcome_evidence_status.review_state).toBe(
+      "MISSING"
+    );
     expect(response.body.payload.evidence_design.design_state).toBe(
       "APPROVED_COMPARISON_DESIGN"
     );
@@ -200,7 +321,7 @@ describe("AI value evidence case API", () => {
         gate.state
       ])
     );
-    expect(gateState.causality_claim).toBe("REVIEW_ELIGIBLE_CONTEXT_ONLY");
+    expect(gateState.causality_claim).toBe("LOCKED");
     expect(response.body.payload.blocked_claims).toContain("causality_claim");
   });
 

@@ -1,5 +1,7 @@
 {
   "workflow_id": "customer_support_case_resolution",
+  "jbtd_id": "resolve_support_case",
+  "persona_id": "support_specialist",
   "outcome_metric": "support_median_resolution_hours",
   "outcome_unit": "hours",
   "period_start": "2026-02-01T00:00:00.000Z",
