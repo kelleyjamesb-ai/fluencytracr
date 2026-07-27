@@ -357,13 +357,13 @@
       "risk": "high",
       "last_note": "Exact Slice B candidate is locally complete. Initial review blockers were repaired with opaque receipts, collision-free exact IDs, terminal receipt comparison, readiness-owned exact binding across consumers, ACCEPTED-only case attachment, storage-only legacy compatibility, a non-authorizing shared validator/value-chain, and an explicit non-authoritative runSpine calculation boundary. Final exact-tree CODE/BUG/ADVERSARIAL review returned GO/GO/GO. Focused backend 78/78, engine 43/43, aggregate plan 3/3, builds, full backend 972/972, V1 governance, strict OpenSpec, JSON, and diff checks pass; repo Python remains 377 passed/10 skipped from the pre-remediation run with no Python changes. Fresh commit confirmation remains required before committing and pushing to draft PR #451; Slice C remains blocked until Slice B merges."
     },
-   {
-  "id": "mcii-rollup-privacy-differencing-slice-c",
-  "title": "MCII Slice C — rollup privacy and differencing protection",
-  "bound": "Aggregate rollup and query-privacy paths only; acceptance: complementary suppression prevents recovery of suppressed cells from totals or sibling values; repeated-query and adjacent-window differencing risks fail closed; every workflow_id, jbtd_id, persona_id slice is suppressed independently; rollups expose only bounded aggregate values that pass existing privacy and suppression rules; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates as required; exclude claim-semantic templates, canonical identity binding, claim trace, deployment, publication, live GCP, runtime qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ROI, causality, prediction, productivity, ranking, or customer-facing economic output",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-created bounded Slice C queue item. Activation remains pending until Slice B canonical state is closed."
-   } 
+    {
+      "id": "mcii-rollup-privacy-differencing-slice-c",
+      "title": "MCII Slice C — rollup privacy and differencing protection",
+      "bound": "Aggregate rollup and query-privacy paths only; acceptance: complementary suppression prevents recovery of suppressed cells from totals or sibling values; repeated-query and adjacent-window differencing risks fail closed; every workflow_id, jbtd_id, persona_id slice is suppressed independently; rollups expose only bounded aggregate values that pass existing privacy and suppression rules; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates as required; exclude claim-semantic templates, canonical identity binding, claim trace, deployment, publication, live GCP, runtime qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ROI, causality, prediction, productivity, ranking, or customer-facing economic output",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-created bounded Slice C queue item. Activation remains pending until Slice B canonical state is closed."
+    }
   ]
 }
