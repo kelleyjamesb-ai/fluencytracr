@@ -561,5 +561,6 @@
 - Review: exact repair CODE/BUG/ADVERSARIAL returned GO/GO/GO after the queue
   was reopened for truthful integration state.
 - Boundary: PR #450 remains open and unmerged; Slice A is the sole
-  `in_progress` queue item pending green current-head CI on the committed/pushed
-  repair. No deploy or live proof.
+  `done` queue item after repair head `92d8aa2` completed 16 successful checks
+  with one expected Supabase Preview skip. Normal merge is authorized; no
+  deploy or live proof.
