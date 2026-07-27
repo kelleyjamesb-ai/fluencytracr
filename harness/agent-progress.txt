@@ -576,6 +576,8 @@
 - Verified/reviewed: full frontend 164/164, production build, focused backend
   auth 43/43, governance, docs, strict OpenSpec, agentic-state, diff checks, and
   exact remediation CODE/BUG/ADVERSARIAL GO/GO/GO.
-- Boundary: Slice A is again the sole `in_progress` queue item. Commit/push,
-  thread resolution, and current-head CI are pending; PR #450 is open and
-  unmerged. No deploy or live proof.
+- Integration gate: remediation head `bbf2675` was committed and pushed; all
+  16 current-head checks passed with one expected Supabase Preview skip, and the
+  two addressed GitHub review threads were explicitly resolved.
+- Boundary: Slice A is the sole `done` queue item; PR #450 remains open pending
+  the authorized normal merge. No deploy or live proof.

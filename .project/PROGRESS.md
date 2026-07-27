@@ -3889,7 +3889,7 @@
   `OBSERVED_NON_ATTRIBUTABLE` ceiling, final acceptance, and stable governed
   execution protocol. It carries no mutable status or authority.
 - Active state: `mcii-live-example-auth-containment-slice-a` is the sole
-  `in_progress` item on PR #450 over canonical `main` merge base
+  `done` item on PR #450 over canonical `main` merge base
   `5cae9eda44a68dd63f76b970299560c280f3f558`; no later slice is active.
 - The four recorded design blockers are implemented: one fail-closed runtime
   predicate governs authentication paths; JWT parsing requires one strict
@@ -3901,10 +3901,11 @@
   reconciliation, `git diff --check`, and exact-candidate
   CODE/BUG/ADVERSARIAL `GO / GO / GO` passed. The approved CI repair has
   focused auth, YAML-parse, governance, agentic-state, and diff verification;
-  exact repair CODE/BUG/ADVERSARIAL review also returned `GO / GO / GO`, and
-  repair head `92d8aa2` completed 16 successful checks with one expected skip.
-- Next action: finish the exact-reviewed GitHub comment remediation, push it,
-  resolve the addressed threads, require green current-head checks, and perform
-  the authorized normal merge. Deployment and publication remain unauthorized.
+  exact repair CODE/BUG/ADVERSARIAL review also returned `GO / GO / GO`.
+  Review-remediation head `bbf2675` passed the focused/full verification,
+  exact CODE/BUG/ADVERSARIAL review, and 16 current-head checks with one expected
+  skip; both addressed GitHub review threads are resolved.
+- Next action: perform the authorized normal merge of PR #450. Deployment and
+  publication remain unauthorized.
   Later slices remain inactive until Slice A merges and a human creates the
   next bounded queue item.
