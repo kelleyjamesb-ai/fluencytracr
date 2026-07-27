@@ -25,8 +25,20 @@
   independent CODE/BUG/ADVERSARIAL `GO / GO / GO`; the panel's state-only
   consistency finding was reconciled and the same panel confirmed
   `GO / GO / GO`. James explicitly authorized the original commit and later
-  authorized this rebase/revalidation step. The queue item is `done`. No push,
-  implementation PR, merge, deploy, or live proof has occurred.
+  authorized this rebase/revalidation step. Slice A commit `8537c67` was pushed
+  and opened as PR #450. Its current-head Assurance `assurance` job exposed one
+  CI integration gap: both Assurance workflows started the backend without an
+  explicit `NODE_ENV`, so the new fail-closed predicate correctly selected
+  strict JWT authentication and the unauthenticated health probe timed out.
+  James authorized the bounded correction; both backend-start steps now declare
+  `NODE_ENV: development`, preserving strict production and managed-runtime
+  authentication. Focused auth tests passed 43/43, both workflow YAML files
+  parse, V1 governance and all 15 agentic-state guards pass, and
+  `git diff --check` passes. Exact repair CODE/BUG/ADVERSARIAL review returned
+  `GO / GO / GO` after reopening the queue for truthful integration state. The
+  queue item remains the sole `in_progress` item pending green current-head CI
+  on the committed/pushed repair. PR #450 is open and unmerged. No deploy or
+  live proof has occurred.
 - The machine-distinct constraints-only Section 7.5A contract merged normally
   through PR #446 as `ed09d6b75dde7156d5f3356815a1a9a281a06f27`.
   Its parents are prior main
@@ -3590,10 +3602,11 @@
 ## Current Status
 
 - `mcii-live-example-auth-containment-slice-a` is locally implemented and
-  committed locally after explicit human authorization. It is rebased onto the
-  PR #449 `main` merge; fresh post-rebase verification and exact-candidate
-  CODE/BUG/ADVERSARIAL review passed. The queue item is `done`. It remains
-  unpushed and undeployed.
+  committed on PR #450 after explicit human authorization. The original exact
+  candidate passed post-rebase verification and CODE/BUG/ADVERSARIAL review.
+  The queue item is reopened as `in_progress` for the approved Assurance
+  workflow repair; exact repair review passed and current-head CI remains
+  pending. PR #450 is open and unmerged.
 
 - Completed phase-ai-value-token-efficiency-signal-contract (user-requested, 2026-06-13 UTC): added the docs-only Token Efficiency strategy, Token Efficiency Signal contract, shared aggregate-only validator/builder, validator-backed present and held examples, exports, and focused npm test script. Token Efficiency is locked to Layer 1 platform telemetry as a cost/intensity overlay on the `surface_usage` evidence lane. It supports cost exposure, model usage, workflow intensity, token efficiency, model routing, workflow design review, and evidence collection planning only. It blocks realized ROI, EBITA, causality, productivity, headcount reduction, individual attribution, manager/team ranking, people decisioning, and customer-facing financial output. It cannot upgrade full Playbook coverage, claim readiness, financial permission, or downstream claim strength. No migrations, Prisma schema edits, backend routes, frontend UI, ingestion jobs, token persistence, claim readiness snapshots, executive readout snapshots, raw rows, raw prompts/responses/transcripts/query/file contents, identifiers, HRIS inference, people analytics, ROI, EBITA, productivity, causality, or customer-facing financial output were added. Verification is tracked in the current branch before PR.
 - Completed phase-ai-value-client-evidence-entry-contract (program-ai-value-post-sales-client-evidence-workflow Phase 3, user-requested, 2026-06-13 UTC): added the AI Value Client Evidence Entry contract, shared validator/builder, examples for all six safe entry modes, and tests for valid aggregate entries, Source Package promotion, invalid-entry rejection, unsafe field/value rejection, string-array enforcement, metadata-value sanitization, and caveat identifier sanitization. Validated entries can become Source Packages only after `validation_status: validated`, present/partial evidence state, aggregate-only privacy posture, required blocked uses, and final `validateSourcePackage` approval. Source Package validation was hardened with unsafe metadata-value and caveat identifier gates so metadata IDs/refs/caveats cannot carry emails, person IDs, hashed/joinable identifiers, raw text markers, ROI/financial/economic/causal/productivity/headcount language, or customer-facing financial output. This phase did not add migrations, Prisma schema changes, backend routes, frontend UI, ingestion jobs, raw file storage, claim readiness snapshot persistence, executive readout snapshot persistence, ROI, EBITA, causality, productivity, headcount, ranking, people decisioning, or customer-facing financial output. Verification: `npm run test:ai-value-client-evidence-entry` passed 27/27; `npm run test:ai-value-source-packages` passed 30/30; `npm run test:ai-value-client-evidence-request` passed 9/9; `npm run test:ai-value-customer-journey` passed 12/12; `npm run test:ai-value-evidence-collection-assembler` passed 20/20; `npm run test:ai-value-measurement-plan` passed 55/55; `node --test scripts/validate_ai_value_evidence_snapshot.test.mjs` passed 62/62; `npm run build --workspace shared` passed; `bash scripts/ci_docs_contract_sweep.sh` passed; `python3 scripts/ci_v1_governance_gates.py` passed; `git diff --check` passed; conflict-marker scan found no markers. Subagent spec and code-quality reviews completed with no remaining Critical or Important issues.
@@ -3645,10 +3658,11 @@
 
 ## Blockers
 
-- MCII Slice A has no known local implementation or review blocker. Fresh
-  post-rebase verification and exact-candidate CODE/BUG/ADVERSARIAL review
-  passed. Push, implementation PR, merge, deploy, and live proof are not
-  authorized or complete.
+- MCII Slice A product behavior has no known implementation blocker. PR #450's
+  required Assurance job exposed a CI runtime-posture integration blocker. The
+  bounded workflow repair is locally verified and exact repair review passed.
+  Green current-head CI on the committed/pushed repair remains required before
+  the authorized normal merge. No deploy or live proof is complete.
 
 - Section 7.5A records 20 independently `OPEN_BLOCKING` obligations spanning
   parent, future full-Section-7.5, and downstream phases (`S75A-P00` through
@@ -3690,9 +3704,11 @@
 
 ## Next Step
 
-- Await explicit human direction before pushing or creating the MCII Slice A
-  implementation PR. Do not claim merge, deployment, or live proof without the
-  corresponding remote and authenticated runtime evidence.
+- Commit/push the exact-reviewed PR #450 Assurance workflow repair, require
+  green current-head checks, and then perform the authorized normal merge
+  without bypass. Activate Slice B only from the exact merged `main`. Do not
+  claim deployment or live proof without corresponding remote and authenticated
+  runtime evidence.
 
 - To begin future full-Section-7.5 design/readiness work, a human must first
   satisfy `S75A-P17` by creating a separate, machine-distinct high-risk queue
@@ -3858,20 +3874,21 @@
   0 rationale, bounded A-F architecture sequence, descriptive
   `OBSERVED_NON_ATTRIBUTABLE` ceiling, final acceptance, and stable governed
   execution protocol. It carries no mutable status or authority.
-- Active state: `mcii-live-example-auth-containment-slice-a` is `done` locally
-  on canonical `main` merge base
-  `5cae9eda44a68dd63f76b970299560c280f3f558`; there is no active queue item and
-  no later slice is active.
+- Active state: `mcii-live-example-auth-containment-slice-a` is the sole
+  `in_progress` queue item on PR #450 over canonical `main` merge base
+  `5cae9eda44a68dd63f76b970299560c280f3f558`; no later slice is active.
 - The four recorded design blockers are implemented: one fail-closed runtime
   predicate governs authentication paths; JWT parsing requires one strict
   finite-future Bearer credential; browser 401 and session races are contained
   without mint or retry; and live reporting binds to an exact non-persistent
   same-run Executive Packet without example fallback, IDs, or source refs.
-- Completed gate: fresh backend and frontend focused/full tests and builds,
+- Product gate completed: fresh backend and frontend focused/full tests and builds,
   Assurance Harness, V1 governance, docs checks, strict OpenSpec, queue
   reconciliation, `git diff --check`, and exact-candidate
-  CODE/BUG/ADVERSARIAL `GO / GO / GO` passed.
-- Next action: await explicit human direction before push or implementation PR
-  creation. Merge, deployment, publication, and other external effects require
-  separate explicit authorization. Later slices remain inactive until Slice A
+  CODE/BUG/ADVERSARIAL `GO / GO / GO` passed. The approved CI repair has
+  focused auth, YAML-parse, governance, agentic-state, and diff verification;
+  exact repair CODE/BUG/ADVERSARIAL review also returned `GO / GO / GO`.
+- Next action: commit/push the reviewed workflow repair, require green
+  current-head checks, and perform the authorized normal merge. Deployment and
+  publication remain unauthorized. Later slices remain inactive until Slice A
   merges and a human creates the next bounded queue item.

@@ -546,3 +546,20 @@
   state-only consistency remediation and same-panel confirmation.
 - Boundary: committed locally after explicit human authorization; queue is
   `done`. No push, PR, merge, deploy, or live proof.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice A PR #450 CI repair)
+
+- Finding: the required Assurance `assurance` job timed out because the
+  workflows started the backend without explicit development posture; Slice A
+  correctly selected strict JWT mode and denied the unauthenticated health
+  probe.
+- Approved repair: declare `NODE_ENV: development` only on the backend-start
+  steps in the standard and full-scale Assurance workflows. Production and
+  managed-runtime authentication remain strict.
+- Verified before exact repair review: focused auth 43/43, both workflow YAML
+  files parse, and `git diff --check` passes.
+- Review: exact repair CODE/BUG/ADVERSARIAL returned GO/GO/GO after the queue
+  was reopened for truthful integration state.
+- Boundary: PR #450 remains open and unmerged; Slice A is the sole
+  `in_progress` queue item pending green current-head CI on the committed/pushed
+  repair. No deploy or live proof.
