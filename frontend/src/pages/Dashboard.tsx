@@ -7,7 +7,7 @@ import type {
   FluencyWindow
 } from "@fluencytracr/shared";
 import { Sidebar } from "../components/Sidebar";
-import { withAuth } from "../auth";
+import { authFetch, getFrontendSessionContext } from "../auth";
 
 type PatternResponse = {
   window: FluencyWindow;
@@ -166,7 +166,11 @@ const isAbortLikeError = (error: unknown) => {
   return error.name === "AbortError" || error.name === "TimeoutError";
 };
 
-const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+const fetchWithTimeout = async (
+  request: (input: RequestInfo | URL, init: RequestInit) => Promise<Response>,
+  input: RequestInfo | URL,
+  init: RequestInit = {}
+) => {
   const timeoutController = new AbortController();
   const timeoutId = globalThis.setTimeout(() => {
     timeoutController.abort(new DOMException("Request timed out", "TimeoutError"));
@@ -183,7 +187,7 @@ const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit = {}
   }
 
   try {
-    return await fetch(input, {
+    return await request(input, {
       ...init,
       signal: timeoutController.signal
     });
@@ -195,19 +199,27 @@ const fetchWithTimeout = async (input: RequestInfo | URL, init: RequestInit = {}
   }
 };
 
+export const fetchDashboardRequest = (
+  role: string,
+  input: RequestInfo | URL,
+  init: RequestInit = {}
+) =>
+  fetchWithTimeout(
+    (requestInput, requestInit) => authFetch(role, requestInput, requestInit),
+    input,
+    init
+  );
+
 export const Dashboard = () => {
-  const orgId = localStorage.getItem("orgId") ?? "org-1";
-  const role = localStorage.getItem("role") ?? "ADMIN";
+  const { orgId, role } = getFrontendSessionContext();
   const schemaVersion = (import.meta.env.VITE_SCHEMA_VERSION ?? "0.1").trim() || "0.1";
   const fetchWithAuthTimeout = (input: RequestInfo | URL, init: RequestInit = {}) =>
-    fetchWithTimeout(input, withAuth(role, init));
+    fetchDashboardRequest(role, input, init);
 
-  const governanceHeaders = withAuth(role, {
-    headers: {
-      "content-type": "application/json",
-      "X-FluencyTracr-Schema-Version": schemaVersion
-    }
-  }).headers as HeadersInit;
+  const governanceHeaders: HeadersInit = {
+    "content-type": "application/json",
+    "X-FluencyTracr-Schema-Version": schemaVersion
+  };
   const [window, setWindow] = useState<FluencyWindow>("60d");
   const [activePage, setActivePage] = useState<ActivePage>("overview");
   const [patterns, setPatterns] = useState<FluencyPattern[]>([]);

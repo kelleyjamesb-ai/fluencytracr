@@ -345,9 +345,9 @@
       "id": "mcii-live-example-auth-containment-slice-a",
       "title": "MCII Slice A — live/example separation and server-authoritative authentication containment",
       "bound": "AI Value Workspace live/example and authentication/RBAC paths only; acceptance: example content is explicitly labeled and cannot appear as live Decisions/readout evidence; live readouts fail closed without bound report data; production organization and role are server-authoritative; missing, stale, or client-selected production identity is denied; preserve fail-closed suppression, aggregate-only privacy, independent-slice governance, nine canonical events, and five suppression reasons; focused tests, contracts/OpenSpec, progress, and queue updates only as required; exclude persistence migration, outcome-evidence admission, rollup privacy, claim semantics, canonical identity binding, claim trace, deployment, publication, live GCP, and runtime qualification",
-      "status": "in_progress",
+      "status": "done",
       "risk": "high",
-      "last_note": "Plan recorded 2026-07-27: docs/agent/MCII_PLAN.md is the durable, non-authorizing A-F architecture sequence only. Mutable Slice A status, blockers, evidence, and next action live in this queue item and .project/PROGRESS.md. Slice A remains the sole active item with no implementation diff. Resume from fresh main and obtain design GO before editing. No later-slice, runtime, model, deployment, publication, live-data, or customer-output authority is granted."
+      "last_note": "Done locally 2026-07-27 after rebase onto main 5cae9eda and explicit human authorization. Strict runtime auth, frontend session containment, non-persistent exact-run reporting, and live/example separation passed focused/full tests, builds, Harness, governance, docs, OpenSpec, agentic guards, and exact CODE/BUG/ADVERSARIAL GO. Committed locally; no push, implementation PR, merge, deploy, or live proof."
     }
   ]
 }

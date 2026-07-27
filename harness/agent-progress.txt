@@ -531,3 +531,18 @@
 - Completed: Used BUG/CODE/ADVERSARIAL sidecars to identify remaining false-pass risks before spending more sampler time, then hardened the Python and TypeScript proof boundaries. Added bounded calibration batches via `--max-pending-per-cell`, rejected negative checkpoint indexes, made canonical result writes validate exact six-cell identity/derived coverage/null evidence/scenario provenance, required TS artifacts to carry 400 null replications and computed calibration scenario IDs before eligibility, and changed deterministic bridge fixtures/recovery smoke to HOLD until the real task-3.3 calibration/null proof exists. Structural-control inputs are now limited to the internal floor/negative-control isolation helper.
 - Verified: calibration runner 29/29; HOLD paths 49/49; full inference suite 146/146; confidence-engine workspace suite 304/304; Python-to-TypeScript bridge 9/9; golden regeneration no-op; OpenSpec strict validation; docs contract sweep; V1 governance gates; semantic drift guard; `git diff --check`; no `package-lock.json` diff.
 - Next focus: resume the strict 1,200-replication grid only in bounded batches or CI/cloud matrix; commit no `calibration_study_results.json` unless every calibration, null, floor, and negative-control acceptance field passes.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice A auth containment)
+
+- Completed locally: unified strict runtime authentication, strict JWT parsing,
+  frontend request/session containment, non-persistent Workspace execution,
+  fail-closed exact-response live reporting, and explicit live/example state
+  separation on `codex/mcii-slice-a-auth-containment`.
+- Fresh post-rebase verification: focused backend 43 and full backend 957 tests;
+  focused frontend 70 and full frontend 163 tests; backend/frontend builds;
+  repo-venv Harness 377 passed/10 skipped; V1 governance; docs sweep; strict
+  OpenSpec; 15 agentic-harness guards; queue JSON; marker/diff checks.
+- Review: exact rebased CODE/BUG/ADVERSARIAL review returned GO/GO/GO after one
+  state-only consistency remediation and same-panel confirmation.
+- Boundary: committed locally after explicit human authorization; queue is
+  `done`. No push, PR, merge, deploy, or live proof.

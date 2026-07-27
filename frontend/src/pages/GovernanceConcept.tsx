@@ -5,24 +5,30 @@ import { ExecutiveSignalHealth } from "../components/governanceConcept/Executive
 import { GovernanceDocumentWorkspace } from "../components/governanceConcept/GovernanceDocumentWorkspace";
 import { HeroActionWorkspace } from "../components/governanceConcept/HeroActionWorkspace";
 import { GOVERNANCE_PAGE_COPY, GovernanceHeroActionId } from "../constants/governanceConcept";
-import { AUTH_TOKEN_STORAGE_KEY } from "../auth";
+import {
+  applyLocalExampleSession,
+  clearAuthSession,
+  isFrontendAuthRequired
+} from "../auth";
 
 export function GovernanceConcept() {
   const [activeHeroAction, setActiveHeroAction] = useState<GovernanceHeroActionId>("org_signals");
   const [activeLowerPanel, setActiveLowerPanel] = useState<"signals" | "documents">("signals");
   const [sessionOrgId, setSessionOrgId] = useState(localStorage.getItem("orgId") ?? "org-1");
   const [sessionRole, setSessionRole] = useState(localStorage.getItem("role") ?? "ADMIN");
+  const requireAuth = isFrontendAuthRequired();
 
   const applySession = () => {
-    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-    localStorage.setItem("orgId", sessionOrgId.trim() || "org-1");
-    localStorage.setItem("role", sessionRole);
+    applyLocalExampleSession({
+      email: localStorage.getItem("userEmail") ?? "",
+      orgId: sessionOrgId.trim() || "org-1",
+      role: sessionRole
+    });
     window.location.reload();
   };
 
   const signOut = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    clearAuthSession();
     window.location.assign("/login");
   };
 
@@ -31,32 +37,37 @@ export function GovernanceConcept() {
       <section className="gc-card gc-session">
         <p className="gc-mono">Session Controls (Temporary)</p>
         <div className="gc-session-grid">
-          <label>
-            Organization ID
-            <input
-              className="gc-input"
-              type="text"
-              value={sessionOrgId}
-              onChange={(event) => setSessionOrgId(event.target.value)}
-            />
-          </label>
-          <label>
-            Role
-            <select
-              className="gc-input"
-              value={sessionRole}
-              onChange={(event) => setSessionRole(event.target.value)}
-            >
-              <option value="ADMIN">ADMIN</option>
-              <option value="EXEC_VIEWER">EXEC_VIEWER</option>
-              <option value="ENABLEMENT_LEAD">ENABLEMENT_LEAD</option>
-            </select>
-          </label>
-          <button type="button" className="gc-btn gc-btn-secondary" onClick={applySession}>
-            Apply Session
-          </button>
+          {!requireAuth && (
+            <>
+              <p>Local example controls only. These values are not verified identity.</p>
+              <label>
+                Organization ID
+                <input
+                  className="gc-input"
+                  type="text"
+                  value={sessionOrgId}
+                  onChange={(event) => setSessionOrgId(event.target.value)}
+                />
+              </label>
+              <label>
+                Role
+                <select
+                  className="gc-input"
+                  value={sessionRole}
+                  onChange={(event) => setSessionRole(event.target.value)}
+                >
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="EXEC_VIEWER">EXEC_VIEWER</option>
+                  <option value="ENABLEMENT_LEAD">ENABLEMENT_LEAD</option>
+                </select>
+              </label>
+              <button type="button" className="gc-btn gc-btn-secondary" onClick={applySession}>
+                Apply Local Example
+              </button>
+            </>
+          )}
           <button type="button" className="gc-btn gc-btn-outline" onClick={signOut}>
-            Go To Login
+            {requireAuth ? "Sign out" : "Go To Login"}
           </button>
         </div>
       </section>

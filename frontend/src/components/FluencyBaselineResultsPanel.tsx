@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
+import { getFrontendSessionContext } from "../auth";
 
 // The five dimensions shown to clients, mapped to engine construct keys.
 const DIMENSIONS = [
@@ -134,9 +135,9 @@ function aggregate(baselines: BaselinePayload[]): AggregateResults | null {
 
 const sessionRole = () => {
   try {
-    return (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
+    return getFrontendSessionContext().role;
   } catch {
-    return "ADMIN";
+    return "EXEC_VIEWER";
   }
 };
 

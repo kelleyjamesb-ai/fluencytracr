@@ -231,6 +231,7 @@ export interface AiValueChainRun {
   customer_facing_economic_output: false;
   engagement: AiValueSpineStage & { covers_workflow_family: boolean | null };
   fluency_baseline: AiValueSpineStage & { summary: Record<string, unknown> | null };
+  outcome_evidence: AiValueSpineStage & { attached: boolean };
   spine: AiValueSpineRun | null;
 }
 
@@ -253,7 +254,8 @@ export const runAiValueChain = (
         blueprint_id: params.blueprintId,
         metrics_library_id: params.metricsLibraryId,
         engagement_id: params.engagementId,
-        fluency_baseline_id: params.fluencyBaselineId
+        fluency_baseline_id: params.fluencyBaselineId,
+        persist: false
       })
     }
   );
@@ -271,7 +273,8 @@ export const runAiValueSpine = (
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         blueprint_id: blueprintId,
-        metrics_library_id: metricsLibraryId
+        metrics_library_id: metricsLibraryId,
+        persist: false
       })
     }
   );

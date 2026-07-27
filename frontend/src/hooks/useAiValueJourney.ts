@@ -12,6 +12,7 @@ import {
   type RealEvidenceMaterializerResult
 } from "../lib/aiValueApi";
 import { selectAiValueJourneyObjects } from "../lib/aiValueFlowSelection";
+import { getFrontendSessionContext } from "../auth";
 import {
   buildAiContributionReportingSpineViewModel,
   type AiContributionReportingSpineViewModel
@@ -401,7 +402,7 @@ const BLOCKED_OUTPUT_LABELS: Record<string, string> = {
   productivity_measurement: "No productivity measurement"
 };
 
-const sessionRole = () => (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
+const sessionRole = () => getFrontendSessionContext().role;
 
 const reviewStateOf = (summary: AiValueObjectSummary): string =>
   String((summary.validation as Record<string, unknown>)?.review_state ?? "SUBMITTED");

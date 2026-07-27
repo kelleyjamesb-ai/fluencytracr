@@ -2,6 +2,7 @@ import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 
 import { fetchAiValueObject, listAiValueObjects } from "../lib/aiValueApi";
 import { displaySafeValuePhrase } from "../lib/aiValueLanguageGuard";
+import { getFrontendSessionContext } from "../auth";
 import {
   readSelectedOutcomeMetricSelection,
   readSelectedOutcomeMetricWatchPlan,
@@ -540,9 +541,9 @@ const humanizeRole = (value: unknown): string => {
 
 const sessionRole = () => {
   try {
-    return (localStorage.getItem("role") ?? "ADMIN").trim() || "ADMIN";
+    return getFrontendSessionContext().role;
   } catch {
-    return "ADMIN";
+    return "EXEC_VIEWER";
   }
 };
 

@@ -29,6 +29,20 @@ AIOM/value-team handoff. It does not authorize customer production ingest,
 customer-facing ROI claims, schemas, APIs, storage, dashboards, direct raw HRIS
 ingest, raw ticket ingestion, causality claims, or productivity measurement.
 
+### Workspace report boundary
+
+The in-app Workspace may display the seeded example only as an explicitly
+illustrative example. A live report is a separate **internal, request-bound
+preview** built from the Executive Packet in the exact successful,
+non-persistent engine response. It must bind the full spine, expose no internal
+identifiers or source references, and must not be described as source-bound,
+canonical, customer-facing, or audit-ready.
+
+Loading, error, and held states do not fall back to the example, an older live
+result, an independently selected Journey packet, or the legacy HTML artifact.
+This is containment of an existing local review surface, not authorization for
+customer-facing output, runtime persistence, or a new report contract.
+
 For the customer-side Phase 3 pilot design, use
 [customer-support-pilot-design.md](./customer-support-pilot-design.md).
 

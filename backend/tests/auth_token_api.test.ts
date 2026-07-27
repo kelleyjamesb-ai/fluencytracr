@@ -23,6 +23,7 @@ describe("auth token api", () => {
   const originalJwtTtl = process.env.JWT_TTL_SECONDS;
   const originalRequireAuthLockdown = process.env.REQUIRE_AUTH_LOCKDOWN;
   const originalIssuerSecret = process.env.AUTH_TOKEN_ISSUER_SECRET;
+  const originalVercelEnv = process.env.VERCEL_ENV;
   const issuerSecret = "auth-token-issuer-test-secret";
 
   beforeEach(() => {
@@ -47,6 +48,7 @@ describe("auth token api", () => {
     process.env.JWT_TTL_SECONDS = originalJwtTtl;
     process.env.REQUIRE_AUTH_LOCKDOWN = originalRequireAuthLockdown;
     process.env.AUTH_TOKEN_ISSUER_SECRET = originalIssuerSecret;
+    process.env.VERCEL_ENV = originalVercelEnv;
   });
 
   it("mints a token that can access protected endpoints", async () => {
@@ -142,6 +144,25 @@ describe("auth token api", () => {
         "content-type": "application/json",
         "x-auth-token-issuer-secret": "wrong-secret"
       },
+      body: JSON.stringify({
+        email: "admin@fluencytracr.com",
+        org_id: "org-1",
+        role: "ADMIN"
+      })
+    });
+    await server.close();
+
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects unauthenticated token minting in managed development", async () => {
+    process.env.NODE_ENV = "development";
+    process.env.REQUIRE_AUTH_LOCKDOWN = "";
+    process.env.VERCEL_ENV = "preview";
+    const server = await startServer();
+    const response = await fetch(`${server.url}/auth/token`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
         email: "admin@fluencytracr.com",
         org_id: "org-1",
