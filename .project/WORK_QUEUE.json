@@ -1,4 +1,4 @@
-yo{
+{
   "version": 1,
   "schema": {
     "document": "Root keys: version (number), schema (object, documentation only), blueprint_ref (string, optional pointer), items (array). Validators must allow blueprint_ref.",
@@ -366,3 +366,4 @@ yo{
   "last_note": "Human-created bounded Slice C queue item. Activation remains pending until Slice B canonical state is closed."
 } 
   ]
+}
