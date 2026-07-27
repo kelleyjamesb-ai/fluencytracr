@@ -337,9 +337,9 @@
       "id": "gcp-runtime-transport-persistence-constraints-section-7-5a",
       "title": "GCP canonical runtime — Section 7.5A constraints and open obligations contract (docs only)",
       "bound": "Section 7.5A docs-only OpenSpec, docs/contracts, exact public provider-source evidence/revalidation, attribution, the single mechanical PINNED_ARTIFACTS[ATTRIBUTION.md] SHA-256 refresh in tests/test_gcp_attestation_receipt_contract.py, and progress; freeze network/TLS, trust-distribution, audit, GCS/Spanner/Logging, local disk/tmpfs/swap, persistence, privacy, parent Section 7.2-7.4 interface obligations, forbidden Section 7.6 dependencies, compile-only canonicalization/hashes, and an exact open-prerequisite registry; current result must HOLD with no verified live record, positive runtime interface, mechanism-writer assignment, approval path, readiness packet, acceptance tests/fixtures or other test changes, validators/verifiers, SUT or implementation, live GCP, credentials, provisioning, signing, deployment, qualification, persistent resources, evidence collection, model execution, Sections 7.6-7.8, or runtime authority",
-      "status": "in_progress",
+      "status": "done",
       "risk": "high",
-      "last_note": "Draft constraints-only Section 7.5A complete: 53 sources/30 claims, 89 research rows, 7 constraints, 4 parent interfaces, 20 OPEN_BLOCKING prerequisites/91 edges, and 12 hash nodes; contract hash b74f7ca6. Strict OpenSpec, governance, docs, source/hash replay, and full pytest passed (384 passed, 3 skipped). It cannot satisfy full Section 7.5, Section 7.6, parent approval, or readiness; runtime authority remains held. Awaiting final exact-tree panel; no commit, GCP, or persistence."
+      "last_note": "Done 2026-07-26: constraints-only Section 7.5A commit 1fe628aa and PR #446 merged normally as ed09d6b7 with exact reviewed tree d2f0529c. Replacement CODE/BUG/ADVERSARIAL review returned GO; all current-head checks passed and the full run reported 384 passed, 3 skipped. Contract hash b74f7ca6 remains mandatory HOLD with satisfies_section_7_5=false, no Section 7.6/parent/readiness eligibility, and no live record, GCP, persistence, or runtime authority."
     }
   ]
 }

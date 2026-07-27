@@ -2,6 +2,37 @@
 
 ## Current Session
 
+- The machine-distinct constraints-only Section 7.5A contract merged normally
+  through PR #446 as `ed09d6b75dde7156d5f3356815a1a9a281a06f27`.
+  Its parents are prior main
+  `9c605e4bf45130dd934cedb5ff7392a7d2e99b27` and reviewed commit
+  `1fe628aa6a1200ab1676c4c072ffbf2cabb83a19`; its merge tree exactly equals
+  final replacement-panel GO/GO/GO tree
+  `d2f0529c20cbf853f9df14b63f2297b5e343d928`. All current-head GitHub
+  checks passed. The closeout `gh`/GitHub API query returned 17 current-head
+  contexts: 16 successful and one expected Supabase skip. Exact workflow run
+  IDs were `30238473520` (assurance/dogfood), `30238473536` and `30238472023`
+  (enforcement), `30238473527` and `30238472004` (governance),
+  `30238473550` and `30238472007` (CI), and `30238473541` and `30238472017`
+  (Agent CI); Vercel deployment `97qqf6s5iiJkcjsnLV41pJWApnGt` and Vercel
+  Preview Comments both returned success. In the originating Pi session, James
+  Kelley explicitly authorized the Git action with the verbatim instruction
+  `Authorize commit, push, PR, and normal merge`; the reviewed commit was then
+  committed and pushed, and PR #446 merged through normal branch policy. Queue
+  state is now `done` with zero active items. The target Section 7.5A note is
+  455 characters. Two unrelated, pre-existing completed-item notes remain over
+  the documented 500-character limit (`hypothesis-metric-longitudinal-admission-boundary`
+  at 629 and `vbd-trajectory-synthetic-implementation-runner` at 699); this
+  metadata-only closeout does not rewrite those historical notes or claim global
+  queue conformance. OpenSpec tasks 3.3 and 3.4 remain unchecked in the merged
+  normative file because the controlling post-merge closeout policy permits
+  updates only to this progress record and the existing queue item's status/note;
+  the completed review and authorized Git-action evidence are recorded here
+  without mutating post-merge OpenSpec task state. The contract remains mandatory
+  HOLD: it does not satisfy
+  full Section 7.5, cannot become a Section 7.6 dependency or parent approval,
+  cannot receive `READINESS_GO`, and creates no live record, mechanism, GCP
+  action, persistence, qualification, model execution, or runtime authority.
 - The machine-distinct constraints-only Section 7.5A draft is complete and
   remains mandatory HOLD. Artifacts contain 53 sanitized public sources and 30
   claim records; a deduplicated 89-row method/platform research inventory with
@@ -28,8 +59,10 @@
   `satisfies_section_7_5=false`, cannot become a Section 7.6 dependency or
   parent approval, cannot receive `READINESS_GO`, and defines no live record,
   writer, approval, SUT, implementation, GCP action, persistence, or runtime
-  authority. Final exact-tree CODE/BUG/ADVERSARIAL review remains pending; no
-  commit or external Git action has occurred.
+  authority. Final exact-tree review first found localized exactness issues;
+  one coherent remediation produced replacement tree `d2f0529c...`, and the
+  replacement CODE/BUG/ADVERSARIAL panel returned GO/GO/GO. The reviewed commit
+  and PR #446 then merged normally as recorded above.
 - The human approved a contract-first Section 7.5 redesign and added the
   docs-only queue item in a clean worktree at base
   `9c605e4bf45130dd934cedb5ff7392a7d2e99b27`. Seven upfront design
@@ -3581,9 +3614,32 @@
 
 ## Blockers
 
-- Positive/full Section 7.5 remains blocked at `STOP_REARCHITECT`: Section 7.3
-  mechanism-writer capability admission and Section 7.4 external checkpoint
-  approval lineage do not exist. The active Section 7.5A item may document
+- Section 7.5A records 20 independently `OPEN_BLOCKING` obligations spanning
+  parent, future full-Section-7.5, and downstream phases (`S75A-P00` through
+  `S75A-P19`):
+  `S75A-P00` runtime-profile approval; `S75A-P01` capability/principal
+  admission; `S75A-P02` typed full-contract approval binding; `S75A-P03`
+  external typed approval/current-target lineage; `S75A-P04`
+  checkpoint/storage/crash mechanics; `S75A-P05` authority separation;
+  `S75A-P06` actual project/role aliases; `S75A-P07` nine records and trusted
+  verification time; `S75A-P08` record authentication and plane identities;
+  `S75A-P09` whole-interval local disk/tmpfs/swap/logging enforcement;
+  `S75A-P10` immutable GCS retention and checkpoint mechanics; `S75A-P11`
+  Spanner transaction/idempotence/unknown-commit mechanics; `S75A-P12`
+  complete audit universe/classifier; `S75A-P13` independently rooted audit
+  delivery and timeline; `S75A-P14` TLS/trust target and anti-rollback
+  approval; `S75A-P15` whole-system Section 7.7 reconciliation; `S75A-P16`
+  separately authorized Section 7.8 qualification after Section 7.7 GO;
+  `S75A-P17` a human-created, machine-distinct full-Section-7.5 queue item;
+  `S75A-P18` whole-interval network and channel mechanisms; and `S75A-P19` an
+  independently controlled nonrollbackable anchor with approved
+  currentness/restore mechanics. Owners and cross-owner obligations remain
+  exactly as recorded in the contract; this list imposes no new universal
+  execution order. Positive/full Section 7.5 remains blocked by the applicable
+  parent and full-Section-7.5 obligations under that owner graph. Downstream
+  `S75A-P15` and `S75A-P16` belong to Section 7.7 reconciliation and Section 7.8
+  qualification respectively; they do not gate the Section 7.5 interface's
+  handoff to Section 7.6. The completed Section 7.5A item documents
   constraints/open obligations only; it cannot satisfy Section 7.5, serve as a
   Section 7.6 dependency, or create runtime authority.
 - No readiness-protocol blocker remains: PR #444 merged normally as
@@ -3598,14 +3654,22 @@
 
 ## Next Step
 
-- Complete the replacement exact-tree CODE/BUG/ADVERSARIAL panel for the
-  machine-distinct docs-only `SECTION_7_5A_CONSTRAINTS_AND_OPEN_OBLIGATIONS`
-  candidate. If it returns GO/GO/GO, request fresh human authorization before
-  any commit, push, PR, or merge. Keep OpenSpec review/merge tasks and queue
-  closeout for the exact reviewed tree or a later metadata-only closeout. Do
-  not create a readiness packet, SUT, live GCP action, credentials,
-  persistence, qualification, model execution, Sections 7.6-7.8 work, or
-  runtime authority.
+- To begin future full-Section-7.5 design/readiness work, a human must first
+  satisfy `S75A-P17` by creating a separate, machine-distinct high-risk queue
+  item; P17 cannot satisfy any other prerequisite. That item must follow the
+  canonical readiness protocol, and exact `READINESS_GO` is required before any
+  SUT implementation. Each of `S75A-P00`–`S75A-P19` may close only through its
+  recorded owner's separately authorized work and exact evidence/review. All
+  parent and full-Section-7.5 obligations required by the owner/dependency graph
+  must close before full Section 7.5 can complete, expose a positive live
+  interface, or become a Section 7.6 dependency. Downstream `S75A-P15` and
+  `S75A-P16` close later through Section 7.7 reconciliation and Section 7.8
+  qualification and do not create a backward gate on the Section 7.5-to-7.6
+  handoff. The registry establishes no universal Section 7.3-before-Section 7.4
+  order. Do not perform live GCP action, credentials, persistent resources,
+  qualification, model execution, later-section work, or runtime activation
+  before the gates applicable to that exact phase are independently closed and
+  authorized.
 - Review/commit/PR the Glean dogfood BigQuery adapter slice. Next bounded step should be an operator path that posts the generated aggregate payloads into a running local backend and opens the Workspace on the refreshed evidence, still without raw rows, identifiers, customer-facing economics, ROI proof, causality, or person-level analysis.
 - AI Value Platform North Star: the VBD canon was amended 2026-06-11 with human approval — Depth = embeddedness of AI in repeatable workflow behavior (aggregate integration signals only); the tool/surface repertoire construct is renamed Repertoire and lives under Breadth's coverage views. Canon lives in `docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md` (decision note included) and `docs/agent/CLAUDE_AI_VALUE_NORTH_STAR_PROMPT.md`; the data boundary schema/fixture/validator/tests are aligned. FluencyTracr core's V4 Depth Repertoire contract is intentionally untouched. Do not "correct" Depth back to repertoire.
 - AI Value Platform North Star: the Value Evidence Case contract slice is complete (TDD, contract before UI) — schema `value-evidence-case.schema.json`, seeded Customer Support fixture, engine validator/builder `shared/src/aiValueEngine/valueEvidenceCase.ts` with fail-closed evidence-ladder gating (missing/rejected outcome evidence holds value language; SUBMITTED stays directional pending human acceptance; SUPPORTED stays caveated and non-causal; STRONG fails closed pending a governed evidence design), CLI `validate_ai_value_evidence_case.mjs`, tests, and package scripts. Next prescribed work per `docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md`: backend object-type registration/persistence for `value_evidence_case` and client-facing Workspace presentation, or the retest-result object — choose from observed review gaps; no ROI proof, causality, person-level data, or customer-facing economic output.
