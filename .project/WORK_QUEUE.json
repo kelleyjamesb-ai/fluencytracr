@@ -340,6 +340,6 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-26: constraints-only Section 7.5A commit 1fe628aa and PR #446 merged normally as ed09d6b7 with exact reviewed tree d2f0529c. Replacement CODE/BUG/ADVERSARIAL review returned GO; all current-head checks passed and the full run reported 384 passed, 3 skipped. Contract hash b74f7ca6 remains mandatory HOLD with satisfies_section_7_5=false, no Section 7.6/parent/readiness eligibility, and no live record, GCP, persistence, or runtime authority."
-    }
-  ]
+    },
 }
+]
