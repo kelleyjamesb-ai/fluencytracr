@@ -1986,7 +1986,7 @@ PINNED_ARTIFACTS: dict[str, str] = {
     "openspec/changes/add-gcp-attestation-receipt-contract/design.md": "b16ac89583fda9e3603c4f4037a7016e9c7ab4f76411f3b0941899ad461e9659",
     "openspec/changes/add-gcp-attestation-receipt-contract/specs/gcp-attestation-receipt/spec.md": "eff27b0d176a3d221a103bdbaf328daa9d68f4cb6a520368ac13d8d4752673e7",
     "docs/contracts/canonical-inference-gcp-runtime-candidate/README.md": "b2ff9b6654d676afecdd40b9479c219e481f5b102454622d17cf668f03470d57",
-    "ATTRIBUTION.md": "3398dcf6f72c4fa719912b6b43db7211073624947ed79e5588bdbb0c286002f5",
+    "ATTRIBUTION.md": "a0bc7c212feae50e5ec268240e09fdf6a2985ae04e28377d6ecfcd8c51f9e4a3",
 }
 
 

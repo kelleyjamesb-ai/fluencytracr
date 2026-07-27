@@ -1,0 +1,2307 @@
+{
+  "authority_effect": "NONE",
+  "canonicalization": {
+    "arrays": "SCHEMA_ORDER_OR_EXACT_DECLARED_UNIQUE_SORT_KEY",
+    "encoding": "UTF-8_NO_BOM_NO_TRAILING_BYTES",
+    "numbers": "SIGNED_64_BIT_INTEGER_ONLY_BOOLEAN_NOT_INTEGER_NEGATIVE_ZERO_REJECT",
+    "object_keys": "LEXICOGRAPHIC_UNICODE_CODE_POINT",
+    "self_hash": "OMITTED_FROM_OWN_PREIMAGE",
+    "separators": "MINIFIED_COMMA_COLON",
+    "unicode": "INPUT_ALREADY_NFC_NON_NFC_CONTROL_SURROGATE_REJECT",
+    "unknown_null_float_duplicate_implicit_default": "REJECT_BEFORE_HASHING",
+    "version": "FT_CANONICAL_JSON_V1"
+  },
+  "compiled_hashes": {
+    "audit_method_research_inventory_hash": "abdce8b44d5e2f374db970d00a11628dff9995d2e2e3124e46443d6fc9e4b774",
+    "forbidden_dependency_registry_hash": "0c0dc160a0a5329cd3069b8082b75402b833c0fbfe1e6cea69f3ff4942076baf",
+    "negative_constraint_registry_hash": "96bdb9491ee748ce8803ce834de132934f4ef88141107de10145fe74070e0f42",
+    "open_prerequisite_registry_hash": "95a650ddebd2b081f16fcffae96ccb8c35f8a5c1afe05e4c378d48511ae97753",
+    "parent_interface_obligation_registry_hash": "b75ba6663d9b93ce2b2dce879ff9a48b6f8bdcb32fc3d21dbd21a17fa133f1d0",
+    "provider_claim_registry_hash": "837db944d843e4421f47feb3caa30a6d401d4bc78a7c9f4b621dbbc9248b8f20",
+    "provider_revalidation_hash": "73c93a682ee31cb9b455d1b5b2bc0b3647afb2a4f3d9fb94c80ba426a6b1b82a",
+    "provider_source_registry_hash": "28e3e3f93a86fa895bc423d9907230bcb16529bb83701d12d30fdfdb36e75463",
+    "section_7_2_policy_obligation_projection_hash": "490cd3d422f84907b3ed53c82a2d0f65bb11d8d561c4111ab679ed138b462f9f",
+    "section_7_3_authority_audit_obligation_projection_hash": "408b7c1ae044d14979d545c4c2b423268d1b57a0842e33a695b2cd1b14f8243c",
+    "section_7_4_stable_semantic_projection_hash": "9e929ab583de8aa71b2a0c598f9513a9f047fea3ffdfca8ec119301b1c842dcc",
+    "section_7_5a_constraints_contract_hash": "b74f7ca6ed796426996700f0ecf6fe134a41de6c14f45fad3622b13b911d93aa"
+  },
+  "contract_version": "SECTION_7_5A_CONSTRAINTS_AND_OPEN_OBLIGATIONS_V1",
+  "decision_algorithm": {
+    "current_open_prerequisite_count": 20,
+    "final_else": "SECTION_7_5A_CONSTRAINTS_INTERNALLY_CONSISTENT_OPEN_PREREQUISITES_BLOCK_LIVE_INTERFACE_AUTHORITY_NONE",
+    "hold_precedence": [
+      "PROVIDER_SOURCE_UNAVAILABLE_OR_DRIFT",
+      "SEMANTIC_AUDIT_CLASSIFIER_UNCLOSED",
+      "ANY_OPEN_PREREQUISITE"
+    ],
+    "positive_runtime_result_exists": false,
+    "predicate_domain": "MATCH_MISMATCH_UNAVAILABLE",
+    "recorded_v1_result": "SECTION_7_5A_CONSTRAINTS_CLOSED_OPEN_PREREQUISITES_BLOCK_LIVE_INTERFACE_RUNTIME_AUTHORITY_HELD",
+    "reject_precedence": [
+      "MALFORMED_CANONICALIZATION_OR_HASH",
+      "PRIVACY_OR_BOUNDARY_LEAKAGE",
+      "PARENT_STABLE_PROJECTION_MISMATCH",
+      "CURRENT_PROVIDER_CONFLICT",
+      "PREREQUISITE_OR_EDGE_OMISSION_OR_WEAKENING",
+      "SECTION_7_5A_SUBSTITUTION_ATTEMPT"
+    ]
+  },
+  "forbidden_dependency_registry": [
+    "NO_NEW_OR_CURRENT_SECTION_7_6_LIVE_SEMANTIC_VALUE_OR_DIRECT_DECISION_DEPENDENCY",
+    "INHERITED_SECTION_7_6_NAMES_INSIDE_SECTION_7_4_PROJECTION_ARE_OPAQUE_OBLIGATIONS_ONLY",
+    "NO_SECTION_7_4_LIVE_ACCEPTANCE_HASH_IN_SECTION_7_5A_PREIMAGE",
+    "NO_CANDIDATE_OR_SELF_ASSERTED_COMMITMENT_AS_ROOT",
+    "NO_SOURCE_ARCHIVE_OR_REVIEW_HASH_AS_RUNTIME_EVIDENCE",
+    "NO_LOCAL_OR_SYNTHETIC_VALUE_IN_APPROVAL_LIST",
+    "NO_CONTRACT_OR_REVIEW_AS_EXTERNAL_AUTHORITY",
+    "NO_LIVE_RECORD_IMPLEMENTATION_EXECUTION_OR_READINESS_ARTIFACT"
+  ],
+  "hash_node_registry": {
+    "entries": [
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:SECTION_7_2_OBLIGATIONS:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "490cd3d422f84907b3ed53c82a2d0f65bb11d8d561c4111ab679ed138b462f9f",
+        "node_id": "section_7_2_policy_obligation_projection_hash",
+        "preimage_fields": [
+          "approved_runtime_profile_hashes",
+          "current_state",
+          "owner",
+          "profile_field_count",
+          "profile_fields",
+          "raw_artifacts"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:SECTION_7_3_OBLIGATIONS:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "408b7c1ae044d14979d545c4c2b423268d1b57a0842e33a695b2cd1b14f8243c",
+        "node_id": "section_7_3_authority_audit_obligation_projection_hash",
+        "preimage_fields": [
+          "actual_aliases",
+          "owner",
+          "positive_decision",
+          "positive_interface_required_keys",
+          "principal_roles",
+          "privacy",
+          "project_roles",
+          "raw_artifacts",
+          "required_authority_operation_ids",
+          "role_capability_ids",
+          "runtime_approved_section_7_5_binding_hashes"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:SECTION_7_4_OBLIGATIONS:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "9e929ab583de8aa71b2a0c598f9513a9f047fea3ffdfca8ec119301b1c842dcc",
+        "node_id": "section_7_4_stable_semantic_projection_hash",
+        "preimage_fields": [
+          "approval_registries",
+          "canonical_full_object_sha256",
+          "composition_count",
+          "future_interface",
+          "hash_node_count",
+          "owner",
+          "raw_artifact",
+          "replay_kind_count",
+          "section_7_5_obligation_nodes",
+          "selector_count",
+          "source_trust_condition_registry"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:PROVIDER_SOURCE_REGISTRY:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "28e3e3f93a86fa895bc423d9907230bcb16529bb83701d12d30fdfdb36e75463",
+        "node_id": "provider_source_registry_hash",
+        "preimage_fields": [
+          "source_registry_sha256",
+          "sources"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "provider_source_registry_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:PROVIDER_CLAIM_REGISTRY:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "837db944d843e4421f47feb3caa30a6d401d4bc78a7c9f4b621dbbc9248b8f20",
+        "node_id": "provider_claim_registry_hash",
+        "preimage_fields": [
+          "claims",
+          "provider_source_registry_hash"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "provider_source_registry_hash",
+          "provider_claim_registry_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:PROVIDER_REVALIDATION:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "73c93a682ee31cb9b455d1b5b2bc0b3647afb2a4f3d9fb94c80ba426a6b1b82a",
+        "node_id": "provider_revalidation_hash",
+        "preimage_fields": [
+          "provider_claim_registry_hash",
+          "provider_revalidation_artifact_sha256",
+          "provider_source_registry_hash",
+          "recorded_revalidation_hash"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "provider_source_registry_hash",
+          "section_7_3_authority_audit_obligation_projection_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:AUDIT_METHOD_RESEARCH_INVENTORY:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "abdce8b44d5e2f374db970d00a11628dff9995d2e2e3124e46443d6fc9e4b774",
+        "node_id": "audit_method_research_inventory_hash",
+        "preimage_fields": [
+          "inventory_raw_file_sha256",
+          "inventory_registry_sha256",
+          "provider_source_registry_hash",
+          "section_7_3_authority_audit_obligation_projection_hash"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "section_7_2_policy_obligation_projection_hash",
+          "section_7_3_authority_audit_obligation_projection_hash",
+          "section_7_4_stable_semantic_projection_hash",
+          "provider_claim_registry_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:NEGATIVE_CONSTRAINT_REGISTRY:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "96bdb9491ee748ce8803ce834de132934f4ef88141107de10145fe74070e0f42",
+        "node_id": "negative_constraint_registry_hash",
+        "preimage_fields": [
+          "constraints",
+          "provider_claim_registry_hash",
+          "section_7_2_policy_obligation_projection_hash",
+          "section_7_3_authority_audit_obligation_projection_hash",
+          "section_7_4_stable_semantic_projection_hash"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "section_7_2_policy_obligation_projection_hash",
+          "section_7_3_authority_audit_obligation_projection_hash",
+          "section_7_4_stable_semantic_projection_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:PARENT_INTERFACE_OBLIGATION_REGISTRY:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "b75ba6663d9b93ce2b2dce879ff9a48b6f8bdcb32fc3d21dbd21a17fa133f1d0",
+        "node_id": "parent_interface_obligation_registry_hash",
+        "preimage_fields": [
+          "interfaces",
+          "parent_slot_rows",
+          "section_7_2_policy_obligation_projection_hash",
+          "section_7_3_authority_audit_obligation_projection_hash",
+          "section_7_4_stable_semantic_projection_hash"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "negative_constraint_registry_hash",
+          "parent_interface_obligation_registry_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:OPEN_PREREQUISITE_REGISTRY:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "95a650ddebd2b081f16fcffae96ccb8c35f8a5c1afe05e4c378d48511ae97753",
+        "node_id": "open_prerequisite_registry_hash",
+        "preimage_fields": [
+          "edge_plan",
+          "negative_constraint_registry_hash",
+          "parent_interface_obligation_registry_hash",
+          "prerequisites",
+          "reverse_edges"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "section_7_2_policy_obligation_projection_hash",
+          "section_7_3_authority_audit_obligation_projection_hash",
+          "section_7_4_stable_semantic_projection_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:FORBIDDEN_DEPENDENCY_REGISTRY:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact preimage object))",
+        "hash": "0c0dc160a0a5329cd3069b8082b75402b833c0fbfe1e6cea69f3ff4942076baf",
+        "node_id": "forbidden_dependency_registry_hash",
+        "preimage_fields": [
+          "forbidden",
+          "non_substitution",
+          "section_7_2_policy_obligation_projection_hash",
+          "section_7_3_authority_audit_obligation_projection_hash",
+          "section_7_4_stable_semantic_projection_hash"
+        ]
+      },
+      {
+        "algorithm": "SHA256",
+        "authority_effect": "NONE",
+        "direct_dependencies": [
+          "section_7_2_policy_obligation_projection_hash",
+          "section_7_3_authority_audit_obligation_projection_hash",
+          "section_7_4_stable_semantic_projection_hash",
+          "provider_source_registry_hash",
+          "provider_claim_registry_hash",
+          "provider_revalidation_hash",
+          "audit_method_research_inventory_hash",
+          "negative_constraint_registry_hash",
+          "parent_interface_obligation_registry_hash",
+          "open_prerequisite_registry_hash",
+          "forbidden_dependency_registry_hash"
+        ],
+        "domain_separator": "FLUENCYTRACR:GCP:SECTION_7_5A:CONSTRAINTS_CONTRACT:V1",
+        "formula": "SHA256(domain || 0x00 || FT_CANONICAL_JSON_V1(exact contract manifest))",
+        "hash": "b74f7ca6ed796426996700f0ecf6fe134a41de6c14f45fad3622b13b911d93aa",
+        "node_id": "section_7_5a_constraints_contract_hash",
+        "preimage_fields": [
+          "contract_kind",
+          "dependency_hashes",
+          "non_substitution_flags",
+          "open_prerequisite_count",
+          "recorded_decision",
+          "schema_version"
+        ]
+      }
+    ],
+    "entry_count": 12,
+    "registry_sha256": "4a3174fc2a72bb5e1912622549c18c320861b4638698d3036d78d802710eb850"
+  },
+  "negative_constraint_registry": [
+    {
+      "authority_effect": "NONE",
+      "constraint_id": "S75A-C-NETWORK",
+      "domain": "NETWORK_CHANNEL",
+      "failure_disposition": "HOLD_OR_REJECT_FAIL_CLOSED",
+      "parent_obligation_ids": [
+        "S75A-I-S72-POLICY",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "prohibited": [
+        "WORKLOAD_STORAGE_SPANNER_LOGGING_IAM_DNS_COMPUTE_RESOURCE_MANAGER_ACCESS_CONTEXT_ARTIFACT_API",
+        "TCP_QUOTE_RELAY",
+        "ARBITRARY_PROXY_DNS_CA"
+      ],
+      "requirement": [
+        "MEASURED_WORKLOAD_NO_PUBLIC_INGRESS",
+        "UDS_QUOTE_CHANNEL_ONLY",
+        "STS_KMS_ONLY_WORKLOAD_EGRESS",
+        "NO_RELAYER_OR_AMBIENT_FALLBACK"
+      ],
+      "source_claim_ids": [
+        "S75A-PC001",
+        "S75A-PC002",
+        "S75A-PC003",
+        "S75A-PC004"
+      ],
+      "unresolved_dependencies": [
+        "S75A-P00",
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P07",
+        "S75A-P08",
+        "S75A-P14",
+        "S75A-P17",
+        "S75A-P18",
+        "S75A-P19"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "constraint_id": "S75A-C-LOCAL",
+      "domain": "LOCAL_EPHEMERAL",
+      "failure_disposition": "HOLD_OR_REJECT_FAIL_CLOSED",
+      "parent_obligation_ids": [
+        "S75A-I-S72-POLICY",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "prohibited": [
+        "PERSISTENT_VOLUME",
+        "PAYLOAD_LOGGING",
+        "CORE_DUMP",
+        "DEBUG_SSH",
+        "OVERRIDES_CAPABILITIES_PORTS"
+      ],
+      "requirement": [
+        "PRODUCTION_ONE_WORKLOAD_PER_BOOT",
+        "RESTART_NEVER",
+        "SWAP_DISABLED",
+        "PROFILE_FROZEN_TMPFS_ONLY"
+      ],
+      "source_claim_ids": [
+        "S75A-PC005",
+        "S75A-PC006",
+        "S75A-PC007"
+      ],
+      "unresolved_dependencies": [
+        "S75A-P00",
+        "S75A-P01",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P09",
+        "S75A-P17",
+        "S75A-P19"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "constraint_id": "S75A-C-GCS",
+      "domain": "GCS_CONSTRAINTS",
+      "failure_disposition": "HOLD_OR_REJECT_FAIL_CLOSED",
+      "parent_obligation_ids": [
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "prohibited": [
+        "BATCH_ATOMICITY_CLAIM",
+        "ATOMIC_LIST_SNAPSHOT_CLAIM",
+        "MUTABLE_HEAD_OR_LATEST_DISCOVERY",
+        "UNDECLARED_SOFT_DELETE_SCOPE"
+      ],
+      "requirement": [
+        "WRITE_ONCE_IF_GENERATION_MATCH_ZERO",
+        "EXACT_GENERATION_METAGENERATION_BYTES_HASH_LENGTH",
+        "LOCK_RETENTION_UBLA_PAP_REGION_CMEK_EVIDENCE"
+      ],
+      "source_claim_ids": [
+        "S75A-PC008",
+        "S75A-PC009",
+        "S75A-PC010",
+        "S75A-PC011",
+        "S75A-PC012",
+        "S75A-PC013",
+        "S75A-PC014"
+      ],
+      "unresolved_dependencies": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P04",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P10",
+        "S75A-P17",
+        "S75A-P19"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "constraint_id": "S75A-C-SPANNER",
+      "domain": "SPANNER_CONSTRAINTS",
+      "failure_disposition": "HOLD_OR_REJECT_FAIL_CLOSED",
+      "parent_obligation_ids": [
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "prohibited": [
+        "SINGLE_USE_WRITE",
+        "TIMESTAMP_UNIQUENESS",
+        "SECTION_7_6_ATTEMPT_SEMANTICS"
+      ],
+      "requirement": [
+        "SERIALIZABLE_READ_WRITE_TRANSACTION",
+        "PREVIOUSLY_BEGUN_TRANSACTION_ID",
+        "PROVIDER_COMMIT_TIMESTAMP"
+      ],
+      "source_claim_ids": [
+        "S75A-PC016",
+        "S75A-PC017",
+        "S75A-PC018",
+        "S75A-PC019"
+      ],
+      "unresolved_dependencies": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P11",
+        "S75A-P17",
+        "S75A-P19"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "constraint_id": "S75A-C-AUDIT",
+      "domain": "AUDIT_LOGGING",
+      "failure_disposition": "HOLD_OR_REJECT_FAIL_CLOSED",
+      "parent_obligation_ids": [
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "prohibited": [
+        "METHOD_FILTERED_UNIVERSE",
+        "POLICY_DENIED_EXCLUSION",
+        "ROUTER_BUFFER_AS_COMPLETENESS",
+        "PUBLIC_AUDIT_PROJECTION"
+      ],
+      "requirement": [
+        "DATA_ACCESS_ENABLED",
+        "TOTAL_METHOD_AND_POLICY_DENIED_APPLICABILITY",
+        "FULL_ROUTE_NO_EXCLUSION_TIMELINE",
+        "RAW_EVIDENCE_RESTRICTED"
+      ],
+      "source_claim_ids": [
+        "S75A-PC015",
+        "S75A-PC020",
+        "S75A-PC021",
+        "S75A-PC022",
+        "S75A-PC023",
+        "S75A-PC024",
+        "S75A-PC025",
+        "S75A-PC026",
+        "S75A-PC027",
+        "S75A-PC028"
+      ],
+      "unresolved_dependencies": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P12",
+        "S75A-P13",
+        "S75A-P15",
+        "S75A-P17",
+        "S75A-P19"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "constraint_id": "S75A-C-PRIVACY",
+      "domain": "PRIVACY",
+      "failure_disposition": "REJECT_PRIVACY_OR_BOUNDARY_LEAKAGE",
+      "parent_obligation_ids": [
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "prohibited": [
+        "RAW_OR_DICTIONARYABLE_IDENTIFIERS",
+        "RUNTIME_GCP_CUSTOMER_LOCATORS",
+        "LOG_TOKEN_QUOTE_SIGNATURE_KEY_CERTIFICATE_BYTES",
+        "CUSTOMER_OR_PERSON_LEVEL_DATA"
+      ],
+      "requirement": [
+        "PUBLIC_DOC_URLS_AND_RECOVERY_LOCATORS_PROVENANCE_ONLY",
+        "ALL_RUNTIME_EVIDENCE_RESTRICTED"
+      ],
+      "source_claim_ids": [
+        "S75A-PC025"
+      ],
+      "unresolved_dependencies": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P12",
+        "S75A-P13",
+        "S75A-P15",
+        "S75A-P17"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "constraint_id": "S75A-C-AUTHORITY",
+      "domain": "AUTHORITY",
+      "failure_disposition": "REJECT_AUTHORITY_SUBSTITUTION",
+      "parent_obligation_ids": [
+        "S75A-I-S72-POLICY",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "prohibited": [
+        "SECTION_7_5_COMPLETION",
+        "SECTION_7_6_DEPENDENCY_ELIGIBILITY",
+        "PARENT_APPROVAL",
+        "READINESS_GO",
+        "ADMIN_OVERRIDE"
+      ],
+      "requirement": [
+        "AUTHORITY_EFFECT_NONE",
+        "MANDATORY_RUNTIME_HOLD",
+        "MACHINE_DISTINCT_SECTION_7_5A"
+      ],
+      "source_claim_ids": [
+        "S75A-PC001",
+        "S75A-PC002",
+        "S75A-PC003",
+        "S75A-PC004",
+        "S75A-PC005",
+        "S75A-PC006",
+        "S75A-PC007",
+        "S75A-PC008",
+        "S75A-PC009",
+        "S75A-PC010",
+        "S75A-PC011",
+        "S75A-PC012",
+        "S75A-PC013",
+        "S75A-PC014",
+        "S75A-PC015",
+        "S75A-PC016",
+        "S75A-PC017",
+        "S75A-PC018",
+        "S75A-PC019",
+        "S75A-PC020",
+        "S75A-PC021",
+        "S75A-PC022",
+        "S75A-PC023",
+        "S75A-PC024",
+        "S75A-PC025",
+        "S75A-PC026",
+        "S75A-PC027",
+        "S75A-PC028",
+        "S75A-PC029",
+        "S75A-PC030"
+      ],
+      "unresolved_dependencies": [
+        "S75A-P00",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P07",
+        "S75A-P14",
+        "S75A-P15",
+        "S75A-P16",
+        "S75A-P17"
+      ]
+    }
+  ],
+  "non_authorization": {
+    "credentials": false,
+    "deployment": false,
+    "evidence_collection": false,
+    "full_section_7_5_complete": false,
+    "gcp_access": false,
+    "model_execution": false,
+    "persistence": false,
+    "provisioning": false,
+    "qualification": false,
+    "runtime_authority": false,
+    "section_7_6_dependency_eligible": false,
+    "signing": false
+  },
+  "non_substitution": {
+    "contract_kind": "SECTION_7_5A_CONSTRAINTS_AND_OPEN_OBLIGATIONS_NOT_FULL_SECTION_7_5",
+    "eligible_as_section_7_6_dependency": false,
+    "eligible_for_parent_approval": false,
+    "parent_slot_rows": [
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "operation_inventory_sha256",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "section_7_5_contract_sha256",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "section_7_5_decision",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "section_7_5_method_mapping_sha256",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "section_7_5_approval_binding_sha256",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "completeness_window_start",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "completeness_window_end",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "missing_operation_count",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "raw_logs_retained_in_fluencytracr",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_3",
+        "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+        "parent_node_or_contract": "audit_completeness_contract",
+        "positive_field_or_status": "audit_interface_binding_sha256",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_TRUST_DISTRIBUTION_ACCEPTANCE:V1",
+        "parent_node_or_contract": "trust_distribution_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "section_7_5_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_CHANNEL_ENFORCEMENT_ACCEPTANCE:V1",
+        "parent_node_or_contract": "channel_enforcement_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "section_7_5_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_PRE_QUOTE_TRANSPORT_ACCEPTANCE:V1",
+        "parent_node_or_contract": "pre_quote_transport_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "transport_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_TERMINAL_QUOTE_TRANSPORT_ACCEPTANCE:V1",
+        "parent_node_or_contract": "terminal_quote_transport_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "transport_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_KMS_SIGN_TRANSPORT_ACCEPTANCE:V1",
+        "parent_node_or_contract": "kms_sign_transport_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "transport_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_AUDIT_MAPPING_ACCEPTANCE:V1",
+        "parent_node_or_contract": "audit_mapping_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "audit_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_INITIAL_REPLAY_RETENTION_ACCEPTANCE:V1",
+        "parent_node_or_contract": "initial_section_7_4_replay_retention_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "retention_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED_DURABLE_REPLAYABLE",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_CURRENT_REPLAY_RETENTION_ACCEPTANCE:V1",
+        "parent_node_or_contract": "current_section_7_4_replay_retention_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "retention_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED_DURABLE_REPLAYABLE",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_FINAL_CONSUMER_REPLAY_RETENTION_ACCEPTANCE:V1",
+        "parent_node_or_contract": "final_consumer_replay_retention_acceptance_hash",
+        "positive_contract_field": "approved_section_7_5_contract_hash",
+        "positive_contract_field_type": "LOWERCASE_HEX64",
+        "positive_status_field": "retention_status",
+        "positive_status_field_type": "STRING_SINGLETON",
+        "positive_status_value": "VERIFIED_DURABLE_REPLAYABLE",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      },
+      {
+        "owner": "SECTION_7_4",
+        "parent_domain": "FLUENCYTRACR:GCP_TOKEN_FRESHNESS:V1",
+        "parent_node_or_contract": "token_freshness_verification_hash",
+        "positive_field_or_status": "section_7_5_trust_record_verified_at assigned by Section 7.4 approved clock",
+        "satisfaction_state": "UNSATISFIED_BLOCKING",
+        "section_7_5a_substitution_allowed": false
+      }
+    ],
+    "positive_runtime_interface_defined": false,
+    "prohibited_parent_decision": "SECTION_7_5_APPROVED_IMMUTABLE_AUDIT_MAPPING",
+    "prohibited_parent_fields": [
+      "section_7_5_contract_sha256",
+      "section_7_5_decision",
+      "section_7_5_method_mapping_sha256",
+      "section_7_5_approval_binding_sha256",
+      "approved_section_7_5_contract_hash"
+    ],
+    "prohibited_status_classes": [
+      "APPROVED",
+      "VERIFIED",
+      "VERIFIED_DURABLE_REPLAYABLE",
+      "REPLAY_READY"
+    ],
+    "runtime_record_schema_defined": false,
+    "satisfies_section_7_5": false
+  },
+  "open_prerequisite_registry": [
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_2",
+      "prerequisite_id": "S75A-P00",
+      "requirement": "Populate and approve the exact runtime-profile hash through a future governed process; current approved hashes are empty.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_3",
+      "prerequisite_id": "S75A-P01",
+      "requirement": "Admit distinct storage/checkpoint, authentication, network/channel, observation, and independent-anchor capabilities/principals with exact permissions and controller separation.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_3",
+      "prerequisite_id": "S75A-P02",
+      "requirement": "Approve future full-Section-7.5 live bindings only after resolving hash to typed full-contract bytes and deterministically rejecting Section 7.5A.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_4",
+      "prerequisite_id": "S75A-P03",
+      "requirement": "Define external typed approval/policy/verifier records and current target lineage; reject Section 7.5A in every acceptance path.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-GCS",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P04",
+      "requirement": "Define checkpoint schema/storage/writer/currentness/concurrency and checkpoint/provider-transaction crash or ambiguous-response mechanics, excluding attempt semantics.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_3_SECTION_7_4_FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P05",
+      "requirement": "Prove mechanism-writer, parent approver/verifier, authenticator, retention, CMEK, storage-controller, and authority-mutator separation.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_3",
+      "prerequisite_id": "S75A-P06",
+      "requirement": "Provide authenticated actual five-project/fourteen-role aliases and provider binding.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "FUTURE_FULL_SECTION_7_5_SECTION_7_4",
+      "prerequisite_id": "S75A-P07",
+      "requirement": "Define nine exact records and one Section-7.4-clock-assigned trust verification time used identically by trust acceptance and token freshness.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_3_FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P08",
+      "requirement": "Admit required record authentication without silently adding an HSM purpose; define plane identities, credentials, targets, methods, and formulas.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-LOCAL",
+        "S75A-I-S72-POLICY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P09",
+      "requirement": "Provide authenticated whole-interval local disk/tmpfs/swap/logging enforcement.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-GCS",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P10",
+      "requirement": "Select immutable GCS retention/checkpoint mechanics and close lock, retention, UBLA, PAP, region, CMEK, incarnation, target, generation, no-replacement, and history scope.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P11",
+      "requirement": "Define Spanner writer/transaction/idempotence/transport/unknown-Commit mechanics only; no Section 7.6 input or attempt semantics.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-PRIVACY",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P12",
+      "requirement": "Close the complete audit universe/classifier and total Policy Denied applicability plus exclusion-method disposition.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-PRIVACY",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "FUTURE_FULL_SECTION_7_5_SECTION_7_7",
+      "prerequisite_id": "S75A-P13",
+      "requirement": "Prove independently rooted audit delivery, service support, routing, Policy Denied no-exclusion, exclusion methods, and full timeline.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-NETWORK",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_4",
+      "prerequisite_id": "S75A-P14",
+      "requirement": "Approve TLS/trust distribution target and anti-rollback semantics.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-PRIVACY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_7",
+      "prerequisite_id": "S75A-P15",
+      "requirement": "Reconcile whole-system DAG, fields, roles, privacy, reasons, and boundaries.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUTHORITY"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_8",
+      "prerequisite_id": "S75A-P16",
+      "requirement": "Define and authorize qualification only after Section 7.7 GO and fresh authorization.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "HUMAN",
+      "prerequisite_id": "S75A-P17",
+      "requirement": "Create a separate machine-distinct high-risk full-Section-7.5 queue item; Section 7.5A cannot activate it.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_3_FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P18",
+      "requirement": "Admit and prove whole-interval network/channel mechanisms, UDS/no-relay, caller-by-method, TLS/target, DNS/firewall/route/perimeter, and observations.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    },
+    {
+      "authority_effect": "NONE",
+      "closes_interface_ids": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "current_state": "OPEN_BLOCKING",
+      "evidence_needed": "SEPARATE_HUMAN_QUEUE_EXACT_EVIDENCE_AND_REVIEW",
+      "forbidden_substitute": "SECTION_7_5A_OR_SECTION_7_6_AUTHORITY_SUBSTITUTION",
+      "owner": "SECTION_7_3_FUTURE_FULL_SECTION_7_5_SECTION_7_4",
+      "prerequisite_id": "S75A-P19",
+      "requirement": "Select an independent nonrollbackable anchor, admit/separate authorities, define currentness/check-and-use/restore mechanics, and obtain parent approval.",
+      "why_blocking": "REQUIRED_PARENT_OR_MECHANISM_OBLIGATION_UNCLOSED"
+    }
+  ],
+  "parent_interface_obligation_registry": [
+    {
+      "authority_effect": "NONE",
+      "interface_id": "S75A-I-S72-POLICY",
+      "owner": "SECTION_7_2",
+      "required_items": [
+        "compiled_constants_sha256",
+        "environment_manifest_sha256",
+        "filesystem_restriction_manifest_sha256",
+        "locale",
+        "model_plan_sha256",
+        "network_restriction_manifest_sha256",
+        "process_thread_policy_sha256",
+        "source_commit",
+        "source_manifest_sha256",
+        "timezone"
+      ],
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false,
+      "unresolved_dependencies": [
+        "S75A-P00",
+        "S75A-P07",
+        "S75A-P09",
+        "S75A-P18"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "interface_id": "S75A-I-S73-AUDIT-AUTHORITY",
+      "owner": "SECTION_7_3",
+      "required_items": [
+        "operation_inventory_sha256",
+        "section_7_5_contract_sha256",
+        "section_7_5_decision",
+        "section_7_5_method_mapping_sha256",
+        "section_7_5_approval_binding_sha256",
+        "completeness_window_start",
+        "completeness_window_end",
+        "missing_operation_count",
+        "raw_logs_retained_in_fluencytracr",
+        "audit_interface_binding_sha256"
+      ],
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false,
+      "unresolved_dependencies": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P12",
+        "S75A-P13"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "interface_id": "S75A-I-S74-NINE-ACCEPTANCE",
+      "owner": "SECTION_7_4",
+      "required_items": [
+        "trust_distribution_acceptance_hash",
+        "channel_enforcement_acceptance_hash",
+        "pre_quote_transport_acceptance_hash",
+        "terminal_quote_transport_acceptance_hash",
+        "kms_sign_transport_acceptance_hash",
+        "audit_mapping_acceptance_hash",
+        "initial_section_7_4_replay_retention_acceptance_hash",
+        "current_section_7_4_replay_retention_acceptance_hash",
+        "final_consumer_replay_retention_acceptance_hash"
+      ],
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false,
+      "unresolved_dependencies": [
+        "S75A-P03",
+        "S75A-P04",
+        "S75A-P05",
+        "S75A-P07",
+        "S75A-P08",
+        "S75A-P10",
+        "S75A-P11",
+        "S75A-P13",
+        "S75A-P14",
+        "S75A-P18",
+        "S75A-P19"
+      ]
+    },
+    {
+      "authority_effect": "NONE",
+      "interface_id": "S75A-I-S74-TOKEN-FRESHNESS",
+      "owner": "SECTION_7_4",
+      "required_items": [
+        "token_freshness_verification_hash.section_7_5_trust_record_verified_at"
+      ],
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false,
+      "unresolved_dependencies": [
+        "S75A-P03",
+        "S75A-P07",
+        "S75A-P14",
+        "S75A-P18",
+        "S75A-P19"
+      ]
+    }
+  ],
+  "parent_positive_slot_non_substitution_registry": [
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "operation_inventory_sha256",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "section_7_5_contract_sha256",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "section_7_5_decision",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "section_7_5_method_mapping_sha256",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "section_7_5_approval_binding_sha256",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "completeness_window_start",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "completeness_window_end",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "missing_operation_count",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "raw_logs_retained_in_fluencytracr",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_3",
+      "parent_domain": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_APPROVAL_BINDING:V1",
+      "parent_node_or_contract": "audit_completeness_contract",
+      "positive_field_or_status": "audit_interface_binding_sha256",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_TRUST_DISTRIBUTION_ACCEPTANCE:V1",
+      "parent_node_or_contract": "trust_distribution_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "section_7_5_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_CHANNEL_ENFORCEMENT_ACCEPTANCE:V1",
+      "parent_node_or_contract": "channel_enforcement_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "section_7_5_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_PRE_QUOTE_TRANSPORT_ACCEPTANCE:V1",
+      "parent_node_or_contract": "pre_quote_transport_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "transport_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_TERMINAL_QUOTE_TRANSPORT_ACCEPTANCE:V1",
+      "parent_node_or_contract": "terminal_quote_transport_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "transport_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_KMS_SIGN_TRANSPORT_ACCEPTANCE:V1",
+      "parent_node_or_contract": "kms_sign_transport_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "transport_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_AUDIT_MAPPING_ACCEPTANCE:V1",
+      "parent_node_or_contract": "audit_mapping_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "audit_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_INITIAL_REPLAY_RETENTION_ACCEPTANCE:V1",
+      "parent_node_or_contract": "initial_section_7_4_replay_retention_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "retention_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED_DURABLE_REPLAYABLE",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_CURRENT_REPLAY_RETENTION_ACCEPTANCE:V1",
+      "parent_node_or_contract": "current_section_7_4_replay_retention_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "retention_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED_DURABLE_REPLAYABLE",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_FINAL_CONSUMER_REPLAY_RETENTION_ACCEPTANCE:V1",
+      "parent_node_or_contract": "final_consumer_replay_retention_acceptance_hash",
+      "positive_contract_field": "approved_section_7_5_contract_hash",
+      "positive_contract_field_type": "LOWERCASE_HEX64",
+      "positive_status_field": "retention_status",
+      "positive_status_field_type": "STRING_SINGLETON",
+      "positive_status_value": "VERIFIED_DURABLE_REPLAYABLE",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    },
+    {
+      "owner": "SECTION_7_4",
+      "parent_domain": "FLUENCYTRACR:GCP_TOKEN_FRESHNESS:V1",
+      "parent_node_or_contract": "token_freshness_verification_hash",
+      "positive_field_or_status": "section_7_5_trust_record_verified_at assigned by Section 7.4 approved clock",
+      "satisfaction_state": "UNSATISFIED_BLOCKING",
+      "section_7_5a_substitution_allowed": false
+    }
+  ],
+  "parent_projections": {
+    "section_7_2": {
+      "approved_runtime_profile_hashes": [],
+      "current_state": "CONTRACT_CLOSED_RUNTIME_AUTHORITY_HELD",
+      "owner": "SECTION_7_2",
+      "profile_field_count": 10,
+      "profile_fields": [
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "compiled_constants_sha256",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "DIGEST_SHA256"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "environment_manifest_sha256",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "DIGEST_SHA256"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "filesystem_restriction_manifest_sha256",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "DIGEST_SHA256"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "locale",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "STRING"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "model_plan_sha256",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "DIGEST_SHA256"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "network_restriction_manifest_sha256",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "DIGEST_SHA256"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "process_thread_policy_sha256",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "DIGEST_SHA256"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "source_commit",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "GIT_COMMIT_SHA1"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "field_id": "source_manifest_sha256",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "PROFILE_FREEZE_VALUE",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "DIGEST_SHA256"
+        },
+        {
+          "allowed_presence": [
+            "PRESENT"
+          ],
+          "attestation_visibility": "NOT_EXPOSED_BY_GCP_ATTESTATION",
+          "binding_phase": "PROFILE_FREEZE_AND_SECTION_7_5_POLICY",
+          "category": "SOURCE_AND_RESTRICTIONS",
+          "control_plane_visibility": "NOT_EXPOSED_BY_GCP_CONTROL_PLANE",
+          "exact_value": "UTC",
+          "field_id": "timezone",
+          "math_relevant": true,
+          "object_scope": "DETERMINISTIC_NUMERICAL_PROFILE",
+          "qualification_treatment": "DIRECT_EXACT_BINDING",
+          "requirement": "EXACT_CONSTANT",
+          "runtime_identity_relevant": true,
+          "source": "canonical service §6/§7",
+          "sufficiency": "SUFFICIENT_FOR_FIELD_BINDING",
+          "value_type": "ENUM"
+        }
+      ],
+      "raw_artifacts": [
+        {
+          "path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json",
+          "sha256": "0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125"
+        },
+        {
+          "path": "docs/contracts/canonical-inference-gcp-runtime-object/README.md",
+          "sha256": "5335a4afe28cd347b85be0fc83bb935dd4ac6e04fbe152b078733fc5a9dde7ab"
+        }
+      ]
+    },
+    "section_7_3": {
+      "actual_aliases": {
+        "principal_roles": "ABSENT_RESTRICTED_EXTERNAL_EVIDENCE_REQUIRED",
+        "project_roles": "ABSENT_RESTRICTED_EXTERNAL_EVIDENCE_REQUIRED"
+      },
+      "owner": "SECTION_7_3",
+      "positive_decision": "SECTION_7_5_APPROVED_IMMUTABLE_AUDIT_MAPPING",
+      "positive_interface_required_keys": [
+        "operation_inventory_sha256",
+        "section_7_5_contract_sha256",
+        "section_7_5_decision",
+        "section_7_5_method_mapping_sha256",
+        "section_7_5_approval_binding_sha256",
+        "completeness_window_start",
+        "completeness_window_end",
+        "missing_operation_count",
+        "raw_logs_retained_in_fluencytracr",
+        "audit_interface_binding_sha256"
+      ],
+      "principal_roles": [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "AUDIT_ROUTER_ADMIN",
+        "DEPLOYER",
+        "IMAGE_BUILDER",
+        "IMAGE_PUBLISHER",
+        "IMAGE_SIGNER",
+        "KEY_DESTRUCTION_APPROVER",
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KEY_LIFECYCLE_ADMIN",
+        "KMS_IAM_ADMIN",
+        "PUBLIC_KEY_VERIFIER",
+        "RUNTIME_SIGNER",
+        "SECURITY_AUDITOR",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      "privacy": {
+        "allowed": [
+          "PUBLIC_PROVIDER_SOURCE_COMMITMENTS",
+          "SYNTHETIC_TEST_VALUES",
+          "CONTEXT_BOUND_RANDOM_ALIASES",
+          "PUBLIC_KEY_SPki_COMMITMENTS",
+          "HSM_ATTESTATION_COMMITMENTS",
+          "CLOSED_COUNTS_AND_WINDOWS"
+        ],
+        "prohibited": [
+          "PERSON_USER_EMPLOYEE_ACCOUNT_EMAIL_GROUP_DOMAIN_IDENTIFIERS",
+          "RAW_PRINCIPAL_PROJECT_POLICY_LOG_OR_TOKEN_BYTES",
+          "PLAIN_OR_DICTIONARYABLE_IDENTIFIER_HASHES",
+          "PRIVATE_RAW_WRAPPED_KEY_BYTES",
+          "REAL_SIGNATURE_BYTES",
+          "CREDENTIALS",
+          "CUSTOMER_OR_MODEL_DATA",
+          "ARBITRARY_PAYLOADS"
+        ],
+        "public_source_recovery_exception": "PUBLIC_DOCUMENTATION_MAY_CONTAIN_PUBLIC_EXAMPLE_IDENTIFIERS_EXTERNAL_RESTRICTED_PROVENANCE_ONLY"
+      },
+      "project_roles": [
+        "AUDIT_PROJECT",
+        "BUILD_PROJECT",
+        "KEY_CUSTODY_PROJECT",
+        "RUNTIME_PROJECT",
+        "SECURITY_POLICY_PROJECT"
+      ],
+      "raw_artifacts": [
+        {
+          "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json",
+          "sha256": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841"
+        },
+        {
+          "path": "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json",
+          "sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17"
+        }
+      ],
+      "required_authority_operation_ids": [
+        "TOKEN_EXCHANGE",
+        "WIF_POOL_PROVIDER_POLICY_MUTATION",
+        "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+        "KEY_CREATE_STATE_DESTROY_RESTORE",
+        "KMS_IAM_MUTATION",
+        "ASYMMETRIC_SIGN_ALLOW_DENY",
+        "PUBLIC_KEY_RETRIEVAL",
+        "IMAGE_PROVENANCE_PUBLICATION",
+        "ALTERNATE_CREDENTIAL_ATTEMPT",
+        "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION"
+      ],
+      "role_capability_ids": [
+        "SIGN_RUNTIME_RECEIPT_DIGEST",
+        "SIGN_IMAGE_PROVENANCE_DIGEST",
+        "VIEW_RUNTIME_PUBLIC_KEY",
+        "VIEW_IMAGE_PUBLIC_KEY",
+        "MANAGE_KEY_LIFECYCLE_NONDESTRUCTIVE",
+        "APPROVE_KEY_DESTRUCTION_RESTORE",
+        "EXECUTE_KEY_DESTRUCTION_RESTORE",
+        "MUTATE_KMS_IAM",
+        "MUTATE_WIF_PROVIDER",
+        "BUILD_IMAGE",
+        "PUBLISH_IMAGE",
+        "DEPLOY_RUNTIME",
+        "VERIFY_IMAGE_PROVENANCE",
+        "READ_SECURITY_EVIDENCE",
+        "MUTATE_AUDIT_ROUTING_INTERFACE",
+        "MUTATE_AUDIT_RETENTION_INTERFACE"
+      ],
+      "runtime_approved_section_7_5_binding_hashes": []
+    },
+    "section_7_4": {
+      "approval_registries": {
+        "challenge_store": [],
+        "consumer_verifier": [],
+        "current_replay_policy": [],
+        "current_replay_verifier": [],
+        "expected_context_resolver": [],
+        "kms_audit_mapping": [],
+        "launcher_image_evidence_capability": [],
+        "oidc_trust_snapshots": [],
+        "quote_verifier_trust_collateral": [],
+        "receipt_hashes": [],
+        "receipt_signer_policy": [],
+        "result_contract": [],
+        "section_7_5_transport_retention": [],
+        "section_7_6_contract": [],
+        "tls_channel": [],
+        "trusted_clock": []
+      },
+      "canonical_full_object_sha256": "72e0692e5d9019aa1ddbf315e178e1ae9bac7cd8caa827f04b9df748e7a96aff",
+      "composition_count": 64,
+      "future_interface": "OPAQUE_TRANSPORT_TRUST_RETENTION_AUDIT_RECORD_ACCEPTANCE_ONLY",
+      "hash_node_count": 116,
+      "owner": "SECTION_7_4",
+      "raw_artifact": {
+        "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json",
+        "sha256": "88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200"
+      },
+      "replay_kind_count": 42,
+      "section_7_5_obligation_nodes": [
+        {
+          "algorithm": "SHA256",
+          "design_line": 65,
+          "direct_dependencies": [],
+          "domain_separator": "FLUENCYTRACR:GCP_TRUST_DISTRIBUTION_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_TRUST_DISTRIBUTION_ACCEPTANCE:V1\" || 0x00 || canonical({ trust_snapshot_hash, opaque_section_7_5_trust_record_hash, record_bound_trust_snapshot_hash, trust_record_authentication_verification_hash, trust_current_head_and_rollback_verification_hash, exact_target_hash_match: true, approved_section_7_5_contract_hash, section_7_5_trust_record_verified_at, section_7_5_status: \"VERIFIED\" }))",
+          "formula_sha256": "6c782ad432453eba06e1a26de95326357c5d5ba8319088c3bc4f73c4f01cbf4a",
+          "node_id": "trust_distribution_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 128,
+          "direct_dependencies": [
+            "authorization_context_commitment_hash",
+            "boot_epoch_commitment",
+            "channel_enforcement_context_hash",
+            "expected_binder_measurement_hash",
+            "kms_sign_request_hash",
+            "kms_sign_transport_acceptance_hash",
+            "kms_sign_wire_request_hash",
+            "pre_execution_quote_verification_hash",
+            "terminal_quote_verification_hash"
+          ],
+          "domain_separator": "FLUENCYTRACR:GCP_CHANNEL_ENFORCEMENT_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_CHANNEL_ENFORCEMENT_ACCEPTANCE:V1\" || 0x00 || canonical({ channel_enforcement_context_hash, boot_epoch_commitment, expected_binder_measurement_hash, pre_execution_quote_verification_hash, terminal_quote_verification_hash, kms_sign_request_hash, kms_sign_wire_request_hash, kms_sign_transport_acceptance_hash, authorization_context_commitment_hash, sign_requested_at, sign_sent_at, opaque_section_7_5_enforcement_record_hash, record_bound_channel_enforcement_context_hash, record_bound_boot_epoch_commitment, record_bound_expected_binder_measurement_hash, record_bound_kms_sign_request_hash, record_bound_kms_sign_wire_request_hash, record_bound_authorization_context_commitment_hash, record_bound_sign_requested_at, record_bound_sign_sent_at, enforcement_record_authentication_verification_hash, enforcement_full_interval_coverage_verification_hash, exact_target_hash_match: true, measured_binder_owned_tls_and_kms_send: true, no_relayer_or_other_process_sent_kms_request: true, approved_section_7_5_contract_hash, section_7_5_status: \"VERIFIED\" }))",
+          "formula_sha256": "ec5b8c9bb8d5c3e10baee48c7cab83ca4b1738ce7d9be9f14e5e728f236215c7",
+          "node_id": "channel_enforcement_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 432,
+          "direct_dependencies": [
+            "pre_quote_request_hash",
+            "pre_quote_wire_request_hash",
+            "trust_distribution_acceptance_hash"
+          ],
+          "domain_separator": "FLUENCYTRACR:GCP_PRE_QUOTE_TRANSPORT_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_PRE_QUOTE_TRANSPORT_ACCEPTANCE:V1\" || 0x00 || canonical({ pre_quote_request_hash, pre_quote_wire_request_hash, trust_distribution_acceptance_hash, opaque_pre_quote_section_7_5_transport_record_hash, pre_quote_record_recomputed_wire_request_hash, pre_quote_transport_record_authentication_verification_hash, pre_quote_transport_freshness_and_anti_replay_hash, exact_expected_wire_hash_match: true, approved_section_7_5_contract_hash, transport_status: \"VERIFIED\" }))",
+          "formula_sha256": "0d6ad4248860614e63a2201743f21ff585818083323be94c8e114109593066db",
+          "node_id": "pre_quote_transport_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 442,
+          "direct_dependencies": [
+            "terminal_quote_request_hash",
+            "terminal_quote_wire_request_hash",
+            "trust_distribution_acceptance_hash"
+          ],
+          "domain_separator": "FLUENCYTRACR:GCP_TERMINAL_QUOTE_TRANSPORT_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_TERMINAL_QUOTE_TRANSPORT_ACCEPTANCE:V1\" || 0x00 || canonical({ terminal_quote_request_hash, terminal_quote_wire_request_hash, trust_distribution_acceptance_hash, opaque_terminal_quote_section_7_5_transport_record_hash, terminal_quote_record_recomputed_wire_request_hash, terminal_quote_transport_record_authentication_verification_hash, terminal_quote_transport_freshness_and_anti_replay_hash, exact_expected_wire_hash_match: true, approved_section_7_5_contract_hash, transport_status: \"VERIFIED\" }))",
+          "formula_sha256": "f19b4fe97192414175e165adc049f3ac99c22a352a2a9545c6a4e9b9597cfc55",
+          "node_id": "terminal_quote_transport_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 452,
+          "direct_dependencies": [
+            "authorization_context_commitment_hash",
+            "boot_epoch_commitment",
+            "channel_enforcement_context_hash",
+            "expected_binder_measurement_hash",
+            "kms_sign_request_hash",
+            "kms_sign_wire_request_hash",
+            "trust_distribution_acceptance_hash"
+          ],
+          "domain_separator": "FLUENCYTRACR:GCP_KMS_SIGN_TRANSPORT_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_KMS_SIGN_TRANSPORT_ACCEPTANCE:V1\" || 0x00 || canonical({ kms_sign_request_hash, kms_sign_wire_request_hash, trust_distribution_acceptance_hash, channel_enforcement_context_hash, boot_epoch_commitment, expected_binder_measurement_hash, authorization_context_commitment_hash, sign_sent_at, opaque_kms_sign_section_7_5_transport_record_hash, record_bound_channel_enforcement_context_hash, record_bound_boot_epoch_commitment, record_bound_expected_binder_measurement_hash, record_bound_authorization_context_commitment_hash, record_bound_sign_sent_at, kms_sign_record_recomputed_wire_request_hash, kms_sign_transport_record_authentication_verification_hash, kms_sign_transport_freshness_and_anti_replay_hash, exact_expected_wire_hash_match: true, exact_measured_context_match: true, approved_section_7_5_contract_hash, transport_status: \"VERIFIED\" }))",
+          "formula_sha256": "8950aeeb23ddc9958d3c1634d6c4a20c25cf0f47e800d8d26f2e54decc2a6747",
+          "node_id": "kms_sign_transport_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 885,
+          "direct_dependencies": [],
+          "domain_separator": "FLUENCYTRACR:GCP_AUDIT_MAPPING_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_AUDIT_MAPPING_ACCEPTANCE:V1\" || 0x00 || canonical({ opaque_section_7_5_audit_record_hash, bounded_audit_field_profile_hash, record_bound_bounded_audit_field_profile_hash, audit_record_authentication_verification_hash, audit_record_freshness_and_anti_replay_hash, exact_target_hash_match: true, approved_section_7_5_contract_hash, audit_status: \"VERIFIED\" }))",
+          "formula_sha256": "5c7ade7d5fae23259d6767bf6de549b69288b1810b15c32121a85acdd858854a",
+          "node_id": "audit_mapping_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 936,
+          "direct_dependencies": [
+            "attestation_receipt_replay_manifest_hash",
+            "initial_retention_challenge_hash"
+          ],
+          "domain_separator": "FLUENCYTRACR:GCP_INITIAL_REPLAY_RETENTION_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_INITIAL_REPLAY_RETENTION_ACCEPTANCE:V1\" || 0x00 || canonical({ attestation_receipt_replay_manifest_hash, initial_retention_challenge_hash, initial_retention_challenge_issued_at, initial_retention_challenge_expires_at, opaque_initial_section_7_5_retention_record_hash, record_bound_attestation_receipt_replay_manifest_hash, record_bound_initial_retention_challenge_hash, initial_retention_record_authentication_verification_hash, initial_retention_anti_replay_consumption_hash, initial_retrieval_transcript_hash, initial_durable_retention_policy_verification_hash, initial_retrieval_and_completeness_verification_hash, initial_retention_verified_at, initial_retention_guaranteed_until, immutable_append_only_storage_policy_hash, exact_target_and_challenge_match: true, all_manifest_bytes_retrieved_at_initial_acceptance: true, approved_section_7_5_contract_hash, retention_status: \"VERIFIED_DURABLE_REPLAYABLE\" }))",
+          "formula_sha256": "4e2e1596339e755f60af4f5e5c20c30b28100dacf3f702d46a6f777d984a4a6f",
+          "node_id": "initial_section_7_4_replay_retention_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 1007,
+          "direct_dependencies": [
+            "verified_historical_section_7_4_replay_manifest_hash"
+          ],
+          "domain_separator": "FLUENCYTRACR:GCP_CURRENT_REPLAY_RETENTION_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_CURRENT_REPLAY_RETENTION_ACCEPTANCE:V1\" || 0x00 || canonical({ verified_historical_section_7_4_replay_manifest_hash, current_retention_verifier_challenge_hash, current_retention_challenge_issued_at, current_retention_challenge_expires_at, opaque_current_section_7_5_retention_record_hash, record_bound_verified_historical_section_7_4_replay_manifest_hash, record_bound_current_retention_verifier_challenge_hash, current_retention_record_authentication_verification_hash, current_retention_anti_replay_consumption_hash, current_retrieval_transcript_hash, current_durable_retention_policy_verification_hash, current_retrieval_and_completeness_verification_hash, current_retention_verified_at, current_retention_guaranteed_until, immutable_append_only_storage_policy_hash, exact_target_and_challenge_match: true, all_manifest_bytes_retrieved_now: true, all_nested_attestation_evidence_bytes_retrieved_now: true, all_historical_record_bundles_retrieved_now: true, approved_section_7_5_contract_hash, retention_status: \"VERIFIED_DURABLE_REPLAYABLE\" }))",
+          "formula_sha256": "415e58b148e101c44182403bcc3d59bb7f59e581b5668e711a1e3992b1679fa0",
+          "node_id": "current_section_7_4_replay_retention_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 1248,
+          "direct_dependencies": [
+            "final_consumer_replay_manifest_hash"
+          ],
+          "domain_separator": "FLUENCYTRACR:GCP_FINAL_CONSUMER_REPLAY_RETENTION_ACCEPTANCE:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_FINAL_CONSUMER_REPLAY_RETENTION_ACCEPTANCE:V1\" || 0x00 || canonical({ final_consumer_replay_manifest_hash, final_retention_verifier_challenge_hash, final_retention_challenge_issued_at, final_retention_challenge_expires_at, opaque_section_7_5_final_replay_retention_record_hash, record_bound_final_consumer_replay_manifest_hash, record_bound_final_retention_verifier_challenge_hash, final_consumer_retention_record_authentication_verification_hash, final_consumer_retention_anti_replay_consumption_hash, final_consumer_current_retrieval_transcript_hash, transitive_section_7_4_member_retrieval_transcript_hash, final_consumer_durable_retention_policy_verification_hash, final_consumer_retrieval_and_completeness_verification_hash, final_consumer_retention_verified_at, final_consumer_retention_guaranteed_until, immutable_append_only_storage_policy_hash, exact_target_and_challenge_match: true, all_manifest_bytes_retrieved_now: true, all_nested_section_7_4_evidence_bytes_retrieved_now: true, section_7_6_terminal_proof_bundle_retrieved_now: true, current_replay_policy_bundle_retrieved_now: true, approved_section_7_5_contract_hash, retention_status: \"VERIFIED_DURABLE_REPLAYABLE\" }))",
+          "formula_sha256": "95154f2c2218fa24aa97550131b9cac7dde7594f43cc8340d63a2feaf49c0b37",
+          "node_id": "final_consumer_replay_retention_acceptance_hash"
+        },
+        {
+          "algorithm": "SHA256",
+          "design_line": 389,
+          "direct_dependencies": [],
+          "domain_separator": "FLUENCYTRACR:GCP_TOKEN_FRESHNESS:V1",
+          "formula": "SHA256(\"FLUENCYTRACR:GCP_TOKEN_FRESHNESS:V1\" || 0x00 || canonical({ challenge_issued_at, challenge_expires_at, trust_snapshot_observed_at, section_7_5_trust_record_verified_at, pre_token_iat, pre_token_nbf, pre_token_exp, pre_token_verified_at, trusted_utc_clock_policy_hash, token_inequality_set_hash, all_token_inequalities_pass: true }))",
+          "formula_sha256": "66c1ccce33ba9c8cdcbfcc7574df28dc897615d54cf37bb86d6d4e4e1d161307",
+          "node_id": "token_freshness_verification_hash"
+        }
+      ],
+      "selector_count": 9,
+      "source_trust_condition_registry": [
+        {
+          "classification": "CLEAR",
+          "condition_id": "APPLICABILITY_REVIEW",
+          "current_state": "REVIEW_COMPLETE",
+          "root_cause_key": "APPLICABILITY_REVIEW",
+          "state_mapping": {
+            "REVIEW_COMPLETE": "CLEAR",
+            "REVIEW_INCOMPLETE": "SOURCE_OR_TRUST_UNAVAILABLE_R4"
+          }
+        },
+        {
+          "classification": "APPROVAL_UNCLOSED_R7",
+          "condition_id": "GCP_ATTESTATION_EVIDENCE_CAPABILITY",
+          "current_state": "SOURCE_CODE_INTERFACE_TEST_ONLY_RUNTIME_CAPABILITY_UNOBSERVED",
+          "root_cause_key": "GCP_ATTESTATION_EVIDENCE_CAPABILITY",
+          "state_mapping": {
+            "APPLICABILITY_REVIEW_INCOMPLETE": "SOURCE_OR_TRUST_UNAVAILABLE_R4",
+            "APPROVED_OBSERVATION_STALE": "EVIDENCE_STALE_REVOKED_OR_UNCORRELATED_R8",
+            "DEFAULT_DISABLED": "APPROVAL_UNCLOSED_R7",
+            "OBSERVED_PRESENT_APPROVAL_MISSING": "APPROVAL_UNCLOSED_R7",
+            "OBSERVED_PRESENT_APPROVED_FRESH": "CLEAR",
+            "SOURCE_BYTES_UNAVAILABLE": "SOURCE_OR_TRUST_UNAVAILABLE_R4",
+            "SOURCE_CODE_INTERFACE_TEST_ONLY_RUNTIME_CAPABILITY_UNOBSERVED": "APPROVAL_UNCLOSED_R7"
+          }
+        },
+        {
+          "classification": "CLEAR",
+          "condition_id": "PROVIDER_SOURCE_BYTES",
+          "current_state": "EXACT_BYTES_AND_CLAIM_WINDOWS_REPLAYED",
+          "root_cause_key": "PROVIDER_SOURCE_BYTES",
+          "state_mapping": {
+            "EXACT_BYTES_AND_CLAIM_WINDOWS_REPLAYED": "CLEAR",
+            "SOURCE_BYTES_UNAVAILABLE": "SOURCE_OR_TRUST_UNAVAILABLE_R4"
+          }
+        },
+        {
+          "classification": "CLEAR",
+          "condition_id": "REVIEWED_PROVIDER_CONFLICT",
+          "current_state": "ABSENT",
+          "root_cause_key": "REVIEWED_PROVIDER_CONFLICT",
+          "state_mapping": {
+            "ABSENT": "CLEAR",
+            "INHERITED_CONTRADICTION": "REVIEWED_CONTRADICTION_R2",
+            "SECTION_7_4_CONTRADICTION": "REVIEWED_CONTRADICTION_R2"
+          }
+        },
+        {
+          "classification": "APPROVAL_UNCLOSED_R7",
+          "condition_id": "RUNTIME_APPROVAL_REGISTRIES",
+          "current_state": "ALL_EMPTY",
+          "root_cause_key": "RUNTIME_APPROVAL_REGISTRIES",
+          "state_mapping": {
+            "ALL_EMPTY": "APPROVAL_UNCLOSED_R7",
+            "COMPLETE_APPROVED": "CLEAR"
+          }
+        },
+        {
+          "classification": "EVIDENCE_STALE_REVOKED_OR_UNCORRELATED_R8",
+          "condition_id": "TRUST_COLLATERAL_CURRENT_STATE",
+          "current_state": "NOT_RUNTIME_OBSERVED",
+          "root_cause_key": "TRUST_COLLATERAL_CURRENT_STATE",
+          "state_mapping": {
+            "CURRENT_APPROVED": "CLEAR",
+            "NOT_RUNTIME_OBSERVED": "EVIDENCE_STALE_REVOKED_OR_UNCORRELATED_R8",
+            "REVOKED_OR_UNCORRELATED": "EVIDENCE_STALE_REVOKED_OR_UNCORRELATED_R8"
+          }
+        }
+      ]
+    }
+  },
+  "prerequisite_edge_registry": {
+    "forward_edges": {
+      "S75A-C-AUDIT": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P12",
+        "S75A-P13",
+        "S75A-P15",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-C-AUTHORITY": [
+        "S75A-P00",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P07",
+        "S75A-P14",
+        "S75A-P15",
+        "S75A-P16",
+        "S75A-P17"
+      ],
+      "S75A-C-GCS": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P04",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P10",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-C-LOCAL": [
+        "S75A-P00",
+        "S75A-P01",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P09",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-C-NETWORK": [
+        "S75A-P00",
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P07",
+        "S75A-P08",
+        "S75A-P14",
+        "S75A-P17",
+        "S75A-P18",
+        "S75A-P19"
+      ],
+      "S75A-C-PRIVACY": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P12",
+        "S75A-P13",
+        "S75A-P15",
+        "S75A-P17"
+      ],
+      "S75A-C-SPANNER": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P11",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-I-S72-POLICY": [
+        "S75A-P00",
+        "S75A-P07",
+        "S75A-P09",
+        "S75A-P18"
+      ],
+      "S75A-I-S73-AUDIT-AUTHORITY": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P12",
+        "S75A-P13"
+      ],
+      "S75A-I-S74-NINE-ACCEPTANCE": [
+        "S75A-P03",
+        "S75A-P04",
+        "S75A-P05",
+        "S75A-P07",
+        "S75A-P08",
+        "S75A-P10",
+        "S75A-P11",
+        "S75A-P13",
+        "S75A-P14",
+        "S75A-P18",
+        "S75A-P19"
+      ],
+      "S75A-I-S74-TOKEN-FRESHNESS": [
+        "S75A-P03",
+        "S75A-P07",
+        "S75A-P14",
+        "S75A-P18",
+        "S75A-P19"
+      ]
+    },
+    "orphan_constraints_allowed": false,
+    "orphan_prerequisites_allowed": false,
+    "reverse_edges": {
+      "S75A-P00": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY"
+      ],
+      "S75A-P01": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P02": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P03": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P04": [
+        "S75A-C-GCS",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P05": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P06": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P07": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P08": [
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P09": [
+        "S75A-C-LOCAL",
+        "S75A-I-S72-POLICY"
+      ],
+      "S75A-P10": [
+        "S75A-C-GCS",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P11": [
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P12": [
+        "S75A-C-AUDIT",
+        "S75A-C-PRIVACY",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P13": [
+        "S75A-C-AUDIT",
+        "S75A-C-PRIVACY",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P14": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-NETWORK",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P15": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-PRIVACY"
+      ],
+      "S75A-P16": [
+        "S75A-C-AUTHORITY"
+      ],
+      "S75A-P17": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER"
+      ],
+      "S75A-P18": [
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P19": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ]
+    }
+  },
+  "privacy": {
+    "allowed_only_for": "NONAUTHORIZING_DOCS_PROVENANCE",
+    "allowed_public_checked_in": [
+      "PUBLIC_PROVIDER_DOCUMENTATION_HTTPS_URLS",
+      "OPAQUE_EXTERNAL_RECOVERY_LOCATORS",
+      "PUBLIC_SOURCE_HASHES_LENGTHS_TIMES",
+      "COMPILE_ONLY_PROVIDER_METHOD_VOCABULARY",
+      "EMPTY_REGISTRIES"
+    ],
+    "prohibited": [
+      "RUNTIME_GCP_CUSTOMER_RESOURCE_LOCATORS",
+      "RAW_OR_DICTIONARYABLE_IDENTIFIERS",
+      "RAW_LOG_TOKEN_QUOTE_SIGNATURE_KEY_CERTIFICATE_BYTES",
+      "REQUEST_RESULT_MODEL_PLAN_BYTES",
+      "CREDENTIALS",
+      "CUSTOMER_OR_PERSON_LEVEL_DATA",
+      "PUBLIC_RUNTIME_EVIDENCE_COUNTS_WINDOWS_COVERAGE_ALIASES_CHECKPOINTS"
+    ]
+  },
+  "provider_bindings": {
+    "audit_inventory_registry_sha256": "3a984f6b7ffc704a89efc627529d1c250897df7a12da19e01f5c986ce90b49ef",
+    "audit_method_inventory_sha256": "e13cf9889947115859d684f7377fd38caa6e5207969eda073f534bc94af87bbf",
+    "claim_registry_sha256": "7715af566b775257571f47adc57521cce99e8fcfb8293acdbd75df8972e077ee",
+    "provider_revalidation_sha256": "523dd8fe73dfe78569e2299720af47b7ffecbaca0502247f86fe8b64ea562d44",
+    "provider_source_evidence_sha256": "b86aefff90355bb5a0621bf84ead642c783badb3e35ac5eb20f1790728f05c8c",
+    "source_registry_sha256": "cc78841f9da1befeef8aefdf3fd8eb297e04a5e58dcf3efd85e01009e2f6dd99"
+  },
+  "queue_item_id": "gcp-runtime-transport-persistence-constraints-section-7-5a",
+  "readiness_boundary": {
+    "canonical_runtime_qualification_item": false,
+    "human_selected_constraints_debt_ledger": true,
+    "later_full_section_7_5_is_qualification_item": true,
+    "later_full_section_7_5_requires_new_human_queue_item": true,
+    "later_sut_requires_full_readiness_protocol": true,
+    "qualification_contract_set_member": false,
+    "qualification_path_dependency": false,
+    "readiness_applicability": "NOT_APPLICABLE_TO_SECTION_7_5A_CONSTRAINTS_LEDGER_NO_SUT_NO_QUALIFICATION_DEPENDENCY",
+    "readiness_go_possible": false,
+    "readiness_packet_present": false,
+    "sut_work_present": false
+  },
+  "recorded_decision": "SECTION_7_5A_CONSTRAINTS_CLOSED_OPEN_PREREQUISITES_BLOCK_LIVE_INTERFACE_RUNTIME_AUTHORITY_HELD",
+  "schema_version": "GCP_SECTION_7_5A_CONSTRAINTS_CONTRACT_V1",
+  "scope": "DOCS_ONLY_CONSTRAINTS_NOT_FULL_SECTION_7_5"
+}

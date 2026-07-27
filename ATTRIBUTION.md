@@ -100,6 +100,12 @@ not necessarily reviewed or approved FluencyTracr.
 - Governance grounding: source-code presence does not prove runtime capability; nil-extra-data applicability, quote continuity, strict collateral/CRL/TCB policy, bounded audit claims, empty approvals, no public receipt projection, and `authority_effect=NONE` preserve the held runtime boundary
 - Used in: GCP Canonical Attestation and Receipt-Verification contract (Section 7.4)
 
+### GCP transport and persistence constraints (Section 7.5A)
+- Sources: Google Cloud documentation for VPC Service Controls/private Google access/restricted VIPs; Cloud DNS, Compute, Access Context Manager, Resource Manager, and Artifact Registry controls/audit methods; Confidential Space image, metadata, disk/tmpfs/swap, ingress, and logging behavior; Cloud Storage consistency, listing, generations/preconditions/checksums, retention lock, access controls, and audit logging; Spanner external consistency, transactions, commit timestamps, IAM, and audit logging; Cloud Logging audit types, Data Access configuration, routing/exclusions, log buckets/locking, platform sink errors, and AuditLog schema; IAM, WIF, STS, and service-account credential audit methods; plus the inherited Section 7.3 Cloud KMS audit source.
+- Retrieval evidence: `docs/contracts/canonical-inference-gcp-transport-persistence-constraints/provider-source-evidence.json` binds 53 sanitized public snapshots to `external-recovery://fluencytracr/gcp-transport-persistence-source-snapshot-20260727T022634Z.zip` (1,360,001 bytes; SHA-256 `cb7c440f18c7afe7e5f05ff455ffca1dd98cd3a284c6b741c7b3ab88b7a88750`) and separately binds the inherited Section 7.3 source bundle; public example identifiers remain external restricted provenance only.
+- Governance grounding: Section 7.5A is a machine-distinct constraints/debt contract only. It cannot satisfy full Section 7.5, become a Section 7.6 dependency, enter parent approvals, define verified records or writers, receive `READINESS_GO`, or create runtime authority. Twenty prerequisites remain open and force the recorded HOLD.
+- Used in: GCP Transport and Persistence Constraints and Open Obligations contract (Section 7.5A)
+
 ### AI Scale Readiness Portfolio
 - Source: James Kelley, scale-readiness portfolio framing for V4 value realization
 - Governance grounding: aggregate readiness zones should guide where to scale, coach, redesign, calibrate trust, expand adoption, or hold without becoming a scorecard, ranking, ROI claim, or productivity measure

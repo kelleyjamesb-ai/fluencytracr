@@ -1,0 +1,939 @@
+{
+  "authority_effect": "NONE",
+  "claim_count": 30,
+  "claim_registry_sha256": "7715af566b775257571f47adc57521cce99e8fcfb8293acdbd75df8972e077ee",
+  "claims": [
+    {
+      "area": "NETWORK",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC001",
+      "source_ids": [
+        "VPCSC_PRIVATE_ACCESS",
+        "VPCSC_PRIVATE_CONNECTIVITY"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Private Google Access with VPC Service Controls requires private-only VM addresses and subnet Private Google Access; restricted VIP routes, firewall, and DNS are separate controls."
+    },
+    {
+      "area": "NETWORK",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC002",
+      "source_ids": [
+        "VPCSC_PRIVATE_CONNECTIVITY"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "The captured restricted VIP ranges are IPv4 199.36.153.4/30 and IPv6 2600:2d00:0002:1000::/56, with Google API traffic on TCP 443."
+    },
+    {
+      "area": "NETWORK",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC003",
+      "source_ids": [
+        "VPCSC_RESTRICTED_VIP_SERVICES",
+        "VPCSC_SUPPORTED_PRODUCTS"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "The restricted VIP source lists the selected Google API services, but source listing is documentation evidence rather than live route or service availability."
+    },
+    {
+      "area": "NETWORK",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC004",
+      "source_ids": [
+        "ARTIFACT_REGISTRY_PRIVATE",
+        "ARTIFACT_REGISTRY_RESTRICTED_DNS"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Artifact Registry pkg.dev private access requires an exact restricted-VIP DNS chain and is distinct from measured numerical-workload API egress."
+    },
+    {
+      "area": "LOCAL",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC005",
+      "source_ids": [
+        "CS_IMAGES"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Confidential Space production is designed for one workload without persistent storage and provides encrypted integrity-protected disk and authenticated encrypted network claims."
+    },
+    {
+      "area": "LOCAL",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC006",
+      "source_ids": [
+        "CS_CREATE_CUSTOMIZE",
+        "CS_METADATA_VARIABLES"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Confidential Space documents swap disabled, tmpfs scratch support, and default inbound blocking; these are provider capabilities, not observed enforcement."
+    },
+    {
+      "area": "LOCAL",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC007",
+      "source_ids": [
+        "CS_METADATA_VARIABLES",
+        "CS_CREATE_CUSTOMIZE"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Workload stdout/stderr redirection, monitoring, mounts, restart, command/environment override, and added capabilities are controlled by exact metadata/policy fields."
+    },
+    {
+      "area": "GCS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC008",
+      "source_ids": [
+        "GCS_CONSISTENCY"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Cloud Storage documents strong read-after-write/delete and object-list consistency for named operations, while access-policy changes can be eventually consistent."
+    },
+    {
+      "area": "GCS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC009",
+      "source_ids": [
+        "GCS_CONSISTENCY"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Cloud Storage individual object operations are atomic but batch requests are not atomic."
+    },
+    {
+      "area": "GCS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC010",
+      "source_ids": [
+        "GCS_PRECONDITIONS",
+        "GCS_METADATA"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Generation and metageneration preconditions provide conditional operations; ifGenerationMatch=0 succeeds only when no live object exists."
+    },
+    {
+      "area": "GCS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC011",
+      "source_ids": [
+        "GCS_OBJECTS_LIST"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Cloud Storage object listing uses nextPageToken terminality and pageToken continuation; concurrent namespace changes can affect paginated visibility."
+    },
+    {
+      "area": "GCS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC012",
+      "source_ids": [
+        "GCS_CHECKSUMS"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Cloud Storage CRC32C is an integrity check, not an authenticity or privacy guarantee."
+    },
+    {
+      "area": "GCS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC013",
+      "source_ids": [
+        "GCS_BUCKET_LOCK",
+        "GCS_LOCK_API"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Bucket Lock can prevent retention reduction/removal and replacement/deletion before retention is met; locking is irreversible."
+    },
+    {
+      "area": "GCS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC014",
+      "source_ids": [
+        "GCS_UBLA",
+        "GCS_PAP"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Uniform bucket-level access disables ACL-based access and public access prevention restricts public grants."
+    },
+    {
+      "area": "AUDIT",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC015",
+      "source_ids": [
+        "GCS_AUDIT"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Cloud Storage Data Access audit logging must be explicitly enabled for applicable data operations."
+    },
+    {
+      "area": "SPANNER",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC016",
+      "source_ids": [
+        "SPANNER_TRANSACTIONS",
+        "SPANNER_TRUETIME"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Spanner serializable transactions are atomic and externally consistent; all writes commit together or none do."
+    },
+    {
+      "area": "SPANNER",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC017",
+      "source_ids": [
+        "SPANNER_COMMIT_TIMESTAMP"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Spanner commit timestamps are provider-selected, atomically storable, microsecond-granularity, and not unique for non-overlapping writes."
+    },
+    {
+      "area": "SPANNER",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC018",
+      "source_ids": [
+        "SPANNER_COMMIT_API",
+        "SPANNER_TRANSACTIONS"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "A Spanner single-use Commit is documented as non-idempotent; explicit transaction identity and ambiguous outcome handling require later contract ownership."
+    },
+    {
+      "area": "SPANNER",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC019",
+      "source_ids": [
+        "SPANNER_TRANSACTIONS"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Spanner client transaction bodies can be retried after ABORTED and external side effects can repeat."
+    },
+    {
+      "area": "AUDIT",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC020",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Spanner BeginTransaction, Commit, Read, and administration methods have exact audit-method and permission-type mappings."
+    },
+    {
+      "area": "AUDIT",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC021",
+      "source_ids": [
+        "LOGGING_AUDIT_OVERVIEW",
+        "LOGGING_DATA_ACCESS"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Admin Activity and System Event audit logs are always written; non-BigQuery Data Access logs are disabled by default and must be enabled."
+    },
+    {
+      "area": "AUDIT",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC022",
+      "source_ids": [
+        "LOGGING_AUDIT_OVERVIEW",
+        "LOGGING_ROUTING"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Policy Denied logs can be excluded from storage, so required no-exclusion completeness needs independent full-route evidence."
+    },
+    {
+      "area": "AUDIT",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC023",
+      "source_ids": [
+        "LOGGING_ROUTING"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Log Router buffering protects temporary disruptions, not configuration errors; sinks are non-retroactive and exclusions affect routing."
+    },
+    {
+      "area": "AUDIT",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC024",
+      "source_ids": [
+        "LOGGING_BUCKETS",
+        "LOGGING_BUCKET_API"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "A locked log bucket prevents retention updates and restricts deletion until retained entries satisfy the retention period."
+    },
+    {
+      "area": "AUDIT_PRIVACY",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC025",
+      "source_ids": [
+        "LOGGING_AUDITLOG_SCHEMA"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "AuditLog exposes serviceName, methodName, resourceName, status, authentication, authorization, request, response, and metadata, including identifier-bearing fields that must remain restricted."
+    },
+    {
+      "area": "AUDIT",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC026",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_PLATFORM_LOGS"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Cloud Logging documents Create, Update, Delete, Get, and List Exclusion methods and sink-error platform logging."
+    },
+    {
+      "area": "AUDIT_METHODS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC027",
+      "source_ids": [
+        "STS_AUDIT",
+        "WIF_AUDIT_EXAMPLES",
+        "WIF_MANAGEMENT",
+        "IAM_AUDIT",
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Security Token Service and IAM publish exact token-exchange, workload-identity, policy, role, and credential method names used by the research inventory."
+    },
+    {
+      "area": "AUDIT_METHODS",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC028",
+      "source_ids": [
+        "ACCESS_CONTEXT_AUDIT",
+        "CLOUD_DNS_AUDIT",
+        "COMPUTE_AUDIT",
+        "RESOURCE_MANAGER_AUDIT",
+        "ARTIFACT_REGISTRY_AUDIT",
+        "GCS_AUDIT",
+        "SPANNER_AUDIT",
+        "LOGGING_AUDIT"
+      ],
+      "state": "CONFIRMED_AT_RETRIEVAL_DOCS_ONLY",
+      "statement": "Access Context Manager, Cloud DNS, Compute, Resource Manager, Artifact Registry, Storage, Spanner, and Logging publish provider method vocabularies used by the research inventory."
+    },
+    {
+      "area": "LIMITATION",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC029",
+      "source_ids": [
+        "LOGGING_AUDIT_OVERVIEW",
+        "LOGGING_ROUTING"
+      ],
+      "state": "RESEARCH_ONLY_BLOCKING",
+      "statement": "Public documentation and method-literal replay do not prove semantic classifier completeness, live configuration, provider delivery completeness, or runtime authority."
+    },
+    {
+      "area": "LIMITATION",
+      "authority_effect": "NONE",
+      "claim_id": "S75A-PC030",
+      "source_ids": [
+        "LOGGING_AUDIT_OVERVIEW",
+        "LOGGING_ROUTING"
+      ],
+      "state": "UNAVAILABLE_FROM_REVIEWED_PROVIDER_SOURCES_BLOCKING",
+      "statement": "No reviewed public source provides an exact end-to-end Cloud Audit delivery-completeness receipt for the required multi-project route universe."
+    }
+  ],
+  "contract_scope": "SECTION_7_5A_CONSTRAINTS_ONLY_NOT_FULL_SECTION_7_5",
+  "inherited_section_7_3_kms_source": {
+    "authorization_effect": "NONE",
+    "source_bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+    "source_id": "KMS_AUDIT_LOGGING",
+    "source_registry_sha256": "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062"
+  },
+  "recorded_state": "EXACT_PUBLIC_DOCS_BYTES_CAPTURED_LIVE_CONFIGURATION_AND_SEMANTIC_CLASSIFIER_UNCLOSED",
+  "retrieval_finished_at": "2026-07-27T02:27:08Z",
+  "retrieval_started_at": "2026-07-27T02:26:34Z",
+  "schema_version": "GCP_SECTION_7_5A_PROVIDER_SOURCE_EVIDENCE_V1",
+  "source_bundle": {
+    "byte_length": 1360001,
+    "content_policy": "PUBLIC_DOCUMENTATION_BYTES_EXTERNAL_RESTRICTED_PROVENANCE_ONLY",
+    "locator": "external-recovery://fluencytracr/gcp-transport-persistence-source-snapshot-20260727T022634Z.zip",
+    "sha256": "cb7c440f18c7afe7e5f05ff455ffca1dd98cd3a284c6b741c7b3ab88b7a88750"
+  },
+  "source_count": 53,
+  "source_registry_sha256": "cc78841f9da1befeef8aefdf3fd8eb297e04a5e58dcf3efd85e01009e2f6dd99",
+  "sources": [
+    {
+      "archive_member": "sources/000-VPCSC_PRIVATE_CONNECTIVITY.html",
+      "byte_length": 148988,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 0,
+      "resolved_url": "https://docs.cloud.google.com/vpc-service-controls/docs/set-up-private-connectivity",
+      "sha256": "ea5fc3de107c5ae2ca4de8f55242b3b5e32cbbf61904687642b6ac0b2a18d34c",
+      "source_id": "VPCSC_PRIVATE_CONNECTIVITY",
+      "url": "https://docs.cloud.google.com/vpc-service-controls/docs/set-up-private-connectivity"
+    },
+    {
+      "archive_member": "sources/001-VPCSC_PRIVATE_ACCESS.html",
+      "byte_length": 117992,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 1,
+      "resolved_url": "https://docs.cloud.google.com/vpc-service-controls/docs/private-connectivity",
+      "sha256": "f17951a39d020fb39f1f316374c046405c5dd8533a12ac1fac2e58e613de39c0",
+      "source_id": "VPCSC_PRIVATE_ACCESS",
+      "url": "https://docs.cloud.google.com/vpc-service-controls/docs/private-connectivity"
+    },
+    {
+      "archive_member": "sources/002-VPCSC_RESTRICTED_VIP_SERVICES.html",
+      "byte_length": 143797,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 2,
+      "resolved_url": "https://docs.cloud.google.com/vpc-service-controls/docs/restricted-vip-services",
+      "sha256": "ffb04738bf768e80389bfba488c723e641446c2f406495b988c435ae509c1ead",
+      "source_id": "VPCSC_RESTRICTED_VIP_SERVICES",
+      "url": "https://docs.cloud.google.com/vpc-service-controls/docs/restricted-vip-services"
+    },
+    {
+      "archive_member": "sources/003-VPCSC_SUPPORTED_PRODUCTS.html",
+      "byte_length": 727642,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 3,
+      "resolved_url": "https://docs.cloud.google.com/vpc-service-controls/docs/supported-products",
+      "sha256": "63de15d68da95fd18fa1da5836dac3e6fabd66307e9cf034342a965f681085ea",
+      "source_id": "VPCSC_SUPPORTED_PRODUCTS",
+      "url": "https://docs.cloud.google.com/vpc-service-controls/docs/supported-products"
+    },
+    {
+      "archive_member": "sources/004-VPCSC_ACCESSIBLE_SERVICES.html",
+      "byte_length": 114240,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 4,
+      "resolved_url": "https://docs.cloud.google.com/vpc-service-controls/docs/vpc-accessible-services",
+      "sha256": "e0f7c94e6629754f23746bc0f68d3b1986949fb1cb0d76c4f351643eb91e7e39",
+      "source_id": "VPCSC_ACCESSIBLE_SERVICES",
+      "url": "https://docs.cloud.google.com/vpc-service-controls/docs/vpc-accessible-services"
+    },
+    {
+      "archive_member": "sources/005-ACCESS_CONTEXT_AUDIT.html",
+      "byte_length": 172399,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 5,
+      "resolved_url": "https://docs.cloud.google.com/access-context-manager/docs/audit-logging",
+      "sha256": "d05677bd94c6d58bb143c8ef5c72413a3de0ded05e7c60fb61e7d0e58a224300",
+      "source_id": "ACCESS_CONTEXT_AUDIT",
+      "url": "https://docs.cloud.google.com/access-context-manager/docs/audit-logging"
+    },
+    {
+      "archive_member": "sources/006-CLOUD_DNS_AUDIT.html",
+      "byte_length": 177705,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 6,
+      "resolved_url": "https://docs.cloud.google.com/dns/docs/audit-logging",
+      "sha256": "1f1a7043f0bc4c5b5daf68e3604b1fb7590fd475b00feb29f63ff405e59b29d0",
+      "source_id": "CLOUD_DNS_AUDIT",
+      "url": "https://docs.cloud.google.com/dns/docs/audit-logging"
+    },
+    {
+      "archive_member": "sources/007-CLOUD_DNS_MANAGED_ZONE_GET.html",
+      "byte_length": 137111,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 7,
+      "resolved_url": "https://docs.cloud.google.com/dns/docs/reference/rest/v1/managedZones/get",
+      "sha256": "8756dda3758402e7baec58567faee1a08b250785aaa8b7d982f7f102feae393d",
+      "source_id": "CLOUD_DNS_MANAGED_ZONE_GET",
+      "url": "https://docs.cloud.google.com/dns/docs/reference/v1/managedZones/get"
+    },
+    {
+      "archive_member": "sources/008-COMPUTE_AUDIT.html",
+      "byte_length": 1122851,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 8,
+      "resolved_url": "https://docs.cloud.google.com/compute/docs/logging/audit-logging",
+      "sha256": "27d0639dd08737551c9366d21c3b34edbad2e5b53c746528ddfd18f0458f0a51",
+      "source_id": "COMPUTE_AUDIT",
+      "url": "https://docs.cloud.google.com/compute/docs/logging/audit-logging"
+    },
+    {
+      "archive_member": "sources/009-ARTIFACT_REGISTRY_PRIVATE.html",
+      "byte_length": 136202,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 9,
+      "resolved_url": "https://docs.cloud.google.com/artifact-registry/docs/securing-with-vpc-sc",
+      "sha256": "72857ca076136e8b8894929ca53cc5c7f314719036f98309596cda1252dfb081",
+      "source_id": "ARTIFACT_REGISTRY_PRIVATE",
+      "url": "https://docs.cloud.google.com/artifact-registry/docs/securing-with-vpc-sc"
+    },
+    {
+      "archive_member": "sources/010-ARTIFACT_REGISTRY_RESTRICTED_DNS.html",
+      "byte_length": 146521,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 10,
+      "resolved_url": "https://docs.cloud.google.com/artifact-registry/docs/gke-private-clusters",
+      "sha256": "d58078149f313c1b921ae3f6847e8f9e1413f9626ca1b6e81a99a4643e808033",
+      "source_id": "ARTIFACT_REGISTRY_RESTRICTED_DNS",
+      "url": "https://docs.cloud.google.com/artifact-registry/docs/gke-private-clusters"
+    },
+    {
+      "archive_member": "sources/011-ARTIFACT_REGISTRY_AUDIT.html",
+      "byte_length": 278549,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 11,
+      "resolved_url": "https://docs.cloud.google.com/artifact-registry/docs/audit-logging",
+      "sha256": "37450bf2f9336a2b65a1430bbdf2c061f18d80a54fcca74ac3c44e4639ff18a6",
+      "source_id": "ARTIFACT_REGISTRY_AUDIT",
+      "url": "https://docs.cloud.google.com/artifact-registry/docs/audit-logging"
+    },
+    {
+      "archive_member": "sources/012-CS_IMAGES.html",
+      "byte_length": 113211,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 12,
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-images",
+      "sha256": "e0ce47b6e8bcdf535e6336a0ff5111f8356af2556a4dae4f2f97d60c5429dd3c",
+      "source_id": "CS_IMAGES",
+      "url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/confidential-space-images"
+    },
+    {
+      "archive_member": "sources/013-CS_METADATA_VARIABLES.html",
+      "byte_length": 122806,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 13,
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/metadata-variables",
+      "sha256": "21b470b33961451669f02b3f7b8e2b4ac27980ac51b6b3298b772f204c5991ca",
+      "source_id": "CS_METADATA_VARIABLES",
+      "url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/reference/metadata-variables"
+    },
+    {
+      "archive_member": "sources/014-CS_CREATE_CUSTOMIZE.html",
+      "byte_length": 132625,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 14,
+      "resolved_url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/create-customize-workloads",
+      "sha256": "7ff5743a16028717389db285706eed364a60048719db7b14e55afa522c1f86d5",
+      "source_id": "CS_CREATE_CUSTOMIZE",
+      "url": "https://docs.cloud.google.com/confidential-computing/confidential-space/docs/create-customize-workloads"
+    },
+    {
+      "archive_member": "sources/015-GCS_CONSISTENCY.html",
+      "byte_length": 171331,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 15,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/consistency",
+      "sha256": "bbe6335bfbaf240d0759a8d64706c4bac11225234f53ad413f983a4d4dd03913",
+      "source_id": "GCS_CONSISTENCY",
+      "url": "https://docs.cloud.google.com/storage/docs/consistency"
+    },
+    {
+      "archive_member": "sources/016-GCS_PRECONDITIONS.html",
+      "byte_length": 189660,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 16,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/request-preconditions",
+      "sha256": "2858d0bea333c872a2cbe980ff0287adf078676df887471e70c6b468a72f4107",
+      "source_id": "GCS_PRECONDITIONS",
+      "url": "https://docs.cloud.google.com/storage/docs/request-preconditions"
+    },
+    {
+      "archive_member": "sources/017-GCS_OBJECTS_LIST.html",
+      "byte_length": 181003,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 17,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/list",
+      "sha256": "80e87e18c711066a885e061b4b02956c1c6c176bb570590e647c988a0bb4f090",
+      "source_id": "GCS_OBJECTS_LIST",
+      "url": "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/list"
+    },
+    {
+      "archive_member": "sources/018-GCS_OBJECTS_GET.html",
+      "byte_length": 166878,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 18,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/get",
+      "sha256": "daf1e0eb37cda08572a697a37362465dfd1c2a3b3c39d104e86d85ebf95921ca",
+      "source_id": "GCS_OBJECTS_GET",
+      "url": "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/get"
+    },
+    {
+      "archive_member": "sources/019-GCS_OBJECTS_INSERT.html",
+      "byte_length": 180514,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 19,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/insert",
+      "sha256": "cf1d335eeffa83fb86289bbea17db330957c0ce207683502e0cb29b1b262b5f2",
+      "source_id": "GCS_OBJECTS_INSERT",
+      "url": "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/insert"
+    },
+    {
+      "archive_member": "sources/020-GCS_METADATA.html",
+      "byte_length": 200813,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 20,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/metadata",
+      "sha256": "e7f6b6e5b094c31c2cce6d2ba4ae1d2c55625520b338f6fadbd7075028a70854",
+      "source_id": "GCS_METADATA",
+      "url": "https://docs.cloud.google.com/storage/docs/metadata"
+    },
+    {
+      "archive_member": "sources/021-GCS_CHECKSUMS.html",
+      "byte_length": 182105,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 21,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/data-validation",
+      "sha256": "77d3ef5a068e5b9d44eadb840c58f1f34990749098d3131d490171411377e0e9",
+      "source_id": "GCS_CHECKSUMS",
+      "url": "https://docs.cloud.google.com/storage/docs/data-validation"
+    },
+    {
+      "archive_member": "sources/022-GCS_BUCKET_LOCK.html",
+      "byte_length": 177053,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 22,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/bucket-lock",
+      "sha256": "071068d184590a3adb13ec38dc55a76edf4d81dfede23b1946e5f789a6b6cccb",
+      "source_id": "GCS_BUCKET_LOCK",
+      "url": "https://docs.cloud.google.com/storage/docs/bucket-lock"
+    },
+    {
+      "archive_member": "sources/023-GCS_LOCK_API.html",
+      "byte_length": 160044,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 23,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/json_api/v1/buckets/lockRetentionPolicy",
+      "sha256": "70b0e559bc94954ec787c9c58730d30dd15daa360d78587719a3cff11b09204e",
+      "source_id": "GCS_LOCK_API",
+      "url": "https://docs.cloud.google.com/storage/docs/json_api/v1/buckets/lockRetentionPolicy"
+    },
+    {
+      "archive_member": "sources/024-GCS_UBLA.html",
+      "byte_length": 179191,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 24,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/uniform-bucket-level-access",
+      "sha256": "a7b36dc39ded1bda3ce513402a86e23e87eb5dc3e9d1627df81aa5eb7034a977",
+      "source_id": "GCS_UBLA",
+      "url": "https://docs.cloud.google.com/storage/docs/uniform-bucket-level-access"
+    },
+    {
+      "archive_member": "sources/025-GCS_PAP.html",
+      "byte_length": 178579,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 25,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/public-access-prevention",
+      "sha256": "eeaeb65f590abb6b6102f25be0f2481ecfa9b3119f54206b0b3d1899dd566804",
+      "source_id": "GCS_PAP",
+      "url": "https://docs.cloud.google.com/storage/docs/public-access-prevention"
+    },
+    {
+      "archive_member": "sources/026-GCS_AUDIT.html",
+      "byte_length": 202283,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 26,
+      "resolved_url": "https://docs.cloud.google.com/storage/docs/audit-logging",
+      "sha256": "64691cee39d4d8a7a3f96fbd976eff1e1c42f16d452df38ec22e21cb5f33a5b9",
+      "source_id": "GCS_AUDIT",
+      "url": "https://docs.cloud.google.com/storage/docs/audit-logging"
+    },
+    {
+      "archive_member": "sources/027-SPANNER_TRUETIME.html",
+      "byte_length": 216396,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 27,
+      "resolved_url": "https://docs.cloud.google.com/spanner/docs/true-time-external-consistency",
+      "sha256": "e78b21e6c024856cb6556c94446fdeb677fb9c2f0bb0ed5a307f4e4de162ee62",
+      "source_id": "SPANNER_TRUETIME",
+      "url": "https://docs.cloud.google.com/spanner/docs/true-time-external-consistency"
+    },
+    {
+      "archive_member": "sources/028-SPANNER_TRANSACTIONS.html",
+      "byte_length": 588135,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 28,
+      "resolved_url": "https://docs.cloud.google.com/spanner/docs/transactions",
+      "sha256": "5e2778a71091b79ab013600364051b529eb4ef495e82a7a649e86e76a0bdaead",
+      "source_id": "SPANNER_TRANSACTIONS",
+      "url": "https://docs.cloud.google.com/spanner/docs/transactions"
+    },
+    {
+      "archive_member": "sources/029-SPANNER_COMMIT_TIMESTAMP.html",
+      "byte_length": 389589,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 29,
+      "resolved_url": "https://docs.cloud.google.com/spanner/docs/commit-timestamp",
+      "sha256": "24577fb4d79603326c18a196b8b492dae6eb066244c8cd6cc52efe79102916a6",
+      "source_id": "SPANNER_COMMIT_TIMESTAMP",
+      "url": "https://docs.cloud.google.com/spanner/docs/commit-timestamp"
+    },
+    {
+      "archive_member": "sources/030-SPANNER_COMMIT_API.html",
+      "byte_length": 295253,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 30,
+      "resolved_url": "https://docs.cloud.google.com/spanner/docs/reference/rest/v1/projects.instances.databases.sessions/commit",
+      "sha256": "9472c37861fef1d781ee227e7f72b35f9c865e21296229f5f5f672129d4f0e47",
+      "source_id": "SPANNER_COMMIT_API",
+      "url": "https://docs.cloud.google.com/spanner/docs/reference/rest/v1/projects.instances.databases.sessions/commit"
+    },
+    {
+      "archive_member": "sources/031-SPANNER_AUDIT.html",
+      "byte_length": 293283,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 31,
+      "resolved_url": "https://docs.cloud.google.com/spanner/docs/audit-logging",
+      "sha256": "105720e4931518bd12b075c2fa060923314f99fb972d5e312693726cb72c737a",
+      "source_id": "SPANNER_AUDIT",
+      "url": "https://docs.cloud.google.com/spanner/docs/audit-logging"
+    },
+    {
+      "archive_member": "sources/032-SPANNER_FGAC.html",
+      "byte_length": 221639,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 32,
+      "resolved_url": "https://docs.cloud.google.com/spanner/docs/fgac-about",
+      "sha256": "8d6b65c88bf68411b20ff451598e03bd3d4aa7a0d173837898a833e7eda2970e",
+      "source_id": "SPANNER_FGAC",
+      "url": "https://docs.cloud.google.com/spanner/docs/fgac-about"
+    },
+    {
+      "archive_member": "sources/033-LOGGING_AUDIT_OVERVIEW.html",
+      "byte_length": 189843,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 33,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/audit",
+      "sha256": "5b26ae306498e242629fd6f274817295f5dd0c3a0c6946ac3900c7b5a12d9978",
+      "source_id": "LOGGING_AUDIT_OVERVIEW",
+      "url": "https://docs.cloud.google.com/logging/docs/audit"
+    },
+    {
+      "archive_member": "sources/034-LOGGING_DATA_ACCESS.html",
+      "byte_length": 199889,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 34,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/audit/configure-data-access",
+      "sha256": "4cdb1ae760b58d4dca0224529a55e904159bd9f63323e03a30a4423bba3bd6b5",
+      "source_id": "LOGGING_DATA_ACCESS",
+      "url": "https://docs.cloud.google.com/logging/docs/audit/configure-data-access"
+    },
+    {
+      "archive_member": "sources/035-LOGGING_ROUTING.html",
+      "byte_length": 182874,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 35,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/routing/overview",
+      "sha256": "5339ce555b874b99efcbbe58991617335bb41ad1cbe2b2e295f8757349c69732",
+      "source_id": "LOGGING_ROUTING",
+      "url": "https://docs.cloud.google.com/logging/docs/routing/overview"
+    },
+    {
+      "archive_member": "sources/036-LOGGING_BUCKETS.html",
+      "byte_length": 228446,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 36,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/buckets",
+      "sha256": "6b74b4b5aeb9dfcc97b4554f4a91cb76d63b2cbfec14b7e8b1c4d6d0f7d3050b",
+      "source_id": "LOGGING_BUCKETS",
+      "url": "https://docs.cloud.google.com/logging/docs/buckets"
+    },
+    {
+      "archive_member": "sources/037-LOGGING_BUCKET_API.html",
+      "byte_length": 205193,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 37,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/projects.locations.buckets",
+      "sha256": "9d089c6ea7d4215ebf311e1e527eb7205af24328388cc159141ea1f77257b1a0",
+      "source_id": "LOGGING_BUCKET_API",
+      "url": "https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/projects.locations.buckets"
+    },
+    {
+      "archive_member": "sources/038-LOGGING_AUDITLOG_SCHEMA.html",
+      "byte_length": 239005,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 38,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/reference/audit/auditlog/rest/Shared.Types/AuditLog",
+      "sha256": "9c22faceab955fbd3d46a84b37b3af5c9cb0096d87233edb7f8eb9a4ce342401",
+      "source_id": "LOGGING_AUDITLOG_SCHEMA",
+      "url": "https://docs.cloud.google.com/logging/docs/reference/audit/auditlog/rest/Shared.Types/AuditLog"
+    },
+    {
+      "archive_member": "sources/039-LOGGING_AUDIT.html",
+      "byte_length": 201317,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 39,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/audit-logging",
+      "sha256": "9c4ebf86d3207227628145d80f547aebaddd4dbdb2c78907acd9b7018beb8af3",
+      "source_id": "LOGGING_AUDIT",
+      "url": "https://docs.cloud.google.com/logging/docs/audit-logging"
+    },
+    {
+      "archive_member": "sources/040-LOGGING_PLATFORM_LOGS.html",
+      "byte_length": 302038,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 40,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/api/platform-logs",
+      "sha256": "9e0bda74673979bdd78293d01e0476b644ab61377d97cdd0e4b17773e073f573",
+      "source_id": "LOGGING_PLATFORM_LOGS",
+      "url": "https://docs.cloud.google.com/logging/docs/api/platform-logs"
+    },
+    {
+      "archive_member": "sources/041-LOGGING_ENTRIES_LIST.html",
+      "byte_length": 209607,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 41,
+      "resolved_url": "https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/entries/list",
+      "sha256": "421ab90b2443648e4b02affb01a61fe032a751cb03b70f694b419b85854bca3c",
+      "source_id": "LOGGING_ENTRIES_LIST",
+      "url": "https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/entries/list"
+    },
+    {
+      "archive_member": "sources/042-STS_AUDIT.html",
+      "byte_length": 155698,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 42,
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/audit-logging/audit-logging-sts",
+      "sha256": "596bcc7f359e907175056c0500bc88cd721084db8b81c345de220e5959749278",
+      "source_id": "STS_AUDIT",
+      "url": "https://docs.cloud.google.com/iam/docs/audit-logging/audit-logging-sts"
+    },
+    {
+      "archive_member": "sources/043-WIF_AUDIT_EXAMPLES.html",
+      "byte_length": 174543,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 43,
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/audit-logging/examples-workload-identity",
+      "sha256": "37bf95963e1bd0666c2f9fdec42d830a06a61215caf0496ffed11a3b28df4c6d",
+      "source_id": "WIF_AUDIT_EXAMPLES",
+      "url": "https://docs.cloud.google.com/iam/docs/audit-logging/examples-workload-identity"
+    },
+    {
+      "archive_member": "sources/044-WIF_MANAGEMENT.html",
+      "byte_length": 201635,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 44,
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/manage-workload-identity-pools-providers",
+      "sha256": "ea9b8070e9a50e040e1dd48c6eabe2393fb987a58efc649b7ecdbec294d00beb",
+      "source_id": "WIF_MANAGEMENT",
+      "url": "https://docs.cloud.google.com/iam/docs/manage-workload-identity-pools-providers"
+    },
+    {
+      "archive_member": "sources/045-IAM_AUDIT.html",
+      "byte_length": 318295,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 45,
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/audit-logging",
+      "sha256": "3287d253de649e87e4c956a0997900bb685e837e438efd2a87829cf9917e367b",
+      "source_id": "IAM_AUDIT",
+      "url": "https://docs.cloud.google.com/iam/docs/audit-logging"
+    },
+    {
+      "archive_member": "sources/046-IAM_POLICY_TYPES.html",
+      "byte_length": 161233,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 46,
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/policy-types",
+      "sha256": "db8dd665f71f7e6b9797f585642b3f9ad6051ed23483717c4766261217e5898f",
+      "source_id": "IAM_POLICY_TYPES",
+      "url": "https://docs.cloud.google.com/iam/docs/policy-types"
+    },
+    {
+      "archive_member": "sources/047-IAM_CREDENTIALS_AUDIT.html",
+      "byte_length": 155628,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 47,
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/audit-logging/audit-logging-iamcreds",
+      "sha256": "3a72aa97f8b9bde7cf1ed5cd06f7401b59bff5a9d76d4a13173c9adfe2907556",
+      "source_id": "IAM_CREDENTIALS_AUDIT",
+      "url": "https://docs.cloud.google.com/iam/docs/audit-logging/audit-logging-iamcreds"
+    },
+    {
+      "archive_member": "sources/048-IAM_CREDENTIALS_API.html",
+      "byte_length": 340140,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 48,
+      "resolved_url": "https://docs.cloud.google.com/iam/docs/reference/credentials/rest",
+      "sha256": "ee8ab130b2184c2bcb564f09ce45b356969f4379fe17a12f34640d8960a5a1e5",
+      "source_id": "IAM_CREDENTIALS_API",
+      "url": "https://docs.cloud.google.com/iam/docs/reference/credentials/rest"
+    },
+    {
+      "archive_member": "sources/049-RESOURCE_MANAGER_PROJECT_GET.html",
+      "byte_length": 163704,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 49,
+      "resolved_url": "https://docs.cloud.google.com/resource-manager/reference/rest/v3/projects/get",
+      "sha256": "e2e5bc36260146ea23d12db61a8e48505ef6ac0940e72606c43ae3aee7ce6f4d",
+      "source_id": "RESOURCE_MANAGER_PROJECT_GET",
+      "url": "https://docs.cloud.google.com/resource-manager/reference/rest/v3/projects/get"
+    },
+    {
+      "archive_member": "sources/050-RESOURCE_MANAGER_FOLDER_GET.html",
+      "byte_length": 163429,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 50,
+      "resolved_url": "https://docs.cloud.google.com/resource-manager/reference/rest/v3/folders/get",
+      "sha256": "9f9bf8b860833ab581e3a7ecb452f68b068668b7a9144dc93bb60fc37b63eb4a",
+      "source_id": "RESOURCE_MANAGER_FOLDER_GET",
+      "url": "https://docs.cloud.google.com/resource-manager/reference/rest/v3/folders/get"
+    },
+    {
+      "archive_member": "sources/051-RESOURCE_MANAGER_ORG_GET.html",
+      "byte_length": 163346,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 51,
+      "resolved_url": "https://docs.cloud.google.com/resource-manager/reference/rest/v3/organizations/get",
+      "sha256": "84fc462f484f46c6cd7304833456f46fe2121878b74ddfe40eae2597e027c98c",
+      "source_id": "RESOURCE_MANAGER_ORG_GET",
+      "url": "https://docs.cloud.google.com/resource-manager/reference/rest/v3/organizations/get"
+    },
+    {
+      "archive_member": "sources/052-RESOURCE_MANAGER_AUDIT.html",
+      "byte_length": 148440,
+      "content_type": "text/html; charset=utf-8",
+      "http_status": 200,
+      "ordinal": 52,
+      "resolved_url": "https://docs.cloud.google.com/resource-manager/docs/audit-logging",
+      "sha256": "1aa3ffa850b5696094758a1367a152190e8aea6c501d21980ba7f3dacd931e19",
+      "source_id": "RESOURCE_MANAGER_AUDIT",
+      "url": "https://docs.cloud.google.com/resource-manager/docs/audit-logging"
+    }
+  ]
+}
