@@ -12,6 +12,7 @@ export class AuthSessionChangedError extends Error {
 }
 
 export const isFrontendAuthRequired = () =>
+  import.meta.env.PROD ||
   (import.meta.env.VITE_REQUIRE_AUTH ?? "false").trim() === "true";
 
 export const getStoredAuthToken = () => {

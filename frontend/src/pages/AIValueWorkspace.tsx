@@ -1468,24 +1468,26 @@ export const AIValueWorkspace = () => {
               <StatusPill label={`Step ${activeStepNumber} of ${workspacePages.length}`} tone="neutral" />
             </section>
 
-            <section className="ai-value-context-bar" aria-label="Current client value thread">
-              <div>
-                <span className="ai-value-map-label">Workflow</span>
-                <strong>{workflowName}</strong>
-              </div>
-              <div>
-                <span className="ai-value-map-label">Value route</span>
-                <strong>{valueRouteLabel}</strong>
-              </div>
-              <div>
-                <span className="ai-value-map-label">Current decision</span>
-                <strong>{decisionLabel}</strong>
-              </div>
-              <div>
-                <span className="ai-value-map-label">Value language</span>
-                <strong>{claimModeLabel}</strong>
-              </div>
-            </section>
+            {(mode === "example" || (mode === "live" && live !== null)) && (
+              <section className="ai-value-context-bar" aria-label="Current client value thread">
+                <div>
+                  <span className="ai-value-map-label">Workflow</span>
+                  <strong>{workflowName}</strong>
+                </div>
+                <div>
+                  <span className="ai-value-map-label">Value route</span>
+                  <strong>{valueRouteLabel}</strong>
+                </div>
+                <div>
+                  <span className="ai-value-map-label">Current decision</span>
+                  <strong>{decisionLabel}</strong>
+                </div>
+                <div>
+                  <span className="ai-value-map-label">Value language</span>
+                  <strong>{claimModeLabel}</strong>
+                </div>
+              </section>
+            )}
 
             {journey.errorMessage && (
               <p role="alert" aria-live="polite" className="ai-value-inline-alert">

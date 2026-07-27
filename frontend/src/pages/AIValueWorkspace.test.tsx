@@ -227,6 +227,9 @@ describe("AIValueWorkspace executive spine", () => {
     await waitFor(() =>
       expect(screen.getByText(/Live report request is loading/i)).toBeInTheDocument()
     );
+    expect(
+      screen.queryByRole("region", { name: /Current client value thread/i })
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
   });
@@ -241,6 +244,9 @@ describe("AIValueWorkspace executive spine", () => {
     await waitFor(() =>
       expect(screen.getAllByText(/Live report is held/i).length).toBeGreaterThan(0)
     );
+    expect(
+      screen.queryByRole("region", { name: /Current client value thread/i })
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
     expect(
@@ -259,6 +265,9 @@ describe("AIValueWorkspace executive spine", () => {
     await waitFor(() =>
       expect(screen.getAllByText(/Live report could not be loaded/i).length).toBeGreaterThan(0)
     );
+    expect(
+      screen.queryByRole("region", { name: /Current client value thread/i })
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
   });

@@ -5,6 +5,7 @@ import {
   authFetch,
   clearAuthSession,
   getFrontendSessionContext,
+  isFrontendAuthRequired,
   withAuth
 } from "./auth";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -39,6 +40,13 @@ describe("auth", () => {
     expect(headers.get("x-role")).toBe("EXEC_VIEWER");
     expect(headers.get("x-org-id")).toBe("org-local");
     expect(headers.get("x-sub")).toBe("local-user");
+  });
+
+  it("requires authentication for a production build without an explicit flag", () => {
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_REQUIRE_AUTH", "");
+
+    expect(isFrontendAuthRequired()).toBe(true);
   });
 
   it("strips every caller-supplied authority header when auth is required", () => {
