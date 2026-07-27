@@ -364,6 +364,6 @@
   "status": "pending",
   "risk": "high",
   "last_note": "Human-created bounded Slice C queue item. Activation remains pending until Slice B canonical state is closed."
-} 
+   } 
   ]
 }
