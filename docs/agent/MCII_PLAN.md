@@ -1,11 +1,15 @@
-# Minimum Coherent Internal Investigation (MCII) Handoff
+# Minimum Coherent Internal Investigation (MCII) Plan
 
-**Status:** active execution plan; non-authorizing
+**Status:** durable architecture sequence; non-authorizing
 **Recorded:** 2026-07-27
-**Queue authorization base:** `27cc0c8d74326ca5158c25b0dfa4f90120895e6b`
-**Active item:** `mcii-live-example-auth-containment-slice-a`
+**Plan provenance base:** `27cc0c8d74326ca5158c25b0dfa4f90120895e6b`
 
-This document lets another Codex session continue the MCII from a fresh checkout of canonical `main`. It records the complete A–F sequence and current handoff; it does not authorize runtime work outside the active queue item, deployment, publication, live data, customer output, model execution, or later slices.
+This document records the stable MCII objective, boundaries, A–F sequence, and
+final acceptance. It is not an active-state or handoff source. Current
+authorization, status, blockers, and next actions live only in
+`.project/WORK_QUEUE.json` and `.project/PROGRESS.md`. This plan does not
+authorize runtime work, deployment, publication, live data, customer output,
+model execution, or any slice.
 
 ## 1. Objective
 
@@ -95,7 +99,7 @@ Required outcome:
 - Every approved slice is suppressed independently; no cross-slice aggregation can re-identify people.
 - Rollups expose only bounded aggregate values that pass the existing privacy and suppression rules.
 
-### Slice D — AI Fluency approval, claim semantics, and manifest hygiene
+### Slice D — Aggregate evidence approval, claim semantics, and manifest hygiene
 
 Separate import approval from authorization to use evidence in interpretation or model work.
 
@@ -142,42 +146,25 @@ After A–F, demonstrate one internal journey in which:
 
 This proves a coherent internal investigation path only. It does not prove causality, ROI, productivity, model qualification, production readiness, or customer-output readiness.
 
-## 5. Current Slice A handoff
+## 5. Governed execution protocol
 
-### Repository state
+This sequence defines architecture order, not current authority. For every
+slice:
 
-- PR #446 merged the Section 7.5A constraints work.
-- PR #447 merged its metadata closeout.
-- PR #448 added the human-authored Slice A queue item as commit `27cc0c8d74326ca5158c25b0dfa4f90120895e6b`.
-- Slice A is the sole `in_progress` item.
-- No Slice A implementation code or commit existed when this handoff was recorded.
-
-### Design blockers to resolve before implementation
-
-A revised Slice A design must receive independent CODE, BUG, and ADVERSARIAL `GO` before code changes begin.
-
-1. **Strict runtime identity:** one predicate must govern header auth, fallback JWT secrets, `/auth/token` issuer bypass, and startup enforcement. Managed, lockdown, production, missing, and unknown environments must fail closed to JWT-only.
-2. **JWT parsing:** accept exactly one syntactically valid Bearer credential with a finite numeric future `exp`, valid role, and nonempty organization. Reject malformed, expired, missing-expiration, appended-junk, multiple-credential, and wrong-scheme inputs.
-3. **Browser/session races:** required-auth requests must strip identity headers, never mint or retry from local claims, invalidate a 401 only when it still owns the current token, and discard successful responses when the token/session epoch changed in flight.
-4. **Same-run report containment:** remove example seed writes, invoke spine/value-chain checks with `persist:false`, clear stale state on every held/error/auth transition, validate exact same-run packet/source references, hide IDs and internal payloads, and use only the wording **internal, request-bound preview**.
-
-### Slice A verification minimum
-
-- Backend environment/auth matrix, issuer-token, Bearer parsing, expiration, fallback-secret, and spoofed-header negative tests.
-- Frontend required-auth sanitization, no-mint/no-retry, route invalidation, session-race, stale-response, and local-only identity-control tests.
-- Workspace no-seed, `persist:false`, held/error/overlap, same-run mutation, and no-sample-leakage tests.
-- Applicable shared/backend/frontend builds and focused suites.
-- Assurance Harness, V1 governance gates, docs/semantic checks, and `git diff --check`.
-- Exact-candidate CODE, BUG, and ADVERSARIAL `GO` after all changes.
-
-## 6. How personal Codex resumes
-
-1. Start from a fresh checkout of canonical `main`; do not use the unrelated dirty/stale primary checkout.
-2. Read `AGENTS.md` and `docs/agent/SESSION_START.md`.
-3. Confirm `.project/WORK_QUEUE.json` has exactly one `in_progress` item: `mcii-live-example-auth-containment-slice-a`.
-4. Read this file and `.project/PROGRESS.md`.
-5. Resolve the four Slice A design blockers and obtain design `GO / GO / GO`.
-6. Implement and verify Slice A only.
-7. Obtain exact-candidate `GO / GO / GO`, present the diff/evidence/commit message, and obtain fresh human confirmation before commit.
-8. Obtain separate fresh authorization for push, PR creation, merge, deployment, publication, or any other external side effect.
-9. After Slice A merges, the human creates Slice B; repeat through F.
+1. Start from canonical `main` and read `AGENTS.md` plus
+   `docs/agent/SESSION_START.md`.
+2. Treat `.project/WORK_QUEUE.json` as the only active-scope source and
+   `.project/PROGRESS.md` as the only mutable status, blocker, evidence, and
+   next-action source.
+3. Work only on the single human-created `in_progress` queue item. A plan
+   heading does not activate its slice.
+4. Obtain the queue-required design review before implementation, then keep
+   changes inside that slice's bound.
+5. Run the focused and repository-governed verification recorded in canonical
+   progress, followed by exact-candidate independent review.
+6. Obtain fresh human confirmation before commit and separate explicit
+   authorization for push, PR creation, merge, deployment, publication, or
+   any other external side effect.
+7. After the current slice merges and its canonical state is closed, the human
+   may create the next bounded queue item. Repeat through Slice F without
+   combining slices or treating this plan as authorization.
