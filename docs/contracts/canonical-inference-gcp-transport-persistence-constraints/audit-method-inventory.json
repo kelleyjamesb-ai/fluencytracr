@@ -1,0 +1,4056 @@
+{
+  "authority_effect": "NONE",
+  "claims": [
+    {
+      "claim_id": "S75-C001",
+      "literal_replayed": true,
+      "source_ids": [
+        "STS_AUDIT",
+        "WIF_AUDIT_EXAMPLES"
+      ],
+      "statement": "Reviewed official source bytes contain google.identity.sts.v1.SecurityTokenService.ExchangeToken for service sts.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / WORKLOAD_IDENTITY_PROVIDER / TOKEN_EXCHANGE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C002",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.CreateWorkloadIdentityPool for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C003",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.UpdateWorkloadIdentityPool for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C004",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.DeleteWorkloadIdentityPool for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C005",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.UndeleteWorkloadIdentityPool for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C006",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.CreateWorkloadIdentityPoolProvider for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C007",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.UpdateWorkloadIdentityPoolProvider for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C008",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.DeleteWorkloadIdentityPoolProvider for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C009",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.UndeleteWorkloadIdentityPoolProvider for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C010",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v1.WorkloadIdentityPools.SetIamPolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / WORKLOAD_IDENTITY_POOL_OR_PROVIDER / WIF_POOL_PROVIDER_POLICY_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C011",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.SetIAMPolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C012",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v2.Policies.CreatePolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C013",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v2.Policies.UpdatePolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C014",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v2.Policies.DeletePolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C015",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v3.PolicyBindings.CreatePolicyBinding for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C016",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v3.PolicyBindings.UpdatePolicyBinding for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C017",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v3.PolicyBindings.DeletePolicyBinding for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C018",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v3.PrincipalAccessBoundaryPolicies.CreatePrincipalAccessBoundaryPolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C019",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v3.PrincipalAccessBoundaryPolicies.UpdatePrincipalAccessBoundaryPolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C020",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.v3.PrincipalAccessBoundaryPolicies.DeletePrincipalAccessBoundaryPolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C021",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.CreateRole for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C022",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.UpdateRole for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C023",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.DeleteRole for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C024",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.UndeleteRole for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_POLICY_BINDING_OR_CUSTOM_ROLE / ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C025",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain CreateCryptoKey for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_KEY_OR_VERSION / KEY_CREATE_STATE_DESTROY_RESTORE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C026",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain CreateCryptoKeyVersion for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_KEY_OR_VERSION / KEY_CREATE_STATE_DESTROY_RESTORE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C027",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain UpdateCryptoKey for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_KEY_OR_VERSION / KEY_CREATE_STATE_DESTROY_RESTORE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C028",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain UpdateCryptoKeyPrimaryVersion for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_KEY_OR_VERSION / KEY_CREATE_STATE_DESTROY_RESTORE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C029",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain UpdateCryptoKeyVersion for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_KEY_OR_VERSION / KEY_CREATE_STATE_DESTROY_RESTORE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C030",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain DestroyCryptoKeyVersion for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_KEY_OR_VERSION / KEY_CREATE_STATE_DESTROY_RESTORE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C031",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain RestoreCryptoKeyVersion for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_KEY_OR_VERSION / KEY_CREATE_STATE_DESTROY_RESTORE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C032",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain GetIamPolicy for service cloudkms.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / KMS_CRYPTOKEY / KMS_IAM_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C033",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain SetIamPolicy for service cloudkms.googleapis.com; design research classifies it as ADMIN_ACTIVITY / KMS_CRYPTOKEY / KMS_IAM_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C034",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain AsymmetricSign for service cloudkms.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / KMS_KEY_VERSION / ASYMMETRIC_SIGN_ALLOW_DENY pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C035",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain GetPublicKey for service cloudkms.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / KMS_KEY_VERSION / PUBLIC_KEY_RETRIEVAL pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C036",
+      "literal_replayed": true,
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_INSERT"
+      ],
+      "statement": "Reviewed official source bytes contain storage.objects.create for service storage.googleapis.com; design research classifies it as DATA_ACCESS_DATA_WRITE / GCS_DETACHED_PROVENANCE_OBJECT / IMAGE_PROVENANCE_PUBLICATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C037",
+      "literal_replayed": true,
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ],
+      "statement": "Reviewed official source bytes contain AsymmetricSign for service cloudkms.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / KMS_KEY_VERSION / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C038",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ],
+      "statement": "Reviewed official source bytes contain GenerateAccessToken for service iamcredentials.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / SERVICE_ACCOUNT_CREDENTIAL / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C039",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ],
+      "statement": "Reviewed official source bytes contain GenerateIdToken for service iamcredentials.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / SERVICE_ACCOUNT_CREDENTIAL / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C040",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ],
+      "statement": "Reviewed official source bytes contain SignBlob for service iamcredentials.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / SERVICE_ACCOUNT_CREDENTIAL / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C041",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ],
+      "statement": "Reviewed official source bytes contain SignJwt for service iamcredentials.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / SERVICE_ACCOUNT_CREDENTIAL / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C042",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.CreateServiceAccountKey for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / SERVICE_ACCOUNT_OR_POLICY / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C043",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.UploadServiceAccountKey for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / SERVICE_ACCOUNT_OR_POLICY / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C044",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.SetIAMPolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / SERVICE_ACCOUNT_OR_POLICY / ALTERNATE_CREDENTIAL_ATTEMPT pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C045",
+      "literal_replayed": true,
+      "source_ids": [
+        "IAM_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.iam.admin.v1.SetIAMPolicy for service iam.googleapis.com; design research classifies it as ADMIN_ACTIVITY / IAM_AUDIT_CONFIG_OR_POLICY / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C046",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.CreateSink for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_SINK / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C047",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.UpdateSink for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_SINK / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C048",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.DeleteSink for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_SINK / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C049",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.CreateExclusion for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_EXCLUSION / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C050",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.UpdateExclusion for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_EXCLUSION / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C051",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.DeleteExclusion for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_EXCLUSION / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C052",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.CreateBucket for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_BUCKET / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C053",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.UpdateBucket for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_BUCKET / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C054",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.DeleteBucket for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_BUCKET / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C055",
+      "literal_replayed": true,
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_LOCK_API"
+      ],
+      "statement": "Reviewed official source bytes contain storage.buckets.lockRetentionPolicy for service storage.googleapis.com; design research classifies it as ADMIN_ACTIVITY / GCS_BUCKET / AUDIT_CONFIG_ROUTING_RETENTION_MUTATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C056",
+      "literal_replayed": true,
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain storage.objects.list for service storage.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / GCS_BUCKET / GCS_EVIDENCE_STORAGE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C057",
+      "literal_replayed": true,
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_GET"
+      ],
+      "statement": "Reviewed official source bytes contain storage.objects.get for service storage.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / GCS_OBJECT / GCS_EVIDENCE_STORAGE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C058",
+      "literal_replayed": true,
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_INSERT"
+      ],
+      "statement": "Reviewed official source bytes contain storage.objects.create for service storage.googleapis.com; design research classifies it as DATA_ACCESS_DATA_WRITE / GCS_OBJECT / GCS_EVIDENCE_STORAGE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C059",
+      "literal_replayed": true,
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_LOCK_API"
+      ],
+      "statement": "Reviewed official source bytes contain storage.buckets.lockRetentionPolicy for service storage.googleapis.com; design research classifies it as ADMIN_ACTIVITY / GCS_BUCKET / GCS_EVIDENCE_STORAGE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C060",
+      "literal_replayed": true,
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.spanner.v1.Spanner.BeginTransaction for service spanner.googleapis.com; design research classifies it as DATA_ACCESS_DATA_WRITE_REQUIRED_PERMISSION_spanner.databases.beginOrRollbackReadWriteTransaction / SPANNER_DATABASE / SPANNER_STORAGE_PRIMITIVE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C061",
+      "literal_replayed": true,
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.spanner.v1.Spanner.BeginTransaction for service spanner.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ_REQUIRED_PERMISSION_spanner.databases.beginReadOnlyTransaction / SPANNER_DATABASE / SPANNER_STORAGE_PRIMITIVE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C062",
+      "literal_replayed": true,
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.spanner.v1.Spanner.Commit for service spanner.googleapis.com; design research classifies it as DATA_ACCESS_DATA_WRITE / SPANNER_DATABASE / SPANNER_STORAGE_PRIMITIVE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C063",
+      "literal_replayed": true,
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.spanner.v1.Spanner.Read for service spanner.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / SPANNER_DATABASE / SPANNER_STORAGE_PRIMITIVE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C064",
+      "literal_replayed": true,
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.spanner.admin.database.v1.DatabaseAdmin.GetDatabase for service spanner.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / SPANNER_DATABASE / SPANNER_STORAGE_PRIMITIVE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C065",
+      "literal_replayed": true,
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.spanner.admin.database.v1.DatabaseAdmin.SetIamPolicy for service spanner.googleapis.com; design research classifies it as ADMIN_ACTIVITY / SPANNER_DATABASE / SPANNER_STORAGE_PRIMITIVE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C066",
+      "literal_replayed": true,
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.spanner.admin.database.v1.DatabaseAdmin.UpdateDatabaseDdl for service spanner.googleapis.com; design research classifies it as ADMIN_ACTIVITY / SPANNER_DATABASE / SPANNER_STORAGE_PRIMITIVE pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C067",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.LoggingServiceV2.ListLogEntries for service logging.googleapis.com; design research classifies it as DATA_ACCESS_DATA_READ / LOG_ENTRY_SET / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C068",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.GetBucket for service logging.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / LOG_BUCKET / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C069",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.GetSink for service logging.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / LOG_SINK / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C070",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.GetExclusion for service logging.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / LOG_EXCLUSION / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C071",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.ListExclusions for service logging.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / LOG_EXCLUSION_SET / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C072",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.GetView for service logging.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / LOG_VIEW / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C073",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.ListViews for service logging.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / LOG_VIEW_SET / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C074",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.CreateView for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_VIEW / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C075",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.UpdateView for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_VIEW / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C076",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ],
+      "statement": "Reviewed official source bytes contain google.logging.v2.ConfigServiceV2.DeleteView for service logging.googleapis.com; design research classifies it as ADMIN_ACTIVITY / LOG_VIEW / AUDIT_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C077",
+      "literal_replayed": true,
+      "source_ids": [
+        "ACCESS_CONTEXT_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.identity.accesscontextmanager.v1.AccessContextManager.GetServicePerimeter for service accesscontextmanager.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / SERVICE_PERIMETER / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C078",
+      "literal_replayed": true,
+      "source_ids": [
+        "ACCESS_CONTEXT_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain google.identity.accesscontextmanager.v1.AccessContextManager.ListServicePerimeters for service accesscontextmanager.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / SERVICE_PERIMETER_SET / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C079",
+      "literal_replayed": true,
+      "source_ids": [
+        "CLOUD_DNS_AUDIT",
+        "CLOUD_DNS_MANAGED_ZONE_GET"
+      ],
+      "statement": "Reviewed official source bytes contain dns.managedZones.get for service dns.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / DNS_MANAGED_ZONE / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C080",
+      "literal_replayed": true,
+      "source_ids": [
+        "CLOUD_DNS_AUDIT",
+        "CLOUD_DNS_MANAGED_ZONE_GET"
+      ],
+      "statement": "Reviewed official source bytes contain dns.changes.list for service dns.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / DNS_CHANGE_SET / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C081",
+      "literal_replayed": true,
+      "source_ids": [
+        "CLOUD_DNS_AUDIT",
+        "CLOUD_DNS_MANAGED_ZONE_GET"
+      ],
+      "statement": "Reviewed official source bytes contain dns.changes.create for service dns.googleapis.com; design research classifies it as ADMIN_ACTIVITY / DNS_CHANGE / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C082",
+      "literal_replayed": true,
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain v1.compute.firewalls.get for service compute.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / COMPUTE_FIREWALL / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C083",
+      "literal_replayed": true,
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain v1.compute.networks.get for service compute.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / COMPUTE_NETWORK / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C084",
+      "literal_replayed": true,
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain v1.compute.routes.get for service compute.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / COMPUTE_ROUTE / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C085",
+      "literal_replayed": true,
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain v1.compute.subnetworks.get for service compute.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / COMPUTE_SUBNETWORK / NETWORK_CONTROL_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C086",
+      "literal_replayed": true,
+      "source_ids": [
+        "RESOURCE_MANAGER_PROJECT_GET",
+        "RESOURCE_MANAGER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain cloudresourcemanager.v3.projects.get for service cloudresourcemanager.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / RESOURCE_MANAGER_PROJECT / RESOURCE_ENCLOSURE_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C087",
+      "literal_replayed": true,
+      "source_ids": [
+        "RESOURCE_MANAGER_FOLDER_GET",
+        "RESOURCE_MANAGER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain cloudresourcemanager.v3.folders.get for service cloudresourcemanager.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / RESOURCE_MANAGER_FOLDER / RESOURCE_ENCLOSURE_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C088",
+      "literal_replayed": true,
+      "source_ids": [
+        "RESOURCE_MANAGER_ORG_GET",
+        "RESOURCE_MANAGER_AUDIT"
+      ],
+      "statement": "Reviewed official source bytes contain cloudresourcemanager.v3.organizations.get for service cloudresourcemanager.googleapis.com; design research classifies it as DATA_ACCESS_ADMIN_READ / RESOURCE_MANAGER_ORGANIZATION / RESOURCE_ENCLOSURE_OBSERVATION pending semantic classifier closure."
+    },
+    {
+      "claim_id": "S75-C089",
+      "literal_replayed": true,
+      "source_ids": [
+        "LOGGING_PLATFORM_LOGS"
+      ],
+      "statement": "Reviewed official source bytes contain logging.googleapis.com%2Fsink_error for service logging.googleapis.com; design research classifies it as PLATFORM_LOG / LOGGING_SINK / AUDIT_SINK_ERROR_OBSERVATION pending semantic classifier closure."
+    }
+  ],
+  "inherited_operation_id_count": 10,
+  "inherited_operation_ids": [
+    "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+    "ALTERNATE_CREDENTIAL_ATTEMPT",
+    "ASYMMETRIC_SIGN_ALLOW_DENY",
+    "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+    "IMAGE_PROVENANCE_PUBLICATION",
+    "KEY_CREATE_STATE_DESTROY_RESTORE",
+    "KMS_IAM_MUTATION",
+    "PUBLIC_KEY_RETRIEVAL",
+    "TOKEN_EXCHANGE",
+    "WIF_POOL_PROVIDER_POLICY_MUTATION"
+  ],
+  "inherited_section_7_3_kms_source_id": "KMS_AUDIT_LOGGING",
+  "inherited_section_7_3_source_bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+  "inherited_section_7_3_source_registry_sha256": "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062",
+  "literal_replay": {
+    "evidence_sha256": "67624ccfec95b5fb9a48464dc72286512ad924db808876b2566d082aa184e092",
+    "fail_count": 0,
+    "pass_count": 89,
+    "result": "PASS",
+    "row_count": 89
+  },
+  "method_row_count": 88,
+  "registry_sha256": "3a984f6b7ffc704a89efc627529d1c250897df7a12da19e01f5c986ce90b49ef",
+  "row_count": 89,
+  "row_keyset_sha256": "ffd46355eb1e3eefa5d7ddd4d432712e151ad67292314fd8bb8a915f2a23216b",
+  "rows": [
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M001",
+      "method_name": "google.identity.sts.v1.SecurityTokenService.ExchangeToken",
+      "operation_context_kind": "TOKEN_EXCHANGE",
+      "operation_id": "TOKEN_EXCHANGE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_PROVIDER",
+      "row_sha256": "d3e608c49474e22f6766036c49f713885fabcc7822fdf0f054582999990153c6",
+      "service_name": "sts.googleapis.com",
+      "source_claim_id": "S75-C001",
+      "source_ids": [
+        "STS_AUDIT",
+        "WIF_AUDIT_EXAMPLES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M002",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.CreateWorkloadIdentityPool",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "f7a6e4482b5688df9e24321f1b9da83c9b74996d063dd6a82c5cab7954b42c39",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C002",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M003",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.UpdateWorkloadIdentityPool",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "71e2a7b01142bafed0c174c986faabb2f397edb3cbc6019ed6252b66a8af54ad",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C003",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M004",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.DeleteWorkloadIdentityPool",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "ee334782ad74aea04c58133351a635d383c03f5a069baf67c17466539c455469",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C004",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M005",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.UndeleteWorkloadIdentityPool",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "02678a95d40ea793c7ceab773b2318b063d4bd655c2c8d133d33f921572e1360",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C005",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M006",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.CreateWorkloadIdentityPoolProvider",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "244300141f1adc5257c9095b30ba55418e26f1d87fa746f43dba86dc48788611",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C006",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M007",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.UpdateWorkloadIdentityPoolProvider",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "799b69bffeacac123b5d9c3d88f7b33d6c8fc2189ccc2b2258a3c7ae1004f107",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C007",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M008",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.DeleteWorkloadIdentityPoolProvider",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "af0157a34b327bc2bc19f1c2dc4faad30af438f9818e76df9fbe86a5d8055164",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C008",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M009",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.UndeleteWorkloadIdentityPoolProvider",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "3318a935b9efa4d3163489e927e4571f9de6340acfb421089c8aba87024bd8e8",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C009",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M010",
+      "method_name": "google.iam.v1.WorkloadIdentityPools.SetIamPolicy",
+      "operation_context_kind": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "operation_id": "WIF_POOL_PROVIDER_POLICY_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "WORKLOAD_IDENTITY_POOL_OR_PROVIDER",
+      "row_sha256": "e1bc018852f99f4dd2a1f4ee3c68ba387936891463c848017017656a14513ff2",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C010",
+      "source_ids": [
+        "IAM_AUDIT",
+        "WIF_MANAGEMENT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M011",
+      "method_name": "google.iam.admin.v1.SetIAMPolicy",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "a39cb79507136be6cacd06b406ca2195b944b2dbb8e84ca1146f9893fa5de7c0",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C011",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M012",
+      "method_name": "google.iam.v2.Policies.CreatePolicy",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "d6f514156b53a67e5afc826107414a1bad1bc191e30dd947011e5a5e32deb717",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C012",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M013",
+      "method_name": "google.iam.v2.Policies.UpdatePolicy",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "867fe3e38d93fd23d3cd509f7892b7bfdfa0b435f0bd21a938af45d7b6daef05",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C013",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M014",
+      "method_name": "google.iam.v2.Policies.DeletePolicy",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "f3d3dfc77e0627fcee3767a4f6747a4b246073f078dcd5d75d4ba02930cf5093",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C014",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M015",
+      "method_name": "google.iam.v3.PolicyBindings.CreatePolicyBinding",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "94917f281d831c71f3516bcdfffbb297c930707867b540142c803f88cf7e3fa0",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C015",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M016",
+      "method_name": "google.iam.v3.PolicyBindings.UpdatePolicyBinding",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "aff4b7100ff8ba044ffbee6f56eec3b92b9927a40a0cfbe5ba6c4c9283cb7a96",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C016",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M017",
+      "method_name": "google.iam.v3.PolicyBindings.DeletePolicyBinding",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "007d722380d8524f75c3e613bfefdb99ae397cb76f580441817baa9e54abaf22",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C017",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M018",
+      "method_name": "google.iam.v3.PrincipalAccessBoundaryPolicies.CreatePrincipalAccessBoundaryPolicy",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "504136279f7092b6f2c9454243e19038176fbbad8558114d3eb894b34968ea27",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C018",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M019",
+      "method_name": "google.iam.v3.PrincipalAccessBoundaryPolicies.UpdatePrincipalAccessBoundaryPolicy",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "198148b51b4ad489633b59bc4cc4e508bb24e0395fd45f5d00596a1ce5137bb9",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C019",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M020",
+      "method_name": "google.iam.v3.PrincipalAccessBoundaryPolicies.DeletePrincipalAccessBoundaryPolicy",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "27a9e8401545d94df5b00183def943e4e84e4a8bc6666f12ff33d574244d3101",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C020",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M021",
+      "method_name": "google.iam.admin.v1.CreateRole",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "f582bb7dd24d0e31427a54c6fe00a2e1faeb4ce82b5e548eea486c9e4a0ecc7f",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C021",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M022",
+      "method_name": "google.iam.admin.v1.UpdateRole",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "95a4299117e1568cfeef501c080c4e3cd0c2135372d78127f41b4ca5551dd001",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C022",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M023",
+      "method_name": "google.iam.admin.v1.DeleteRole",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "cf679370d5ef4176d92b52f3f389f4b8343cba0dbf509e0e587629a6891f9763",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C023",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M024",
+      "method_name": "google.iam.admin.v1.UndeleteRole",
+      "operation_context_kind": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "operation_id": "ALLOW_DENY_PAB_CUSTOM_ROLE_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_POLICY_BINDING_OR_CUSTOM_ROLE",
+      "row_sha256": "bb8ecbb265f08457a82e906204a0072eb415f864bc72c75235fb499e8b3cf6c6",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C024",
+      "source_ids": [
+        "IAM_AUDIT",
+        "IAM_POLICY_TYPES"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M025",
+      "method_name": "CreateCryptoKey",
+      "operation_context_kind": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "operation_id": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_OR_VERSION",
+      "row_sha256": "fc8ac1d651faef486698fa7d8dac978323dd54b5da7b5c7c3e6ab97c55416d82",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C025",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M026",
+      "method_name": "CreateCryptoKeyVersion",
+      "operation_context_kind": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "operation_id": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_OR_VERSION",
+      "row_sha256": "9a8a487c4e09403ebe413b1af4645cd5efc1b1191ea862b6fc8e7b3af5a44ea1",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C026",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M027",
+      "method_name": "UpdateCryptoKey",
+      "operation_context_kind": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "operation_id": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_OR_VERSION",
+      "row_sha256": "b8171702f288127d4a0acb5731bdafdf6e8f30314353a69f0f50b9c8b93e6b69",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C027",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M028",
+      "method_name": "UpdateCryptoKeyPrimaryVersion",
+      "operation_context_kind": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "operation_id": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_OR_VERSION",
+      "row_sha256": "08d4a17c26e3d9f73a9375251360fa0fcc8b943fab1909f933048f70817b74cc",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C028",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M029",
+      "method_name": "UpdateCryptoKeyVersion",
+      "operation_context_kind": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "operation_id": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_OR_VERSION",
+      "row_sha256": "37cd1589637b1939e5e60629c83193fbc7049b27abffa088e60d61b25b5fc3df",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C029",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M030",
+      "method_name": "DestroyCryptoKeyVersion",
+      "operation_context_kind": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "operation_id": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_OR_VERSION",
+      "row_sha256": "47969f790a321d33b600b7777c5fda5dd6bc0accbd99d53a34a842463248ac0d",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C030",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M031",
+      "method_name": "RestoreCryptoKeyVersion",
+      "operation_context_kind": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "operation_id": "KEY_CREATE_STATE_DESTROY_RESTORE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_OR_VERSION",
+      "row_sha256": "47e8f57ca08fcc70b01281654a65a479b94ac129d2cdb6782c65b346cb87ffd8",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C031",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M032",
+      "method_name": "GetIamPolicy",
+      "operation_context_kind": "KMS_IAM_MUTATION",
+      "operation_id": "KMS_IAM_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_CRYPTOKEY",
+      "row_sha256": "33a169bd5623ba0d6455ebfc88acc3f04d738037e9cc43749ada0d06cd7f0eac",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C032",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M033",
+      "method_name": "SetIamPolicy",
+      "operation_context_kind": "KMS_IAM_MUTATION",
+      "operation_id": "KMS_IAM_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_CRYPTOKEY",
+      "row_sha256": "54612b0f66d5a8ffda0fa97b472728ebc1d51db7d9961ee3b52b5b6cb7a0b23d",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C033",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "MULTI_LABEL_SORTED_OPERATION_IDS",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M034",
+      "method_name": "AsymmetricSign",
+      "operation_context_kind": "ASYMMETRIC_SIGN_ALLOW_DENY",
+      "operation_id": "ASYMMETRIC_SIGN_ALLOW_DENY",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_VERSION",
+      "row_sha256": "515f61b31b72249e514e9caa3a0f946f9efdd6937a065efdfb13aa46827af802",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C034",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M035",
+      "method_name": "GetPublicKey",
+      "operation_context_kind": "PUBLIC_KEY_RETRIEVAL",
+      "operation_id": "PUBLIC_KEY_RETRIEVAL",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_VERSION",
+      "row_sha256": "b0474be154096278a488435a91a17ad696c351145cea4c70a89a2055ac295fa2",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C035",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_WRITE",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M036",
+      "method_name": "storage.objects.create",
+      "operation_context_kind": "IMAGE_PROVENANCE_PUBLICATION",
+      "operation_id": "IMAGE_PROVENANCE_PUBLICATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "GCS_DETACHED_PROVENANCE_OBJECT",
+      "row_sha256": "6fd936e1b5344b8d66dff02baaa1c79bf5858ab2a48b7a7efa17d22176f0b17f",
+      "service_name": "storage.googleapis.com",
+      "source_claim_id": "S75-C036",
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_INSERT"
+      ]
+    },
+    {
+      "applicability": "DENIED_CANARY_REQUIRED",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "MULTI_LABEL_SORTED_OPERATION_IDS",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M037",
+      "method_name": "AsymmetricSign",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "KMS_KEY_VERSION",
+      "row_sha256": "ea98c93dda813a3b859347c439bb8788c6a10394054ff5e105ba7c44a09df484",
+      "service_name": "cloudkms.googleapis.com",
+      "source_claim_id": "S75-C037",
+      "source_ids": [
+        "KMS_AUDIT_LOGGING"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL_IF_PATH_APPLICABLE",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M038",
+      "method_name": "GenerateAccessToken",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_ACCOUNT_CREDENTIAL",
+      "row_sha256": "26a2a8200678fbee6069c65c5f449975b59e8c211c1a6e5704b4db43c88f7154",
+      "service_name": "iamcredentials.googleapis.com",
+      "source_claim_id": "S75-C038",
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL_IF_PATH_APPLICABLE",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M039",
+      "method_name": "GenerateIdToken",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_ACCOUNT_CREDENTIAL",
+      "row_sha256": "5076fbfe6e2ee65150a03f67ff053196fb2eb865653f3c79014275457a6c3ae6",
+      "service_name": "iamcredentials.googleapis.com",
+      "source_claim_id": "S75-C039",
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL_IF_PATH_APPLICABLE",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M040",
+      "method_name": "SignBlob",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_ACCOUNT_CREDENTIAL",
+      "row_sha256": "86c18c54d3746776e1480b7720f9139ca24da73f4878d8ed4d60ae65bc651799",
+      "service_name": "iamcredentials.googleapis.com",
+      "source_claim_id": "S75-C040",
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL_IF_PATH_APPLICABLE",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M041",
+      "method_name": "SignJwt",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_ACCOUNT_CREDENTIAL",
+      "row_sha256": "cb38c4a0de11c4fc1ecba9e0c2b021203b32502d2ad77e2ffd4e6eec886389a6",
+      "service_name": "iamcredentials.googleapis.com",
+      "source_claim_id": "S75-C041",
+      "source_ids": [
+        "IAM_CREDENTIALS_AUDIT",
+        "IAM_CREDENTIALS_API"
+      ]
+    },
+    {
+      "applicability": "SOURCE_EVIDENCE_FOR_PARENT_CREDENTIAL_PATH",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M042",
+      "method_name": "google.iam.admin.v1.CreateServiceAccountKey",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_ACCOUNT_OR_POLICY",
+      "row_sha256": "268656ff2f5536717e309cd943665c953205b0b8dca9d23f19b9a9c34508d64b",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C042",
+      "source_ids": [
+        "IAM_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SOURCE_EVIDENCE_FOR_PARENT_CREDENTIAL_PATH",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M043",
+      "method_name": "google.iam.admin.v1.UploadServiceAccountKey",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_ACCOUNT_OR_POLICY",
+      "row_sha256": "e704fcc686dd95b04327af2c75ed0f78d1d14a50c667bc63d3fa2aa86014bdd8",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C043",
+      "source_ids": [
+        "IAM_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SOURCE_EVIDENCE_FOR_PARENT_CREDENTIAL_PATH",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M044",
+      "method_name": "google.iam.admin.v1.SetIAMPolicy",
+      "operation_context_kind": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "operation_id": "ALTERNATE_CREDENTIAL_ATTEMPT",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_ACCOUNT_OR_POLICY",
+      "row_sha256": "b1965526a9be5e331db0edeadf73406f32f9e8965e345b3c4a39814c48a5efbc",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C044",
+      "source_ids": [
+        "IAM_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M045",
+      "method_name": "google.iam.admin.v1.SetIAMPolicy",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "IAM_AUDIT_CONFIG_OR_POLICY",
+      "row_sha256": "887cd6fe5240dce984fe95b29fde638f81bb8991220005cba0ddc0ecf291cba3",
+      "service_name": "iam.googleapis.com",
+      "source_claim_id": "S75-C045",
+      "source_ids": [
+        "IAM_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M046",
+      "method_name": "google.logging.v2.ConfigServiceV2.CreateSink",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_SINK",
+      "row_sha256": "f4cd98c907ee05f8f5461b5bada47629db76e61dd93a661a773a7de9ab37d97d",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C046",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M047",
+      "method_name": "google.logging.v2.ConfigServiceV2.UpdateSink",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_SINK",
+      "row_sha256": "30e9be0b4d43715ff7db277fa4eb964cdfa79d1b70878e6149bd9642ffcf459b",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C047",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M048",
+      "method_name": "google.logging.v2.ConfigServiceV2.DeleteSink",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_SINK",
+      "row_sha256": "1129e097714dd74e13220fdf428f4a71609c74df410e0f1456144574d552b67b",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C048",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M049",
+      "method_name": "google.logging.v2.ConfigServiceV2.CreateExclusion",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_EXCLUSION",
+      "row_sha256": "4bd2e81a4d7a7503df62ce38d6236ee8f92868ecc7069c44e419512a65594f73",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C049",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M050",
+      "method_name": "google.logging.v2.ConfigServiceV2.UpdateExclusion",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_EXCLUSION",
+      "row_sha256": "409563a59812c4a561c9249a9662b365505fb695377c7da301d70ffb4f528b28",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C050",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M051",
+      "method_name": "google.logging.v2.ConfigServiceV2.DeleteExclusion",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_EXCLUSION",
+      "row_sha256": "554c7004dfe3ce2443a79fc9b0aee6f207a02d91037500db3e2179d15a1bbe31",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C051",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M052",
+      "method_name": "google.logging.v2.ConfigServiceV2.CreateBucket",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_BUCKET",
+      "row_sha256": "4334b33436fb6949bf4ad0327a375d6b183a74447f4529f53c1873730799fbce",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C052",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M053",
+      "method_name": "google.logging.v2.ConfigServiceV2.UpdateBucket",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_BUCKET",
+      "row_sha256": "1cdd0f466204f5e417f579e5e35ca796fbd4314cb120b75e6dc1698748ba5998",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C053",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M054",
+      "method_name": "google.logging.v2.ConfigServiceV2.DeleteBucket",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_BUCKET",
+      "row_sha256": "2e57afff6965f736ca73a2b5eae8744416da9324993033c040e018201db5d548",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C054",
+      "source_ids": [
+        "LOGGING_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "MULTI_LABEL_SORTED_OPERATION_IDS",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_3_AUTHORITY",
+      "mapping_id": "S75-M055",
+      "method_name": "storage.buckets.lockRetentionPolicy",
+      "operation_context_kind": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "operation_id": "AUDIT_CONFIG_ROUTING_RETENTION_MUTATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "GCS_BUCKET",
+      "row_sha256": "d995474b4788f6c1a664f355fd19a7330db0f258a1a01e776741f893300807ee",
+      "service_name": "storage.googleapis.com",
+      "source_claim_id": "S75-C055",
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_LOCK_API"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M056",
+      "method_name": "storage.objects.list",
+      "operation_context_kind": "GCS_EVIDENCE_STORAGE",
+      "operation_id": "GCS_EVIDENCE_STORAGE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "GCS_BUCKET",
+      "row_sha256": "c5b29c99ebbc7e1f4a94509e71313431add989bf66d31adba54ea7a0102dc2f6",
+      "service_name": "storage.googleapis.com",
+      "source_claim_id": "S75-C056",
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M057",
+      "method_name": "storage.objects.get",
+      "operation_context_kind": "GCS_EVIDENCE_STORAGE",
+      "operation_id": "GCS_EVIDENCE_STORAGE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "GCS_OBJECT",
+      "row_sha256": "d08c01033a2bd9c1a5ea214cc4dbbfd8c042617dee48979c07691e78ec229c21",
+      "service_name": "storage.googleapis.com",
+      "source_claim_id": "S75-C057",
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_GET"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_WRITE",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M058",
+      "method_name": "storage.objects.create",
+      "operation_context_kind": "GCS_EVIDENCE_STORAGE",
+      "operation_id": "GCS_EVIDENCE_STORAGE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "GCS_OBJECT",
+      "row_sha256": "431a09b3982aef50ca6f2f8e0684229cfdd320230b4c2f05d0c1bf1529a6f870",
+      "service_name": "storage.googleapis.com",
+      "source_claim_id": "S75-C058",
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_OBJECTS_INSERT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "MULTI_LABEL_SORTED_OPERATION_IDS",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M059",
+      "method_name": "storage.buckets.lockRetentionPolicy",
+      "operation_context_kind": "GCS_EVIDENCE_STORAGE",
+      "operation_id": "GCS_EVIDENCE_STORAGE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "GCS_BUCKET",
+      "row_sha256": "a85f90cff6c866efc067c7f64265510cb1aa30d637417be306da7b801eed8e65",
+      "service_name": "storage.googleapis.com",
+      "source_claim_id": "S75-C059",
+      "source_ids": [
+        "GCS_AUDIT",
+        "GCS_LOCK_API"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_WRITE_REQUIRED_PERMISSION_spanner.databases.beginOrRollbackReadWriteTransaction",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M060",
+      "method_name": "google.spanner.v1.Spanner.BeginTransaction",
+      "operation_context_kind": "SPANNER_STORAGE_PRIMITIVE",
+      "operation_id": "SPANNER_STORAGE_PRIMITIVE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SPANNER_DATABASE",
+      "row_sha256": "f679b7246fa8e8b83bd9ac9ab8823b515b7585a6dbe650c52014f5f29195e26e",
+      "service_name": "spanner.googleapis.com",
+      "source_claim_id": "S75-C060",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ_REQUIRED_PERMISSION_spanner.databases.beginReadOnlyTransaction",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M061",
+      "method_name": "google.spanner.v1.Spanner.BeginTransaction",
+      "operation_context_kind": "SPANNER_STORAGE_PRIMITIVE",
+      "operation_id": "SPANNER_STORAGE_PRIMITIVE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SPANNER_DATABASE",
+      "row_sha256": "53ffdb84b1db2ba93750be1c3e73e58c931ec16c9be056c3b6419de31ca4f2c5",
+      "service_name": "spanner.googleapis.com",
+      "source_claim_id": "S75-C061",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_WRITE",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M062",
+      "method_name": "google.spanner.v1.Spanner.Commit",
+      "operation_context_kind": "SPANNER_STORAGE_PRIMITIVE",
+      "operation_id": "SPANNER_STORAGE_PRIMITIVE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SPANNER_DATABASE",
+      "row_sha256": "6b95c348d3690ae943cffd345b89f364a643e0408a2f43fb54c5711d7a49d37c",
+      "service_name": "spanner.googleapis.com",
+      "source_claim_id": "S75-C062",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M063",
+      "method_name": "google.spanner.v1.Spanner.Read",
+      "operation_context_kind": "SPANNER_STORAGE_PRIMITIVE",
+      "operation_id": "SPANNER_STORAGE_PRIMITIVE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SPANNER_DATABASE",
+      "row_sha256": "d2ed778658da802c8f01cfa82f797b867981708d854e8a65d6ac62578494b847",
+      "service_name": "spanner.googleapis.com",
+      "source_claim_id": "S75-C063",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M064",
+      "method_name": "google.spanner.admin.database.v1.DatabaseAdmin.GetDatabase",
+      "operation_context_kind": "SPANNER_STORAGE_PRIMITIVE",
+      "operation_id": "SPANNER_STORAGE_PRIMITIVE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SPANNER_DATABASE",
+      "row_sha256": "251d9460ef8c275822ac295c89e6c698c308fd7c75a89765c5cb05a9bc383b02",
+      "service_name": "spanner.googleapis.com",
+      "source_claim_id": "S75-C064",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M065",
+      "method_name": "google.spanner.admin.database.v1.DatabaseAdmin.SetIamPolicy",
+      "operation_context_kind": "SPANNER_STORAGE_PRIMITIVE",
+      "operation_id": "SPANNER_STORAGE_PRIMITIVE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SPANNER_DATABASE",
+      "row_sha256": "408d03a66480fb8517118aa69b78514d9c573f68de0a40c91a98b76d3165d011",
+      "service_name": "spanner.googleapis.com",
+      "source_claim_id": "S75-C065",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M066",
+      "method_name": "google.spanner.admin.database.v1.DatabaseAdmin.UpdateDatabaseDdl",
+      "operation_context_kind": "SPANNER_STORAGE_PRIMITIVE",
+      "operation_id": "SPANNER_STORAGE_PRIMITIVE",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SPANNER_DATABASE",
+      "row_sha256": "ca00c5e798c50e53e7054aa520e5022b509bd3d0dfbed3c6ea3c96608f6fe623",
+      "service_name": "spanner.googleapis.com",
+      "source_claim_id": "S75-C066",
+      "source_ids": [
+        "SPANNER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_DATA_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M067",
+      "method_name": "google.logging.v2.LoggingServiceV2.ListLogEntries",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_ENTRY_SET",
+      "row_sha256": "15da0c9eb1d2884571f3e01c9cfd6bb29058c9fc87e732ad29ee4ec615a38933",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C067",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M068",
+      "method_name": "google.logging.v2.ConfigServiceV2.GetBucket",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_BUCKET",
+      "row_sha256": "020fd053ff1841d1bd85d5ff4b3336f0364977f3e4a928cb585a808e569e930a",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C068",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M069",
+      "method_name": "google.logging.v2.ConfigServiceV2.GetSink",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_SINK",
+      "row_sha256": "5b15b1d401d6067768bd15ba6d184fab5aaa6623bce17e0be1a8dbac8caaa3ac",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C069",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M070",
+      "method_name": "google.logging.v2.ConfigServiceV2.GetExclusion",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_EXCLUSION",
+      "row_sha256": "96be2ed4aa91f80f464f29a3aa5ec96c974fb9e5298ae49ae713c3b175a06db7",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C070",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M071",
+      "method_name": "google.logging.v2.ConfigServiceV2.ListExclusions",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_EXCLUSION_SET",
+      "row_sha256": "f6fa57d8f08f57907ecc0943f4e060e0b5f35175a26d190f1ac959142af00663",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C071",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M072",
+      "method_name": "google.logging.v2.ConfigServiceV2.GetView",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_VIEW",
+      "row_sha256": "fae68a59d6820ebe0be1bf47a3ff7ce2e453a919543e16865406c03be31c611a",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C072",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M073",
+      "method_name": "google.logging.v2.ConfigServiceV2.ListViews",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_VIEW_SET",
+      "row_sha256": "a90453283b46f024023eecd9534215f759df788417b56592c3453b493f3dbfd4",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C073",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M074",
+      "method_name": "google.logging.v2.ConfigServiceV2.CreateView",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_VIEW",
+      "row_sha256": "2ec767f3dd1dabc12b0d6eadf89888d77467e381cf5a190168197b4f2d310d1b",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C074",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M075",
+      "method_name": "google.logging.v2.ConfigServiceV2.UpdateView",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_VIEW",
+      "row_sha256": "ad20ac28181a7ebf0a5d2db6e87b14db8db5af9751d3ce3015233d9477407acc",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C075",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M076",
+      "method_name": "google.logging.v2.ConfigServiceV2.DeleteView",
+      "operation_context_kind": "AUDIT_OBSERVATION",
+      "operation_id": "AUDIT_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "LOG_VIEW",
+      "row_sha256": "5ad2d27811e02b0fe19e574d370b58875156d533a6e7ac233d98c9b996ceec16",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C076",
+      "source_ids": [
+        "LOGGING_AUDIT",
+        "LOGGING_ENTRIES_LIST"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M077",
+      "method_name": "google.identity.accesscontextmanager.v1.AccessContextManager.GetServicePerimeter",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_PERIMETER",
+      "row_sha256": "dfd6ec53e9e6bae55f11ba27bf35d1f6c99c41bbc5adeda9e57caa07d3bfa1d0",
+      "service_name": "accesscontextmanager.googleapis.com",
+      "source_claim_id": "S75-C077",
+      "source_ids": [
+        "ACCESS_CONTEXT_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M078",
+      "method_name": "google.identity.accesscontextmanager.v1.AccessContextManager.ListServicePerimeters",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "SERVICE_PERIMETER_SET",
+      "row_sha256": "d3a61faac9b83082201fc7a78928154fd76a33b5d7c69a9b19a1495f3b3111e6",
+      "service_name": "accesscontextmanager.googleapis.com",
+      "source_claim_id": "S75-C078",
+      "source_ids": [
+        "ACCESS_CONTEXT_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M079",
+      "method_name": "dns.managedZones.get",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "DNS_MANAGED_ZONE",
+      "row_sha256": "9b746df66330c542a7fe82709cc58502fefec5d592a2b387affe98ab20f01377",
+      "service_name": "dns.googleapis.com",
+      "source_claim_id": "S75-C079",
+      "source_ids": [
+        "CLOUD_DNS_AUDIT",
+        "CLOUD_DNS_MANAGED_ZONE_GET"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M080",
+      "method_name": "dns.changes.list",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "DNS_CHANGE_SET",
+      "row_sha256": "cba5e06e51070a63d15eaeeafa8a172a7c99f3516afaba54141347a77bb74da1",
+      "service_name": "dns.googleapis.com",
+      "source_claim_id": "S75-C080",
+      "source_ids": [
+        "CLOUD_DNS_AUDIT",
+        "CLOUD_DNS_MANAGED_ZONE_GET"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "ADMIN_ACTIVITY",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M081",
+      "method_name": "dns.changes.create",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "DNS_CHANGE",
+      "row_sha256": "0947e5c4ce2fdc542ecaf9de9e7195c02096b6c349be4046806d4d5272794cd1",
+      "service_name": "dns.googleapis.com",
+      "source_claim_id": "S75-C081",
+      "source_ids": [
+        "CLOUD_DNS_AUDIT",
+        "CLOUD_DNS_MANAGED_ZONE_GET"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M082",
+      "method_name": "v1.compute.firewalls.get",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "COMPUTE_FIREWALL",
+      "row_sha256": "ba4bb148d5f34fcdcaba0731671d22db4fab25b0ab0b514974e8645aa459aeb2",
+      "service_name": "compute.googleapis.com",
+      "source_claim_id": "S75-C082",
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M083",
+      "method_name": "v1.compute.networks.get",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "COMPUTE_NETWORK",
+      "row_sha256": "5a86223e5f96424c853135dcd63105d56a995591026b82ccfcf5daed52897562",
+      "service_name": "compute.googleapis.com",
+      "source_claim_id": "S75-C083",
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M084",
+      "method_name": "v1.compute.routes.get",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "COMPUTE_ROUTE",
+      "row_sha256": "aef6445c51aaaa796cceea7a29cb70716f9ba33162d53e885d71eb60d0b1f713",
+      "service_name": "compute.googleapis.com",
+      "source_claim_id": "S75-C084",
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M085",
+      "method_name": "v1.compute.subnetworks.get",
+      "operation_context_kind": "NETWORK_CONTROL_OBSERVATION",
+      "operation_id": "NETWORK_CONTROL_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "COMPUTE_SUBNETWORK",
+      "row_sha256": "366ae6e34687713e9f9abff1eb2227bd004073f693706bf8184dad8dc7b50f89",
+      "service_name": "compute.googleapis.com",
+      "source_claim_id": "S75-C085",
+      "source_ids": [
+        "COMPUTE_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M086",
+      "method_name": "cloudresourcemanager.v3.projects.get",
+      "operation_context_kind": "RESOURCE_ENCLOSURE_OBSERVATION",
+      "operation_id": "RESOURCE_ENCLOSURE_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "RESOURCE_MANAGER_PROJECT",
+      "row_sha256": "9ccf12e29714de37e6f26b9cb1290de63aa741303b4ed6e8315735de65b7d54d",
+      "service_name": "cloudresourcemanager.googleapis.com",
+      "source_claim_id": "S75-C086",
+      "source_ids": [
+        "RESOURCE_MANAGER_PROJECT_GET",
+        "RESOURCE_MANAGER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M087",
+      "method_name": "cloudresourcemanager.v3.folders.get",
+      "operation_context_kind": "RESOURCE_ENCLOSURE_OBSERVATION",
+      "operation_id": "RESOURCE_ENCLOSURE_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "RESOURCE_MANAGER_FOLDER",
+      "row_sha256": "655827d94f0a7fe917f90e0e32cddc4aaaad728c982a50ff179b116f744eca59",
+      "service_name": "cloudresourcemanager.googleapis.com",
+      "source_claim_id": "S75-C087",
+      "source_ids": [
+        "RESOURCE_MANAGER_FOLDER_GET",
+        "RESOURCE_MANAGER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "SUCCESS_AND_DENIAL",
+      "classification_key_fields": [
+        "service_name",
+        "method_name",
+        "log_type",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_LABEL",
+      "log_type": "DATA_ACCESS_ADMIN_READ",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M088",
+      "method_name": "cloudresourcemanager.v3.organizations.get",
+      "operation_context_kind": "RESOURCE_ENCLOSURE_OBSERVATION",
+      "operation_id": "RESOURCE_ENCLOSURE_OBSERVATION",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "protoPayload.serviceName",
+        "protoPayload.methodName",
+        "protoPayload.resourceName",
+        "protoPayload.status.code",
+        "protoPayload.authenticationInfo.principalSubject",
+        "protoPayload.authorizationInfo"
+      ],
+      "resource_class": "RESOURCE_MANAGER_ORGANIZATION",
+      "row_sha256": "a7f195cdcaf8c2e678601407c72d2be901712fc0fa7fff5b7993177aeafc81fd",
+      "service_name": "cloudresourcemanager.googleapis.com",
+      "source_claim_id": "S75-C088",
+      "source_ids": [
+        "RESOURCE_MANAGER_ORG_GET",
+        "RESOURCE_MANAGER_AUDIT"
+      ]
+    },
+    {
+      "applicability": "EVERY_OBSERVATION_WINDOW",
+      "classification_key_fields": [
+        "service_name",
+        "platform_log_id",
+        "resource_class",
+        "operation_context_kind"
+      ],
+      "classification_mode": "SINGLE_PLATFORM_LOG_LABEL",
+      "log_type": "PLATFORM_LOG",
+      "map_kind": "SECTION_7_5_INTERNAL",
+      "mapping_id": "S75-M089",
+      "operation_context_kind": "AUDIT_SINK_ERROR_OBSERVATION",
+      "operation_id": "AUDIT_SINK_ERROR_OBSERVATION",
+      "platform_log_id": "logging.googleapis.com%2Fsink_error",
+      "required_fields": [
+        "logName",
+        "timestamp",
+        "receiveTimestamp",
+        "insertId",
+        "resource.type",
+        "severity",
+        "labels"
+      ],
+      "resource_class": "LOGGING_SINK",
+      "row_sha256": "ed8f917fafee0844f16e54bf4e335914b21f47f14455a3642404900e4159bda3",
+      "service_name": "logging.googleapis.com",
+      "source_claim_id": "S75-C089",
+      "source_ids": [
+        "LOGGING_PLATFORM_LOGS"
+      ]
+    }
+  ],
+  "schema_version": "SECTION_7_5A_AUDIT_METHOD_RESEARCH_INVENTORY_V3",
+  "source_manifest_sha256": "5f98896e8bd11e0232b14eca46670f6273bb65cbb61f94629095949aa859fd50",
+  "source_namespace_registry": {
+    "KMS_AUDIT_LOGGING": {
+      "owner": "SECTION_7_3",
+      "source_bundle_sha256": "6f87fa394a9ae88032dfa28ebfba03b2e92408f1bb703975a8c146f2453fdae3",
+      "source_registry_sha256": "e12d0dcb6d7ff6b1a48519e21cc7c84364cde3e9611d24b9900b2581d6670062"
+    }
+  },
+  "state": "RESEARCH_INVENTORY_LITERAL_REPLAY_PASS_SEMANTIC_CLASSIFIER_UNCLOSED"
+}

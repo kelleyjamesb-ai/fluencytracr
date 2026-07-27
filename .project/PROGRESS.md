@@ -2,6 +2,70 @@
 
 ## Current Session
 
+- The machine-distinct constraints-only Section 7.5A draft is complete and
+  remains mandatory HOLD. Artifacts contain 53 sanitized public sources and 30
+  claim records; a deduplicated 89-row method/platform research inventory with
+  all five Logging exclusion methods and 89/89 literal replay; seven negative
+  constraint families; four exact parent-interface families; 20 contiguous
+  `OPEN_BLOCKING` prerequisites with 91 exact bidirectional edges; a complete
+  parent positive-slot non-substitution registry; and 12 acyclic compile-only
+  hash nodes. The contract hash is
+  `b74f7ca6ed796426996700f0ecf6fe134a41de6c14f45fad3622b13b911d93aa`.
+  Raw artifact SHA-256 values are: README
+  `4ae830609725d52e494c55171192887a707a5fe8344c23d369c407761ef23385`,
+  inventory `e13cf9889947115859d684f7377fd38caa6e5207969eda073f534bc94af87bbf`,
+  contract `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`,
+  provider revalidation
+  `523dd8fe73dfe78569e2299720af47b7ffecbaca0502247f86fe8b64ea562d44`,
+  and provider evidence
+  `b86aefff90355bb5a0621bf84ead642c783badb3e35ac5eb20f1790728f05c8c`.
+  Upfront constraints-design review returned GO/GO/GO before drafting. Strict
+  OpenSpec, V1 governance, docs sweep, 53/53 external source replay, independent
+  12/12 hash replay, edge/non-substitution/privacy checks, and full Python tests
+  passed; the completed full run reported 384 passed and 3 skipped. The only
+  parent-test change is the human-authorized one-line `ATTRIBUTION.md` SHA-256
+  pin refresh; no test logic changed. Section 7.5A explicitly has
+  `satisfies_section_7_5=false`, cannot become a Section 7.6 dependency or
+  parent approval, cannot receive `READINESS_GO`, and defines no live record,
+  writer, approval, SUT, implementation, GCP action, persistence, or runtime
+  authority. Final exact-tree CODE/BUG/ADVERSARIAL review remains pending; no
+  commit or external Git action has occurred.
+- The human approved a contract-first Section 7.5 redesign and added the
+  docs-only queue item in a clean worktree at base
+  `9c605e4bf45130dd934cedb5ff7392a7d2e99b27`. Seven upfront design
+  generations were tested before any repository contract artifact was drafted.
+  Public research captured 53 exact official pages into
+  `external-recovery://fluencytracr/gcp-transport-persistence-source-snapshot-20260727T022634Z.zip`
+  (1,360,001 bytes, SHA-256
+  `cb7c440f18c7afe7e5f05ff455ffca1dd98cd3a284c6b741c7b3ab88b7a88750`)
+  with sanitized manifest SHA-256
+  `5f98896e8bd11e0232b14eca46670f6273bb65cbb61f94629095949aa859fd50`.
+  The latest constraints-only design now has a deduplicated 89-row audit/
+  platform research inventory with exact ten-operation Section 7.3 coverage,
+  complete Logging exclusion-method rows, and 89/89 literal replay. Material
+  v7 CODE and ADVERSARIAL findings nevertheless exposed two cross-section
+  prerequisites that Section 7.5 cannot lawfully invent: Section 7.4 has no
+  external current-checkpoint approval lineage independent of compile-pinned
+  bytes, and Section 7.3 has no capability owner for a Section 7.5 storage/
+  checkpoint mechanism writer. Treating the writer as Section 7.6 would violate
+  the frozen boundary where Section 7.5 owns persistence mechanics and Section
+  7.6 owns attempt semantics. The item returned to `pending` under
+  `STOP_REARCHITECT`; no repository contract/OpenSpec files, evidence commit,
+  SUT, live GCP action, credential, persistence, later-section work, or runtime
+  authority were created. Recommended redesign: either narrow this item to a
+  constraints-and-open-obligations Section 7.5A contract with no verified live
+  record interface, or first authorize bounded Section 7.3/7.4 amendments for
+  mechanism-writer ownership and external approval/checkpoint lineage.
+- The human then selected and activated the narrower constraints-only Section
+  7.5A item. It may freeze negative provider constraints, exact parent
+  obligations, compile-only hashes, and open prerequisites only. It cannot
+  define a verified record, mechanism writer, approval path, positive live
+  interface, readiness evidence, SUT, or implementation; it does not satisfy
+  Section 7.5 and cannot be a Section 7.6 dependency. Upfront design review is
+  now reconciling total prerequisite coverage, exact parent node/domain
+  identities, readiness applicability, and non-substitution rules against the
+  retained 53-source/89-row research. That upfront panel ultimately returned
+  GO/GO/GO for the narrowed constraints-only design.
 - The `canonical-runtime-readiness-first-protocol` item closed on 2026-07-26.
   Upfront review rejected prose-only readiness and an uncommitted generic
   2,597-line manifest/validator that could mistake structural completeness for
@@ -3517,6 +3581,11 @@
 
 ## Blockers
 
+- Positive/full Section 7.5 remains blocked at `STOP_REARCHITECT`: Section 7.3
+  mechanism-writer capability admission and Section 7.4 external checkpoint
+  approval lineage do not exist. The active Section 7.5A item may document
+  constraints/open obligations only; it cannot satisfy Section 7.5, serve as a
+  Section 7.6 dependency, or create runtime authority.
 - No readiness-protocol blocker remains: PR #444 merged normally as
   `6e1dd42b52f393295e92d1f0b33d0fbc017d8b7e`, its merge tree exactly matched
   reviewed tree `2c43039a42f39ea10bde5d4c5fc0ef97c2c8da6c`, and all current-head
@@ -3529,13 +3598,14 @@
 
 ## Next Step
 
-- Before Section 7.5, a human must create its bounded high-risk queue item.
-  Then copy the readiness template into that item’s OpenSpec change, add the
-  adversarial tests/fixtures without system-under-test implementation, create a
-  preimplementation evidence commit, and obtain exact-packet CODE/BUG/
-  ADVERSARIAL `READINESS_GO`. Keep runtime authority held; do not perform live
-  GCP, credentials, signing, deployment, qualification, persistence, model
-  execution, or Sections 7.5-7.8 implementation.
+- Complete the replacement exact-tree CODE/BUG/ADVERSARIAL panel for the
+  machine-distinct docs-only `SECTION_7_5A_CONSTRAINTS_AND_OPEN_OBLIGATIONS`
+  candidate. If it returns GO/GO/GO, request fresh human authorization before
+  any commit, push, PR, or merge. Keep OpenSpec review/merge tasks and queue
+  closeout for the exact reviewed tree or a later metadata-only closeout. Do
+  not create a readiness packet, SUT, live GCP action, credentials,
+  persistence, qualification, model execution, Sections 7.6-7.8 work, or
+  runtime authority.
 - Review/commit/PR the Glean dogfood BigQuery adapter slice. Next bounded step should be an operator path that posts the generated aggregate payloads into a running local backend and opens the Workspace on the refreshed evidence, still without raw rows, identifiers, customer-facing economics, ROI proof, causality, or person-level analysis.
 - AI Value Platform North Star: the VBD canon was amended 2026-06-11 with human approval — Depth = embeddedness of AI in repeatable workflow behavior (aggregate integration signals only); the tool/surface repertoire construct is renamed Repertoire and lives under Breadth's coverage views. Canon lives in `docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md` (decision note included) and `docs/agent/CLAUDE_AI_VALUE_NORTH_STAR_PROMPT.md`; the data boundary schema/fixture/validator/tests are aligned. FluencyTracr core's V4 Depth Repertoire contract is intentionally untouched. Do not "correct" Depth back to repertoire.
 - AI Value Platform North Star: the Value Evidence Case contract slice is complete (TDD, contract before UI) — schema `value-evidence-case.schema.json`, seeded Customer Support fixture, engine validator/builder `shared/src/aiValueEngine/valueEvidenceCase.ts` with fail-closed evidence-ladder gating (missing/rejected outcome evidence holds value language; SUBMITTED stays directional pending human acceptance; SUPPORTED stays caveated and non-causal; STRONG fails closed pending a governed evidence design), CLI `validate_ai_value_evidence_case.mjs`, tests, and package scripts. Next prescribed work per `docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md`: backend object-type registration/persistence for `value_evidence_case` and client-facing Workspace presentation, or the retest-result object — choose from observed review gaps; no ROI proof, causality, person-level data, or customer-facing economic output.

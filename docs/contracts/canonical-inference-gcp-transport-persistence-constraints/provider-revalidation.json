@@ -1,0 +1,22 @@
+{
+  "authority_effect": "NONE",
+  "decision": "EXACT_PUBLIC_DOCUMENTATION_BYTES_BOUND_SEMANTIC_LIVE_INTERFACE_UNCLOSED",
+  "revalidation_basis": {
+    "audit_inventory_literal_pass_count": 89,
+    "audit_inventory_raw_file_sha256": "e13cf9889947115859d684f7377fd38caa6e5207969eda073f534bc94af87bbf",
+    "audit_inventory_registry_sha256": "3a984f6b7ffc704a89efc627529d1c250897df7a12da19e01f5c986ce90b49ef",
+    "audit_inventory_row_count": 89,
+    "claim_count": 30,
+    "claim_registry_sha256": "7715af566b775257571f47adc57521cce99e8fcfb8293acdbd75df8972e077ee",
+    "http_200_count": 53,
+    "live_configuration_state": "UNOBSERVED_BLOCKING",
+    "provider_source_evidence_sha256": "b86aefff90355bb5a0621bf84ead642c783badb3e35ac5eb20f1790728f05c8c",
+    "semantic_classifier_state": "UNCLOSED_BLOCKING",
+    "source_bundle_sha256": "cb7c440f18c7afe7e5f05ff455ffca1dd98cd3a284c6b741c7b3ab88b7a88750",
+    "source_count": 53,
+    "source_registry_sha256": "cc78841f9da1befeef8aefdf3fd8eb297e04a5e58dcf3efd85e01009e2f6dd99"
+  },
+  "revalidation_hash": "5e2a245f558439dc95547328ba6d87455d98e73abd9c12b703c870eb113ba6d7",
+  "runtime_authority": "HELD",
+  "schema_version": "GCP_SECTION_7_5A_PROVIDER_REVALIDATION_V1"
+}
