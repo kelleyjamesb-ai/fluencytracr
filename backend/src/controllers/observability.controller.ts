@@ -4,8 +4,6 @@
  */
 
 import type { WorkflowAggregateRepository } from "../repositories/workflow-aggregate.repository";
-import type { WorkflowPatternDistribution } from "../services/workflow-aggregate.service";
-import { toPrevalenceBand } from "../services/workflow-aggregate.service";
 
 export interface GetObservabilityControllerDeps {
   readonly workflowAggregateRepository: WorkflowAggregateRepository;
@@ -21,35 +19,13 @@ export type ObservabilityWorkflowPayload = {
   readonly workflow_id: string;
   readonly jbtd_id: string | null;
   readonly persona_id: string | null;
+  readonly privacy_decision: "HOLD";
   readonly classified_execution_count: number;
   readonly suppressed_execution_count: number;
   readonly pattern_distribution: ReadonlyArray<ObservabilityPatternRow>;
   /** Always categorical at this boundary regardless of stored aggregate mode. */
   readonly prevalence_mode: "CATEGORICAL_PREVALENCE";
 };
-
-function toExecutivePatternRows(
-  rows: ReadonlyArray<WorkflowPatternDistribution>,
-  classified_execution_count: number
-): ReadonlyArray<ObservabilityPatternRow> {
-  return rows.map((p) => {
-    let prevalence_band: "LOW" | "MODERATE" | "HIGH";
-    if (p.prevalence_band !== undefined) {
-      prevalence_band = p.prevalence_band;
-    } else if (p.share !== undefined) {
-      prevalence_band = toPrevalenceBand(p.share);
-    } else if (classified_execution_count > 0) {
-      prevalence_band = toPrevalenceBand(p.count / classified_execution_count);
-    } else {
-      prevalence_band = "LOW";
-    }
-    return {
-      pattern: p.pattern,
-      count: p.count,
-      prevalence_band
-    };
-  });
-}
 
 export async function handleGetObservability(
   orgId: string,
@@ -60,18 +36,8 @@ export async function handleGetObservability(
     return { status: 400, body: { error: "org_id_required" } };
   }
 
-  const workflowsRaw = await deps.workflowAggregateRepository.findByOrgId(trimmed);
-  const workflows: ObservabilityWorkflowPayload[] = workflowsRaw
-    .filter((w) => w.verdict === "SURFACE" || (w.jbtd_id === null && w.persona_id === null))
-    .map((w) => ({
-      workflow_id: w.workflow_id,
-      jbtd_id: w.jbtd_id,
-      persona_id: w.persona_id,
-      classified_execution_count: w.classified_execution_count,
-      suppressed_execution_count: w.suppressed_execution_count,
-      pattern_distribution: toExecutivePatternRows(w.pattern_distribution, w.classified_execution_count),
-      prevalence_mode: "CATEGORICAL_PREVALENCE"
-    }));
+  void deps;
+  const workflows: ObservabilityWorkflowPayload[] = [];
 
   return {
     status: 200,

@@ -20,9 +20,11 @@ it("suppresses rollups below minimum group size", () => {
   };
   store.enablementEvents.set(event.eventId, event);
   const rollups = runEnablementRollupsForEvents("org-1", [event]);
-  expect(rollups).toHaveLength(1);
-  expect(rollups[0].suppressed).toBe(true);
-  expect(rollups[0].percentEnabledByRole).toBeNull();
+  expect(rollups).toEqual([]);
+  const stored = Array.from(store.enablementRollups.values())[0];
+  expect(stored?.suppressed).toBe(true);
+  expect(stored?.totalEvents).toBe(0);
+  expect(stored?.percentEnabledByRole).toBeNull();
 });
 
 it("computes assessment delta and cadence when above threshold", () => {
@@ -48,6 +50,8 @@ it("computes assessment delta and cadence when above threshold", () => {
   ];
   events.forEach((event) => store.enablementEvents.set(event.eventId, event));
   const rollups = runEnablementRollupsForEvents("org-1", events);
-  expect(rollups[0].suppressed).toBe(false);
-  expect(rollups[0].assessmentDelta).toBe(1);
+  expect(rollups).toEqual([]);
+  const stored = Array.from(store.enablementRollups.values())[0];
+  expect(stored?.suppressed).toBe(false);
+  expect(stored?.assessmentDelta).toBe(1);
 });

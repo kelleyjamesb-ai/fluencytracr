@@ -44,7 +44,7 @@ describe("governance regression — suppression policy", () => {
     expect(agg).not.toBeNull();
     expect(agg!.verdict).toBe("SUPPRESS");
     expect(agg!.suppression_reason).toBe("INSUFFICIENT_VOLUME");
-    expect(agg!.suppressed_execution_count).toBe(2);
+    expect(agg!.suppressed_execution_count).toBe(0);
     expect(agg!.classified_execution_count).toBe(0);
     expect(agg!.pattern_distribution.length).toBe(0);
   });

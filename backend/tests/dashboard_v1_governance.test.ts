@@ -213,10 +213,10 @@ describe("dashboard v1 governance enforcement", () => {
     await server.close();
 
     const rowWithVerification = withVerificationPayload.workflows.find((row: any) => row.workflow_id === "wf-high-risk");
-    expect(rowWithVerification.visibility_state).toBe("VISIBLE");
+    expect(rowWithVerification.visibility_state).toBe("NOT_ENOUGH_DATA_YET");
   });
 
-  it("enforces suppression as NOT_SHOWN_SAFETY and cannot be overridden by additional evidence", async () => {
+  it("does not let storage-only behavioral membership alter workflow visibility", async () => {
     const server = await startServer();
     await postWorkflowVersion(server.url, "wf-suppressed", "ADMIN", { risk_class: "low" });
     for (let i = 1; i <= 6; i += 1) {
@@ -239,8 +239,7 @@ describe("dashboard v1 governance enforcement", () => {
     await server.close();
 
     const row = payload.workflows.find((workflow: any) => workflow.workflow_id === "wf-suppressed");
-    expect(row.visibility_state).toBe("NOT_SHOWN_SAFETY");
-    expect(row.working_style).toBeNull();
+    expect(row.visibility_state).toBe("NOT_ENOUGH_DATA_YET");
   });
 
   it("enforces role-based registry modification", async () => {

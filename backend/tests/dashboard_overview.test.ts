@@ -21,7 +21,7 @@ beforeEach(() => {
   store.orgs.set("org-1", { id: "org-1", name: "Org", minGroupSize: 10, createdAt: "now" });
 });
 
-it("returns 12 points for 12w range", async () => {
+it("does not expose held bucket membership for a 12w range", async () => {
   for (let i = 1; i <= 12; i += 1) {
     const bucket = `2024-01-${String(i).padStart(2, "0")}`;
     store.metrics.set(`org-1:org:${bucket}:weekly_active_users:`, {
@@ -67,7 +67,9 @@ it("returns 12 points for 12w range", async () => {
   const payload = await response.json();
   await server.close();
 
-  expect(payload.coverage.weekly_active_users).toHaveLength(12);
+  expect(payload.coverage.weekly_active_users).toEqual([]);
+  expect(payload.sessions_shape.bucket_start).toBeNull();
+  expect(payload.spread.bucket_start).toBeNull();
 });
 
 it("returns suppressed values as null", async () => {
@@ -97,10 +99,45 @@ it("returns suppressed values as null", async () => {
   const server = await startServer();
   const response = await fetch(
     `${server.url}/orgs/org-1/dashboard/overview?range=12w&vendor=all&groupType=team&group_key=team-1`,
+    { headers: { "x-role": "ADMIN" } }
+  );
+  const payload = await response.json();
+  await server.close();
+
+  expect(payload.coverage.weekly_active_users).toEqual([]);
+});
+
+it("rejects a team filter when aggregation authorization is org-only", async () => {
+  const server = await startServer();
+  const response = await fetch(
+    `${server.url}/orgs/org-1/dashboard/overview?aggregation=org&groupType=team&group_key=team-1`,
+    { headers: { "x-role": "EXEC_VIEWER" } }
+  );
+  await server.close();
+
+  expect(response.status).toBe(403);
+});
+
+it("holds a single legacy snapshot without server-owned privacy context", async () => {
+  store.metrics.set("org-1:org:2024-01-01:usage_frequency_band_regular_count:", {
+    orgId: "org-1",
+    group_key: "org",
+    group_type: "org",
+    vendor: "all",
+    bucket_start: "2024-01-01",
+    metric_name: "usage_frequency_band_regular_count",
+    metric_value: 20,
+    is_user_count: true,
+    suppressed: false
+  });
+
+  const server = await startServer();
+  const response = await fetch(
+    `${server.url}/orgs/org-1/dashboard/overview?range=12w&vendor=all&groupType=org`,
     { headers: { "x-role": "EXEC_VIEWER" } }
   );
   const payload = await response.json();
   await server.close();
 
-  expect(payload.coverage.weekly_active_users[0].value).toBeNull();
+  expect(payload.sessions_shape.frequency_bands.usage_frequency_band_regular_count).toBeNull();
 });

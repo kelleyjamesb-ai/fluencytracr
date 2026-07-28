@@ -644,3 +644,52 @@
 - Boundary: local implementation is ready for fresh human commit confirmation.
   Draft PR #451 still contains only activation state. No implementation commit,
   push, merge, deploy, live proof, or Slice C activation has occurred.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice C candidate)
+
+- Implemented fail-closed aggregate disclosure, complementary suppression,
+  value-independent legacy transcripts, bounded observability release, exact
+  value/content replay, contribution collision claims, and exact-slice
+  adjacent-window collision on `codex/mcii-slice-c-rollup-privacy`.
+- Initial exact CODE/BUG/ADVERSARIAL review returned HOLD. Adjacent-window,
+  arbitrary-projection, compatibility, readiness, API-schema, and durable-state
+  findings are remediated; exact re-review is running.
+- Current evidence includes backend `1004/1004`, Python `377 passed, 10
+  skipped`, shared/backend builds, governance, docs, agentic harness, strict
+  OpenSpec, Prisma, JSON, and diff checks. Final exact-tree rerun remains.
+- No commit, push, PR, live migration, deployment, or live proof.
+
+## 2026-07-28 (UTC) — Codex (MCII Slice C exact candidate)
+
+- Completed: Closed `mcii-rollup-privacy-differencing-slice-c` locally after
+  exact CODE/BUG/ADVERSARIAL review returned GO/GO/GO. The bounded
+  observability release is the only positive release path; covered legacy
+  aggregate sinks fail closed as storage-only or fixed HOLD.
+- Verified: full backend `1006/1006`; focused privacy/observability `28/28`;
+  shared/backend builds; V1 governance; docs sweep; agentic harness `15/15`;
+  strict OpenSpec; Prisma validation; aggregate-privacy JSON and OpenAPI YAML
+  parsing; and `git diff --check`. Repo Python remains `377 passed, 10
+  skipped` with no later Python changes.
+- Boundary: local lint is blocked by the existing TypeScript
+  7/`@typescript-eslint` incompatibility, and the unavailable Docker daemon
+  prevented live Postgres concurrency verification. No commit, push, PR,
+  migration apply, deployment, or live proof.
+- Next focus: obtain fresh human commit authorization, then commit and push
+  this exact reviewed candidate before creating any PR.
+
+## 2026-07-28 (UTC) — Codex (MCII Slice C clean-CI remediation)
+
+- Completed: Repaired PR #453's clean-run Node failure by explicitly
+  generating Prisma, removing generated-constructor coupling from the
+  aggregate privacy repository, resolving database clients inside fail-closed
+  guards, and preventing duplicate feature-branch push plus PR CI runs.
+- Verified: fresh `npm ci`; Prisma generation; shared/backend builds; focused
+  privacy/observability `35/35`; full backend `1007/1007` in 383.662 seconds;
+  governance; agentic harness `15/15`; strict OpenSpec; YAML/JSON/diff checks;
+  and exact CODE/BUG/ADVERSARIAL GO/GO/GO.
+- Boundary: local reviewed remediation only until commit/push. No merge,
+  migration apply, deployment, or live proof.
+
+- Remote proof: remediation commit `a6f2a39` produced one pull-request CI run
+  (`30329184071`); its Node job passed every step and exited in 5 minutes 5
+  seconds. PR #453 remains draft and unmerged.

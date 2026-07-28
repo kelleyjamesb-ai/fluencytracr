@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/aggregate_privacy_release_request.schema.json",
+  "title": "Aggregate Privacy Release Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidate", "projection"],
+  "properties": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "org_id",
+        "workflow_id",
+        "jbtd_id",
+        "persona_id",
+        "privacy_slot_id",
+        "content_fingerprint",
+        "atomic_lineage_fingerprint",
+        "public_projection_hash",
+        "temporal_grid_id",
+        "window_start",
+        "window_end",
+        "release_version",
+        "hierarchy_axis",
+        "source_mode",
+        "atomic_cell_ids"
+      ],
+      "properties": {
+        "org_id": { "$ref": "#/$defs/opaqueKey" },
+        "workflow_id": { "$ref": "#/$defs/opaqueKey" },
+        "jbtd_id": { "$ref": "#/$defs/opaqueKey" },
+        "persona_id": { "$ref": "#/$defs/opaqueKey" },
+        "privacy_slot_id": { "$ref": "#/$defs/opaqueKey" },
+        "content_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "atomic_lineage_fingerprint": { "$ref": "#/$defs/opaqueKey" },
+        "public_projection_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "temporal_grid_id": { "$ref": "#/$defs/opaqueKey" },
+        "window_start": {
+          "type": "string",
+          "format": "date"
+        },
+        "window_end": {
+          "type": "string",
+          "format": "date"
+        },
+        "release_version": { "type": "integer", "minimum": 1 },
+        "hierarchy_axis": { "$ref": "#/$defs/opaqueKey" },
+        "source_mode": { "$ref": "#/$defs/opaqueKey" },
+        "atomic_cell_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/opaqueKey" }
+        }
+      }
+    },
+    "projection": { "$ref": "#/$defs/observabilityProjection" }
+  },
+  "$defs": {
+    "opaqueKey": {
+      "type": "string",
+      "pattern": "^[a-z0-9:_-]{1,128}$"
+    },
+    "observabilityProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["org_id", "observation_window", "workflows"],
+      "properties": {
+        "org_id": { "type": "string", "minLength": 1 },
+        "observation_window": { "enum": ["60d", "90d"] },
+        "workflows": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "$ref": "#/$defs/releasedWorkflow" }
+        }
+      }
+    },
+    "releasedWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_id",
+        "jbtd_id",
+        "persona_id",
+        "executions_total",
+        "executions_disclosed",
+        "executions_suppressed",
+        "disclosure",
+        "privacy_decision",
+        "suppression_reasons",
+        "pattern_distribution",
+        "residual_patterns",
+        "reliability_factor",
+        "reliability_components",
+        "allowed_interpretation_hints"
+      ],
+      "properties": {
+        "workflow_id": { "$ref": "#/$defs/opaqueKey" },
+        "jbtd_id": { "$ref": "#/$defs/opaqueKey" },
+        "persona_id": { "$ref": "#/$defs/opaqueKey" },
+        "executions_total": { "type": "integer", "minimum": 0 },
+        "executions_disclosed": { "type": "integer", "minimum": 0 },
+        "executions_suppressed": { "type": "integer", "minimum": 0 },
+        "disclosure": { "const": "ALLOWED" },
+        "privacy_decision": { "const": "RELEASE" },
+        "suppression_reasons": {
+          "type": "array",
+          "maxItems": 0,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "pattern_distribution": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "Calibrated Fluency",
+                "Blind Efficiency",
+                "Recovery Maturity",
+                "Friction Loop",
+                "Undertrust Avoidance"
+              ],
+              "properties": {
+                "Calibrated Fluency": { "enum": ["LOW", "MODERATE", "HIGH"] },
+                "Blind Efficiency": { "enum": ["LOW", "MODERATE", "HIGH"] },
+                "Recovery Maturity": { "enum": ["LOW", "MODERATE", "HIGH"] },
+                "Friction Loop": { "enum": ["LOW", "MODERATE", "HIGH"] },
+                "Undertrust Avoidance": { "enum": ["LOW", "MODERATE", "HIGH"] }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "residual_patterns": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ghost_use"],
+          "properties": {
+            "ghost_use": { "enum": ["PRESENT", "ABSENT", "SUPPRESSED"] }
+          }
+        },
+        "reliability_factor": {
+          "anyOf": [
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "reliability_components": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "abandonment_rate",
+                "friction_loop_rate",
+                "recovery_success_rate",
+                "verification_presence_rate"
+              ],
+              "properties": {
+                "abandonment_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+                "friction_loop_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+                "recovery_success_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+                "verification_presence_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "allowed_interpretation_hints": {
+          "type": "array",
+          "maxItems": 0,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

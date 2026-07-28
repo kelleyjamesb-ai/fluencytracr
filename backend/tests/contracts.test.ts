@@ -355,7 +355,7 @@ it("quarantines connector events with unknown event types", async () => {
 
   expect(response.status).toBe(202);
   expect(body.status).toBe("quarantined");
-  expect(body.quarantined_count).toBe(1);
+  expect(body.quarantined_count).toBe(0);
   expect(body.unknown_event_types).toEqual(["chat.unknown"]);
 
   const quarantines = Array.from(store.connectorEventQuarantine.values());

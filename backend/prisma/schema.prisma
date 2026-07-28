@@ -897,3 +897,73 @@ model CustomerDataModelSnapshot {
   @@index([orgId, aggregateSourceSystem, aggregateExportReviewState])
   @@map("ai_value_customer_data_model_snapshots")
 }
+
+model AggregatePrivacyReleaseJournal {
+  id                       String   @id @default(uuid()) @db.Uuid
+  orgId                    String   @map("org_id")
+  workflowId               String   @map("workflow_id")
+  jbtdId                   String   @map("jbtd_id")
+  personaId                String   @map("persona_id")
+  privacySlotId            String   @map("privacy_slot_id")
+  privacyDomainFingerprint String   @map("privacy_domain_fingerprint")
+  contentFingerprint       String   @map("content_fingerprint")
+  atomicLineageFingerprint String   @map("atomic_lineage_fingerprint")
+  publicProjectionHash     String   @map("public_projection_hash")
+  temporalGridId           String   @map("temporal_grid_id")
+  windowId                 String   @map("window_id")
+  releaseVersion           Int      @map("release_version")
+  canonicalContributionFingerprint String @map("canonical_contribution_fingerprint")
+  decision                 String
+  projectionJson           Json     @map("projection_json")
+  createdAt                DateTime @default(now()) @map("created_at")
+
+  @@unique([orgId, privacySlotId], name: "aggregate_privacy_release_slot_key")
+  @@unique([orgId, atomicLineageFingerprint], name: "aggregate_privacy_atomic_lineage_key")
+  @@unique([orgId, privacyDomainFingerprint], name: "aggregate_privacy_domain_key")
+  @@map("aggregate_privacy_release_journal")
+}
+
+model AggregatePrivacyManifest {
+  id                       String   @id @default(uuid()) @db.Uuid
+  orgId                    String   @map("org_id")
+  workflowId               String   @map("workflow_id")
+  jbtdId                   String   @map("jbtd_id")
+  personaId                String   @map("persona_id")
+  privacySlotId            String   @map("privacy_slot_id")
+  contentFingerprint       String   @map("content_fingerprint")
+  atomicLineageFingerprint String   @map("atomic_lineage_fingerprint")
+  publicProjectionHash     String   @map("public_projection_hash")
+  temporalGridId           String   @map("temporal_grid_id")
+  windowId                 String   @map("window_id")
+  releaseVersion           Int      @map("release_version")
+  hierarchyAxis            String   @map("hierarchy_axis")
+  sourceMode               String   @map("source_mode")
+  atomicCellIds            Json     @map("atomic_cell_ids")
+  completePartition        Boolean  @map("complete_partition")
+  canonicalContributions   Boolean  @map("canonical_contributions")
+  canonicalContributionFingerprint String @map("canonical_contribution_fingerprint")
+  canonicalContributionCount Int @map("canonical_contribution_count")
+  canonicalContributionIds Json @map("canonical_contribution_ids")
+  hasSuppressedChild       Boolean  @map("has_suppressed_child")
+  hasAmbiguousLineage      Boolean  @map("has_ambiguous_lineage")
+  hasOverlappingEquation   Boolean  @map("has_overlapping_equation")
+  isMultiWindow            Boolean  @map("is_multi_window")
+  verified                 Boolean
+  createdAt                DateTime @default(now()) @map("created_at")
+
+  @@unique([orgId, privacySlotId], name: "aggregate_privacy_manifest_slot_key")
+  @@unique([orgId, atomicLineageFingerprint], name: "aggregate_privacy_manifest_lineage_key")
+  @@map("aggregate_privacy_manifests")
+}
+
+model AggregatePrivacyContributionClaim {
+  id                    String   @id @default(uuid()) @db.Uuid
+  orgId                 String   @map("org_id")
+  contributionTokenHash String   @map("contribution_token_hash")
+  privacySlotId         String   @map("privacy_slot_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@unique([orgId, contributionTokenHash], name: "aggregate_privacy_contribution_claim_key")
+  @@index([orgId, privacySlotId])
+  @@map("aggregate_privacy_contribution_claims")
+}

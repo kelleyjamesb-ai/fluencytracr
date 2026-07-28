@@ -537,6 +537,7 @@ export type FluencySnapshotRecord = {
 export type BehavioralSignalRecord = ConnectorSignalAggregate & {
   originalCount?: number;  // Store original count before suppression for rollups
   includesRollup?: boolean;  // Indicates this record includes rolled-up small teams
+  privacyRollupAxis?: "team" | "role";
 };
 
 export type FunctionRecord = {
@@ -932,7 +933,7 @@ export const upsertEnablement = (record: TrainingEventRecord): { inserted: boole
 };
 
 export const upsertBehavioralSignal = (record: BehavioralSignalRecord): { inserted: boolean } => {
-  const key = `${record.org_id}:${record.group_id}:${record.bucket_start}:${record.signal_name}:${record.tool_class ?? ""}`;
+  const key = `${record.org_id}:${record.group_id}:${record.bucket_start}:${record.signal_name}:${record.tool_class ?? ""}:${record.privacyRollupAxis ?? ""}`;
   const existing = store.behavioralSignals.get(key);
   store.behavioralSignals.set(key, record);
   return { inserted: !existing };

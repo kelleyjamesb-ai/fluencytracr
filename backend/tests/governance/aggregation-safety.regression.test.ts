@@ -15,7 +15,7 @@ import {
 import type { CanonicalEvent } from "../../src/domain/canonical-event.schema";
 
 describe("governance regression — aggregation safety", () => {
-  it("observability exposes per-workflow rows only; no cross-workflow comparison fields", async () => {
+  it("observability holds storage-only workflow rows and exposes no comparison fields", async () => {
     const { classificationRepository, workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
     for (let i = 0; i < 5; i += 1) {
       const executionA = `gov-wf-a-${i}`;
@@ -48,15 +48,13 @@ describe("governance regression — aggregation safety", () => {
     expectGovernanceSafeObservabilityBody(res.body);
 
     const body = res.body as { workflows: ReadonlyArray<{ workflow_id: string }> };
-    expect(body.workflows.length).toBe(2);
-    const ids = body.workflows.map((w) => w.workflow_id).sort();
-    expect(ids).toEqual([fixtureIds.workflowA, fixtureIds.workflowB].sort());
+    expect(body.workflows).toEqual([]);
 
     const raw = JSON.stringify(res.body).toLowerCase();
     expect(raw).not.toMatch(/cross_workflow|workflow_comparison|relative_performance|delta_vs/);
   });
 
-  it("default prevalence mode from pipeline refresh remains categorical (executive-safe default)", async () => {
+  it("pipeline refresh cannot publish without a server-owned privacy manifest", async () => {
     const { classificationRepository, workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
     for (let i = 0; i < 5; i += 1) {
       const executionId = `gov-prev-default-${i}`;
@@ -71,11 +69,10 @@ describe("governance regression — aggregation safety", () => {
       );
     }
     const res = await handleGetObservability(fixtureIds.org, observabilityDeps);
-    const w = (res.body as { workflows: ReadonlyArray<{ prevalence_mode: string }> }).workflows[0]!;
-    expect(w.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
+    expect((res.body as { workflows: ReadonlyArray<unknown> }).workflows).toEqual([]);
   });
 
-  it("numeric share stored in aggregate is converted at controller boundary — categorical mode and no share in JSON", async () => {
+  it("numeric share stored in an aggregate remains storage-only at the controller boundary", async () => {
     const { workflowAggregateRepository, observabilityDeps } = createE2eInMemoryStack();
     await workflowAggregateRepository.upsertAggregate(
       {
@@ -100,10 +97,7 @@ describe("governance regression — aggregation safety", () => {
         pattern_distribution: ReadonlyArray<{ prevalence_band?: string; share?: number }>;
       }>;
     };
-    expect(body.workflows[0]!.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
-    const row = body.workflows[0]!.pattern_distribution[0]!;
-    expect(row.prevalence_band).toBe("HIGH");
-    expect(row).not.toHaveProperty("share");
+    expect(body.workflows).toEqual([]);
     const raw = JSON.stringify(res.body).toLowerCase();
     expect(raw).not.toMatch(/\brank\b|\btrend\b|diagnostic/);
     expect(raw).not.toMatch(/"share"/);

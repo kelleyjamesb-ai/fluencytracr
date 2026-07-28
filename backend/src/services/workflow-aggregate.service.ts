@@ -26,6 +26,7 @@ export interface ExecutionClassificationRecord {
   readonly jbtd_id?: string | null;
   readonly persona_id?: string | null;
   readonly execution_id: string;
+  readonly canonical_contribution_token?: string | null;
   readonly status: "ALLOWED" | "SUPPRESSED";
   readonly pattern?: BehaviorPattern;
   readonly suppression_reason?: SuppressionReason;
@@ -132,7 +133,17 @@ export function aggregateWorkflowClassifications(
   if (records.some((r) => (r.jbtd_id ?? null) !== jbtd_id || (r.persona_id ?? null) !== persona_id)) {
     return { success: false, failed_reason: "MIXED_SLICE" };
   }
-  if (records.length < MIN_SLICE_COHORT_SIZE) {
+  const canonicalContributionTokens = records.map(
+    (record) => record.canonical_contribution_token?.trim() ?? ""
+  );
+  const uniqueContributionCount = new Set(canonicalContributionTokens).size;
+  if (
+    jbtd_id === null ||
+    persona_id === null ||
+    canonicalContributionTokens.some((token) => token.length === 0) ||
+    uniqueContributionCount < MIN_SLICE_COHORT_SIZE ||
+    uniqueContributionCount !== records.length
+  ) {
     return {
       success: true,
       result: {
@@ -140,7 +151,7 @@ export function aggregateWorkflowClassifications(
         jbtd_id,
         persona_id,
         classified_execution_count: 0,
-        suppressed_execution_count: records.length,
+        suppressed_execution_count: 0,
         verdict: "SUPPRESS",
         suppression_reason: "INSUFFICIENT_VOLUME",
         pattern_distribution: Object.freeze([]),
@@ -154,6 +165,8 @@ export function aggregateWorkflowClassifications(
     suppressed_execution_count === 0 && classified_execution_count === records.length
       ? "SURFACE"
       : "SUPPRESS";
+  const publicClassifiedExecutionCount = verdict === "SURFACE" ? classified_execution_count : 0;
+  const publicSuppressedExecutionCount = 0;
   const pattern_distribution =
     verdict === "SURFACE" ? computePatternDistribution(records, prevalence_mode) : Object.freeze([]);
   const firstSuppressionReason =
@@ -167,8 +180,8 @@ export function aggregateWorkflowClassifications(
       workflow_id,
       jbtd_id,
       persona_id,
-      classified_execution_count,
-      suppressed_execution_count,
+      classified_execution_count: publicClassifiedExecutionCount,
+      suppressed_execution_count: publicSuppressedExecutionCount,
       verdict,
       suppression_reason: firstSuppressionReason,
       pattern_distribution,

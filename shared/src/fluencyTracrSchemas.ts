@@ -484,6 +484,7 @@ export const ObservabilityWorkflowRowSchema = z
     executions_disclosed: z.number().int().nonnegative(),
     executions_suppressed: z.number().int().nonnegative(),
     disclosure: z.enum(["ALLOWED", "SUPPRESSED"]),
+    privacy_decision: z.enum(["RELEASE", "HOLD"]).default("HOLD"),
     suppression_reasons: z.array(z.string().min(1)),
     pattern_distribution: ObservabilityPatternDistributionSchema.nullable(),
     residual_patterns: ObservabilityResidualPatternsSchema,
@@ -493,7 +494,47 @@ export const ObservabilityWorkflowRowSchema = z
   })
   .strict()
   .superRefine((row, context) => {
-    if (row.disclosure === "ALLOWED") {
+    if (row.privacy_decision === "HOLD") {
+      if (
+        row.executions_total !== 0 ||
+        row.executions_disclosed !== 0 ||
+        row.executions_suppressed !== 0
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "execution counts must be zero when privacy_decision is HOLD",
+          path: ["executions_total"]
+        });
+      }
+      if (row.pattern_distribution !== null || row.allowed_interpretation_hints.length !== 0) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "derived aggregate fields must be empty when privacy_decision is HOLD",
+          path: ["pattern_distribution"]
+        });
+      }
+      if (row.residual_patterns.ghost_use !== "SUPPRESSED") {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "residual patterns must be suppressed when privacy_decision is HOLD",
+          path: ["residual_patterns", "ghost_use"]
+        });
+      }
+      if (row.reliability_factor !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_factor must be null when privacy_decision is HOLD",
+          path: ["reliability_factor"]
+        });
+      }
+      if (row.reliability_components !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "reliability_components must be null when privacy_decision is HOLD",
+          path: ["reliability_components"]
+        });
+      }
+    } else if (row.disclosure === "ALLOWED") {
       if (row.reliability_factor === null) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
@@ -510,6 +551,20 @@ export const ObservabilityWorkflowRowSchema = z
       }
     }
     if (row.disclosure === "SUPPRESSED") {
+      if (
+        row.executions_total !== 0 ||
+        row.executions_disclosed !== 0 ||
+        row.executions_suppressed !== 0 ||
+        row.pattern_distribution !== null ||
+        row.allowed_interpretation_hints.length !== 0 ||
+        row.residual_patterns.ghost_use !== "SUPPRESSED"
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "suppressed product rows must not carry aggregate values",
+          path: ["executions_total"]
+        });
+      }
       if (row.reliability_factor !== null) {
         context.addIssue({
           code: z.ZodIssueCode.custom,

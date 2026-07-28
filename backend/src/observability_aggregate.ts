@@ -14,6 +14,7 @@ import {
   computeReliabilityFactor,
   reliabilityComponentsFromCounts
 } from "./value_realization/reliability_factor";
+import { valueIndependentCounts } from "./aggregate_disclosure_policy";
 
 export const PATTERN_ORDER: FluencyPatternName[] = [
   "Calibrated Fluency",
@@ -205,7 +206,7 @@ export const buildObservabilityRollup = (
     let reliability_factor: number | null = computeReliabilityFactor(reliability_components);
     let allowed_interpretation_hints: string[] = [];
 
-    if (executions_disclosed < minDisclosed) {
+    if (jbtdId === null || personaId === null || executions_disclosed < minDisclosed) {
       disclosure = "SUPPRESSED";
       suppression_reasons.push("insufficient_disclosed_executions");
       pattern_distribution = null;
@@ -219,13 +220,19 @@ export const buildObservabilityRollup = (
       }
     }
 
+    const publicCounts = valueIndependentCounts(disclosure, {
+      total: executions_total,
+      disclosed: executions_disclosed,
+      suppressed: executions_suppressed
+    });
+
     return {
       workflow_id: workflowId,
       jbtd_id: jbtdId,
       persona_id: personaId,
-      executions_total,
-      executions_disclosed,
-      executions_suppressed,
+      executions_total: publicCounts.total,
+      executions_disclosed: publicCounts.disclosed,
+      executions_suppressed: publicCounts.suppressed,
       disclosure,
       suppression_reasons,
       pattern_distribution,

@@ -17,7 +17,10 @@ const REQUIRED_TABLE_ROWS = [
   { tablename: "claim_readiness_snapshots" },
   { tablename: "executive_readout_snapshots" },
   { tablename: "measurement_cell_snapshots" },
-  { tablename: "ai_value_customer_data_model_snapshots" }
+  { tablename: "ai_value_customer_data_model_snapshots" },
+  { tablename: "aggregate_privacy_manifests" },
+  { tablename: "aggregate_privacy_release_journal" },
+  { tablename: "aggregate_privacy_contribution_claims" }
 ];
 
 const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
@@ -190,7 +193,10 @@ describe("health postgres disclosure", () => {
         "claim_readiness_snapshots",
         "executive_readout_snapshots",
         "measurement_cell_snapshots",
-        "ai_value_customer_data_model_snapshots"
+        "ai_value_customer_data_model_snapshots",
+        "aggregate_privacy_manifests",
+        "aggregate_privacy_release_journal",
+        "aggregate_privacy_contribution_claims"
       ])
     );
   });

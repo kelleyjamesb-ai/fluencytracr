@@ -24,7 +24,7 @@ beforeEach(() => {
   store.roles.set("role-1", { id: "role-1", orgId: "org-1", name: "Role" });
 });
 
-it("imports enablement events from JSON and returns structured errors", async () => {
+it("imports enablement events from JSON without exposing storage membership", async () => {
   const server = await startServer();
   const response = await fetch(`${server.url}/enablement/import`, {
     method: "POST",
@@ -53,9 +53,10 @@ it("imports enablement events from JSON and returns structured errors", async ()
   const payload = await response.json();
   await server.close();
 
-  expect(payload.imported).toBe(1);
-  expect(payload.rejected).toBe(1);
-  expect(payload.errors[0].index).toBe(2);
+  expect(payload.imported).toBe(0);
+  expect(payload.rejected).toBe(0);
+  expect(payload.errors).toEqual([]);
+  expect(payload.privacy_decision).toBe("HOLD");
   expect(store.enablementEvents.size).toBe(1);
 });
 
@@ -71,7 +72,7 @@ it("imports enablement events from CSV", async () => {
   const payload = await response.json();
   await server.close();
 
-  expect(payload.imported).toBe(1);
+  expect(payload.imported).toBe(0);
   expect(payload.rejected).toBe(0);
   expect(store.enablementEvents.size).toBe(1);
 });
@@ -107,8 +108,8 @@ it("rejects duplicate event ids", async () => {
   const payload = await response.json();
   await server.close();
 
-  expect(payload.imported).toBe(1);
-  expect(payload.rejected).toBe(1);
+  expect(payload.imported).toBe(0);
+  expect(payload.rejected).toBe(0);
 });
 
 it("rejects cross-org rows when auth org scope is set", async () => {

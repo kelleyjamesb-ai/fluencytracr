@@ -43,7 +43,7 @@ describe("/api/patterns", () => {
     store.reset();
   });
 
-  it("returns stored inference records without raw event processing", async () => {
+  it("holds legacy stored inference records without exposing membership", async () => {
     store.patternInferenceRecords.push(buildInferenceRecord("workflow-1"));
     store.patternInferenceRecords.push(buildInferenceRecord("workflow-2"));
     store.patternInferenceRecords.push(buildInferenceRecord("workflow-3"));
@@ -58,7 +58,9 @@ describe("/api/patterns", () => {
     await server.close();
 
     expect(response.status).toBe(200);
-    expect(payload.patterns.length).toBeGreaterThan(0);
+    expect(payload.patterns).toEqual([]);
+    expect(payload.cohort_size).toBe(0);
+    expect(payload.privacy_decision).toBe("HOLD");
   });
 
   it("rejects non-org scopes", async () => {
