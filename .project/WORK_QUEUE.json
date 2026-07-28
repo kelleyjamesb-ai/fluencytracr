@@ -385,9 +385,9 @@
   "id": "mcii-cohort-proof-shared-reservation-slice-c0",
   "title": "MCII Slice C.0 — trusted cohort-equality proof and shared privacy reservation",
   "bound": "Aggregate privacy proof infrastructure only; acceptance: a trusted customer-boundary producer emits a non-member-level proof that the exact baseline and comparison windows use the same population without transmitting or persisting member tokens; the proof binds exact organization, workflow_id, jbtd_id, persona_id, metric, source, unit, windows, cohort counts, producer policy, provenance, and freshness; one database-unique reservation authority is used atomically by both Slice C and C.1 so either release order and concurrent first writers permit at most one privacy domain; missing, stale, conflicting, aliased, cross-slice, replayed, or unavailable proof fails closed; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude C.1 comparison release, Slice D claim semantics, migration apply, deployment, publication, live proof, individual fields, member tokens, scoring, ROI, causality, productivity, prediction, ranking, new canonical events, new suppression reasons, or tunable thresholds",
-  "status": "pending",
+  "status": "in_progress",
   "risk": "high",
-  "last_note": "Human-authorized 2026-07-28 before C.1. Acceptance also requires org-bound producer authentication and proof integrity; unknown, expired, or revoked authority HOLDs; exact Slice B receipt and baseline/comparison evidence content hashes are bound; Slice C/C.1 derive one canonical reservation key from org/workflow/JBTD/persona only; reservations are create-once immutable retained tombstones with exact replay only. No implementation or migration apply yet."
+      "last_note": "Final candidate passes focused 57/57, full backend 1037/1037, harness 377/10 skipped, and exact CODE/BUG/ADVERSARIAL GO. PostgreSQL execution remains CI-only; commit/push is authorized and PR remains separate. C.1/D blocked."
     }
   ]
 }

@@ -1,36 +1,50 @@
 import type { OutcomeEvidenceCreate, OutcomeEvidenceQuery } from "@fluencytracr/shared";
-import type { Prisma } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { getPrisma } from "../db";
 import { store, type OutcomeEvidenceStoredRecord } from "../store";
 
 const usePrisma = () => Boolean(process.env.DATABASE_URL);
 
-export async function persistOutcomeEvidence(
-  orgId: string,
-  payload: OutcomeEvidenceCreate,
-  evidenceId: string,
-  acceptedAt: string
-): Promise<OutcomeEvidenceStoredRecord> {
-  const record: OutcomeEvidenceStoredRecord = {
-    ...payload,
-    org_id: orgId,
-    jbtd_id: payload.jbtd_id ?? null,
-    persona_id: payload.persona_id ?? null,
-    aggregate_kind: payload.aggregate_kind ?? null,
-    evidence_id: evidenceId,
-    ingested_at: acceptedAt
-  };
+type OutcomeEvidenceDbClient = PrismaClient | Prisma.TransactionClient;
 
-  if (!usePrisma()) {
-    store.outcomeEvidence.set(evidenceId, record);
-    return record;
-  }
+export interface OutcomeEvidenceFamily {
+  orgId: string;
+  workflowId: string;
+  jbtdId: string | null;
+  personaId: string | null;
+}
 
-  await getPrisma().v1OutcomeEvidence.create({
+const outcomeEvidenceFamilyLockKey = (
+  family: OutcomeEvidenceFamily
+): string =>
+  JSON.stringify([
+    "FT_OUTCOME_EVIDENCE_FAMILY_LOCK_V1",
+    family.orgId,
+    family.workflowId,
+    family.jbtdId,
+    family.personaId
+  ]);
+
+export const acquireOutcomeEvidenceFamilyLock = async (
+  client: Prisma.TransactionClient,
+  family: OutcomeEvidenceFamily
+): Promise<void> => {
+  await client.$queryRaw(
+    Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${outcomeEvidenceFamilyLockKey(
+      family
+    )}, 0))`
+  );
+};
+
+const createOutcomeEvidence = async (
+  client: OutcomeEvidenceDbClient,
+  record: OutcomeEvidenceStoredRecord
+): Promise<void> => {
+  await client.v1OutcomeEvidence.create({
     data: {
-      evidenceId,
-      orgId,
+      evidenceId: record.evidence_id,
+      orgId: record.org_id,
       workflowId: record.workflow_id,
       outcomeMetric: record.outcome_metric,
       outcomeUnit: record.outcome_unit,
@@ -42,21 +56,65 @@ export async function persistOutcomeEvidence(
       jbtdId: record.jbtd_id,
       personaId: record.persona_id,
       aggregateKind: record.aggregate_kind,
-      sourceAttestation: record.source_attestation as Prisma.InputJsonValue | undefined,
-      ingestedAt: new Date(acceptedAt)
+      sourceAttestation:
+        record.source_attestation as Prisma.InputJsonValue | undefined,
+      ingestedAt: new Date(record.ingested_at)
     }
   });
+};
+
+export async function persistOutcomeEvidence(
+  orgId: string,
+  payload: OutcomeEvidenceCreate,
+  evidenceId: string,
+  acceptedAt: string,
+  client?: Prisma.TransactionClient
+): Promise<OutcomeEvidenceStoredRecord> {
+  const record: OutcomeEvidenceStoredRecord = {
+    ...payload,
+    org_id: orgId,
+    jbtd_id: payload.jbtd_id ?? null,
+    persona_id: payload.persona_id ?? null,
+    aggregate_kind: payload.aggregate_kind ?? null,
+    evidence_id: evidenceId,
+    ingested_at: acceptedAt
+  };
+
+  if (!usePrisma() && !client) {
+    store.outcomeEvidence.set(evidenceId, record);
+    return record;
+  }
+
+  const family = {
+    orgId,
+    workflowId: record.workflow_id,
+    jbtdId: record.jbtd_id ?? null,
+    personaId: record.persona_id ?? null
+  };
+  if (client) {
+    await acquireOutcomeEvidenceFamilyLock(client, family);
+    await createOutcomeEvidence(client, record);
+  } else {
+    await getPrisma().$transaction(
+      async (transaction) => {
+        await acquireOutcomeEvidenceFamilyLock(transaction, family);
+        await createOutcomeEvidence(transaction, record);
+      },
+      { isolationLevel: "Serializable" }
+    );
+  }
   return record;
 }
 
 export async function listOutcomeEvidence(
   orgId: string,
-  query: OutcomeEvidenceQuery
+  query: OutcomeEvidenceQuery,
+  client?: OutcomeEvidenceDbClient
 ): Promise<OutcomeEvidenceStoredRecord[]> {
   const periodStart = Date.parse(query.period_start);
   const periodEnd = Date.parse(query.period_end);
 
-  if (!usePrisma()) {
+  if (!usePrisma() && !client) {
     return Array.from(store.outcomeEvidence.values())
       .filter((record) => record.org_id === orgId)
       .filter((record) => record.workflow_id === query.workflow_id)
@@ -67,7 +125,7 @@ export async function listOutcomeEvidence(
       .sort((a, b) => a.period_start.localeCompare(b.period_start) || a.evidence_id.localeCompare(b.evidence_id));
   }
 
-  const rows = await getPrisma().v1OutcomeEvidence.findMany({
+  const rows = await (client ?? getPrisma()).v1OutcomeEvidence.findMany({
     where: {
       orgId,
       workflowId: query.workflow_id,

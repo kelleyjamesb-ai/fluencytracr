@@ -67,7 +67,9 @@ values and derived trends remain held.
 
 The local schema adds `aggregate_privacy_manifests`,
 `aggregate_privacy_release_journal`, and
-`aggregate_privacy_contribution_claims`. The manifest is the server-owned
+`aggregate_privacy_contribution_claims`. C.0 additionally adds the shared
+`aggregate_privacy_reservations` tombstone used by both Slice C and the
+two-window cohort-proof authority. The manifest is the server-owned
 completeness authority; callers cannot supply or override it. The release
 transaction loads that manifest, evaluates the complete privacy domain and
 existing organization-wide slot, lineage, and opaque contribution claims, then
@@ -89,6 +91,15 @@ unique per organization. As a result, an adjacent or alternate window cannot
 create a second release by changing those labels or using a disjoint
 contribution set. Slice C permits exact replay of one fixed release, not a
 numeric time series.
+
+The shared reservation key uses the C.0 byte codec over only the exact
+organization/workflow/JBTD/persona tuple. New Slice C releases reserve it in
+the same serializable transaction as the release journal. An exact
+pre-migration Slice C replay may create only its own missing
+`SLICE_C_FIXED_WINDOW` reservation. A C.0 proof always holds when an existing
+Slice C journal already owns the domain. Database triggers reject update and
+delete of the manifest, release journal, contribution claims, and shared
+reservation.
 
 The ADMIN-only `POST /orgs/:orgId/aggregate-privacy/releases` path is the
 production integration point. It accepts a bounded candidate and exactly one

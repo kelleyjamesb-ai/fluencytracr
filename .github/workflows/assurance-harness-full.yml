@@ -103,9 +103,21 @@ jobs:
         if: steps.lmsys-credentials.outputs.available == 'true'
         run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
 
+      - name: Install C.0 constraints and guards on baselined schema
+        if: steps.lmsys-credentials.outputs.available == 'true'
+        run: npx prisma db execute --file backend/prisma/post_push/20260728120000_c0_constraints_and_guards.sql --schema backend/prisma/schema.prisma
+
       - name: Generate Prisma client
         if: steps.lmsys-credentials.outputs.available == 'true'
         run: npx prisma generate --schema backend/prisma/schema.prisma
+
+      - name: Build backend for C.0 application-path verification
+        if: steps.lmsys-credentials.outputs.available == 'true'
+        run: npm run build --workspace backend
+
+      - name: Verify C.0 PostgreSQL tombstones and races
+        if: steps.lmsys-credentials.outputs.available == 'true'
+        run: node scripts/verify_cohort_proof_postgres.mjs
 
       - name: Download LMSYS-Chat-1M
         if: steps.lmsys-credentials.outputs.available == 'true'

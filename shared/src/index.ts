@@ -17,6 +17,7 @@ export * from "./realSourceReadinessSchemas";
 export * from "./aggregateEvidenceImportSchemas";
 export * from "./outcomeEvidenceSchemas";
 export * from "./outcomeEvidenceAdmission";
+export * from "./cohortProof";
 export * from "./nielsenSourceEvidenceTrialSchemas";
 export * from "./gleanClaimRegistrySchemas";
 export * from "./gleanAssumptionLedgerSchemas";

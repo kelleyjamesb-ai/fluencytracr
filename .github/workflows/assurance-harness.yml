@@ -82,8 +82,17 @@ jobs:
       - name: Run Prisma migrations
         run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
 
+      - name: Install C.0 constraints and guards on baselined schema
+        run: npx prisma db execute --file backend/prisma/post_push/20260728120000_c0_constraints_and_guards.sql --schema backend/prisma/schema.prisma
+
       - name: Generate Prisma client
         run: npx prisma generate --schema backend/prisma/schema.prisma
+
+      - name: Build backend for C.0 application-path verification
+        run: npm run build --workspace backend
+
+      - name: Verify C.0 PostgreSQL tombstones and races
+        run: node scripts/verify_cohort_proof_postgres.mjs
 
       - name: Run seed self-test
         run: npm run test:seed
