@@ -364,6 +364,14 @@
       "status": "done",
       "risk": "high",
       "last_note": "Done 2026-07-27 remediation: commit a6f2a39 fixed clean CI with explicit Prisma generation, lazy fail-closed client resolution, constructor-independent P2002 handling, and main-only push CI. Fresh local backend passed 1007/1007; CODE/BUG/ADVERSARIAL GO. PR #453 run 30329184071 then passed one pull-request Node job in 5m05s, proving the duplicate CI job and timeout failure are fixed. No merge, migration, deploy, or live proof."
+    },
+    {
+  "id": "mcii-aggregate-evidence-claim-semantics-slice-d",
+  "title": "MCII Slice D — aggregate evidence approval, claim semantics, and manifest hygiene",
+  "bound": "Aggregate evidence interpretation and claim-authorization paths only; acceptance: one authoritative policy keeps import or schema approval, accepted review, privacy release, readiness, and model eligibility separate from claim authorization; bounded templates permit only descriptive baseline, comparison, absolute delta, mechanically valid percent change, and declared-direction language labeled OBSERVED_NON_ATTRIBUTABLE; immutable manifests bind the admitted exact-slice input, policy state, template version, and produced artifact; missing, mutable, ambiguous, stale, or cross-slice references fail closed; unsupported causality, attribution, ROI, productivity, prediction, and customer-facing claims remain blocked; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates as required; exclude Slice E canonical identity binding, Slice F claim trace, deployment, publication, live GCP, runtime qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, or customer-facing economic output",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authorized 2026-07-27: queue Slice D after merged PR #453. Pending until this queue-only change merges; no Slice D implementation, deployment, publication, or live proof is authorized yet."
     }
   ]
 }
