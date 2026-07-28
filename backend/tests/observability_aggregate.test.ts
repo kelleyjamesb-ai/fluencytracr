@@ -25,6 +25,8 @@ const dispositionPair = (
       risk_class: "low",
       org_unit: "org:org-1",
       workflow_id: workflowId,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       disposition: "accepted",
       edit_distance_bucket: "none",
       verification_present: verification,
@@ -41,6 +43,8 @@ const dispositionPair = (
       risk_class: "low",
       org_unit: "org:org-1",
       workflow_id: workflowId,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       disposition: "accepted",
       edit_distance_bucket: "none",
       verification_present: false,
@@ -66,6 +70,8 @@ const workActivityOnlyPair = (
       risk_class: "medium",
       org_unit: "org:org-1",
       workflow_id: workflowId,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       stage_from: "not_started",
       stage_to: "started",
       ai_assisted: false,
@@ -83,6 +89,8 @@ const workActivityOnlyPair = (
       risk_class: "medium",
       org_unit: "org:org-1",
       workflow_id: workflowId,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       stage_from: "started",
       stage_to: "human_work_observed",
       ai_assisted: false,
@@ -135,6 +143,9 @@ describe("buildObservabilityRollup", () => {
     const wfb = rows.find((r) => r.workflow_id === "wf-b");
     expect(wfb?.disclosure).toBe("SUPPRESSED");
     expect(wfb?.suppression_reasons).toContain("insufficient_disclosed_executions");
+    expect(wfb?.executions_total).toBe(0);
+    expect(wfb?.executions_disclosed).toBe(0);
+    expect(wfb?.executions_suppressed).toBe(0);
     expect(wfb?.pattern_distribution).toBeNull();
     expect(wfb?.reliability_factor).toBeNull();
     expect(wfb?.reliability_components).toBeNull();
@@ -181,7 +192,35 @@ describe("buildObservabilityRollup", () => {
       jbtd_id: "manager-review",
       persona_id: "exec",
       disclosure: "SUPPRESSED",
-      executions_disclosed: 1
+      executions_total: 0,
+      executions_disclosed: 0,
+      executions_suppressed: 0
+    });
+  });
+
+  it("holds a legacy observability slice with missing exact identity", () => {
+    const events = dispositionPair(
+      "wf-legacy",
+      "legacy-run",
+      "2026-04-09T00:00:00.000Z",
+      "2026-04-09T00:01:00.000Z",
+      true,
+      { jbtd_id: null, persona_id: null }
+    );
+
+    const [row] = buildObservabilityRollup(events, "org-1", "60d", {
+      now,
+      minDisclosedExecutions: 1
+    });
+
+    expect(row).toMatchObject({
+      workflow_id: "wf-legacy",
+      jbtd_id: null,
+      persona_id: null,
+      disclosure: "SUPPRESSED",
+      executions_total: 0,
+      executions_disclosed: 0,
+      executions_suppressed: 0
     });
   });
 

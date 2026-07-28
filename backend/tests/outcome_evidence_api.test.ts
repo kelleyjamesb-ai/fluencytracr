@@ -5,6 +5,7 @@ import { buildFluencyEventRecord, store } from "../src/store";
 
 const PERIOD_START = "2026-05-01T00:00:00.000Z";
 const PERIOD_END = "2026-05-15T00:00:00.000Z";
+const EXACT_SLICE_QUERY = "&jbtd_id=manager-review&persona_id=frontline-manager";
 
 beforeEach(() => {
   store.reset();
@@ -22,14 +23,14 @@ const basePayload = (overrides: Record<string, unknown> = {}) => ({
   aggregate_value: 4.2,
   cohort_size: 12,
   source_system: "Jira",
-  jbtd_id: null,
-  persona_id: null,
+  jbtd_id: "manager-review",
+  persona_id: "frontline-manager",
   ...overrides
 });
 
 const addSurfaceEvents = (workflowId = "wf-outcome", orgId = "org-1") => {
   for (let i = 0; i < 5; i += 1) {
-    const runId = `${workflowId}-run-${i}`;
+    const runId = `${orgId}-${workflowId}-run-${i}`;
     const timestamp = `2026-05-1${i}T00:00:00.000Z`;
     const verified = buildFluencyEventRecord(
       {
@@ -38,6 +39,8 @@ const addSurfaceEvents = (workflowId = "wf-outcome", orgId = "org-1") => {
         risk_class: "low",
         org_unit: `org:${orgId}`,
         workflow_id: workflowId,
+        jbtd_id: "manager-review",
+        persona_id: "frontline-manager",
         run_id: runId,
         disposition: "accepted",
         edit_distance_bucket: "none",
@@ -53,6 +56,8 @@ const addSurfaceEvents = (workflowId = "wf-outcome", orgId = "org-1") => {
         risk_class: "low",
         org_unit: `org:${orgId}`,
         workflow_id: workflowId,
+        jbtd_id: "manager-review",
+        persona_id: "frontline-manager",
         run_id: runId,
         disposition: "accepted",
         edit_distance_bucket: "none",
@@ -67,7 +72,7 @@ const addSurfaceEvents = (workflowId = "wf-outcome", orgId = "org-1") => {
 };
 
 describe("Outcome Evidence API", () => {
-  it("round-trips aggregate outcome evidence and returns it with the workflow verdict", async () => {
+  it("stores aggregate outcome evidence but returns a value-independent privacy hold", async () => {
     addSurfaceEvents();
 
     const posted = await request(app)
@@ -80,27 +85,20 @@ describe("Outcome Evidence API", () => {
     expect(posted.body.evidence_id).toEqual(expect.any(String));
 
     const read = await request(app)
-      .get(`/api/v1/outcome-evidence?workflow_id=wf-outcome&period_start=${PERIOD_START}&period_end=${PERIOD_END}`)
+      .get(`/api/v1/outcome-evidence?workflow_id=wf-outcome&period_start=${PERIOD_START}&period_end=${PERIOD_END}${EXACT_SLICE_QUERY}`)
       .set(auth);
 
     expect(read.status).toBe(200);
     expect(read.body).toMatchObject({
       workflow_id: "wf-outcome",
-      verdict: "SURFACE",
-      suppression_reason: null,
+      verdict: "SUPPRESS",
+      privacy_decision: "HOLD",
+      suppression_reason: "INSUFFICIENT_VOLUME",
+      value_type: "UNCLASSIFIED",
       evidence_grade: "QUALITATIVE",
-      reliability_factor: 0.75
+      reliability_factor: null
     });
-    expect(["ACCELERATION", "QUALITY_PREMIUM", "NET_NEW", "UNCLASSIFIED"]).toContain(read.body.value_type);
-    expect(read.body.outcome_evidence).toHaveLength(1);
-    expect(read.body.outcome_evidence[0]).toMatchObject({
-      evidence_id: posted.body.evidence_id,
-      outcome_metric: "jira_cycle_time",
-      outcome_unit: "days",
-      aggregate_value: 4.2,
-      cohort_size: 12,
-      source_system: "Jira"
-    });
+    expect(read.body.outcome_evidence).toEqual([]);
   });
 
   it("rejects cohort_size below 5 unless aggregate_kind is team_level_kpi", async () => {
@@ -183,18 +181,18 @@ describe("Outcome Evidence API", () => {
     expect(org2.status).toBe(201);
 
     const org1Read = await request(app)
-      .get(`/api/v1/outcome-evidence?workflow_id=wf-shared&period_start=${PERIOD_START}&period_end=${PERIOD_END}`)
+      .get(`/api/v1/outcome-evidence?workflow_id=wf-shared&period_start=${PERIOD_START}&period_end=${PERIOD_END}${EXACT_SLICE_QUERY}`)
       .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-1" });
     const org2Read = await request(app)
-      .get(`/api/v1/outcome-evidence?workflow_id=wf-shared&period_start=${PERIOD_START}&period_end=${PERIOD_END}`)
+      .get(`/api/v1/outcome-evidence?workflow_id=wf-shared&period_start=${PERIOD_START}&period_end=${PERIOD_END}${EXACT_SLICE_QUERY}`)
       .set({ "x-role": "EXEC_VIEWER", "x-org-id": "org-2" });
 
     expect(org1Read.status).toBe(200);
     expect(org2Read.status).toBe(200);
-    expect(org1Read.body.outcome_evidence).toHaveLength(1);
-    expect(org2Read.body.outcome_evidence).toHaveLength(1);
-    expect(org1Read.body.outcome_evidence[0].aggregate_value).toBe(4.2);
-    expect(org2Read.body.outcome_evidence[0].aggregate_value).toBe(9.9);
+    expect(org1Read.body.privacy_decision).toBe("HOLD");
+    expect(org2Read.body.privacy_decision).toBe("HOLD");
+    expect(org1Read.body.outcome_evidence).toEqual([]);
+    expect(org2Read.body.outcome_evidence).toEqual([]);
   });
 
   it("keeps a suppressed workflow suppressed even when outcome evidence exists", async () => {
@@ -221,7 +219,7 @@ describe("Outcome Evidence API", () => {
 
     const read = await request(app)
       .get(
-        `/api/v1/outcome-evidence?workflow_id=wf-suppressed-outcome&period_start=${PERIOD_START}&period_end=${PERIOD_END}`
+        `/api/v1/outcome-evidence?workflow_id=wf-suppressed-outcome&period_start=${PERIOD_START}&period_end=${PERIOD_END}${EXACT_SLICE_QUERY}`
       )
       .set(auth);
 
@@ -229,6 +227,6 @@ describe("Outcome Evidence API", () => {
     expect(read.body.verdict).toBe("SUPPRESS");
     expect(read.body.suppression_reason).toBe("INSUFFICIENT_VOLUME");
     expect(read.body.reliability_factor).toBeNull();
-    expect(read.body.outcome_evidence).toHaveLength(1);
+    expect(read.body.outcome_evidence).toEqual([]);
   });
 });

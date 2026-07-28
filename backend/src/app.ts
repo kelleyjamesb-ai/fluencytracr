@@ -2,6 +2,7 @@ import crypto from "crypto";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import {
   DashboardRequestSchema,
   DashboardResponse,
@@ -19,7 +20,6 @@ import {
   FluencyJoinKeySchema,
   OutcomeEvidenceCreateSchema,
   OutcomeEvidenceQuerySchema,
-  deriveAivmVerdictFields,
   UnifiedTelemetryEventSchema,
   FluencyScopeSchema,
   FluencyWindowSchema,
@@ -73,7 +73,11 @@ import type {
 import { reconstructTracesForQuery } from "./trace_engine";
 import { attachPhase2ToTraces } from "./execution_signals";
 import { applyDisclosureToTraces } from "./execution_disclosure";
-import { buildObservabilityRollup } from "./observability_aggregate";import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
+import { suppressAndRollup as suppressAndRollupBehavioral } from "./behavioral_signals";
+import {
+  privacyAdmittedBehavioralSignals,
+  privacyHeldBehavioralPosture
+} from "./aggregate_disclosure_policy";
 import { detectPatterns, getPreviousWeekBucket } from "./behavioral_patterns";
 import { EnablementEventType, EnablementEventInput, generateEventId, parseEnablementCsv, parsePayload } from "./enablement";
 import { runEnablementRollupsForEvents } from "./enablement_rollups";
@@ -87,7 +91,7 @@ import { enforceScopeWhitelist, hasDisallowedScopes } from "./query_scope";
 import { buildTransparencyReport } from "./transparency";
 import { ConnectorService } from "./connectors";
 import { listAuditLogs, logAuditEvent } from "./audit_log";
-import { auditSuppressedObservabilityRows, listSuppressionAuditLogs } from "./suppression_audit_log";
+import { listSuppressionAuditLogs } from "./suppression_audit_log";
 import {
   causalDeltaWindowsOverlap,
   computeCausalDelta,
@@ -125,10 +129,7 @@ import {
   loadFluencyEventRecords,
   persistFluencyEventRecord
 } from "./services/fluency-canonical-persistence";
-import {
-  listOutcomeEvidence,
-  persistOutcomeEvidence
-} from "./repositories/outcome-evidence.repository";
+import { persistOutcomeEvidence } from "./repositories/outcome-evidence.repository";
 import {
   isVelocityPersistenceEnabled,
   listVelocityDistributions,
@@ -201,6 +202,10 @@ import {
 } from "./workflow_visibility";
 import { computeWorkflowVisibility as computeWorkflowVisibilityService } from "./workflow_visibility_service";
 import { isAuthTokenIssuerAuthorized, resolveJwtSecret } from "./auth_secret";
+import {
+  commitAggregatePrivacyProjection,
+  readAdmittedAggregatePrivacyProjection
+} from "./repositories/aggregate-privacy-release.repository";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -417,6 +422,121 @@ const validateRows = <T>(
   return { accepted, rejected };
 };
 
+const storageOnlyEnablementImportReceipt = () => ({
+  status: "accepted_storage_only" as const,
+  privacy_decision: "HOLD" as const,
+  imported: 0,
+  rejected: 0,
+  errors: [] as never[]
+});
+
+const storageOnlyMutationReceipt = () => ({
+  status: "accepted_storage_only" as const,
+  privacy_decision: "HOLD" as const,
+  inserted: 0,
+  updated: 0,
+  rejected: [] as never[]
+});
+
+const storageOnlyBehaviorImportReceipt = () => ({
+  status: "accepted_storage_only" as const,
+  privacy_decision: "HOLD" as const,
+  imported: 0,
+  suppressed: 0,
+  rolled_up: 0,
+  rejected: 0,
+  errors: [] as never[],
+  events_processed: 0,
+  signals_generated: 0
+});
+
+const AggregatePrivacyOpaqueKeySchema = z.string().regex(/^[a-z0-9:_-]{1,128}$/);
+const parseCanonicalUtcDate = (value: string): number | null => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) {
+    return null;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const timestamp = Date.UTC(year, month - 1, day);
+  const date = new Date(timestamp);
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  )
+    ? timestamp
+    : null;
+};
+
+const AggregatePrivacyFixedWindowIdSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}\/\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => {
+    const [start, end] = value.split("/");
+    const startMs = parseCanonicalUtcDate(start);
+    const endMs = parseCanonicalUtcDate(end);
+    return startMs !== null && endMs !== null && endMs > startMs;
+  }, "window_id must be an increasing fixed UTC date range");
+const AggregatePrivacyUtcDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => parseCanonicalUtcDate(value) !== null, "invalid UTC calendar date");
+
+const fixedWindowMatchesObservationWindow = (
+  fixedWindowId: string,
+  observationWindow: string
+): boolean => {
+  const [start, end] = fixedWindowId.split("/");
+  const startMs = parseCanonicalUtcDate(start);
+  const endMs = parseCanonicalUtcDate(end);
+  if (startMs === null || endMs === null) {
+    return false;
+  }
+  const durationDays =
+    (endMs - startMs) / (24 * 60 * 60 * 1000);
+  return (
+    (observationWindow === "60d" && durationDays === 60) ||
+    (observationWindow === "90d" && durationDays === 90)
+  );
+};
+
+const AggregatePrivacyReleaseRequestSchema = z.object({
+  candidate: z.object({
+    org_id: AggregatePrivacyOpaqueKeySchema,
+    workflow_id: AggregatePrivacyOpaqueKeySchema,
+    jbtd_id: AggregatePrivacyOpaqueKeySchema,
+    persona_id: AggregatePrivacyOpaqueKeySchema,
+    privacy_slot_id: AggregatePrivacyOpaqueKeySchema,
+    content_fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    atomic_lineage_fingerprint: AggregatePrivacyOpaqueKeySchema,
+    public_projection_hash: z.string().regex(/^[a-f0-9]{64}$/),
+    temporal_grid_id: AggregatePrivacyOpaqueKeySchema,
+    window_start: AggregatePrivacyUtcDateSchema,
+    window_end: AggregatePrivacyUtcDateSchema,
+    release_version: z.number().int().positive(),
+    hierarchy_axis: AggregatePrivacyOpaqueKeySchema,
+    source_mode: AggregatePrivacyOpaqueKeySchema,
+    atomic_cell_ids: z.array(AggregatePrivacyOpaqueKeySchema).min(1)
+  }).strict().refine(
+    (candidate) =>
+      parseCanonicalUtcDate(candidate.window_end)! >
+      parseCanonicalUtcDate(candidate.window_start)!,
+    "window_end must be after window_start"
+  ),
+  projection: ObservabilityResponseSchema.refine(
+    (projection) =>
+      projection.workflows.length === 1 &&
+      projection.workflows[0]?.privacy_decision === "RELEASE" &&
+      projection.workflows[0]?.disclosure === "ALLOWED" &&
+      ["60d", "90d"].includes(projection.observation_window) &&
+      projection.workflows[0]?.suppression_reasons.length === 0 &&
+      projection.workflows[0]?.allowed_interpretation_hints.length === 0,
+    "release projection must contain one privacy-admitted workflow slice"
+  )
+}).strict();
+
 const filterByQuery = (groupKey: string, groupType: string | undefined, vendor: string | undefined) => {
   return (record: { group_key: string; group_type?: string; vendor?: string }) => {
     if (groupKey !== "all" && record.group_key !== groupKey) {
@@ -442,32 +562,19 @@ const rangeToWeeks = (range: string) => {
   return 4;
 };
 
-const buildTimeseries = (metricName: string, metrics: typeof store.metrics, limit: number) => {
-  const sorted = Array.from(metrics.values())
-    .filter((metric) => metric.metric_name === metricName)
-    .sort((a, b) => a.bucket_start.localeCompare(b.bucket_start));
-  return sorted.slice(-limit).map((metric) => ({
-    week_start: metric.bucket_start,
-    value: metric.metric_value,
-    suppressed: metric.suppressed || metric.metric_value === null
-  }));
-};
+const buildTimeseries = (
+  _metricName: string,
+  _metrics: typeof store.metrics,
+  _limit: number
+): Array<{ week_start: string; value: null; suppressed: true }> => [];
 
 const latestSnapshot = (metricNames: string[], metrics: typeof store.metrics) => {
-  const relevant = Array.from(metrics.values()).filter((metric) => metricNames.includes(metric.metric_name));
-  if (relevant.length === 0) {
-    return { bucket_start: null, values: {} as Record<string, number | null> };
-  }
-  const latestBucket = relevant.reduce(
-    (latest, metric) => (metric.bucket_start > latest ? metric.bucket_start : latest),
-    ""
-  );
+  void metrics;
   const values: Record<string, number | null> = {};
   metricNames.forEach((name) => {
-    const match = relevant.find((metric) => metric.bucket_start === latestBucket && metric.metric_name === name);
-    values[name] = match?.suppressed || match?.metric_value === null ? null : (match?.metric_value ?? null);
+    values[name] = null;
   });
-  return { bucket_start: latestBucket, values };
+  return { bucket_start: null, values };
 };
 
 const latestControls = (controlNames: string[], controls: typeof store.controls) => {
@@ -888,6 +995,12 @@ const REQUIRED_AI_VALUE_TABLES = [
   "ai_value_customer_data_model_snapshots"
 ] as const;
 
+const REQUIRED_AGGREGATE_PRIVACY_TABLES = [
+  "aggregate_privacy_manifests",
+  "aggregate_privacy_release_journal",
+  "aggregate_privacy_contribution_claims"
+] as const;
+
 const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
   "aggregate_source_system",
   "aggregate_export_review_ref",
@@ -929,7 +1042,8 @@ const REQUIRED_PERSISTENCE_TABLE_COLUMNS = {
 
 const REQUIRED_PERSISTENCE_TABLES = [
   ...REQUIRED_COMPLIANCE_TABLES,
-  ...REQUIRED_AI_VALUE_TABLES
+  ...REQUIRED_AI_VALUE_TABLES,
+  ...REQUIRED_AGGREGATE_PRIVACY_TABLES
 ] as const;
 
 const REQUIRED_PERSISTENCE_COLUMN_BINDINGS = Object.entries(
@@ -1908,7 +2022,7 @@ app.post(
       });
     }
 
-    return res.json({ imported: stored.length, rejected: errors.length, errors });
+    return res.json(storageOnlyEnablementImportReceipt());
   }
 );
 
@@ -2077,7 +2191,7 @@ app.post("/orgs/:orgId/metrics/import", strictLimiter, schemaVersionMiddleware, 
   });
 
   clearLegacyFluencyIndexArtifacts(org.id);
-  return res.json({ inserted, updated, rejected });
+  return res.json(storageOnlyMutationReceipt());
 });
 
 app.post("/orgs/:orgId/controls/import", schemaVersionMiddleware, forbiddenFieldsMiddleware, async (req, res) => {
@@ -3107,7 +3221,7 @@ app.post("/orgs/:orgId/enablement/import", schemaVersionMiddleware, forbiddenFie
       updated += 1;
     }
   });
-  return res.json({ inserted, updated, rejected });
+  return res.json(storageOnlyMutationReceipt());
 });
 
 app.post("/api/ingest", ingestLimiter, async (req, res) => {
@@ -3547,53 +3661,24 @@ app.get(
     if (!windowParsed.success) {
       return res.status(400).json({ error: "Invalid query" });
     }
-    const window = windowParsed.data;
-    const records = store.patternInferenceRecords.filter((record) =>
-      matchesWindow(record, window)
-    );
-
-    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
-    const cohortSize = workflowIds.size;
-
-    if (cohortSize < MIN_COHORT_SIZE) {
-      return res.status(400).json({
-        error: "Cohort below minimum size",
-        cohort_size: cohortSize,
-        min_cohort_size: MIN_COHORT_SIZE
-      });
-    }
-
-    const confidentRecords = records.filter((record) => ["MEDIUM", "HIGH"].includes(record.confidence_level));
-    const confidentWorkflows = new Set(
-      confidentRecords.map((record) => workflowIdFromScopeKey(record.scope_key))
-    ).size;
-
-    const workflowCoverage = cohortSize === 0 ? 0 : confidentWorkflows / cohortSize;
-    const patternConfidence = records.length === 0 ? 0 : confidentRecords.length / records.length;
-    const value = workflowCoverage * 0.67 + patternConfidence * 0.33;
-    const confidence = records.length === 0 ? 0 : Math.min(1, 0.5 + 0.5 * patternConfidence);
-    const latestRecord = records.reduce(
-      (latest, record) => (record.generated_at > latest.generated_at ? record : latest),
-      records[0]
-    );
-
     return res.json({
       org_id: req.params.orgId,
-      window,
+      window: windowParsed.data,
+      privacy_decision: "HOLD",
       operational_telemetry_index: {
-        value,
-        confidence,
+        value: null,
+        confidence: null,
         components: {
-          workflow_coverage: workflowCoverage,
-          pattern_confidence: patternConfidence
+          workflow_coverage: null,
+          pattern_confidence: null
         },
         does_not_mean: [
           "This index does not measure individual performance.",
           "This index does not guarantee outcome quality."
         ],
-        inference_version: latestRecord?.inference_version ?? INFERENCE_VERSION,
-        parameter_hash: latestRecord?.parameter_hash ?? parameterHash(),
-        generated_at: latestRecord?.generated_at ?? nowIso()
+        inference_version: INFERENCE_VERSION,
+        parameter_hash: parameterHash(),
+        generated_at: null
       }
     });
   }
@@ -3906,7 +3991,7 @@ app.get(
     const entries = await listRegistryEntriesByOrg(org.id);
     const policyConfigs = await listRegistryPolicyConfigsByOrg(org.id);
     const baselineResets = await listBaselineResetsByOrg(org.id);
-    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
+    const fluencyEvents: FluencyEventRecord[] = [];
     const baselineResetsByWorkflowVersion = entries.reduce<Record<string, string | null>>(
       (acc, entry) => {
         acc[`${entry.workflowId}:${entry.version}`] = getBaselineResetAtForRegistryVersion(
@@ -3921,8 +4006,8 @@ app.get(
       policyConfigs,
       baselineResetsByWorkflowVersion,
       fluencyEvents,
-      v0Signals: Array.from(store.behavioralSignals.values()),
-      patternInferenceRecords: store.patternInferenceRecords
+      v0Signals: privacyHeldBehavioralPosture(Array.from(store.behavioralSignals.values())),
+      patternInferenceRecords: []
     });
 
     const payload: OrientationWorkflowVisibilitySummaryResponse = {
@@ -3969,7 +4054,7 @@ app.get(
         return acc;
       }, new Map<string, (typeof entries)[number]>());
     const now = new Date();
-    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
+    const fluencyEvents: FluencyEventRecord[] = [];
     const workflows = await Promise.all(
       Array.from(currentWorkflows.values())
         .sort((a, b) => {
@@ -4540,62 +4625,6 @@ app.get(
   }
 );
 
-const toOutcomeEvidenceSuppressionReason = (reasons: string[] | undefined) => {
-  if (!reasons || reasons.length === 0) {
-    return null;
-  }
-  if (reasons.includes("insufficient_disclosed_executions")) {
-    return "INSUFFICIENT_VOLUME";
-  }
-  return "HIGH_AMBIGUITY";
-};
-
-const outcomeEvidenceAivmFields = (
-  events: FluencyEventRecord[],
-  workflowId: string,
-  jbtdId: string | null,
-  personaId: string | null,
-  periodStart: string,
-  periodEnd: string
-) => {
-  const startMs = Date.parse(periodStart);
-  const endMs = Date.parse(periodEnd);
-  const canonical_events = events
-    .filter((event) => event.workflow_id === workflowId)
-    .filter((event) => (event.jbtd_id ?? null) === jbtdId)
-    .filter((event) => (event.persona_id ?? null) === personaId)
-    .filter((event) => {
-      const at = Date.parse(event.timestamp);
-      return at >= startMs && at <= endMs;
-    })
-    .map((event) => {
-      switch (event.event_type) {
-        case "ai_output_disposition":
-          return {
-            event_name: "FT_V1_VERIFICATION_PRESENCE_OBSERVED",
-            verification_present: event.verification_present
-          };
-        case "ai_recovery_loop":
-          return { event_name: "FT_V1_RECOVERY_OBSERVED", recovery_present: true };
-        case "ai_abandonment":
-          return { event_name: "FT_V1_ABANDONMENT_OBSERVED", abandonment_present: true };
-        default:
-          return { event_name: "FT_V1_DISPOSITION_OBSERVED" };
-      }
-    });
-  return deriveAivmVerdictFields({
-    canonical_events,
-    cohort_size: new Set(
-      events
-        .filter((event) => event.workflow_id === workflowId)
-        .filter((event) => (event.jbtd_id ?? null) === jbtdId)
-        .filter((event) => (event.persona_id ?? null) === personaId)
-        .map((event) => event.execution_id)
-    ).size,
-    window_length_days: Math.floor((endMs - startMs) / (24 * 60 * 60 * 1000))
-  });
-};
-
 app.post(
   "/api/v1/outcome-evidence",
   rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
@@ -4651,48 +4680,15 @@ app.get(
     if (!orgId) {
       return res.status(401).json({ error: "Authentication required" });
     }
-    const loadedEvents = await loadFluencyEventRecords({ dbOrgId: orgId });
-    const scopedEvents = loadedEvents.filter((event) => eventBelongsToAuthOrg(event, orgId));
-    const periodEnd = new Date(parsed.data.period_end);
-    const rows = orgId
-      ? buildObservabilityRollup(scopedEvents, orgId, "90d", { now: periodEnd })
-      : [];
-    const row = rows.find(
-      (entry) =>
-        entry.workflow_id === parsed.data.workflow_id &&
-        (entry.jbtd_id ?? null) === (parsed.data.jbtd_id ?? null) &&
-        (entry.persona_id ?? null) === (parsed.data.persona_id ?? null)
-    );
-    const verdict = row?.disclosure === "ALLOWED" ? "SURFACE" : "SUPPRESS";
-    const outcomeEvidence = await listOutcomeEvidence(orgId, parsed.data);
-    const aivm = outcomeEvidenceAivmFields(
-      scopedEvents,
-      parsed.data.workflow_id,
-      parsed.data.jbtd_id ?? null,
-      parsed.data.persona_id ?? null,
-      parsed.data.period_start,
-      parsed.data.period_end
-    );
-
     return res.json({
       workflow_id: parsed.data.workflow_id,
-      verdict,
-      suppression_reason:
-        verdict === "SURFACE" ? null : toOutcomeEvidenceSuppressionReason(row?.suppression_reasons) ?? "INSUFFICIENT_VOLUME",
-      value_type: aivm.value_type,
-      evidence_grade: aivm.evidence_grade,
-      reliability_factor: row?.reliability_factor ?? null,
-      outcome_evidence: outcomeEvidence.map((record) => ({
-        evidence_id: record.evidence_id,
-        outcome_metric: record.outcome_metric,
-        outcome_unit: record.outcome_unit,
-        period_start: record.period_start,
-        period_end: record.period_end,
-        aggregate_value: record.aggregate_value,
-        cohort_size: record.cohort_size,
-        source_system: record.source_system,
-        ingested_at: record.ingested_at
-      }))
+      verdict: "SUPPRESS",
+      privacy_decision: "HOLD",
+      suppression_reason: "INSUFFICIENT_VOLUME",
+      value_type: "UNCLASSIFIED",
+      evidence_grade: "QUALITATIVE",
+      reliability_factor: null,
+      outcome_evidence: []
     });
   }
 );
@@ -4758,22 +4754,38 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
     const observationWindow = windowParsed.data;
-    const fluencyEvents = await loadFluencyEventRecords({ dbOrgId: org.id });
-    const workflows = buildObservabilityRollup(
-      fluencyEvents,
-      org.id,
-      observationWindow,
-      { minDisclosedExecutions: MIN_COHORT_SIZE, now: new Date() }
-    );
-    await auditSuppressedObservabilityRows(org.id, workflows);
+    const privacySlotId =
+      typeof req.query.privacy_slot_id === "string"
+        ? req.query.privacy_slot_id.trim()
+        : "";
+    const fixedWindowId =
+      typeof req.query.fixed_window_id === "string"
+        ? req.query.fixed_window_id.trim()
+        : "";
+    if (
+      privacySlotId.length > 0 &&
+      AggregatePrivacyFixedWindowIdSchema.safeParse(fixedWindowId).success
+    ) {
+      const admittedRelease = await readAdmittedAggregatePrivacyProjection(
+        org.id,
+        privacySlotId
+      );
+      const admitted = ObservabilityResponseSchema.safeParse(
+        admittedRelease?.projection
+      );
+      if (
+        admittedRelease?.window_id === fixedWindowId &&
+        admitted.success &&
+        admitted.data.org_id === org.id &&
+        admitted.data.observation_window === observationWindow
+      ) {
+        return res.json(admitted.data);
+      }
+    }
     const payload = {
       org_id: org.id,
       observation_window: observationWindow,
-      workflows: workflows.filter(
-        (workflow) =>
-          workflow.disclosure === "ALLOWED" ||
-          (workflow.jbtd_id === null && workflow.persona_id === null)
-      )
+      workflows: []
     };
     const validated = ObservabilityResponseSchema.safeParse(payload);
     if (!validated.success) {
@@ -4812,102 +4824,12 @@ app.get(
       });
     }
 
-    const window = windowParsed.data;
-    const records = store.patternInferenceRecords.filter((record) =>
-      matchesWindow(record, window)
-    );
-
-    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
-    const cohortSize = workflowIds.size;
-
-    if (cohortSize < MIN_COHORT_SIZE) {
-      return res.status(400).json({
-        error: "Cohort below minimum size",
-        cohort_size: cohortSize,
-        min_cohort_size: MIN_COHORT_SIZE
-      });
-    }
-
-    const patternCopy = {
-      CALIBRATED_FLUENCY: {
-        name: "Calibrated Fluency",
-        what_we_see: "Accepted outputs appear alongside regular verification touchpoints and light edits.",
-        might_suggest: "This signal may reflect steady calibration between automation and human review.",
-        does_not_mean: "This does NOT mean outcomes are guaranteed or that any group is ahead of another.",
-        posture: "Scale"
-      },
-      BLIND_EFFICIENCY: {
-        name: "Blind Efficiency",
-        what_we_see: "Acceptance rates appear high while verification signals remain limited.",
-        might_suggest: "This signal may reflect a speed-first flow with lighter verification coverage.",
-        does_not_mean: "This does NOT mean outputs are correct or that scrutiny is unnecessary.",
-        posture: "Study"
-      },
-      RECOVERY_MATURITY: {
-        name: "Recovery Maturity",
-        what_we_see: "Recovery loops appear with resolution and limited escalation.",
-        might_suggest: "This signal may reflect maturing correction habits when automation needs adjustment.",
-        does_not_mean: "This does NOT mean issues will stop appearing or that attention is no longer needed.",
-        posture: "Stabilize"
-      },
-      FRICTION_LOOP: {
-        name: "Friction Loop",
-        what_we_see: "Repeated edits or overrides cluster in the current window.",
-        might_suggest: "This signal may reflect friction in prompts, handoffs, or verification steps.",
-        does_not_mean: "This does NOT mean any individual or small team is struggling.",
-        posture: "Study"
-      },
-      UNDERTRUST_AVOIDANCE: {
-        name: "Undertrust Avoidance",
-        what_we_see: "Verification and abandonment signals rise alongside rejections.",
-        might_suggest: "This signal may reflect cautious adoption in higher-risk moments.",
-        does_not_mean: "This does NOT mean the system is unsafe or that the approach should be paused.",
-        posture: "Stabilize"
-      },
-      NO_PATTERN: {
-        name: "No Pattern",
-        what_we_see: "Signals are insufficient to classify a pattern.",
-        might_suggest: "Coverage may be limited for this window.",
-        does_not_mean: "This does NOT mean activity is absent.",
-        posture: "Study"
-      }
-    } as const;
-
-    const signalStatusMap = {
-      WITHHOLD: "Emerging Pattern",
-      LOW: "Emerging Pattern",
-      MEDIUM: "Observed Behavioral Shift",
-      HIGH: "Sustained Pattern"
-    } as const;
-
-    const totalDays = WINDOW_DAYS[window];
-    const patterns = records
-      .filter(
-        (record) =>
-          record.pattern !== "NO_PATTERN" &&
-          ["MEDIUM", "HIGH"].includes(record.confidence_level)
-      )
-      .map((record) => {
-        const copy = patternCopy[record.pattern];
-        return {
-          pattern_name: copy.name,
-          signal_status: signalStatusMap[record.confidence_level],
-          confidence: record.confidence_level === "HIGH" ? "High" : "Medium",
-          window: windowParsed.data,
-          risk_context: "medium",
-          coverage: Math.min(1, record.coverage_days / totalDays),
-          what_we_see: copy.what_we_see,
-          might_suggest: copy.might_suggest,
-          does_not_mean: copy.does_not_mean,
-          recommended_posture: copy.posture
-        };
-      });
-
     return res.json({
       window: windowParsed.data,
       scope: scopeParsed.data,
-      cohort_size: cohortSize,
-      patterns
+      privacy_decision: "HOLD",
+      cohort_size: 0,
+      patterns: []
     });
   }
 );
@@ -4923,34 +4845,11 @@ app.get(
       return res.status(400).json({ error: "Invalid query" });
     }
 
-    const window = windowParsed.data;
-    const records = store.patternInferenceRecords.filter((record) =>
-      matchesWindow(record, window)
-    );
-
-    const workflowIds = new Set(records.map((record) => workflowIdFromScopeKey(record.scope_key)));
-    const cohortSize = workflowIds.size;
-
-    if (cohortSize < MIN_COHORT_SIZE) {
-      return res.status(400).json({
-        error: "Cohort below minimum size",
-        cohort_size: cohortSize,
-        min_cohort_size: MIN_COHORT_SIZE
-      });
-    }
-
-    const activeWorkflows = new Set(
-      records
-        .filter((record) => record.pattern !== "NO_PATTERN" && ["MEDIUM", "HIGH"].includes(record.confidence_level))
-        .map((record) => workflowIdFromScopeKey(record.scope_key))
-    ).size;
-
-    const coverage = cohortSize === 0 ? 0 : activeWorkflows / cohortSize;
-
     return res.json({
       window: windowParsed.data,
-      cohort_size: cohortSize,
-      coverage,
+      privacy_decision: "HOLD",
+      cohort_size: 0,
+      coverage: null,
       verification_rate: null,
       risk_mix: {
         low: null,
@@ -5365,13 +5264,7 @@ app.post(
       }
     });
 
-    return res.json({
-      imported,
-      suppressed,
-      rolled_up: rolledUp,
-      rejected: errors.length,
-      errors
-    });
+    return res.json(storageOnlyBehaviorImportReceipt());
   }
 );
 
@@ -5412,7 +5305,8 @@ app.post(
       });
       return res.status(202).json({
         status: "quarantined",
-        quarantined_count: unknownEvents.unknown_event_count,
+        privacy_decision: "HOLD",
+        quarantined_count: 0,
         unknown_event_types: unknownEvents.unknown_event_types
       });
     }
@@ -5435,7 +5329,8 @@ app.post(
       });
       return res.status(202).json({
         status: "quarantined",
-        quarantined_count: invalidEvents.invalid_event_count,
+        privacy_decision: "HOLD",
+        quarantined_count: 0,
         unknown_event_types: [],
         invalid_event_types: invalidEvents.invalid_event_types
       });
@@ -5472,13 +5367,7 @@ app.post(
       }
     });
 
-    return res.json({
-      imported,
-      suppressed,
-      rolled_up: rolledUp,
-      events_processed: parsed.data.events.length,
-      signals_generated: transformResult.aggregates.length
-    });
+    return res.json(storageOnlyBehaviorImportReceipt());
   }
 );
 
@@ -5532,6 +5421,7 @@ app.get(
     if (!includeSuppressed) {
       signals = signals.filter((s) => !s.suppressed);
     }
+    signals = privacyAdmittedBehavioralSignals(signals);
 
     const suppressedCount = signals.filter((s) => s.suppressed).length;
 
@@ -5575,8 +5465,10 @@ app.get(
       : undefined;
 
     // Get signals for current week
-    let currentSignals = Array.from(store.behavioralSignals.values()).filter(
+    let currentSignals = privacyAdmittedBehavioralSignals(
+      Array.from(store.behavioralSignals.values()).filter(
       (signal) => signal.org_id === org.id
+      )
     );
 
     // Default to latest bucket_start if not specified
@@ -5602,12 +5494,14 @@ app.get(
 
     // Get previous week signals for trend detection
     const previousBucket = getPreviousWeekBucket(targetBucket);
-    const previousSignals = Array.from(store.behavioralSignals.values()).filter(
+    const previousSignals = privacyAdmittedBehavioralSignals(
+      Array.from(store.behavioralSignals.values()).filter(
       (signal) =>
         signal.org_id === org.id &&
         signal.bucket_start === previousBucket &&
         (!groupType || signal.group_type === groupType) &&
         (!groupId || signal.group_id === groupId)
+      )
     );
 
     // Group signals by group_id
@@ -5741,6 +5635,66 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
     required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
   });
 });
+
+app.post(
+  "/orgs/:orgId/aggregate-privacy/releases",
+  rbacMiddleware(["ADMIN"]),
+  schemaVersionMiddleware,
+  forbiddenFieldsMiddleware,
+  async (req, res) => {
+    const parsed = AggregatePrivacyReleaseRequestSchema.safeParse(req.body);
+    if (!parsed.success || parsed.data.candidate.org_id !== req.params.orgId) {
+      return res.status(400).json({
+        status: "held",
+        privacy_decision: "HOLD",
+        error: "invalid_release_request"
+      });
+    }
+    const {
+      window_start: windowStart,
+      window_end: windowEnd,
+      ...candidateFields
+    } = parsed.data.candidate;
+    const candidate = {
+      ...candidateFields,
+      window_id: `${windowStart}/${windowEnd}`
+    };
+    const projection = parsed.data.projection;
+    const projectionRow = projection.workflows[0]!;
+    if (
+      projection.org_id !== req.params.orgId ||
+      !fixedWindowMatchesObservationWindow(
+        candidate.window_id,
+        projection.observation_window
+      ) ||
+      projectionRow.workflow_id !== candidate.workflow_id ||
+      projectionRow.jbtd_id !== candidate.jbtd_id ||
+      projectionRow.persona_id !== candidate.persona_id
+    ) {
+      return res.status(400).json({
+        status: "held",
+        privacy_decision: "HOLD",
+        error: "invalid_release_request"
+      });
+    }
+
+    const result = await commitAggregatePrivacyProjection(
+      candidate,
+      projection as Prisma.InputJsonValue
+    );
+    if (result.decision === "HOLD") {
+      return res.status(result.diagnostic === "JOURNAL_UNAVAILABLE" ? 503 : 409).json({
+        status: "held",
+        privacy_decision: "HOLD"
+      });
+    }
+    return res.status(201).json({
+      status: "released",
+      privacy_decision: "RELEASE",
+      projection: result.projection
+    });
+  }
+);
 
 app.get("/health", async (_req, res) => {
   incrementOpsCounter("health_requests");

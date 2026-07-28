@@ -30,6 +30,19 @@ export interface ClassificationPipelineInput {
 export interface ClassificationPipelineDeps {
   readonly classificationRepository: ClassificationRepository;
   readonly workflowAggregateRepository: WorkflowAggregateRepository;
+  /**
+   * Trusted infrastructure resolver. Production callers that do not provide
+   * server-owned contribution identity remain fail-closed at aggregation.
+   */
+  readonly canonicalContributionResolver?: (
+    input: Readonly<{
+      org_id: string;
+      workflow_id: string;
+      jbtd_id: string | null;
+      persona_id: string | null;
+      events: ReadonlyArray<CanonicalEvent>;
+    }>
+  ) => Promise<string | null> | string | null;
 }
 
 export interface ClassificationPipelineResult {
@@ -87,6 +100,7 @@ async function refreshWorkflowAggregate(
       jbtd_id: o.jbtd_id,
       persona_id: o.persona_id,
       execution_id: o.execution_id,
+      canonical_contribution_token: o.canonical_contribution_token,
       status: o.status,
       pattern: o.pattern,
       suppression_reason: o.suppression_reason
@@ -148,6 +162,7 @@ function buildSuppressedOutcome(params: {
   jbtd_id: string | null;
   persona_id: string | null;
   execution_id: string;
+  canonical_contribution_token: string | null;
   suppression_reason: SuppressionReason;
   diagnostics: ReadonlyArray<string>;
   signal_profile?: Readonly<Record<string, unknown>>;
@@ -158,6 +173,7 @@ function buildSuppressedOutcome(params: {
     jbtd_id: params.jbtd_id,
     persona_id: params.persona_id,
     execution_id: params.execution_id,
+    canonical_contribution_token: params.canonical_contribution_token,
     status: "SUPPRESSED",
     suppression_reason: params.suppression_reason,
     signal_profile: params.signal_profile,
@@ -175,6 +191,15 @@ export async function runClassificationPipeline(
   const joinKeys = resolveExecutionJoinKeys(input);
   const jbtd_id = joinKeys.ok ? joinKeys.jbtd_id : input.jbtd_id ?? null;
   const persona_id = joinKeys.ok ? joinKeys.persona_id : input.persona_id ?? null;
+  const resolvedContributionToken = joinKeys.ok && deps.canonicalContributionResolver
+    ? (await deps.canonicalContributionResolver({
+        org_id,
+        workflow_id,
+        jbtd_id,
+        persona_id,
+        events
+      }))?.trim() || null
+    : null;
 
   if (!joinKeys.ok) {
     const outcome = buildSuppressedOutcome({
@@ -183,6 +208,7 @@ export async function runClassificationPipeline(
       jbtd_id,
       persona_id,
       execution_id,
+      canonical_contribution_token: resolvedContributionToken,
       suppression_reason: "INCOMPLETE_EXECUTION",
       diagnostics: Object.freeze(["join_key_mismatch", "fail_closed_join_key"])
     });
@@ -199,6 +225,7 @@ export async function runClassificationPipeline(
       jbtd_id,
       persona_id,
       execution_id,
+      canonical_contribution_token: resolvedContributionToken,
       suppression_reason: "INCOMPLETE_EXECUTION",
       diagnostics: Object.freeze(["execution_build_failed", "fail_closed_build"])
     });
@@ -279,6 +306,7 @@ export async function runClassificationPipeline(
           jbtd_id,
           persona_id,
           execution_id,
+          canonical_contribution_token: resolvedContributionToken,
           status: "ALLOWED",
           pattern,
           signal_profile: signalProfileToDiagnostics(signals),
@@ -291,6 +319,7 @@ export async function runClassificationPipeline(
           jbtd_id,
           persona_id,
           execution_id,
+          canonical_contribution_token: resolvedContributionToken,
           status: "SUPPRESSED",
           suppression_reason: suppression.reason,
           signal_profile: signalProfileToDiagnostics(signals),

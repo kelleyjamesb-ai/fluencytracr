@@ -44,7 +44,7 @@ describe("v1 pipeline e2e (in-memory)", () => {
     expect(agg!.verdict).toBe("SUPPRESS");
     expect(agg!.suppression_reason).toBe("INSUFFICIENT_VOLUME");
     expect(agg!.classified_execution_count).toBe(0);
-    expect(agg!.suppressed_execution_count).toBe(1);
+    expect(agg!.suppressed_execution_count).toBe(0);
     expect(agg!.pattern_distribution.length).toBe(0);
   });
 
@@ -70,7 +70,7 @@ describe("v1 pipeline e2e (in-memory)", () => {
     const agg = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowA);
     expect(agg).not.toBeNull();
     expect(agg!.classified_execution_count).toBe(0);
-    expect(agg!.suppressed_execution_count).toBe(1);
+    expect(agg!.suppressed_execution_count).toBe(0);
     expect(agg!.pattern_distribution.length).toBe(0);
   });
 
@@ -137,6 +137,10 @@ describe("v1 pipeline e2e (in-memory)", () => {
 
   it("gates cohort size independently within each JBTD persona bucket", async () => {
     const { classificationRepository, workflowAggregateRepository } = createE2eInMemoryStack();
+    const canonicalContributionResolver = ({ events }: { events: ReadonlyArray<CanonicalEvent> }) => {
+      const eventId = events[0]?.metadata?.event_id;
+      return typeof eventId === "string" ? `trusted-test:${eventId}` : null;
+    };
 
     for (let i = 0; i < 5; i += 1) {
       const exId = `slice-large-${i}`;
@@ -153,7 +157,11 @@ describe("v1 pipeline e2e (in-memory)", () => {
             persona_id: "frontline-manager"
           }))
         },
-        { classificationRepository, workflowAggregateRepository }
+        {
+          classificationRepository,
+          workflowAggregateRepository,
+          canonicalContributionResolver
+        }
       );
     }
 
@@ -171,7 +179,11 @@ describe("v1 pipeline e2e (in-memory)", () => {
           persona_id: "executive-sponsor"
         }))
       },
-      { classificationRepository, workflowAggregateRepository }
+      {
+        classificationRepository,
+        workflowAggregateRepository,
+        canonicalContributionResolver
+      }
     );
 
     const large = await workflowAggregateRepository.findByWorkflowId(fixtureIds.org, fixtureIds.workflowA, {
@@ -190,6 +202,6 @@ describe("v1 pipeline e2e (in-memory)", () => {
     expect(solo?.verdict).toBe("SUPPRESS");
     expect(solo?.suppression_reason).toBe("INSUFFICIENT_VOLUME");
     expect(solo?.classified_execution_count).toBe(0);
-    expect(solo?.suppressed_execution_count).toBe(1);
+    expect(solo?.suppressed_execution_count).toBe(0);
   });
 });

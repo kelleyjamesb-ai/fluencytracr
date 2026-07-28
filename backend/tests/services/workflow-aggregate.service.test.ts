@@ -15,7 +15,10 @@ const rec = (
   partial: Partial<ExecutionClassificationRecord> & Pick<ExecutionClassificationRecord, "execution_id">
 ): ExecutionClassificationRecord => ({
   workflow_id: "wf1",
+  jbtd_id: "manager-review",
+  persona_id: "frontline-manager",
   status: "ALLOWED",
+  canonical_contribution_token: `server:${partial.execution_id}`,
   ...partial
 });
 
@@ -117,8 +120,8 @@ describe("aggregateWorkflowClassifications", () => {
     if (out.success) {
       expect(out.result.verdict).toBe("SUPPRESS");
       expect(out.result.suppression_reason).toBe("INSUFFICIENT_SIGNAL");
-      expect(out.result.classified_execution_count).toBe(4);
-      expect(out.result.suppressed_execution_count).toBe(1);
+      expect(out.result.classified_execution_count).toBe(0);
+      expect(out.result.suppressed_execution_count).toBe(0);
       expect(out.result.pattern_distribution).toEqual([]);
     }
   });
@@ -184,7 +187,109 @@ describe("aggregateWorkflowClassifications", () => {
       expect(out.result.verdict).toBe("SUPPRESS");
       expect(out.result.suppression_reason).toBe("INSUFFICIENT_VOLUME");
       expect(out.result.classified_execution_count).toBe(0);
-      expect(out.result.suppressed_execution_count).toBe(1);
+      expect(out.result.suppressed_execution_count).toBe(0);
+      expect(out.result.pattern_distribution).toEqual([]);
+    }
+  });
+
+  it("does not let duplicate contribution tokens satisfy the cohort gate", () => {
+    const records = Array.from({ length: 5 }, () =>
+      rec({
+        execution_id: "same-contribution",
+        jbtd_id: "manager-review",
+        persona_id: "frontline-manager",
+        pattern: BehaviorPattern.CALIBRATED_FLUENCY
+      })
+    );
+
+    const out = aggregateWorkflowClassifications({ records });
+
+    expect(out.success).toBe(true);
+    if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+      expect(out.result.classified_execution_count).toBe(0);
+      expect(out.result.suppressed_execution_count).toBe(0);
+      expect(out.result.pattern_distribution).toEqual([]);
+    }
+  });
+
+  it("holds an otherwise large slice when any contribution token is duplicated", () => {
+    const records = ["e1", "e2", "e3", "e4", "e5", "e5"].map((execution_id) =>
+      rec({
+        execution_id,
+        pattern: BehaviorPattern.CALIBRATED_FLUENCY
+      })
+    );
+
+    const out = aggregateWorkflowClassifications({ records });
+
+    expect(out.success).toBe(true);
+    if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.classified_execution_count).toBe(0);
+      expect(out.result.suppressed_execution_count).toBe(0);
+      expect(out.result.pattern_distribution).toEqual([]);
+    }
+  });
+
+  it("does not let distinct caller execution ids alias one canonical contribution", () => {
+    const records = ["e1", "e2", "e3", "e4", "e5"].map((execution_id) =>
+      rec({
+        execution_id,
+        canonical_contribution_token: "server:one-contribution",
+        pattern: BehaviorPattern.CALIBRATED_FLUENCY
+      })
+    );
+
+    const out = aggregateWorkflowClassifications({ records });
+
+    expect(out.success).toBe(true);
+    if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+      expect(out.result.classified_execution_count).toBe(0);
+      expect(out.result.pattern_distribution).toEqual([]);
+    }
+  });
+
+  it("holds a large slice when server-owned contribution identity is unavailable", () => {
+    const records = ["e1", "e2", "e3", "e4", "e5"].map((execution_id) =>
+      rec({
+        execution_id,
+        canonical_contribution_token: null,
+        pattern: BehaviorPattern.CALIBRATED_FLUENCY
+      })
+    );
+
+    const out = aggregateWorkflowClassifications({ records });
+
+    expect(out.success).toBe(true);
+    if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.suppression_reason).toBe("INSUFFICIENT_VOLUME");
+      expect(out.result.classified_execution_count).toBe(0);
+      expect(out.result.pattern_distribution).toEqual([]);
+    }
+  });
+
+  it("keeps a legacy slice with missing exact identity non-disclosable", () => {
+    const records = Array.from({ length: 5 }, (_, index) =>
+      rec({
+        execution_id: `legacy-${index}`,
+        jbtd_id: null,
+        persona_id: null,
+        pattern: BehaviorPattern.CALIBRATED_FLUENCY
+      })
+    );
+
+    const out = aggregateWorkflowClassifications({ records });
+
+    expect(out.success).toBe(true);
+    if (out.success) {
+      expect(out.result.verdict).toBe("SUPPRESS");
+      expect(out.result.classified_execution_count).toBe(0);
+      expect(out.result.suppressed_execution_count).toBe(0);
       expect(out.result.pattern_distribution).toEqual([]);
     }
   });

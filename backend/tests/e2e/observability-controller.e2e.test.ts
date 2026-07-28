@@ -77,10 +77,8 @@ describe("GET observability controller e2e", () => {
     expect(res.status).toBe(200);
     assertExecutiveSafeObservabilityPayload(res.body);
 
-    const body = res.body as { workflows: ReadonlyArray<{ workflow_id: string; suppressed_execution_count: number }> };
-    const wf = body.workflows.find((w) => w.workflow_id === fixtureIds.workflowA);
-    expect(wf).toBeDefined();
-    expect(wf!.suppressed_execution_count).toBeGreaterThanOrEqual(1);
+    const body = res.body as { workflows: ReadonlyArray<unknown> };
+    expect(body.workflows).toEqual([]);
   });
 
   it("rejects empty org id with 400", async () => {

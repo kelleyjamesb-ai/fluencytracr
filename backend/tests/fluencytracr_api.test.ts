@@ -108,7 +108,7 @@ it("rejects event payloads containing person identifiers", async () => {
   expect(response.status).toBe(400);
 });
 
-it("rejects pattern queries when cohort size is below minimum", async () => {
+it("holds pattern queries without exposing cohort threshold state", async () => {
   const server = await startServer();
   store.patternInferenceRecords.push(
     buildInferenceRecord("workflow-1", "MEDIUM", "CALIBRATED_FLUENCY"),
@@ -120,7 +120,13 @@ it("rejects pattern queries when cohort size is below minimum", async () => {
     headers: { "x-role": "EXEC_VIEWER" }
   });
   await server.close();
-  expect(patternsResponse.status).toBe(400);
+  const payload = await patternsResponse.json();
+  expect(patternsResponse.status).toBe(200);
+  expect(payload).toMatchObject({
+    privacy_decision: "HOLD",
+    cohort_size: 0,
+    patterns: []
+  });
 });
 
 it("suppresses patterns below Medium confidence", async () => {

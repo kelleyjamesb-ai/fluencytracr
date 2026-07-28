@@ -7,29 +7,7 @@ import {
   listRegistryPolicyConfigsByOrg
 } from "./workflow_registry";
 import { computeWorkflowVisibility as computeVisibilityState } from "./workflow_visibility";
-
-type DominantPattern =
-  | "CALIBRATED_FLUENCY"
-  | "BLIND_EFFICIENCY"
-  | "RECOVERY_MATURITY"
-  | "FRICTION_LOOP"
-  | "UNDERTRUST_AVOIDANCE";
-
-const normalizeDominantPattern = (pattern: string | null): DominantPattern | null => {
-  if (!pattern) {
-    return null;
-  }
-  if (
-    pattern === "CALIBRATED_FLUENCY" ||
-    pattern === "BLIND_EFFICIENCY" ||
-    pattern === "RECOVERY_MATURITY" ||
-    pattern === "FRICTION_LOOP" ||
-    pattern === "UNDERTRUST_AVOIDANCE"
-  ) {
-    return pattern;
-  }
-  return null;
-};
+import { privacyHeldBehavioralPosture } from "./aggregate_disclosure_policy";
 
 export const computeWorkflowVisibility = async (
   orgId: string,
@@ -57,26 +35,16 @@ export const computeWorkflowVisibility = async (
   const policyConfig = getPolicyConfigForRegistryVersion(policyConfigs, latest);
   const baselineResetAt = getBaselineResetAtForRegistryVersion(baselineResets, latest);
 
-  const fluencyEvents = fluencyEventsOverride ?? Array.from(store.fluencyEvents.values());
+  const fluencyEvents = fluencyEventsOverride ?? [];
   const visibilityState = computeVisibilityState(workflowId, "60d", {
     now,
     registryEntry: latest,
     policyConfig,
     baselineResetAt,
     fluencyEvents,
-    v0Signals: Array.from(store.behavioralSignals.values()),
-    patternInferenceRecords: store.patternInferenceRecords
+    v0Signals: privacyHeldBehavioralPosture(Array.from(store.behavioralSignals.values())),
+    patternInferenceRecords: []
   });
 
-  const dominantPatterns = new Set(
-    store.patternInferenceRecords
-      .filter((record) => record.scope_key.split(":")[0] === workflowId)
-      .filter((record) => record.confidence_level === "MEDIUM" || record.confidence_level === "HIGH")
-      .filter((record) => record.pattern !== "NO_PATTERN")
-      .map((record) => normalizeDominantPattern(record.pattern))
-      .filter((pattern): pattern is DominantPattern => pattern !== null)
-  );
-
-  const dominantPattern = dominantPatterns.size === 1 ? Array.from(dominantPatterns)[0] : null;
-  return { visibilityState, dominantPattern };
+  return { visibilityState, dominantPattern: null };
 };

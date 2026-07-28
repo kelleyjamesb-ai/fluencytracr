@@ -13,6 +13,8 @@ export interface ExecutionClassificationOutcome {
   readonly jbtd_id: string | null;
   readonly persona_id: string | null;
   readonly execution_id: string;
+  /** Opaque server-owned admission identity; never copied from caller execution IDs. */
+  readonly canonical_contribution_token?: string | null;
   readonly status: "ALLOWED" | "SUPPRESSED";
   readonly pattern?: BehaviorPattern;
   readonly suppression_reason?: SuppressionReason;

@@ -53,7 +53,7 @@ describe("/orgs/:orgId/telemetry/index", () => {
     expect(response.status).toBe(403);
   });
 
-  it("returns telemetry index for admins", async () => {
+  it("returns a storage-only telemetry index hold for admins", async () => {
     store.patternInferenceRecords.push(
       buildInferenceRecord("workflow-1"),
       buildInferenceRecord("workflow-2"),
@@ -70,6 +70,15 @@ describe("/orgs/:orgId/telemetry/index", () => {
     await server.close();
 
     expect(response.status).toBe(200);
-    expect(payload.operational_telemetry_index).toBeDefined();
+    expect(payload.privacy_decision).toBe("HOLD");
+    expect(payload.operational_telemetry_index).toMatchObject({
+      value: null,
+      confidence: null,
+      components: {
+        workflow_coverage: null,
+        pattern_confidence: null
+      },
+      generated_at: null
+    });
   });
 });

@@ -170,7 +170,7 @@ describe("Behavioral Signals - Suppression and Rollup", () => {
       expect(funcRollup?.count).toBe(45);  // Should aggregate team count
     });
 
-    test("includes suppressed counts in function rollup", () => {
+    test("holds function and org rollups that contain a suppressed child", () => {
       const signals: BehavioralSignal[] = [
         {
           org_id: "org-1",
@@ -200,10 +200,15 @@ describe("Behavioral Signals - Suppression and Rollup", () => {
       const teamDs = result.find(r => r.group_id === "team-ds");
       expect(teamDs?.suppressed).toBe(true);
 
-      // Function rollup should include both teams (45 + 12 = 57)
       const funcRollup = result.find(r => r.group_type === "function" && r.group_id === "func-rd");
-      expect(funcRollup?.count).toBe(57);
-      expect(funcRollup?.includesRollup).toBe(true);  // Marked as including rollup
+      expect(funcRollup?.count).toBe(0);
+      expect(funcRollup?.suppressed).toBe(true);
+      expect(funcRollup?.includesRollup).toBe(true);
+
+      const orgRollup = result.find(r => r.group_type === "org" && r.group_id === "org-1");
+      expect(orgRollup?.count).toBe(0);
+      expect(orgRollup?.suppressed).toBe(true);
+      expect(orgRollup?.includesRollup).toBe(true);
     });
 
     test("creates org rollup from all function rollups", () => {
@@ -225,6 +230,78 @@ describe("Behavioral Signals - Suppression and Rollup", () => {
       const orgRollup = result.find(r => r.group_type === "org" && r.group_id === "org-1");
       expect(orgRollup).toBeDefined();
       expect(orgRollup?.count).toBe(45);
+    });
+
+    test("holds caller-supplied parents that collide with derived children", () => {
+      const signals: BehavioralSignal[] = [
+        {
+          org_id: "org-1",
+          group_id: "func-rd",
+          group_type: "function",
+          bucket_start: "2026-01-06",
+          signal_name: "delegate_code_commit",
+          count: 99,
+          suppressed: false
+        },
+        {
+          org_id: "org-1",
+          group_id: "team-eng",
+          group_type: "team",
+          function_id: "func-rd",
+          bucket_start: "2026-01-06",
+          signal_name: "delegate_code_commit",
+          count: 45,
+          suppressed: false
+        }
+      ];
+
+      const result = suppressAndRollup(signals, 5);
+      const functionParents = result.filter(
+        (signal) => signal.group_type === "function" && signal.group_id === "func-rd"
+      );
+
+      expect(functionParents.length).toBeGreaterThan(0);
+      expect(functionParents.every((signal) => signal.suppressed && signal.count === 0)).toBe(true);
+    });
+
+    test("keeps team and role axes separate when deriving function rollups", () => {
+      for (let index = 0; index < 5; index += 1) {
+        store.employees.set(`emp-role-${index}`, {
+          orgId: "org-1",
+          employeeHash: `hash-role-${index}`,
+          teamIds: new Set(),
+          roleIds: new Set(["role-eng"])
+        });
+      }
+      const result = suppressAndRollup([
+        {
+          org_id: "org-1",
+          group_id: "team-eng",
+          group_type: "team",
+          function_id: "func-rd",
+          bucket_start: "2026-01-06",
+          signal_name: "delegate_code_commit",
+          count: 5,
+          suppressed: false
+        },
+        {
+          org_id: "org-1",
+          group_id: "role-eng",
+          group_type: "role",
+          function_id: "func-rd",
+          bucket_start: "2026-01-06",
+          signal_name: "delegate_code_commit",
+          count: 7,
+          suppressed: false
+        }
+      ], 5);
+      const parents = result.filter(
+        (signal) => signal.group_type === "function" && signal.group_id === "func-rd"
+      );
+
+      expect(parents).toHaveLength(2);
+      expect(parents.map((signal) => signal.privacyRollupAxis).sort()).toEqual(["role", "team"]);
+      expect(parents.map((signal) => signal.count).sort()).toEqual([5, 7]);
     });
   });
 

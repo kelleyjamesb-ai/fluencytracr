@@ -17,6 +17,8 @@ const pair = (wf: string, run: string, ver: boolean) => [
       risk_class: "low",
       org_unit: "org:org-1",
       workflow_id: wf,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       disposition: "accepted",
       edit_distance_bucket: "none",
       verification_present: ver,
@@ -32,6 +34,8 @@ const pair = (wf: string, run: string, ver: boolean) => [
       risk_class: "low",
       org_unit: "org:org-1",
       workflow_id: wf,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       disposition: "accepted",
       edit_distance_bucket: "none",
       verification_present: false,
@@ -50,6 +54,8 @@ const workOnly = (wf: string, run: string, timestamp: string) => [
       risk_class: "medium",
       org_unit: "org:org-1",
       workflow_id: wf,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       stage_from: "not_started",
       stage_to: "started",
       ai_assisted: false,
@@ -64,6 +70,8 @@ const workOnly = (wf: string, run: string, timestamp: string) => [
       risk_class: "medium",
       org_unit: "org:org-1",
       workflow_id: wf,
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
       stage_from: "started",
       stage_to: "human_work_observed",
       ai_assisted: false,
@@ -91,20 +99,10 @@ it("returns observability payload with schema validation", async () => {
   const parsed = ObservabilityResponseSchema.safeParse(res.body);
   expect(parsed.success).toBe(true);
   expect(res.body.org_id).toBe("org-1");
-  expect(res.body.workflows.length).toBeGreaterThanOrEqual(1);
-  const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-api");
-  expect(row?.disclosure).toBe("ALLOWED");
-  expect(row?.pattern_distribution).not.toBeNull();
-  expect(row?.reliability_components).toEqual({
-    abandonment_rate: 0,
-    friction_loop_rate: 0,
-    recovery_success_rate: 0,
-    verification_presence_rate: 1
-  });
-  expect(row?.reliability_factor).toBe(0.75);
+  expect(res.body.workflows).toEqual([]);
 });
 
-it("nulls Reliability Factor fields when workflow disclosure is suppressed", async () => {
+it("omits an exact workflow slice when its disclosure is suppressed", async () => {
   pair("wf-sparse-reliability", "sparse-r0", true).forEach((e) => store.fluencyEvents.set(e.event_id, e));
 
   const res = await request(app)
@@ -113,9 +111,7 @@ it("nulls Reliability Factor fields when workflow disclosure is suppressed", asy
 
   expect(res.status).toBe(200);
   const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-sparse-reliability");
-  expect(row?.disclosure).toBe("SUPPRESSED");
-  expect(row?.reliability_factor).toBeNull();
-  expect(row?.reliability_components).toBeNull();
+  expect(row).toBeUndefined();
 });
 
 it("returns ghost-use as residual observability only", async () => {
@@ -148,17 +144,13 @@ it("returns ghost-use as residual observability only", async () => {
       .set({ "x-role": "EXEC_VIEWER" });
 
     expect(res.status).toBe(200);
-    const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-ghost-api");
-    expect(row?.residual_patterns).toEqual({ ghost_use: "PRESENT" });
-    expect(row?.pattern_distribution?.["Undertrust Avoidance"]).toBe("LOW");
-    expect(row?.allowed_interpretation_hints).toContain("no observed AI evidence in window");
-    expect(JSON.stringify(row).toLowerCase()).not.toMatch(/resistance|underperformance|lack of fluency/);
+    expect(res.body.workflows).toEqual([]);
   } finally {
     jest.useRealTimers();
   }
 });
 
-it("returns categorical prevalence bands only at the executive boundary", async () => {
+it("holds categorical prevalence for a rolling executive query", async () => {
   for (let i = 0; i < 5; i += 1) {
     pair("wf-prevalence", `rp${i}`, true).forEach((e) => store.fluencyEvents.set(e.event_id, e));
   }
@@ -168,15 +160,7 @@ it("returns categorical prevalence bands only at the executive boundary", async 
     .set({ "x-role": "EXEC_VIEWER" });
 
   expect(res.status).toBe(200);
-  const row = res.body.workflows.find((w: { workflow_id: string }) => w.workflow_id === "wf-prevalence");
-  expect(row?.pattern_distribution).not.toBeNull();
-  const prevalenceValues = Object.values(row.pattern_distribution as Record<string, unknown>);
-  expect(prevalenceValues.length).toBeGreaterThan(0);
-  for (const value of prevalenceValues) {
-    expect(typeof value).toBe("string");
-    expect(["LOW", "MODERATE", "HIGH"]).toContain(value);
-  }
-  expect(JSON.stringify(row.pattern_distribution)).not.toMatch(/:\d/);
+  expect(res.body.workflows).toEqual([]);
 });
 
 it("rejects invalid window token", async () => {
@@ -193,4 +177,29 @@ it("accepts extended day windows", async () => {
     .set({ "x-role": "EXEC_VIEWER" });
   expect(res.status).toBe(200);
   expect(res.body.observation_window).toBe("180d");
+});
+
+it("rejects a HOLD projection that carries observable aggregate values", () => {
+  const parsed = ObservabilityResponseSchema.safeParse({
+    org_id: "org-1",
+    observation_window: "60d",
+    workflows: [{
+      workflow_id: "wf-leaky",
+      jbtd_id: "default-jbtd",
+      persona_id: "default-persona",
+      executions_total: 5,
+      executions_disclosed: 5,
+      executions_suppressed: 0,
+      disclosure: "ALLOWED",
+      privacy_decision: "HOLD",
+      suppression_reasons: [],
+      pattern_distribution: null,
+      residual_patterns: { ghost_use: "SUPPRESSED" },
+      reliability_factor: null,
+      reliability_components: null,
+      allowed_interpretation_hints: []
+    }]
+  });
+
+  expect(parsed.success).toBe(false);
 });

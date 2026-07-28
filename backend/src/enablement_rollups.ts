@@ -49,7 +49,7 @@ export const runDailyEnablementRollup = (orgId: string, day: string): Enablement
       teamId,
       roleId,
       day,
-      totalEvents: value.total,
+      totalEvents: suppressed ? 0 : value.total,
       percentEnabledByRole: suppressed ? null : enabled ? 1 : 0,
       assessmentDelta: suppressed ? null : assessmentDelta,
       everboardingCadence: suppressed ? null : everboardingCadence,
@@ -60,7 +60,7 @@ export const runDailyEnablementRollup = (orgId: string, day: string): Enablement
     rollups.push(record);
   });
 
-  return rollups;
+  return [];
 };
 
 export const runEnablementRollupsForEvents = (
@@ -68,9 +68,8 @@ export const runEnablementRollupsForEvents = (
   events: EnablementEventRecord[]
 ): EnablementRollupRecord[] => {
   const days = new Set(events.map((event) => eventDay(event.timestamp)));
-  const rollups: EnablementRollupRecord[] = [];
   days.forEach((day) => {
-    rollups.push(...runDailyEnablementRollup(orgId, day));
+    runDailyEnablementRollup(orgId, day);
   });
-  return rollups;
+  return [];
 };

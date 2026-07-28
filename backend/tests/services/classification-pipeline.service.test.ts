@@ -167,7 +167,7 @@ describe("runClassificationPipeline", () => {
     expect(agg!.verdict).toBe("SUPPRESS");
     expect(agg!.suppression_reason).toBe("INSUFFICIENT_VOLUME");
     expect(agg!.classified_execution_count).toBe(0);
-    expect(agg!.suppressed_execution_count).toBe(1);
+    expect(agg!.suppressed_execution_count).toBe(0);
   });
 
   it("classifies RECOVERY_MATURITY when explicit error, retry, and success (pattern-specific, no global UNKNOWN suppression)", async () => {

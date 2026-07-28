@@ -193,10 +193,14 @@ export const rbacMiddleware = (allowed: Role[]) => {
 
 export const enforceAggregation = (req: RequestWithRole, res: Response, next: NextFunction) => {
   const aggregation = req.query.aggregation?.toString() ?? "org";
+  const requestedGroupType = req.query.groupType?.toString() ?? aggregation;
   if (!(["org", "team"] as const).includes(aggregation as "org" | "team")) {
     return res.status(400).json({ error: "Invalid aggregation", message: "Aggregation must be 'org' or 'team'" });
   }
-  if (req.role === "EXEC_VIEWER" && aggregation === "team") {
+  if (!(["org", "team"] as const).includes(requestedGroupType as "org" | "team")) {
+    return res.status(400).json({ error: "Invalid aggregation", message: "Group type must be 'org' or 'team'" });
+  }
+  if (req.role === "EXEC_VIEWER" && (aggregation === "team" || requestedGroupType === "team")) {
     return res.status(403).json({ error: "Forbidden", message: "Executive viewers cannot access team-level aggregation" });
   }
   return next();

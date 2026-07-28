@@ -197,8 +197,8 @@ describe("workflow registry and orientation API", () => {
     expect(payload).toEqual({
       org_id: "org-1",
       workflow_visibility_summary: {
-        visible: 1,
-        not_enough_data_yet: 2,
+        visible: 0,
+        not_enough_data_yet: 3,
         not_shown_safety: 0
       }
     });
@@ -304,6 +304,11 @@ describe("workflow registry and orientation API", () => {
       code_commit_hash: "commit",
       generated_at: new Date().toISOString()
     });
+    store.patternInferenceRecords.push({
+      ...store.patternInferenceRecords[0]!,
+      pattern: "FRICTION_LOOP",
+      generated_at: new Date().toISOString()
+    });
 
     const response = await fetch(`${server.url}/api/board-snapshot/org-1?window=60d`, {
       headers: { "x-role": "EXEC_VIEWER" }
@@ -315,7 +320,8 @@ describe("workflow registry and orientation API", () => {
     expect(response.status).toBe(200);
     expect(schemaResult.success).toBe(true);
     expect(payload.workflows.map((row: any) => row.workflow_display_name)).toEqual(["wf-a", "wf-b"]);
-    expect(payload.workflows[0].working_style).toBe("Balanced AI use");
+    expect(payload.workflows[0].visibility_state).toBe("NOT_ENOUGH_DATA_YET");
+    expect(payload.workflows[0].working_style).toBeNull();
     expect(payload.workflows[1].working_style).toBeNull();
     expect(payload.workflows[0]).not.toHaveProperty("rank");
     expect(payload.workflows[0]).not.toHaveProperty("trend");

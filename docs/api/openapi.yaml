@@ -183,6 +183,84 @@ paths:
                 $ref: "#/components/schemas/VelocityIndexResponse"
         "400":
           description: Malformed input
+  /orgs/{orgId}/aggregate-privacy/releases:
+    post:
+      summary: Commit one server-authorized aggregate privacy projection
+      description: >
+        ADMIN-only admission path. The caller cannot provide or override the
+        server-owned privacy manifest or canonical contribution set. HOLD
+        responses do not expose internal diagnostics or replay receipts.
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../../schemas/aggregate_privacy_release_request.schema.json"
+      responses:
+        "201":
+          description: Exact bounded observability projection admitted
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status, privacy_decision, projection]
+                properties:
+                  status:
+                    const: released
+                  privacy_decision:
+                    const: RELEASE
+                  projection:
+                    $ref: "../../schemas/aggregate_privacy_release_request.schema.json#/$defs/observabilityProjection"
+        "400":
+          description: Invalid bounded release request
+        "409":
+          description: Privacy admission held
+        "503":
+          description: Durable journal unavailable; admission held
+  /api/observability/{orgId}:
+    get:
+      summary: Read a privacy-admitted observability projection
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: window
+          in: query
+          required: false
+          schema:
+            enum: [30d, 60d, 90d]
+        - name: privacy_slot_id
+          in: query
+          required: false
+          description: >
+            Exact non-person privacy slot. Missing, held, unavailable, or
+            mismatched slots return the ordinary empty held projection.
+          schema:
+            type: string
+            minLength: 1
+        - name: fixed_window_id
+          in: query
+          required: false
+          description: >
+            Concrete immutable UTC date range bound to the admitted release,
+            formatted YYYY-MM-DD/YYYY-MM-DD. A slot without the exact fixed
+            window id remains held.
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}/\\d{4}-\\d{2}-\\d{2}$"
+      responses:
+        "200":
+          description: Admitted projection or empty held projection
 components:
   schemas:
     VelocityDistribution:

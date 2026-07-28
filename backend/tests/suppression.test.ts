@@ -14,15 +14,15 @@ it("suppresses small user counts", () => {
   expect(result[0].metricValue).toBeNull();
 });
 
-it("rolls up suppressed values to org when possible", () => {
+it("holds an org rollup when it contains suppressed child values", () => {
   const metrics = [
     { ...baseMetric, groupKey: "team-1", metricValue: 3, suppressed: true },
     { ...baseMetric, groupKey: "team-2", metricValue: 4, suppressed: true }
   ];
   const result = rollupSuppressedToOrg(metrics, 5);
   const orgMetric = result.find((metric) => metric.groupKey === "org");
-  expect(orgMetric?.metricValue).toBe(7);
-  expect(orgMetric?.suppressed).toBe(false);
+  expect(orgMetric?.metricValue).toBeNull();
+  expect(orgMetric?.suppressed).toBe(true);
 });
 
 it("suppresses org rollup when still below threshold", () => {
@@ -43,5 +43,32 @@ it("runs suppression and rollup together", () => {
   const orgMetric = result.find((metric) => metric.groupKey === "org");
   expect(team1?.metricValue).toBeNull();
   expect(team1?.suppressed).toBe(true);
-  expect(orgMetric?.metricValue).toBe(8);
+  expect(orgMetric?.metricValue).toBeNull();
+  expect(orgMetric?.suppressed).toBe(true);
+});
+
+it("holds caller-supplied parents that collide with derived children", () => {
+  const metrics = [
+    { ...baseMetric, groupKey: "org", groupType: "org", metricValue: 9 },
+    { ...baseMetric, groupKey: "team-1", groupType: "team", metricValue: 4 },
+    { ...baseMetric, groupKey: "team-2", groupType: "team", metricValue: 5 }
+  ];
+
+  const result = suppressAndRollup(metrics, 5);
+  const parents = result.filter((metric) => metric.groupKey === "org");
+
+  expect(parents.length).toBeGreaterThan(0);
+  expect(parents.every((metric) => metric.suppressed && metric.metricValue === null)).toBe(true);
+});
+
+it("keeps team and role hierarchy axes in separate org partitions", () => {
+  const result = suppressAndRollup([
+    { ...baseMetric, groupKey: "team-1", groupType: "team", metricValue: 5 },
+    { ...baseMetric, groupKey: "role-1", groupType: "role", metricValue: 7 }
+  ], 5);
+  const parents = result.filter((metric) => metric.groupKey === "org");
+
+  expect(parents).toHaveLength(2);
+  expect(parents.map((metric) => metric.groupType).sort()).toEqual(["role", "team"]);
+  expect(parents.map((metric) => metric.metricValue).sort()).toEqual([5, 7]);
 });

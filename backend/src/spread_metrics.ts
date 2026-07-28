@@ -21,19 +21,21 @@ export const runDailySpreadRollup = (orgId: string, day: string): SpreadRollupRe
   const concentrationIndex = totalSignals
     ? Array.from(byTeam.values()).reduce((sum, count) => sum + (count / totalSignals) ** 2, 0)
     : 0;
-  const suppressed = totalTeams > 0 && totalTeams < org.minGroupSize;
+  const suppressed =
+    (totalTeams > 0 && totalTeams < org.minGroupSize) ||
+    (teamsWithAi > 0 && teamsWithAi < org.minGroupSize);
   const record: SpreadRollupRecord = {
     orgId,
     day,
-    totalTeams,
-    teamsWithAi,
+    totalTeams: suppressed ? 0 : totalTeams,
+    teamsWithAi: suppressed ? 0 : teamsWithAi,
     percentTeamsWithAi: suppressed || totalTeams === 0 ? null : teamsWithAi / totalTeams,
     adoptionSpread: suppressed || totalTeams === 0 ? null : teamsWithAi / totalTeams,
     concentrationIndex: suppressed || totalTeams === 0 ? null : concentrationIndex,
     suppressed
   };
   store.spreadRollups.set(`${orgId}:${day}`, record);
-  return record;
+  return null;
 };
 
 export const runSpreadRollupForOrg = (orgId: string, timestamp: string): SpreadRollupRecord | null => {

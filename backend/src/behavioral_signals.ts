@@ -4,6 +4,64 @@ import { store } from "./store";
 export type BehavioralSignal = ConnectorSignalAggregate & {
   originalCount?: number;  // Preserved original count before suppression
   includesRollup?: boolean;  // Indicates this record includes rolled-up small teams
+  privacyRollupAxis?: "team" | "role";
+};
+
+const signalCellKey = (signal: BehavioralSignal): string =>
+  [
+    signal.org_id,
+    signal.group_type,
+    signal.group_id,
+    signal.bucket_start,
+    signal.signal_name,
+    signal.tool_class ?? "",
+    signal.privacyRollupAxis ?? ""
+  ].join(":");
+
+const holdDuplicateCells = (signals: BehavioralSignal[]): BehavioralSignal[] => {
+  const counts = new Map<string, number>();
+  for (const signal of signals) {
+    const key = signalCellKey(signal);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return signals.map((signal) =>
+    (counts.get(signalCellKey(signal)) ?? 0) > 1
+      ? { ...signal, count: 0, suppressed: true }
+      : signal
+  );
+};
+
+const rollupParentKey = (signal: BehavioralSignal): string =>
+  [
+    signal.org_id,
+    signal.group_type,
+    signal.group_id,
+    signal.bucket_start,
+    signal.signal_name,
+    signal.tool_class ?? ""
+  ].join(":");
+
+const holdAmbiguousParentCells = (signals: BehavioralSignal[]): BehavioralSignal[] => {
+  const serverDerivedParents = new Set(
+    signals
+      .filter((signal) => signal.privacyRollupAxis !== undefined)
+      .map(rollupParentKey)
+  );
+  const ambiguousParents = new Set(
+    signals
+      .filter(
+        (signal) =>
+          signal.privacyRollupAxis === undefined &&
+          (signal.group_type === "function" || signal.group_type === "org") &&
+          serverDerivedParents.has(rollupParentKey(signal))
+      )
+      .map(rollupParentKey)
+  );
+  return signals.map((signal) =>
+    ambiguousParents.has(rollupParentKey(signal))
+      ? { ...signal, count: 0, suppressed: true }
+      : signal
+  );
 };
 
 /**
@@ -93,7 +151,7 @@ const buildFunctionRollups = (
       continue;
     }
 
-    const key = `${signal.org_id}:${signal.function_id}:${signal.bucket_start}:${signal.signal_name}:${signal.tool_class ?? ""}`;
+    const key = `${signal.org_id}:${signal.function_id}:${signal.bucket_start}:${signal.signal_name}:${signal.tool_class ?? ""}:${signal.group_type}`;
 
     if (!rollupMap[key]) {
       rollupMap[key] = {
@@ -106,6 +164,7 @@ const buildFunctionRollups = (
         tool_class: signal.tool_class,
         suppressed: false,
         includesRollup: false,
+        privacyRollupAxis: signal.group_type,
         metadata: signal.metadata
       };
     }
@@ -123,6 +182,13 @@ const buildFunctionRollups = (
   // Apply suppression to function rollups themselves (if function is small)
   const rollups = Object.values(rollupMap);
   return rollups.map((rollup) => {
+    if (rollup.includesRollup) {
+      return {
+        ...rollup,
+        count: 0,
+        suppressed: true
+      };
+    }
     const functionSize = getGroupSize(rollup.org_id, rollup.group_id, "function");
     if (functionSize < minGroupSize) {
       return {
@@ -152,7 +218,7 @@ const buildOrgRollups = (
   for (const signal of allSignals) {
     // Use function rollups as source (to avoid double-counting)
     if (signal.group_type === "function") {
-      const key = `${signal.org_id}:${signal.bucket_start}:${signal.signal_name}:${signal.tool_class ?? ""}`;
+      const key = `${signal.org_id}:${signal.bucket_start}:${signal.signal_name}:${signal.tool_class ?? ""}:${signal.privacyRollupAxis ?? ""}`;
 
       if (!rollupMap[key]) {
         rollupMap[key] = {
@@ -165,6 +231,7 @@ const buildOrgRollups = (
           tool_class: signal.tool_class,
           suppressed: false,
           includesRollup: false,
+          privacyRollupAxis: signal.privacyRollupAxis,
           metadata: signal.metadata
         };
       }
@@ -180,7 +247,15 @@ const buildOrgRollups = (
     }
   }
 
-  return Object.values(rollupMap);
+  return Object.values(rollupMap).map((rollup) =>
+    rollup.includesRollup
+      ? {
+          ...rollup,
+          count: 0,
+          suppressed: true
+        }
+      : rollup
+  );
 };
 
 /**
@@ -203,12 +278,20 @@ export const suppressAndRollup = (
 
   // Step 2: Build function rollups (includes suppressed counts)
   const functionRollups = buildFunctionRollups(suppressed, minGroupSize);
+  const functionStage = holdAmbiguousParentCells(
+    holdDuplicateCells([...suppressed, ...functionRollups])
+  );
 
   // Step 3: Build org rollups (includes all suppressed counts)
-  const orgRollups = buildOrgRollups(suppressed, functionRollups);
+  const orgRollups = buildOrgRollups(
+    functionStage.filter((signal) => signal.group_type !== "function"),
+    functionStage.filter((signal) => signal.group_type === "function")
+  );
 
   // Return all signals: original (suppressed) + function rollups + org rollups
-  return [...suppressed, ...functionRollups, ...orgRollups];
+  return holdAmbiguousParentCells(
+    holdDuplicateCells([...functionStage, ...orgRollups])
+  );
 };
 
 /**

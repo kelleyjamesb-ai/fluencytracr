@@ -4017,3 +4017,69 @@
 - Boundary: no deployment or live proof occurred. Slice C activation requires
   this closeout and queue-addition PR to merge first, followed by a fresh branch
   from canonical `main`.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice C activation)
+
+- PR #452 merged normally as `3ce845c`; its two-parent merge tree exactly
+  matches reviewed queue head `358b181`, and all current-head checks passed.
+- Created `codex/mcii-slice-c-rollup-privacy` from merged `origin/main`.
+  Slice B remains `done`; the human-created
+  `mcii-rollup-privacy-differencing-slice-c` item is now the sole
+  `in_progress` queue item.
+- Bound: complementary suppression, repeated-query and adjacent-window
+  differencing protection, independent exact-slice suppression, and bounded
+  aggregate rollup outputs only.
+- Next: inventory current rollup and query paths, define fail-first acceptance
+  evidence, and obtain the queue-required design review before implementation.
+  No Slice C implementation, deployment, publication, or live proof yet.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice C candidate review remediation)
+
+- Locally implemented one fail-closed aggregate disclosure authority across
+  the covered legacy rollup/query paths. Legacy rows without a server manifest
+  remain storage-only and yield empty, null, or fixed HOLD transcripts before
+  filters or derived orientation/visibility/pattern consumers.
+- Added a serializable server-manifest/release-journal transaction with exact
+  projection-value fingerprinting, immutable replay, opaque canonical
+  contribution claims, and one server-derived collision fingerprint per exact
+  organization/workflow/JBTD/persona slice. Slot, lineage, source, axis, grid,
+  window, or contribution changes cannot create an adjacent release.
+- Added an ADMIN-only bounded release path for exactly one schema-valid,
+  product-ALLOWED observability projection and a read path that returns only
+  the stored admitted projection for an exact organization/slot/window.
+  Free-form JSON, interpretation text, product-suppressed rows, missing
+  manifests, journal failure, and changed replay HOLD.
+- Initial CODE/BUG/ADVERSARIAL review returned HOLD on adjacent-window
+  collision, overly broad release JSON, import response compatibility,
+  readiness coverage, public API documentation, sink routing, and stale
+  durable state. All findings except the independently re-evaluated
+  legacy-sink positive-routing question are remediated in the current tree.
+- Verification before the latest review remediation: full backend
+  `1004/1004`; repo `.venv` Python `377 passed, 10 skipped`; shared/backend
+  builds; V1 governance; docs sweep; agentic harness `15/15`; strict OpenSpec;
+  Prisma validation; JSON; and diff checks. Focused remediation checks are
+  green. Full exact-tree rerun and final CODE/BUG/ADVERSARIAL GO remain
+  required.
+- Boundary: local implementation only. No commit, push, PR, migration apply,
+  deployment, or live proof.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice C exact candidate)
+
+- Final exact-tree CODE, BUG, and ADVERSARIAL review returned `GO/GO/GO`.
+  Reviewers accepted the deliberately fail-closed legacy sinks: only the
+  bounded observability path has positive release authority; all other covered
+  legacy aggregate surfaces remain storage-only or fixed HOLD without a
+  server-owned manifest.
+- Exact candidate verification passed: full backend `1006/1006`; focused
+  privacy/observability `28/28`; shared and backend builds; V1 governance;
+  docs contract sweep; agentic harness `15/15`; strict OpenSpec; Prisma
+  validation; aggregate-privacy JSON schemas; OpenAPI YAML; and
+  `git diff --check`. The earlier repository `.venv` Python result remains
+  `377 passed, 10 skipped` with no subsequent Python changes.
+- Local lint remains blocked before source lint by the existing TypeScript 7
+  and `@typescript-eslint` plugin incompatibility:
+  `Cannot read properties of undefined (reading 'Intrinsic')`. Docker is
+  installed but its daemon is unavailable, so no live Postgres concurrency
+  integration was run.
+- Slice C is locally complete and marked `done`. Boundary: no commit, push,
+  PR, migration apply, deployment, production readback, or live proof.

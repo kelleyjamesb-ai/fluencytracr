@@ -4,7 +4,7 @@ import { BehaviorPattern } from "../../src/services/pattern-classifier";
 import { DEFAULT_PREVALENCE_MODE } from "../../src/services/workflow-aggregate.service";
 
 describe("handleGetObservability", () => {
-  it("returns org-scoped workflow aggregates", async () => {
+  it("holds stored workflow aggregates until a durable privacy release exists", async () => {
     const repo = new InMemoryWorkflowAggregateRepository();
     await repo.upsertAggregate(
       {
@@ -24,13 +24,7 @@ describe("handleGetObservability", () => {
     expect(res.status).toBe(200);
     const body = res.body as { org_id: string; workflows: unknown[] };
     expect(body.org_id).toBe("org-a");
-    expect(body.workflows).toHaveLength(1);
-    expect((body.workflows[0] as { workflow_id: string }).workflow_id).toBe("w1");
-    const wf = body.workflows[0] as Record<string, unknown>;
-    expect(wf.jbtd_id).toBeNull();
-    expect(wf.persona_id).toBeNull();
-    expect(wf).not.toHaveProperty("executions");
-    expect(wf).not.toHaveProperty("diagnostics");
+    expect(body.workflows).toEqual([]);
   });
 
   it("returns empty workflows safely for unknown org", async () => {
@@ -47,7 +41,7 @@ describe("handleGetObservability", () => {
     expect(res.status).toBe(400);
   });
 
-  it("Scenario E: converts stored NUMERIC_SHARE rows to categorical bands and omits share", async () => {
+  it("Scenario E: holds stored NUMERIC_SHARE rows and omits their distribution", async () => {
     const repo = new InMemoryWorkflowAggregateRepository();
     await repo.upsertAggregate(
       {
@@ -74,14 +68,9 @@ describe("handleGetObservability", () => {
         pattern_distribution: ReadonlyArray<Record<string, unknown>>;
       }>;
     };
-    expect(body.workflows[0]!.prevalence_mode).toBe("CATEGORICAL_PREVALENCE");
     const json = JSON.stringify(res.body);
     expect(json).not.toMatch(/"share"/);
-    const bands = body.workflows[0]!.pattern_distribution.map((r) => r.prevalence_band).sort();
-    expect(bands).toEqual(["HIGH", "MODERATE"]);
-    for (const row of body.workflows[0]!.pattern_distribution) {
-      expect(row).not.toHaveProperty("share");
-    }
+    expect(body.workflows).toEqual([]);
   });
 
   it("returns opaque JBTD and persona join keys when present", async () => {
@@ -103,8 +92,7 @@ describe("handleGetObservability", () => {
     const res = await handleGetObservability("org-a", { workflowAggregateRepository: repo });
     expect(res.status).toBe(200);
     const body = res.body as { workflows: ReadonlyArray<Record<string, unknown>> };
-    expect(body.workflows[0]!.jbtd_id).toBe("manager-review");
-    expect(body.workflows[0]!.persona_id).toBe("frontline-manager");
+    expect(body.workflows).toEqual([]);
   });
 
   it("does not expose suppressed slice buckets publicly", async () => {
