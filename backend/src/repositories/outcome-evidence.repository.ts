@@ -30,7 +30,7 @@ export const acquireOutcomeEvidenceFamilyLock = async (
   client: Prisma.TransactionClient,
   family: OutcomeEvidenceFamily
 ): Promise<void> => {
-  await client.$queryRaw(
+  await client.$executeRaw(
     Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${outcomeEvidenceFamilyLockKey(
       family
     )}, 0))`

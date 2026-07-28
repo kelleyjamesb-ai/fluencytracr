@@ -387,7 +387,7 @@
   "bound": "Aggregate privacy proof infrastructure only; acceptance: a trusted customer-boundary producer emits a non-member-level proof that the exact baseline and comparison windows use the same population without transmitting or persisting member tokens; the proof binds exact organization, workflow_id, jbtd_id, persona_id, metric, source, unit, windows, cohort counts, producer policy, provenance, and freshness; one database-unique reservation authority is used atomically by both Slice C and C.1 so either release order and concurrent first writers permit at most one privacy domain; missing, stale, conflicting, aliased, cross-slice, replayed, or unavailable proof fails closed; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude C.1 comparison release, Slice D claim semantics, migration apply, deployment, publication, live proof, individual fields, member tokens, scoring, ROI, causality, productivity, prediction, ranking, new canonical events, new suppression reasons, or tunable thresholds",
   "status": "in_progress",
   "risk": "high",
-      "last_note": "Final candidate passes focused 57/57, full backend 1037/1037, harness 377/10 skipped, and exact CODE/BUG/ADVERSARIAL GO. PostgreSQL execution remains CI-only; commit/push is authorized and PR remains separate. C.1/D blocked."
+      "last_note": "PR #457 Assurance exposed Prisma void deserialization in advisory locks. TDD repair uses executeRaw and passes affected 60/60, full backend 1039/1039, lint/build, and exact CODE/BUG/ADVERSARIAL GO. Commit/push and current-head CI rerun pending; C.1/D blocked."
     }
   ]
 }

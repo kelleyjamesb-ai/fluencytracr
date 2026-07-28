@@ -24,6 +24,7 @@ describe("C.0 cohort producer authority repository", () => {
       ...data
     }));
     const transaction = {
+      $executeRaw: jest.fn(async () => 0),
       $queryRaw: jest.fn(async () => []),
       cohortProducerAuthority: {
         findMany: jest.fn(async () => []),
@@ -92,10 +93,10 @@ describe("C.0 cohort producer authority repository", () => {
     const create = jest.fn(async () => ({ id: "revocation-id" }));
     let query = 0;
     const transaction = {
+      $executeRaw: jest.fn(async () => 0),
       $queryRaw: jest.fn(async () => {
         query += 1;
-        if (query === 1) return [];
-        return query === 2
+        return query === 1
           ? [{ id: "authority-id" }]
           : [{ revoked_at: revokedAt }];
       }),
@@ -137,6 +138,7 @@ describe("C.0 cohort producer authority repository", () => {
     if (!Buffer.isBuffer(der)) throw new Error("test key export failed");
     const create = jest.fn();
     const transaction = {
+      $executeRaw: jest.fn(async () => 0),
       $queryRaw: jest.fn(async () => []),
       cohortProducerAuthority: {
         findMany: jest.fn(async () => [{
@@ -183,6 +185,7 @@ describe("C.0 cohort producer authority repository", () => {
     const client = {
       $transaction: jest.fn(async (operation: (tx: any) => Promise<boolean>) =>
         operation({
+          $executeRaw: jest.fn(async () => 0),
           $queryRaw: jest
             .fn()
             .mockResolvedValueOnce([])

@@ -50,7 +50,7 @@ export const acquireCohortProducerAuthorityLock = async (
   orgId: string,
   producerKeyId: string
 ): Promise<void> => {
-  await client.$queryRaw(
+  await client.$executeRaw(
     Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${authorityLockKey(
       orgId,
       producerKeyId

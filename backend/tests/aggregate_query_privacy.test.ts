@@ -19,6 +19,7 @@ const withSharedReservation = (
   const releaseJournal = transaction.aggregatePrivacyReleaseJournal;
   return {
     ...transaction,
+    $executeRaw: async () => 0,
     $queryRaw: async () => [],
     aggregatePrivacyReservation: {
       findUnique: async () => reservation,

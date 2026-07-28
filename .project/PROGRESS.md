@@ -2,6 +2,14 @@
 
 ## Current Session
 
+- C.0 PR #457 Assurance failed at exact head
+  `0a55ad825c22837cb3a1cc156dea141039144177`: Prisma P2010 attempted to
+  deserialize `pg_advisory_xact_lock`'s `void` result after both C.0 advisory
+  lock helpers used `$queryRaw`. A narrow fail-first repair now uses
+  `$executeRaw`; the repair passed the affected `60/60`, full backend
+  `1,039/1,039`, lint, build, and exact repair CODE/BUG/ADVERSARIAL
+  `GO / GO / GO`. Commit, push, current-head CI rerun, merge, deployment, and
+  live proof remain unperformed.
 - The twice-remediated exact C.0 candidate passes all locally available checks:
   shared codec/producer `11/11`; final focused backend `57/57`; full backend
   `126` suites and `1,037` tests; shared/backend builds; clean-install backend
@@ -19,8 +27,8 @@
   collision tuple checks, tombstone mutation, repository-induced uniqueness
   failure, rollback, and fresh-client state verification for every scenario.
   It remains unexecuted locally solely because neither Docker nor a PostgreSQL
-  server is available. A final adversarial pass found and closed a
-  two canonicalization aliases by preserving exact SQL string-literal and
+  server is available. A final adversarial pass found and closed two
+  canonicalization aliases by preserving exact SQL string-literal and
   quoted-identifier bytes; the formerly colliding whitespace-accepting
   fingerprint regex and uppercase quoted-column substitutions now have
   fail-first readiness regressions. Final exact-candidate
