@@ -5,7 +5,8 @@
 Slice C and the C.0 comparison-proof path SHALL derive one canonical
 reservation key from exact organization, workflow, JBTD, and persona only.
 They SHALL reserve that key through one database-unique create-once retained
-tombstone inside their respective serializable transactions. Metric, source,
+tombstone inside their respective advisory-lock-governed `ReadCommitted`
+transactions. Metric, source,
 unit, window, evidence, value, slot, contribution, producer, and path-specific
 fields SHALL NOT alter the key.
 The database SHALL reject reservation `UPDATE` and `DELETE`, and every hash
@@ -37,8 +38,8 @@ lookup SHALL compare the stored exact typed tuple before replay.
 
 - **WHEN** Slice C and C.0 concurrently attempt the first reservation for the
   same canonical key
-- **THEN** database uniqueness and serializable transactions SHALL permit at
-  most one owner
+- **THEN** database uniqueness and advisory-lock-governed `ReadCommitted`
+  transactions SHALL permit at most one owner
 - **AND** the losing transaction SHALL leave no orphan journal, proof,
   reservation, or contribution claims
 
@@ -53,8 +54,10 @@ lookup SHALL compare the stored exact typed tuple before replay.
 
 - **WHEN** an Outcome Evidence write, authority revocation, Slice C writer, or
   C.0 writer races the proof transaction
-- **THEN** shared transaction locks and serializable commit ordering SHALL
-  expose one complete before-or-after state
+- **THEN** every path SHALL acquire its shared advisory transaction locks
+  before governed reads, in canonical outcome-family then producer-key order
+- **AND** post-wait `ReadCommitted` statement snapshots SHALL expose one
+  complete before-or-after state
 - **AND** state effective at or before C.0 commit SHALL be rechecked before any
   proof journal or reservation is retained
 

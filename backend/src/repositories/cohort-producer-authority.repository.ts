@@ -119,7 +119,7 @@ export const registerCohortProducerAuthority = async (
           }
         });
       },
-      { isolationLevel: "Serializable" }
+      { isolationLevel: "ReadCommitted" }
     );
     return { authority_id: row.id, public_key_fingerprint: fingerprint };
   } catch {
@@ -174,7 +174,7 @@ export const revokeCohortProducerAuthority = async (
         });
         return true;
       },
-      { isolationLevel: "Serializable" }
+      { isolationLevel: "ReadCommitted" }
     );
   } catch {
     return false;

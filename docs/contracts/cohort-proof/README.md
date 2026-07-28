@@ -42,9 +42,10 @@ The internal receipt has `claim_authority_effect: NONE` and all claim, model,
 publication, and customer-facing flags false. It is not exposed through an
 HTTP endpoint or AI Value payload. A future C.1 implementation must present
 the signed proof and expected exact organization/slice to the internal
-handoff verifier inside its serializable release transaction, reload the
-current authority/evidence/admission and exact C.0 journal, and reuse the
-existing reservation owner/reference. It may not mint a replacement.
+handoff verifier inside its advisory-lock-governed `ReadCommitted` release
+transaction, reload the current authority/evidence/admission and exact C.0
+journal, and reuse the existing reservation owner/reference. It may not mint
+a replacement.
 
 Schemas:
 

@@ -293,10 +293,10 @@ const buildFixture = () => {
     }
   };
   const client = {
-    $transaction: async (operation: (tx: any) => Promise<unknown>) => {
+    $transaction: jest.fn(async (operation: (tx: any) => Promise<unknown>) => {
       queryIndex = 0;
       return operation(transaction);
-    }
+    })
   };
   return {
     proof,
@@ -364,6 +364,10 @@ describe("C.0 cohort proof repository", () => {
     );
 
     expect(first).toEqual(second);
+    expect(fixture.client.$transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      { isolationLevel: "ReadCommitted" }
+    );
     expect(first.decision).toBe("VERIFIED_PRIVACY_ONLY");
     expect(first.receipt).toEqual(
       expect.objectContaining({
@@ -535,6 +539,18 @@ describe("C.0 cohort proof repository", () => {
       expect.objectContaining({ decision: "VERIFIED_PRIVACY_ONLY" })
     );
     fixture.resetQuery();
+    let acquiredLocks = 0;
+    fixture.transaction.$executeRaw = async () => {
+      acquiredLocks += 1;
+      return 0;
+    };
+    const findJournal = fixture.transaction.cohortProofJournal.findUnique;
+    fixture.transaction.cohortProofJournal.findUnique = async (query: any) => {
+      if (acquiredLocks < 2) {
+        throw new Error("handoff read occurred before required locks");
+      }
+      return findJournal(query);
+    };
     const handoff = await verifyCohortProofPrivacyHandoff(
       fixture.proof,
       {

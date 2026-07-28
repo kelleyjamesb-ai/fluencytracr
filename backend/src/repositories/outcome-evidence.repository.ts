@@ -100,7 +100,7 @@ export async function persistOutcomeEvidence(
         await acquireOutcomeEvidenceFamilyLock(transaction, family);
         await createOutcomeEvidence(transaction, record);
       },
-      { isolationLevel: "Serializable" }
+      { isolationLevel: "ReadCommitted" }
     );
   }
   return record;

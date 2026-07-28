@@ -1005,6 +1005,13 @@ const REQUIRED_AGGREGATE_PRIVACY_TABLES = [
   "cohort_proof_journal"
 ] as const;
 
+const REQUIRED_C0_RESTRICTED_TABLES = [
+  "cohort_producer_authorities",
+  "cohort_producer_authority_revocations",
+  "aggregate_privacy_reservations",
+  "cohort_proof_journal"
+] as const;
+
 const REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS = [
   ["cohort_producer_authorities_append_only", "cohort_producer_authorities"],
   [
@@ -1235,8 +1242,8 @@ const REQUIRED_PERSISTENCE_COLUMN_BINDINGS = Object.entries(
 
 type DatabaseReadinessResult =
   | { status: "not_configured" }
-  | { status: "ready"; missingTables: []; missingColumns: []; missingGuards: []; missingConstraints: []; tableCount: number }
-  | { status: "schema_incomplete"; missingTables: string[]; missingColumns: string[]; missingGuards: string[]; missingConstraints: string[]; tableCount: number }
+  | { status: "ready"; missingTables: []; missingColumns: []; missingGuards: []; missingConstraints: []; missingSecurity: []; tableCount: number }
+  | { status: "schema_incomplete"; missingTables: string[]; missingColumns: string[]; missingGuards: string[]; missingConstraints: string[]; missingSecurity: string[]; tableCount: number }
   | { status: "unavailable"; error: string };
 
 const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
@@ -1252,6 +1259,57 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
     const tableNames = new Set(rows.map((row) => row.tablename));
     const missingTables = REQUIRED_PERSISTENCE_TABLES.filter((tableName) => !tableNames.has(tableName));
     const missingColumns: string[] = [];
+    const securityRows = (await prisma.$queryRawUnsafe(`
+      SELECT
+        security_table.relname AS table_name,
+        security_table.relrowsecurity AS rls_enabled,
+        COALESCE(
+          (
+            SELECT has_table_privilege(
+              role_row.oid,
+              security_table.oid,
+              'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+            )
+            FROM pg_roles AS role_row
+            WHERE role_row.rolname = 'anon'
+          ),
+          false
+        ) AS anon_has_privilege,
+        COALESCE(
+          (
+            SELECT has_table_privilege(
+              role_row.oid,
+              security_table.oid,
+              'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+            )
+            FROM pg_roles AS role_row
+            WHERE role_row.rolname = 'authenticated'
+          ),
+          false
+        ) AS authenticated_has_privilege
+      FROM pg_class AS security_table
+      JOIN pg_namespace AS security_schema
+        ON security_schema.oid = security_table.relnamespace
+      WHERE security_schema.nspname = 'public'
+        AND security_table.relkind = 'r'
+    `)) as Array<{
+      table_name: string;
+      rls_enabled: boolean;
+      anon_has_privilege: boolean;
+      authenticated_has_privilege: boolean;
+    }>;
+    const missingSecurity = REQUIRED_C0_RESTRICTED_TABLES
+      .filter((tableName) => tableNames.has(tableName))
+      .filter(
+        (tableName) =>
+          !securityRows.some(
+            (row) =>
+              row.table_name === tableName &&
+              row.rls_enabled &&
+              !row.anon_has_privilege &&
+              !row.authenticated_has_privilege
+          )
+      );
     const guardRows = (await prisma.$queryRawUnsafe(`
       SELECT
         trigger_row.tgname,
@@ -1385,7 +1443,8 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       missingTables.length > 0 ||
       missingColumns.length > 0 ||
       missingGuards.length > 0 ||
-      missingConstraints.length > 0
+      missingConstraints.length > 0 ||
+      missingSecurity.length > 0
     ) {
       return {
         status: "schema_incomplete",
@@ -1393,6 +1452,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
         missingColumns,
         missingGuards: [...missingGuards],
         missingConstraints: [...missingConstraints],
+        missingSecurity: [...missingSecurity],
         tableCount: tableNames.size
       };
     }
@@ -1402,6 +1462,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       missingColumns: [],
       missingGuards: [],
       missingConstraints: [],
+      missingSecurity: [],
       tableCount: tableNames.size
     };
   } catch (error) {
@@ -5900,7 +5961,8 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
       required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
       required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
-      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS]
+      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
   if (readiness.status === "unavailable") {
@@ -5911,7 +5973,8 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
       required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
       required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
-      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS]
+      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
   if (readiness.status === "schema_incomplete") {
@@ -5922,10 +5985,12 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       missing_columns: readiness.missingColumns,
       missing_guards: readiness.missingGuards,
       missing_constraints: readiness.missingConstraints,
+      missing_security: readiness.missingSecurity,
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
       required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
       required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
-      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS]
+      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
   return res.json({
@@ -5934,7 +5999,8 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
     required_tables: [...REQUIRED_PERSISTENCE_TABLES],
     required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
     required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
-    required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS]
+    required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+    required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
   });
 });
 
@@ -6027,6 +6093,7 @@ app.get("/health", async (_req, res) => {
       missing_columns: readiness.missingColumns,
       missing_guards: readiness.missingGuards,
       missing_constraints: readiness.missingConstraints,
+      missing_security: readiness.missingSecurity,
       fail_closed_total: failClosedMetrics.total,
       details: "Apply pending Prisma migration for compliance persistence models."
     });

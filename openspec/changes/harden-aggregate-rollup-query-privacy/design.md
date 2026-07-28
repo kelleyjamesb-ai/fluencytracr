@@ -172,8 +172,8 @@ collides even when every caller-visible label and contribution is changed.
 
 The ADMIN-only release route accepts candidate data and the proposed
 projection, never the manifest or canonical contribution list. It reloads
-server authority inside the serializable transaction and returns a fixed HOLD
-posture when admission fails.
+server authority inside the advisory-lock-governed `ReadCommitted` transaction
+and returns a fixed HOLD posture when admission fails.
 
 Release identity uses a concrete immutable UTC date range formatted
 `YYYY-MM-DD/YYYY-MM-DD`. Relative observation labels such as `60d` or `90d`

@@ -67,4 +67,25 @@ describe("C.0 privacy authority migration", () => {
   it("does not persist the raw proof or population commitment", () => {
     expect(sql).not.toMatch(/"raw_proof"|"signed_proof"|"population_commitment"/);
   });
+
+  it("enables RLS and revokes public Data API roles on every C.0 table", () => {
+    for (const table of [
+      "cohort_producer_authorities",
+      "cohort_producer_authority_revocations",
+      "aggregate_privacy_reservations",
+      "cohort_proof_journal"
+    ]) {
+      for (const script of [sql, postPushSql]) {
+        expect(script).toContain(
+          `ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`
+        );
+        expect(script).toContain(
+          `REVOKE ALL ON TABLE public.${table} FROM anon`
+        );
+        expect(script).toContain(
+          `REVOKE ALL ON TABLE public.${table} FROM authenticated`
+        );
+      }
+    }
+  });
 });

@@ -10,6 +10,7 @@ const {
   verifyCohortProofPrivacyHandoff
 } = require("../backend/dist/repositories/cohort-proof.repository.js");
 const {
+  acquireCohortProducerAuthorityLock,
   registerCohortProducerAuthority,
   revokeCohortProducerAuthority
 } = require("../backend/dist/repositories/cohort-producer-authority.repository.js");
@@ -33,6 +34,7 @@ const {
 
 const prisma = new PrismaClient();
 const orgId = `c0-postgres-${crypto.randomUUID()}`;
+const createdRestrictedRoles = [];
 const hash = (label) =>
   crypto.createHash("sha256").update(`${orgId}:${label}`).digest("hex");
 
@@ -342,7 +344,35 @@ const expectMutationRejected = async (table, id) => {
   }
 };
 
+const waitForAdvisoryWaiters = async (minimum) => {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const rows = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS "waiting"
+      FROM "pg_locks"
+      WHERE "locktype" = 'advisory'
+        AND NOT "granted"
+        AND "database" = (
+          SELECT "oid" FROM "pg_database" WHERE "datname" = current_database()
+        )
+    `;
+    if ((rows[0]?.waiting ?? 0) >= minimum) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error(`timed out waiting for ${minimum} advisory-lock waiter(s)`);
+};
+
 try {
+  for (const role of ["anon", "authenticated"]) {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${role}') AS "exists"`
+    );
+    if (!rows[0]?.exists) {
+      await prisma.$executeRawUnsafe(`CREATE ROLE "${role}" NOLOGIN`);
+      createdRestrictedRoles.push(role);
+    }
+  }
+
   const authority = await prisma.cohortProducerAuthority.create({
     data: {
       orgId,
@@ -474,6 +504,57 @@ try {
     await expectMutationRejected(table, id);
   }
 
+  for (const table of [
+    "cohort_producer_authorities",
+    "cohort_producer_authority_revocations",
+    "aggregate_privacy_reservations",
+    "cohort_proof_journal"
+  ]) {
+    const security = await prisma.$queryRawUnsafe(`
+      SELECT
+        "security_table"."relrowsecurity" AS "rls_enabled",
+        has_table_privilege(
+          'anon',
+          "security_table"."oid",
+          'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+        ) AS "anon_has_privilege",
+        has_table_privilege(
+          'authenticated',
+          "security_table"."oid",
+          'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+        ) AS "authenticated_has_privilege"
+      FROM "pg_class" AS "security_table"
+      JOIN "pg_namespace" AS "security_schema"
+        ON "security_schema"."oid" = "security_table"."relnamespace"
+      WHERE "security_schema"."nspname" = 'public'
+        AND "security_table"."relname" = '${table}'
+    `);
+    if (
+      security.length !== 1 ||
+      !security[0].rls_enabled ||
+      security[0].anon_has_privilege ||
+      security[0].authenticated_has_privilege
+    ) {
+      throw new Error(`restricted role posture is open for ${table}`);
+    }
+    for (const role of ["anon", "authenticated"]) {
+      let denied = false;
+      try {
+        await prisma.$transaction(async (transaction) => {
+          await transaction.$executeRawUnsafe(`SET LOCAL ROLE "${role}"`);
+          await transaction.$queryRawUnsafe(
+            `SELECT * FROM public."${table}" LIMIT 1`
+          );
+        });
+      } catch {
+        denied = true;
+      }
+      if (!denied) {
+        throw new Error(`${role} read unexpectedly succeeded for ${table}`);
+      }
+    }
+  }
+
   const raceKey = hash("race");
   const race = await Promise.allSettled(
     ["owner-a", "owner-b"].map((ownerReference) =>
@@ -541,7 +622,7 @@ try {
         },
         transaction
       ),
-    { isolationLevel: "Serializable" }
+    { isolationLevel: "ReadCommitted" }
   );
   if (
     !c0FirstHandoff ||
@@ -577,7 +658,7 @@ try {
         },
         transaction
       ),
-    { isolationLevel: "Serializable" }
+    { isolationLevel: "ReadCommitted" }
   );
   if (
     missingHandoff !== null ||
@@ -636,6 +717,102 @@ try {
     concurrentProofJournals + concurrentSliceJournals !== 1
   ) {
     throw new Error("concurrent C.0/Slice C application paths left orphan state");
+  }
+
+  const blockedEvidence = await setupApplicationScenario("blocked-evidence");
+  let releaseEvidenceWriter;
+  let evidenceWriterReady;
+  const evidenceWriterRelease = new Promise((resolve) => {
+    releaseEvidenceWriter = resolve;
+  });
+  const evidenceWriterStarted = new Promise((resolve) => {
+    evidenceWriterReady = resolve;
+  });
+  const evidenceWriter = prisma.$transaction(async (transaction) => {
+    await persistOutcomeEvidence(
+      blockedEvidence.orgId,
+      {
+        ...blockedEvidence.baseline,
+        aggregate_value: 99
+      },
+      crypto.randomUUID(),
+      "2026-05-02T00:01:00.000Z",
+      transaction
+    );
+    evidenceWriterReady();
+    await evidenceWriterRelease;
+  });
+  await evidenceWriterStarted;
+  const blockedEvidenceProof = commitCohortEqualityProof(
+    blockedEvidence.proof,
+    prisma
+  );
+  await waitForAdvisoryWaiters(1);
+  releaseEvidenceWriter();
+  await evidenceWriter;
+  const blockedEvidenceResult = await blockedEvidenceProof;
+  if (
+    blockedEvidenceResult.decision !== "HOLD" ||
+    await prisma.cohortProofJournal.count({
+      where: { orgId: blockedEvidence.orgId }
+    }) !== 0
+  ) {
+    throw new Error(
+      "proof retained stale evidence after waiting behind a committed writer"
+    );
+  }
+
+  const blockedRevocation = await setupApplicationScenario(
+    "blocked-revocation"
+  );
+  let releaseAuthorityBlocker;
+  let authorityBlockerReady;
+  const authorityBlockerRelease = new Promise((resolve) => {
+    releaseAuthorityBlocker = resolve;
+  });
+  const authorityBlockerStarted = new Promise((resolve) => {
+    authorityBlockerReady = resolve;
+  });
+  const authorityBlocker = prisma.$transaction(async (transaction) => {
+    await acquireCohortProducerAuthorityLock(
+      transaction,
+      blockedRevocation.orgId,
+      "producer_primary"
+    );
+    authorityBlockerReady();
+    await authorityBlockerRelease;
+  });
+  await authorityBlockerStarted;
+  const blockedRevocationWriter = revokeCohortProducerAuthority(
+    {
+      org_id: blockedRevocation.orgId,
+      producer_key_id: "producer_primary",
+      authority_version: 1,
+      reason_code: "CI_BLOCKED_RACE"
+    },
+    prisma
+  );
+  await waitForAdvisoryWaiters(1);
+  const blockedRevocationProof = commitCohortEqualityProof(
+    blockedRevocation.proof,
+    prisma
+  );
+  await waitForAdvisoryWaiters(2);
+  releaseAuthorityBlocker();
+  await authorityBlocker;
+  if (!(await blockedRevocationWriter)) {
+    throw new Error("blocked authority revocation did not commit");
+  }
+  const blockedRevocationResult = await blockedRevocationProof;
+  if (
+    blockedRevocationResult.decision !== "HOLD" ||
+    await prisma.cohortProofJournal.count({
+      where: { orgId: blockedRevocation.orgId }
+    }) !== 0
+  ) {
+    throw new Error(
+      "proof retained stale authority after waiting behind a committed revocation"
+    );
   }
 
   const evidenceRace = await setupApplicationScenario("evidence-race");
@@ -714,7 +891,7 @@ try {
         },
         transaction
       ),
-    { isolationLevel: "Serializable" }
+    { isolationLevel: "ReadCommitted" }
   );
   if (revokedHandoff !== null) {
     throw new Error("revoked C.1 handoff did not hold");
@@ -997,6 +1174,11 @@ try {
   await fresh.$disconnect();
   process.stdout.write("cohort proof postgres guards: PASS\n");
 } finally {
+  for (const role of createdRestrictedRoles.reverse()) {
+    await prisma.$executeRawUnsafe(`DROP ROLE IF EXISTS "${role}"`).catch(
+      () => undefined
+    );
+  }
   await prisma.$disconnect().catch(() => undefined);
   await disconnectPrisma().catch(() => undefined);
 }

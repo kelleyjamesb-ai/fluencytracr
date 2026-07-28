@@ -591,7 +591,7 @@ export const commitCohortEqualityProof = async (
           )
         };
       },
-      { isolationLevel: "Serializable" }
+      { isolationLevel: "ReadCommitted" }
     );
   } catch {
     return held();
@@ -642,6 +642,17 @@ export const verifyCohortProofPrivacyHandoff = async (
   }
   const proof = parsed.data;
   try {
+    await acquireOutcomeEvidenceFamilyLock(transaction, {
+      orgId: proof.org_id,
+      workflowId: proof.workflow_id,
+      jbtdId: proof.jbtd_id,
+      personaId: proof.persona_id
+    });
+    await acquireCohortProducerAuthorityLock(
+      transaction,
+      proof.org_id,
+      proof.producer_key_id
+    );
     const existingJournal = await transaction.cohortProofJournal.findUnique({
       where: {
         cohort_proof_journal_proof_id_key: {

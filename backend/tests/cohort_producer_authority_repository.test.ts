@@ -128,7 +128,7 @@ describe("C.0 cohort producer authority repository", () => {
     });
     expect(client.$transaction).toHaveBeenCalledWith(
       expect.any(Function),
-      { isolationLevel: "Serializable" }
+      { isolationLevel: "ReadCommitted" }
     );
   });
 

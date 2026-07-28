@@ -253,16 +253,31 @@ const REQUIRED_CONSTRAINT_ROWS = [
   convalidated: true
 }));
 
+const REQUIRED_SECURITY_ROWS = [
+  "cohort_producer_authorities",
+  "cohort_producer_authority_revocations",
+  "aggregate_privacy_reservations",
+  "cohort_proof_journal"
+].map((table_name) => ({
+  table_name,
+  rls_enabled: true,
+  anon_has_privilege: false,
+  authenticated_has_privilege: false
+}));
+
 const mockDb = (
   tableRows: Array<{ tablename: string }>,
   columnRows = REQUIRED_COLUMN_ROWS,
   guardRows = REQUIRED_GUARD_ROWS,
-  constraintRows = REQUIRED_CONSTRAINT_ROWS
+  constraintRows = REQUIRED_CONSTRAINT_ROWS,
+  securityRows = REQUIRED_SECURITY_ROWS
 ) => ({
   getPrisma: () => ({
     $queryRawUnsafe: async (query: string) =>
       query.includes("information_schema.columns")
         ? columnRows
+        : query.includes("security_table")
+          ? securityRows
         : query.includes("pg_trigger")
           ? guardRows
           : query.includes("pg_constraint")
@@ -487,6 +502,36 @@ describe("health postgres disclosure", () => {
     expect(response.body.missing_constraints).toEqual([
       "aggregate_privacy_reservation_owner_kind_check"
     ]);
+  });
+
+  it("fails readiness when a C.0 table lacks RLS or grants a Data API role", async () => {
+    const insecureRows = REQUIRED_SECURITY_ROWS.map((row) =>
+      row.table_name === "cohort_proof_journal"
+        ? {
+            ...row,
+            rls_enabled: false,
+            authenticated_has_privilege: true
+          }
+        : row
+    );
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        insecureRows
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.status).toBe("schema_incomplete");
+    expect(response.body.missing_security).toEqual(["cohort_proof_journal"]);
   });
 
   it("fails readiness when a same-named check constraint is weakened", async () => {

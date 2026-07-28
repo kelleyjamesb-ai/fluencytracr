@@ -173,9 +173,12 @@ semantic alias matching. Different evidence, a copied receipt, or a
 caller-selected receipt/export also holds.
 
 All authority, evidence, admission, proof, time, and legacy-state checks occur
-inside the committing serializable transaction. Outcome Evidence writes and
+inside the committing `ReadCommitted` transaction. Outcome Evidence writes and
 C.0 acquire the same exact family advisory transaction lock before reading or
-writing the two windows. The C.0 transaction then locks the immutable
+writing the two windows. Every governed transaction acquires all required
+advisory locks first in canonical outcome-family then producer-key order so
+later statements use post-wait snapshots while relevant writers remain
+excluded. The C.0 transaction then locks the immutable
 authority epoch row; revocation insertion must acquire that same row lock.
 This gives an explicit ordering for concurrent evidence mutation and
 revocation. A concurrent duplicate/replacement evidence write, authority
@@ -207,14 +210,15 @@ tombstones. Every lookup compares the exact stored tuple in addition to the
 hash so a hash collision holds. Exact replay requires the same owner kind,
 reference, content hash, and slice. Any other owner or content holds.
 
-Slice C reserves this row inside its existing serializable release transaction
-before its journal row and contribution claims commit. A pre-migration Slice C
+Slice C reserves this row inside its advisory-lock-governed `ReadCommitted`
+release transaction before its journal row and contribution claims commit. A
+pre-migration Slice C
 journal exact replay may atomically create its own missing
 `SLICE_C_FIXED_WINDOW` reservation; C.0 may never adopt a legacy Slice C row
 and holds if any matching Slice C privacy-domain journal already exists. C.0
 checks that legacy table before creating its proof journal and reservation in
 the same transaction. Database uniqueness, exact domain advisory locking, and
-serializable transactions make both release orders and concurrent
+post-wait `ReadCommitted` snapshots make both release orders and concurrent
 cross-authority first writers converge on at most one owner. Any transaction
 failure or uniqueness race holds with no orphan reservation, proof, journal,
 or claims.
@@ -236,7 +240,8 @@ reassigned.
 
 The later C.1 path must present the signed proof plus its expected
 organization/slice to the internal handoff verifier inside the same
-serializable transaction used for the future release. That verifier reruns
+advisory-lock-governed `ReadCommitted` transaction used for the future release.
+That verifier reruns
 current authority, revocation, freshness, accepted Slice B chain, evidence,
 admission, journal, and reservation checks; matches every typed field,
 non-authorizing flag, hash, ID, count, and window; and returns the existing

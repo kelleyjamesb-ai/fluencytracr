@@ -451,7 +451,7 @@ export const commitAggregatePrivacyProjection = async (
       }
       return { decision: "RELEASE" as const, receipt, projection: row.projectionJson };
     }, {
-      isolationLevel: "Serializable"
+      isolationLevel: "ReadCommitted"
     });
   } catch (error) {
     if (isPrismaUniqueConstraintError(error)) {

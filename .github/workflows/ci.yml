@@ -48,6 +48,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ripgrep
       - name: Build shared workspace
         run: npm run build --workspace shared
+      - name: Run cohort-proof codec and producer tests
+        run: npm run test:cohort-proof
       - name: Run backend tests
         run: npm run test:ci --workspace backend
       - name: Run frontend tests

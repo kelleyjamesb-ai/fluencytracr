@@ -19,7 +19,8 @@
       evidence/receipt hashes, and require one total admitted pair and one
       evidence ID per window with canonical metric-library identity.
 - [x] 2.3 Add the create-once shared reservation and C.0 proof journal in one
-      serializable, advisory-locked transaction.
+      advisory-lock-governed `ReadCommitted` transaction with all required
+      locks acquired before governed reads.
 - [x] 2.4 Require the same shared reservation inside the Slice C release
       transaction; allow only Slice C to adopt its exact pre-migration journal
       and make C.0 hold on every legacy Slice C row.

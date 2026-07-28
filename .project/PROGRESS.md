@@ -2,6 +2,21 @@
 
 ## Current Session
 
+- C.0 PR #457 final-review remediation is locally complete at uncommitted head
+  `f1594f35107510c35cc8fef39f47621f0742f92a`. Advisory-lock-governed
+  repository transactions now use `ReadCommitted`, acquire the outcome-family
+  and producer-key locks before governed reads, and have deterministic
+  PostgreSQL regressions proving that a proof waiting behind evidence insertion
+  or authority revocation observes the committed state and holds. Required CI
+  now invokes `npm run test:cohort-proof`. The four C.0 tables enable RLS,
+  revoke direct `PUBLIC`, `anon`, and `authenticated` access, and readiness
+  fails closed when either posture drifts; the PostgreSQL verifier includes
+  catalog checks and real denied-role reads. Final local evidence: focused
+  backend `76/76`, full backend `1,042/1,042`, cohort-proof `11/11`, real
+  PostgreSQL verifier PASS, backend lint/build PASS, Prisma validation PASS,
+  strict OpenSpec PASS, V1 governance PASS, workflow YAML PASS, and diff
+  checks PASS. No commit, push, current-head remote CI rerun, migration apply,
+  merge, deployment, or live proof has occurred.
 - C.0 PR #457 Assurance failed at exact head
   `0a55ad825c22837cb3a1cc156dea141039144177`: Prisma P2010 attempted to
   deserialize `pg_advisory_xact_lock`'s `void` result after both C.0 advisory
