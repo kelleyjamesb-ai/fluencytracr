@@ -898,6 +898,21 @@ describe("aggregate disclosure policy", () => {
     expect(upsertCalled).toBe(false);
   });
 
+  it("treats a durable unique-slot race as a changed replay without constructor coupling", async () => {
+    const journal = {
+      $transaction: async () => {
+        throw { code: "P2002" };
+      }
+    };
+
+    await expect(
+      commitAggregatePrivacyProjection(candidate, projection, journal as never)
+    ).resolves.toEqual({
+      decision: "HOLD",
+      diagnostic: "CHANGED_REPLAY"
+    });
+  });
+
   it("reads only an already-admitted durable projection", async () => {
     const journal = {
       aggregatePrivacyReleaseJournal: {

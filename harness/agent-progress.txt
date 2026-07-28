@@ -676,3 +676,16 @@
   migration apply, deployment, or live proof.
 - Next focus: obtain fresh human commit authorization, then commit and push
   this exact reviewed candidate before creating any PR.
+
+## 2026-07-28 (UTC) — Codex (MCII Slice C clean-CI remediation)
+
+- Completed: Repaired PR #453's clean-run Node failure by explicitly
+  generating Prisma, removing generated-constructor coupling from the
+  aggregate privacy repository, resolving database clients inside fail-closed
+  guards, and preventing duplicate feature-branch push plus PR CI runs.
+- Verified: fresh `npm ci`; Prisma generation; shared/backend builds; focused
+  privacy/observability `35/35`; full backend `1007/1007` in 383.662 seconds;
+  governance; agentic harness `15/15`; strict OpenSpec; YAML/JSON/diff checks;
+  and exact CODE/BUG/ADVERSARIAL GO/GO/GO.
+- Boundary: local reviewed remediation only until commit/push. No merge,
+  migration apply, deployment, or live proof.

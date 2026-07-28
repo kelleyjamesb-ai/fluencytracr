@@ -4083,3 +4083,35 @@
   integration was run.
 - Slice C is locally complete and marked `done`. Boundary: no commit, push,
   PR, migration apply, deployment, production readback, or live proof.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice C clean-CI remediation)
+
+- Both CI Node jobs for PR #453 ran the same head because `ci.yml` triggered on
+  both branch push and pull request. On a clean runner, neither job generated
+  Prisma before backend tests. The suite reported `999 passed, 7 failed` after
+  about 202-226 seconds, then retained an open handle until the 20-minute job
+  timeout. The failures were confined to aggregate-privacy tests:
+  `@prisma/client did not initialize yet`, a 30-second route timeout, and
+  constructor-coupled `instanceof` errors.
+- Repaired the clean path by generating Prisma immediately after `npm ci`,
+  limiting branch-push CI to `main` while retaining pull-request CI, importing
+  repository Prisma symbols as types, resolving `getPrisma()` inside guarded
+  operations, using the Prisma-supported literal `Serializable` isolation
+  value, and recognizing `P2002` without generated-constructor coupling.
+  All failures still HOLD: `P2002` maps to `CHANGED_REPLAY`; all other commit
+  failures map to `JOURNAL_UNAVAILABLE`; read failures return `null`.
+- Fail-first evidence: the new constructor-independent `P2002` regression
+  initially returned `JOURNAL_UNAVAILABLE`, then passed after remediation.
+  Focused privacy/observability verification passed `35/35`.
+- Exact cold-path verification passed: fresh `npm ci`; Prisma generation;
+  shared/backend builds; full backend `123/123` suites and `1007/1007` tests,
+  exiting normally in 383.662 seconds; V1 governance; agentic harness
+  `15/15`; strict OpenSpec; workflow YAML parsing; queue JSON parsing; and
+  `git diff --check`.
+- Exact remediation review returned CODE/BUG/ADVERSARIAL `GO/GO/GO`. The cold
+  suite remains substantial because `ai_value_minimal_persistence.test.ts`
+  took about 253 seconds, but it passed and is separate from the fixed
+  post-failure hang.
+- Slice C is locally `done` again. Boundary: PR #453 still points to the prior
+  failing head until this remediation is committed and pushed. No merge,
+  migration apply, deployment, production readback, or live proof.

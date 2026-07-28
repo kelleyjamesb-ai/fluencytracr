@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-import { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { getPrisma } from "../db";
 import type {
@@ -66,6 +66,14 @@ export type AggregatePrivacyCommitResult =
       decision: "HOLD";
       diagnostic: AggregateDisclosureDiagnostic | "JOURNAL_UNAVAILABLE";
     };
+
+const isPrismaUniqueConstraintError = (
+  error: unknown
+): error is { code: "P2002" } =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  error.code === "P2002";
 
 const canonicalJson = (value: Prisma.InputJsonValue): string => {
   if (Array.isArray(value)) {
@@ -222,7 +230,7 @@ const isExactReceipt = (
 export const commitAggregatePrivacyProjection = async (
   candidate: AggregateDisclosureCandidate,
   projection: Prisma.InputJsonValue,
-  client: PrismaClient = getPrisma()
+  client?: PrismaClient
 ): Promise<AggregatePrivacyCommitResult> => {
   if (!candidate.workflow_id || !candidate.jbtd_id || !candidate.persona_id) {
     return { decision: "HOLD", diagnostic: "MISSING_SERVER_AUTHORITY" };
@@ -239,7 +247,8 @@ export const commitAggregatePrivacyProjection = async (
     return { decision: "HOLD", diagnostic: "MISSING_SERVER_AUTHORITY" };
   }
   try {
-    return await client.$transaction(async (transaction) => {
+    const resolvedClient = client ?? getPrisma();
+    return await resolvedClient.$transaction(async (transaction) => {
       const manifest = toManifest(
         await transaction.aggregatePrivacyManifest.findUnique({
           where: {
@@ -350,10 +359,10 @@ export const commitAggregatePrivacyProjection = async (
       }
       return { decision: "RELEASE" as const, receipt, projection: row.projectionJson };
     }, {
-      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+      isolationLevel: "Serializable"
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (isPrismaUniqueConstraintError(error)) {
       return { decision: "HOLD", diagnostic: "CHANGED_REPLAY" };
     }
     return { decision: "HOLD", diagnostic: "JOURNAL_UNAVAILABLE" };
@@ -368,10 +377,11 @@ export const commitAggregatePrivacyProjection = async (
 export const readAdmittedAggregatePrivacyProjection = async (
   orgId: string,
   privacySlotId: string,
-  client: PrismaClient = getPrisma()
+  client?: PrismaClient
 ): Promise<{ projection: Prisma.JsonValue; window_id: string } | null> => {
   try {
-    const row = await client.aggregatePrivacyReleaseJournal.findUnique({
+    const resolvedClient = client ?? getPrisma();
+    const row = await resolvedClient.aggregatePrivacyReleaseJournal.findUnique({
       where: {
         aggregate_privacy_release_slot_key: {
           orgId,
