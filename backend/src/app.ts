@@ -998,8 +998,151 @@ const REQUIRED_AI_VALUE_TABLES = [
 const REQUIRED_AGGREGATE_PRIVACY_TABLES = [
   "aggregate_privacy_manifests",
   "aggregate_privacy_release_journal",
-  "aggregate_privacy_contribution_claims"
+  "aggregate_privacy_contribution_claims",
+  "aggregate_privacy_reservations",
+  "cohort_producer_authorities",
+  "cohort_producer_authority_revocations",
+  "cohort_proof_journal"
 ] as const;
+
+const REQUIRED_C0_RESTRICTED_TABLES = [
+  "cohort_producer_authorities",
+  "cohort_producer_authority_revocations",
+  "aggregate_privacy_reservations",
+  "cohort_proof_journal"
+] as const;
+
+const REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS = [
+  ["cohort_producer_authorities_append_only", "cohort_producer_authorities"],
+  [
+    "cohort_producer_authority_revocations_append_only",
+    "cohort_producer_authority_revocations"
+  ],
+  ["aggregate_privacy_reservations_append_only", "aggregate_privacy_reservations"],
+  ["cohort_proof_journal_append_only", "cohort_proof_journal"],
+  [
+    "aggregate_privacy_release_journal_append_only",
+    "aggregate_privacy_release_journal"
+  ],
+  ["aggregate_privacy_manifests_append_only", "aggregate_privacy_manifests"],
+  [
+    "aggregate_privacy_contribution_claims_append_only",
+    "aggregate_privacy_contribution_claims"
+  ]
+] as const;
+const REQUIRED_PRIVACY_APPEND_ONLY_GUARDS =
+  REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS.map(([name]) => name);
+const REQUIRED_PRIVACY_GUARD_FUNCTION_SOURCE = `
+BEGIN
+  RAISE EXCEPTION 'MCII privacy authority rows are append-only'
+    USING ERRCODE = 'integrity_constraint_violation';
+END;
+`.replace(/\s+/g, " ").trim();
+const REQUIRED_PRIVACY_CHECK_CONSTRAINT_BINDINGS = [
+  ["cohort_producer_authority_version_check", "cohort_producer_authorities"],
+  ["cohort_producer_authority_time_check", "cohort_producer_authorities"],
+  ["cohort_producer_authority_fingerprint_check", "cohort_producer_authorities"],
+  [
+    "cohort_producer_revocation_version_check",
+    "cohort_producer_authority_revocations"
+  ],
+  [
+    "cohort_producer_revocation_reason_check",
+    "cohort_producer_authority_revocations"
+  ],
+  ["aggregate_privacy_reservation_owner_kind_check", "aggregate_privacy_reservations"],
+  ["aggregate_privacy_reservation_key_check", "aggregate_privacy_reservations"],
+  [
+    "aggregate_privacy_reservation_content_hash_check",
+    "aggregate_privacy_reservations"
+  ],
+  ["cohort_proof_journal_decision_check", "cohort_proof_journal"],
+  ["cohort_proof_journal_baseline_count_check", "cohort_proof_journal"],
+  ["cohort_proof_journal_comparison_count_check", "cohort_proof_journal"],
+  ["cohort_proof_journal_baseline_window_check", "cohort_proof_journal"],
+  ["cohort_proof_journal_comparison_window_check", "cohort_proof_journal"]
+] as const;
+const REQUIRED_PRIVACY_CHECK_CONSTRAINTS =
+  REQUIRED_PRIVACY_CHECK_CONSTRAINT_BINDINGS.map(([name]) => name);
+const canonicalConstraintDefinition = (definition: string): string => {
+  let canonical = "";
+  let insideStringLiteral = false;
+  let insideQuotedIdentifier = false;
+  for (let index = 0; index < definition.length; index += 1) {
+    const character = definition[index] ?? "";
+    if (insideStringLiteral) {
+      canonical += character;
+      if (character === "'" && definition[index + 1] === "'") {
+        canonical += "'";
+        index += 1;
+      } else if (character === "'") {
+        insideStringLiteral = false;
+      }
+      continue;
+    }
+    if (insideQuotedIdentifier) {
+      canonical += character;
+      if (character === '"' && definition[index + 1] === '"') {
+        canonical += '"';
+        index += 1;
+      } else if (character === '"') {
+        insideQuotedIdentifier = false;
+      }
+      continue;
+    }
+    if (character === "'") {
+      insideStringLiteral = true;
+      canonical += character;
+      continue;
+    }
+    if (character === '"') {
+      insideQuotedIdentifier = true;
+      canonical += character;
+      continue;
+    }
+    if (definition.slice(index, index + 6).toLowerCase() === "::text") {
+      index += 5;
+      continue;
+    }
+    if (
+      /\s/.test(character) ||
+      character === "(" ||
+      character === ")"
+    ) {
+      continue;
+    }
+    canonical += character.toLowerCase();
+  }
+  return canonical;
+};
+const REQUIRED_PRIVACY_CHECK_DEFINITIONS: Readonly<Record<string, string>> = {
+  cohort_producer_authority_version_check:
+    "CHECK authority_version > 0",
+  cohort_producer_authority_time_check:
+    "CHECK expires_at > valid_from",
+  cohort_producer_authority_fingerprint_check:
+    "CHECK public_key_fingerprint ~ '^[0-9a-f]{64}$'",
+  cohort_producer_revocation_version_check:
+    "CHECK authority_version > 0",
+  cohort_producer_revocation_reason_check:
+    "CHECK reason_code ~ '^[A-Z][A-Z0-9_]{0,63}$'",
+  aggregate_privacy_reservation_owner_kind_check:
+    "CHECK owner_kind = ANY ARRAY['SLICE_C_FIXED_WINDOW', 'OUTCOME_COMPARISON_PROOF']",
+  aggregate_privacy_reservation_key_check:
+    "CHECK reservation_key ~ '^[0-9a-f]{64}$'",
+  aggregate_privacy_reservation_content_hash_check:
+    "CHECK owner_content_hash ~ '^[0-9a-f]{64}$'",
+  cohort_proof_journal_decision_check:
+    "CHECK decision = 'VERIFIED_PRIVACY_ONLY'",
+  cohort_proof_journal_baseline_count_check:
+    "CHECK baseline_cohort_size >= 5",
+  cohort_proof_journal_comparison_count_check:
+    "CHECK comparison_cohort_size >= 5",
+  cohort_proof_journal_baseline_window_check:
+    "CHECK baseline_period_end > baseline_period_start",
+  cohort_proof_journal_comparison_window_check:
+    "CHECK comparison_period_end > comparison_period_start"
+};
 
 const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
   "aggregate_source_system",
@@ -1037,6 +1180,51 @@ const REQUIRED_PERSISTENCE_TABLE_COLUMNS = {
     "aggregate_boundary_ref_json",
     "required_caveats_json",
     "blocked_uses_json"
+  ],
+  cohort_producer_authorities: [
+    "org_id",
+    "producer_key_id",
+    "authority_version",
+    "proof_policy_version",
+    "producer_policy_version",
+    "public_key_der_base64",
+    "public_key_fingerprint",
+    "valid_from",
+    "expires_at"
+  ],
+  cohort_producer_authority_revocations: [
+    "authority_id",
+    "org_id",
+    "producer_key_id",
+    "authority_version",
+    "revoked_at",
+    "reason_code"
+  ],
+  aggregate_privacy_reservations: [
+    "org_id",
+    "reservation_key",
+    "owner_kind",
+    "owner_reference",
+    "owner_content_hash",
+    "workflow_id",
+    "jbtd_id",
+    "persona_id"
+  ],
+  cohort_proof_journal: [
+    "org_id",
+    "proof_id",
+    "proof_hash",
+    "producer_key_id",
+    "authority_version",
+    "workflow_id",
+    "jbtd_id",
+    "persona_id",
+    "baseline_evidence_hash",
+    "comparison_evidence_hash",
+    "evidence_pair_hash",
+    "admission_receipt_hash",
+    "reservation_key",
+    "decision"
   ]
 } as const;
 
@@ -1054,8 +1242,8 @@ const REQUIRED_PERSISTENCE_COLUMN_BINDINGS = Object.entries(
 
 type DatabaseReadinessResult =
   | { status: "not_configured" }
-  | { status: "ready"; missingTables: []; missingColumns: []; tableCount: number }
-  | { status: "schema_incomplete"; missingTables: string[]; missingColumns: string[]; tableCount: number }
+  | { status: "ready"; missingTables: []; missingColumns: []; missingGuards: []; missingConstraints: []; missingSecurity: []; tableCount: number }
+  | { status: "schema_incomplete"; missingTables: string[]; missingColumns: string[]; missingGuards: string[]; missingConstraints: string[]; missingSecurity: string[]; tableCount: number }
   | { status: "unavailable"; error: string };
 
 const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
@@ -1071,6 +1259,159 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
     const tableNames = new Set(rows.map((row) => row.tablename));
     const missingTables = REQUIRED_PERSISTENCE_TABLES.filter((tableName) => !tableNames.has(tableName));
     const missingColumns: string[] = [];
+    const securityRows = (await prisma.$queryRawUnsafe(`
+      SELECT
+        security_table.relname AS table_name,
+        security_table.relrowsecurity AS rls_enabled,
+        COALESCE(
+          (
+            SELECT has_table_privilege(
+              role_row.oid,
+              security_table.oid,
+              'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+            )
+            FROM pg_roles AS role_row
+            WHERE role_row.rolname = 'anon'
+          ),
+          false
+        ) AS anon_has_privilege,
+        COALESCE(
+          (
+            SELECT has_table_privilege(
+              role_row.oid,
+              security_table.oid,
+              'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+            )
+            FROM pg_roles AS role_row
+            WHERE role_row.rolname = 'authenticated'
+          ),
+          false
+        ) AS authenticated_has_privilege
+      FROM pg_class AS security_table
+      JOIN pg_namespace AS security_schema
+        ON security_schema.oid = security_table.relnamespace
+      WHERE security_schema.nspname = 'public'
+        AND security_table.relkind = 'r'
+    `)) as Array<{
+      table_name: string;
+      rls_enabled: boolean;
+      anon_has_privilege: boolean;
+      authenticated_has_privilege: boolean;
+    }>;
+    const missingSecurity = REQUIRED_C0_RESTRICTED_TABLES
+      .filter((tableName) => tableNames.has(tableName))
+      .filter(
+        (tableName) =>
+          !securityRows.some(
+            (row) =>
+              row.table_name === tableName &&
+              row.rls_enabled &&
+              !row.anon_has_privilege &&
+              !row.authenticated_has_privilege
+          )
+      );
+    const guardRows = (await prisma.$queryRawUnsafe(`
+      SELECT
+        trigger_row.tgname,
+        table_row.relname AS table_name,
+        table_schema.nspname AS table_schema,
+        function_row.proname AS function_name,
+        function_schema.nspname AS function_schema,
+        function_language.lanname AS function_language,
+        function_row.prosrc AS function_source,
+        function_row.prosecdef AS function_security_definer,
+        function_row.provolatile AS function_volatility,
+        trigger_row.tgenabled,
+        (trigger_row.tgtype & 1) = 1 AS row_level,
+        (trigger_row.tgtype & 2) = 2 AS before_event,
+        (trigger_row.tgtype & 4) = 4 AS fires_insert,
+        (trigger_row.tgtype & 8) = 8 AS fires_delete,
+        (trigger_row.tgtype & 16) = 16 AS fires_update,
+        (trigger_row.tgtype & 32) = 32 AS fires_truncate
+      FROM pg_trigger AS trigger_row
+      JOIN pg_class AS table_row ON table_row.oid = trigger_row.tgrelid
+      JOIN pg_namespace AS table_schema ON table_schema.oid = table_row.relnamespace
+      JOIN pg_proc AS function_row ON function_row.oid = trigger_row.tgfoid
+      JOIN pg_namespace AS function_schema ON function_schema.oid = function_row.pronamespace
+      JOIN pg_language AS function_language ON function_language.oid = function_row.prolang
+      WHERE NOT trigger_row.tgisinternal
+    `)) as Array<{
+      tgname: string;
+      table_name: string;
+      table_schema: string;
+      function_name: string;
+      function_schema: string;
+      function_language: string;
+      function_source: string;
+      function_security_definer: boolean;
+      function_volatility: string;
+      tgenabled: string;
+      row_level: boolean;
+      before_event: boolean;
+      fires_insert: boolean;
+      fires_delete: boolean;
+      fires_update: boolean;
+      fires_truncate: boolean;
+    }>;
+    const missingGuards = REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS
+      .filter(([guardName, tableName]) =>
+        !guardRows.some(
+          (row) =>
+            row.tgname === guardName &&
+            row.table_name === tableName &&
+            row.table_schema === "public" &&
+            row.function_name === "reject_mcii_privacy_authority_mutation" &&
+            row.function_schema === "public" &&
+            row.function_language === "plpgsql" &&
+            row.function_source.replace(/\s+/g, " ").trim() ===
+              REQUIRED_PRIVACY_GUARD_FUNCTION_SOURCE &&
+            !row.function_security_definer &&
+            row.function_volatility === "v" &&
+            (row.tgenabled === "O" || row.tgenabled === "A") &&
+            row.row_level &&
+            row.before_event &&
+            !row.fires_insert &&
+            row.fires_delete &&
+            row.fires_update &&
+            !row.fires_truncate
+        )
+      )
+      .map(([guardName]) => guardName);
+    const constraintRows = (await prisma.$queryRawUnsafe(`
+      SELECT
+        constraint_row.conname,
+        table_row.relname AS table_name,
+        table_schema.nspname AS table_schema,
+        constraint_row.contype,
+        constraint_row.convalidated,
+        pg_get_constraintdef(constraint_row.oid, false) AS constraint_definition
+      FROM pg_constraint AS constraint_row
+      JOIN pg_class AS table_row ON table_row.oid = constraint_row.conrelid
+      JOIN pg_namespace AS table_schema ON table_schema.oid = table_row.relnamespace
+    `)) as Array<{
+      conname: string;
+      table_name: string;
+      table_schema: string;
+      contype: string;
+      convalidated: boolean;
+      constraint_definition: string;
+    }>;
+    const missingConstraints = REQUIRED_PRIVACY_CHECK_CONSTRAINT_BINDINGS
+      .filter(([constraintName, tableName]) =>
+        !constraintRows.some(
+          (row) =>
+            row.conname === constraintName &&
+            row.table_name === tableName &&
+            row.table_schema === "public" &&
+            row.contype === "c" &&
+            row.convalidated &&
+            canonicalConstraintDefinition(row.constraint_definition) ===
+              canonicalConstraintDefinition(
+                REQUIRED_PRIVACY_CHECK_DEFINITIONS[constraintName] ?? ""
+              )
+        )
+      )
+      .map(([constraintName]) => constraintName);
     const requiredColumnTables = Object.keys(REQUIRED_PERSISTENCE_TABLE_COLUMNS)
       .filter((tableName) => tableNames.has(tableName));
 
@@ -1098,11 +1439,20 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       }
     }
 
-    if (missingTables.length > 0 || missingColumns.length > 0) {
+    if (
+      missingTables.length > 0 ||
+      missingColumns.length > 0 ||
+      missingGuards.length > 0 ||
+      missingConstraints.length > 0 ||
+      missingSecurity.length > 0
+    ) {
       return {
         status: "schema_incomplete",
         missingTables: [...missingTables],
         missingColumns,
+        missingGuards: [...missingGuards],
+        missingConstraints: [...missingConstraints],
+        missingSecurity: [...missingSecurity],
         tableCount: tableNames.size
       };
     }
@@ -1110,6 +1460,9 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       status: "ready",
       missingTables: [],
       missingColumns: [],
+      missingGuards: [],
+      missingConstraints: [],
+      missingSecurity: [],
       tableCount: tableNames.size
     };
   } catch (error) {
@@ -5606,7 +5959,10 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
     return res.json({
       status: "not_configured",
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
-      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
+      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
+      required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
   if (readiness.status === "unavailable") {
@@ -5615,7 +5971,10 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       error: "database_unavailable",
       details: process.env.NODE_ENV === "production" ? undefined : readiness.error,
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
-      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
+      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
+      required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
   if (readiness.status === "schema_incomplete") {
@@ -5624,15 +5983,24 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       table_count: readiness.tableCount,
       missing_tables: readiness.missingTables,
       missing_columns: readiness.missingColumns,
+      missing_guards: readiness.missingGuards,
+      missing_constraints: readiness.missingConstraints,
+      missing_security: readiness.missingSecurity,
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
-      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
+      required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
+      required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+      required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
   return res.json({
     status: "ready",
     table_count: readiness.tableCount,
     required_tables: [...REQUIRED_PERSISTENCE_TABLES],
-    required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS
+    required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
+    required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+    required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+    required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
   });
 });
 
@@ -5683,7 +6051,7 @@ app.post(
       projection as Prisma.InputJsonValue
     );
     if (result.decision === "HOLD") {
-      return res.status(result.diagnostic === "JOURNAL_UNAVAILABLE" ? 503 : 409).json({
+      return res.status(409).json({
         status: "held",
         privacy_decision: "HOLD"
       });
@@ -5723,6 +6091,9 @@ app.get("/health", async (_req, res) => {
       error: "database_schema_incomplete",
       missing_tables: readiness.missingTables,
       missing_columns: readiness.missingColumns,
+      missing_guards: readiness.missingGuards,
+      missing_constraints: readiness.missingConstraints,
+      missing_security: readiness.missingSecurity,
       fail_closed_total: failClosedMetrics.total,
       details: "Apply pending Prisma migration for compliance persistence models."
     });

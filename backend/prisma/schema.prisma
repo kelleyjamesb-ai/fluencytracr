@@ -967,3 +967,91 @@ model AggregatePrivacyContributionClaim {
   @@index([orgId, privacySlotId])
   @@map("aggregate_privacy_contribution_claims")
 }
+
+model CohortProducerAuthority {
+  id                    String   @id @default(uuid()) @db.Uuid
+  orgId                 String   @map("org_id")
+  producerKeyId         String   @map("producer_key_id")
+  authorityVersion      Int      @map("authority_version")
+  proofPolicyVersion    String   @map("proof_policy_version")
+  producerPolicyVersion String   @map("producer_policy_version")
+  publicKeyDerBase64    String   @map("public_key_der_base64")
+  publicKeyFingerprint  String   @unique @map("public_key_fingerprint")
+  validFrom             DateTime @map("valid_from")
+  expiresAt             DateTime @map("expires_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+  revocation            CohortProducerAuthorityRevocation?
+
+  @@unique([orgId, producerKeyId, authorityVersion], name: "cohort_producer_authority_epoch_key")
+  @@index([orgId, producerKeyId])
+  @@map("cohort_producer_authorities")
+}
+
+model CohortProducerAuthorityRevocation {
+  id               String                  @id @default(uuid()) @db.Uuid
+  authorityId      String                  @unique @map("authority_id") @db.Uuid
+  orgId            String                  @map("org_id")
+  producerKeyId    String                  @map("producer_key_id")
+  authorityVersion Int                     @map("authority_version")
+  revokedAt        DateTime                @map("revoked_at")
+  reasonCode       String                  @map("reason_code")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  authority        CohortProducerAuthority @relation(fields: [authorityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([orgId, producerKeyId, authorityVersion], name: "cohort_producer_revocation_epoch_key")
+  @@map("cohort_producer_authority_revocations")
+}
+
+model AggregatePrivacyReservation {
+  id               String   @id @default(uuid()) @db.Uuid
+  orgId            String   @map("org_id")
+  reservationKey   String   @map("reservation_key")
+  ownerKind        String   @map("owner_kind")
+  ownerReference   String   @map("owner_reference")
+  ownerContentHash String   @map("owner_content_hash")
+  workflowId       String   @map("workflow_id")
+  jbtdId           String   @map("jbtd_id")
+  personaId        String   @map("persona_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@unique([orgId, reservationKey], name: "aggregate_privacy_reservation_key")
+  @@unique([orgId, ownerKind, ownerReference], name: "aggregate_privacy_reservation_owner_key")
+  @@map("aggregate_privacy_reservations")
+}
+
+model CohortProofJournal {
+  id                      String   @id @default(uuid()) @db.Uuid
+  orgId                   String   @map("org_id")
+  proofId                 String   @map("proof_id")
+  proofHash               String   @map("proof_hash")
+  producerKeyId           String   @map("producer_key_id")
+  authorityVersion        Int      @map("authority_version")
+  workflowId              String   @map("workflow_id")
+  jbtdId                  String   @map("jbtd_id")
+  personaId               String   @map("persona_id")
+  outcomeMetric           String   @map("outcome_metric")
+  outcomeUnit             String   @map("outcome_unit")
+  sourceSystem            String   @map("source_system")
+  baselinePeriodStart     DateTime @map("baseline_period_start")
+  baselinePeriodEnd       DateTime @map("baseline_period_end")
+  baselineCohortSize      Int      @map("baseline_cohort_size")
+  baselineEvidenceId      String   @map("baseline_evidence_id")
+  baselineEvidenceHash    String   @map("baseline_evidence_hash")
+  comparisonPeriodStart   DateTime @map("comparison_period_start")
+  comparisonPeriodEnd     DateTime @map("comparison_period_end")
+  comparisonCohortSize    Int      @map("comparison_cohort_size")
+  comparisonEvidenceId    String   @map("comparison_evidence_id")
+  comparisonEvidenceHash  String   @map("comparison_evidence_hash")
+  evidencePairHash        String   @map("evidence_pair_hash")
+  admissionReceiptHash    String   @map("admission_receipt_hash")
+  reservationKey          String   @map("reservation_key")
+  decision                String
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  @@unique([orgId, proofId], name: "cohort_proof_journal_proof_id_key")
+  @@unique([orgId, proofHash], name: "cohort_proof_journal_proof_hash_key")
+  @@unique([orgId, admissionReceiptHash], name: "cohort_proof_journal_admission_hash_key")
+  @@unique([orgId, evidencePairHash], name: "cohort_proof_journal_evidence_pair_key")
+  @@unique([orgId, reservationKey], name: "cohort_proof_journal_reservation_key")
+  @@map("cohort_proof_journal")
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/cohort_proof_privacy_receipt.schema.json",
+  "title": "Cohort Proof Privacy Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proof_policy_version",
+    "proof_journal_id",
+    "proof_hash",
+    "reservation_key",
+    "authority_version",
+    "comparison_privacy_only",
+    "claim_authority_effect",
+    "claim_authorized",
+    "model_authorized",
+    "customer_publishable"
+  ],
+  "properties": {
+    "proof_policy_version": {
+      "const": "FT_COHORT_EQUALITY_PRIVACY_POLICY_2026_07"
+    },
+    "proof_journal_id": { "type": "string", "format": "uuid" },
+    "proof_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "reservation_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "authority_version": { "type": "integer", "minimum": 1 },
+    "comparison_privacy_only": { "const": true },
+    "claim_authority_effect": { "const": "NONE" },
+    "claim_authorized": { "const": false },
+    "model_authorized": { "const": false },
+    "customer_publishable": { "const": false }
+  }
+}

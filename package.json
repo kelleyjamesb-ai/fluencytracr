@@ -12,6 +12,7 @@
   "scripts": {
     "agent:dev": "npm run build --workspace @fluencytracr/openai-agents-harness && npm run start --workspace @fluencytracr/openai-agents-harness --",
     "test:agentic-harness": "node --test scripts/agentic_harness_guard.test.mjs scripts/agentic_harness_ledger.test.mjs scripts/agentic_harness_replay.test.mjs",
+    "test:cohort-proof": "npm run build --workspace shared && node --test scripts/cohort_proof_codec.test.mjs scripts/cohort_proof_producer.test.mjs",
     "glean:readiness": "npm run build --workspace shared && node scripts/generate_glean_readiness_map.mjs",
     "reportability:roi": "npm run build --workspace shared && node scripts/generate_reportability_decision.mjs",
     "reportability:appendix": "npm run build --workspace shared && node scripts/generate_customer_evidence_appendix.mjs",

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/cohort_equality_proof.schema.json",
+  "title": "Cohort Equality Proof",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "proof_policy_version",
+    "producer_policy_version",
+    "proof_id",
+    "org_id",
+    "producer_key_id",
+    "authority_version",
+    "issued_at",
+    "expires_at",
+    "workflow_id",
+    "jbtd_id",
+    "persona_id",
+    "outcome_metric",
+    "outcome_unit",
+    "source_system",
+    "baseline_window",
+    "comparison_window",
+    "admission_receipt_hash",
+    "population_commitment",
+    "reservation_key",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": { "const": "FT_COHORT_EQUALITY_PROOF_V1" },
+    "proof_policy_version": {
+      "const": "FT_COHORT_EQUALITY_PRIVACY_POLICY_2026_07"
+    },
+    "producer_policy_version": {
+      "const": "FT_CUSTOMER_BOUNDARY_COHORT_PRODUCER_2026_07"
+    },
+    "proof_id": { "$ref": "#/$defs/machineId" },
+    "org_id": { "$ref": "#/$defs/machineId" },
+    "producer_key_id": { "$ref": "#/$defs/machineId" },
+    "authority_version": { "type": "integer", "minimum": 1 },
+    "issued_at": { "$ref": "#/$defs/instant" },
+    "expires_at": { "$ref": "#/$defs/instant" },
+    "workflow_id": { "$ref": "#/$defs/machineId" },
+    "jbtd_id": { "$ref": "#/$defs/sliceId" },
+    "persona_id": { "$ref": "#/$defs/sliceId" },
+    "outcome_metric": { "type": "string", "minLength": 1, "maxLength": 180 },
+    "outcome_unit": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "source_system": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "baseline_window": { "$ref": "#/$defs/window" },
+    "comparison_window": { "$ref": "#/$defs/window" },
+    "admission_receipt_hash": { "$ref": "#/$defs/hash" },
+    "population_commitment": { "$ref": "#/$defs/hash" },
+    "reservation_key": { "$ref": "#/$defs/hash" },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{86}$"
+    }
+  },
+  "$defs": {
+    "machineId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9:_-]{0,179}$"
+    },
+    "sliceId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "instant": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "period_start",
+        "period_end",
+        "cohort_size",
+        "evidence_content_hash"
+      ],
+      "properties": {
+        "period_start": { "$ref": "#/$defs/instant" },
+        "period_end": { "$ref": "#/$defs/instant" },
+        "cohort_size": { "type": "integer", "minimum": 5 },
+        "evidence_content_hash": { "$ref": "#/$defs/hash" }
+      }
+    }
+  }
+}

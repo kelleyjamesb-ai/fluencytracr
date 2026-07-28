@@ -34,6 +34,13 @@ Any missing identity, cross-slice record, shifted window, missing pair, or
 duplicate candidate produces `HELD`. The evaluator never chooses among
 ambiguous records by insertion order.
 
+C.0 cohort proof is narrower than general Slice B admission: the complete
+admission must contain exactly one admitted pair and exactly one evidence ID
+per window. The verifier reloads the deterministic accepted export/readiness
+chain and evidence inside the committing transaction. It hashes the complete
+typed evidence records and this receipt with the shared C.0 codec; caller
+hashes, export IDs, aliases, or receipt copies confer no authority.
+
 ## Authority Boundary
 
 Only the backend materializer may mark a stored export with

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 
+import { cohortReservationBytes } from "@fluencytracr/shared";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { getPrisma } from "../db";
@@ -10,6 +11,7 @@ import type {
   ServerAggregatePrivacyManifest
 } from "../aggregate_disclosure_policy";
 import { evaluateAggregateDisclosure } from "../aggregate_disclosure_policy";
+import { acquireOutcomeEvidenceFamilyLock } from "./outcome-evidence.repository";
 
 type AggregatePrivacyJournalRow = {
   orgId: string;
@@ -126,6 +128,26 @@ export const hashPrivacyDomainFingerprint = (
     persona_id: candidate.persona_id
   }));
 
+export const hashSharedPrivacyReservationKey = (
+  candidate: {
+    org_id: string;
+    workflow_id: string;
+    jbtd_id: string;
+    persona_id: string;
+  }
+): string =>
+  crypto
+    .createHash("sha256")
+    .update(
+      cohortReservationBytes({
+        org_id: candidate.org_id,
+        workflow_id: candidate.workflow_id,
+        jbtd_id: candidate.jbtd_id,
+        persona_id: candidate.persona_id
+      })
+    )
+    .digest("hex");
+
 export const hashAggregateProjectionContent = (
   candidate: Omit<AggregateDisclosureCandidate, "content_fingerprint">,
   projection: Prisma.InputJsonValue
@@ -239,6 +261,12 @@ export const commitAggregatePrivacyProjection = async (
   const jbtdId = candidate.jbtd_id;
   const personaId = candidate.persona_id;
   const privacyDomainFingerprint = hashPrivacyDomainFingerprint(candidate);
+  const reservationKey = hashSharedPrivacyReservationKey({
+    org_id: candidate.org_id,
+    workflow_id: workflowId,
+    jbtd_id: jbtdId,
+    persona_id: personaId
+  });
   if (hashPublicProjectionShape(projection) !== candidate.public_projection_hash) {
     return { decision: "HOLD", diagnostic: "MISSING_SERVER_AUTHORITY" };
   }
@@ -249,6 +277,12 @@ export const commitAggregatePrivacyProjection = async (
   try {
     const resolvedClient = client ?? getPrisma();
     return await resolvedClient.$transaction(async (transaction) => {
+      await acquireOutcomeEvidenceFamilyLock(transaction, {
+        orgId: candidate.org_id,
+        workflowId,
+        jbtdId,
+        personaId
+      });
       const manifest = toManifest(
         await transaction.aggregatePrivacyManifest.findUnique({
           where: {
@@ -291,6 +325,29 @@ export const commitAggregatePrivacyProjection = async (
         };
       }
 
+      const existingReservation =
+        await transaction.aggregatePrivacyReservation.findUnique({
+          where: {
+            aggregate_privacy_reservation_key: {
+              orgId: candidate.org_id,
+              reservationKey
+            }
+          }
+        });
+      const exactReservation =
+        existingReservation?.ownerKind === "SLICE_C_FIXED_WINDOW" &&
+        existingReservation.ownerReference === candidate.privacy_slot_id &&
+        existingReservation.ownerContentHash === candidate.content_fingerprint &&
+        existingReservation.workflowId === workflowId &&
+        existingReservation.jbtdId === jbtdId &&
+        existingReservation.personaId === personaId;
+      if (existingReservation && !exactReservation) {
+        return {
+          decision: "HOLD" as const,
+          diagnostic: "CHANGED_REPLAY" as const
+        };
+      }
+
       const existingClaims = await transaction.aggregatePrivacyContributionClaim.findMany({
         where: {
           orgId: candidate.org_id,
@@ -313,14 +370,50 @@ export const commitAggregatePrivacyProjection = async (
         };
       }
 
-      const row = await transaction.aggregatePrivacyReleaseJournal.upsert({
-        where: {
-          aggregate_privacy_release_slot_key: {
+      if (!existingReservation) {
+        const legacyDomainRow = priorRows.find(
+          (prior) =>
+            prior.privacyDomainFingerprint === privacyDomainFingerprint
+        );
+        const reservationOwnerReference =
+          legacyDomainRow?.privacySlotId ?? candidate.privacy_slot_id;
+        const reservationOwnerContentHash =
+          legacyDomainRow?.contentFingerprint ?? candidate.content_fingerprint;
+        if (
+          legacyDomainRow &&
+          (reservationOwnerReference !== candidate.privacy_slot_id ||
+            reservationOwnerContentHash !== candidate.content_fingerprint)
+        ) {
+          return {
+            decision: "HOLD" as const,
+            diagnostic: "CHANGED_REPLAY" as const
+          };
+        }
+        await transaction.aggregatePrivacyReservation.create({
+          data: {
             orgId: candidate.org_id,
-            privacySlotId: candidate.privacy_slot_id
+            reservationKey,
+            ownerKind: "SLICE_C_FIXED_WINDOW",
+            ownerReference: reservationOwnerReference,
+            ownerContentHash: reservationOwnerContentHash,
+            workflowId,
+            jbtdId,
+            personaId
           }
-        },
-        create: {
+        });
+      }
+
+      const existingRow =
+        await transaction.aggregatePrivacyReleaseJournal.findUnique({
+          where: {
+            aggregate_privacy_release_slot_key: {
+              orgId: candidate.org_id,
+              privacySlotId: candidate.privacy_slot_id
+            }
+          }
+        });
+      const row = existingRow ?? await transaction.aggregatePrivacyReleaseJournal.create({
+        data: {
           orgId: candidate.org_id,
           workflowId,
           jbtdId,
@@ -337,8 +430,7 @@ export const commitAggregatePrivacyProjection = async (
             manifest.canonical_contribution_fingerprint,
           decision: "RELEASE",
           projectionJson: projection
-        },
-        update: {}
+        }
       });
       const receipt = toReceipt(row);
       if (
@@ -359,7 +451,7 @@ export const commitAggregatePrivacyProjection = async (
       }
       return { decision: "RELEASE" as const, receipt, projection: row.projectionJson };
     }, {
-      isolationLevel: "Serializable"
+      isolationLevel: "ReadCommitted"
     });
   } catch (error) {
     if (isPrismaUniqueConstraintError(error)) {

@@ -2,6 +2,120 @@
 
 ## Current Session
 
+- C.0 PR #457 final-review remediation is locally complete at uncommitted head
+  `f1594f35107510c35cc8fef39f47621f0742f92a`. Advisory-lock-governed
+  repository transactions now use `ReadCommitted`, acquire the outcome-family
+  and producer-key locks before governed reads, and have deterministic
+  PostgreSQL regressions proving that a proof waiting behind evidence insertion
+  or authority revocation observes the committed state and holds. Required CI
+  now invokes `npm run test:cohort-proof`. The four C.0 tables enable RLS,
+  revoke direct `PUBLIC`, `anon`, and `authenticated` access, and readiness
+  fails closed when either posture drifts; the PostgreSQL verifier includes
+  catalog checks and real denied-role reads. Final local evidence: focused
+  backend `76/76`, full backend `1,042/1,042`, cohort-proof `11/11`, real
+  PostgreSQL verifier PASS, backend lint/build PASS, Prisma validation PASS,
+  strict OpenSpec PASS, V1 governance PASS, workflow YAML PASS, and diff
+  checks PASS. No commit, push, current-head remote CI rerun, migration apply,
+  merge, deployment, or live proof has occurred.
+- C.0 PR #457 Assurance failed at exact head
+  `0a55ad825c22837cb3a1cc156dea141039144177`: Prisma P2010 attempted to
+  deserialize `pg_advisory_xact_lock`'s `void` result after both C.0 advisory
+  lock helpers used `$queryRaw`. A narrow fail-first repair now uses
+  `$executeRaw`; the repair passed the affected `60/60`, full backend
+  `1,039/1,039`, lint, build, and exact repair CODE/BUG/ADVERSARIAL
+  `GO / GO / GO`. Commit, push, current-head CI rerun, merge, deployment, and
+  live proof remain unperformed.
+- The twice-remediated exact C.0 candidate passes all locally available checks:
+  shared codec/producer `11/11`; final focused backend `57/57`; full backend
+  `126` suites and `1,037` tests; shared/backend builds; clean-install backend
+  lint; Prisma validation/generation; strict OpenSpec; workflow YAML and
+  schema/queue JSON parsing; docs links; V1 governance; diff checks; and the
+  repository Python Harness `377` passed, `10` skipped. Database readiness now
+  canonical-compares every required `pg_get_constraintdef` expression in
+  addition to exact trigger table/function/event/security bindings, and
+  migration/post-push tests require matching constraint expressions. The
+  application-path PostgreSQL verifier is syntax-checked and wired into both
+  Assurance workflows after exact CHECK/trigger installation and a backend
+  build. It covers both Slice C/C.0 release orders, concurrent first writers,
+  same-transaction C.1 replay/no-mint/revoked handoffs, evidence insertion,
+  revocation, scheduled rotation, legacy adoption, cross-org key reuse,
+  collision tuple checks, tombstone mutation, repository-induced uniqueness
+  failure, rollback, and fresh-client state verification for every scenario.
+  It remains unexecuted locally solely because neither Docker nor a PostgreSQL
+  server is available. A final adversarial pass found and closed two
+  canonicalization aliases by preserving exact SQL string-literal and
+  quoted-identifier bytes; the formerly colliding whitespace-accepting
+  fingerprint regex and uppercase quoted-column substitutions now have
+  fail-first readiness regressions. Final exact-candidate
+  CODE/BUG/ADVERSARIAL review returned `GO / GO / GO`. No commit, push, PR, or
+  remote PostgreSQL CI claim has occurred; those remain behind fresh human
+  commit confirmation.
+- Exact-candidate CODE/BUG/ADVERSARIAL review returned `HOLD / HOLD / HOLD`.
+  The material findings were accepted: superseded authority epochs could
+  remain usable; replay omitted stored window/count fields; the C.1 handoff
+  did not revalidate current authority/evidence/admission or bind an expected
+  slice; readiness checked trigger names rather than exact enabled
+  table/function/event bindings; db-push CI omitted migration CHECK
+  constraints; Slice C exposed unavailable versus conflict through 503/409;
+  and the PostgreSQL verifier exercised raw rows rather than real C.0/Slice C
+  repository paths. Remediation now serializes authority registration,
+  revocation, and proof verification on one producer-key lock; requires
+  strictly increasing non-overlapping epochs and exactly one active database-
+  time epoch; compares the complete stored replay tuple; revalidates C.1
+  handoff inside one serializable transaction with an expected exact slice;
+  distinguishes codec null from empty string; verifies exact trigger and CHECK
+  bindings; installs the same constraints/guards after CI db-push; unifies
+  internal Slice C HOLD responses at 409; and expands the PostgreSQL script to
+  real application-path release-order, concurrency, evidence, revocation,
+  legacy, collision, rollback, and fresh-client checks. Replacement review and
+  remote PostgreSQL evidence remain required.
+- MCII Slice C.0 is locally implemented but remains `in_progress` and
+  uncommitted pending exact-candidate review and CI PostgreSQL evidence. The
+  candidate adds one shared byte-exact proof codec, a standard-library Node
+  customer-boundary Ed25519 producer, immutable organization-bound authority
+  epochs and revocations, exact Slice B evidence/receipt revalidation, one
+  serializable advisory-locked C.0 commit, a database-unique shared Slice
+  C/C.1 reservation, guarded append-only journals, a privacy-only C.1 handoff,
+  readiness guard checks, schemas/contracts, and focused adversarial vectors.
+  It adds no HTTP surface and persists neither raw proof nor population
+  commitment. Local verification passed the shared/producer suite (9 tests),
+  focused backend suites (41 tests), full
+  backend CI (126 suites, 1,021 tests), shared/backend builds, Prisma
+  validation/generation, strict OpenSpec, docs links, workflow YAML/JSON
+  parsing, V1 governance, and the repository Python Harness (377 passed,
+  10 skipped). The system-Python Harness attempt was blocked by PEP 668 and
+  was rerun successfully through the repository `.venv`. Docker is not
+  running locally, so the real-PostgreSQL trigger/race/rollback/fresh-client
+  check is wired into both Assurance workflows but is not yet locally or
+  remotely proven. Exact CODE/BUG/ADVERSARIAL candidate review is in progress.
+  C.1 and Slice D remain blocked. No migration apply, key provisioning,
+  proof ingestion, deployment, publication, live proof, commit, push, or PR
+  has occurred.
+- C.0 proposal remediation completed after initial CODE/BUG/ADVERSARIAL
+  `HOLD`. The proposal now uses customer-held Ed25519 private signing,
+  immutable public-key epochs and append-only revocations, one shared
+  length-framed codec, exactly one admitted pair/evidence ID per window,
+  server-owned Slice B export/readiness resolution, one advisory-locked
+  serializable commit, database-guarded tombstones, legacy Slice C adoption
+  only by Slice C, no persisted raw proof/commitment, and exact C.1 replay of
+  the C.0 owner. Population commitments remain exact-slice-bound and
+  unlinkable rather than creating an organization-wide cohort tracker; C.0
+  authorizes no cross-slice join or partial-overlap claim. Strict OpenSpec,
+  queue JSON, and diff checks pass. Replacement exact-proposal review remains
+  required. No product code, migration apply, key provisioning, proof
+  ingestion, deployment, publication, or live proof has occurred.
+- MCII Slice C.0 is the sole active queue item on
+  `codex/mcii-c0-cohort-proof-reservation`, created from merged `origin/main`
+  `d6cc28541486189301a8bc9b9ce6d20e1df8145c`. PR #456 merged normally after
+  its four review findings were encoded: organization-bound producer
+  authentication and integrity, exact Slice B receipt/evidence-content
+  binding, one canonical organization/workflow/JBTD/persona reservation key,
+  and create-once retained-tombstone semantics. The merge tree exactly matched
+  reviewed head `f611c52`; all exact-head checks passed, including Node in
+  5m12s. Next: draft and strictly validate the C.0 OpenSpec, obtain
+  preimplementation CODE/BUG/ADVERSARIAL review, then implement fail-first.
+  C.1 and Slice D remain blocked. No implementation, migration apply,
+  deployment, publication, or live proof has occurred.
 - MCII Slice A is locally implemented and committed on
   `codex/mcii-slice-a-auth-containment`, replayed onto exact `origin/main` base
   `5cae9eda44a68dd63f76b970299560c280f3f558`

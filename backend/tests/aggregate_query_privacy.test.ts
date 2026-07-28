@@ -11,6 +11,36 @@ import {
   readAdmittedAggregatePrivacyProjection
 } from "../src/repositories/aggregate-privacy-release.repository";
 
+const withSharedReservation = (
+  transaction: any,
+  initialReservation: Record<string, unknown> | null = null
+) => {
+  let reservation: Record<string, unknown> | null = initialReservation;
+  const releaseJournal = transaction.aggregatePrivacyReleaseJournal;
+  return {
+    ...transaction,
+    $executeRaw: async () => 0,
+    $queryRaw: async () => [],
+    aggregatePrivacyReservation: {
+      findUnique: async () => reservation,
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        reservation = data;
+        return data;
+      }
+    },
+    aggregatePrivacyReleaseJournal: {
+      ...releaseJournal,
+      findUnique:
+        releaseJournal.findUnique ??
+        (async () => (await releaseJournal.findMany())[0] ?? null),
+      create:
+        releaseJournal.create ??
+        (async ({ data }: { data: Record<string, unknown> }) =>
+          releaseJournal.upsert?.({ create: data }))
+    }
+  };
+};
+
 describe("aggregate query privacy", () => {
   beforeEach(() => {
     store.reset();
@@ -212,6 +242,75 @@ describe("aggregate disclosure policy", () => {
     });
   });
 
+  it("holds Slice C when C.0 already owns the exact shared reservation", async () => {
+    const manifestRow = {
+      orgId: serverManifest.org_id,
+      workflowId: serverManifest.workflow_id,
+      jbtdId: serverManifest.jbtd_id,
+      personaId: serverManifest.persona_id,
+      privacySlotId: serverManifest.privacy_slot_id,
+      contentFingerprint: serverManifest.content_fingerprint,
+      atomicLineageFingerprint: serverManifest.atomic_lineage_fingerprint,
+      publicProjectionHash: serverManifest.public_projection_hash,
+      temporalGridId: serverManifest.temporal_grid_id,
+      windowId: serverManifest.window_id,
+      releaseVersion: serverManifest.release_version,
+      hierarchyAxis: serverManifest.hierarchy_axis,
+      sourceMode: serverManifest.source_mode,
+      atomicCellIds: serverManifest.atomic_cell_ids,
+      completePartition: true,
+      canonicalContributions: true,
+      canonicalContributionFingerprint:
+        serverManifest.canonical_contribution_fingerprint,
+      canonicalContributionCount:
+        serverManifest.canonical_contribution_count,
+      canonicalContributionIds: serverManifest.canonical_contribution_ids,
+      hasSuppressedChild: false,
+      hasAmbiguousLineage: false,
+      hasOverlappingEquation: false,
+      isMultiWindow: false,
+      verified: true
+    };
+    let journalCreated = false;
+    const journal = {
+      $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
+        operation(withSharedReservation(
+          {
+            aggregatePrivacyManifest: {
+              findUnique: async () => manifestRow
+            },
+            aggregatePrivacyReleaseJournal: {
+              findMany: async () => [],
+              create: async () => {
+                journalCreated = true;
+                throw new Error("must not create");
+              }
+            },
+            aggregatePrivacyContributionClaim: {
+              findMany: async () => [],
+              createMany: async () => ({ count: 0 })
+            }
+          },
+          {
+            ownerKind: "OUTCOME_COMPARISON_PROOF",
+            ownerReference: "proof-journal",
+            ownerContentHash: "proof-hash",
+            workflowId: candidate.workflow_id,
+            jbtdId: candidate.jbtd_id,
+            personaId: candidate.persona_id
+          }
+        ))
+    };
+
+    await expect(
+      commitAggregatePrivacyProjection(candidate, projection, journal as never)
+    ).resolves.toEqual({
+      decision: "HOLD",
+      diagnostic: "CHANGED_REPLAY"
+    });
+    expect(journalCreated).toBe(false);
+  });
+
   it("connects the authenticated release route to durable server authority and holds when unavailable", async () => {
     const routeProjection = {
       org_id: "org-1",
@@ -302,7 +401,7 @@ describe("aggregate disclosure policy", () => {
 
     expect(rollingResponse.status).toBe(400);
     expect(invalidCalendarResponse.status).toBe(400);
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(409);
     expect(response.body).toEqual({
       status: "held",
       privacy_decision: "HOLD"
@@ -416,7 +515,7 @@ describe("aggregate disclosure policy", () => {
     let upsertCalled = false;
     const journal = {
       $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({
+        operation(withSharedReservation({
           aggregatePrivacyManifest: {
             findUnique: async () => null
           },
@@ -431,7 +530,7 @@ describe("aggregate disclosure policy", () => {
             findMany: async () => [],
             createMany: async () => ({ count: 0 })
           }
-        })
+        }))
     };
 
     await expect(
@@ -495,7 +594,7 @@ describe("aggregate disclosure policy", () => {
     };
     const journal = {
       $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({
+        operation(withSharedReservation({
           aggregatePrivacyManifest: {
             findUnique: async () => manifestRow
           },
@@ -507,7 +606,7 @@ describe("aggregate disclosure policy", () => {
             findMany: async () => [],
             createMany: async () => ({ count: 0 })
           }
-        })
+        }))
     };
 
     await expect(
@@ -543,7 +642,7 @@ describe("aggregate disclosure policy", () => {
     };
     const journal = {
       $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({
+        operation(withSharedReservation({
           aggregatePrivacyManifest: {
             findUnique: async () => ({
               orgId: serverManifest.org_id,
@@ -580,7 +679,7 @@ describe("aggregate disclosure policy", () => {
             findMany: async () => [],
             createMany: async () => ({ count: 0 })
           }
-        })
+        }))
     };
 
     await expect(
@@ -641,7 +740,7 @@ describe("aggregate disclosure policy", () => {
     };
     const journal = {
       $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({
+        operation(withSharedReservation({
           aggregatePrivacyManifest: { findUnique: async () => manifestRow },
           aggregatePrivacyReleaseJournal: {
             findMany: async () => [establishedRow],
@@ -656,7 +755,7 @@ describe("aggregate disclosure policy", () => {
               })),
             createMany: async () => ({ count: 0 })
           }
-        })
+        }))
     };
 
     await expect(
@@ -713,7 +812,7 @@ describe("aggregate disclosure policy", () => {
     };
     const journal = {
       $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({
+        operation(withSharedReservation({
           aggregatePrivacyManifest: {
             findUnique: async () => manifestRow
           },
@@ -732,7 +831,7 @@ describe("aggregate disclosure policy", () => {
             }],
             createMany: async () => ({ count: 0 })
           }
-        })
+        }))
     };
 
     await expect(
@@ -810,7 +909,7 @@ describe("aggregate disclosure policy", () => {
     let upsertCalled = false;
     const journal = {
       $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({
+        operation(withSharedReservation({
           aggregatePrivacyManifest: { findUnique: async () => manifestRow },
           aggregatePrivacyReleaseJournal: {
             findMany: async () => [priorRow],
@@ -823,7 +922,7 @@ describe("aggregate disclosure policy", () => {
             findMany: async () => [],
             createMany: async () => ({ count: 0 })
           }
-        })
+        }))
     };
 
     await expect(
@@ -869,7 +968,7 @@ describe("aggregate disclosure policy", () => {
     };
     const journal = {
       $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({
+        operation(withSharedReservation({
           aggregatePrivacyManifest: { findUnique: async () => manifestRow },
           aggregatePrivacyReleaseJournal: {
             findMany: async () => [],
@@ -886,7 +985,7 @@ describe("aggregate disclosure policy", () => {
             }],
             createMany: async () => ({ count: 0 })
           }
-        })
+        }))
     };
 
     await expect(
