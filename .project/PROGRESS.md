@@ -4115,3 +4115,16 @@
 - Slice C is locally `done` again. Boundary: PR #453 still points to the prior
   failing head until this remediation is committed and pushed. No merge,
   migration apply, deployment, production readback, or live proof.
+
+## 2026-07-27 (America/Los_Angeles) - Codex (MCII Slice C remote CI repair proof)
+
+- Committed and pushed the exact reviewed remediation as `a6f2a39`.
+- PR #453 CI run `30329184071` was triggered only by `pull_request`; no
+  duplicate branch-push `CI` run was created for the feature branch.
+- The remote Node job generated Prisma explicitly, passed backend, frontend,
+  suppression evidence, package builds/tests, fixture validation, docs sweep,
+  and link checks, then exited normally in 5 minutes 5 seconds. Remote Python
+  and lint jobs also passed.
+- Boundary: this state-only closeout follows the green remediation head. PR
+  #453 remains draft and unmerged. No migration apply, deployment, production
+  readback, or live proof.

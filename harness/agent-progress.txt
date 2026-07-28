@@ -689,3 +689,7 @@
   and exact CODE/BUG/ADVERSARIAL GO/GO/GO.
 - Boundary: local reviewed remediation only until commit/push. No merge,
   migration apply, deployment, or live proof.
+
+- Remote proof: remediation commit `a6f2a39` produced one pull-request CI run
+  (`30329184071`); its Node job passed every step and exited in 5 minutes 5
+  seconds. PR #453 remains draft and unmerged.
