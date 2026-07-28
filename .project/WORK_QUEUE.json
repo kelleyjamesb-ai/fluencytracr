@@ -372,6 +372,14 @@
   "status": "pending",
   "risk": "high",
   "last_note": "Human-authorized 2026-07-27: queue Slice D after merged PR #453. Pending until this queue-only change merges; no Slice D implementation, deployment, publication, or live proof is authorized yet."
+    },
+    {
+  "id": "mcii-outcome-comparison-privacy-slice-c1",
+  "title": "MCII Slice C.1 — exact two-window Outcome Evidence comparison privacy",
+  "bound": "Aggregate Outcome Evidence two-window comparison privacy only; acceptance: one server-owned immutable comparison family binds the exact organization, workflow_id, jbtd_id, persona_id, metric identity, source identity, unit, baseline window/value, and comparison window/value; the complete two-window family is evaluated and released atomically, never as independently queryable windows; complementary suppression, repeated-query protection, durable replay, contribution collision protection, and cross-slice isolation prevent partial, alternate-window, overlapping, or differencing disclosure; only the exact admitted projection may become a Slice D privacy input; default HOLD on missing, ambiguous, mutable, stale, cross-slice, conflicting, partial, or unavailable authority; preserve all nine invariants, nine canonical events, five suppression reasons, fixed thresholds, aggregate-only privacy, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude claim authorization, claim templates, canonical identity binding, claim trace, deployment, publication, live GCP, model execution, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authorized 2026-07-28 as the narrow privacy prerequisite for Slice D. No implementation, migration apply, deployment, publication, or live proof yet."
     }
   ]
 }
