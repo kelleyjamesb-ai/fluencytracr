@@ -380,6 +380,14 @@
   "status": "pending",
   "risk": "high",
   "last_note": "Human-authorized 2026-07-28 as the narrow privacy prerequisite for Slice D. No implementation, migration apply, deployment, publication, or live proof yet."
+    },
+    {
+  "id": "mcii-cohort-proof-shared-reservation-slice-c0",
+  "title": "MCII Slice C.0 — trusted cohort-equality proof and shared privacy reservation",
+  "bound": "Aggregate privacy proof infrastructure only; acceptance: a trusted customer-boundary producer emits a non-member-level proof that the exact baseline and comparison windows use the same population without transmitting or persisting member tokens; the proof binds exact organization, workflow_id, jbtd_id, persona_id, metric, source, unit, windows, cohort counts, producer policy, provenance, and freshness; one database-unique reservation authority is used atomically by both Slice C and C.1 so either release order and concurrent first writers permit at most one privacy domain; missing, stale, conflicting, aliased, cross-slice, replayed, or unavailable proof fails closed; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude C.1 comparison release, Slice D claim semantics, migration apply, deployment, publication, live proof, individual fields, member tokens, scoring, ROI, causality, productivity, prediction, ranking, new canonical events, new suppression reasons, or tunable thresholds",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authorized 2026-07-28 as the privacy prerequisite required before Slice C.1 implementation. No implementation, migration apply, deployment, publication, or live proof yet."
     }
   ]
 }
