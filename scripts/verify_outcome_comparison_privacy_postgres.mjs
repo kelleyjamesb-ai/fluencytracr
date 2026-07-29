@@ -54,10 +54,28 @@ process.env.C1_CREATION_ATTESTATION_ACTIVE_KEY_ID = attestationKeyId;
 process.env.C1_CREATION_ATTESTATION_KEYS_JSON = JSON.stringify({
   [attestationKeyId]: attestationSecret
 });
-await prisma.$transaction(async (transaction) => {
-  await transaction.$executeRawUnsafe(
-    "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
+const configuredProvisionerPassword =
+  process.env.C1_ATTESTATION_PROVISIONER_DATABASE_PASSWORD;
+if (
+  configuredProvisionerPassword &&
+  !/^[A-Za-z0-9_-]{16,128}$/.test(configuredProvisionerPassword)
+) {
+  throw new Error(
+    "C1_ATTESTATION_PROVISIONER_DATABASE_PASSWORD has invalid test shape"
   );
+}
+const provisionerPassword =
+  configuredProvisionerPassword ?? crypto.randomBytes(24).toString("base64url");
+await prisma.$executeRawUnsafe(
+  `ALTER ROLE fluencytracr_c1_attestation_provisioner PASSWORD '${provisionerPassword}'`
+);
+const provisionerDatabaseUrl = new URL(process.env.DATABASE_URL);
+provisionerDatabaseUrl.username = "fluencytracr_c1_attestation_provisioner";
+provisionerDatabaseUrl.password = provisionerPassword;
+const provisionerPrisma = new PrismaClient({
+  datasources: { db: { url: provisionerDatabaseUrl.toString() } }
+});
+await provisionerPrisma.$transaction(async (transaction) => {
   await transaction.$executeRaw`
     SELECT pg_catalog.pg_advisory_xact_lock(
       pg_catalog.hashtextextended('FT_C1_ATTESTATION_PROVISIONING_V1', 0)
@@ -112,6 +130,21 @@ runtimeDatabaseUrl.password = runtimePassword;
 const runtimePrisma = new PrismaClient({
   datasources: { db: { url: runtimeDatabaseUrl.toString() } }
 });
+const sliceERuntimePassword = crypto.randomBytes(24).toString("base64url");
+await prisma.$executeRawUnsafe(
+  `ALTER ROLE fluencytracr_slice_e_runtime PASSWORD '${sliceERuntimePassword}'`
+);
+const sliceERuntimeDatabaseUrl = new URL(process.env.DATABASE_URL);
+sliceERuntimeDatabaseUrl.username = "fluencytracr_slice_e_runtime";
+sliceERuntimeDatabaseUrl.password = sliceERuntimePassword;
+process.env.SLICE_E_RUNTIME_DATABASE_URL =
+  sliceERuntimeDatabaseUrl.toString();
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID =
+  "FT_E_HMAC_C1_VERIFY";
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET =
+  crypto.randomBytes(32).toString("base64url");
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON =
+  "{}";
 const runId = crypto.randomUUID();
 const attestationRaceSuffix = runId.replaceAll("-", "").slice(0, 8).toUpperCase();
 const orgPrefix = `c1-postgres-${runId}`;
@@ -1432,7 +1465,7 @@ const assertCreationAttestationAdversarialPosture = async () => {
           committed.receipt.release_id
         );
       }),
-    /direct runtime login/i
+    /direct runtime login|permission denied to set role/i
   );
 
   await expectDatabaseRejection(
@@ -1492,10 +1525,7 @@ const assertCreationAttestationAdversarialPosture = async () => {
     await expectDatabaseRejection(
       `provisioner SELECT on ${tableName}`,
       () =>
-        prisma.$transaction(async (transaction) => {
-          await transaction.$executeRawUnsafe(
-            "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-          );
+        provisionerPrisma.$transaction(async (transaction) => {
           await transaction.$queryRawUnsafe(
             `SELECT * FROM public.${tableName} LIMIT 1`
           );
@@ -1507,10 +1537,7 @@ const assertCreationAttestationAdversarialPosture = async () => {
   await expectDatabaseRejection(
     "provisioner release INSERT",
     () =>
-      prisma.$transaction(async (transaction) => {
-        await transaction.$executeRawUnsafe(
-          "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-        );
+      provisionerPrisma.$transaction(async (transaction) => {
         await transaction.$executeRawUnsafe(
           "INSERT INTO public.outcome_comparison_privacy_releases DEFAULT VALUES"
         );
@@ -1890,27 +1917,24 @@ const assertRollbackScopedStructuralDrift = async () => {
         )
     },
     {
-      label: "pgcrypto digest owner",
+      label: "pgcrypto digest config",
       mutate: (transaction) =>
         transaction.$executeRawUnsafe(
-          "ALTER FUNCTION public.digest(BYTEA, TEXT) OWNER TO fluencytracr_c1_attestation_provisioner"
+          "ALTER FUNCTION extensions.digest(BYTEA, TEXT) SET search_path = pg_catalog"
         )
     },
     {
-      label: "pgcrypto digest body",
+      label: "pgcrypto digest volatility",
       mutate: (transaction) =>
         transaction.$executeRawUnsafe(
-          `CREATE OR REPLACE FUNCTION public.digest(BYTEA, TEXT)
-           RETURNS BYTEA
-           AS '$libdir/pgcrypto', 'pg_hmac'
-           LANGUAGE C IMMUTABLE PARALLEL SAFE STRICT`
+          "ALTER FUNCTION extensions.digest(BYTEA, TEXT) VOLATILE"
         )
     },
     {
       label: "pgcrypto HMAC ACL",
       mutate: (transaction) =>
         transaction.$executeRawUnsafe(
-          "GRANT EXECUTE ON FUNCTION public.hmac(BYTEA, BYTEA, TEXT) TO fluencytracr_c1_runtime"
+          "GRANT EXECUTE ON FUNCTION extensions.hmac(BYTEA, BYTEA, TEXT) TO fluencytracr_c1_runtime"
         )
     },
     {
@@ -2125,10 +2149,7 @@ const provisionAndActivateAttestationKey = async (keyId, secret) => {
     .createHash("sha256")
     .update(secret, "utf8")
     .digest("hex");
-  await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-    );
+  await provisionerPrisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`
       SELECT pg_catalog.pg_advisory_xact_lock(
         pg_catalog.hashtextextended(${provisioningLockKey}, 0)
@@ -2147,10 +2168,7 @@ const provisionAndActivateAttestationKey = async (keyId, secret) => {
 };
 
 const revokeAttestationKey = async (keyId, reasonCode) => {
-  await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-    );
+  await provisionerPrisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`
       SELECT pg_catalog.pg_advisory_xact_lock(
         pg_catalog.hashtextextended(${provisioningLockKey}, 0)
@@ -2165,10 +2183,7 @@ const revokeAttestationKey = async (keyId, reasonCode) => {
 };
 
 const reactivatePrimaryAttestationKey = async () => {
-  await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-    );
+  await provisionerPrisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`
       SELECT pg_catalog.pg_advisory_xact_lock(
         pg_catalog.hashtextextended(${provisioningLockKey}, 0)
@@ -2200,10 +2215,7 @@ const assertAttestationProvisioningInterleavings = async () => {
   let activationCommit;
   try {
     const scenario = await setupScenario("attestation-activation-first");
-    activationTransaction = prisma.$transaction(async (transaction) => {
-      await transaction.$executeRawUnsafe(
-        "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-      );
+    activationTransaction = provisionerPrisma.$transaction(async (transaction) => {
       await transaction.$executeRaw`
         SELECT pg_catalog.pg_advisory_xact_lock(
           pg_catalog.hashtextextended(${provisioningLockKey}, 0)
@@ -2296,14 +2308,11 @@ const assertAttestationProvisioningInterleavings = async () => {
       creationClient
     );
     await creationReady.promise;
-    activationAfterCreation = prisma.$transaction(async (transaction) => {
+    activationAfterCreation = provisionerPrisma.$transaction(async (transaction) => {
       const pidRows = await transaction.$queryRawUnsafe(
         "SELECT pg_backend_pid()::int AS pid"
       );
       activationStarted.resolve(pidRows[0].pid);
-      await transaction.$executeRawUnsafe(
-        "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-      );
       await transaction.$executeRaw`
         SELECT pg_catalog.pg_advisory_xact_lock(
           pg_catalog.hashtextextended(${provisioningLockKey}, 0)
@@ -2376,10 +2385,7 @@ const assertAttestationProvisioningInterleavings = async () => {
   let creationAfterRevocation;
   try {
     const scenario = await setupScenario("attestation-revocation-first");
-    revocationTransaction = prisma.$transaction(async (transaction) => {
-      await transaction.$executeRawUnsafe(
-        "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-      );
+    revocationTransaction = provisionerPrisma.$transaction(async (transaction) => {
       await transaction.$executeRaw`
         SELECT pg_catalog.pg_advisory_xact_lock(
           pg_catalog.hashtextextended(${provisioningLockKey}, 0)
@@ -2474,14 +2480,11 @@ const assertAttestationProvisioningInterleavings = async () => {
       creationClient
     );
     await creationBeforeRevokeReady.promise;
-    revokeAfterCreation = prisma.$transaction(async (transaction) => {
+    revokeAfterCreation = provisionerPrisma.$transaction(async (transaction) => {
       const pidRows = await transaction.$queryRawUnsafe(
         "SELECT pg_backend_pid()::int AS pid"
       );
       revokeAfterCreationStarted.resolve(pidRows[0].pid);
-      await transaction.$executeRawUnsafe(
-        "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-      );
       await transaction.$executeRaw`
         SELECT pg_catalog.pg_advisory_xact_lock(
           pg_catalog.hashtextextended(${provisioningLockKey}, 0)
@@ -2551,10 +2554,7 @@ const assertAttestationRotationAndRevocation = async () => {
     .createHash("sha256")
     .update(secondarySecret, "utf8")
     .digest("hex");
-  await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-    );
+  await provisionerPrisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`
       SELECT pg_catalog.pg_advisory_xact_lock(
         pg_catalog.hashtextextended('FT_C1_ATTESTATION_PROVISIONING_V1', 0)
@@ -2606,10 +2606,7 @@ const assertAttestationRotationAndRevocation = async () => {
       `omitted active key did not fail readiness: ${JSON.stringify(omittedActiveReadiness)}`
     );
   }
-  await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-    );
+  await provisionerPrisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`
       SELECT pg_catalog.pg_advisory_xact_lock(
         pg_catalog.hashtextextended('FT_C1_ATTESTATION_PROVISIONING_V1', 0)
@@ -2682,10 +2679,7 @@ const assertAttestationRotationAndRevocation = async () => {
     [secondaryKeyId]: secondarySecret
   });
 
-  await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
-    );
+  await provisionerPrisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`
       INSERT INTO public.outcome_comparison_attestation_key_revocations
         (key_id, reason_code)
@@ -3219,6 +3213,7 @@ try {
   );
 } finally {
   await runtimePrisma.$disconnect();
+  await provisionerPrisma.$disconnect();
   await prisma.$disconnect();
   await disconnectPrisma();
 }

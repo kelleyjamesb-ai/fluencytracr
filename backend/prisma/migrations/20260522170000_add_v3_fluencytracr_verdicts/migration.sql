@@ -62,3 +62,27 @@ CREATE INDEX IF NOT EXISTS "fluencytracr_verdicts_org_id_workflow_id_idx"
 
 CREATE INDEX IF NOT EXISTS "fluencytracr_verdicts_org_id_calibration_id_idx"
   ON "fluencytracr_verdicts"("org_id", "calibration_id");
+
+ALTER TABLE public.fluencytracr_verdicts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.fluencytracr_verdicts FROM PUBLIC;
+
+DO $restricted_acl$
+DECLARE
+  restricted_role TEXT;
+BEGIN
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON TABLE public.fluencytracr_verdicts FROM %I',
+        restricted_role
+      );
+    END IF;
+  END LOOP;
+END
+$restricted_acl$;

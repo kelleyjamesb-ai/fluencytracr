@@ -6,10 +6,12 @@ const KEY_ID = /^FT_C1_HMAC_[A-Z0-9_]{1,48}$/;
 const SECRET = /^[A-Za-z0-9_-]{43}$/;
 const keyId = process.env.C1_ATTESTATION_PROVISION_KEY_ID;
 const secret = process.env.C1_ATTESTATION_PROVISION_SECRET;
+const provisionerDatabaseUrl =
+  process.env.C1_ATTESTATION_PROVISIONER_DATABASE_URL;
 
-if (!process.env.DATABASE_URL || !keyId || !secret) {
+if (!provisionerDatabaseUrl || !keyId || !secret) {
   throw new Error(
-    "DATABASE_URL, C1_ATTESTATION_PROVISION_KEY_ID, and C1_ATTESTATION_PROVISION_SECRET are required"
+    "C1_ATTESTATION_PROVISIONER_DATABASE_URL, C1_ATTESTATION_PROVISION_KEY_ID, and C1_ATTESTATION_PROVISION_SECRET are required"
   );
 }
 if (
@@ -25,12 +27,25 @@ const secretHash = crypto
   .createHash("sha256")
   .update(secret, "utf8")
   .digest("hex");
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: { db: { url: provisionerDatabaseUrl } }
+});
 try {
   await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
+    const credential = await transaction.$queryRaw(
+      Prisma.sql`SELECT session_user AS session_user, current_user AS current_user`
     );
+    if (
+      credential.length !== 1 ||
+      credential[0]?.session_user !==
+        "fluencytracr_c1_attestation_provisioner" ||
+      credential[0]?.current_user !==
+        "fluencytracr_c1_attestation_provisioner"
+    ) {
+      throw new Error(
+        "C.1 attestation provisioning requires the direct provisioner login"
+      );
+    }
     await transaction.$executeRaw(
       Prisma.sql`SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('FT_C1_ATTESTATION_PROVISIONING_V1', 0))`
     );

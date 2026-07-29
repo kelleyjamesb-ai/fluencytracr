@@ -117,39 +117,47 @@ assert(
   await checkCanonicalIdentityFamilyHeadStructureReadiness(prisma),
   "Slice E family-head structure was not ready"
 );
-const expectStructureDriftDetected = async (label, mutate) => {
-  const rollbackMessage = `SLICE_E_STRUCTURE_DRIFT_ROLLBACK_${label}`;
+const expectOwnerBoundaryRejectsStructureDrift = async (label, mutate) => {
+  const rollbackMessage = `SLICE_E_OWNER_BOUNDARY_ROLLBACK_${label}`;
+  const unexpectedlyPermittedMessage =
+    `SLICE_E_OWNER_BOUNDARY_PERMITTED_${label}`;
   try {
     await prisma.$transaction(async (transaction) => {
-      await mutate(transaction);
-      assert(
-        !(await checkCanonicalIdentityFamilyHeadStructureReadiness(transaction)),
-        `${label} escaped Slice E structural readiness`
-      );
-      throw new Error(rollbackMessage);
+      try {
+        await mutate(transaction);
+      } catch {
+        throw new Error(rollbackMessage);
+      }
+      throw new Error(unexpectedlyPermittedMessage);
     });
-    throw new Error(`${label} drift probe did not roll back`);
   } catch (error) {
-    if (!(error instanceof Error) || error.message !== rollbackMessage) {
+    if (
+      !(error instanceof Error) ||
+      ![rollbackMessage, unexpectedlyPermittedMessage].includes(error.message)
+    ) {
       throw error;
     }
+    assert(
+      error.message === rollbackMessage,
+      `${label} was unexpectedly permitted across the Slice E owner boundary`
+    );
   }
   assert(
     await checkCanonicalIdentityFamilyHeadStructureReadiness(prisma),
-    `${label} drift probe did not restore the exact Slice E structure`
+    `${label} owner-boundary probe changed the exact Slice E structure`
   );
 };
-await expectStructureDriftDetected("JOURNAL_INSERT_GRANT", (transaction) =>
+await expectOwnerBoundaryRejectsStructureDrift("JOURNAL_INSERT_GRANT", (transaction) =>
   transaction.$executeRawUnsafe(
     "GRANT INSERT ON TABLE public.ai_value_canonical_identity_family_head_journal TO fluencytracr_slice_e_runtime"
   )
 );
-await expectStructureDriftDetected("SECURITY_DEFINER_SEARCH_PATH", (transaction) =>
+await expectOwnerBoundaryRejectsStructureDrift("SECURITY_DEFINER_SEARCH_PATH", (transaction) =>
   transaction.$executeRawUnsafe(
     "ALTER FUNCTION public.append_canonical_identity_family_head() SET search_path = public"
   )
 );
-await expectStructureDriftDetected("JOURNAL_RLS_DISABLED", (transaction) =>
+await expectOwnerBoundaryRejectsStructureDrift("JOURNAL_RLS_DISABLED", (transaction) =>
   transaction.$executeRawUnsafe(
     "ALTER TABLE public.ai_value_canonical_identity_family_head_journal DISABLE ROW LEVEL SECURITY"
   )
@@ -206,53 +214,21 @@ try {
   );
 }
 
-const cutoverWriter = new PrismaClient();
-try {
-  await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "LOCK TABLE public.value_hypotheses, public.measurement_plans, public.measurement_cell_snapshots IN SHARE ROW EXCLUSIVE MODE"
-    );
-    for (const sourceTable of [
-      "value_hypotheses",
-      "measurement_plans",
-      "measurement_cell_snapshots"
-    ]) {
-      let lockTimedOut = false;
-      try {
-        await cutoverWriter.$transaction(async (writer) => {
-          await writer.$executeRawUnsafe("SET LOCAL lock_timeout = '250ms'");
-          await writer.$executeRawUnsafe(
-            `INSERT INTO public.${sourceTable} DEFAULT VALUES`
-          );
-        });
-      } catch (error) {
-        lockTimedOut =
-          error?.code === "P2010" &&
-          (error?.meta?.code === "55P03" ||
-            /lock timeout|canceling statement due to lock timeout/i.test(
-              String(error?.meta?.message ?? error?.message ?? "")
-            ));
-      }
-      assert(
-        lockTimedOut,
-        `${sourceTable} write was not blocked by the Slice E cutover lock`
-      );
-    }
-  });
-} finally {
-  await cutoverWriter.$disconnect();
-}
-const substitutedRuntimeCredentialAccepted = await prisma.$transaction(
-  async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_slice_e_runtime"
-    );
-    return canonicalIdentityRuntimeCredentialIsReady(transaction);
-  }
+await expectRejected(
+  () =>
+    prisma.$transaction((transaction) =>
+      transaction.$executeRawUnsafe(
+        "LOCK TABLE public.value_hypotheses, public.measurement_plans, public.measurement_cell_snapshots IN SHARE ROW EXCLUSIVE MODE"
+      )
+    ),
+  "database owner source-table cutover lock after Slice E ownership transfer"
 );
-assert(
-  !substitutedRuntimeCredentialAccepted,
-  "elevated session using SET ROLE was accepted as the Slice E runtime login"
+await expectRejected(
+  () =>
+    prisma.$executeRawUnsafe(
+      "SET ROLE fluencytracr_slice_e_runtime"
+    ),
+  "database owner SET ROLE Slice E runtime substitution"
 );
 await expectRejected(
   () =>
@@ -745,7 +721,7 @@ hypothesisValidation.canonical_value_hypothesis_creation_attestation_v1 = {
   hypothesis_semantic_commitment: hypothesisSource.semanticCommitment,
   ...hypothesisAttestation
 };
-await prisma.valueHypothesis.create({
+await sliceERuntimePrisma.valueHypothesis.create({
   data: {
     id: hypothesisRowId,
     orgId,
@@ -822,7 +798,7 @@ planValidation.canonical_hypothesis_edge_v1 = {
   canonical_slice_commitment: measurementPlan.canonical_slice_binding_v1.slice_commitment,
   ...planAttestation
 };
-await prisma.measurementPlan.create({
+await sliceERuntimePrisma.measurementPlan.create({
   data: {
     id: planRowId,
     orgId,
@@ -866,7 +842,7 @@ const cellSource = {
   payload: cellPayload,
   authority: {
     measurement_plan_id: measurementPlanId,
-    aggregate_source_system: projection.source_system,
+    aggregate_source_system: "bigquery_export",
     value_hypothesis_id: hypothesisId,
     value_hypothesis_ref: `${hypothesisId}:v1`,
     approval_state: "approved",
@@ -935,14 +911,14 @@ cellValidation.canonical_measurement_lineage_v1 = {
   canonical_direction: canonicalMetric.canonical_direction,
   ...cellAttestation
 };
-await prisma.measurementCellSnapshot.create({
+await sliceERuntimePrisma.measurementCellSnapshot.create({
   data: {
     id: cellRowId,
     orgId,
     measurementCellId,
     measurementCellAssemblyRunId: crypto.randomUUID(),
     measurementPlanId,
-    aggregateSourceSystem: projection.source_system,
+    aggregateSourceSystem: "bigquery_export",
     aggregateExportReviewRef: "aggregate-review-v1",
     aggregateExportReviewState: "PASSED_BIGQUERY_AGGREGATE_EXPORT_REVIEW",
     aggregateSourceExportRef: "aggregate-export-v1",
@@ -952,7 +928,7 @@ await prisma.measurementCellSnapshot.create({
     aggregateBoundaryRefJson: { aggregate_only: true },
     valueHypothesisId: hypothesisId,
     valueHypothesisRef: `${hypothesisId}:v1`,
-    valueHypothesisBindingState: "approved",
+    valueHypothesisBindingState: "bound",
     approvedBlueprintRef: blueprint.blueprint_id,
     approvedBlueprintPayloadHash: "c".repeat(64),
     blueprintExpectationRef: "expectation-v1",
@@ -974,7 +950,7 @@ await prisma.measurementCellSnapshot.create({
     workflowId: projection.workflow_id,
     functionArea: "customer_support",
     cohortKey: "aggregate_exact_slice",
-    windowMode: "fixed",
+    windowMode: "milestone",
     milestoneDay: 30,
     baselineWindowStart: new Date(projection.baseline_window.period_start),
     baselineWindowEnd: new Date(projection.baseline_window.period_end),
@@ -1050,7 +1026,7 @@ await expectRejected(
   "owner-level journal delete trigger bypass"
 );
 const appendHypothesisAttack = (version, supersedesId) =>
-  prisma.valueHypothesis.create({
+  sliceERuntimePrisma.valueHypothesis.create({
     data: {
       id: crypto.randomUUID(),
       orgId,
@@ -1566,7 +1542,7 @@ assert(
 );
 
 console.log(
-  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E session/effective runtime credential, same-server/database identity, wrong-database rejection, write-blocking three-source cutover lock, SET ROLE substitution rejection, elevated existing-readout rejection, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice, approval-role, and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
+  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E session/effective runtime credential, same-server/database identity, wrong-database rejection, post-transfer database-owner source-lock and SET ROLE rejection, elevated existing-readout rejection, canonical source/journal/HMAC authority, owner-boundary privilege-drift rejection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice, approval-role, and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
 );
 
 await sliceERuntimePrisma.$disconnect();

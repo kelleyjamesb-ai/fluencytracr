@@ -103,6 +103,11 @@ const deepEqual = (left: unknown, right: unknown): boolean =>
 const exactHash = (domain: string, value: unknown): string =>
   aiValueEngine.aggregateClaimHash(domain, value);
 
+export const canonicalIdentityAggregateSourceIsApproved = (
+  sourceSystem: unknown
+): boolean =>
+  sourceSystem === "bigquery_export" || sourceSystem === "sigma_export";
+
 const windowToken = (start: unknown, end: unknown): string | null => {
   if (typeof start !== "string" || typeof end !== "string") return null;
   const canonicalMidnight = /^\d{4}-\d{2}-\d{2}T00:00:00\.000Z$/;
@@ -618,7 +623,9 @@ export const resolveCanonicalIdentityAuthority = async (
     metricProjection.measurement_unit !== bindingCandidate.measurement_unit ||
     metricProjection.canonical_direction !== bindingCandidate.approved_direction ||
     measurementCell.authority.metric_id !== bindingCandidate.metric_id ||
-    measurementCell.authority.aggregate_source_system !== bindingCandidate.outcome_source_system ||
+    !canonicalIdentityAggregateSourceIsApproved(
+      measurementCell.authority.aggregate_source_system
+    ) ||
     measurementCell.authority.metric_definition_ref !== bindingCandidate.metric_definition_ref ||
     measurementCell.authority.metric_unit !== bindingCandidate.measurement_unit ||
     aiValueEngine.canonicalSliceJoinKeyCommitment(

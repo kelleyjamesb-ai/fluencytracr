@@ -83,3 +83,37 @@ ON "aggregate_privacy_contribution_claims"("org_id", "contribution_token_hash");
 
 CREATE INDEX "aggregate_privacy_contribution_claims_org_id_privacy_slot_id_idx"
 ON "aggregate_privacy_contribution_claims"("org_id", "privacy_slot_id");
+
+ALTER TABLE public.aggregate_privacy_release_journal
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aggregate_privacy_manifests
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aggregate_privacy_contribution_claims
+  ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE
+  public.aggregate_privacy_release_journal,
+  public.aggregate_privacy_manifests,
+  public.aggregate_privacy_contribution_claims
+FROM PUBLIC;
+
+DO $restricted_acl$
+DECLARE
+  restricted_role TEXT;
+BEGIN
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON TABLE public.aggregate_privacy_release_journal, public.aggregate_privacy_manifests, public.aggregate_privacy_contribution_claims FROM %I',
+        restricted_role
+      );
+    END IF;
+  END LOOP;
+END
+$restricted_acl$;

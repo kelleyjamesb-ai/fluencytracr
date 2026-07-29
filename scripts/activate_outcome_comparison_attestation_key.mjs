@@ -2,18 +2,33 @@ import { Prisma, PrismaClient } from "@prisma/client";
 
 const KEY_ID = /^FT_C1_HMAC_[A-Z0-9_]{1,48}$/;
 const keyId = process.env.C1_ATTESTATION_ACTIVATE_KEY_ID;
-if (!process.env.DATABASE_URL || !keyId || !KEY_ID.test(keyId)) {
+const provisionerDatabaseUrl =
+  process.env.C1_ATTESTATION_PROVISIONER_DATABASE_URL;
+if (!provisionerDatabaseUrl || !keyId || !KEY_ID.test(keyId)) {
   throw new Error(
-    "DATABASE_URL and canonical C1_ATTESTATION_ACTIVATE_KEY_ID are required"
+    "C1_ATTESTATION_PROVISIONER_DATABASE_URL and canonical C1_ATTESTATION_ACTIVATE_KEY_ID are required"
   );
 }
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: { db: { url: provisionerDatabaseUrl } }
+});
 try {
   await prisma.$transaction(async (transaction) => {
-    await transaction.$executeRawUnsafe(
-      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
+    const credential = await transaction.$queryRaw(
+      Prisma.sql`SELECT session_user AS session_user, current_user AS current_user`
     );
+    if (
+      credential.length !== 1 ||
+      credential[0]?.session_user !==
+        "fluencytracr_c1_attestation_provisioner" ||
+      credential[0]?.current_user !==
+        "fluencytracr_c1_attestation_provisioner"
+    ) {
+      throw new Error(
+        "C.1 attestation activation requires the direct provisioner login"
+      );
+    }
     await transaction.$executeRaw(
       Prisma.sql`SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('FT_C1_ATTESTATION_PROVISIONING_V1', 0))`
     );

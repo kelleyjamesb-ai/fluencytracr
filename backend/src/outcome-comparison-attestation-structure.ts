@@ -25,18 +25,15 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
                  'dd14bd956cb8e51d23f2e561d63ee6baa71a46fc32b831715c188884abc5c553']::TEXT[], false),
           ('stamp_outcome_comparison_creation_attestation', '', 'trigger', true, 'v',
            'plpgsql', NULL, 'u', false, ARRAY['search_path=pg_catalog, public']::TEXT[],
-           ARRAY['f24650f24cc8a892fec586b7b416f807cbf7a985c78f8219954e5c5adb228f76',
-                 'd2f1dd912f45454d24826e9b1feeecd0d5f08e3991bfcafd710cb26b9780261b']::TEXT[], false),
+           ARRAY['8ed81278a38a7b87fae411dd318887e7f80846cf9fa6a1539b6018cf448fe08c']::TEXT[], false),
           ('verify_outcome_comparison_creation_attestation', 'release_id uuid', 'boolean', true, 'v',
            'plpgsql', NULL, 'u', false, ARRAY['search_path=pg_catalog, public']::TEXT[],
-           ARRAY['3265c4021509a8773ab187e32ee9c3f9861581bee47dc742cb1f9dbfc59509d9',
-                 'eced2120134134c61c098bd3a5794b6313eec2f6c3823707f51a450622141eed']::TEXT[], true),
+           ARRAY['fff322c8049390db73413a139943d4a8e8fa1496f3cf9a452e176ee9665d0938']::TEXT[], true),
           ('outcome_comparison_attestation_readiness',
            'configured_active_key_id text, configured_key_ids text[], configured_secrets text[]',
            'TABLE(ok boolean, diagnostics text[])', true, 'v',
            'plpgsql', NULL, 'u', false, ARRAY['search_path=pg_catalog, public']::TEXT[],
-           ARRAY['5becef391b62973f6e2c1a7f1e3865393f029c72b094cc1a2356dcea486c547f',
-                 '0be99f008fbeba346c3f3eea056fefb590ffbcfb5639b9ea7dd50996f736ae6b']::TEXT[], true),
+           ARRAY['4fd53596ec4911594f6e69e3f22b153f510bc14221ecb9ce4099bc4e729de5a0']::TEXT[], true),
           ('reject_c1_runtime_lock_only_mutation', '', 'trigger', false, 'v',
            'plpgsql', NULL, 'u', false, ARRAY['search_path=pg_catalog']::TEXT[],
            ARRAY['80df9f95714a47444d65fc21a0b56e5790461142b6c528c4268e68d9558239d3']::TEXT[], false),
@@ -64,7 +61,7 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
           proc.proconfig,
           proc.proacl,
           pg_catalog.encode(
-            public.digest(
+            extensions.digest(
               pg_catalog.convert_to(
                 pg_catalog.regexp_replace(pg_catalog.btrim(proc.prosrc), '\\s+', ' ', 'g'),
                 'UTF8'
@@ -84,8 +81,8 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
       ),
       expected_crypto(function_oid, source_symbol) AS (
         VALUES
-          ('public.digest(bytea,text)'::regprocedure, 'pg_digest'),
-          ('public.hmac(bytea,bytea,text)'::regprocedure, 'pg_hmac')
+          ('extensions.digest(bytea,text)'::regprocedure, 'pg_digest'),
+          ('extensions.hmac(bytea,bytea,text)'::regprocedure, 'pg_hmac')
       ),
       expected_tables(table_name, expected_rls) AS (
         VALUES
@@ -99,7 +96,7 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
           ('cohort_proof_journal', true),
           ('outcome_evidence', true),
           ('ai_value_objects', true),
-          ('aggregate_privacy_release_journal', false)
+          ('aggregate_privacy_release_journal', true)
       ),
       provisioner_forbidden_table AS (
         SELECT table_row.oid
@@ -208,7 +205,7 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
           JOIN pg_catalog.pg_namespace AS namespace
             ON namespace.oid = extension.extnamespace
           WHERE extension.extname = 'pgcrypto'
-            AND namespace.nspname = 'public'
+            AND namespace.nspname = 'extensions'
             AND extension.extowner = (SELECT datdba FROM pg_catalog.pg_database WHERE datname = current_database())
         )
         AND NOT EXISTS (
@@ -220,7 +217,7 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
             ON namespace.oid = proc.pronamespace
           JOIN pg_catalog.pg_language AS language
             ON language.oid = proc.prolang
-          WHERE namespace.nspname <> 'public'
+          WHERE namespace.nspname <> 'extensions'
              OR proc.proowner <>
                 (SELECT datdba FROM pg_catalog.pg_database WHERE datname = current_database())
              OR language.lanname <> 'c'
@@ -253,6 +250,12 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
                ) AS acl
                WHERE acl.privilege_type = 'EXECUTE'
                  AND acl.grantee <> proc.proowner
+                 AND NOT EXISTS (
+                   SELECT 1
+                   FROM pg_catalog.pg_roles AS platform_role
+                   WHERE platform_role.oid = acl.grantee
+                     AND platform_role.rolname = 'dashboard_user'
+                 )
              )
              OR pg_catalog.has_function_privilege(
                   'fluencytracr_c1_runtime',
@@ -306,7 +309,22 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
           JOIN pg_catalog.pg_roles AS member_role ON member_role.oid = membership.member
           JOIN pg_catalog.pg_roles AS granted_role ON granted_role.oid = membership.roleid
           WHERE member_role.rolname IN ('fluencytracr_c1_runtime', 'fluencytracr_c1_attestation_provisioner')
-             OR granted_role.rolname IN ('fluencytracr_c1_runtime', 'fluencytracr_c1_attestation_provisioner')
+             OR (
+               granted_role.rolname IN (
+                 'fluencytracr_c1_runtime',
+                 'fluencytracr_c1_attestation_provisioner'
+               )
+               AND NOT (
+                 member_role.oid = (
+                   SELECT datdba
+                   FROM pg_catalog.pg_database
+                   WHERE datname = current_database()
+                 )
+                 AND membership.admin_option
+                 AND NOT membership.inherit_option
+                 AND NOT membership.set_option
+               )
+             )
         )
         AND NOT EXISTS (
           SELECT 1
@@ -335,7 +353,7 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
              OR constraint_row.contype::TEXT <> expected.constraint_type
              OR NOT constraint_row.convalidated
              OR pg_catalog.encode(
-                  public.digest(
+                  extensions.digest(
                     pg_catalog.convert_to(
                       pg_catalog.regexp_replace(
                         pg_catalog.btrim(

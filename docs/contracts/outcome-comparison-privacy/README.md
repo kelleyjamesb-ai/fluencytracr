@@ -96,8 +96,11 @@ lock completes before the later mutation, after which stale replay/readback
 holds.
 
 Database readiness separately attests exact `pgcrypto` membership, direct
-login role attributes, absence of role memberships, and the absence of
-effective `CREATE` authority on the `public` schema for both restricted roles,
+login role attributes, and the absence of effective `CREATE` authority on the
+`public` schema for both restricted roles. On PostgreSQL 17, readiness permits
+only the database owner's unavoidable admin-only creator membership with
+`admin_option = true`, `inherit_option = false`, and `set_option = false`;
+every other restricted-role membership is drift. It also attests
 attestation table
 ownership/types/nullability/RLS, constraints and foreign keys, the complete
 policy and ACL set, append-only and creation-stamp trigger bindings, and exact
@@ -116,9 +119,11 @@ four-field key codec are attested with exact signature, owner, language,
 volatility, parallel, strict, security, search-path, body-hash, and owner-only
 execute ACLs. The runtime lock-only function has the same exact posture;
 `PUBLIC` cannot execute any of them. The `digest`
-and `hmac` dependencies are pinned as the exact `pgcrypto` C functions owned
-by the database owner, with their expected binary/source metadata, extension
-dependency, attributes, configuration, and owner-only execute ACLs. A
+and `hmac` dependencies are pinned in the hosted `extensions` schema as the
+exact `pgcrypto` C functions owned by the database owner, with their expected
+binary/source metadata, extension dependency, attributes, and configuration.
+`PUBLIC`, the C.1 runtime, and the Supabase API roles cannot execute them; the
+existing platform `dashboard_user` grant is the only allowed non-owner ACL. A
 same-named function in another schema, a no-op replacement body, an unexpected
 trigger, family-lock/codec replacement, pgcrypto owner/body/ACL drift,
 source-table RLS drift, or required or forbidden runtime ACL drift therefore
@@ -129,14 +134,18 @@ any other public table or sequence. Any additional grant fails readiness.
 
 Deployment key lifecycle is explicit and append-only:
 
-1. Run `provision_outcome_comparison_attestation_key.mjs` with the deployment
-   database URL, one canonical key ID, and one 32-byte base64url secret.
+1. Run `provision_outcome_comparison_attestation_key.mjs` with
+   `C1_ATTESTATION_PROVISIONER_DATABASE_URL` authenticated directly as
+   `fluencytracr_c1_attestation_provisioner`, one canonical key ID, and one
+   32-byte base64url secret.
 2. Deploy the retained runtime key map and dedicated runtime URL.
-3. Run `activate_outcome_comparison_attestation_key.mjs` for the new key.
+3. Run `activate_outcome_comparison_attestation_key.mjs` through that same
+   direct provisioner URL for the new key.
 4. Remove an old retained secret only after no valid release references it.
 5. For compromise response, run
-   `revoke_outcome_comparison_attestation_key.mjs`; revocation is irreversible
-   and every release bound to that key holds.
+   `revoke_outcome_comparison_attestation_key.mjs` through that same direct
+   provisioner URL; revocation is irreversible and every release bound to that
+   key holds.
 
 Provisioning is insert-or-exact-verify. It never updates, replaces, adopts, or
 prints a secret. An inactive, unreferenced registered key may be staged before
@@ -145,3 +154,5 @@ readiness still requires every configured key and every non-revoked
 release-referenced key to have a valid retained secret. Activation is
 serialized and greatest-epoch authoritative.
 Revocation never falls back to an earlier activation.
+All three lifecycle commands require both `session_user` and `current_user`
+to equal the direct provisioner login and never use `SET ROLE`.

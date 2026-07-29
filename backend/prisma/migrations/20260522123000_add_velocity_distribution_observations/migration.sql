@@ -41,3 +41,32 @@ CREATE INDEX IF NOT EXISTS "velocity_distribution_observations_org_id_workflow_e
 
 CREATE INDEX IF NOT EXISTS "velocity_distribution_observations_org_id_ingested_at_idx"
     ON "velocity_distribution_observations"("org_id", "ingested_at");
+
+ALTER TABLE public.velocity_distribution_observations
+  ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.velocity_distribution_observations FROM PUBLIC;
+
+DO $restricted_acl$
+DECLARE
+  restricted_role TEXT;
+BEGIN
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON TABLE public.velocity_distribution_observations FROM %I',
+        restricted_role
+      );
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON SEQUENCE public.velocity_distribution_observations_ingest_sequence_seq FROM %I',
+        restricted_role
+      );
+    END IF;
+  END LOOP;
+END
+$restricted_acl$;

@@ -208,10 +208,10 @@ describe("C.1 outcome comparison privacy migration", () => {
         "public.aggregate_privacy_contribution_claims"
       );
       expect(script).toContain(
-        "REVOKE ALL ON FUNCTION public.digest(BYTEA, TEXT) FROM PUBLIC"
+        "REVOKE ALL ON FUNCTION extensions.digest(BYTEA, TEXT) FROM PUBLIC"
       );
       expect(script).toContain(
-        "REVOKE ALL ON FUNCTION public.hmac(BYTEA, BYTEA, TEXT) FROM PUBLIC"
+        "REVOKE ALL ON FUNCTION extensions.hmac(BYTEA, BYTEA, TEXT) FROM PUBLIC"
       );
       expect(script).toContain(
         "REVOKE ALL ON FUNCTION public.lock_outcome_evidence_family_mutation() FROM PUBLIC"
@@ -329,10 +329,10 @@ describe("C.1 outcome comparison privacy migration", () => {
         "REVOKE ALL ON TABLE public.outcome_comparison_privacy_releases FROM PUBLIC"
       );
       expect(script).toContain(
-        "REVOKE ALL ON TABLE public.outcome_comparison_privacy_releases FROM anon"
+        "ARRAY['anon', 'authenticated', 'service_role']"
       );
       expect(script).toContain(
-        "REVOKE ALL ON TABLE public.outcome_comparison_privacy_releases FROM authenticated"
+        "public.outcome_comparison_privacy_releases, public.cohort_producer_authorities"
       );
     }
   });

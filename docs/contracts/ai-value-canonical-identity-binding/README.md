@@ -54,9 +54,11 @@ A `BOUND` result requires:
 5. An exact recomputation of
    `canonical_metric_definition_commitment_v1`.
 6. Exact agreement across organization, workflow, JBTD, persona, aggregate
-   grain, metric, source, unit, permitted direction, baseline/comparison
-   windows, Slice D source graph, accepted evidence, and current C.1
-   projection.
+   grain, metric, outcome source, unit, permitted direction,
+   baseline/comparison windows, Slice D source graph, accepted evidence, and
+   current C.1 projection. The Measurement Cell's separate aggregate pipeline
+   source remains restricted to `bigquery_export` or `sigma_export`; it is not
+   equated with a customer outcome source such as `customer_crm`.
 7. Exact agreement with the append-only family-head journal for the selected
    hypothesis, plan, and Measurement Cell families.
 
@@ -76,6 +78,10 @@ connection, and family-head structural readiness runs against the runtime
 target. Operational readiness additionally requires a valid Slice E active
 HMAC write key and retained-read-key configuration.
 The general database credential remains outside Slice E source authority.
+On PostgreSQL 17 it can retain only the unavoidable admin-only creator
+membership for the Slice E roles, with no `INHERIT` or `SET` option. It cannot
+assume the runtime or owner role, lock or mutate the transferred source
+tables, or alter the owner-controlled journal/functions.
 
 ## Canonical identity core
 
