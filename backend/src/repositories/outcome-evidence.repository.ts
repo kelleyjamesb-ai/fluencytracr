@@ -15,7 +15,7 @@ export interface OutcomeEvidenceFamily {
   personaId: string | null;
 }
 
-const outcomeEvidenceFamilyLockKey = (
+export const outcomeEvidenceFamilyLockKey = (
   family: OutcomeEvidenceFamily
 ): string =>
   JSON.stringify([

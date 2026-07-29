@@ -65,6 +65,7 @@ import {
   insertUnifiedTelemetryEvent,  insertDecisionLedgerEntry,
   insertDecisionLedgerEvaluation
 } from "./store";
+import { getOutcomeComparisonRuntimePrisma } from "./outcome-comparison-runtime-client";
 import type {
   CanonicalControlSnapshotRecord,
   DecisionLedgerEvaluationRecord,
@@ -206,6 +207,8 @@ import {
   commitAggregatePrivacyProjection,
   readAdmittedAggregatePrivacyProjection
 } from "./repositories/aggregate-privacy-release.repository";
+import { checkOutcomeComparisonAttestationReadiness } from "./outcome-comparison-attestation-config";
+import { checkOutcomeComparisonAttestationStructureReadiness } from "./outcome-comparison-attestation-structure";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -1002,14 +1005,22 @@ const REQUIRED_AGGREGATE_PRIVACY_TABLES = [
   "aggregate_privacy_reservations",
   "cohort_producer_authorities",
   "cohort_producer_authority_revocations",
-  "cohort_proof_journal"
+  "cohort_proof_journal",
+  "outcome_comparison_attestation_keys",
+  "outcome_comparison_attestation_key_activations",
+  "outcome_comparison_attestation_key_revocations",
+  "outcome_comparison_privacy_releases"
 ] as const;
 
 const REQUIRED_C0_RESTRICTED_TABLES = [
   "cohort_producer_authorities",
   "cohort_producer_authority_revocations",
   "aggregate_privacy_reservations",
-  "cohort_proof_journal"
+  "cohort_proof_journal",
+  "outcome_comparison_attestation_keys",
+  "outcome_comparison_attestation_key_activations",
+  "outcome_comparison_attestation_key_revocations",
+  "outcome_comparison_privacy_releases"
 ] as const;
 
 const REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS = [
@@ -1028,6 +1039,10 @@ const REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS = [
   [
     "aggregate_privacy_contribution_claims_append_only",
     "aggregate_privacy_contribution_claims"
+  ],
+  [
+    "outcome_comparison_privacy_releases_append_only",
+    "outcome_comparison_privacy_releases"
   ]
 ] as const;
 const REQUIRED_PRIVACY_APPEND_ONLY_GUARDS =
@@ -1038,6 +1053,79 @@ BEGIN
     USING ERRCODE = 'integrity_constraint_violation';
 END;
 `.replace(/\s+/g, " ").trim();
+const REQUIRED_OUTCOME_EVIDENCE_FAMILY_MUTATION_GUARD =
+  "outcome_evidence_family_lock_before_mutation";
+const REQUIRED_OUTCOME_EVIDENCE_FAMILY_MUTATION_FUNCTION_SOURCE = `
+DECLARE
+  old_lock_key TEXT;
+  new_lock_key TEXT;
+  old_lock_id BIGINT;
+  new_lock_id BIGINT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    new_lock_key := public.outcome_evidence_family_lock_key(
+      NEW.org_id,
+      NEW.workflow_id,
+      NEW.jbtd_id,
+      NEW.persona_id
+    );
+    PERFORM pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended(new_lock_key, 0)
+    );
+    RETURN NEW;
+  END IF;
+
+  old_lock_key := public.outcome_evidence_family_lock_key(
+    OLD.org_id,
+    OLD.workflow_id,
+    OLD.jbtd_id,
+    OLD.persona_id
+  );
+
+  IF TG_OP = 'DELETE' THEN
+    PERFORM pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended(old_lock_key, 0)
+    );
+    RETURN OLD;
+  END IF;
+
+  new_lock_key := public.outcome_evidence_family_lock_key(
+    NEW.org_id,
+    NEW.workflow_id,
+    NEW.jbtd_id,
+    NEW.persona_id
+  );
+  old_lock_id := pg_catalog.hashtextextended(old_lock_key, 0);
+  new_lock_id := pg_catalog.hashtextextended(new_lock_key, 0);
+
+  IF old_lock_id <= new_lock_id THEN
+    PERFORM pg_catalog.pg_advisory_xact_lock(old_lock_id);
+    IF new_lock_id <> old_lock_id THEN
+      PERFORM pg_catalog.pg_advisory_xact_lock(new_lock_id);
+    END IF;
+  ELSE
+    PERFORM pg_catalog.pg_advisory_xact_lock(new_lock_id);
+    PERFORM pg_catalog.pg_advisory_xact_lock(old_lock_id);
+  END IF;
+
+  RETURN NEW;
+END;
+`.replace(/\s+/g, " ").trim();
+const REQUIRED_OUTCOME_EVIDENCE_FAMILY_KEY_FUNCTION_SOURCE = `
+  SELECT
+    '['
+    || pg_catalog.to_json('FT_OUTCOME_EVIDENCE_FAMILY_LOCK_V1'::TEXT)::TEXT
+    || ',' || pg_catalog.to_json(org_id_value)::TEXT
+    || ',' || pg_catalog.to_json(workflow_id_value)::TEXT
+    || ',' || COALESCE(pg_catalog.to_json(jbtd_id_value)::TEXT, 'null')
+    || ',' || COALESCE(pg_catalog.to_json(persona_id_value)::TEXT, 'null')
+    || ']';
+`.replace(/\s+/g, " ").trim();
+const REQUIRED_PRIVACY_GUARDS = [
+  ...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS,
+  REQUIRED_OUTCOME_EVIDENCE_FAMILY_MUTATION_GUARD,
+  "outcome_evidence_family_lock_key_function"
+] as const;
 const REQUIRED_PRIVACY_CHECK_CONSTRAINT_BINDINGS = [
   ["cohort_producer_authority_version_check", "cohort_producer_authorities"],
   ["cohort_producer_authority_time_check", "cohort_producer_authorities"],
@@ -1060,10 +1148,64 @@ const REQUIRED_PRIVACY_CHECK_CONSTRAINT_BINDINGS = [
   ["cohort_proof_journal_baseline_count_check", "cohort_proof_journal"],
   ["cohort_proof_journal_comparison_count_check", "cohort_proof_journal"],
   ["cohort_proof_journal_baseline_window_check", "cohort_proof_journal"],
-  ["cohort_proof_journal_comparison_window_check", "cohort_proof_journal"]
+  ["cohort_proof_journal_comparison_window_check", "cohort_proof_journal"],
+  [
+    "outcome_comparison_release_policy_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_decision_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_identity_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_evidence_ids_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_descriptors_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_hashes_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_windows_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_cohort_sizes_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_values_check",
+    "outcome_comparison_privacy_releases"
+  ],
+  [
+    "outcome_comparison_release_non_authority_check",
+    "outcome_comparison_privacy_releases"
+  ]
 ] as const;
 const REQUIRED_PRIVACY_CHECK_CONSTRAINTS =
   REQUIRED_PRIVACY_CHECK_CONSTRAINT_BINDINGS.map(([name]) => name);
+const REQUIRED_PRIVACY_UNIQUE_INDEX_BINDINGS = [
+  {
+    name: "outcome_comparison_release_proof_journal_key",
+    table: "outcome_comparison_privacy_releases",
+    columns: ["org_id", "proof_journal_id"]
+  },
+  {
+    name: "outcome_comparison_release_reservation_key",
+    table: "outcome_comparison_privacy_releases",
+    columns: ["org_id", "reservation_key"]
+  }
+] as const;
+const REQUIRED_PRIVACY_UNIQUE_INDEXES =
+  REQUIRED_PRIVACY_UNIQUE_INDEX_BINDINGS.map(({ name }) => name);
 const canonicalConstraintDefinition = (definition: string): string => {
   let canonical = "";
   let insideStringLiteral = false;
@@ -1141,7 +1283,27 @@ const REQUIRED_PRIVACY_CHECK_DEFINITIONS: Readonly<Record<string, string>> = {
   cohort_proof_journal_baseline_window_check:
     "CHECK baseline_period_end > baseline_period_start",
   cohort_proof_journal_comparison_window_check:
-    "CHECK comparison_period_end > comparison_period_start"
+    "CHECK comparison_period_end > comparison_period_start",
+  outcome_comparison_release_policy_check:
+    "CHECK policy_version = 'FT_OUTCOME_COMPARISON_PRIVACY_POLICY_2026_07'",
+  outcome_comparison_release_decision_check:
+    "CHECK decision = 'ATOMIC_COMPARISON_PRIVACY_RELEASED'",
+  outcome_comparison_release_identity_check:
+    "CHECK org_id ~ '^[a-z0-9][a-z0-9:_-]{0,179}$' AND workflow_id ~ '^[a-z0-9][a-z0-9:_-]{0,179}$' AND jbtd_id ~ '^[a-z0-9][a-z0-9_-]{0,63}$' AND persona_id ~ '^[a-z0-9][a-z0-9_-]{0,63}$'",
+  outcome_comparison_release_evidence_ids_check:
+    "CHECK baseline_evidence_id ~ '^[a-z0-9][a-z0-9_-]{0,127}$' AND comparison_evidence_id ~ '^[a-z0-9][a-z0-9_-]{0,127}$' AND baseline_evidence_id <> comparison_evidence_id",
+  outcome_comparison_release_descriptors_check:
+    "CHECK char_length(outcome_metric) >= 1 AND char_length(outcome_metric) <= 180 AND char_length(outcome_unit) >= 1 AND char_length(outcome_unit) <= 80 AND char_length(source_system) >= 1 AND char_length(source_system) <= 120",
+  outcome_comparison_release_hashes_check:
+    "CHECK proof_hash ~ '^[0-9a-f]{64}$' AND reservation_key ~ '^[0-9a-f]{64}$' AND admission_receipt_hash ~ '^[0-9a-f]{64}$' AND baseline_evidence_hash ~ '^[0-9a-f]{64}$' AND comparison_evidence_hash ~ '^[0-9a-f]{64}$' AND projection_hash ~ '^[0-9a-f]{64}$' AND content_fingerprint ~ '^[0-9a-f]{64}$'",
+  outcome_comparison_release_windows_check:
+    "CHECK baseline_period_end > baseline_period_start AND comparison_period_end > comparison_period_start AND comparison_period_start >= baseline_period_end",
+  outcome_comparison_release_cohort_sizes_check:
+    "CHECK baseline_cohort_size >= 5 AND comparison_cohort_size >= 5",
+  outcome_comparison_release_values_check:
+    "CHECK baseline_aggregate_value <> 'NaN'::DOUBLE PRECISION AND baseline_aggregate_value <> 'Infinity'::DOUBLE PRECISION AND baseline_aggregate_value <> '-Infinity'::DOUBLE PRECISION AND comparison_aggregate_value <> 'NaN'::DOUBLE PRECISION AND comparison_aggregate_value <> 'Infinity'::DOUBLE PRECISION AND comparison_aggregate_value <> '-Infinity'::DOUBLE PRECISION",
+  outcome_comparison_release_non_authority_check:
+    "CHECK comparison_privacy_only IS TRUE AND claim_authority_effect = 'NONE' AND claim_authorized IS FALSE AND model_authorized IS FALSE AND customer_publishable IS FALSE"
 };
 
 const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
@@ -1225,6 +1387,59 @@ const REQUIRED_PERSISTENCE_TABLE_COLUMNS = {
     "admission_receipt_hash",
     "reservation_key",
     "decision"
+  ],
+  outcome_comparison_privacy_releases: [
+    "org_id",
+    "policy_version",
+    "proof_journal_id",
+    "proof_hash",
+    "reservation_key",
+    "admission_receipt_hash",
+    "workflow_id",
+    "jbtd_id",
+    "persona_id",
+    "outcome_metric",
+    "outcome_unit",
+    "source_system",
+    "baseline_period_start",
+    "baseline_period_end",
+    "baseline_evidence_id",
+    "baseline_evidence_hash",
+    "baseline_cohort_size",
+    "baseline_aggregate_value",
+    "comparison_period_start",
+    "comparison_period_end",
+    "comparison_evidence_id",
+    "comparison_evidence_hash",
+    "comparison_cohort_size",
+    "comparison_aggregate_value",
+    "projection_json",
+    "projection_hash",
+    "content_fingerprint",
+    "decision",
+    "comparison_privacy_only",
+    "claim_authority_effect",
+    "claim_authorized",
+    "model_authorized",
+    "customer_publishable",
+    "attestation_key_id",
+    "creation_attestation"
+  ],
+  outcome_comparison_attestation_keys: [
+    "key_id",
+    "algorithm",
+    "secret_hash",
+    "provisioned_at"
+  ],
+  outcome_comparison_attestation_key_activations: [
+    "activation_epoch",
+    "key_id",
+    "activated_at"
+  ],
+  outcome_comparison_attestation_key_revocations: [
+    "key_id",
+    "reason_code",
+    "revoked_at"
   ]
 } as const;
 
@@ -1242,8 +1457,8 @@ const REQUIRED_PERSISTENCE_COLUMN_BINDINGS = Object.entries(
 
 type DatabaseReadinessResult =
   | { status: "not_configured" }
-  | { status: "ready"; missingTables: []; missingColumns: []; missingGuards: []; missingConstraints: []; missingSecurity: []; tableCount: number }
-  | { status: "schema_incomplete"; missingTables: string[]; missingColumns: string[]; missingGuards: string[]; missingConstraints: string[]; missingSecurity: string[]; tableCount: number }
+  | { status: "ready"; missingTables: []; missingColumns: []; missingGuards: []; missingConstraints: []; missingIndexes: []; missingSecurity: []; tableCount: number }
+  | { status: "schema_incomplete"; missingTables: string[]; missingColumns: string[]; missingGuards: string[]; missingConstraints: string[]; missingIndexes: string[]; missingSecurity: string[]; tableCount: number }
   | { status: "unavailable"; error: string };
 
 const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
@@ -1298,7 +1513,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       anon_has_privilege: boolean;
       authenticated_has_privilege: boolean;
     }>;
-    const missingSecurity = REQUIRED_C0_RESTRICTED_TABLES
+    const missingSecurity: string[] = REQUIRED_C0_RESTRICTED_TABLES
       .filter((tableName) => tableNames.has(tableName))
       .filter(
         (tableName) =>
@@ -1322,6 +1537,8 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
         function_row.prosecdef AS function_security_definer,
         function_row.provolatile AS function_volatility,
         trigger_row.tgenabled,
+        trigger_row.tgqual IS NULL AS has_no_when_clause,
+        trigger_row.tgnargs AS argument_count,
         (trigger_row.tgtype & 1) = 1 AS row_level,
         (trigger_row.tgtype & 2) = 2 AS before_event,
         (trigger_row.tgtype & 4) = 4 AS fires_insert,
@@ -1346,6 +1563,8 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       function_security_definer: boolean;
       function_volatility: string;
       tgenabled: string;
+      has_no_when_clause: boolean;
+      argument_count: number;
       row_level: boolean;
       before_event: boolean;
       fires_insert: boolean;
@@ -1353,7 +1572,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       fires_update: boolean;
       fires_truncate: boolean;
     }>;
-    const missingGuards = REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS
+    const missingAppendOnlyGuards = REQUIRED_PRIVACY_APPEND_ONLY_GUARD_BINDINGS
       .filter(([guardName, tableName]) =>
         !guardRows.some(
           (row) =>
@@ -1368,6 +1587,8 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
             !row.function_security_definer &&
             row.function_volatility === "v" &&
             (row.tgenabled === "O" || row.tgenabled === "A") &&
+            row.has_no_when_clause &&
+            row.argument_count === 0 &&
             row.row_level &&
             row.before_event &&
             !row.fires_insert &&
@@ -1377,6 +1598,88 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
         )
       )
       .map(([guardName]) => guardName);
+    const mutationGuardPresent = guardRows.some(
+      (row) =>
+        row.tgname === REQUIRED_OUTCOME_EVIDENCE_FAMILY_MUTATION_GUARD &&
+        row.table_name === "outcome_evidence" &&
+        row.table_schema === "public" &&
+        row.function_name === "lock_outcome_evidence_family_mutation" &&
+        row.function_schema === "public" &&
+        row.function_language === "plpgsql" &&
+        row.function_source.replace(/\s+/g, " ").trim() ===
+          REQUIRED_OUTCOME_EVIDENCE_FAMILY_MUTATION_FUNCTION_SOURCE &&
+        !row.function_security_definer &&
+        row.function_volatility === "v" &&
+        (row.tgenabled === "O" || row.tgenabled === "A") &&
+        row.has_no_when_clause &&
+        row.argument_count === 0 &&
+        row.row_level &&
+        row.before_event &&
+        row.fires_insert &&
+        row.fires_delete &&
+        row.fires_update &&
+        !row.fires_truncate
+    );
+    const familyKeyFunctionRows = (await prisma.$queryRawUnsafe(`
+      /* family_key_function */
+      SELECT
+        function_row.proname AS function_name,
+        function_schema.nspname AS function_schema,
+        function_language.lanname AS function_language,
+        function_row.prosrc AS function_source,
+        function_row.prosecdef AS function_security_definer,
+        function_row.provolatile AS function_volatility,
+        function_row.proparallel AS function_parallel,
+        pg_catalog.oidvectortypes(function_row.proargtypes) AS argument_types,
+        pg_catalog.format_type(function_row.prorettype, NULL) AS return_type,
+        function_row.proisstrict AS function_is_strict,
+        function_row.proconfig AS function_config
+      FROM pg_proc AS function_row
+      JOIN pg_namespace AS function_schema
+        ON function_schema.oid = function_row.pronamespace
+      JOIN pg_language AS function_language
+        ON function_language.oid = function_row.prolang
+      WHERE function_schema.nspname = 'public'
+        AND function_row.proname = 'outcome_evidence_family_lock_key'
+    `)) as Array<{
+      function_name: string;
+      function_schema: string;
+      function_language: string;
+      function_source: string;
+      function_security_definer: boolean;
+      function_volatility: string;
+      function_parallel: string;
+      argument_types: string;
+      return_type: string;
+      function_is_strict: boolean;
+      function_config: string[] | null;
+    }>;
+    const familyKeyFunctionPresent = familyKeyFunctionRows.some(
+      (row) =>
+        row.function_name === "outcome_evidence_family_lock_key" &&
+        row.function_schema === "public" &&
+        row.function_language === "sql" &&
+        row.function_source.replace(/\s+/g, " ").trim() ===
+          REQUIRED_OUTCOME_EVIDENCE_FAMILY_KEY_FUNCTION_SOURCE &&
+        !row.function_security_definer &&
+        row.function_volatility === "i" &&
+        row.function_parallel === "s" &&
+        row.argument_types === "text, text, text, text" &&
+        row.return_type === "text" &&
+        !row.function_is_strict &&
+        Array.isArray(row.function_config) &&
+        row.function_config.length === 1 &&
+        row.function_config[0] === "search_path=pg_catalog"
+    );
+    const missingGuards = [
+      ...missingAppendOnlyGuards,
+      ...(mutationGuardPresent
+        ? []
+        : [REQUIRED_OUTCOME_EVIDENCE_FAMILY_MUTATION_GUARD]),
+      ...(familyKeyFunctionPresent
+        ? []
+        : ["outcome_evidence_family_lock_key_function"])
+    ];
     const constraintRows = (await prisma.$queryRawUnsafe(`
       SELECT
         constraint_row.conname,
@@ -1412,6 +1715,102 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
         )
       )
       .map(([constraintName]) => constraintName);
+    const indexRows = (await prisma.$queryRawUnsafe(`
+      /* privacy_unique_indexes */
+      SELECT
+        index_table.relname AS index_name,
+        indexed_table.relname AS table_name,
+        indexed_schema.nspname AS table_schema,
+        index_definition.indisunique AS is_unique,
+        index_definition.indisvalid AS is_valid,
+        index_definition.indisready AS is_ready,
+        index_definition.indpred IS NOT NULL AS is_partial,
+        index_definition.indexprs IS NOT NULL AS has_expressions,
+        index_method.amname AS index_method,
+        index_definition.indnkeyatts AS key_column_count,
+        index_definition.indnatts AS total_column_count,
+        ARRAY(
+          SELECT indexed_attribute.attname
+          FROM unnest(index_definition.indkey)
+            WITH ORDINALITY AS indexed_key(attribute_number, position)
+          JOIN pg_attribute AS indexed_attribute
+            ON indexed_attribute.attrelid = indexed_table.oid
+           AND indexed_attribute.attnum = indexed_key.attribute_number
+          WHERE indexed_key.position <= index_definition.indnkeyatts
+          ORDER BY indexed_key.position
+        ) AS column_names
+      FROM pg_index AS index_definition
+      JOIN pg_class AS index_table
+        ON index_table.oid = index_definition.indexrelid
+      JOIN pg_class AS indexed_table
+        ON indexed_table.oid = index_definition.indrelid
+      JOIN pg_namespace AS indexed_schema
+        ON indexed_schema.oid = indexed_table.relnamespace
+      JOIN pg_am AS index_method
+        ON index_method.oid = index_table.relam
+      WHERE indexed_schema.nspname = 'public'
+    `)) as Array<{
+      index_name: string;
+      table_name: string;
+      table_schema: string;
+      is_unique: boolean;
+      is_valid: boolean;
+      is_ready: boolean;
+      is_partial: boolean;
+      has_expressions: boolean;
+      index_method: string;
+      key_column_count: number;
+      total_column_count: number;
+      column_names: string[];
+    }>;
+    const missingIndexes = REQUIRED_PRIVACY_UNIQUE_INDEX_BINDINGS
+      .filter(
+        ({ name, table, columns }) =>
+          !indexRows.some(
+            (row) =>
+              row.index_name === name &&
+              row.table_name === table &&
+              row.table_schema === "public" &&
+              row.is_unique &&
+              row.is_valid &&
+              row.is_ready &&
+              !row.is_partial &&
+              !row.has_expressions &&
+              row.index_method === "btree" &&
+              row.key_column_count === columns.length &&
+              row.total_column_count === columns.length &&
+              row.column_names.length === columns.length &&
+              row.column_names.every(
+                (columnName, index) => columnName === columns[index]
+              )
+          )
+      )
+      .map(({ name }) => name);
+    if (
+      !(await checkOutcomeComparisonAttestationStructureReadiness(prisma))
+    ) {
+      missingSecurity.push("outcome_comparison_attestation_structure");
+    }
+    let attestationReadiness: { ok: boolean; diagnostics: string[] };
+    const c1RuntimePrisma = getOutcomeComparisonRuntimePrisma();
+    if (c1RuntimePrisma) {
+      attestationReadiness =
+        await checkOutcomeComparisonAttestationReadiness(
+          c1RuntimePrisma,
+          process.env
+        );
+    } else if (process.env.NODE_ENV === "test") {
+      attestationReadiness =
+        await checkOutcomeComparisonAttestationReadiness(prisma, process.env);
+    } else {
+      attestationReadiness = {
+        ok: false,
+        diagnostics: ["RUNTIME_DATABASE_URL_MISSING"]
+      };
+    }
+    if (!attestationReadiness.ok) {
+      missingSecurity.push("outcome_comparison_attestation_runtime");
+    }
     const requiredColumnTables = Object.keys(REQUIRED_PERSISTENCE_TABLE_COLUMNS)
       .filter((tableName) => tableNames.has(tableName));
 
@@ -1444,6 +1843,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       missingColumns.length > 0 ||
       missingGuards.length > 0 ||
       missingConstraints.length > 0 ||
+      missingIndexes.length > 0 ||
       missingSecurity.length > 0
     ) {
       return {
@@ -1452,6 +1852,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
         missingColumns,
         missingGuards: [...missingGuards],
         missingConstraints: [...missingConstraints],
+        missingIndexes: [...missingIndexes],
         missingSecurity: [...missingSecurity],
         tableCount: tableNames.size
       };
@@ -1462,6 +1863,7 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       missingColumns: [],
       missingGuards: [],
       missingConstraints: [],
+      missingIndexes: [],
       missingSecurity: [],
       tableCount: tableNames.size
     };
@@ -5960,8 +6362,9 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       status: "not_configured",
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
       required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
-      required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+      required_guards: [...REQUIRED_PRIVACY_GUARDS],
       required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_indexes: [...REQUIRED_PRIVACY_UNIQUE_INDEXES],
       required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
@@ -5972,8 +6375,9 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       details: process.env.NODE_ENV === "production" ? undefined : readiness.error,
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
       required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
-      required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+      required_guards: [...REQUIRED_PRIVACY_GUARDS],
       required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_indexes: [...REQUIRED_PRIVACY_UNIQUE_INDEXES],
       required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
@@ -5985,11 +6389,13 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
       missing_columns: readiness.missingColumns,
       missing_guards: readiness.missingGuards,
       missing_constraints: readiness.missingConstraints,
+      missing_indexes: readiness.missingIndexes,
       missing_security: readiness.missingSecurity,
       required_tables: [...REQUIRED_PERSISTENCE_TABLES],
       required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
-      required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+      required_guards: [...REQUIRED_PRIVACY_GUARDS],
       required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+      required_indexes: [...REQUIRED_PRIVACY_UNIQUE_INDEXES],
       required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
     });
   }
@@ -5998,8 +6404,9 @@ app.get("/ops/db/readiness", rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT
     table_count: readiness.tableCount,
     required_tables: [...REQUIRED_PERSISTENCE_TABLES],
     required_columns: REQUIRED_PERSISTENCE_COLUMN_BINDINGS,
-    required_guards: [...REQUIRED_PRIVACY_APPEND_ONLY_GUARDS],
+    required_guards: [...REQUIRED_PRIVACY_GUARDS],
     required_constraints: [...REQUIRED_PRIVACY_CHECK_CONSTRAINTS],
+    required_indexes: [...REQUIRED_PRIVACY_UNIQUE_INDEXES],
     required_security: [...REQUIRED_C0_RESTRICTED_TABLES]
   });
 });
@@ -6093,6 +6500,7 @@ app.get("/health", async (_req, res) => {
       missing_columns: readiness.missingColumns,
       missing_guards: readiness.missingGuards,
       missing_constraints: readiness.missingConstraints,
+      missing_indexes: readiness.missingIndexes,
       missing_security: readiness.missingSecurity,
       fail_closed_total: failClosedMetrics.total,
       details: "Apply pending Prisma migration for compliance persistence models."

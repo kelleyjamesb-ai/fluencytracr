@@ -18,6 +18,7 @@ export * from "./aggregateEvidenceImportSchemas";
 export * from "./outcomeEvidenceSchemas";
 export * from "./outcomeEvidenceAdmission";
 export * from "./cohortProof";
+export * from "./outcomeComparisonPrivacy";
 export * from "./nielsenSourceEvidenceTrialSchemas";
 export * from "./gleanClaimRegistrySchemas";
 export * from "./gleanAssumptionLedgerSchemas";

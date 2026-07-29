@@ -4,6 +4,10 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   DATABASE_URL: postgresql://fluency:fluency@localhost:5432/fluency?schema=public
   DIRECT_URL: postgresql://fluency:fluency@localhost:5432/fluency?schema=public
+  C1_RUNTIME_DATABASE_PASSWORD: c1_assurance_runtime_2026
+  C1_RUNTIME_DATABASE_URL: postgresql://fluencytracr_c1_runtime:c1_assurance_runtime_2026@localhost:5432/fluency?schema=public
+  C1_CREATION_ATTESTATION_ACTIVE_KEY_ID: FT_C1_HMAC_PRIMARY
+  C1_CREATION_ATTESTATION_KEYS_JSON: '{"FT_C1_HMAC_PRIMARY":"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"}'
   JWT_SECRET: dev-secret
   DEV_HEADER_AUTH: "true"
   BACKEND_URL: http://localhost:4000
@@ -36,7 +40,7 @@ jobs:
 
   assurance:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16
@@ -68,6 +72,9 @@ jobs:
       - name: Build shared package
         run: npm run build --workspace shared
 
+      - name: Precreate restricted database roles
+        run: npx prisma db execute --file scripts/assurance_precreate_restricted_roles.sql --schema backend/prisma/schema.prisma
+
       - name: Create current schema in fresh CI database
         run: npx prisma db push --schema backend/prisma/schema.prisma --skip-generate
 
@@ -85,6 +92,12 @@ jobs:
       - name: Install C.0 constraints and guards on baselined schema
         run: npx prisma db execute --file backend/prisma/post_push/20260728120000_c0_constraints_and_guards.sql --schema backend/prisma/schema.prisma
 
+      - name: Restore historical source-table RLS before C.1
+        run: npx prisma db execute --file scripts/assurance_apply_historical_source_rls.sql --schema backend/prisma/schema.prisma
+
+      - name: Install C.1 comparison privacy constraints and guards
+        run: npx prisma db execute --file backend/prisma/post_push/20260728210000_outcome_comparison_privacy_release.sql --schema backend/prisma/schema.prisma
+
       - name: Generate Prisma client
         run: npx prisma generate --schema backend/prisma/schema.prisma
 
@@ -93,6 +106,11 @@ jobs:
 
       - name: Verify C.0 PostgreSQL tombstones and races
         run: node scripts/verify_cohort_proof_postgres.mjs
+
+      - name: Verify C.1 PostgreSQL atomic comparison privacy
+        env:
+          C1_VERIFY_EPHEMERAL_DATABASE: "1"
+        run: node scripts/verify_outcome_comparison_privacy_postgres.mjs
 
       - name: Run seed self-test
         run: npm run test:seed

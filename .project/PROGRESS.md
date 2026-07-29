@@ -2,6 +2,82 @@
 
 ## Current Session
 
+- C.0 is complete: PR #457 merged normally as
+  `21daef146dc2d73c760c6fa8ed0de8e729812f25` from reviewed head
+  `644b10279f76450fba6cd00297d70087bc3878cb`, and the merge tree matched
+  exactly. Every current-head check passed, the three review threads were
+  resolved, and exact CODE/BUG/ADVERSARIAL review returned GO. C.1 is now the
+  sole active queue item on `codex/mcii-c1-outcome-comparison-privacy-v2`,
+  created from that merged main.
+- C.1 is locally implemented in the durable worktree. It consumes the current
+  C.0 signed-proof handoff inside one lock-first `ReadCommitted` transaction,
+  reuses the existing `OUTCOME_COMPARISON_PROOF` reservation, and journals one
+  exact immutable server-loaded comparison projection. A dedicated memoized
+  direct runtime client, versioned key/activation/revocation journals,
+  database-stamped HMAC creation attestation, restricted provisioner/runtime
+  roles, bounded readiness, and provision/activate/revoke commands close the
+  raw-writer self-attestation gap.
+- Second-review structural remediation is local. Readiness now resolves exact
+  public `regprocedure` OIDs, `tgfoid` bindings, and empty `tgattr` trigger
+  columns, rejects unexpected governed-table triggers, pins the complete
+  runtime lock-only and `pgcrypto`
+  function definitions/owners/ACLs, removes unused runtime manifest and
+  contribution-claim reads, preserves historical RLS on Outcome Evidence and
+  AI Value, and pins their exact C.1 runtime read/lock policies. Real-role
+  verification proves the required reads and AI Value row lock work while
+  forbidden source writes and unused reads fail.
+- Fresh history-equivalent PostgreSQL 16 proof passed in 11.088 seconds. It
+  starts with the historical Outcome Evidence and AI Value RLS posture before
+  installing C.1 and covers 37
+  rollback-scoped structural drift vectors, including cross-schema same-name
+  trigger rebinding, unexpected triggers, runtime-guard body replacement,
+  `pgcrypto` owner/body/ACL drift, source-table RLS/policy drift, all six
+  individually required runtime privileges, forbidden runtime grants,
+  provisioner source/release grants, activation-sequence privilege drift, and
+  unrelated sequence grants. The final six attacks prove a column-filtered
+  same-name trigger can skip the new-family lock for a slice-identity update
+  and a later-sorting Outcome Evidence trigger can rewrite slice identity
+  after the family lock, but exact readiness rejects and rolls back both
+  postures; replacement of the
+  family-lock or four-field key-codec body and execute grants on either
+  function also fail closed. It also proves direct RLS-scoped source reads,
+  AI Value `FOR UPDATE`, actual provisioner denial, direct-runtime readiness,
+  key-journal denial, missing/wrong-secret rejection before uniqueness, owner
+  `SET ROLE` non-masquerade, guarded lock-only access, cross-TimeZone HMAC
+  stability, four forced provisioning interleavings, rotation/retention/
+  missing-key/revocation, proof failure vectors, real mutation races, exact
+  replay, durable readback, rollback, append-only behavior, sequential
+  non-composition, and revocation serialization.
+- CI follow-through remediation is local for failed Assurance run
+  `30410853644`, job `90446347988`, at pushed head `5c77c1d3`. Both PostgreSQL
+  verifiers passed there, but the attestation rotation test had intentionally
+  left a revoked secondary key as the latest activation while the later
+  backend step correctly retained the workflow's primary-key configuration;
+  `/health` therefore stayed fail-closed for 120 seconds with
+  `outcome_comparison_attestation_runtime`. A fail-first terminal
+  direct-runtime `/ops/db/readiness` assertion reproduced that exact `503`.
+  The verifier now reactivates the valid primary after proving
+  `ACTIVE_KEY_INVALID` for the revoked secondary and reruns that real readiness
+  assertion before success. One fresh exact Assurance sequence passed C.0,
+  C.1 in 11.088 seconds, and then returned `/health` `200` on port 4002 with
+  `status=ok`, `db=postgres`, 47 tables, and zero fail-closed events. An
+  independent root rerun passed C.1 in 9.920 seconds and returned the same
+  `/health` result on port 4011. Commit/push and new-head CI remain required.
+- Current final-review verification is green: focused backend `218/218`;
+  shared/backend builds; Prisma validation; V1 governance; docs sweep; strict
+  OpenSpec; contract `6/6`; workflow YAML, queue JSON, verifier syntax,
+  stale-language scan, and `git diff --check`. The exact final full backend is
+  `134/134` suites and `1246/1246` tests; frontend remains `164/164` plus
+  production build, and
+  repository-venv Python remains `377 passed, 10 skipped`; no frontend or
+  Python file changed in this remediation. Backend lint remains blocked before
+  project lint by the unchanged dependency mismatch:
+  `ts-api-utils@1.4.3` reads missing `Intrinsic` under TypeScript `7.0.2`.
+- Independent exact-tree review returned `CODE GO`, `BUG GO`, and
+  `ADVERSARIAL GO` after the final empty-`tgattr` remediation. Remaining gate:
+  commit, push, current-head CI, PR review, and normal merge. Boundary: no
+  commit, push, PR, merge, migration apply, deployment, publication, live
+  proof, or Slice D implementation has occurred.
 - C.0 PR #457 final-review remediation is locally complete at uncommitted head
   `f1594f35107510c35cc8fef39f47621f0742f92a`. Advisory-lock-governed
   repository transactions now use `ReadCommitted`, acquire the outcome-family
@@ -4242,3 +4318,34 @@
 - Boundary: this state-only closeout follows the green remediation head. PR
   #453 remains draft and unmerged. No migration apply, deployment, production
   readback, or live proof.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII C.1 final review remediation)
+
+- Repaired the four final-review HOLDs. Stamp, verifier, bounded readiness,
+  activation, and revocation now share
+  `FT_C1_ATTESTATION_PROVISIONING_V1`; commit/replay/readback call bounded
+  readiness transactionally before C.0 verification or discovery.
+- Narrowed the C.1 runtime to SELECT-only C.0 access except guarded UPDATE
+  grants required for producer-authority and AI Value row locks. Runtime
+  INSERT/UPDATE/DELETE attempts against C.0 authority, revocation,
+  reservation, and proof journals are tested through the actual login.
+- Added exact catalog readiness for pgcrypto membership, direct-login roles
+  and membership absence, table ownership/types/RLS, constraint/FK
+  definitions, policy predicates/counts, table/function ACLs, trigger
+  bindings, and exact codec/stamp/verifier/readiness bodies and metadata.
+- Added eight rollback-scoped live drift vectors and four forced
+  activation/revocation-versus-creation interleavings in both orders.
+  Post-push fresh PostgreSQL passed in 7.629 seconds; the supported direct C.1
+  migration simulation also returned exact structural readiness.
+- Exact-tree remediation verification passed: focused backend 207/207; full
+  backend 133/133 suites and 1241/1241 tests; frontend 164/164; Python 377
+  passed and 10 skipped; shared/backend/frontend builds; V1 governance; docs
+  sweep; strict OpenSpec; Prisma validation; C.1 contract 6/6; JSON; diff
+  whitespace; final fresh PostgreSQL 7.697 seconds; and both post-push and
+  supported direct-C.1-migration structural readiness.
+- Repository lint remains blocked before source lint by the unchanged
+  TypeScript 7 and `@typescript-eslint` plugin incompatibility:
+  `Cannot read properties of undefined (reading 'Intrinsic')`. Replacement
+  independent CODE/BUG/ADVERSARIAL review remains required. Boundary remains
+  local only: no commit, push, PR, migration apply outside ephemeral test
+  databases, deployment, publication, or live proof.
