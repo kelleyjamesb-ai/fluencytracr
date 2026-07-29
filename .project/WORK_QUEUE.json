@@ -17,7 +17,7 @@
       "id": "phase-01-schemas-ingest",
       "title": "Phase 1 \u2014 Schemas + ingestion (append-only POST /api/events)",
       "bound": "shared/schemas + ingest path; DB canonical_events; strict validation, unknown fields rejected; blueprint \u00a72 (services/ingest layout), \u00a74 Event Schema, \u00a714 API, \u00a717 phase 1",
-  "status": "done",
+      "status": "done",
       "risk": "medium",
       "last_note": "POST /api/events + /api/ingest: Zod strict + persistFluencyEventRecord \u2192 Prisma canonical_events when DATABASE_URL set (org from JWT/x-org-id). Readers merge DB + memory via loadFluencyEventRecords."
     },
@@ -401,7 +401,7 @@
   "id": "mcii-allowlisted-claim-trace-slice-f",
   "title": "MCII Slice F — allowlisted read-only claim trace and legacy-path demotion",
   "bound": "Allowlisted read-only claim trace and legacy-path demotion only; acceptance: one read-only allowlisted projection links the approved hypothesis, measurement, admitted evidence, policy decisions, authorized claim, and canonical readout through immutable identity; access is limited to ADMIN and ENABLEMENT_LEAD and all other roles are denied; exclude user-identifiable data, raw events, internal secrets, unrestricted payloads, and mutation controls; independent packet selection, legacy HTML readout, mutable lineage, and obsolete authority paths are removed or explicitly demoted; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing economic output",
-      "status": "done",
+  "status": "in_progress",
   "risk": "high",
   "last_note": "Implemented one binding-addressed read-only allowlisted claim trace, removed frontend packet-selection authority, and explicitly demoted legacy HTML. Focused contract/API/frontend tests and the Slice F PostgreSQL verifier pass. No migration or deployment was performed. Exact-SHA review is pending."
     }
