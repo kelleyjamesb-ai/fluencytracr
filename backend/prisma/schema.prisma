@@ -816,6 +816,24 @@ model MeasurementCellSnapshot {
   @@map("measurement_cell_snapshots")
 }
 
+model AiValueCanonicalIdentityFamilyHeadJournal {
+  sourceKind                  String   @map("source_kind")
+  orgId                       String   @map("org_id")
+  stableSourceId              String   @map("stable_source_id")
+  version                     Int
+  sourceRowId                 String   @map("source_row_id") @db.Uuid
+  predecessorRowId            String?  @map("predecessor_row_id") @db.Uuid
+  sourceSemanticCommitment    String?  @map("source_semantic_commitment")
+  sourceAttestationCommitment String?  @map("source_attestation_commitment")
+  attestationState            String   @map("attestation_state")
+  createdAt                   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([sourceKind, orgId, stableSourceId, version])
+  @@unique([sourceKind, sourceRowId], map: "canonical_identity_family_source_row_key")
+  @@index([sourceKind, orgId, stableSourceId, version(sort: Desc)], map: "canonical_identity_family_tail_idx")
+  @@map("ai_value_canonical_identity_family_head_journal")
+}
+
 model CustomerDataModelSnapshot {
   id                              String   @id @default(uuid()) @db.Uuid
   orgId                           String   @map("org_id")

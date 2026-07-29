@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  buildCanonicalSliceBindingV1,
   MEASUREMENT_PLAN_SCHEMA_VERSION,
   buildPlaybookMeasurementPlanDraft,
   validateMeasurementPlan
@@ -122,6 +123,53 @@ test("valid layer-1-only draft plan passes", () => {
   assert.equal(result.readiness.max_snapshot_type, "TELEMETRY_ONLY_CAVEATED");
   assert.equal(result.readiness.can_build_claim_readiness, false);
   assert.equal(result.readiness.can_build_executive_readout, false);
+});
+
+test("optional Slice E binding is exact while legacy plans remain valid", () => {
+  const legacy = buildValidDraftPlan({
+    comparisonWindowStart: "2026-06-01",
+    comparisonWindowEnd: "2026-06-30"
+  });
+  assert.equal(validateMeasurementPlan(legacy).valid, true);
+
+  const binding = buildCanonicalSliceBindingV1({
+    plan_version: 1,
+    workflow_id: "customer_support_case_resolution",
+    jbtd_id: "resolve_support_case",
+    persona_id: "support_specialist",
+    baseline_window_start: legacy.windows.baseline_window_start,
+    baseline_window_end: legacy.windows.baseline_window_end,
+    comparison_window_start: legacy.windows.comparison_window_start,
+    comparison_window_end: legacy.windows.comparison_window_end,
+    metric_id: legacy.metric_selection.primary_metric.metric_id,
+    metric_definition_ref: "metric-def/support-resolution/v1",
+    canonical_metric_definition_commitment_v1: "a".repeat(64),
+    outcome_source_system: "Support case management system",
+    measurement_unit: "hours",
+    approved_direction: "DECREASE",
+    approved_aggregate_grain: legacy.workflow_scope.approved_aggregate_grain,
+    aggregate_only: true,
+    approved_at: "2026-07-29T00:00:00.000Z",
+    approved_by_role: "business_sponsor"
+  });
+  legacy.canonical_slice_binding_v1 = binding;
+  assert.equal(validateMeasurementPlan(legacy).valid, true);
+
+  const forged = clone(legacy);
+  forged.canonical_slice_binding_v1.persona_id = "employee_12345";
+  assert.equal(validateMeasurementPlan(forged).valid, false);
+  assert.match(
+    validateMeasurementPlan(forged).gaps.join("; "),
+    /person-shaped|does not match exact bytes/
+  );
+
+  const changedWindow = clone(legacy);
+  changedWindow.canonical_slice_binding_v1.comparison_window_end = "2026-07-01";
+  assert.equal(validateMeasurementPlan(changedWindow).valid, false);
+  assert.match(
+    validateMeasurementPlan(changedWindow).gaps.join("; "),
+    /must match the Measurement Plan|does not match exact bytes/
+  );
 });
 
 test("missing measurement_plan_id fails", () => {

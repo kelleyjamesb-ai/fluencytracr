@@ -4679,3 +4679,43 @@
 - Activation state is designed and locally validated only. It is not yet
   committed, pushed, in a PR, merged, implemented, deployed, or applied to any
   production database.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice E runtime candidate)
+
+- Started the runtime implementation from fresh current `main` at
+  `c995521a`, the normal merge of activation PR #462. Scope remains frozen to
+  the single Slice E compatibility binding; Slice F, deployment, publication,
+  production migration application, new events/reasons/thresholds, individual
+  fields, scoring, ROI, causality, prediction, and customer-facing output
+  remain excluded.
+- Added exact hypothesis, Measurement Plan, and Measurement Cell source
+  authority with distinct Slice-E-only HMAC domains, exact parent edges,
+  canonical metric and slice commitments, deterministic family locks, and one
+  append-only family-head journal. Existing records and D readouts remain
+  explicitly `UNBOUND`; a supplied invalid E selector fails closed without
+  downgrade.
+- Added the fourth reserved, insert-or-exact canonical compatibility binding.
+  The server reconstructs the complete current B/C.1/D/E chain, binds the
+  canonical core before D content-derived IDs, atomically seals the four
+  artifacts, and revalidates the exact renderer bytes and bundle attestation
+  before a readout can set source-bound and canonical headers true.
+- Synchronized Prisma SQL, post-push CI installation, structural readiness,
+  shared contracts, JSON Schema, docs, OpenSpec, route behavior, repository
+  tests, and the real PostgreSQL verifier. The runtime defect found during the
+  verifier was Prisma attempting to deserialize the `void` advisory-lock
+  result; both new Slice E lock sites now execute the lock statement without
+  deserializing a result row.
+- Fresh focused evidence passed: shared and backend builds; 9 backend suites,
+  134/134 tests; measurement-plan and metric contract tests, 65/65; strict
+  OpenSpec; whitespace; and disposable PostgreSQL 16 C.0, C.1, and D/E
+  verification, including exact privilege-drift detection, direct journal
+  write denial, source/journal append-only guards, gap and wrong-predecessor
+  rejection, exact journal/HMAC authority, one four-artifact bound bundle,
+  forged bundle-MAC rejection, race/mutation defenses, and C.1 revocation
+  readback.
+- State: designed and locally implemented and focused-verified. It is not yet
+  committed, exact-SHA reviewed, full-suite verified, pushed, in a PR, merged,
+  deployed, or applied to production. Next: create the immutable local
+  candidate commit, run exact-SHA CODE/BUG/ADVERSARIAL review in parallel,
+  repair only an executable authorization/privacy or nine-invariant blocker,
+  then run the full required suite once on the final reviewed SHA.

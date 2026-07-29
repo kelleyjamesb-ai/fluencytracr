@@ -255,9 +255,45 @@ describe("aggregate claim authorization contracts", () => {
       }
     };
     const bundle = buildAggregateClaimAuthorizationBundle(bundleInput);
+    const canonicalCoreCommitment = "a".repeat(64);
+    const canonicalBundle = buildAggregateClaimAuthorizationBundle({
+      ...bundleInput,
+      canonicalIdentityCoreCommitment: canonicalCoreCommitment
+    });
+    const changedCanonicalBundle = buildAggregateClaimAuthorizationBundle({
+      ...bundleInput,
+      canonicalIdentityCoreCommitment: "b".repeat(64)
+    });
     expect(aggregateManifestIdFromPacketId(bundle.packet.packet_id)).toBe(
       bundle.manifest.manifest_id
     );
+    expect(bundle.claim.content).not.toHaveProperty("canonical_identity_core_commitment");
+    expect(canonicalBundle.claim.content.canonical_identity_core_commitment).toBe(
+      canonicalCoreCommitment
+    );
+    expect(canonicalBundle.packet.content.canonical_identity_core_commitment).toBe(
+      canonicalCoreCommitment
+    );
+    expect(canonicalBundle.manifest.core.canonical_identity_core_commitment).toBe(
+      canonicalCoreCommitment
+    );
+    expect(canonicalBundle.claim.claim_id).not.toBe(bundle.claim.claim_id);
+    expect(canonicalBundle.packet.packet_id).not.toBe(bundle.packet.packet_id);
+    expect(canonicalBundle.manifest.manifest_id).not.toBe(bundle.manifest.manifest_id);
+    expect(changedCanonicalBundle.packet.packet_id).not.toBe(canonicalBundle.packet.packet_id);
+    expect(aggregateClaimBundleReconciles(canonicalBundle)).toBe(true);
+    expect(
+      aggregateClaimBundleReconciles({
+        ...canonicalBundle,
+        manifest: {
+          ...canonicalBundle.manifest,
+          core: {
+            ...canonicalBundle.manifest.core,
+            canonical_identity_core_commitment: "c".repeat(64)
+          }
+        }
+      })
+    ).toBe(false);
     expect(bundle.packet.content.claim_content_hash).toBe(bundle.claim.content_hash);
     expect(aggregateClaimBundleReconciles(bundle)).toBe(true);
     expect(() =>

@@ -762,6 +762,7 @@ describe("AI value spine run API", () => {
 
     expect(missing.headers["x-ai-value-readout-boundary"]).toBe("aggregate_claim_authority");
     expect(missing.headers["x-ai-value-source-bound"]).toBe("false");
+    expect(missing.headers["x-ai-value-canonical-identity-bound"]).toBe("false");
     expect(missing.headers["x-ai-value-customer-facing-output"]).toBe("false");
     expect(missing.headers["x-ai-value-export-authorized"]).toBe("false");
     expect(missing.headers["cache-control"]).toContain("no-store");
@@ -785,6 +786,7 @@ describe("AI value spine run API", () => {
       .set(readoutAuth)
       .expect(200);
     expect(readout.headers["x-ai-value-source-bound"]).toBe("false");
+    expect(readout.headers["x-ai-value-canonical-identity-bound"]).toBe("false");
     expect(readout.text).toContain("Claim authorization held");
     expect(readout.text).not.toContain("Northstar Enterprise");
     expect(readout.text).not.toContain("Value realization planning artifact");
@@ -806,6 +808,7 @@ describe("AI value spine run API", () => {
       .expect(200);
 
     expect(response.headers["x-ai-value-source-bound"]).toBe("false");
+    expect(response.headers["x-ai-value-canonical-identity-bound"]).toBe("false");
     expect(response.text).toContain("Claim authorization held");
     expect(response.text).not.toContain(ORG_ID);
   });
@@ -816,5 +819,26 @@ describe("AI value spine run API", () => {
       .set(readAuth)
       .send({ blueprint_id: blueprintId, metrics_library_id: metricsLibraryId });
     expect(response.status).toBe(403);
+  });
+
+  it("fails closed when a supplied canonical identity selector is malformed", async () => {
+    const malformed = await request(app)
+      .post("/api/v1/ai-value/value-chain/run")
+      .set(writeAuth)
+      .send({
+        persist: true,
+        canonical_identity_selector: {
+          value_hypothesis_id: "employee_123",
+          value_hypothesis_version: 1
+        }
+      })
+      .expect(200);
+
+    expect(malformed.body).toEqual({
+      decision: "HOLD",
+      reason_family: "AGGREGATE_CLAIM_AUTHORIZATION_HELD",
+      persisted: []
+    });
+    expect(JSON.stringify(malformed.body)).not.toContain("employee_123");
   });
 });

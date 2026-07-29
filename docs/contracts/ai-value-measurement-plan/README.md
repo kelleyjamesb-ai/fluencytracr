@@ -78,6 +78,7 @@ Each Measurement Plan must include:
 - `blocked_uses`
 - `created_at`
 - `derivation_version`
+- optional `canonical_slice_binding_v1` for Slice E authority
 
 The shared validator lives at
 [`shared/src/aiValueEngine/measurementPlan.ts`](../../../shared/src/aiValueEngine/measurementPlan.ts).
@@ -102,6 +103,43 @@ Allowed `value_route` values:
 - `experience_improvement`
 - `revenue_expansion`
 - `unclassified`
+
+## 6A. Optional Slice E exact-slice binding
+
+`canonical_slice_binding_v1` is an additive field for a new E-capable
+Measurement Plan version. Existing valid plans may omit it and remain usable
+by existing planning consumers, but they remain `UNBOUND` and cannot establish
+Slice E source-bound or canonical readout authority.
+
+When present, the binding has schema version
+`FT_CANONICAL_SLICE_BINDING_V1` and contains:
+
+- positive `plan_version`;
+- exact `workflow_id`, `jbtd_id`, and `persona_id`;
+- exact baseline and comparison start/end timestamps;
+- `metric_id`;
+- version-bearing `metric_definition_ref`;
+- separately named `canonical_metric_definition_commitment_v1`;
+- exact `outcome_source_system` and `measurement_unit`;
+- `approved_direction`;
+- `approved_aggregate_grain`;
+- `aggregate_only: true`;
+- approval timestamp and aggregate-safe approving role; and
+- `slice_commitment`.
+
+The commitment is recomputed under
+`FT_CANONICAL_SLICE_BINDING_COMMITMENT_V1` from every field above except the
+schema version and commitment itself. The bound plan version, windows,
+aggregate grain, and primary metric must exact-match the containing
+Measurement Plan. Slice E additionally exact-compares the organization,
+workflow, JBTD, persona, source, unit, permitted direction, metric-definition
+commitment, aggregate grain, and windows with the selected Measurement Cell,
+authoritative Slice D source graph, accepted export, and current C.1
+projection.
+
+No aliasing, normalization, inferred equivalence, caller-provided hash, or
+latest-version lookup can repair a mismatch. Selector IDs never enter the
+reserved claim or binding payload as raw text.
 
 ## 7. Workflow and Function Scope
 
@@ -136,6 +174,19 @@ Each plan must include a primary metric with:
 - `metric_category`
 - `source_system_type`
 - optional `metric_owner_role`
+
+For Slice E, the plan's canonical slice additionally carries a version-bearing
+`metric_definition_ref` and separately named
+`canonical_metric_definition_commitment_v1`. The authoritative metrics-library
+entry must provide those fields plus `canonical_direction`; if any of the
+three fields is present, all three are required.
+
+The server recomputes `FT_CANONICAL_METRIC_DEFINITION_V1` over the metric ID,
+definition ref, definition, governed source-system projection, measurement
+unit, canonical direction, allowed claim level, and sorted unique blocked
+claims. Exactly one entry may match the selected metric ID and definition ref.
+The legacy Measurement Cell `metric_definition_hash` retains its existing
+projection and meaning and never substitutes for this Slice E commitment.
 
 Allowed `metric_category` values:
 

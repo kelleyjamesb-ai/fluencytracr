@@ -3,10 +3,12 @@
 Policy version: `FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07`
 
 Slice D adds one server-owned authorization decision for one internal,
-aggregate, descriptive metric movement. It does not promote import approval,
-accepted review, exact-slice admission, C.1 comparison privacy, readiness, or
-model eligibility into claim authority. Every state remains independent and
-must reconcile for the same exact source graph.
+aggregate, descriptive metric movement. Slice E additively binds that result
+to one exact canonical Discovery-to-readout lineage when a strict selector is
+present and the complete current chain passes. Neither slice promotes import
+approval, accepted review, exact-slice admission, C.1 comparison privacy,
+readiness, or model eligibility into claim authority. Every state remains
+independent and must reconcile for the same exact source graph.
 
 The only authorized template is
 `FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1`. It copies one baseline and comparison
@@ -19,9 +21,12 @@ contract.
 
 The builder recomputes the complete movement from the validated C.1
 projection and rejects any caller-supplied delta, percent change, or direction
-that differs. Current readback rebuilds the complete claim, packet, and
+that differs. Current D readback rebuilds the complete claim, packet, and
 manifest from the current authoritative source graph and C.1 projection before
-rendering. A coherently rehashed three-artifact substitution therefore remains
+rendering. A bound Slice E readback additionally rebuilds the exact
+hypothesis, plan, Measurement Cell, metric definition, family heads, canonical
+core, deterministic HTML body, final binding, and four-artifact creation
+attestation. A coherently rehashed artifact substitution therefore remains
 non-renderable even when its internal hashes agree with each other.
 
 Before artifact generation, the movement unit must match the compiled generic
@@ -56,8 +61,9 @@ readiness reference, and complete C.1 projection. The authenticated
 organization remains the database row's tenant/RLS envelope, and the reserved
 row's `workflow_family` is null; neither value is duplicated into artifact
 payloads. These private commitments are storage-minimization bindings, not
-canonical identities, public pseudonyms, or person-level signals. Canonical
-identity compatibility remains Slice E scope.
+public pseudonyms or person-level signals. Slice E adds a separate
+commitment-only canonical identity core and final binding without exposing the
+underlying selectors or row locators.
 
 ## Authority chain
 
@@ -78,6 +84,17 @@ identity compatibility remains Slice E scope.
 6. Post-commit C.1, source, artifact, and manifest reconciliation must pass
    before authorization is returned. HTML readback repeats current
    reconciliation, including C.1 revocation state.
+7. When `canonical_identity_selector` is present, Slice E loads exact explicit
+   hypothesis, plan, and Measurement Cell versions, verifies their durable
+   family heads, HMAC-attested source edges, canonical slice, and unique
+   version-bearing metric definition, then builds the canonical core before D
+   artifact IDs.
+8. The fixed renderer builds exact HTML only after the final D IDs exist. Its
+   byte commitment enters a packet-derived fourth binding, and one
+   Slice-E-specific HMAC attests all four finalized artifact projections.
+9. All four artifacts are inserted or exact-compared atomically. Post-commit
+   authorization and every bound readout rebuild the complete D/E chain,
+   renderer bytes, and creation attestation.
 
 ## Immutable internal artifacts
 
@@ -86,6 +103,7 @@ The reserved object types are:
 - `aggregate_authorized_claim`
 - `aggregate_authorized_packet`
 - `aggregate_claim_authorization_manifest`
+- `canonical_identity_compatibility_binding` for a Slice E `BOUND` result
 
 They are excluded from generic create, read, list, and upsert paths. Existing
 `claim_boundary` and `executive_packet` objects remain compatible but
@@ -97,6 +115,32 @@ commitments; approved source-content hashes; the non-identifying C.1 receipt;
 policy; template; and claim/packet content hashes. Its hash derives the
 manifest ID and separate domain-derived claim and packet IDs. Exact replay may
 reuse the same three rows; a conflicting row is never updated or adopted.
+
+For Slice E, an optional `canonical_identity_core_commitment` is included in
+the claim content, packet content, and manifest core before these hashes and
+IDs are derived. The renderer version is inside the committed core. After the
+final D IDs exist, the fourth binding commits to those IDs and hashes plus the
+exact rendered HTML bytes. Exact replay may reuse the same three-row D bundle
+or four-row E bundle; a conflicting row is never updated or adopted.
+
+## Compatibility and response states
+
+Existing callers that omit `canonical_identity_selector` remain on the
+compatible D-only path. A valid D-only authorization may retain its legacy
+three-artifact response. New state-aware consumers receive
+`canonical_identity_state: UNBOUND`, `source_bound: false`, and the same three
+persisted artifact references.
+
+A complete Slice E authorization returns
+`canonical_identity_state: BOUND`, `source_bound: true`, the canonical core
+commitment, and exactly four persisted references, one for each reserved
+artifact. Only that state may set both HTML headers true.
+
+If a selector is supplied, invalid shape, missing versions, stale or forked
+sources, foreign ownership, cross-spliced lineage, metric/slice/window/source
+mismatch, renderer drift, artifact conflict, or attestation failure returns
+the fixed HOLD below. The server never treats an invalid supplied selector as
+selector absence and never falls back to an unbound result.
 
 ## Failure posture
 
@@ -117,11 +161,24 @@ holds its claim and executive stages with null objects. Missing, legacy,
 direct, stale, substituted, revoked, or mismatched HTML packet reads render
 only the fixed held page.
 
+A current legacy D-only readout may remain descriptively renderable, but
+`x-ai-value-source-bound` and
+`x-ai-value-canonical-identity-bound` are both `false`. A bound readout sets
+both headers to `true` only after the deterministic binding, all current
+sources and family heads, the four-artifact creation attestation, the declared
+renderer version, and the exact returned UTF-8 bytes revalidate. No
+independently rendered body may receive bound headers.
+
 The synchronized JSON Schema is
 [`aggregate-claim-authorization.schema.json`](../../../schemas/ai-value-intelligence/aggregate-claim-authorization.schema.json).
+The Slice E binding contract and schema are
+[`ai-value-canonical-identity-binding`](../ai-value-canonical-identity-binding/)
+and
+[`canonical-identity-binding.schema.json`](../../../schemas/ai-value/canonical-identity-binding.schema.json).
 The governing behavioral requirements are in
 [`harden-aggregate-claim-authorization`](../../../openspec/changes/harden-aggregate-claim-authorization/).
+Slice E behavior is governed by
+[`bind-canonical-identity-compatibility`](../../../openspec/changes/bind-canonical-identity-compatibility/).
 
-This implementation adds no table, endpoint, canonical event, suppression
-reason, tunable threshold, migration, deployment, production key change, or
-customer-facing output.
+These contracts add no endpoint, canonical event, suppression reason, tunable
+threshold, deployment, production key change, or customer-facing output.

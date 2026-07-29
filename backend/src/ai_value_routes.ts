@@ -330,26 +330,8 @@ const objectRef = (value: unknown): Record<string, unknown> | null =>
     ? (value as Record<string, unknown>)
     : null;
 
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
 const aggregateClaimHeldHtml = (): string =>
   "<!doctype html><html><body><main><h1>Claim authorization held</h1><p>No authorized aggregate claim is available.</p></main></body></html>";
-
-const aggregateClaimReadoutHtml = (
-  content: aiValueEngine.AggregateAuthorizedPacketContent
-): string => {
-  const movementText = aiValueEngine.aggregateClaimReadoutText(content.movement);
-  const caveats = content.caveats.map((caveat) => `<li>${escapeHtml(caveat)}</li>`).join("");
-  return `<!doctype html><html><body><main><h1>Internal aggregate observation</h1><p>${escapeHtml(
-    movementText
-  )}</p><ul>${caveats}</ul></main></body></html>`;
-};
 
 const legacyExecutivePacketIsolationGaps = (packet: Record<string, unknown>): string[] => {
   const summary = objectRef(packet.ebita_impact_summary);
@@ -807,14 +789,18 @@ export function registerAiValueRoutes(app: Express): void {
       const orgId = requireOrg(req, res);
       if (!orgId) return;
 
-      const content = await readAuthorizedAggregateClaim(orgId, req.params.packetId);
+      const readout = await readAuthorizedAggregateClaim(orgId, req.params.packetId);
       res.set("x-ai-value-readout-boundary", "aggregate_claim_authority");
-      res.set("x-ai-value-source-bound", content ? "true" : "false");
+      res.set("x-ai-value-source-bound", readout?.sourceBound ? "true" : "false");
+      res.set(
+        "x-ai-value-canonical-identity-bound",
+        readout?.canonicalIdentityState === "BOUND" ? "true" : "false"
+      );
       res.set("x-ai-value-customer-facing-output", "false");
       res.set("x-ai-value-export-authorized", "false");
       res.set("cache-control", "no-store");
       res.set("content-type", "text/html; charset=utf-8");
-      return res.send(content ? aggregateClaimReadoutHtml(content) : aggregateClaimHeldHtml());
+      return res.send(readout?.html ?? aggregateClaimHeldHtml());
     }
   );
 
@@ -917,6 +903,13 @@ export function registerAiValueRoutes(app: Express): void {
       if (!orgId) return;
 
       const body = (req.body ?? {}) as Record<string, unknown>;
+      const selectorSupplied = Object.prototype.hasOwnProperty.call(
+        body,
+        "canonical_identity_selector"
+      );
+      const selector = selectorSupplied
+        ? aiValueEngine.CanonicalIdentitySelectorSchema.safeParse(body.canonical_identity_selector)
+        : null;
       return res.json(
         await authorizeAggregateClaim({
           orgId,
@@ -926,6 +919,8 @@ export function registerAiValueRoutes(app: Express): void {
           outcomeEvidenceExportId: stringRef(body.outcome_evidence_export_id) ?? undefined,
           outcomeEvidenceReadinessId: stringRef(body.outcome_evidence_readiness_id) ?? undefined,
           comparisonPrivacyReceipt: body.comparison_privacy_receipt,
+          canonicalIdentitySelector: selector?.success ? selector.data : undefined,
+          canonicalIdentitySelectorInvalid: selectorSupplied && selector?.success !== true,
           persist: body.persist !== false
         })
       );

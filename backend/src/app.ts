@@ -209,6 +209,7 @@ import {
 } from "./repositories/aggregate-privacy-release.repository";
 import { checkOutcomeComparisonAttestationReadiness } from "./outcome-comparison-attestation-config";
 import { checkOutcomeComparisonAttestationStructureReadiness } from "./outcome-comparison-attestation-structure";
+import { checkCanonicalIdentityFamilyHeadStructureReadiness } from "./canonical-identity-family-head-structure";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -1790,6 +1791,9 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
       !(await checkOutcomeComparisonAttestationStructureReadiness(prisma))
     ) {
       missingSecurity.push("outcome_comparison_attestation_structure");
+    }
+    if (!(await checkCanonicalIdentityFamilyHeadStructureReadiness(prisma))) {
+      missingSecurity.push("canonical_identity_family_head_structure");
     }
     let attestationReadiness: { ok: boolean; diagnostics: string[] };
     const c1RuntimePrisma = getOutcomeComparisonRuntimePrisma();

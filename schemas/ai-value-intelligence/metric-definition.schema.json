@@ -45,6 +45,17 @@
           "metric_id": {
             "type": "string"
           },
+          "metric_definition_ref": {
+            "type": "string",
+            "pattern": "(?:[/#@:](?:[vV]|[vV][eE][rR][sS][iI][oO][nN])?[0-9]+|(?:[vV]|[vV][eE][rR][sS][iI][oO][nN])[_:-]?[0-9]+)$"
+          },
+          "canonical_metric_definition_commitment_v1": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "canonical_direction": {
+            "enum": ["INCREASE", "DECREASE", "MAINTAIN", "MONITOR", "NO_CHANGE"]
+          },
           "workflow_family": {
             "type": "string"
           },
@@ -116,6 +127,20 @@
               ]
             }
           }
+        },
+        "dependentRequired": {
+          "metric_definition_ref": [
+            "canonical_metric_definition_commitment_v1",
+            "canonical_direction"
+          ],
+          "canonical_metric_definition_commitment_v1": [
+            "metric_definition_ref",
+            "canonical_direction"
+          ],
+          "canonical_direction": [
+            "metric_definition_ref",
+            "canonical_metric_definition_commitment_v1"
+          ]
         }
       }
     }

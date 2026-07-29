@@ -395,7 +395,7 @@
   "bound": "Canonical identity compatibility binding only; acceptance: append-only identities bind the approved hypothesis, metric definition/version, exact slice/window, admitted evidence, and readout; reject stale, foreign, mutable, ambiguous, or cross-spliced lineage; source-bound or canonical status requires validation of the complete identity chain; preserve existing consumers through additive compatibility while obsolete mutable selectors lose authority; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and independent-slice governance; include focused tests, contracts, OpenSpec, progress, and queue updates; exclude Slice F claim trace, deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
   "status": "in_progress",
   "risk": "high",
-  "last_note": "Activated contract-first from main bf00324 after PR #461. Final packet 3d9881f/7564c40 passed exact CODE/BUG/ADVERSARIAL review GO/GO/GO after adding the Slice-E-only durable family-head journal and full HMAC chain. Activation commit/PR is next; migration remains local/CI only and production is untouched."
+  "last_note": "Runtime implementation is locally focused-verified: shared/backend builds, 134 focused backend tests, 65 contract tests, strict OpenSpec, and disposable PostgreSQL 16 C.0/C.1/D/E verifier pass. The candidate commit and exact-SHA CODE/BUG/ADVERSARIAL review are next; full suite runs once after review. No production migration or deployment."
     }
   ]
 }

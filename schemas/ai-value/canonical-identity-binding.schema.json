@@ -1,0 +1,370 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value/canonical-identity-binding.schema.json",
+  "title": "AI Value Canonical Identity Binding",
+  "description": "Internal Slice E selector, canonical core, final binding, and bound authorization response contracts. This schema authorizes no customer-facing output.",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "safe_aggregate_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9:_-]{0,511}$",
+      "not": {
+        "pattern": "(?:@|\\b(?:employee|user|person|email|name)[_:-]?[a-z0-9])"
+      }
+    },
+    "positive_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "claim_id": {
+      "type": "string",
+      "pattern": "^aggregate_claim_[0-9a-f]{64}_[0-9a-f]{64}$"
+    },
+    "packet_id": {
+      "type": "string",
+      "pattern": "^aggregate_packet_[0-9a-f]{64}_[0-9a-f]{64}$"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^manifest_[0-9a-f]{64}$"
+    },
+    "binding_id": {
+      "type": "string",
+      "pattern": "^canonical_identity_binding_[0-9a-f]{64}$"
+    },
+    "canonical_identity_selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value_hypothesis_id",
+        "value_hypothesis_version",
+        "measurement_plan_id",
+        "measurement_plan_version",
+        "measurement_cell_id",
+        "measurement_cell_version"
+      ],
+      "properties": {
+        "value_hypothesis_id": {
+          "$ref": "#/$defs/safe_aggregate_id"
+        },
+        "value_hypothesis_version": {
+          "$ref": "#/$defs/positive_version"
+        },
+        "measurement_plan_id": {
+          "$ref": "#/$defs/safe_aggregate_id"
+        },
+        "measurement_plan_version": {
+          "$ref": "#/$defs/positive_version"
+        },
+        "measurement_cell_id": {
+          "$ref": "#/$defs/safe_aggregate_id"
+        },
+        "measurement_cell_version": {
+          "$ref": "#/$defs/positive_version"
+        }
+      }
+    },
+    "canonical_identity_core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "renderer_version",
+        "org_commitment",
+        "hypothesis_version",
+        "hypothesis_semantic_commitment",
+        "hypothesis_creation_attestation_commitment",
+        "plan_version",
+        "plan_semantic_commitment",
+        "plan_edge_attestation_commitment",
+        "measurement_cell_version",
+        "measurement_cell_semantic_commitment",
+        "measurement_cell_edge_attestation_commitment",
+        "metric_definition_commitment",
+        "canonical_slice_commitment",
+        "windows_commitment",
+        "source_graph_commitment",
+        "accepted_export_commitment",
+        "accepted_review_commitment",
+        "admission_commitment",
+        "comparison_receipt_commitment",
+        "comparison_projection_commitment",
+        "claim_policy_version",
+        "claim_template_id"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "FT_CANONICAL_IDENTITY_CORE_V1"
+        },
+        "renderer_version": {
+          "const": "FT_CANONICAL_READOUT_RENDERER_V1"
+        },
+        "org_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "hypothesis_version": {
+          "$ref": "#/$defs/positive_version"
+        },
+        "hypothesis_semantic_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "hypothesis_creation_attestation_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "plan_version": {
+          "$ref": "#/$defs/positive_version"
+        },
+        "plan_semantic_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "plan_edge_attestation_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "measurement_cell_version": {
+          "$ref": "#/$defs/positive_version"
+        },
+        "measurement_cell_semantic_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "measurement_cell_edge_attestation_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "metric_definition_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "canonical_slice_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "windows_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_graph_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "accepted_export_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "accepted_review_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "admission_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "comparison_receipt_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "comparison_projection_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "claim_policy_version": {
+          "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
+        },
+        "claim_template_id": {
+          "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1"
+        }
+      }
+    },
+    "canonical_identity_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "binding_id",
+        "state",
+        "canonical_identity_core_commitment",
+        "claim_id",
+        "claim_content_hash",
+        "packet_id",
+        "packet_content_hash",
+        "manifest_id",
+        "manifest_hash",
+        "rendered_body_commitment",
+        "customer_facing_output_authorized"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "FT_CANONICAL_IDENTITY_BINDING_V1"
+        },
+        "binding_id": {
+          "$ref": "#/$defs/binding_id"
+        },
+        "state": {
+          "const": "BOUND"
+        },
+        "canonical_identity_core_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "claim_id": {
+          "$ref": "#/$defs/claim_id"
+        },
+        "claim_content_hash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "packet_id": {
+          "$ref": "#/$defs/packet_id"
+        },
+        "packet_content_hash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "manifest_id": {
+          "$ref": "#/$defs/manifest_id"
+        },
+        "manifest_hash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rendered_body_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "customer_facing_output_authorized": {
+          "const": false
+        }
+      }
+    },
+    "persisted_binding_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_type", "object_id"],
+      "properties": {
+        "object_type": {
+          "const": "canonical_identity_compatibility_binding"
+        },
+        "object_id": {
+          "$ref": "#/$defs/binding_id"
+        }
+      }
+    },
+    "bound_authorized_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "claim_authorization_state",
+        "canonical_identity_state",
+        "source_bound",
+        "canonical_identity_core_commitment",
+        "packet_id",
+        "persisted",
+        "customer_facing_output_authorized"
+      ],
+      "properties": {
+        "decision": {
+          "const": "AUTHORIZED"
+        },
+        "claim_authorization_state": {
+          "const": "AUTHORIZED"
+        },
+        "canonical_identity_state": {
+          "const": "BOUND"
+        },
+        "source_bound": {
+          "const": true
+        },
+        "canonical_identity_core_commitment": {
+          "$ref": "#/$defs/sha256"
+        },
+        "packet_id": {
+          "$ref": "#/$defs/packet_id"
+        },
+        "persisted": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["object_type", "object_id"],
+            "properties": {
+              "object_type": {
+                "enum": [
+                  "aggregate_authorized_claim",
+                  "aggregate_authorized_packet",
+                  "aggregate_claim_authorization_manifest",
+                  "canonical_identity_compatibility_binding"
+                ]
+              },
+              "object_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "object_type": {
+                    "const": "aggregate_authorized_claim"
+                  }
+                },
+                "required": ["object_type"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "object_type": {
+                    "const": "aggregate_authorized_packet"
+                  }
+                },
+                "required": ["object_type"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "object_type": {
+                    "const": "aggregate_claim_authorization_manifest"
+                  }
+                },
+                "required": ["object_type"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "object_type": {
+                    "const": "canonical_identity_compatibility_binding"
+                  }
+                },
+                "required": ["object_type"]
+              },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          ]
+        },
+        "customer_facing_output_authorized": {
+          "const": false
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/canonical_identity_selector"
+    },
+    {
+      "$ref": "#/$defs/canonical_identity_core"
+    },
+    {
+      "$ref": "#/$defs/canonical_identity_binding"
+    },
+    {
+      "$ref": "#/$defs/bound_authorized_response"
+    }
+  ]
+}

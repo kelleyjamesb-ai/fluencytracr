@@ -138,6 +138,17 @@ export interface AggregateClaimBundleRecords {
   claim: AiValueObjectStoredRecord;
   packet: AiValueObjectStoredRecord;
   manifest: AiValueObjectStoredRecord;
+  binding?: AiValueObjectStoredRecord;
+}
+
+export interface CanonicalIdentitySealSource {
+  sourceKind: "VALUE_HYPOTHESIS" | "MEASUREMENT_PLAN" | "MEASUREMENT_CELL";
+  stableId: string;
+  version: number;
+  rowId: string;
+  predecessorRowId: string | null;
+  semanticCommitment: string;
+  attestationCommitment: string;
 }
 
 const storedRecordSemanticProjection = (
@@ -184,7 +195,8 @@ const artifactInput = (
   objectId: string,
   payload: Record<string, unknown>,
   workflowFamily: string | null,
-  manifestId: string
+  manifestId: string,
+  validationExtras: Record<string, unknown> = {}
 ): AiValueObjectUpsertInput => ({
   orgId,
   objectType,
@@ -196,7 +208,8 @@ const artifactInput = (
     valid: true,
     claim_authorization_authoritative: true,
     immutable: true,
-    manifest_id: manifestId
+    manifest_id: manifestId,
+    ...validationExtras
   },
   valid: true
 });
@@ -270,12 +283,109 @@ const insertOrExactArtifact = async (
   return exact;
 };
 
+const lockCanonicalIdentitySource = async (
+  transaction: Prisma.TransactionClient,
+  orgId: string,
+  source: CanonicalIdentitySealSource
+): Promise<boolean> => {
+  await transaction.$executeRaw(
+    Prisma.sql`SELECT pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended(
+        public.canonical_identity_family_lock_key(
+          ${source.sourceKind},
+          ${orgId},
+          ${source.stableId}
+        ),
+        0
+      )
+    )`
+  );
+  const rows =
+    source.sourceKind === "VALUE_HYPOTHESIS"
+      ? await transaction.$queryRaw<
+          Array<{ id: string; version: number; supersedes_id: string | null }>
+        >(
+          Prisma.sql`SELECT "id", "version", "supersedes_id"
+            FROM "value_hypotheses"
+            WHERE "org_id" = ${orgId}
+              AND "value_hypothesis_id" = ${source.stableId}
+              AND "version" = ${source.version}
+              AND "id" = ${source.rowId}::uuid
+            FOR UPDATE`
+        )
+      : source.sourceKind === "MEASUREMENT_PLAN"
+        ? await transaction.$queryRaw<
+            Array<{ id: string; version: number; supersedes_id: string | null }>
+          >(
+            Prisma.sql`SELECT "id", "version", "supersedes_id"
+              FROM "measurement_plans"
+              WHERE "org_id" = ${orgId}
+                AND "measurement_plan_id" = ${source.stableId}
+                AND "version" = ${source.version}
+                AND "id" = ${source.rowId}::uuid
+              FOR UPDATE`
+          )
+        : await transaction.$queryRaw<
+            Array<{ id: string; version: number; supersedes_id: string | null }>
+          >(
+            Prisma.sql`SELECT "id", "version", "supersedes_id"
+              FROM "measurement_cell_snapshots"
+              WHERE "org_id" = ${orgId}
+                AND "measurement_cell_id" = ${source.stableId}
+                AND "version" = ${source.version}
+                AND "id" = ${source.rowId}::uuid
+              FOR UPDATE`
+          );
+  if (
+    rows.length !== 1 ||
+    rows[0].id !== source.rowId ||
+    rows[0].version !== source.version ||
+    rows[0].supersedes_id !== source.predecessorRowId
+  ) {
+    return false;
+  }
+  const heads = await transaction.$queryRaw<
+    Array<{
+      version: number;
+      source_row_id: string;
+      predecessor_row_id: string | null;
+      source_semantic_commitment: string | null;
+      source_attestation_commitment: string | null;
+      attestation_state: string;
+    }>
+  >(
+    Prisma.sql`SELECT "version", "source_row_id", "predecessor_row_id",
+      "source_semantic_commitment", "source_attestation_commitment",
+      "attestation_state"
+    FROM "ai_value_canonical_identity_family_head_journal"
+    WHERE "source_kind" = ${source.sourceKind}
+      AND "org_id" = ${orgId}
+      AND "stable_source_id" = ${source.stableId}
+    ORDER BY "version" DESC
+    LIMIT 1
+    FOR UPDATE`
+  );
+  const head = heads[0];
+  return Boolean(
+    head &&
+      head.version === source.version &&
+      head.source_row_id === source.rowId &&
+      head.predecessor_row_id === source.predecessorRowId &&
+      head.source_semantic_commitment === source.semanticCommitment &&
+      head.source_attestation_commitment === source.attestationCommitment &&
+      head.attestation_state === "ATTESTATION_PRESENT"
+  );
+};
+
 export async function sealAiValueClaimBundleSerializable(input: {
   orgId: string;
   sourceSnapshots: ReadonlyArray<AiValueObjectStoredRecord>;
   claim: aiValueEngine.AggregateAuthorizedClaimArtifact;
   packet: aiValueEngine.AggregateAuthorizedPacketArtifact;
   manifest: aiValueEngine.AggregateClaimAuthorizationManifest;
+  binding?: aiValueEngine.CanonicalIdentityBinding;
+  bindingValidation?: Record<string, unknown>;
+  canonicalIdentitySources?: ReadonlyArray<CanonicalIdentitySealSource>;
 }): Promise<AggregateClaimBundleRecords | null> {
   // The in-memory fallback is intentionally non-authoritative. It may support
   // pure contract tests, but it cannot prove durable locking or isolation.
@@ -312,7 +422,20 @@ export async function sealAiValueClaimBundleSerializable(input: {
       input.packet,
       workflowFamily,
       input.manifest.manifest_id
-    )
+    ),
+    ...(input.binding
+      ? [
+          artifactInput(
+            input.orgId,
+            aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+            input.binding.binding_id,
+            input.binding,
+            workflowFamily,
+            input.manifest.manifest_id,
+            input.bindingValidation
+          )
+        ]
+      : [])
   ].sort(
     (left, right) =>
       left.objectType.localeCompare(right.objectType) || left.objectId.localeCompare(right.objectId)
@@ -321,6 +444,15 @@ export async function sealAiValueClaimBundleSerializable(input: {
   try {
     return await getPrisma().$transaction(
       async (transaction) => {
+        for (const source of [...(input.canonicalIdentitySources ?? [])].sort(
+          (left, right) =>
+            left.sourceKind.localeCompare(right.sourceKind) ||
+            left.stableId.localeCompare(right.stableId)
+        )) {
+          if (!(await lockCanonicalIdentitySource(transaction, input.orgId, source))) {
+            throw new Error("CANONICAL_IDENTITY_SOURCE_CHANGED");
+          }
+        }
         for (const source of sourceSnapshots) {
           await transaction.$queryRaw(
             Prisma.sql`SELECT "id" FROM "ai_value_objects"
@@ -349,10 +481,14 @@ export async function sealAiValueClaimBundleSerializable(input: {
         const claim = stored.get(aiValueEngine.INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPE);
         const packet = stored.get(aiValueEngine.INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE);
         const manifest = stored.get(aiValueEngine.INTERNAL_AGGREGATE_MANIFEST_OBJECT_TYPE);
+        const binding = stored.get(aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE);
         if (!claim || !packet || !manifest) {
           throw new Error("AGGREGATE_CLAIM_BUNDLE_INCOMPLETE");
         }
-        return { claim, packet, manifest };
+        if (input.binding && !binding) {
+          throw new Error("CANONICAL_IDENTITY_BUNDLE_INCOMPLETE");
+        }
+        return { claim, packet, manifest, ...(binding ? { binding } : {}) };
       },
       { isolationLevel: "Serializable" }
     );
@@ -386,7 +522,17 @@ export async function readAiValueClaimBundle(
     aiValueEngine.INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPE,
     parsedManifest.data.claim_id
   );
-  return claim ? { claim, packet, manifest } : null;
+  if (!claim) return null;
+  const expectedBindingId = aiValueEngine.canonicalIdentityBindingIdFromPacketId(packetId);
+  const binding = await getAiValueObjectRaw(
+    orgId,
+    aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+    expectedBindingId
+  );
+  if (binding && !aiValueEngine.CanonicalIdentityBindingSchema.safeParse(binding.payload).success) {
+    return null;
+  }
+  return { claim, packet, manifest, ...(binding ? { binding } : {}) };
 }
 
 function rowToRecord(row: {

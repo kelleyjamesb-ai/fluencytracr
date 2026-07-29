@@ -20,6 +20,10 @@
       "type": "string",
       "pattern": "^aggregate_packet_[0-9a-f]{64}_[0-9a-f]{64}$"
     },
+    "binding_id": {
+      "type": "string",
+      "pattern": "^canonical_identity_binding_[0-9a-f]{64}$"
+    },
     "caveats": {
       "type": "array",
       "prefixItems": [
@@ -179,6 +183,7 @@
         },
         "template_id": { "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1" },
         "slice_commitment": { "$ref": "#/$defs/sha256" },
+        "canonical_identity_core_commitment": { "$ref": "#/$defs/sha256" },
         "movement": { "$ref": "#/$defs/movement" },
         "caveats": { "$ref": "#/$defs/caveats" },
         "model_use_authorized": { "const": false },
@@ -203,6 +208,7 @@
         },
         "template_id": { "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1" },
         "slice_commitment": { "$ref": "#/$defs/sha256" },
+        "canonical_identity_core_commitment": { "$ref": "#/$defs/sha256" },
         "claim_content_hash": { "$ref": "#/$defs/sha256" },
         "movement": { "$ref": "#/$defs/movement" },
         "caveats": { "$ref": "#/$defs/caveats" },
@@ -287,6 +293,7 @@
               "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
             },
             "slice_commitment": { "$ref": "#/$defs/sha256" },
+            "canonical_identity_core_commitment": { "$ref": "#/$defs/sha256" },
             "source_graph": {
               "$ref": "#/$defs/source_graph_commitment"
             },
@@ -359,11 +366,57 @@
         },
         "customer_facing_output_authorized": { "const": false }
       }
+    },
+    "unbound_authorized_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "claim_authorization_state",
+        "canonical_identity_state",
+        "source_bound",
+        "packet_id",
+        "persisted",
+        "customer_facing_output_authorized"
+      ],
+      "properties": {
+        "decision": { "const": "AUTHORIZED" },
+        "claim_authorization_state": { "const": "AUTHORIZED" },
+        "canonical_identity_state": { "const": "UNBOUND" },
+        "source_bound": { "const": false },
+        "packet_id": { "$ref": "#/$defs/packet_id" },
+        "persisted": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["object_type", "object_id"],
+            "properties": {
+              "object_type": {
+                "enum": [
+                  "aggregate_authorized_claim",
+                  "aggregate_authorized_packet",
+                  "aggregate_claim_authorization_manifest"
+                ]
+              },
+              "object_id": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "customer_facing_output_authorized": { "const": false }
+      }
+    },
+    "bound_authorized_response": {
+      "$ref": "../ai-value/canonical-identity-binding.schema.json#/$defs/bound_authorized_response"
     }
   },
   "oneOf": [
     { "$ref": "#/$defs/held_response" },
     { "$ref": "#/$defs/authorized_response" },
+    { "$ref": "#/$defs/unbound_authorized_response" },
+    { "$ref": "#/$defs/bound_authorized_response" },
     {
       "type": "object",
       "additionalProperties": false,
@@ -372,6 +425,19 @@
         "claim": { "$ref": "#/$defs/claim" },
         "packet": { "$ref": "#/$defs/packet" },
         "manifest": { "$ref": "#/$defs/manifest" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim", "packet", "manifest", "binding"],
+      "properties": {
+        "claim": { "$ref": "#/$defs/claim" },
+        "packet": { "$ref": "#/$defs/packet" },
+        "manifest": { "$ref": "#/$defs/manifest" },
+        "binding": {
+          "$ref": "../ai-value/canonical-identity-binding.schema.json#/$defs/canonical_identity_binding"
+        }
       }
     }
   ]

@@ -6,6 +6,10 @@ import {
   recommendMetricsForBlueprint,
   validateAiValueMetricsLibrary
 } from "./validate_ai_value_metrics.mjs";
+import {
+  canonicalMetricDefinitionCommitment,
+  resolveCanonicalMetricDefinition
+} from "../shared/dist/aiValueEngine/index.js";
 
 const baseLibrary = {
   schema_version: "FT_AI_VALUE_METRICS_LIBRARY_2026_06",
@@ -134,6 +138,34 @@ test("validates a Customer Support metrics library and recommends metrics from a
     ]
   );
   assert.equal(recommendation.feeds.metrics_mapping, true);
+});
+
+test("adds a distinct exact Slice E metric commitment without changing legacy hashes", () => {
+  const library = structuredClone(baseLibrary);
+  const metric = library.metrics[0];
+  metric.metric_definition_ref = "metric-def/support-resolution/v1";
+  metric.canonical_direction = "DECREASE";
+  metric.canonical_metric_definition_commitment_v1 = canonicalMetricDefinitionCommitment(metric);
+
+  assert.equal(validateAiValueMetricsLibrary(library).valid, true);
+  assert.equal(
+    resolveCanonicalMetricDefinition(library, metric.metric_id, metric.metric_definition_ref)
+      .canonical_direction,
+    "DECREASE"
+  );
+
+  const forged = structuredClone(library);
+  forged.metrics[0].measurement_unit = "days";
+  const result = validateAiValueMetricsLibrary(forged);
+  assert.equal(result.valid, false);
+  assert.match(
+    result.gaps.join("; "),
+    /canonical_metric_definition_commitment_v1 does not match exact bytes/
+  );
+
+  const partial = structuredClone(baseLibrary);
+  partial.metrics[0].metric_definition_ref = "metric-def/support-resolution/v1";
+  assert.equal(validateAiValueMetricsLibrary(partial).valid, false);
 });
 
 test("seeded Customer Support metrics fixture is valid", () => {
