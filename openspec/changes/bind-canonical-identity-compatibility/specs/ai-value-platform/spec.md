@@ -35,7 +35,9 @@ ref/hash, outcome source, unit, direction, aggregate grain, and plan version.
 The E-capable binding SHALL retain only domain-separated commitments for the
 workflow, JBTD, and persona join keys, and the server SHALL recompute them from
 the authoritative aggregate slice before granting authority. It SHALL retain
-the approving role only as a separately domain-separated commitment.
+the approving role only as a compiled non-personal role code plus its
+separately domain-separated commitment. Arbitrary or person-shaped approving
+roles and caller-supplied role commitments SHALL hold.
 
 #### Scenario: Existing plan omits Slice E binding
 

@@ -13,6 +13,15 @@ export const MEASUREMENT_PLAN_SCHEMA_VERSION =
   "FT_AI_VALUE_MEASUREMENT_PLAN_2026_06";
 export const CANONICAL_SLICE_BINDING_SCHEMA_VERSION =
   "FT_CANONICAL_SLICE_BINDING_V1";
+export const CANONICAL_SLICE_APPROVAL_ROLES = [
+  "value_realization_pm",
+  "business_sponsor"
+] as const;
+export type CanonicalSliceApprovalRole =
+  (typeof CANONICAL_SLICE_APPROVAL_ROLES)[number];
+const CANONICAL_SLICE_APPROVAL_ROLE_SET = new Set<string>(
+  CANONICAL_SLICE_APPROVAL_ROLES
+);
 
 export interface CanonicalSliceBindingV1 {
   schema_version: typeof CANONICAL_SLICE_BINDING_SCHEMA_VERSION;
@@ -33,11 +42,16 @@ export interface CanonicalSliceBindingV1 {
   approved_aggregate_grain: string;
   aggregate_only: true;
   approved_at: string;
+  approved_by_role: CanonicalSliceApprovalRole;
   approved_by_role_commitment: string;
   slice_commitment: string;
 }
 
 export type BuildCanonicalSliceBindingInput = Omit<
+  CanonicalSliceBindingV1,
+  "schema_version" | "slice_commitment" | "approved_by_role_commitment"
+>;
+type CanonicalSliceBindingProjection = Omit<
   CanonicalSliceBindingV1,
   "schema_version" | "slice_commitment"
 >;
@@ -55,14 +69,21 @@ export const canonicalSliceJoinKeyCommitment = (
     value
   });
 
-export const canonicalSliceApprovalRoleCommitment = (value: string): string =>
-  aggregateClaimHash("FT_CANONICAL_SLICE_APPROVAL_ROLE_COMMITMENT_V1", {
-    approved_by_role: value
-  });
+export const canonicalSliceApprovalRoleCommitment = (value: string): string => {
+  if (!CANONICAL_SLICE_APPROVAL_ROLE_SET.has(value)) {
+    throw new Error("CANONICAL_SLICE_APPROVAL_ROLE_INVALID");
+  }
+  return aggregateClaimHash(
+    "FT_CANONICAL_SLICE_APPROVAL_ROLE_COMMITMENT_V1",
+    {
+      approved_by_role: value
+    }
+  );
+};
 
 const canonicalSliceProjection = (
   input: BuildCanonicalSliceBindingInput
-): BuildCanonicalSliceBindingInput => ({
+): CanonicalSliceBindingProjection => ({
   plan_version: input.plan_version,
   workflow_commitment: input.workflow_commitment,
   jbtd_commitment: input.jbtd_commitment,
@@ -81,11 +102,14 @@ const canonicalSliceProjection = (
   approved_aggregate_grain: input.approved_aggregate_grain,
   aggregate_only: true,
   approved_at: input.approved_at,
-  approved_by_role_commitment: input.approved_by_role_commitment
+  approved_by_role: input.approved_by_role,
+  approved_by_role_commitment: canonicalSliceApprovalRoleCommitment(
+    input.approved_by_role
+  )
 });
 
 export const canonicalSliceBindingCommitment = (
-  input: BuildCanonicalSliceBindingInput
+  input: CanonicalSliceBindingProjection
 ): string =>
   aggregateClaimHash(
     "FT_CANONICAL_SLICE_BINDING_COMMITMENT_V1",
@@ -564,6 +588,7 @@ function collectCanonicalSliceBindingGaps(
     "approved_direction",
     "approved_aggregate_grain",
     "approved_at",
+    "approved_by_role",
     "approved_by_role_commitment",
     "slice_commitment"
   ]) {
@@ -588,6 +613,20 @@ function collectCanonicalSliceBindingGaps(
         `canonical_slice_binding_v1.${field} must be an exact timestamp`
       );
     }
+  }
+  if (
+    !CANONICAL_SLICE_APPROVAL_ROLE_SET.has(
+      String(binding?.approved_by_role ?? "")
+    )
+  ) {
+    gaps.push("canonical_slice_binding_v1.approved_by_role is invalid");
+  } else if (
+    binding?.approved_by_role_commitment !==
+    canonicalSliceApprovalRoleCommitment(binding.approved_by_role)
+  ) {
+    gaps.push(
+      "canonical_slice_binding_v1.approved_by_role_commitment does not match approved_by_role"
+    );
   }
   for (const field of [
     "workflow_commitment",
@@ -670,7 +709,7 @@ function collectCanonicalSliceBindingGaps(
     } = binding as CanonicalSliceBindingV1;
     if (
       canonicalSliceBindingCommitment(
-        projection as BuildCanonicalSliceBindingInput
+        projection as CanonicalSliceBindingProjection
       ) !== binding.slice_commitment
     ) {
       gaps.push(

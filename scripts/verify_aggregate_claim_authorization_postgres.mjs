@@ -104,6 +104,13 @@ const expectRejected = async (operation, label) => {
   }
   assert(rejected, `${label} was unexpectedly permitted`);
 };
+await expectRejected(
+  async () =>
+    aiValueEngine.canonicalSliceApprovalRoleCommitment(
+      "james.kelley@example.com"
+    ),
+  "personal Slice E approving role"
+);
 
 assert(
   await checkCanonicalIdentityFamilyHeadStructureReadiness(prisma),
@@ -624,8 +631,7 @@ measurementPlan.canonical_slice_binding_v1 = aiValueEngine.buildCanonicalSliceBi
   approved_aggregate_grain: canonicalMetric.source_system.approved_grain,
   aggregate_only: true,
   approved_at: "2026-07-28T00:00:00.000Z",
-  approved_by_role_commitment:
-    aiValueEngine.canonicalSliceApprovalRoleCommitment("value_realization_pm")
+  approved_by_role: "value_realization_pm"
 });
 const measurementPlanValidation = aiValueEngine.validateMeasurementPlan(measurementPlan);
 assert(

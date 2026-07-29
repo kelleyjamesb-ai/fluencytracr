@@ -4767,3 +4767,23 @@
   full-suite verified, pushed, in a PR, merged, deployed, or applied to
   production. Next: freeze a new replacement commit and rerun all three
   exact-SHA reviews.
+- Froze second replacement
+  `df78416b6d77c92b6c458ab0e861b8e530a464ce`. Exact BUG and ADVERSARIAL
+  rereviews returned `GO`; CODE returned `HOLD` with executable invariant-5
+  proof that the deterministic approval-role commitment helper still accepted
+  an arbitrary personal email, producing a joinable commitment that could
+  reach a bound readout.
+- Repaired only that privacy residual. Slice E now accepts exactly the
+  compiled non-personal approval-role codes `value_realization_pm` and
+  `business_sponsor`; the builder derives and stores the matching commitment,
+  and validation requires the safe code/commitment pair. Arbitrary role text,
+  personal email, and caller-supplied role commitments fail before binding.
+- Fresh repair evidence passed: shared/backend builds; 56/56 Measurement Plan
+  contract tests including personal-role rejection; 69 focused persistence,
+  authorization, and binding tests; strict OpenSpec; and a fresh disposable
+  PostgreSQL 16 C.0/C.1/D/E sequence with the complete prior attack coverage.
+- State: the third replacement tree is designed, locally implemented, and
+  focused-verified. It is not yet committed, exact-SHA rereviewed,
+  full-suite verified, pushed, in a PR, merged, deployed, or applied to
+  production. Next: freeze a new replacement commit and rerun all three
+  exact-SHA reviews.

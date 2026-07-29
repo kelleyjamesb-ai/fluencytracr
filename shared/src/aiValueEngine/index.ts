@@ -523,6 +523,7 @@ export {
   canonicalSliceApprovalRoleCommitment,
   canonicalSliceBindingCommitment,
   canonicalSliceJoinKeyCommitment,
+  CANONICAL_SLICE_APPROVAL_ROLES,
   CANONICAL_SLICE_BINDING_SCHEMA_VERSION,
   MEASUREMENT_PLAN_SCHEMA_VERSION
 } from "./measurementPlan";
@@ -530,6 +531,7 @@ export type {
   MeasurementPlanValidationResult,
   BuildPlaybookMeasurementPlanInputs,
   BuildCanonicalSliceBindingInput,
+  CanonicalSliceApprovalRole,
   CanonicalSliceBindingV1
 } from "./measurementPlan";
 

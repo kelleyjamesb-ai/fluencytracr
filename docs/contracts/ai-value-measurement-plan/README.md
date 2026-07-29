@@ -125,8 +125,9 @@ When present, the binding has schema version
 - `approved_direction`;
 - `approved_aggregate_grain`;
 - `aggregate_only: true`;
-- approval timestamp and a domain-separated
-  `approved_by_role_commitment` for the aggregate-safe approving role; and
+- approval timestamp, one compiled non-personal `approved_by_role` code from
+  `value_realization_pm` or `business_sponsor`, and its domain-separated
+  `approved_by_role_commitment`; and
 - `slice_commitment`.
 
 The commitment is recomputed under
@@ -144,6 +145,9 @@ repair a mismatch. Slice join-key commitments are recomputed by the server
 under `FT_CANONICAL_SLICE_JOIN_KEY_COMMITMENT_V1`; raw workflow, JBTD, persona,
 and selector IDs never enter the E-capable plan binding or the reserved claim
 or binding payload as raw text.
+The approving-role commitment is derived only after the role matches the
+compiled non-personal vocabulary; arbitrary text, emails, and caller-supplied
+role hashes are rejected.
 
 ## 7. Workflow and Function Scope
 

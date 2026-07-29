@@ -4,7 +4,6 @@ import test from "node:test";
 
 import {
   buildCanonicalSliceBindingV1,
-  canonicalSliceApprovalRoleCommitment,
   MEASUREMENT_PLAN_SCHEMA_VERSION,
   buildPlaybookMeasurementPlanDraft,
   validateMeasurementPlan
@@ -151,8 +150,7 @@ test("optional Slice E binding is exact while legacy plans remain valid", () => 
     approved_aggregate_grain: legacy.workflow_scope.approved_aggregate_grain,
     aggregate_only: true,
     approved_at: "2026-07-29T00:00:00.000Z",
-    approved_by_role_commitment:
-      canonicalSliceApprovalRoleCommitment("business_sponsor")
+    approved_by_role: "business_sponsor"
   });
   legacy.canonical_slice_binding_v1 = binding;
   assert.equal(validateMeasurementPlan(legacy).valid, true);
@@ -172,6 +170,31 @@ test("optional Slice E binding is exact while legacy plans remain valid", () => 
   assert.match(
     validateMeasurementPlan(personalApprover).gaps.join("; "),
     /must be SHA-256|does not match exact bytes/
+  );
+  assert.throws(
+    () =>
+      buildCanonicalSliceBindingV1({
+        plan_version: 1,
+        workflow_commitment: "b".repeat(64),
+        jbtd_commitment: "c".repeat(64),
+        persona_commitment: "d".repeat(64),
+        baseline_window_start: legacy.windows.baseline_window_start,
+        baseline_window_end: legacy.windows.baseline_window_end,
+        comparison_window_start: legacy.windows.comparison_window_start,
+        comparison_window_end: legacy.windows.comparison_window_end,
+        metric_id: legacy.metric_selection.primary_metric.metric_id,
+        metric_definition_ref: "metric-def/support-resolution/v1",
+        canonical_metric_definition_commitment_v1: "a".repeat(64),
+        outcome_source_system: "Support case management system",
+        measurement_unit: "hours",
+        approved_direction: "DECREASE",
+        approved_aggregate_grain:
+          legacy.workflow_scope.approved_aggregate_grain,
+        aggregate_only: true,
+        approved_at: "2026-07-29T00:00:00.000Z",
+        approved_by_role: "james.kelley@example.com"
+      }),
+    /CANONICAL_SLICE_APPROVAL_ROLE_INVALID/
   );
 
   const changedWindow = clone(legacy);

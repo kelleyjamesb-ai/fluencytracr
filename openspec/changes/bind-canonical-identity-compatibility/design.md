@@ -90,8 +90,8 @@ version and contains:
   approved direction;
 - the approved aggregate grain;
 - fixed `aggregate_only: true`;
-- approval timestamp and a domain-separated commitment to the non-personal
-  approver role; and
+- approval timestamp, one compiled non-personal approver-role code, and its
+  domain-separated commitment; and
 - a domain-separated slice commitment derived from the complete tuple, the
   authenticated organization, and the exact plan version.
 
