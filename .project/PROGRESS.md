@@ -4528,3 +4528,14 @@
   No new identity semantics, architecture, migration, endpoint, event,
   suppression reason, threshold, model path, or customer-facing output was
   added.
+- Replacement exact commit `ce48a31` received CODE, BUG, and ADVERSARIAL `GO`.
+  Its one full backend run passed 1,255/1,256 tests and exposed one stale
+  pre-Slice-D API-push assertion: it expected the readiness outcome lane to
+  remain `MISSING`, while the reviewed Slice D materializer contract now marks
+  admitted aggregate Outcome Evidence `PRESENT`. Runtime behavior matched the
+  focused materializer tests and contract.
+- The replacement changes only that integration-test expectation to
+  `PRESENT`. Its focused test passes 1/1. This is test synchronization for the
+  already-reviewed D behavior, not a runtime or architecture change. A new
+  immutable SHA, replacement exact reviews, and one full suite on that final
+  reviewed SHA remain required.

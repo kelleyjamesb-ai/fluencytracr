@@ -114,7 +114,7 @@ describe("AI Value aggregate API push path", () => {
       workflow: "PRESENT",
       trust: "PRESENT",
       suppression: "PRESENT",
-      outcome: "MISSING"
+      outcome: "PRESENT"
     });
     expect(readiness.body.payload.source_refs).toMatchObject({
       v3_verdict_id: expect.any(String),
