@@ -4787,3 +4787,36 @@
   full-suite verified, pushed, in a PR, merged, deployed, or applied to
   production. Next: freeze a new replacement commit and rerun all three
   exact-SHA reviews.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice E closure)
+
+- Froze final implementation commit
+  `23554549b4a6df20a7213343c0383d1d80fa67cb` with tree
+  `872bed0d226c3eeb93dcd64491d2d465efd132ee`. Exact-SHA CODE, BUG, and
+  ADVERSARIAL reviews independently returned `GO`; no review demonstrated an
+  executable authorization/privacy failure or violation of the nine
+  invariants.
+- The final reviewed SHA passed the focused shared/backend identity,
+  authorization, binding, Measurement Plan, strict OpenSpec, whitespace, and
+  fresh disposable PostgreSQL 16 C.0/C.1/D/E verification. The PostgreSQL
+  sequence covered exact restricted-login authority, `SET ROLE` substitution,
+  elevated existing-readout rejection, personal-role rejection, privilege
+  drift, append-only journal and HMAC authority, post-seal supersession,
+  artifact and renderer substitution, and C.1 revocation.
+- Ran the full required suite once on the final reviewed SHA: Python
+  `377 passed, 10 skipped`; backend `142/142` suites and `1295/1295` tests;
+  frontend `20/20` files and `164/164` tests; cohort proof, suppression,
+  EvidenceBundle, MCP, publisher, agent harness, fixture, V1 governance,
+  docs/contract, link, semantic-drift, JSON, strict OpenSpec, and whitespace
+  checks all passed.
+- Pushed the exact reviewed SHA and opened PR #463. All current-head GitHub
+  checks completed with 22 successes and one expected Supabase Preview skip.
+  PR #463 merged normally as
+  `0e1e8320343aabb82ca50ab52c7cac29b0ccc280`; the merge second parent is the
+  reviewed SHA and the merge tree exactly matches the reviewed tree.
+- Final state: designed, locally implemented, locally verified, committed,
+  pushed, reviewed, PR-opened, and merged are complete. No deployment action,
+  publication, production migration application, authenticated live proof, or
+  Slice F work was performed; no deployed or live-proved state is claimed.
+  The completed OpenSpec change remains unarchived because repository
+  OpenSpec policy archives only after deployment, which is outside this slice.
