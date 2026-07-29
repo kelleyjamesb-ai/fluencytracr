@@ -4893,3 +4893,36 @@
   verified, pushed, PR-opened, merged, deployed, production-migrated, runtime
   credentialed, key-provisioned, or live-proved. Production remains on HOLD
   until this repair is reviewed and merged.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (post-merge migration and Slice F gate)
+
+- Verified current `origin/main` at
+  `b66a3ece418df701460bffb4032a0d7c31a46c45`, the normal merge of PR #466.
+  PR #466 includes the PostgreSQL 17 assurance follow-up at `0efb695`; all
+  required current-head GitHub checks passed.
+- Re-audited the production FluencyTracr Supabase project
+  `nosfeoshwghfmmlbskvm` read-only. It is healthy on PostgreSQL 17.6.1.063 and
+  still records exactly seven completed Prisma migrations with no failed
+  migration; 16 repository migrations remain pending.
+- Confirmed a completed physical backup from
+  `2026-07-29T10:36:01.881Z`. No production migration, DDL, credential
+  rotation, key lifecycle, deployment, or data mutation was performed.
+- The production backend Vercel project exposes only an old pooled
+  `DATABASE_URL`; no `DIRECT_URL` or non-empty non-pooling credential is
+  available. Both the stored transaction-pooler credential and a derived
+  session-pooler attempt fail password authentication. Production migration is
+  therefore blocked until the Supabase database password/direct session
+  credential is repaired and reverified. Do not use Supabase MCP migration
+  history as a substitute for the authoritative Prisma `_prisma_migrations`
+  ledger.
+- Closed Slice E in the queue because its implementation, Codex-review repair,
+  and PostgreSQL 17 compatibility repair are merged, and its explicit bound
+  excludes production migration application. Production migration and live
+  proof remain separate incomplete operational states.
+- James requested the human-authored Slice F activation. Governance permits an
+  agent to update status only and prohibits agents from adding queue items.
+  Slice F therefore remains unactivated until James adds the bounded
+  `mcii-allowlisted-claim-trace-slice-f` item from
+  `docs/agent/MCII_PLAN.md` to `.project/WORK_QUEUE.json`. No Slice F design,
+  implementation, endpoint, schema, trace, legacy-path demotion, deployment,
+  publication, or customer output has started.
