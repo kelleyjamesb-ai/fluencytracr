@@ -239,6 +239,7 @@
     "test:seed": "npm run build --workspace shared && node --test scripts/lmsys_harness_selftest.mjs",
     "test:ai-value-engine": "npm run build --workspace shared && node --test scripts/ai_value_engine.test.mjs",
     "test:canonical-claim-trace": "npm run build --workspace shared && node --test scripts/canonical_claim_trace_contract.test.mjs",
+    "verify:canonical-claim-trace:postgres": "node scripts/verify_canonical_claim_trace_postgres.mjs",
     "aggregate:ai-fluency-sessions": "npm run build --workspace shared && node scripts/aggregate_ai_fluency_sessions.mjs",
     "test:ai-fluency-aggregator": "npm run build --workspace shared && node --test scripts/aggregate_ai_fluency_sessions.test.mjs",
     "generate:ai-value-readout": "npm run build --workspace shared && node scripts/generate_ai_value_readout_html.mjs",
