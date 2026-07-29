@@ -13,6 +13,8 @@ describe("Slice E canonical identity family-head structural readiness", () => {
     await expect(checkCanonicalIdentityFamilyHeadStructureReadiness(client)).resolves.toBe(true);
 
     expect(inspectedSql).toContain("canonical_identity_family_head_structure");
+    expect(inspectedSql).toContain("pg_catalog.sha256");
+    expect(inspectedSql).not.toContain("public.digest");
     expect(inspectedSql).toContain("fluencytracr_slice_e_owner");
     expect(inspectedSql).toContain("fluencytracr_slice_e_runtime");
     expect(inspectedSql).toContain("ai_value_canonical_identity_family_head_journal");

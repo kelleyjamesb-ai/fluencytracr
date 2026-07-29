@@ -98,6 +98,11 @@
 - [x] 4.4 Freeze an immutable implementation candidate, obtain exact-candidate
       CODE/BUG/ADVERSARIAL review, repair only executable invariant failures,
       and run the full required suite once on the final reviewed SHA.
+- [x] 4.5 Repair the confirmed post-merge findings: exact runtime
+      server/database binding and runtime-target readiness, health-visible
+      Slice E credential/HMAC readiness, plan hypothesis/version equality,
+      canonical UTC millisecond bound windows, and write-locked source-journal
+      cutover. Re-run focused tests and the PostgreSQL verifier.
 - [x] 4.5 Update only the Slice E queue status/last note and canonical
       `.project/PROGRESS.md`; do not deploy or apply the Slice E migration to
       production.

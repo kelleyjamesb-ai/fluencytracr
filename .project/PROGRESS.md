@@ -4820,3 +4820,40 @@
   Slice F work was performed; no deployed or live-proved state is claimed.
   The completed OpenSpec change remains unarchived because repository
   OpenSpec policy archives only after deployment, which is outside this slice.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice E Codex-review repair)
+
+- James explicitly reopened Slice E to address only six findings delivered by
+  the GitHub Codex reviews for PRs #462 and #463: bind the restricted runtime
+  connection to the primary artifact database, include the Slice E credential
+  and HMAC configuration in readiness, reject conflicting hypothesis IDs,
+  reject binding/persisted plan-version mismatch, require canonical UTC
+  millisecond timestamps before attestation, and lock all three source tables
+  across first-install validation/backfill/trigger cutover.
+- Started branch `codex/mcii-slice-e-codex-review-fixes` from fresh
+  `origin/main` `cb502df`. The primary checkout's unrelated uncommitted Slice D
+  work remains untouched in a separate worktree.
+- Baseline setup and focused checks pass: `npm ci`, Prisma generation, shared
+  build, and seven Slice E backend suites with 60/60 tests.
+- Scope remains the existing Slice E OpenSpec contract and its synchronized
+  SQL, runtime, readiness, tests, verifier, docs, and queue/progress state.
+  Slice D semantics, Slice F, deployment, production migration application,
+  new events/reasons/thresholds, individual data, scoring, ROI, causality,
+  prediction, and customer-facing output remain excluded.
+- Implemented the six bounded repairs. The dedicated runtime now proves the
+  same PostgreSQL server/database as the primary connection; credential,
+  runtime-target structure, and HMAC configuration are health-visible. Bound
+  plans reject hypothesis/version divergence and noncanonical window
+  timestamps. Both migration paths lock all three sources before validation
+  and hold through trigger installation.
+- Focused evidence passes: shared/backend builds; 56/56 Measurement Plan
+  contract tests; 44/44 minimal-persistence tests; 45/45 runtime,
+  migration, and health tests; strict OpenSpec; and whitespace. A fresh
+  disposable PostgreSQL 16 C.0/C.1/D/E sequence passed, including an actual
+  different-database rejection and lock-timeout proof for writes to each of
+  the three source tables during cutover.
+- State: designed, locally implemented, and focused-verified. It is not yet
+  committed, exact-SHA reviewed, full-suite verified, pushed, PR-opened,
+  merged, deployed, or applied to any production database. Next: freeze the
+  immutable repair commit and run CODE, BUG, and ADVERSARIAL review against
+  that exact SHA.

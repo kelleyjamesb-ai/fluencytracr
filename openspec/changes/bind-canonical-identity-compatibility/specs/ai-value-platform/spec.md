@@ -38,6 +38,10 @@ the authoritative aggregate slice before granting authority. It SHALL retain
 the approving role only as a compiled non-personal role code plus its
 separately domain-separated commitment. Arbitrary or person-shaped approving
 roles and caller-supplied role commitments SHALL hold.
+All four bound window values SHALL be canonical UTC millisecond timestamps
+before commitment or persistence. The containing plan's Value Hypothesis ID
+and persistence version SHALL exactly equal its nested hypothesis ID and
+bound `plan_version`.
 
 #### Scenario: Existing plan omits Slice E binding
 
@@ -60,6 +64,38 @@ roles and caller-supplied role commitments SHALL hold.
   persona, aggregate grain, organization, or any exact boundary differs
 - **THEN** the plan-to-evidence compatibility check SHALL hold
 - **AND** the system SHALL NOT normalize, alias, or infer equality
+
+#### Scenario: Noncanonical or cross-spliced plan authority
+
+- **WHEN** a bound window uses a date-only, offset, or non-millisecond
+  representation, or caller metadata names a different hypothesis ID or plan
+  version
+- **THEN** plan validation or persistence SHALL reject it before attestation
+  or durable source creation
+
+### Requirement: Exact Slice E runtime and cutover readiness
+
+The system SHALL require the dedicated Slice E runtime connection to target
+the same PostgreSQL server and database as the primary application connection.
+Credential and family-head structural readiness SHALL run against that runtime
+target, and health/readiness SHALL also require valid Slice E active-write and
+retained-read HMAC configuration. First-install and post-push journal cutover
+SHALL block writes to all three canonical source tables from before historical
+validation and backfill through append-trigger installation and commit.
+
+#### Scenario: Runtime database or configuration drift
+
+- **WHEN** the Slice E runtime targets a different server or database, lacks
+  the exact restricted credential, has invalid HMAC configuration, or its
+  family-head structure drifts
+- **THEN** health/readiness and Slice E authority SHALL fail closed
+
+#### Scenario: Concurrent source write during cutover
+
+- **WHEN** a writer attempts to insert, update, or delete a canonical source
+  while journal history is being validated, backfilled, and triggers installed
+- **THEN** the cutover transaction SHALL hold a write-conflicting table lock
+  until enforcement is installed and committed
 
 ### Requirement: Authenticated source creation and parent-version edges
 

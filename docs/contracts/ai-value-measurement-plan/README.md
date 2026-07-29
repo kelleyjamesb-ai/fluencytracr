@@ -117,7 +117,8 @@ When present, the binding has schema version
 - positive `plan_version`;
 - domain-separated SHA-256 `workflow_commitment`, `jbtd_commitment`, and
   `persona_commitment` values for the exact aggregate slice join keys;
-- exact baseline and comparison start/end timestamps;
+- exact baseline and comparison start/end timestamps in canonical UTC
+  millisecond form (`YYYY-MM-DDTHH:mm:ss.sssZ`);
 - `metric_id`;
 - version-bearing `metric_definition_ref`;
 - separately named `canonical_metric_definition_commitment_v1`;
@@ -134,7 +135,9 @@ The commitment is recomputed under
 `FT_CANONICAL_SLICE_BINDING_COMMITMENT_V1` from every field above except the
 schema version and commitment itself. The bound plan version, windows,
 aggregate grain, and primary metric must exact-match the containing
-Measurement Plan. Slice E additionally exact-compares the organization,
+Measurement Plan. Persistence also rejects a caller-supplied Value Hypothesis
+ID or plan version that differs from the nested hypothesis ID or bound
+`plan_version`. Slice E additionally exact-compares the organization,
 workflow, JBTD, and persona commitments plus source, unit, permitted direction, metric-definition
 commitment, aggregate grain, and windows with the selected Measurement Cell,
 authoritative Slice D source graph, accepted export, and current C.1

@@ -62,12 +62,46 @@ describe("Slice E canonical identity family-head migration", () => {
     }
   );
 
+  it.each([migrationSql, postPushSql])(
+    "holds all canonical source tables against writes for the complete validation-to-trigger cutover",
+    (sql) => {
+      const sourceLock = sql.indexOf(
+        "LOCK TABLE public.value_hypotheses, public.measurement_plans, public.measurement_cell_snapshots"
+      );
+      const historicalValidation = sql.indexOf(
+        "canonical identity historical lineage is inconsistent"
+      );
+      const firstBackfill = sql.indexOf(
+        "INSERT INTO public.ai_value_canonical_identity_family_head_journal"
+      );
+      const finalTrigger = sql.lastIndexOf(
+        'CREATE TRIGGER "measurement_cell_snapshots_canonical_identity_append"'
+      );
+      const commit = sql.lastIndexOf("COMMIT;");
+
+      expect(sourceLock).toBeGreaterThan(-1);
+      expect(sourceLock).toBeLessThan(historicalValidation);
+      expect(sourceLock).toBeLessThan(firstBackfill);
+      expect(finalTrigger).toBeGreaterThan(firstBackfill);
+      expect(commit).toBeGreaterThan(finalTrigger);
+    }
+  );
+
   it.each(workflowPaths)(
     "configures the exact Slice E runtime login in %s",
     (workflowPath) => {
       const workflow = fs.readFileSync(workflowPath, "utf8");
       expect(workflow).toContain(
         "SLICE_E_RUNTIME_DATABASE_URL: postgresql://fluencytracr_slice_e_runtime:"
+      );
+      expect(workflow).toContain(
+        "SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID: FT_E_HMAC_PRIMARY"
+      );
+      expect(workflow).toContain(
+        "SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET:"
+      );
+      expect(workflow).toContain(
+        "SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON: '{}'"
       );
     }
   );

@@ -393,9 +393,9 @@
   "id": "mcii-canonical-identity-compatibility-slice-e",
   "title": "MCII Slice E — append-only canonical identity compatibility binding",
   "bound": "Canonical identity compatibility binding only; acceptance: append-only identities bind the approved hypothesis, metric definition/version, exact slice/window, admitted evidence, and readout; reject stale, foreign, mutable, ambiguous, or cross-spliced lineage; source-bound or canonical status requires validation of the complete identity chain; preserve existing consumers through additive compatibility while obsolete mutable selectors lose authority; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and independent-slice governance; include focused tests, contracts, OpenSpec, progress, and queue updates; exclude Slice F claim trace, deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
-  "status": "done",
+  "status": "in_progress",
   "risk": "high",
-      "last_note": "Done: exact reviewed SHA 23554549 received CODE/BUG/ADVERSARIAL GO, passed the focused PostgreSQL verifier and one full required suite, and merged normally in PR #463 as 0e1e832 with an identical tree after 22 successful current-head checks and one expected skip. No deployment action, publication, live qualification, or production migration was performed; no deployed/live state is claimed, and Slice F remains excluded."
+      "last_note": "Reopened 2026-07-29 by explicit human request to repair only six confirmed Codex review findings: runtime/primary database identity, Slice E readiness, hypothesis ID equality, plan-version equality, canonical timestamps, and migration cutover locking. No deployment, production migration, Slice F, or architecture expansion."
     }
   ]
 }

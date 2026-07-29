@@ -70,7 +70,11 @@ use only the `fluencytracr_slice_e_runtime` login configured by
 `SLICE_E_RUNTIME_DATABASE_URL`. Both the authenticated `session_user` and
 effective `current_user` must be that exact login. A missing URL, a different
 login, `SET ROLE` substitution, a superuser, or a role with bypass or
-role-creation authority makes Slice E unavailable.
+role-creation authority makes Slice E unavailable. The runtime connection must
+also prove the same PostgreSQL server and database identity as the primary
+connection, and family-head structural readiness runs against the runtime
+target. Operational readiness additionally requires a valid Slice E active
+HMAC write key and retained-read-key configuration.
 The general database credential remains outside Slice E source authority.
 
 ## Canonical identity core
@@ -133,6 +137,12 @@ Slice E uses separate domains for hypothesis creation, plan edge, cell edge,
 and bundle attestations and does not reuse or modify C.1 attestation state.
 
 ## Persistence and current readout
+
+Journal installation locks `value_hypotheses`, `measurement_plans`, and
+`measurement_cell_snapshots` against concurrent writes before historical
+validation or backfill and holds those locks through append-trigger
+installation and commit. A source row therefore cannot enter the cutover gap
+without a corresponding journal entry.
 
 The existing serializable D seal is extended to take deterministic
 source-family locks, lock the three exact durable journal heads and source

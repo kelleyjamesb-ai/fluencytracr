@@ -30,7 +30,8 @@ const {
   checkCanonicalIdentityFamilyHeadStructureReadiness
 } = require("../backend/dist/canonical-identity-family-head-structure.js");
 const {
-  canonicalIdentityRuntimeCredentialIsReady
+  canonicalIdentityRuntimeCredentialIsReady,
+  canonicalIdentityRuntimeTargetsPrimaryDatabase
 } = require("../backend/dist/canonical-identity-runtime-client.js");
 const {
   canonicalHypothesisAttestationPayload,
@@ -170,9 +171,77 @@ assert(
   "configured Slice E client was not the exact least-privilege runtime role"
 );
 assert(
+  await canonicalIdentityRuntimeTargetsPrimaryDatabase(
+    prisma,
+    sliceERuntimePrisma
+  ),
+  "configured Slice E client did not target the primary PostgreSQL database"
+);
+assert(
   !(await canonicalIdentityRuntimeCredentialIsReady(prisma)),
   "database-owner credential was accepted as the Slice E runtime role"
 );
+
+const mismatchedDatabaseName = `slice_e_mismatch_${runId}`;
+await prisma.$executeRawUnsafe(
+  `CREATE DATABASE "${mismatchedDatabaseName}"`
+);
+const mismatchedRuntimeUrl = new URL(sliceERuntimeUrl);
+mismatchedRuntimeUrl.pathname = `/${mismatchedDatabaseName}`;
+const mismatchedRuntimePrisma = new PrismaClient({
+  datasources: { db: { url: mismatchedRuntimeUrl.toString() } }
+});
+try {
+  assert(
+    !(await canonicalIdentityRuntimeTargetsPrimaryDatabase(
+      prisma,
+      mismatchedRuntimePrisma
+    )),
+    "different PostgreSQL database was accepted as the Slice E runtime target"
+  );
+} finally {
+  await mismatchedRuntimePrisma.$disconnect();
+  await prisma.$executeRawUnsafe(
+    `DROP DATABASE "${mismatchedDatabaseName}" WITH (FORCE)`
+  );
+}
+
+const cutoverWriter = new PrismaClient();
+try {
+  await prisma.$transaction(async (transaction) => {
+    await transaction.$executeRawUnsafe(
+      "LOCK TABLE public.value_hypotheses, public.measurement_plans, public.measurement_cell_snapshots IN SHARE ROW EXCLUSIVE MODE"
+    );
+    for (const sourceTable of [
+      "value_hypotheses",
+      "measurement_plans",
+      "measurement_cell_snapshots"
+    ]) {
+      let lockTimedOut = false;
+      try {
+        await cutoverWriter.$transaction(async (writer) => {
+          await writer.$executeRawUnsafe("SET LOCAL lock_timeout = '250ms'");
+          await writer.$executeRawUnsafe(
+            `INSERT INTO public.${sourceTable} DEFAULT VALUES`
+          );
+        });
+      } catch (error) {
+        lockTimedOut =
+          error?.code === "P2010" &&
+          (error?.meta?.code === "55P03" ||
+            /lock timeout|canceling statement due to lock timeout/i.test(
+              String(error?.meta?.message ?? error?.message ?? "")
+            ));
+      }
+      assert(
+        lockTimedOut,
+        `${sourceTable} write was not blocked by the Slice E cutover lock`
+      );
+    }
+  });
+} finally {
+  await cutoverWriter.$disconnect();
+}
 const substitutedRuntimeCredentialAccepted = await prisma.$transaction(
   async (transaction) => {
     await transaction.$executeRawUnsafe(
@@ -1497,7 +1566,7 @@ assert(
 );
 
 console.log(
-  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E session/effective runtime credential, SET ROLE substitution rejection, elevated existing-readout rejection, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice, approval-role, and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
+  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E session/effective runtime credential, same-server/database identity, wrong-database rejection, write-blocking three-source cutover lock, SET ROLE substitution rejection, elevated existing-readout rejection, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice, approval-role, and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
 );
 
 await sliceERuntimePrisma.$disconnect();

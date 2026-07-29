@@ -1,5 +1,8 @@
 BEGIN;
 
+LOCK TABLE public.value_hypotheses, public.measurement_plans, public.measurement_cell_snapshots
+  IN SHARE ROW EXCLUSIVE MODE;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
