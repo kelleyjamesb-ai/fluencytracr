@@ -395,7 +395,7 @@
   "bound": "Canonical identity compatibility binding only; acceptance: append-only identities bind the approved hypothesis, metric definition/version, exact slice/window, admitted evidence, and readout; reject stale, foreign, mutable, ambiguous, or cross-spliced lineage; source-bound or canonical status requires validation of the complete identity chain; preserve existing consumers through additive compatibility while obsolete mutable selectors lose authority; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and independent-slice governance; include focused tests, contracts, OpenSpec, progress, and queue updates; exclude Slice F claim trace, deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
   "status": "done",
   "risk": "high",
-      "last_note": "Done 2026-07-29: Slice E PR #463, Codex-review repair PR #465, and PostgreSQL 17 migration-compatibility PR #466 merged normally through b66a3ec; all required current-head checks passed. Production migration, key activation, deployment, and live proof remain separate and unapplied."
+      "last_note": "Done 2026-07-29: Slice E PR #463, Codex-review repair PR #465, and PostgreSQL 17 migration-compatibility PR #466 merged normally through b66a3ec; all required current-head checks passed. The separately authorized production operation later applied all 23 Prisma migrations and configured restricted runtime credentials and active attestation keys. No deployment or live proof was performed."
     }
   ]
 }

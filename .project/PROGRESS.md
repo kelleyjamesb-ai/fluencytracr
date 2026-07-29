@@ -4926,3 +4926,44 @@
   `docs/agent/MCII_PLAN.md` to `.project/WORK_QUEUE.json`. No Slice F design,
   implementation, endpoint, schema, trace, legacy-path demotion, deployment,
   publication, or customer output has started.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (production migration activation)
+
+- James explicitly authorized the production database credential repair,
+  pending Prisma migration application, restricted C.1/Slice E credential
+  configuration, and attestation-key activation. Deployment remained outside
+  that authority and was not performed.
+- Confirmed the production project and completed physical backup, rotated the
+  Supabase database password, and replaced the backend Vercel Production
+  `DATABASE_URL` and `DIRECT_URL` with encrypted transaction- and
+  session-pooler credentials. No secret value was written to the repository or
+  exposed in the durable record.
+- Applied the authoritative Prisma migration chain to production. Supabase
+  catalog readback reports 23 completed migrations and zero failed or
+  unfinished migrations.
+- Set and directly verified restricted logins for
+  `fluencytracr_c1_runtime`,
+  `fluencytracr_c1_attestation_provisioner`, and
+  `fluencytracr_slice_e_runtime`. Provisioned and activated C.1 key
+  `FT_C1_HMAC_PROD_20260729_A` and configured Slice E key
+  `FT_E_HMAC_PROD_20260729_A`; all application secrets are stored as encrypted
+  Vercel Production variables.
+- Production catalog verification preserves the C.1 governance stop rule.
+  `outcome_evidence` has only the C.1 runtime `SELECT` policy.
+  `ai_value_objects` has only the C.1 runtime `SELECT` and lock-only `UPDATE`
+  policies. The attestation provisioner has only `SELECT`/`INSERT` on its
+  three key journals, `USAGE` on the activation sequence, and no schema
+  `CREATE`.
+- Supabase security advisors report two non-blocking mutable-search-path
+  warnings on pre-existing `SECURITY INVOKER` trigger functions. Neither
+  function performs relation or routine lookup, and PostgreSQL does not permit
+  direct execution of a trigger-returning function; no executable
+  authorization/privacy failure or invariant violation was demonstrated.
+  Record search-path hardening as separate follow-up work rather than
+  broadening this operation. Performance advisors report informational
+  findings only.
+- Final operational state: Slice E remains done and merged; production is
+  migrated, restricted-role credentialed, and key-configured. The backend has
+  not been redeployed with the new environment revision, and no authenticated
+  runtime readiness or live application proof is claimed. Slice F remains
+  unactivated pending the required human-authored queue item.
