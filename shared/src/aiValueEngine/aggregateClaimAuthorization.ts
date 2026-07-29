@@ -31,6 +31,21 @@ export const AGGREGATE_CLAIM_CAVEATS = Object.freeze([
   "No causal conclusion.",
   "Internal review only; not customer-facing."
 ]);
+export const AGGREGATE_CLAIM_MEASUREMENT_UNITS = [
+  "cases",
+  "count",
+  "days",
+  "hours",
+  "minutes",
+  "months",
+  "percent",
+  "percentage_points",
+  "rate",
+  "ratio",
+  "seconds",
+  "share",
+  "weeks"
+] as const;
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9:_-]{0,511}$/;
@@ -46,6 +61,7 @@ const safeId = z
 const exactHash = z.string().regex(SHA256_HEX);
 const finiteNumber = z.number().finite();
 const nonNegativeInteger = z.number().int().nonnegative();
+export const AggregateClaimMeasurementUnitSchema = z.enum(AGGREGATE_CLAIM_MEASUREMENT_UNITS);
 
 export const AggregateClaimSourceGraphSealSchema = z
   .object({
@@ -68,7 +84,7 @@ export type AggregateClaimSourceGraphSeal = z.infer<typeof AggregateClaimSourceG
 export const AggregateObservedMovementSchema = z
   .object({
     metric_id: safeId,
-    measurement_unit: z.string().min(1).max(80),
+    measurement_unit: AggregateClaimMeasurementUnitSchema,
     baseline_value: finiteNumber,
     comparison_value: finiteNumber,
     absolute_delta: finiteNumber,

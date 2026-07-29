@@ -10,6 +10,7 @@ import { store } from "../src/store";
 const {
   AGGREGATE_CLAIM_CAVEATS,
   AGGREGATE_CLAIM_HELD_REASON,
+  AGGREGATE_CLAIM_MEASUREMENT_UNITS,
   AGGREGATE_CLAIM_SOURCE_GRAPH_SCHEMA_VERSION,
   AggregateClaimHeldResponseSchema,
   AggregateAuthorizedClaimContentSchema,
@@ -342,5 +343,35 @@ describe("aggregate claim authorization contracts", () => {
         source_graph: buildAggregateClaimSourceGraphSeal(objects)
       }).success
     ).toBe(false);
+  });
+
+  it.each([
+    "james.kelley@glean.com",
+    "hours caused by AI improvement",
+    "customer-facing impact",
+    "currency_usd_millions",
+    "score"
+  ])("rejects identifier-bearing or unsupported unit %s", (measurementUnit) => {
+    expect(() =>
+      buildAggregateObservedMovement({
+        metricId: "support_resolution_hours",
+        measurementUnit,
+        baselineValue: 18.4,
+        comparisonValue: 15.1
+      })
+    ).toThrow();
+  });
+
+  it("accepts only the compiled generic Slice D unit vocabulary", () => {
+    for (const measurementUnit of AGGREGATE_CLAIM_MEASUREMENT_UNITS) {
+      expect(
+        buildAggregateObservedMovement({
+          metricId: "support_resolution_hours",
+          measurementUnit,
+          baselineValue: 18.4,
+          comparisonValue: 15.1
+        }).measurement_unit
+      ).toBe(measurementUnit);
+    }
   });
 });

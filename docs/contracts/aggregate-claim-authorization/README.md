@@ -17,6 +17,14 @@ productivity, prediction, probability, confidence, individual performance,
 ranking, improvement, impact, and customer-facing semantics are outside this
 contract.
 
+Before artifact generation, the movement unit must match the compiled generic
+Slice D vocabulary: `cases`, `count`, `days`, `hours`, `minutes`, `months`,
+`percent`, `percentage_points`, `rate`, `ratio`, `seconds`, `share`, or
+`weeks`. This boundary rejects identifier-bearing values, customer-authored
+prose, monetary units, scores, and unsupported semantic text even when an
+upstream Outcome Evidence or C.1 schema can store that value. Extending the
+vocabulary requires a reviewed contract version; it is not caller-tunable.
+
 ## Authority chain
 
 1. Real-evidence materialization persists its generated scenario and seals the

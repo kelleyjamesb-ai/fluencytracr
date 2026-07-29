@@ -4422,3 +4422,18 @@
   CODE/BUG/ADVERSARIAL review; one full required suite on the final reviewed
   SHA; push; PR; current-head GitHub checks; and normal merge. No production
   migration was applied and nothing was deployed.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII Slice D exact-review remediation)
+
+- Exact commit `d107857` received CODE `GO` and BUG/ADVERSARIAL `HOLD` on one
+  shared executable invariant failure: arbitrary C.1 `outcome_unit` text
+  reached authorized movement prose, permitting an email-shaped identifier
+  or causal/improvement language in stored and rendered output.
+- The remediation is D-only and contract-bounded. It adds one compiled generic
+  movement-unit vocabulary at the final Slice D artifact boundary, with
+  synchronized JSON Schema and documentation. It does not alter C.1 storage,
+  readback, migration, runtime privileges, or architecture.
+- Regression coverage rejects identifier-bearing, causal, improvement,
+  customer-facing, monetary, and score units before artifact generation.
+  The CODE follow-up about expressing one-of-each persisted artifact identity
+  more precisely in JSON Schema remains non-blocking follow-up work.

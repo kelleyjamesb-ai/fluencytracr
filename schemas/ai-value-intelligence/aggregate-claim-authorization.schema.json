@@ -54,9 +54,21 @@
       "properties": {
         "metric_id": { "$ref": "#/$defs/safe_id" },
         "measurement_unit": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 80
+          "enum": [
+            "cases",
+            "count",
+            "days",
+            "hours",
+            "minutes",
+            "months",
+            "percent",
+            "percentage_points",
+            "rate",
+            "ratio",
+            "seconds",
+            "share",
+            "weeks"
+          ]
         },
         "baseline_value": { "type": "number" },
         "comparison_value": { "type": "number" },
