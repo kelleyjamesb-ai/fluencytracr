@@ -334,6 +334,107 @@ const withOutcomeReviewState = (state: "MISSING" | "SUBMITTED" | "ACCEPTED" | "R
   return { objects: nextObjects, details: nextDetails };
 };
 
+const withAcceptedSupportAndSelectedBillingReview = () => {
+  const billingWorkflow = "billing_invoice_resolution";
+  const nextDetails = cloneDetails();
+  const billingMetrics = JSON.parse(
+    JSON.stringify(detailPayloads["metrics_library/metrics_support"])
+  ) as Record<string, any>;
+  const billingRoiScenario = JSON.parse(
+    JSON.stringify(detailPayloads["roi_scenario/roi_support"])
+  ) as Record<string, any>;
+
+  nextDetails["blueprint/a_billing"] = {
+    ...detailPayloads["blueprint/bp_support"],
+    blueprint_id: "a_billing",
+    workflow_family: billingWorkflow,
+    workflow_name: "Billing invoice resolution"
+  };
+  nextDetails["metrics_library/a_billing"] = {
+    ...billingMetrics,
+    library_id: "a_billing",
+    workflow_family: billingWorkflow,
+    metrics: billingMetrics.metrics.map((metric: Record<string, unknown>) => ({
+      ...metric,
+      workflow_family: billingWorkflow
+    }))
+  };
+  nextDetails["evidence_readiness/a_billing"] = {
+    ...detailPayloads["evidence_readiness/readiness_v1"],
+    readiness_id: "a_billing",
+    workflow_family: billingWorkflow
+  };
+  nextDetails["value_scenario/a_billing"] = {
+    ...detailPayloads["value_scenario/scenario_support"],
+    scenario_id: "a_billing"
+  };
+  nextDetails["roi_scenario/a_billing"] = {
+    ...billingRoiScenario,
+    roi_scenario_id: "a_billing",
+    workflow: {
+      ...billingRoiScenario.workflow,
+      workflow_family: billingWorkflow,
+      workflow_name: "Billing invoice resolution"
+    },
+    evidence_status: {
+      ...billingRoiScenario.evidence_status,
+      outcome_evidence_review_state: "SUBMITTED"
+    }
+  };
+
+  const supportAccepted = objects.map((item) =>
+    item.object_type === "outcome_evidence_export"
+      ? { ...item, validation: { review_state: "ACCEPTED" } }
+      : item
+  );
+  const billingObjects = [
+    {
+      object_type: "metrics_library",
+      object_id: "a_billing",
+      workflow_family: billingWorkflow,
+      valid: true,
+      validation: { metric_count: 2 }
+    },
+    {
+      object_type: "blueprint",
+      object_id: "a_billing",
+      workflow_family: billingWorkflow,
+      valid: true,
+      validation: {}
+    },
+    {
+      object_type: "evidence_readiness",
+      object_id: "a_billing",
+      workflow_family: billingWorkflow,
+      valid: true,
+      validation: { decision: "HOLD_FOR_ASSUMPTIONS" }
+    },
+    {
+      object_type: "value_scenario",
+      object_id: "a_billing",
+      workflow_family: billingWorkflow,
+      valid: true,
+      validation: {}
+    },
+    {
+      object_type: "roi_scenario",
+      object_id: "a_billing",
+      workflow_family: billingWorkflow,
+      valid: true,
+      validation: {}
+    },
+    {
+      object_type: "outcome_evidence_export",
+      object_id: "a_billing",
+      workflow_family: billingWorkflow,
+      valid: true,
+      validation: { review_state: "SUBMITTED" }
+    }
+  ];
+
+  return { objects: [...billingObjects, ...supportAccepted], details: nextDetails };
+};
+
 const stubJourneyFetch = (
   objectList: Array<Record<string, unknown>> = objects,
   payloads: Record<string, Record<string, unknown>> = detailPayloads
@@ -1286,6 +1387,35 @@ describe("AIValueJourney", () => {
       expect.stringContaining("/ai-value/readout/"),
       expect.anything()
     );
+  });
+
+  it("keeps readout readiness bound to the selected workflow evidence review", async () => {
+    const fixture = withAcceptedSupportAndSelectedBillingReview();
+    stubJourneyFetch(fixture.objects, fixture.details);
+    renderPage();
+
+    await screen.findAllByText(/Billing invoice resolution/);
+
+    const railReadout = screen
+      .getByText("7. Executive Readout")
+      .closest(".ai-value-journey-stage") as HTMLElement;
+    expect(within(railReadout).getByText("Not started")).toBeInTheDocument();
+
+    const readoutPhase = screen
+      .getByRole("heading", { name: "Executive Readout" })
+      .closest("article") as HTMLElement;
+    expect(
+      within(readoutPhase).getByText(
+        /Complete the evidence review before internal planning can proceed/i
+      )
+    ).toBeInTheDocument();
+    expect(within(readoutPhase).getByText("Not started")).toBeInTheDocument();
+
+    const preview = screen.getByRole("region", { name: /Executive report preview/i });
+    expect(within(preview).getByText("Review held for evidence")).toBeInTheDocument();
+    expect(
+      within(preview).queryByText("Internal review planning only")
+    ).not.toBeInTheDocument();
   });
 
   it.each([

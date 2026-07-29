@@ -1008,12 +1008,10 @@ function buildExecutiveOperatingPlan(params: {
 function buildExecutiveReadoutPreview(params: {
   customerEvidenceRequest: CustomerEvidenceRequest;
   customerEvidenceReview: CustomerEvidenceReviewWorkbench;
-  executivePlan: ExecutiveOperatingPlan;
 }): ExecutiveReadoutPreview {
   const {
     customerEvidenceRequest,
-    customerEvidenceReview,
-    executivePlan
+    customerEvidenceReview
   } = params;
   const reviewer = customerEvidenceReview.reviewer || "Customer data owner";
   const metricName = customerEvidenceRequest.metricName || "selected outcome signal";
@@ -2126,14 +2124,14 @@ function buildCustomerEvidenceReviewWorkbench(params: {
 function deriveStages(params: {
   byType: Record<string, AiValueObjectSummary[]>;
   opportunities: ValueOpportunity[];
+  customerEvidenceReview?: CustomerEvidenceReviewWorkbench;
 }): JourneyStage[] {
-  const { byType, opportunities } = params;
+  const { byType, opportunities, customerEvidenceReview } = params;
   const baselines = byType.fluency_baseline ?? [];
   const engagements = byType.engagement ?? [];
   const blueprints = byType.blueprint ?? [];
   const libraries = byType.metrics_library ?? [];
   const readiness = byType.evidence_readiness ?? [];
-  const exportsList = byType.outcome_evidence_export ?? [];
   const scenarios = byType.value_scenario ?? [];
   const roiScenarios = byType.roi_scenario ?? [];
 
@@ -2141,8 +2139,9 @@ function deriveStages(params: {
   const readinessDecision = latestReadiness
     ? String((latestReadiness.validation as Record<string, unknown>)?.decision ?? "")
     : "";
-  const accepted = exportsList.filter((item) => reviewStateOf(item) === "ACCEPTED");
-  const submitted = exportsList.filter((item) => reviewStateOf(item) === "SUBMITTED");
+  const reviewState = customerEvidenceReview?.reviewState ?? "MISSING";
+  const hasAcceptedEvidence = reviewState === "ACCEPTED";
+  const hasSubmittedEvidence = reviewState === "SUBMITTED";
 
   return [
     {
@@ -2213,12 +2212,12 @@ function deriveStages(params: {
     {
       key: "measurement",
       label: "Evidence & Measurement",
-      state: readiness.length > 0 || accepted.length > 0 ? "done" : libraries.length > 0 ? "attention" : "todo",
+      state: readiness.length > 0 || hasAcceptedEvidence ? "done" : libraries.length > 0 ? "attention" : "todo",
       detail:
-        accepted.length > 0
+        hasAcceptedEvidence
           ? "Customer outcome evidence is attached."
-          : submitted.length > 0
-            ? `${submitted.length} customer export${submitted.length === 1 ? "" : "s"} awaiting review.`
+          : hasSubmittedEvidence
+            ? "Customer export awaiting review."
             : readiness.length > 0
               ? DECISION_LABELS[readinessDecision] ?? "Evidence readiness has been assessed."
               : "Connect FluencyTracr evidence and customer outcome sources.",
@@ -2227,14 +2226,14 @@ function deriveStages(params: {
         libraries.length > 0 && "Outcome signal library on file",
         readiness.length > 0 &&
           `Evidence readiness: ${DECISION_LABELS[readinessDecision] ?? "Assessed"}`,
-        accepted.length > 0 && "Accepted customer outcome export"
+        hasAcceptedEvidence && "Accepted customer outcome export"
       ]),
       missing: compact([
         libraries.length === 0 && "Metrics Library / outcome signal definitions",
-        accepted.length === 0 && "Customer-owned outcome data for validation"
+        !hasAcceptedEvidence && "Customer-owned outcome data for validation"
       ]),
       feedsNext: "Evidence readiness shows which value opportunities can be modeled, caveated, or held.",
-      nextAction: submitted.length > 0 ? "Review submitted customer evidence." : "Map outcome data sources."
+      nextAction: hasSubmittedEvidence ? "Review submitted customer evidence." : "Map outcome data sources."
     },
     {
       key: "opportunity",
@@ -2250,7 +2249,7 @@ function deriveStages(params: {
       ]),
       missing: compact([
         opportunities.length === 0 && "Metrics tied to the selected workflow",
-        accepted.length === 0 && "Customer data exports to validate modeled value"
+        !hasAcceptedEvidence && "Customer data exports to validate modeled value"
       ]),
       feedsNext: "Selected opportunities become value scenarios with assumptions, baselines, and claim limits.",
       nextAction: "Prioritize which ROI point to model first."
@@ -2279,7 +2278,7 @@ function deriveStages(params: {
       missing: compact([
         scenarios.length === 0 && roiScenarios.length === 0 &&
           "Customer-owned assumptions and scenario bands",
-        accepted.length === 0 && "Outcome evidence before stronger claims"
+        !hasAcceptedEvidence && "Outcome evidence before stronger claims"
       ]),
       feedsNext: "Scenario status and safe value language prepare the executive readout.",
       nextAction: scenarios.length > 0 ? "Prepare executive validation." : "Draft scenario with caveats."
@@ -2287,17 +2286,17 @@ function deriveStages(params: {
     {
       key: "readout",
       label: "Executive Readout",
-      state: accepted.length > 0 ? "done" : "todo",
+      state: hasAcceptedEvidence ? "done" : "todo",
       detail:
-        accepted.length > 0
+        hasAcceptedEvidence
           ? "Accepted aggregate evidence is ready for internal review planning."
           : "Complete the evidence review before internal planning can proceed.",
       objectLabel: "Evidence review and planning cadence",
-      captured: compact([accepted.length > 0 && "Accepted aggregate evidence available for planning"]),
-      missing: compact([accepted.length === 0 && "Accepted aggregate evidence for internal review"]),
+      captured: compact([hasAcceptedEvidence && "Accepted aggregate evidence available for planning"]),
+      missing: compact([!hasAcceptedEvidence && "Accepted aggregate evidence for internal review"]),
       feedsNext: "Internal planning supports renewal, expansion, or the next workflow pilot.",
       nextAction:
-        accepted.length > 0
+        hasAcceptedEvidence
           ? "Review internal planning guidance."
           : "Complete evidence review after scenario review."
     }
@@ -2446,15 +2445,6 @@ export const useAiValueJourney = (): AiValueJourney => {
           }),
           evidenceItems: [],
           roiScenario: null
-        }),
-        executivePlan: buildExecutiveOperatingPlan({
-          evidenceScenarioPlan: buildEvidenceScenarioPlan({
-            readiness: null,
-            scenario: null,
-            evidenceItems: [],
-            opportunities: []
-          }),
-          opportunities: []
         })
       })
     );
@@ -2569,8 +2559,7 @@ export const useAiValueJourney = (): AiValueJourney => {
       });
       const readoutPreview = buildExecutiveReadoutPreview({
         customerEvidenceRequest: evidenceRequest,
-        customerEvidenceReview: evidenceReview,
-        executivePlan
+        customerEvidenceReview: evidenceReview
       });
       const sponsorDecision = buildSponsorDecisionLoop({
         customerEvidenceRequest: evidenceRequest,
@@ -2615,7 +2604,13 @@ export const useAiValueJourney = (): AiValueJourney => {
         sponsorDecisionLoop: sponsorDecision
       });
 
-      setStages(deriveStages({ byType, opportunities: mappedOpportunities }));
+      setStages(
+        deriveStages({
+          byType,
+          opportunities: mappedOpportunities,
+          customerEvidenceReview: evidenceReview
+        })
+      );
       setWorkflowHandoff(handoff);
       setValueQuestions(questions);
       setQuestionMetricBridge(metricBridge);
