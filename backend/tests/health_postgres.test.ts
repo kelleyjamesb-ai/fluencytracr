@@ -533,7 +533,22 @@ const mockDb = (
   attestationStructureOk = true
 ) => ({
   getPrisma: () => ({
-    $queryRaw: async () => [{ ok: true, diagnostics: [] }],
+    $queryRaw: async (query: TemplateStringsArray | { strings?: string[] }) =>
+      (
+        Array.isArray(query)
+          ? query.join("")
+          : Array.isArray(query?.strings)
+            ? query.strings.join("")
+            : ""
+      ).includes("pg_postmaster_start_time")
+        ? [{
+            server_address: "127.0.0.1",
+            server_port: "5432",
+            server_started_at: "2026-07-29 12:00:00+00",
+            database_name: "fluency",
+            database_oid: "16384"
+          }]
+        : [{ ok: true, diagnostics: [] }],
     $queryRawUnsafe: async (query: string) =>
       query.includes("outcome_comparison_attestation_structure")
         ? [{ ok: attestationStructureOk }]
@@ -567,6 +582,12 @@ describe("health postgres disclosure", () => {
     process.env.C1_CREATION_ATTESTATION_ACTIVE_KEY_ID;
   const originalAttestationKeys =
     process.env.C1_CREATION_ATTESTATION_KEYS_JSON;
+  const originalSliceEActiveKeyId =
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID;
+  const originalSliceEActiveSecret =
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET;
+  const originalSliceERetainedKeys =
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON;
 
   beforeEach(() => {
     jest.resetModules();
@@ -578,6 +599,12 @@ describe("health postgres disclosure", () => {
       FT_C1_HMAC_PRIMARY:
         "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
     });
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID =
+      "FT_E_HMAC_PRIMARY";
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET =
+      "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI";
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON =
+      "{}";
   });
 
   afterEach(() => {
@@ -604,7 +631,29 @@ describe("health postgres disclosure", () => {
       process.env.C1_CREATION_ATTESTATION_KEYS_JSON =
         originalAttestationKeys;
     }
+    if (originalSliceEActiveKeyId === undefined) {
+      delete process.env
+        .SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID;
+    } else {
+      process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID =
+        originalSliceEActiveKeyId;
+    }
+    if (originalSliceEActiveSecret === undefined) {
+      delete process.env
+        .SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET;
+    } else {
+      process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET =
+        originalSliceEActiveSecret;
+    }
+    if (originalSliceERetainedKeys === undefined) {
+      delete process.env
+        .SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON;
+    } else {
+      process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON =
+        originalSliceERetainedKeys;
+    }
     jest.dontMock("../src/db");
+    jest.dontMock("../src/canonical-identity-runtime-client");
   });
 
   it("reports postgres when database readiness succeeds", async () => {
@@ -616,6 +665,35 @@ describe("health postgres disclosure", () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("ok");
     expect(response.body.db).toBe("postgres");
+  });
+
+  it("fails readiness when Slice E runtime identity, credential, or HMAC configuration is unavailable", async () => {
+    const primary = mockDb(REQUIRED_TABLE_ROWS).getPrisma();
+    jest.doMock("../src/db", () => ({
+      getPrisma: () => primary,
+      disconnectPrisma: async () => undefined
+    }));
+    jest.doMock("../src/canonical-identity-runtime-client", () => ({
+      getCanonicalIdentityRuntimePrisma: () => primary,
+      canonicalIdentityRuntimeCredentialIsReady: async () => false,
+      canonicalIdentityRuntimeTargetsPrimaryDatabase: async () => false
+    }));
+    delete process.env
+      .SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET;
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_security).toEqual(
+      expect.arrayContaining([
+        "canonical_identity_runtime_credential",
+        "canonical_identity_runtime_database",
+        "canonical_identity_attestation_config"
+      ])
+    );
   });
 
   it("fails readiness when a Phase 4 AI Value persistence table is missing", async () => {

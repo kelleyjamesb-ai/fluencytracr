@@ -5,8 +5,10 @@ import { Prisma } from "@prisma/client";
 
 import {
   canonicalIdentityRuntimeCredentialIsReady,
+  canonicalIdentityRuntimeTargetsPrimaryDatabase,
   getCanonicalIdentityRuntimePrisma
 } from "../canonical-identity-runtime-client";
+import { checkCanonicalIdentityFamilyHeadStructureReadiness } from "../canonical-identity-family-head-structure";
 import { getPrisma } from "../db";
 import {
   canonicalIdentitySourceSemanticCommitment,
@@ -36,7 +38,12 @@ const usePrisma = () => Boolean(process.env.DATABASE_URL);
 
 const canonicalIdentityRuntimePrisma = async () => {
   const client = getCanonicalIdentityRuntimePrisma();
-  if (!client || !(await canonicalIdentityRuntimeCredentialIsReady(client))) {
+  if (
+    !client ||
+    !(await canonicalIdentityRuntimeCredentialIsReady(client)) ||
+    !(await canonicalIdentityRuntimeTargetsPrimaryDatabase(getPrisma(), client)) ||
+    !(await checkCanonicalIdentityFamilyHeadStructureReadiness(client))
+  ) {
     throw new Error("SLICE_E_RUNTIME_DATABASE_URL_MISSING");
   }
   return client;
@@ -4929,6 +4936,29 @@ export async function persistAiValueMeasurementPlan(
   requireValid(validation, "Measurement Plan");
 
   const plan = input.measurementPlan;
+  const canonicalSliceBinding = asOptionalRecord(plan.canonical_slice_binding_v1);
+  if (canonicalSliceBinding) {
+    const identityGaps: string[] = [];
+    if (
+      asString(asRecord(plan.value_hypothesis).value_hypothesis_id) !==
+      input.valueHypothesisId
+    ) {
+      identityGaps.push(
+        "valueHypothesisId must match Measurement Plan value_hypothesis_id"
+      );
+    }
+    if (Number(canonicalSliceBinding.plan_version) !== input.version) {
+      identityGaps.push(
+        "version must match canonical_slice_binding_v1.plan_version"
+      );
+    }
+    if (identityGaps.length > 0) {
+      throw new AiValuePersistenceValidationError(
+        "Slice E Measurement Plan durable identity mismatch",
+        identityGaps
+      );
+    }
+  }
   const workflowScope = asRecord(plan.workflow_scope);
   const windows = asRecord(plan.windows);
   const readiness = asRecord(plan.readiness);
@@ -4972,7 +5002,6 @@ export async function persistAiValueMeasurementPlan(
   if (record.comparison_window_end) {
     parseDate(record.comparison_window_end, "comparison_window_end");
   }
-  const canonicalSliceBinding = asOptionalRecord(plan.canonical_slice_binding_v1);
   if (canonicalSliceBinding) {
     if (!usePrisma() || !input.valueHypothesisVersion) {
       throw new AiValuePersistenceValidationError(

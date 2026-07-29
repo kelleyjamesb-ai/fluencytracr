@@ -95,6 +95,12 @@ version and contains:
 - a domain-separated slice commitment derived from the complete tuple, the
   authenticated organization, and the exact plan version.
 
+All four bound window values use one canonical UTC millisecond representation
+(`YYYY-MM-DDTHH:mm:ss.sssZ`) before commitment or persistence. The containing
+plan's stable Value Hypothesis ID and persistence version must exactly equal
+the nested hypothesis ID and bound `plan_version`; caller metadata cannot
+silently select a different durable parent or version.
+
 The raw tuple does not enter the E-capable Measurement Plan binding. The
 server recomputes domain-separated workflow, JBTD, and persona commitments
 from the authoritative aggregate slice before granting authority. The
@@ -199,11 +205,14 @@ be exactly `tail.version + 1` and to supersede the exact tail row key, then
 appends the new journal entry in the same transaction. Gap, fork,
 wrong-predecessor, duplicate-row, or non-monotonic insert fails.
 
-The migration deterministically backfills all existing source families in
-version order before enabling enforcement and fails rather than silently
-accepting any historical gap, fork, duplicate, or wrong predecessor. Existing
-rows without Slice E HMAC attestations can be journaled for append-only
-continuity and remain valid for existing consumers, but they stay `UNBOUND`.
+The migration takes write-conflicting table locks on all three canonical
+source tables before historical validation or backfill and holds them through
+append-trigger installation and commit. It then deterministically backfills
+all existing source families in version order before enabling enforcement and
+fails rather than silently accepting any historical gap, fork, duplicate, or
+wrong predecessor. Existing rows without Slice E HMAC attestations can be
+journaled for append-only continuity and remain valid for existing consumers,
+but they stay `UNBOUND`.
 
 Fixed BEFORE UPDATE OR DELETE guards reject mutation of all three source
 tables and the journal. Runtime roles retain only their exact existing source
@@ -217,10 +226,14 @@ of privilege drift.
 
 All Slice E source reads, writes, and family locks use the dedicated
 `fluencytracr_slice_e_runtime` login configured by
-`SLICE_E_RUNTIME_DATABASE_URL`. A missing URL, a different login, or an
-elevated login fails closed. The source-family runtime transaction holds its
-locks across the separate atomic four-artifact D/E seal, preserving the
-historical C.1 RLS posture on `ai_value_objects`.
+`SLICE_E_RUNTIME_DATABASE_URL`. Runtime readiness proves that this connection
+targets the same PostgreSQL server and database as the primary application
+connection, then runs family-head structural readiness on that runtime target.
+A missing URL, different database identity, different login, elevated login,
+invalid active HMAC write key, or invalid retained-read-key configuration
+fails health/readiness and Slice E authority closed. The source-family runtime
+transaction holds its locks across the separate atomic four-artifact D/E seal,
+preserving the historical C.1 RLS posture on `ai_value_objects`.
 
 E sealing and every readout must lock and exact-match the selected source row,
 version, predecessor, semantic commitment, and verified source-attestation

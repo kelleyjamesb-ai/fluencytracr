@@ -141,7 +141,7 @@ export const checkCanonicalIdentityFamilyHeadStructureReadiness = async (
           proc.proconfig,
           proc.proacl,
           pg_catalog.encode(
-            public.digest(
+            pg_catalog.sha256(
               pg_catalog.convert_to(
                 pg_catalog.regexp_replace(
                   pg_catalog.btrim(proc.prosrc),
@@ -150,8 +150,7 @@ export const checkCanonicalIdentityFamilyHeadStructureReadiness = async (
                   'g'
                 ),
                 'UTF8'
-              ),
-              'sha256'
+              )
             ),
             'hex'
           ) AS body_hash,
@@ -343,7 +342,7 @@ export const checkCanonicalIdentityFamilyHeadStructureReadiness = async (
              OR constraint_row.contype::TEXT <> expected.constraint_type
              OR NOT constraint_row.convalidated
              OR pg_catalog.encode(
-                  public.digest(
+                  pg_catalog.sha256(
                     pg_catalog.convert_to(
                       pg_catalog.regexp_replace(
                         pg_catalog.btrim(
@@ -357,8 +356,7 @@ export const checkCanonicalIdentityFamilyHeadStructureReadiness = async (
                         'g'
                       ),
                       'UTF8'
-                    ),
-                    'sha256'
+                    )
                   ),
                   'hex'
                 ) <> expected.definition_hash
@@ -388,7 +386,7 @@ export const checkCanonicalIdentityFamilyHeadStructureReadiness = async (
              OR NOT index_definition.indisvalid
              OR NOT index_definition.indisready
              OR pg_catalog.encode(
-                  public.digest(
+                  pg_catalog.sha256(
                     pg_catalog.convert_to(
                       pg_catalog.regexp_replace(
                         pg_catalog.btrim(
@@ -401,8 +399,7 @@ export const checkCanonicalIdentityFamilyHeadStructureReadiness = async (
                         'g'
                       ),
                       'UTF8'
-                    ),
-                    'sha256'
+                    )
                   ),
                   'hex'
                 ) <> expected.definition_hash

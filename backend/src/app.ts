@@ -66,6 +66,11 @@ import {
   insertDecisionLedgerEvaluation
 } from "./store";
 import { getOutcomeComparisonRuntimePrisma } from "./outcome-comparison-runtime-client";
+import {
+  canonicalIdentityRuntimeCredentialIsReady,
+  canonicalIdentityRuntimeTargetsPrimaryDatabase,
+  getCanonicalIdentityRuntimePrisma
+} from "./canonical-identity-runtime-client";
 import type {
   CanonicalControlSnapshotRecord,
   DecisionLedgerEvaluationRecord,
@@ -210,6 +215,7 @@ import {
 import { checkOutcomeComparisonAttestationReadiness } from "./outcome-comparison-attestation-config";
 import { checkOutcomeComparisonAttestationStructureReadiness } from "./outcome-comparison-attestation-structure";
 import { checkCanonicalIdentityFamilyHeadStructureReadiness } from "./canonical-identity-family-head-structure";
+import { parseCanonicalIdentityAttestationConfig } from "./canonical-identity-attestation-config";
 
 const app = express();
 // Trust proxy only in known reverse-proxy environments to avoid spoofable
@@ -1792,8 +1798,37 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
     ) {
       missingSecurity.push("outcome_comparison_attestation_structure");
     }
-    if (!(await checkCanonicalIdentityFamilyHeadStructureReadiness(prisma))) {
+    const sliceERuntimePrisma =
+      getCanonicalIdentityRuntimePrisma() ??
+      (process.env.NODE_ENV === "test" ? prisma : null);
+    if (!sliceERuntimePrisma) {
+      missingSecurity.push("canonical_identity_runtime_credential");
+      missingSecurity.push("canonical_identity_runtime_database");
       missingSecurity.push("canonical_identity_family_head_structure");
+    } else {
+      if (
+        !(await canonicalIdentityRuntimeCredentialIsReady(sliceERuntimePrisma))
+      ) {
+        missingSecurity.push("canonical_identity_runtime_credential");
+      }
+      if (
+        !(await canonicalIdentityRuntimeTargetsPrimaryDatabase(
+          prisma,
+          sliceERuntimePrisma
+        ))
+      ) {
+        missingSecurity.push("canonical_identity_runtime_database");
+      }
+      if (
+        !(await checkCanonicalIdentityFamilyHeadStructureReadiness(
+          sliceERuntimePrisma
+        ))
+      ) {
+        missingSecurity.push("canonical_identity_family_head_structure");
+      }
+    }
+    if (parseCanonicalIdentityAttestationConfig(process.env) === null) {
+      missingSecurity.push("canonical_identity_attestation_config");
     }
     let attestationReadiness: { ok: boolean; diagnostics: string[] };
     const c1RuntimePrisma = getOutcomeComparisonRuntimePrisma();

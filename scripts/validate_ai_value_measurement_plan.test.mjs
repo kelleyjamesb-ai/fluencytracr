@@ -127,9 +127,11 @@ test("valid layer-1-only draft plan passes", () => {
 
 test("optional Slice E binding is exact while legacy plans remain valid", () => {
   const legacy = buildValidDraftPlan({
-    comparisonWindowStart: "2026-06-01",
-    comparisonWindowEnd: "2026-06-30"
+    comparisonWindowStart: "2026-06-01T00:00:00.000Z",
+    comparisonWindowEnd: "2026-06-30T00:00:00.000Z"
   });
+  legacy.windows.baseline_window_start = "2026-05-01T00:00:00.000Z";
+  legacy.windows.baseline_window_end = "2026-05-31T00:00:00.000Z";
   assert.equal(validateMeasurementPlan(legacy).valid, true);
 
   const binding = buildCanonicalSliceBindingV1({
@@ -204,6 +206,38 @@ test("optional Slice E binding is exact while legacy plans remain valid", () => 
     validateMeasurementPlan(changedWindow).gaps.join("; "),
     /must match the Measurement Plan|does not match exact bytes/
   );
+
+  for (const nonCanonicalWindow of [
+    "2026-05-01",
+    "2026-05-01T00:00:00Z",
+    "2026-04-30T17:00:00.000-07:00"
+  ]) {
+    assert.throws(
+      () =>
+        buildCanonicalSliceBindingV1({
+          plan_version: 1,
+          workflow_commitment: "b".repeat(64),
+          jbtd_commitment: "c".repeat(64),
+          persona_commitment: "d".repeat(64),
+          baseline_window_start: nonCanonicalWindow,
+          baseline_window_end: "2026-05-31T00:00:00.000Z",
+          comparison_window_start: "2026-06-01T00:00:00.000Z",
+          comparison_window_end: "2026-06-30T00:00:00.000Z",
+          metric_id: legacy.metric_selection.primary_metric.metric_id,
+          metric_definition_ref: "metric-def/support-resolution/v1",
+          canonical_metric_definition_commitment_v1: "a".repeat(64),
+          outcome_source_system: "Support case management system",
+          measurement_unit: "hours",
+          approved_direction: "DECREASE",
+          approved_aggregate_grain:
+            legacy.workflow_scope.approved_aggregate_grain,
+          aggregate_only: true,
+          approved_at: "2026-07-29T00:00:00.000Z",
+          approved_by_role: "business_sponsor"
+        }),
+      /canonical UTC millisecond timestamp/
+    );
+  }
 });
 
 test("missing measurement_plan_id fails", () => {

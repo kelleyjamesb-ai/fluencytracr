@@ -12,6 +12,7 @@ import {
 } from "../outcome_evidence_admission_authority";
 import {
   canonicalIdentityRuntimeCredentialIsReady,
+  canonicalIdentityRuntimeTargetsPrimaryDatabase,
   getCanonicalIdentityRuntimePrisma
 } from "../canonical-identity-runtime-client";
 import { checkCanonicalIdentityFamilyHeadStructureReadiness } from "../canonical-identity-family-head-structure";
@@ -354,10 +355,15 @@ export const resolveCanonicalIdentityAuthority = async (
   selector: aiValueEngine.CanonicalIdentitySelector
 ): Promise<CanonicalIdentityAuthority | null> => {
   const runtimePrisma = getCanonicalIdentityRuntimePrisma();
+  const primaryPrisma = getPrisma();
   if (
     !runtimePrisma ||
     !(await canonicalIdentityRuntimeCredentialIsReady(runtimePrisma)) ||
-    !(await checkCanonicalIdentityFamilyHeadStructureReadiness(getPrisma()))
+    !(await canonicalIdentityRuntimeTargetsPrimaryDatabase(
+      primaryPrisma,
+      runtimePrisma
+    )) ||
+    !(await checkCanonicalIdentityFamilyHeadStructureReadiness(runtimePrisma))
   ) {
     return null;
   }

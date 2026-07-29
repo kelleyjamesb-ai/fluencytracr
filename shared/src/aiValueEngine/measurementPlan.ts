@@ -57,6 +57,8 @@ type CanonicalSliceBindingProjection = Omit<
 >;
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
+const CANONICAL_UTC_MILLISECOND_TIMESTAMP =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const VERSION_BEARING_REF =
   /(?:[/#@:](?:v|version)?\d+|(?:v|version)[_:-]?\d+)$/i;
 
@@ -607,10 +609,12 @@ function collectCanonicalSliceBindingGaps(
   ]) {
     if (
       typeof binding?.[field] !== "string" ||
-      !Number.isFinite(Date.parse(binding[field]))
+      !CANONICAL_UTC_MILLISECOND_TIMESTAMP.test(binding[field]) ||
+      !Number.isFinite(Date.parse(binding[field])) ||
+      new Date(binding[field]).toISOString() !== binding[field]
     ) {
       gaps.push(
-        `canonical_slice_binding_v1.${field} must be an exact timestamp`
+        `canonical_slice_binding_v1.${field} must be a canonical UTC millisecond timestamp`
       );
     }
   }

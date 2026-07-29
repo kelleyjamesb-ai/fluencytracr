@@ -902,6 +902,61 @@ describe("AI Value minimal persistence migration", () => {
 });
 
 describe("AI Value minimal persistence repository", () => {
+  it("rejects Slice E plan identity and version mismatches before durable authority lookup", async () => {
+    const plan = measurementPlan();
+    plan.windows.baseline_window_start = "2026-05-01T00:00:00.000Z";
+    plan.windows.baseline_window_end = "2026-05-31T00:00:00.000Z";
+    plan.windows.comparison_window_start = "2026-06-01T00:00:00.000Z";
+    plan.windows.comparison_window_end = "2026-06-30T00:00:00.000Z";
+    plan.canonical_slice_binding_v1 =
+      aiValueEngine.buildCanonicalSliceBindingV1({
+        plan_version: 1,
+        workflow_commitment: "b".repeat(64),
+        jbtd_commitment: "c".repeat(64),
+        persona_commitment: "d".repeat(64),
+        baseline_window_start: plan.windows.baseline_window_start,
+        baseline_window_end: plan.windows.baseline_window_end,
+        comparison_window_start: plan.windows.comparison_window_start,
+        comparison_window_end: plan.windows.comparison_window_end,
+        metric_id: plan.metric_selection.primary_metric.metric_id,
+        metric_definition_ref: "metric-def/support-resolution/v1",
+        canonical_metric_definition_commitment_v1: "a".repeat(64),
+        outcome_source_system: "Support case management system",
+        measurement_unit: "hours",
+        approved_direction: "DECREASE",
+        approved_aggregate_grain:
+          plan.workflow_scope.approved_aggregate_grain,
+        aggregate_only: true,
+        approved_at: "2026-07-29T00:00:00.000Z",
+        approved_by_role: "business_sponsor"
+      });
+
+    const hypothesisMismatch = await persistAiValueMeasurementPlan({
+      measurementPlan: plan,
+      version: 1,
+      valueHypothesisId: "different_aggregate_hypothesis",
+      valueHypothesisVersion: 1,
+      createdByRole: "value_realization_pm"
+    }).catch((error) => error);
+    expect(hypothesisMismatch).toBeInstanceOf(AiValuePersistenceValidationError);
+    expect(hypothesisMismatch.gaps).toContain(
+      "valueHypothesisId must match Measurement Plan value_hypothesis_id"
+    );
+
+    const planVersionMismatch = await persistAiValueMeasurementPlan({
+      measurementPlan: plan,
+      version: 2,
+      valueHypothesisId: plan.value_hypothesis.value_hypothesis_id,
+      valueHypothesisVersion: 1,
+      createdByRole: "value_realization_pm"
+    }).catch((error) => error);
+    expect(planVersionMismatch).toBeInstanceOf(AiValuePersistenceValidationError);
+    expect(planVersionMismatch.gaps).toContain(
+      "version must match canonical_slice_binding_v1.plan_version"
+    );
+    expect(store.aiValueMeasurementPlans.size).toBe(0);
+  });
+
   it("persists validated value hypotheses and measurement plans append-only", async () => {
     const plan = measurementPlan();
 
