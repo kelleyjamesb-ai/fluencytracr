@@ -243,6 +243,20 @@ describe("C.1 outcome comparison privacy migration", () => {
       expect(script).toContain(
         "REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM fluencytracr_c1_attestation_provisioner"
       );
+      expect(script).toContain(
+        "REVOKE CREATE ON SCHEMA public FROM PUBLIC"
+      );
+      expect(script).toContain(
+        "REVOKE CREATE ON SCHEMA public FROM fluencytracr_c1_runtime"
+      );
+      expect(script).toContain(
+        "REVOKE CREATE ON SCHEMA public FROM fluencytracr_c1_attestation_provisioner"
+      );
+      expect(script).not.toContain("registered_nonrevoked_count");
+      expect(script).not.toContain("CONFIGURED_KEY_SET_MISMATCH");
+      expect(script).toContain(
+        "configured_active_key_id = ANY(configured_key_ids)"
+      );
     }
   });
 

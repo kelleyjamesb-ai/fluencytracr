@@ -1259,6 +1259,22 @@ const assertRestrictedRolePosture = async () => {
   if ((publicGrants[0]?.grant_count ?? 0) !== 0) {
     throw new Error("PUBLIC retains C.1 table privileges");
   }
+  for (const role of [
+    "fluencytracr_c1_runtime",
+    "fluencytracr_c1_attestation_provisioner"
+  ]) {
+    const schemaPrivilege = await prisma.$queryRawUnsafe(
+      `SELECT pg_catalog.has_schema_privilege(
+         $1,
+         'public',
+         'CREATE'
+       ) AS "has_create"`,
+      role
+    );
+    if (schemaPrivilege[0]?.has_create) {
+      throw new Error(`${role} retains public-schema CREATE privilege`);
+    }
+  }
   for (const role of ["anon", "authenticated"]) {
     const rows = await prisma.$queryRawUnsafe(
       `SELECT EXISTS (
@@ -2010,6 +2026,13 @@ const assertRollbackScopedStructuralDrift = async () => {
         )
     },
     {
+      label: "restricted public-schema DDL",
+      mutate: (transaction) =>
+        transaction.$executeRawUnsafe(
+          "GRANT CREATE ON SCHEMA public TO PUBLIC"
+        )
+    },
+    {
       label: "provisioner activation sequence UPDATE",
       mutate: (transaction) =>
         transaction.$executeRawUnsafe(
@@ -2541,6 +2564,56 @@ const assertAttestationRotationAndRevocation = async () => {
       INSERT INTO public.outcome_comparison_attestation_keys
         (key_id, algorithm, secret_hash)
       VALUES (${secondaryKeyId}, 'HMAC-SHA-256', ${secondarySecretHash})
+    `;
+  });
+  const stagedReadiness = await runtimePrisma.$queryRawUnsafe(
+    `SELECT ok, diagnostics
+     FROM public.outcome_comparison_attestation_readiness(
+       $1,
+       ARRAY[$2]::text[],
+       ARRAY[$3]::text[]
+     )`,
+    attestationKeyId,
+    attestationKeyId,
+    attestationSecret
+  );
+  if (
+    stagedReadiness.length !== 1 ||
+    stagedReadiness[0]?.ok !== true ||
+    stagedReadiness[0]?.diagnostics?.length !== 0
+  ) {
+    throw new Error(
+      `inactive unreferenced staged key broke readiness: ${JSON.stringify(stagedReadiness)}`
+    );
+  }
+  const omittedActiveReadiness = await runtimePrisma.$queryRawUnsafe(
+    `SELECT ok, diagnostics
+     FROM public.outcome_comparison_attestation_readiness(
+       $1,
+       ARRAY[$2]::text[],
+       ARRAY[$3]::text[]
+     )`,
+    attestationKeyId,
+    secondaryKeyId,
+    secondarySecret
+  );
+  if (
+    omittedActiveReadiness.length !== 1 ||
+    omittedActiveReadiness[0]?.ok !== false ||
+    !omittedActiveReadiness[0]?.diagnostics?.includes("CONFIG_INVALID")
+  ) {
+    throw new Error(
+      `omitted active key did not fail readiness: ${JSON.stringify(omittedActiveReadiness)}`
+    );
+  }
+  await prisma.$transaction(async (transaction) => {
+    await transaction.$executeRawUnsafe(
+      "SET LOCAL ROLE fluencytracr_c1_attestation_provisioner"
+    );
+    await transaction.$executeRaw`
+      SELECT pg_catalog.pg_advisory_xact_lock(
+        pg_catalog.hashtextextended('FT_C1_ATTESTATION_PROVISIONING_V1', 0)
+      )
     `;
     await transaction.$executeRaw`
       INSERT INTO public.outcome_comparison_attestation_key_activations (key_id)

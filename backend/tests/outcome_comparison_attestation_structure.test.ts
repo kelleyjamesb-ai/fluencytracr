@@ -74,6 +74,15 @@ describe("C.1 exact attestation structural readiness", () => {
     expect(inspectedSql).toContain(
       "provisioner_forbidden_sequence"
     );
+    expect(inspectedSql).toContain(
+      "has_schema_privilege"
+    );
+    expect(inspectedSql).toContain(
+      "'fluencytracr_c1_runtime'"
+    );
+    expect(inspectedSql).toContain(
+      "'fluencytracr_c1_attestation_provisioner'"
+    );
     expect(inspectedSql).not.toContain(
       "'public.outcome_comparison_privacy_releases', 'SELECT,INSERT'"
     );

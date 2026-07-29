@@ -172,13 +172,21 @@ authority SHALL fail structural readiness.
 - **THEN** PostgreSQL SHALL deny it
 - **AND** provisioning SHALL insert-or-exact-verify under the separate
   deployment-only role without replacing or adopting a mismatch
+- **AND** neither the runtime nor provisioner role SHALL have effective
+  `CREATE` authority on schema `public`, whether granted directly, through
+  `PUBLIC`, or through role membership
+- **AND** any such effective schema authority SHALL fail structural readiness
 - **AND** direct key-journal reads SHALL remain denied while a bounded
   security-definer readiness function accepts parameterized validated key
   arrays and returns only boolean/closed diagnostics
 
 #### Scenario: Attestation key rotates or is revoked
 
-- **WHEN** a new registered key becomes active and the prior key and secret
+- **WHEN** a new non-revoked key is registered but remains inactive and
+  unreferenced
+- **THEN** existing instances configured with the current active key SHALL
+  remain ready during the staging interval
+- **BUT WHEN** the new registered key becomes active and the prior key and secret
   remain retained
 - **THEN** new releases SHALL bind the new key and old releases SHALL continue
   exact replay/readback under their stored key IDs

@@ -217,6 +217,9 @@ REVOKE ALL ON TABLE public.outcome_comparison_attestation_key_activations FROM P
 REVOKE ALL ON TABLE public.outcome_comparison_attestation_key_revocations FROM PUBLIC;
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM fluencytracr_c1_attestation_provisioner;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM fluencytracr_c1_attestation_provisioner;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+REVOKE CREATE ON SCHEMA public FROM fluencytracr_c1_runtime;
+REVOKE CREATE ON SCHEMA public FROM fluencytracr_c1_attestation_provisioner;
 
 GRANT SELECT, INSERT ON TABLE
   public.outcome_comparison_attestation_keys,
@@ -558,7 +561,6 @@ DECLARE
   registry_hash TEXT;
   registry_algorithm TEXT;
   registry_revoked BOOLEAN;
-  registered_nonrevoked_count INTEGER;
 BEGIN
   ok := true;
   diagnostics := ARRAY[]::TEXT[];
@@ -573,6 +575,7 @@ BEGIN
      OR pg_catalog.cardinality(configured_key_ids) = 0
      OR pg_catalog.cardinality(configured_key_ids) <>
         pg_catalog.cardinality(configured_secrets)
+     OR NOT (configured_active_key_id = ANY(configured_key_ids))
      OR EXISTS (
        SELECT 1
        FROM pg_catalog.unnest(configured_key_ids) AS configured(key_id)
@@ -636,16 +639,6 @@ BEGIN
     END IF;
   END LOOP;
 
-  SELECT pg_catalog.count(*)::INTEGER
-  INTO registered_nonrevoked_count
-  FROM public.outcome_comparison_attestation_keys AS key_row
-  LEFT JOIN public.outcome_comparison_attestation_key_revocations AS revocation
-    ON revocation.key_id = key_row.key_id
-  WHERE revocation.key_id IS NULL;
-  IF registered_nonrevoked_count <> pg_catalog.cardinality(configured_key_ids) THEN
-    ok := false;
-    diagnostics := pg_catalog.array_append(diagnostics, 'CONFIGURED_KEY_SET_MISMATCH');
-  END IF;
   IF EXISTS (
     SELECT 1
     FROM public.outcome_comparison_privacy_releases AS release_row

@@ -258,14 +258,18 @@ bounded security-definer function owned by the migration owner with fixed
 only to `fluencytracr_c1_runtime`. The app validates configuration, then
 parameterizes `active_key_id`, equal-length `key_ids[]`, and `secrets[]`. The
 function revalidates all shapes, compares secret hashes internally, requires
-the active ID to equal the greatest committed activation, then separately
-requires that exact key to be registered and non-revoked, checks every
+the configured active ID to be present in the configured key array and to equal
+the greatest committed activation, then separately requires that exact key to
+be registered and non-revoked with a matching configured secret, checks every
 non-revoked key referenced by a release, and returns only `ok boolean` plus a
 closed array of diagnostic codes. It never skips a revoked greatest
 activation; recovery requires appending a newer activation. It never returns
 key IDs, hashes, secrets, journal rows, or release data and never stores or
-logs input. Empty, duplicate, malformed, mismatched, missing, or extra array
-entries fail closed.
+logs input. Empty, duplicate, malformed, mismatched, missing, or unregistered
+array entries fail closed. A registered, non-revoked key that is neither active
+nor referenced by a release may remain absent from an instance configuration
+while it is staged before activation; this is the only registry/configuration
+set difference that remains ready.
 
 Exact replay returns the original receipt and stored projection. Any changed
 proof, value, evidence, window, slice, metric, source, unit, cohort context, or

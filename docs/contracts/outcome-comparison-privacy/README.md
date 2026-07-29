@@ -96,7 +96,9 @@ lock completes before the later mutation, after which stale replay/readback
 holds.
 
 Database readiness separately attests exact `pgcrypto` membership, direct
-login role attributes and absence of role memberships, attestation table
+login role attributes, absence of role memberships, and the absence of
+effective `CREATE` authority on the `public` schema for both restricted roles,
+attestation table
 ownership/types/nullability/RLS, constraints and foreign keys, the complete
 policy and ACL set, append-only and creation-stamp trigger bindings, and exact
 codec/stamp/verifier/readiness signatures, bodies, owners, volatility,
@@ -137,5 +139,9 @@ Deployment key lifecycle is explicit and append-only:
    and every release bound to that key holds.
 
 Provisioning is insert-or-exact-verify. It never updates, replaces, adopts, or
-prints a secret. Activation is serialized and greatest-epoch authoritative.
+prints a secret. An inactive, unreferenced registered key may be staged before
+its configuration is deployed without making existing instances unready;
+readiness still requires every configured key and every non-revoked
+release-referenced key to have a valid retained secret. Activation is
+serialized and greatest-epoch authoritative.
 Revocation never falls back to an earlier activation.

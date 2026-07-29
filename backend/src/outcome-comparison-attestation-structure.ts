@@ -35,8 +35,8 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
            'configured_active_key_id text, configured_key_ids text[], configured_secrets text[]',
            'TABLE(ok boolean, diagnostics text[])', true, 'v',
            'plpgsql', NULL, 'u', false, ARRAY['search_path=pg_catalog, public']::TEXT[],
-           ARRAY['87c7112b44ac771c0fd83aa5694b3ae4c70e16530ec9c95985ae4bb7455b842a',
-                 'b098257a585d37a0e112c786270a901b74a1b550aae1d16a18eeb088d91baeca']::TEXT[], true),
+           ARRAY['5becef391b62973f6e2c1a7f1e3865393f029c72b094cc1a2356dcea486c547f',
+                 '0be99f008fbeba346c3f3eea056fefb590ffbcfb5639b9ea7dd50996f736ae6b']::TEXT[], true),
           ('reject_c1_runtime_lock_only_mutation', '', 'trigger', false, 'v',
            'plpgsql', NULL, 'u', false, ARRAY['search_path=pg_catalog']::TEXT[],
            ARRAY['80df9f95714a47444d65fc21a0b56e5790461142b6c528c4268e68d9558239d3']::TEXT[], false),
@@ -286,6 +286,18 @@ export const checkOutcomeComparisonAttestationStructureReadiness = async (
           WHERE rolname IN (
             'fluencytracr_c1_runtime',
             'fluencytracr_c1_attestation_provisioner'
+          )
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM (VALUES
+            ('fluencytracr_c1_runtime'),
+            ('fluencytracr_c1_attestation_provisioner')
+          ) AS restricted_role(role_name)
+          WHERE pg_catalog.has_schema_privilege(
+            restricted_role.role_name,
+            'public',
+            'CREATE'
           )
         )
         AND NOT EXISTS (
