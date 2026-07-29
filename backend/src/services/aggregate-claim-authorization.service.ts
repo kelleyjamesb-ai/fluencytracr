@@ -14,6 +14,7 @@ import {
   aiValueObjectSemanticHash,
   aiValueObjectUsesPrisma,
   getAiValueObject,
+  listAiValueObjects,
   readAiValueClaimBundle,
   readAiValueObjectSet,
   sealAiValueClaimBundleSerializable,
@@ -119,6 +120,27 @@ const sourceSetMatches = (
     (record) =>
       byKey.get(`${record.object_type}:${record.object_id}`) === aiValueObjectSemanticHash(record)
   );
+};
+
+const readinessByCommitment = async (
+  orgId: string,
+  readinessRefCommitment: string,
+  readinessHash: string
+): Promise<AiValueObjectStoredRecord | null> => {
+  const matches = (await listAiValueObjects(orgId, "evidence_readiness")).filter(
+    (record) => {
+      const semanticHash = aiValueObjectSemanticHash(record);
+      return (
+        semanticHash === readinessHash &&
+        aiValueEngine.aggregateClaimSourceRefCommitment(
+          "evidence_readiness",
+          record.object_id,
+          semanticHash
+        ) === readinessRefCommitment
+      );
+    }
+  );
+  return matches.length === 1 ? matches[0] : null;
 };
 
 const resolveAuthoritativeSourceGraph = async (
@@ -454,19 +476,37 @@ export const readAuthorizedAggregateClaim = async (
     ) {
       return null;
     }
-    const seal = manifest.data.core.source_graph_seal;
+    const readinessRecord = await readinessByCommitment(
+      orgId,
+      manifest.data.core.readiness_ref_commitment,
+      manifest.data.core.readiness_hash
+    );
+    const seal = aiValueEngine.AggregateClaimSourceGraphSealSchema.safeParse(
+      readinessRecord?.validation.aggregate_claim_source_graph
+    );
+    if (!readinessRecord || !seal.success) return null;
     const graph = await resolveAuthoritativeSourceGraph({
       orgId,
-      blueprintId: seal.blueprint_id,
-      metricsLibraryId: seal.metrics_library_id,
-      scenarioId: seal.scenario_id,
-      outcomeEvidenceExportId: seal.outcome_evidence_export_id,
-      outcomeEvidenceReadinessId: manifest.data.core.readiness_id,
+      blueprintId: seal.data.blueprint_id,
+      metricsLibraryId: seal.data.metrics_library_id,
+      scenarioId: seal.data.scenario_id,
+      outcomeEvidenceExportId: seal.data.outcome_evidence_export_id,
+      outcomeEvidenceReadinessId: readinessRecord.object_id,
       persist: true
     });
     if (
       !graph ||
-      !deepEqual(graph.sourceGraphSeal, seal) ||
+      !deepEqual(
+        aiValueEngine.aggregateClaimSourceGraphCommitment(graph.sourceGraphSeal),
+        manifest.data.core.source_graph
+      ) ||
+      aiValueEngine.aggregateClaimSliceCommitment({
+        orgId: graph.expectedSlice.org_id,
+        workflowId: graph.expectedSlice.workflow_id,
+        jbtdId: graph.expectedSlice.jbtd_id,
+        personaId: graph.expectedSlice.persona_id,
+        sourceGraphCommitment: manifest.data.core.source_graph.source_graph_commitment
+      }) !== manifest.data.core.slice_commitment ||
       aiValueObjectSemanticHash(graph.readinessRecord) !== manifest.data.core.readiness_hash ||
       aiValueEngine.aggregateClaimHash(
         "FT_AGGREGATE_CLAIM_ACCEPTED_EXPORT_PAYLOAD_V1",
@@ -487,7 +527,8 @@ export const readAuthorizedAggregateClaim = async (
       comparison.decision !== "ATOMIC_COMPARISON_PRIVACY_RELEASED" ||
       !comparisonMatchesGraph(graph, comparison) ||
       !deepEqual(comparison.receipt, manifest.data.core.comparison_privacy_receipt) ||
-      !deepEqual(comparison.projection, manifest.data.core.comparison_projection)
+      aiValueEngine.aggregateClaimComparisonProjectionCommitment(comparison.projection) !==
+        manifest.data.core.comparison_projection_commitment
     ) {
       return null;
     }

@@ -35,20 +35,22 @@ vocabulary requires a reviewed contract version; upstream storage or C.1
 acceptance does not extend Slice D authority.
 
 The C.1 projection source system must independently match the compiled
-server-owned Slice D source-system vocabulary represented by
-`manifest.core.comparison_projection.source_system` in the synchronized JSON
-Schema. This prevents arbitrary source labels, person-shaped text, or other
-customer-authored strings from entering the internal authorization manifest.
-Upstream storage, review, and C.1 release remain non-authorizing for this
-boundary.
+server-owned Slice D source-system vocabulary represented by the synchronized
+runtime and JSON Schema definitions. The source label is validated transiently
+and the reserved artifacts retain only a domain-separated commitment to the
+complete C.1 projection. Upstream storage, review, and C.1 release remain
+non-authorizing for this boundary.
 
-Every Slice D slice, source-graph, readiness, and C.1 evidence identifier must
-also pass the aggregate-safe identifier boundary before artifact generation.
-The boundary accepts only lowercase machine identifiers and rejects
-identifier tokens associated with people, direct identifiers, causal or
-attribution claims, model output, financial/ROI claims, productivity,
-prediction, ranking, scoring, and customer-facing authorization. This is a
-Slice D storage boundary; it does not alter upstream C.1 contracts.
+Reserved Slice D payloads never store raw organization, workflow, JBTD,
+persona, source-object, readiness, or C.1 evidence identifiers. The authority
+uses those identifiers transiently to reconcile the exact upstream graph,
+then stores only domain-separated commitments for the slice, source graph,
+readiness reference, and complete C.1 projection. The authenticated
+organization remains the database row's tenant/RLS envelope, and the reserved
+row's `workflow_family` is null; neither value is duplicated into artifact
+payloads. These private commitments are storage-minimization bindings, not
+canonical identities, public pseudonyms, or person-level signals. Canonical
+identity compatibility remains Slice E scope.
 
 ## Authority chain
 
@@ -83,10 +85,11 @@ They are excluded from generic create, read, list, and upsert paths. Existing
 non-authoritative.
 
 Claim and packet content hashes exclude their envelope IDs. The manifest core
-binds all source, C.1, policy, template, claim-content, and packet-content
-bytes. Its hash derives the manifest ID and separate domain-derived claim and
-packet IDs. Exact replay may reuse the same three rows; a conflicting row is
-never updated or adopted.
+binds the opaque slice, source-graph, readiness, and C.1 projection
+commitments; approved source-content hashes; the non-identifying C.1 receipt;
+policy; template; and claim/packet content hashes. Its hash derives the
+manifest ID and separate domain-derived claim and packet IDs. Exact replay may
+reuse the same three rows; a conflicting row is never updated or adopted.
 
 ## Failure posture
 

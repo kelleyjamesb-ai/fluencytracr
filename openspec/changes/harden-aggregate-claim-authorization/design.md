@@ -198,9 +198,14 @@ The synchronized JSON Schema is the normative enumeration for both compiled
 movement vocabularies and the compiled server-owned source-system vocabulary.
 Upstream storage, accepted review, and C.1 release do not add metric
 identifiers, measurement units, or source labels to Slice D authority.
-Every slice, source-graph, readiness, and C.1 evidence identifier is
-independently revalidated by the Slice D aggregate-safe identifier boundary
-before it can enter a reserved artifact.
+Raw slice, source-graph, readiness, and C.1 evidence identifiers are used only
+while reconciling authoritative upstream state. Reserved artifacts replace
+them with domain-separated slice, source-graph, readiness-reference, and
+complete-projection commitments. The authenticated organization remains only
+as the database tenant/RLS envelope, and reserved rows set
+`workflow_family = null`. These private commitments provide exact D binding
+without defining canonical identity compatibility, which remains Slice E
+scope.
 
 ### Internal artifact namespace and non-circular identity
 
@@ -232,14 +237,15 @@ The backend canonicalizes strict JSON with sorted object keys, frames
 hash-critical payloads by domain, and hashes with SHA-256. The manifest core
 binds:
 
-- authenticated organization and server-derived exact
-  workflow/JBTD/persona identity;
-- accepted Outcome Evidence export ID, payload hash, review state, and
-  authoritative admission receipt;
+- a domain-separated commitment to the authenticated organization and
+  server-derived exact workflow/JBTD/persona slice;
+- accepted Outcome Evidence content and review hashes plus a commitment to the
+  authoritative source graph;
 - the exact returned C.1 receipt, including its proof-journal ID, reservation
-  key, content fingerprint, and projection hash, plus the complete returned
-  projection bytes;
-- blueprint, metrics library, scenario, and readiness object IDs/hashes;
+  key, content fingerprint, and projection hash, plus a separate commitment to
+  the complete returned projection;
+- blueprint, metrics library, scenario, and readiness hashes plus an opaque
+  readiness-reference commitment;
 - the complete independent policy-state projection;
 - template ID/version;
 - claim-boundary content hash; and

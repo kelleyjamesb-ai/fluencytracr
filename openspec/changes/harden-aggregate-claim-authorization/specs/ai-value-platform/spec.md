@@ -152,14 +152,18 @@ label that movement `OBSERVED_NON_ATTRIBUTABLE`.
 - **AND** the arbitrary label SHALL NOT enter an internal artifact or fixed
   held response
 
-#### Scenario: Person-shaped or claim-bearing aggregate identity
+#### Scenario: Raw aggregate identity reaches the artifact boundary
 
-- **WHEN** any Slice D slice, source-graph, readiness, or C.1 evidence
-  identifier contains person/direct-identifier tokens or unsupported claim
-  semantics
-- **THEN** claim authorization SHALL hold before artifact generation
-- **AND** the identifier SHALL NOT enter a claim, packet, manifest, or fixed
-  held response
+- **WHEN** authoritative Slice D slice, source-graph, readiness, or C.1
+  evidence identifiers are used to authorize one exact movement
+- **THEN** the claim, packet, and manifest SHALL retain only domain-separated
+  commitments to those identities and the complete C.1 projection
+- **AND** no raw identifier SHALL enter an artifact payload or fixed held
+  response
+- **AND** reserved persistence SHALL keep the authenticated organization only
+  as the tenant/RLS row envelope and SHALL store a null workflow family
+- **AND** the commitments SHALL NOT define Slice E canonical identity
+  compatibility
 
 #### Scenario: Multiple movement or overflow attempt
 

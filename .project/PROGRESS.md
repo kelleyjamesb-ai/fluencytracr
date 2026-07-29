@@ -4482,3 +4482,35 @@
   shared/backend build with Prisma generation, strict OpenSpec, whitespace,
   builder/reconciler rejection probes, and the real Slice D PostgreSQL
   verifier against disposable local PostgreSQL.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII Slice D commitment-only artifact repair)
+
+- James authorized the one remaining Slice D architectural move identified by
+  exact review: reserved claim, packet, and manifest payloads now replace raw
+  organization/workflow/JBTD/persona, source-object, readiness, and C.1
+  evidence identities with domain-separated commitments. The authenticated
+  organization remains only the existing database tenant/RLS envelope, and
+  reserved rows persist `workflow_family = null`.
+- Authorization still resolves and validates the exact raw upstream graph
+  transiently. Readback resolves the authoritative readiness row by its
+  readiness-reference commitment plus semantic hash, fails on zero or
+  multiple matches, reloads the materializer-owned raw seal, and repeats
+  source-graph, slice, C.1 receipt, and complete-projection commitment checks.
+  The commitments are private Slice D storage bindings; they do not define
+  canonical identity compatibility, which remains Slice E scope.
+- Runtime contracts, JSON Schema, OpenSpec, contract documentation, repository
+  storage, focused tests, and the PostgreSQL verifier are synchronized.
+  Regression coverage proves person-shaped raw identity text is absent from
+  every artifact payload, commitment domains differ, projection mutation
+  changes the manifest identity, reserved workflow columns are null, and
+  exact authorization/readback still succeeds.
+- Focused verification passes 72/72 backend tests, shared/backend builds with
+  Prisma generation, strict OpenSpec, JSON parsing, whitespace, and the full
+  C.0/C.1/Slice D PostgreSQL verifier sequence against fresh disposable
+  PostgreSQL 16. No migration was added or applied to production, and nothing
+  was deployed.
+- Remaining gates: create the immutable repair commit; run exact-commit
+  CODE/BUG/ADVERSARIAL review; run the full required suite once on the final
+  reviewed SHA; push; create the Slice D PR; wait for required current-head
+  GitHub checks; and normal-merge. Slice E must start from fresh current
+  `main`.

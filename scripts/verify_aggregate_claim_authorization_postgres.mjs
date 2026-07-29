@@ -276,6 +276,32 @@ const internalRows = await prisma.aiValueObject.findMany({
   }
 });
 assert(internalRows.length === 3, "exact replay inserted duplicate artifacts");
+assert(
+  internalRows.every((row) => row.workflowFamily === null),
+  "reserved Slice D artifacts duplicated raw workflow identity into workflow_family"
+);
+const rawArtifactIdentities = [
+  orgId,
+  projection.workflow_id,
+  projection.jbtd_id,
+  projection.persona_id,
+  projection.baseline_window.evidence_id,
+  projection.comparison_window.evidence_id,
+  blueprint.blueprint_id,
+  metricsLibrary.library_id,
+  scenarioId,
+  outcomeExportId,
+  readinessId
+];
+const storedArtifactPayloads = JSON.stringify(
+  internalRows.map((row) => row.payloadJson)
+);
+for (const identity of rawArtifactIdentities) {
+  assert(
+    !storedArtifactPayloads.includes(identity),
+    `reserved Slice D payload retained raw identity ${identity}`
+  );
+}
 
 const genericList = await request(app).get("/api/v1/ai-value/objects").set(readoutAuth).expect(200);
 assert(

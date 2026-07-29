@@ -183,7 +183,7 @@ const artifactInput = (
   objectType: string,
   objectId: string,
   payload: Record<string, unknown>,
-  workflowFamily: string,
+  workflowFamily: string | null,
   manifestId: string
 ): AiValueObjectUpsertInput => ({
   orgId,
@@ -285,7 +285,9 @@ export async function sealAiValueClaimBundleSerializable(input: {
       left.object_type.localeCompare(right.object_type) ||
       left.object_id.localeCompare(right.object_id)
   );
-  const workflowFamily = input.manifest.core.workflow_id;
+  // Reserved Slice D artifacts retain only opaque commitments in their payload
+  // and do not duplicate a raw workflow identity into the row envelope.
+  const workflowFamily = null;
   const artifactInputs = [
     artifactInput(
       input.orgId,

@@ -12,6 +12,8 @@ export const AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION =
   "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07";
 export const AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID = "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1";
 export const AGGREGATE_CLAIM_SOURCE_GRAPH_SCHEMA_VERSION = "FT_AGGREGATE_CLAIM_SOURCE_GRAPH_V1";
+export const AGGREGATE_CLAIM_SOURCE_GRAPH_COMMITMENT_SCHEMA_VERSION =
+  "FT_AGGREGATE_CLAIM_SOURCE_GRAPH_COMMITMENT_V1";
 export const AGGREGATE_CLAIM_MANIFEST_SCHEMA_VERSION =
   "FT_AGGREGATE_CLAIM_AUTHORIZATION_MANIFEST_V1";
 export const AGGREGATE_CLAIM_ARTIFACT_SCHEMA_VERSION = "FT_AGGREGATE_CLAIM_AUTHORIZED_ARTIFACT_V1";
@@ -82,15 +84,8 @@ export const AGGREGATE_CLAIM_SOURCE_SYSTEMS = [
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const SAFE_ID = /^[a-z0-9][a-z0-9:_-]{0,511}$/;
-const FORBIDDEN_CLAIM_TOKEN =
-  /(?:^|[_:-])(?:attributable|attribution|cause|caused|causal|causality|confidence|dollar|email|employee|facing|impact|improvement|individual|member|model|money|name|participant|person|prediction|probability|productivity|rank|respondent|revenue|roi|score|subject|user)(?:$|[_:-])/;
 
-const safeId = z
-  .string()
-  .regex(SAFE_ID)
-  .refine((value) => !FORBIDDEN_CLAIM_TOKEN.test(value), {
-    message: "identifier contains blocked claim semantics"
-  });
+const safeId = z.string().regex(SAFE_ID);
 const exactHash = z.string().regex(SHA256_HEX);
 const finiteNumber = z.number().finite();
 const nonNegativeInteger = z.number().int().nonnegative();
@@ -134,6 +129,21 @@ export const AggregateClaimSourceGraphSealSchema = z
 
 export type AggregateClaimSourceGraphSeal = z.infer<typeof AggregateClaimSourceGraphSealSchema>;
 
+export const AggregateClaimSourceGraphCommitmentSchema = z
+  .object({
+    schema_version: z.literal(AGGREGATE_CLAIM_SOURCE_GRAPH_COMMITMENT_SCHEMA_VERSION),
+    source_graph_commitment: exactHash,
+    outcome_evidence_content_hash: exactHash,
+    blueprint_hash: exactHash,
+    metrics_library_hash: exactHash,
+    scenario_hash: exactHash
+  })
+  .strict();
+
+export type AggregateClaimSourceGraphCommitment = z.infer<
+  typeof AggregateClaimSourceGraphCommitmentSchema
+>;
+
 export const AggregateObservedMovementSchema = z
   .object({
     metric_id: AggregateClaimMetricIdSchema,
@@ -175,7 +185,7 @@ const exactCaveats = z
     message: "aggregate claim caveats must match the fixed template"
   });
 
-export const AggregateAuthorizedClaimContentSchema = z
+const AggregateClaimAuthorizationInputContentSchema = z
   .object({
     policy_version: z.literal(AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION),
     template_id: z.literal(AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID),
@@ -190,16 +200,25 @@ export const AggregateAuthorizedClaimContentSchema = z
   })
   .strict();
 
+export const AggregateAuthorizedClaimContentSchema = z
+  .object({
+    policy_version: z.literal(AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION),
+    template_id: z.literal(AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID),
+    slice_commitment: exactHash,
+    movement: AggregateObservedMovementSchema,
+    caveats: exactCaveats,
+    model_use_authorized: z.literal(false),
+    customer_facing_output_authorized: z.literal(false)
+  })
+  .strict();
+
 export type AggregateAuthorizedClaimContent = z.infer<typeof AggregateAuthorizedClaimContentSchema>;
 
 export const AggregateAuthorizedPacketContentSchema = z
   .object({
     policy_version: z.literal(AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION),
     template_id: z.literal(AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID),
-    org_id: safeId,
-    workflow_id: safeId,
-    jbtd_id: safeId,
-    persona_id: safeId,
+    slice_commitment: exactHash,
     claim_content_hash: exactHash,
     movement: AggregateObservedMovementSchema,
     caveats: exactCaveats,
@@ -214,17 +233,14 @@ export type AggregateAuthorizedPacketContent = z.infer<
 export const AggregateClaimManifestCoreSchema = z
   .object({
     policy_version: z.literal(AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION),
-    org_id: safeId,
-    workflow_id: safeId,
-    jbtd_id: safeId,
-    persona_id: safeId,
-    source_graph_seal: AggregateClaimSourceGraphSealSchema,
-    readiness_id: safeId,
+    slice_commitment: exactHash,
+    source_graph: AggregateClaimSourceGraphCommitmentSchema,
+    readiness_ref_commitment: exactHash,
     readiness_hash: exactHash,
     accepted_export_payload_hash: exactHash,
     accepted_review_hash: exactHash,
     comparison_privacy_receipt: OutcomeComparisonPrivacyReceiptSchema,
-    comparison_projection: AggregateClaimComparisonProjectionSchema,
+    comparison_projection_commitment: exactHash,
     policy_state: AggregateClaimPolicyStateSchema,
     template_id: z.literal(AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID),
     claim_content_hash: exactHash,
@@ -339,6 +355,62 @@ export const aggregateClaimCanonicalBytes = (domain: string, value: unknown): Ui
 
 export const aggregateClaimHash = (domain: string, value: unknown): string =>
   createHash("sha256").update(aggregateClaimCanonicalBytes(domain, value)).digest("hex");
+
+export const aggregateClaimSourceRefCommitment = (
+  objectType: string,
+  objectId: string,
+  sourceHash: string
+): string =>
+  aggregateClaimHash("FT_AGGREGATE_CLAIM_SOURCE_REF_COMMITMENT_V1", {
+    object_type: safeId.parse(objectType),
+    object_id: safeId.parse(objectId),
+    source_hash: exactHash.parse(sourceHash)
+  });
+
+export const aggregateClaimSourceGraphCommitment = (
+  sealInput: unknown
+): AggregateClaimSourceGraphCommitment => {
+  const seal = AggregateClaimSourceGraphSealSchema.parse(sealInput);
+  const { source_graph_hash: sourceGraphHash, ...sealWithoutGraphHash } = seal;
+  if (
+    sourceGraphHash !==
+    aggregateClaimHash("FT_AGGREGATE_CLAIM_SOURCE_GRAPH_SEAL_V1", sealWithoutGraphHash)
+  ) {
+    throw new Error("AGGREGATE_CLAIM_SOURCE_GRAPH_SEAL_MISMATCH");
+  }
+  return AggregateClaimSourceGraphCommitmentSchema.parse({
+    schema_version: AGGREGATE_CLAIM_SOURCE_GRAPH_COMMITMENT_SCHEMA_VERSION,
+    source_graph_commitment: aggregateClaimHash(
+      "FT_AGGREGATE_CLAIM_SOURCE_GRAPH_COMMITMENT_V1",
+      seal
+    ),
+    outcome_evidence_content_hash: seal.outcome_evidence_content_hash,
+    blueprint_hash: seal.blueprint_hash,
+    metrics_library_hash: seal.metrics_library_hash,
+    scenario_hash: seal.scenario_hash
+  });
+};
+
+export const aggregateClaimSliceCommitment = (input: {
+  orgId: string;
+  workflowId: string;
+  jbtdId: string;
+  personaId: string;
+  sourceGraphCommitment: string;
+}): string =>
+  aggregateClaimHash("FT_AGGREGATE_CLAIM_SLICE_COMMITMENT_V1", {
+    org_id: safeId.parse(input.orgId),
+    workflow_id: safeId.parse(input.workflowId),
+    jbtd_id: safeId.parse(input.jbtdId),
+    persona_id: safeId.parse(input.personaId),
+    source_graph_commitment: exactHash.parse(input.sourceGraphCommitment)
+  });
+
+export const aggregateClaimComparisonProjectionCommitment = (projectionInput: unknown): string =>
+  aggregateClaimHash(
+    "FT_AGGREGATE_CLAIM_COMPARISON_PROJECTION_COMMITMENT_V1",
+    AggregateClaimComparisonProjectionSchema.parse(projectionInput)
+  );
 
 export const outcomeEvidenceContentProjection = (
   exportObject: Record<string, unknown>
@@ -458,13 +530,47 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
   comparisonPrivacyReceipt: unknown;
   comparisonProjection: unknown;
   policyState: AggregateClaimPolicyState;
-  claimContent: AggregateAuthorizedClaimContent;
+  claimContent: z.infer<typeof AggregateClaimAuthorizationInputContentSchema>;
 }): {
   claim: AggregateAuthorizedClaimArtifact;
   packet: AggregateAuthorizedPacketArtifact;
   manifest: AggregateClaimAuthorizationManifest;
 } => {
-  const claimContent = AggregateAuthorizedClaimContentSchema.parse(input.claimContent);
+  const claimInput = AggregateClaimAuthorizationInputContentSchema.parse(input.claimContent);
+  const sourceGraphSeal = AggregateClaimSourceGraphSealSchema.parse(input.sourceGraphSeal);
+  const sourceGraph = aggregateClaimSourceGraphCommitment(sourceGraphSeal);
+  const comparisonProjection = AggregateClaimComparisonProjectionSchema.parse(
+    input.comparisonProjection
+  );
+  if (
+    comparisonProjection.org_id !== claimInput.org_id ||
+    comparisonProjection.workflow_id !== claimInput.workflow_id ||
+    comparisonProjection.jbtd_id !== claimInput.jbtd_id ||
+    comparisonProjection.persona_id !== claimInput.persona_id ||
+    comparisonProjection.outcome_metric !== claimInput.movement.metric_id ||
+    comparisonProjection.outcome_unit !== claimInput.movement.measurement_unit ||
+    comparisonProjection.baseline_window.aggregate_value !== claimInput.movement.baseline_value ||
+    comparisonProjection.comparison_window.aggregate_value !==
+      claimInput.movement.comparison_value
+  ) {
+    throw new Error("AGGREGATE_CLAIM_PROJECTION_MISMATCH");
+  }
+  const sliceCommitment = aggregateClaimSliceCommitment({
+    orgId: claimInput.org_id,
+    workflowId: claimInput.workflow_id,
+    jbtdId: claimInput.jbtd_id,
+    personaId: claimInput.persona_id,
+    sourceGraphCommitment: sourceGraph.source_graph_commitment
+  });
+  const claimContent = AggregateAuthorizedClaimContentSchema.parse({
+    policy_version: claimInput.policy_version,
+    template_id: claimInput.template_id,
+    slice_commitment: sliceCommitment,
+    movement: claimInput.movement,
+    caveats: claimInput.caveats,
+    model_use_authorized: false,
+    customer_facing_output_authorized: false
+  });
   const claimContentHash = aggregateClaimHash(
     "FT_AGGREGATE_AUTHORIZED_CLAIM_CONTENT_V1",
     claimContent
@@ -472,10 +578,7 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
   const packetContent = AggregateAuthorizedPacketContentSchema.parse({
     policy_version: AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION,
     template_id: AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID,
-    org_id: claimContent.org_id,
-    workflow_id: claimContent.workflow_id,
-    jbtd_id: claimContent.jbtd_id,
-    persona_id: claimContent.persona_id,
+    slice_commitment: claimContent.slice_commitment,
     claim_content_hash: claimContentHash,
     movement: claimContent.movement,
     caveats: claimContent.caveats,
@@ -487,17 +590,19 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
   );
   const core = AggregateClaimManifestCoreSchema.parse({
     policy_version: AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION,
-    org_id: claimContent.org_id,
-    workflow_id: claimContent.workflow_id,
-    jbtd_id: claimContent.jbtd_id,
-    persona_id: claimContent.persona_id,
-    source_graph_seal: input.sourceGraphSeal,
-    readiness_id: input.readinessId,
+    slice_commitment: claimContent.slice_commitment,
+    source_graph: sourceGraph,
+    readiness_ref_commitment: aggregateClaimSourceRefCommitment(
+      "evidence_readiness",
+      input.readinessId,
+      input.readinessHash
+    ),
     readiness_hash: input.readinessHash,
     accepted_export_payload_hash: input.acceptedExportPayloadHash,
     accepted_review_hash: input.acceptedReviewHash,
     comparison_privacy_receipt: input.comparisonPrivacyReceipt,
-    comparison_projection: input.comparisonProjection,
+    comparison_projection_commitment:
+      aggregateClaimComparisonProjectionCommitment(comparisonProjection),
     policy_state: input.policyState,
     template_id: AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID,
     claim_content_hash: claimContentHash,
@@ -567,24 +672,55 @@ export const aggregateClaimBundleReconciles = (input: {
   const manifest = AggregateClaimAuthorizationManifestSchema.safeParse(input.manifest);
   if (!claim.success || !packet.success || !manifest.success) return false;
   try {
-    const rebuilt = buildAggregateClaimAuthorizationBundle({
-      sourceGraphSeal: manifest.data.core.source_graph_seal,
-      readinessId: manifest.data.core.readiness_id,
-      readinessHash: manifest.data.core.readiness_hash,
-      acceptedExportPayloadHash: manifest.data.core.accepted_export_payload_hash,
-      acceptedReviewHash: manifest.data.core.accepted_review_hash,
-      comparisonPrivacyReceipt: manifest.data.core.comparison_privacy_receipt,
-      comparisonProjection: manifest.data.core.comparison_projection,
-      policyState: manifest.data.core.policy_state,
-      claimContent: claim.data.content
+    const claimContentHash = aggregateClaimHash(
+      "FT_AGGREGATE_AUTHORIZED_CLAIM_CONTENT_V1",
+      claim.data.content
+    );
+    const packetContent = AggregateAuthorizedPacketContentSchema.parse({
+      policy_version: claim.data.content.policy_version,
+      template_id: claim.data.content.template_id,
+      slice_commitment: claim.data.content.slice_commitment,
+      claim_content_hash: claimContentHash,
+      movement: claim.data.content.movement,
+      caveats: claim.data.content.caveats,
+      customer_facing_output_authorized: false
     });
+    const packetContentHash = aggregateClaimHash(
+      "FT_AGGREGATE_AUTHORIZED_PACKET_CONTENT_V1",
+      packetContent
+    );
+    const expectedManifestHash = aggregateClaimHash(
+      "FT_AGGREGATE_CLAIM_AUTHORIZATION_MANIFEST_CORE_V1",
+      manifest.data.core
+    );
+    const expectedManifestId = `manifest_${expectedManifestHash}`;
+    const expectedClaimId = `aggregate_claim_${expectedManifestHash}_${aggregateClaimHash(
+      "FT_AGGREGATE_AUTHORIZED_CLAIM_ID_V1",
+      { manifest_hash: expectedManifestHash }
+    )}`;
+    const expectedPacketId = `aggregate_packet_${expectedManifestHash}_${aggregateClaimHash(
+      "FT_AGGREGATE_AUTHORIZED_PACKET_ID_V1",
+      { manifest_hash: expectedManifestHash }
+    )}`;
     return (
-      aggregateClaimHash("FT_AGGREGATE_CLAIM_BUNDLE_COMPARE_V1", rebuilt) ===
-        aggregateClaimHash("FT_AGGREGATE_CLAIM_BUNDLE_COMPARE_V1", {
-          claim: claim.data,
-          packet: packet.data,
-          manifest: manifest.data
-        }) && packet.data.content.claim_content_hash === claim.data.content_hash
+      claim.data.content_hash === claimContentHash &&
+      packet.data.content_hash === packetContentHash &&
+      packet.data.content.claim_content_hash === claimContentHash &&
+      aggregateClaimHash("FT_AGGREGATE_CLAIM_PACKET_CONTENT_COMPARE_V1", packet.data.content) ===
+        aggregateClaimHash("FT_AGGREGATE_CLAIM_PACKET_CONTENT_COMPARE_V1", packetContent) &&
+      manifest.data.core.claim_content_hash === claimContentHash &&
+      manifest.data.core.packet_content_hash === packetContentHash &&
+      manifest.data.core.slice_commitment === claim.data.content.slice_commitment &&
+      packet.data.content.slice_commitment === claim.data.content.slice_commitment &&
+      manifest.data.manifest_hash === expectedManifestHash &&
+      manifest.data.manifest_id === expectedManifestId &&
+      claim.data.manifest_id === expectedManifestId &&
+      packet.data.manifest_id === expectedManifestId &&
+      manifest.data.claim_id === expectedClaimId &&
+      claim.data.claim_id === expectedClaimId &&
+      manifest.data.packet_id === expectedPacketId &&
+      packet.data.packet_id === expectedPacketId &&
+      packet.data.claim_id === expectedClaimId
     );
   } catch {
     return false;

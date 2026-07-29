@@ -23,6 +23,7 @@ const {
   aggregateClaimFixedHeldResponse,
   aggregateClaimHash,
   aggregateClaimPolicyState,
+  aggregateClaimSourceRefCommitment,
   aggregateManifestIdFromPacketId,
   buildAggregateClaimAuthorizationBundle,
   buildAggregateClaimSourceGraphSeal,
@@ -277,16 +278,7 @@ describe("aggregate claim authorization contracts", () => {
     for (const unsafeProjection of [
       { ...comparisonProjection, outcome_metric: "james.kelley@glean.com" },
       { ...comparisonProjection, outcome_unit: "james.kelley@glean.com" },
-      { ...comparisonProjection, source_system: "james.kelley@glean.com" },
-      { ...comparisonProjection, persona_id: "employee_12345" },
-      { ...comparisonProjection, workflow_id: "outcome_caused_by_ai" },
-      {
-        ...comparisonProjection,
-        baseline_window: {
-          ...comparisonProjection.baseline_window,
-          evidence_id: "user_james_kelley"
-        }
-      }
+      { ...comparisonProjection, source_system: "james.kelley@glean.com" }
     ]) {
       expect(() =>
         buildAggregateClaimAuthorizationBundle({
@@ -313,6 +305,118 @@ describe("aggregate claim authorization contracts", () => {
         }
       })
     ).toThrow();
+  });
+
+  it("persists only commitments when authoritative identities contain person-shaped text", () => {
+    const objects = sourceObjects();
+    objects.outcomeEvidenceExport.export_id = "james_kelley";
+    objects.blueprint.blueprint_id = "james_kelley";
+    objects.metricsLibrary.library_id = "james_kelley";
+    objects.scenario.scenario_id = "james_kelley";
+    const sourceGraphSeal = buildAggregateClaimSourceGraphSeal(objects);
+    const movement = buildAggregateObservedMovement({
+      metricId: "support_median_resolution_hours",
+      measurementUnit: "hours",
+      baselineValue: 18.4,
+      comparisonValue: 15.1
+    });
+    const personProjection = {
+      ...comparisonProjection,
+      org_id: "james_kelley",
+      workflow_id: "james_kelley",
+      jbtd_id: "james_kelley",
+      persona_id: "james_kelley",
+      baseline_window: {
+        ...comparisonProjection.baseline_window,
+        evidence_id: "james_kelley"
+      },
+      comparison_window: {
+        ...comparisonProjection.comparison_window,
+        evidence_id: "james_kelley_comparison"
+      }
+    };
+    const bundle = buildAggregateClaimAuthorizationBundle({
+      sourceGraphSeal,
+      readinessId: "james_kelley",
+      readinessHash: "4".repeat(64),
+      acceptedExportPayloadHash: "5".repeat(64),
+      acceptedReviewHash: "6".repeat(64),
+      comparisonPrivacyReceipt: comparisonReceipt,
+      comparisonProjection: personProjection,
+      policyState: aggregateClaimPolicyState(),
+      claimContent: {
+        policy_version: "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07",
+        template_id: "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1",
+        org_id: "james_kelley",
+        workflow_id: "james_kelley",
+        jbtd_id: "james_kelley",
+        persona_id: "james_kelley",
+        movement,
+        caveats: [...AGGREGATE_CLAIM_CAVEATS],
+        model_use_authorized: false,
+        customer_facing_output_authorized: false
+      }
+    });
+
+    expect(JSON.stringify(bundle)).not.toContain("james_kelley");
+    expect(bundle.claim.content).toMatchObject({
+      slice_commitment: expect.stringMatching(/^[0-9a-f]{64}$/)
+    });
+    expect(bundle.manifest.core).toMatchObject({
+      slice_commitment: bundle.claim.content.slice_commitment,
+      readiness_ref_commitment: expect.stringMatching(/^[0-9a-f]{64}$/),
+      comparison_projection_commitment: expect.stringMatching(/^[0-9a-f]{64}$/)
+    });
+    expect(bundle.manifest.core.source_graph).toEqual(
+      expect.not.objectContaining({
+        outcome_evidence_export_id: expect.anything(),
+        blueprint_id: expect.anything(),
+        metrics_library_id: expect.anything(),
+        scenario_id: expect.anything()
+      })
+    );
+    expect(
+      aggregateClaimSourceRefCommitment(
+        "evidence_readiness",
+        "james_kelley",
+        "4".repeat(64)
+      )
+    ).not.toBe(
+      aggregateClaimSourceRefCommitment("blueprint", "james_kelley", "4".repeat(64))
+    );
+
+    const changedProjection = buildAggregateClaimAuthorizationBundle({
+      sourceGraphSeal,
+      readinessId: "james_kelley",
+      readinessHash: "4".repeat(64),
+      acceptedExportPayloadHash: "5".repeat(64),
+      acceptedReviewHash: "6".repeat(64),
+      comparisonPrivacyReceipt: comparisonReceipt,
+      comparisonProjection: {
+        ...personProjection,
+        comparison_window: {
+          ...personProjection.comparison_window,
+          evidence_id: "james_kelley_alternate"
+        }
+      },
+      policyState: aggregateClaimPolicyState(),
+      claimContent: {
+        policy_version: "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07",
+        template_id: "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1",
+        org_id: "james_kelley",
+        workflow_id: "james_kelley",
+        jbtd_id: "james_kelley",
+        persona_id: "james_kelley",
+        movement,
+        caveats: [...AGGREGATE_CLAIM_CAVEATS],
+        model_use_authorized: false,
+        customer_facing_output_authorized: false
+      }
+    });
+    expect(changedProjection.manifest.core.comparison_projection_commitment).not.toBe(
+      bundle.manifest.core.comparison_projection_commitment
+    );
+    expect(changedProjection.manifest.manifest_id).not.toBe(bundle.manifest.manifest_id);
   });
 
   it("returns one fixed redacted HOLD shape", () => {
@@ -358,10 +462,7 @@ describe("aggregate claim authorization contracts", () => {
     const content = {
       policy_version: "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07",
       template_id: "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1",
-      org_id: "org-northstar",
-      workflow_id: "customer_support_case_resolution",
-      jbtd_id: "resolve_support_case",
-      persona_id: "support_specialist",
+      slice_commitment: "7".repeat(64),
       movement,
       caveats: [...AGGREGATE_CLAIM_CAVEATS],
       model_use_authorized: false,
@@ -465,9 +566,6 @@ describe("aggregate claim authorization contracts", () => {
     expect(schema.$defs.movement.properties.measurement_unit.enum).toEqual([
       ...AGGREGATE_CLAIM_MEASUREMENT_UNITS
     ]);
-    expect(
-      schema.$defs.manifest.properties.core.properties.comparison_projection.allOf[1].properties
-        .source_system.enum
-    ).toEqual([...AGGREGATE_CLAIM_SOURCE_SYSTEMS]);
+    expect(schema.$defs.source_system.enum).toEqual([...AGGREGATE_CLAIM_SOURCE_SYSTEMS]);
   });
 });

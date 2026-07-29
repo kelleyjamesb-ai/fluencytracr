@@ -8,13 +8,6 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
     },
-    "safe_id": {
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9:_-]{0,511}$",
-      "not": {
-        "pattern": "(^|[_:-])(attributable|attribution|cause|caused|causal|causality|confidence|dollar|email|employee|facing|impact|improvement|individual|member|model|money|name|participant|person|prediction|probability|productivity|rank|respondent|revenue|roi|score|subject|user)($|[_:-])"
-      }
-    },
     "manifest_id": {
       "type": "string",
       "pattern": "^manifest_[0-9a-f]{64}$"
@@ -38,6 +31,18 @@
       "items": false,
       "minItems": 4,
       "maxItems": 4
+    },
+    "source_system": {
+      "enum": [
+        "Aggregate AI Work Evidence",
+        "CRM activity reporting",
+        "CRM opportunity reporting",
+        "Customer Success operating metrics mart",
+        "Customer support satisfaction survey",
+        "Forecast review reporting",
+        "Support case management system",
+        "customer_crm"
+      ]
     },
     "movement": {
       "type": "object",
@@ -106,34 +111,26 @@
         "claim_label": { "const": "OBSERVED_NON_ATTRIBUTABLE" }
       }
     },
-    "source_graph_seal": {
+    "source_graph_commitment": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "schema_version",
-        "source_graph_authoritative",
-        "outcome_evidence_export_id",
+        "source_graph_commitment",
         "outcome_evidence_content_hash",
-        "blueprint_id",
         "blueprint_hash",
-        "metrics_library_id",
         "metrics_library_hash",
-        "scenario_id",
-        "scenario_hash",
-        "source_graph_hash"
+        "scenario_hash"
       ],
       "properties": {
-        "schema_version": { "const": "FT_AGGREGATE_CLAIM_SOURCE_GRAPH_V1" },
-        "source_graph_authoritative": { "const": true },
-        "outcome_evidence_export_id": { "$ref": "#/$defs/safe_id" },
+        "schema_version": {
+          "const": "FT_AGGREGATE_CLAIM_SOURCE_GRAPH_COMMITMENT_V1"
+        },
+        "source_graph_commitment": { "$ref": "#/$defs/sha256" },
         "outcome_evidence_content_hash": { "$ref": "#/$defs/sha256" },
-        "blueprint_id": { "$ref": "#/$defs/safe_id" },
         "blueprint_hash": { "$ref": "#/$defs/sha256" },
-        "metrics_library_id": { "$ref": "#/$defs/safe_id" },
         "metrics_library_hash": { "$ref": "#/$defs/sha256" },
-        "scenario_id": { "$ref": "#/$defs/safe_id" },
-        "scenario_hash": { "$ref": "#/$defs/sha256" },
-        "source_graph_hash": { "$ref": "#/$defs/sha256" }
+        "scenario_hash": { "$ref": "#/$defs/sha256" }
       }
     },
     "policy_state": {
@@ -170,10 +167,7 @@
       "required": [
         "policy_version",
         "template_id",
-        "org_id",
-        "workflow_id",
-        "jbtd_id",
-        "persona_id",
+        "slice_commitment",
         "movement",
         "caveats",
         "model_use_authorized",
@@ -184,10 +178,7 @@
           "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
         },
         "template_id": { "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1" },
-        "org_id": { "$ref": "#/$defs/safe_id" },
-        "workflow_id": { "$ref": "#/$defs/safe_id" },
-        "jbtd_id": { "$ref": "#/$defs/safe_id" },
-        "persona_id": { "$ref": "#/$defs/safe_id" },
+        "slice_commitment": { "$ref": "#/$defs/sha256" },
         "movement": { "$ref": "#/$defs/movement" },
         "caveats": { "$ref": "#/$defs/caveats" },
         "model_use_authorized": { "const": false },
@@ -200,10 +191,7 @@
       "required": [
         "policy_version",
         "template_id",
-        "org_id",
-        "workflow_id",
-        "jbtd_id",
-        "persona_id",
+        "slice_commitment",
         "claim_content_hash",
         "movement",
         "caveats",
@@ -214,10 +202,7 @@
           "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
         },
         "template_id": { "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1" },
-        "org_id": { "$ref": "#/$defs/safe_id" },
-        "workflow_id": { "$ref": "#/$defs/safe_id" },
-        "jbtd_id": { "$ref": "#/$defs/safe_id" },
-        "persona_id": { "$ref": "#/$defs/safe_id" },
+        "slice_commitment": { "$ref": "#/$defs/sha256" },
         "claim_content_hash": { "$ref": "#/$defs/sha256" },
         "movement": { "$ref": "#/$defs/movement" },
         "caveats": { "$ref": "#/$defs/caveats" },
@@ -284,17 +269,14 @@
           "additionalProperties": false,
           "required": [
             "policy_version",
-            "org_id",
-            "workflow_id",
-            "jbtd_id",
-            "persona_id",
-            "source_graph_seal",
-            "readiness_id",
+            "slice_commitment",
+            "source_graph",
+            "readiness_ref_commitment",
             "readiness_hash",
             "accepted_export_payload_hash",
             "accepted_review_hash",
             "comparison_privacy_receipt",
-            "comparison_projection",
+            "comparison_projection_commitment",
             "policy_state",
             "template_id",
             "claim_content_hash",
@@ -304,63 +286,18 @@
             "policy_version": {
               "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
             },
-            "org_id": { "$ref": "#/$defs/safe_id" },
-            "workflow_id": { "$ref": "#/$defs/safe_id" },
-            "jbtd_id": { "$ref": "#/$defs/safe_id" },
-            "persona_id": { "$ref": "#/$defs/safe_id" },
-            "source_graph_seal": {
-              "$ref": "#/$defs/source_graph_seal"
+            "slice_commitment": { "$ref": "#/$defs/sha256" },
+            "source_graph": {
+              "$ref": "#/$defs/source_graph_commitment"
             },
-            "readiness_id": { "$ref": "#/$defs/safe_id" },
+            "readiness_ref_commitment": { "$ref": "#/$defs/sha256" },
             "readiness_hash": { "$ref": "#/$defs/sha256" },
             "accepted_export_payload_hash": { "$ref": "#/$defs/sha256" },
             "accepted_review_hash": { "$ref": "#/$defs/sha256" },
             "comparison_privacy_receipt": {
               "$ref": "../outcome_comparison_privacy_receipt.schema.json"
             },
-            "comparison_projection": {
-              "allOf": [
-                {
-                  "$ref": "../outcome_comparison_projection.schema.json"
-                },
-                {
-                  "properties": {
-                    "org_id": { "$ref": "#/$defs/safe_id" },
-                    "workflow_id": { "$ref": "#/$defs/safe_id" },
-                    "jbtd_id": { "$ref": "#/$defs/safe_id" },
-                    "persona_id": { "$ref": "#/$defs/safe_id" },
-                    "outcome_metric": {
-                      "$ref": "#/$defs/movement/properties/metric_id"
-                    },
-                    "outcome_unit": {
-                      "$ref": "#/$defs/movement/properties/measurement_unit"
-                    },
-                    "source_system": {
-                      "enum": [
-                        "Aggregate AI Work Evidence",
-                        "CRM activity reporting",
-                        "CRM opportunity reporting",
-                        "Customer Success operating metrics mart",
-                        "Customer support satisfaction survey",
-                        "Forecast review reporting",
-                        "Support case management system",
-                        "customer_crm"
-                      ]
-                    },
-                    "baseline_window": {
-                      "properties": {
-                        "evidence_id": { "$ref": "#/$defs/safe_id" }
-                      }
-                    },
-                    "comparison_window": {
-                      "properties": {
-                        "evidence_id": { "$ref": "#/$defs/safe_id" }
-                      }
-                    }
-                  }
-                }
-              ]
-            },
+            "comparison_projection_commitment": { "$ref": "#/$defs/sha256" },
             "policy_state": { "$ref": "#/$defs/policy_state" },
             "template_id": {
               "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1"
