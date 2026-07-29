@@ -434,7 +434,7 @@ export const resolveCanonicalIdentityAuthority = async (
     approved_aggregate_grain: sliceBinding.approved_aggregate_grain,
     aggregate_only: sliceBinding.aggregate_only,
     approved_at: sliceBinding.approved_at,
-    approved_by_role: sliceBinding.approved_by_role,
+    approved_by_role_commitment: sliceBinding.approved_by_role_commitment,
     slice_commitment: sliceBinding.slice_commitment
   } as aiValueEngine.CanonicalSliceBindingV1;
   const bindingValidation = aiValueEngine.validateMeasurementPlan({

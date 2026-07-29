@@ -33,7 +33,7 @@ export interface CanonicalSliceBindingV1 {
   approved_aggregate_grain: string;
   aggregate_only: true;
   approved_at: string;
-  approved_by_role: string;
+  approved_by_role_commitment: string;
   slice_commitment: string;
 }
 
@@ -53,6 +53,11 @@ export const canonicalSliceJoinKeyCommitment = (
   aggregateClaimHash("FT_CANONICAL_SLICE_JOIN_KEY_COMMITMENT_V1", {
     field,
     value
+  });
+
+export const canonicalSliceApprovalRoleCommitment = (value: string): string =>
+  aggregateClaimHash("FT_CANONICAL_SLICE_APPROVAL_ROLE_COMMITMENT_V1", {
+    approved_by_role: value
   });
 
 const canonicalSliceProjection = (
@@ -76,7 +81,7 @@ const canonicalSliceProjection = (
   approved_aggregate_grain: input.approved_aggregate_grain,
   aggregate_only: true,
   approved_at: input.approved_at,
-  approved_by_role: input.approved_by_role
+  approved_by_role_commitment: input.approved_by_role_commitment
 });
 
 export const canonicalSliceBindingCommitment = (
@@ -559,7 +564,7 @@ function collectCanonicalSliceBindingGaps(
     "approved_direction",
     "approved_aggregate_grain",
     "approved_at",
-    "approved_by_role",
+    "approved_by_role_commitment",
     "slice_commitment"
   ]) {
     if (
@@ -587,7 +592,8 @@ function collectCanonicalSliceBindingGaps(
   for (const field of [
     "workflow_commitment",
     "jbtd_commitment",
-    "persona_commitment"
+    "persona_commitment",
+    "approved_by_role_commitment"
   ]) {
     if (!SHA256_HEX.test(String(binding?.[field] ?? ""))) {
       gaps.push(`canonical_slice_binding_v1.${field} must be SHA-256`);

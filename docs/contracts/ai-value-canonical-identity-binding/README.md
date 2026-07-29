@@ -67,8 +67,10 @@ Slice E metric-definition commitment.
 
 Slice E source creation, source loading, family locking, and journal readback
 use only the `fluencytracr_slice_e_runtime` login configured by
-`SLICE_E_RUNTIME_DATABASE_URL`. A missing URL, a different login, a superuser,
-or a role with bypass or role-creation authority makes Slice E unavailable.
+`SLICE_E_RUNTIME_DATABASE_URL`. Both the authenticated `session_user` and
+effective `current_user` must be that exact login. A missing URL, a different
+login, `SET ROLE` substitution, a superuser, or a role with bypass or
+role-creation authority makes Slice E unavailable.
 The general database credential remains outside Slice E source authority.
 
 ## Canonical identity core

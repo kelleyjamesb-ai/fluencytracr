@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   buildCanonicalSliceBindingV1,
+  canonicalSliceApprovalRoleCommitment,
   MEASUREMENT_PLAN_SCHEMA_VERSION,
   buildPlaybookMeasurementPlanDraft,
   validateMeasurementPlan
@@ -150,7 +151,8 @@ test("optional Slice E binding is exact while legacy plans remain valid", () => 
     approved_aggregate_grain: legacy.workflow_scope.approved_aggregate_grain,
     aggregate_only: true,
     approved_at: "2026-07-29T00:00:00.000Z",
-    approved_by_role: "business_sponsor"
+    approved_by_role_commitment:
+      canonicalSliceApprovalRoleCommitment("business_sponsor")
   });
   legacy.canonical_slice_binding_v1 = binding;
   assert.equal(validateMeasurementPlan(legacy).valid, true);
@@ -160,6 +162,15 @@ test("optional Slice E binding is exact while legacy plans remain valid", () => 
   assert.equal(validateMeasurementPlan(forged).valid, false);
   assert.match(
     validateMeasurementPlan(forged).gaps.join("; "),
+    /must be SHA-256|does not match exact bytes/
+  );
+
+  const personalApprover = clone(legacy);
+  personalApprover.canonical_slice_binding_v1.approved_by_role_commitment =
+    "james.kelley@example.com";
+  assert.equal(validateMeasurementPlan(personalApprover).valid, false);
+  assert.match(
+    validateMeasurementPlan(personalApprover).gaps.join("; "),
     /must be SHA-256|does not match exact bytes/
   );
 

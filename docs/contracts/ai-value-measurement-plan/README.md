@@ -125,7 +125,8 @@ When present, the binding has schema version
 - `approved_direction`;
 - `approved_aggregate_grain`;
 - `aggregate_only: true`;
-- approval timestamp and aggregate-safe approving role; and
+- approval timestamp and a domain-separated
+  `approved_by_role_commitment` for the aggregate-safe approving role; and
 - `slice_commitment`.
 
 The commitment is recomputed under

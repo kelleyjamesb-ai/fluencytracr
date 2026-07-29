@@ -166,6 +166,18 @@ assert(
   !(await canonicalIdentityRuntimeCredentialIsReady(prisma)),
   "database-owner credential was accepted as the Slice E runtime role"
 );
+const substitutedRuntimeCredentialAccepted = await prisma.$transaction(
+  async (transaction) => {
+    await transaction.$executeRawUnsafe(
+      "SET LOCAL ROLE fluencytracr_slice_e_runtime"
+    );
+    return canonicalIdentityRuntimeCredentialIsReady(transaction);
+  }
+);
+assert(
+  !substitutedRuntimeCredentialAccepted,
+  "elevated session using SET ROLE was accepted as the Slice E runtime login"
+);
 await expectRejected(
   () =>
     sliceERuntimePrisma.aiValueCanonicalIdentityFamilyHeadJournal.create({
@@ -612,7 +624,8 @@ measurementPlan.canonical_slice_binding_v1 = aiValueEngine.buildCanonicalSliceBi
   approved_aggregate_grain: canonicalMetric.source_system.approved_grain,
   aggregate_only: true,
   approved_at: "2026-07-28T00:00:00.000Z",
-  approved_by_role: "value_realization_pm"
+  approved_by_role_commitment:
+    aiValueEngine.canonicalSliceApprovalRoleCommitment("value_realization_pm")
 });
 const measurementPlanValidation = aiValueEngine.validateMeasurementPlan(measurementPlan);
 assert(
@@ -1066,6 +1079,16 @@ assert(
     canonicalHtml.text.includes("OBSERVED_NON_ATTRIBUTABLE"),
   "Slice E readout did not prove exact bound authority"
 );
+process.env.SLICE_E_RUNTIME_DATABASE_URL = process.env.DATABASE_URL;
+assert(
+  (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) === null,
+  "elevated general credential revalidated an existing Slice E readout"
+);
+process.env.SLICE_E_RUNTIME_DATABASE_URL = sliceERuntimeUrl.toString();
+assert(
+  (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) !== null,
+  "exact Slice E runtime restoration did not recover readback"
+);
 expectHeld(
   await authorizeAggregateClaim({
     ...canonicalAuthorizationRequest,
@@ -1468,7 +1491,7 @@ assert(
 );
 
 console.log(
-  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E runtime credential, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
+  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E session/effective runtime credential, SET ROLE substitution rejection, elevated existing-readout rejection, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice, approval-role, and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
 );
 
 await sliceERuntimePrisma.$disconnect();

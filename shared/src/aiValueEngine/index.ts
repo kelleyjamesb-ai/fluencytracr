@@ -520,6 +520,7 @@ export {
   validateMeasurementPlan,
   buildPlaybookMeasurementPlanDraft,
   buildCanonicalSliceBindingV1,
+  canonicalSliceApprovalRoleCommitment,
   canonicalSliceBindingCommitment,
   canonicalSliceJoinKeyCommitment,
   CANONICAL_SLICE_BINDING_SCHEMA_VERSION,

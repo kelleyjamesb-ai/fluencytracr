@@ -4745,3 +4745,25 @@
   full-suite verified, pushed, in a PR, merged, deployed, or applied to
   production. Next: freeze the replacement commit and rerun exact-SHA
   CODE/BUG/ADVERSARIAL review in parallel.
+- Froze replacement `c749864eea4bf9ae549ec6b0f5f0ce7c0ad77556`.
+  Exact-SHA CODE, BUG, and ADVERSARIAL rereviews returned `HOLD` on two
+  executable residuals: an elevated authenticated session could use
+  `SET ROLE fluencytracr_slice_e_runtime` to pass the effective-role-only
+  credential check, and a raw personal email could still enter the
+  E-capable binding through `approved_by_role`.
+- Repaired only those residuals. Slice E now requires both `session_user` and
+  `current_user` to be the exact restricted login, and the source loader
+  independently enforces that credential. The E-capable binding now retains
+  an `approved_by_role_commitment` instead of raw approving-role text.
+  Executable regressions cover `SET LOCAL ROLE` substitution, owner-URL
+  rejection for an already-bound readout, and a personal-email approver.
+- Fresh repair evidence passed: shared/backend builds; 56/56 Measurement Plan
+  contract tests; focused runtime/binding/authorization tests; strict
+  OpenSpec; whitespace; and a fresh disposable PostgreSQL 16 C.0/C.1/D/E
+  sequence including the new credential-substitution and existing-readout
+  rejection probes.
+- State: the second replacement tree is designed, locally implemented, and
+  focused-verified. It is not yet committed, exact-SHA rereviewed,
+  full-suite verified, pushed, in a PR, merged, deployed, or applied to
+  production. Next: freeze a new replacement commit and rerun all three
+  exact-SHA reviews.

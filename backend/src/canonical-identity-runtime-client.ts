@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 let runtimePrisma: PrismaClient | null = null;
 let runtimeDatabaseUrl: string | null = null;
@@ -19,13 +19,14 @@ export const getCanonicalIdentityRuntimePrisma = (): PrismaClient | null => {
 };
 
 export const canonicalIdentityRuntimeCredentialIsReady = async (
-  client: PrismaClient
+  client: Pick<Prisma.TransactionClient, "$queryRaw">
 ): Promise<boolean> => {
   try {
     const rows = await client.$queryRaw<
       Array<{ ok: boolean }>
     >`SELECT (
-      current_user = 'fluencytracr_slice_e_runtime'
+      session_user = 'fluencytracr_slice_e_runtime'
+      AND current_user = 'fluencytracr_slice_e_runtime'
       AND NOT rolsuper
       AND NOT rolbypassrls
       AND NOT rolcreaterole

@@ -1,7 +1,10 @@
 import { aiValueEngine } from "@fluencytracr/shared";
 import type { Prisma } from "@prisma/client";
 
-import { getCanonicalIdentityRuntimePrisma } from "../canonical-identity-runtime-client";
+import {
+  canonicalIdentityRuntimeCredentialIsReady,
+  getCanonicalIdentityRuntimePrisma
+} from "../canonical-identity-runtime-client";
 
 export type CanonicalIdentitySourceKind =
   | "VALUE_HYPOTHESIS"
@@ -164,7 +167,12 @@ export async function loadCanonicalIdentityExactSources(
   const parsed = aiValueEngine.CanonicalIdentitySelectorSchema.safeParse(selector);
   if (!parsed.success) return null;
   const runtimePrisma = getCanonicalIdentityRuntimePrisma();
-  if (!runtimePrisma) return null;
+  if (
+    !runtimePrisma ||
+    !(await canonicalIdentityRuntimeCredentialIsReady(runtimePrisma))
+  ) {
+    return null;
+  }
 
   const [hypothesisRow, planRow, cellRow] = await Promise.all([
     runtimePrisma.valueHypothesis.findFirst({
