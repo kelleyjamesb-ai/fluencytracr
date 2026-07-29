@@ -145,6 +145,15 @@ describe("canonical claim trace API", () => {
     }
   );
 
+  it("keeps ordinary org-scope enforcement outside the exact trace path", async () => {
+    const response = await request(app)
+      .get(`${tracePath}/extra?org_id=org-foreign`)
+      .set("authorization", bearer("ADMIN", "org-northstar"));
+
+    expect(response.status).toBe(403);
+    expect(response.headers["cache-control"]).toBe("no-store");
+  });
+
   it("returns byte-identical HOLD for authenticated lookup failures", async () => {
     traceService.mockImplementation(async (_orgId, requestedBindingId) =>
       requestedBindingId === bindingId

@@ -145,7 +145,8 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
 const getRequestedOrgId = (req: RequestWithRole): string | null => {
   const fromParams = (req.params?.orgId ?? req.params?.org_id) as string | undefined;
   const isCanonicalClaimTraceRequest =
-    req.method === "GET" && req.path.startsWith("/api/v1/ai-value/claim-trace/");
+    req.method === "GET" &&
+    /^\/api\/v1\/ai-value\/claim-trace\/[^/]+$/.test(req.path);
   const fromQueryRaw = isCanonicalClaimTraceRequest
     ? undefined
     : req.query?.org_id ?? req.query?.orgId;
