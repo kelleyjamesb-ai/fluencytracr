@@ -24,7 +24,11 @@ const REQUIRED_TABLE_ROWS = [
   { tablename: "aggregate_privacy_reservations" },
   { tablename: "cohort_producer_authorities" },
   { tablename: "cohort_producer_authority_revocations" },
-  { tablename: "cohort_proof_journal" }
+  { tablename: "cohort_proof_journal" },
+  { tablename: "outcome_comparison_attestation_keys" },
+  { tablename: "outcome_comparison_attestation_key_activations" },
+  { tablename: "outcome_comparison_attestation_key_revocations" },
+  { tablename: "outcome_comparison_privacy_releases" }
 ];
 
 const REQUIRED_MEASUREMENT_CELL_SNAPSHOT_COLUMNS = [
@@ -134,10 +138,64 @@ const REQUIRED_COLUMN_ROWS = [
   ].map((column_name) => ({
     table_name: "cohort_proof_journal",
     column_name
+  })),
+  ...[
+    "org_id",
+    "policy_version",
+    "proof_journal_id",
+    "proof_hash",
+    "reservation_key",
+    "admission_receipt_hash",
+    "workflow_id",
+    "jbtd_id",
+    "persona_id",
+    "outcome_metric",
+    "outcome_unit",
+    "source_system",
+    "baseline_period_start",
+    "baseline_period_end",
+    "baseline_evidence_id",
+    "baseline_evidence_hash",
+    "baseline_cohort_size",
+    "baseline_aggregate_value",
+    "comparison_period_start",
+    "comparison_period_end",
+    "comparison_evidence_id",
+    "comparison_evidence_hash",
+    "comparison_cohort_size",
+    "comparison_aggregate_value",
+    "projection_json",
+    "projection_hash",
+    "content_fingerprint",
+    "decision",
+    "comparison_privacy_only",
+    "claim_authority_effect",
+    "claim_authorized",
+    "model_authorized",
+    "customer_publishable",
+    "attestation_key_id",
+    "creation_attestation"
+  ].map((column_name) => ({
+    table_name: "outcome_comparison_privacy_releases",
+    column_name
+  })),
+  ...["key_id", "algorithm", "secret_hash", "provisioned_at"].map(
+    (column_name) => ({
+      table_name: "outcome_comparison_attestation_keys",
+      column_name
+    })
+  ),
+  ...["activation_epoch", "key_id", "activated_at"].map((column_name) => ({
+    table_name: "outcome_comparison_attestation_key_activations",
+    column_name
+  })),
+  ...["key_id", "reason_code", "revoked_at"].map((column_name) => ({
+    table_name: "outcome_comparison_attestation_key_revocations",
+    column_name
   }))
 ];
 
-const REQUIRED_GUARD_ROWS = [
+const APPEND_ONLY_GUARD_ROWS = [
   ["cohort_producer_authorities_append_only", "cohort_producer_authorities"],
   [
     "cohort_producer_authority_revocations_append_only",
@@ -153,6 +211,10 @@ const REQUIRED_GUARD_ROWS = [
   [
     "aggregate_privacy_contribution_claims_append_only",
     "aggregate_privacy_contribution_claims"
+  ],
+  [
+    "outcome_comparison_privacy_releases_append_only",
+    "outcome_comparison_privacy_releases"
   ]
 ].map(([tgname, table_name]) => ({
   tgname,
@@ -170,6 +232,8 @@ const REQUIRED_GUARD_ROWS = [
   function_security_definer: false,
   function_volatility: "v",
   tgenabled: "O",
+  has_no_when_clause: true,
+  argument_count: 0,
   row_level: true,
   before_event: true,
   fires_insert: false,
@@ -177,6 +241,114 @@ const REQUIRED_GUARD_ROWS = [
   fires_update: true,
   fires_truncate: false
 }));
+
+const OUTCOME_EVIDENCE_FAMILY_MUTATION_FUNCTION_SOURCE = `
+DECLARE
+  old_lock_key TEXT;
+  new_lock_key TEXT;
+  old_lock_id BIGINT;
+  new_lock_id BIGINT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    new_lock_key := public.outcome_evidence_family_lock_key(
+      NEW.org_id,
+      NEW.workflow_id,
+      NEW.jbtd_id,
+      NEW.persona_id
+    );
+    PERFORM pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended(new_lock_key, 0)
+    );
+    RETURN NEW;
+  END IF;
+
+  old_lock_key := public.outcome_evidence_family_lock_key(
+    OLD.org_id,
+    OLD.workflow_id,
+    OLD.jbtd_id,
+    OLD.persona_id
+  );
+
+  IF TG_OP = 'DELETE' THEN
+    PERFORM pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended(old_lock_key, 0)
+    );
+    RETURN OLD;
+  END IF;
+
+  new_lock_key := public.outcome_evidence_family_lock_key(
+    NEW.org_id,
+    NEW.workflow_id,
+    NEW.jbtd_id,
+    NEW.persona_id
+  );
+  old_lock_id := pg_catalog.hashtextextended(old_lock_key, 0);
+  new_lock_id := pg_catalog.hashtextextended(new_lock_key, 0);
+
+  IF old_lock_id <= new_lock_id THEN
+    PERFORM pg_catalog.pg_advisory_xact_lock(old_lock_id);
+    IF new_lock_id <> old_lock_id THEN
+      PERFORM pg_catalog.pg_advisory_xact_lock(new_lock_id);
+    END IF;
+  ELSE
+    PERFORM pg_catalog.pg_advisory_xact_lock(new_lock_id);
+    PERFORM pg_catalog.pg_advisory_xact_lock(old_lock_id);
+  END IF;
+
+  RETURN NEW;
+END;
+`;
+
+const REQUIRED_GUARD_ROWS = [
+  ...APPEND_ONLY_GUARD_ROWS,
+  {
+    tgname: "outcome_evidence_family_lock_before_mutation",
+    table_name: "outcome_evidence",
+    table_schema: "public",
+    function_name: "lock_outcome_evidence_family_mutation",
+    function_schema: "public",
+    function_language: "plpgsql",
+    function_source: OUTCOME_EVIDENCE_FAMILY_MUTATION_FUNCTION_SOURCE,
+    function_security_definer: false,
+    function_volatility: "v",
+    tgenabled: "O",
+    has_no_when_clause: true,
+    argument_count: 0,
+    row_level: true,
+    before_event: true,
+    fires_insert: true,
+    fires_delete: true,
+    fires_update: true,
+    fires_truncate: false
+  }
+];
+
+const OUTCOME_EVIDENCE_FAMILY_KEY_FUNCTION_SOURCE = `
+  SELECT
+    '['
+    || pg_catalog.to_json('FT_OUTCOME_EVIDENCE_FAMILY_LOCK_V1'::TEXT)::TEXT
+    || ',' || pg_catalog.to_json(org_id_value)::TEXT
+    || ',' || pg_catalog.to_json(workflow_id_value)::TEXT
+    || ',' || COALESCE(pg_catalog.to_json(jbtd_id_value)::TEXT, 'null')
+    || ',' || COALESCE(pg_catalog.to_json(persona_id_value)::TEXT, 'null')
+    || ']';
+`;
+
+const REQUIRED_FAMILY_KEY_FUNCTION_ROWS = [
+  {
+    function_name: "outcome_evidence_family_lock_key",
+    function_schema: "public",
+    function_language: "sql",
+    function_source: OUTCOME_EVIDENCE_FAMILY_KEY_FUNCTION_SOURCE,
+    function_security_definer: false,
+    function_volatility: "i",
+    function_parallel: "s",
+    argument_types: "text, text, text, text",
+    return_type: "text",
+    function_is_strict: false,
+    function_config: ["search_path=pg_catalog"]
+  }
+];
 
 const REQUIRED_CONSTRAINT_ROWS = [
   [
@@ -243,6 +415,56 @@ const REQUIRED_CONSTRAINT_ROWS = [
     "cohort_proof_journal_comparison_window_check",
     "cohort_proof_journal",
     "CHECK (comparison_period_end > comparison_period_start)"
+  ],
+  [
+    "outcome_comparison_release_policy_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK (policy_version = 'FT_OUTCOME_COMPARISON_PRIVACY_POLICY_2026_07'::text)"
+  ],
+  [
+    "outcome_comparison_release_decision_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK (decision = 'ATOMIC_COMPARISON_PRIVACY_RELEASED'::text)"
+  ],
+  [
+    "outcome_comparison_release_identity_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK ((org_id ~ '^[a-z0-9][a-z0-9:_-]{0,179}$'::text) AND (workflow_id ~ '^[a-z0-9][a-z0-9:_-]{0,179}$'::text) AND (jbtd_id ~ '^[a-z0-9][a-z0-9_-]{0,63}$'::text) AND (persona_id ~ '^[a-z0-9][a-z0-9_-]{0,63}$'::text))"
+  ],
+  [
+    "outcome_comparison_release_evidence_ids_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK ((baseline_evidence_id ~ '^[a-z0-9][a-z0-9_-]{0,127}$'::text) AND (comparison_evidence_id ~ '^[a-z0-9][a-z0-9_-]{0,127}$'::text) AND (baseline_evidence_id <> comparison_evidence_id))"
+  ],
+  [
+    "outcome_comparison_release_descriptors_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK (((char_length(outcome_metric) >= 1) AND (char_length(outcome_metric) <= 180)) AND ((char_length(outcome_unit) >= 1) AND (char_length(outcome_unit) <= 80)) AND ((char_length(source_system) >= 1) AND (char_length(source_system) <= 120)))"
+  ],
+  [
+    "outcome_comparison_release_hashes_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK ((proof_hash ~ '^[0-9a-f]{64}$'::text) AND (reservation_key ~ '^[0-9a-f]{64}$'::text) AND (admission_receipt_hash ~ '^[0-9a-f]{64}$'::text) AND (baseline_evidence_hash ~ '^[0-9a-f]{64}$'::text) AND (comparison_evidence_hash ~ '^[0-9a-f]{64}$'::text) AND (projection_hash ~ '^[0-9a-f]{64}$'::text) AND (content_fingerprint ~ '^[0-9a-f]{64}$'::text))"
+  ],
+  [
+    "outcome_comparison_release_windows_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK ((baseline_period_end > baseline_period_start) AND (comparison_period_end > comparison_period_start) AND (comparison_period_start >= baseline_period_end))"
+  ],
+  [
+    "outcome_comparison_release_cohort_sizes_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK ((baseline_cohort_size >= 5) AND (comparison_cohort_size >= 5))"
+  ],
+  [
+    "outcome_comparison_release_values_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK ((baseline_aggregate_value <> 'NaN'::double precision) AND (baseline_aggregate_value <> 'Infinity'::double precision) AND (baseline_aggregate_value <> '-Infinity'::double precision) AND (comparison_aggregate_value <> 'NaN'::double precision) AND (comparison_aggregate_value <> 'Infinity'::double precision) AND (comparison_aggregate_value <> '-Infinity'::double precision))"
+  ],
+  [
+    "outcome_comparison_release_non_authority_check",
+    "outcome_comparison_privacy_releases",
+    "CHECK ((comparison_privacy_only IS TRUE) AND (claim_authority_effect = 'NONE'::text) AND (claim_authorized IS FALSE) AND (model_authorized IS FALSE) AND (customer_publishable IS FALSE))"
   ]
 ].map(([conname, table_name, constraint_definition]) => ({
   conname,
@@ -257,7 +479,11 @@ const REQUIRED_SECURITY_ROWS = [
   "cohort_producer_authorities",
   "cohort_producer_authority_revocations",
   "aggregate_privacy_reservations",
-  "cohort_proof_journal"
+  "cohort_proof_journal",
+  "outcome_comparison_attestation_keys",
+  "outcome_comparison_attestation_key_activations",
+  "outcome_comparison_attestation_key_revocations",
+  "outcome_comparison_privacy_releases"
 ].map((table_name) => ({
   table_name,
   rls_enabled: true,
@@ -265,17 +491,58 @@ const REQUIRED_SECURITY_ROWS = [
   authenticated_has_privilege: false
 }));
 
+const REQUIRED_INDEX_ROWS = [
+  {
+    index_name: "outcome_comparison_release_proof_journal_key",
+    table_name: "outcome_comparison_privacy_releases",
+    table_schema: "public",
+    is_unique: true,
+    is_valid: true,
+    is_ready: true,
+    is_partial: false,
+    has_expressions: false,
+    index_method: "btree",
+    column_names: ["org_id", "proof_journal_id"],
+    key_column_count: 2,
+    total_column_count: 2
+  },
+  {
+    index_name: "outcome_comparison_release_reservation_key",
+    table_name: "outcome_comparison_privacy_releases",
+    table_schema: "public",
+    is_unique: true,
+    is_valid: true,
+    is_ready: true,
+    is_partial: false,
+    has_expressions: false,
+    index_method: "btree",
+    column_names: ["org_id", "reservation_key"],
+    key_column_count: 2,
+    total_column_count: 2
+  }
+];
+
 const mockDb = (
   tableRows: Array<{ tablename: string }>,
   columnRows = REQUIRED_COLUMN_ROWS,
   guardRows = REQUIRED_GUARD_ROWS,
   constraintRows = REQUIRED_CONSTRAINT_ROWS,
-  securityRows = REQUIRED_SECURITY_ROWS
+  securityRows = REQUIRED_SECURITY_ROWS,
+  familyKeyFunctionRows = REQUIRED_FAMILY_KEY_FUNCTION_ROWS,
+  indexRows = REQUIRED_INDEX_ROWS,
+  attestationStructureOk = true
 ) => ({
   getPrisma: () => ({
+    $queryRaw: async () => [{ ok: true, diagnostics: [] }],
     $queryRawUnsafe: async (query: string) =>
-      query.includes("information_schema.columns")
+      query.includes("outcome_comparison_attestation_structure")
+        ? [{ ok: attestationStructureOk }]
+      : query.includes("information_schema.columns")
         ? columnRows
+        : query.includes("privacy_unique_indexes")
+          ? indexRows
+        : query.includes("family_key_function")
+          ? familyKeyFunctionRows
         : query.includes("security_table")
           ? securityRows
         : query.includes("pg_trigger")
@@ -294,11 +561,21 @@ const mockDb = (
 describe("health postgres disclosure", () => {
   const originalDatabaseUrl = process.env.DATABASE_URL;
   const originalDirectUrl = process.env.DIRECT_URL;
+  const originalAttestationKeyId =
+    process.env.C1_CREATION_ATTESTATION_ACTIVE_KEY_ID;
+  const originalAttestationKeys =
+    process.env.C1_CREATION_ATTESTATION_KEYS_JSON;
 
   beforeEach(() => {
     jest.resetModules();
     process.env.DATABASE_URL = "postgresql://fluency:fluency@localhost:5432/fluency?schema=public";
     process.env.DIRECT_URL = process.env.DATABASE_URL;
+    process.env.C1_CREATION_ATTESTATION_ACTIVE_KEY_ID =
+      "FT_C1_HMAC_PRIMARY";
+    process.env.C1_CREATION_ATTESTATION_KEYS_JSON = JSON.stringify({
+      FT_C1_HMAC_PRIMARY:
+        "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+    });
   });
 
   afterEach(() => {
@@ -312,6 +589,18 @@ describe("health postgres disclosure", () => {
       delete process.env.DIRECT_URL;
     } else {
       process.env.DIRECT_URL = originalDirectUrl;
+    }
+    if (originalAttestationKeyId === undefined) {
+      delete process.env.C1_CREATION_ATTESTATION_ACTIVE_KEY_ID;
+    } else {
+      process.env.C1_CREATION_ATTESTATION_ACTIVE_KEY_ID =
+        originalAttestationKeyId;
+    }
+    if (originalAttestationKeys === undefined) {
+      delete process.env.C1_CREATION_ATTESTATION_KEYS_JSON;
+    } else {
+      process.env.C1_CREATION_ATTESTATION_KEYS_JSON =
+        originalAttestationKeys;
     }
     jest.dontMock("../src/db");
   });
@@ -451,6 +740,89 @@ describe("health postgres disclosure", () => {
     expect(response.body.missing_guards).toEqual([
       "aggregate_privacy_reservations_append_only"
     ]);
+  });
+
+  it("fails readiness when exact creation-attestation structure drifts", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS,
+        REQUIRED_FAMILY_KEY_FUNCTION_ROWS,
+        REQUIRED_INDEX_ROWS,
+        false
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_security).toContain(
+      "outcome_comparison_attestation_structure"
+    );
+  });
+
+  it("fails readiness when Outcome Evidence has an unexpected later trigger", async () => {
+    const unexpectedTrigger = {
+      ...REQUIRED_GUARD_ROWS.find(
+        (row) =>
+          row.tgname === "outcome_evidence_family_lock_before_mutation"
+      )!,
+      tgname: "zz_outcome_evidence_rewrite_after_lock",
+      function_name: "rewrite_outcome_evidence_slice_after_lock"
+    };
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        [...REQUIRED_GUARD_ROWS, unexpectedTrigger],
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS,
+        REQUIRED_FAMILY_KEY_FUNCTION_ROWS,
+        REQUIRED_INDEX_ROWS,
+        false
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_security).toContain(
+      "outcome_comparison_attestation_structure"
+    );
+  });
+
+  it("fails readiness when the exact checker rejects a column-filtered Outcome Evidence trigger", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS,
+        REQUIRED_FAMILY_KEY_FUNCTION_ROWS,
+        REQUIRED_INDEX_ROWS,
+        false
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_security).toContain(
+      "outcome_comparison_attestation_structure"
+    );
   });
 
   it("fails readiness when the guard function body is replaced", async () => {
@@ -672,6 +1044,263 @@ describe("health postgres disclosure", () => {
         "measurement_cell_snapshots.aggregate_boundary_ref_json"
       ])
     );
+  });
+
+  it("fails readiness when the C.1 release table is missing", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS.filter(
+          (row) => row.tablename !== "outcome_comparison_privacy_releases"
+        )
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_tables).toEqual([
+      "outcome_comparison_privacy_releases"
+    ]);
+  });
+
+  it("fails readiness when the Outcome Evidence family mutation trigger is missing", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS.filter(
+          (row) =>
+            row.tgname !== "outcome_evidence_family_lock_before_mutation"
+        )
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_guards).toEqual([
+      "outcome_evidence_family_lock_before_mutation"
+    ]);
+    expect(response.body.required_guards).toEqual(
+      expect.arrayContaining([
+        "outcome_evidence_family_lock_before_mutation",
+        "outcome_evidence_family_lock_key_function"
+      ])
+    );
+  });
+
+  it.each([
+    ["has a WHEN clause", { has_no_when_clause: false }],
+    ["receives trigger arguments", { argument_count: 1 }]
+  ])(
+    "fails readiness when the Outcome Evidence family mutation trigger %s",
+    async (_condition, patch) => {
+      jest.doMock("../src/db", () =>
+        mockDb(
+          REQUIRED_TABLE_ROWS,
+          REQUIRED_COLUMN_ROWS,
+          REQUIRED_GUARD_ROWS.map((row) =>
+            row.tgname === "outcome_evidence_family_lock_before_mutation"
+              ? { ...row, ...patch }
+              : row
+          )
+        )
+      );
+
+      const { app } = await import("../src/app");
+      const response = await request(app)
+        .get("/ops/db/readiness")
+        .set({ "x-role": "EXEC_VIEWER" });
+
+      expect(response.status).toBe(503);
+      expect(response.body.missing_guards).toEqual([
+        "outcome_evidence_family_lock_before_mutation"
+      ]);
+    }
+  );
+
+  it("fails readiness when the family lock key SQL codec is missing", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS,
+        []
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_guards).toEqual([
+      "outcome_evidence_family_lock_key_function"
+    ]);
+  });
+
+  it.each([
+    [
+      "has a different four-argument overload",
+      { argument_types: "text, text, uuid, text" }
+    ],
+    ["returns a non-text value", { return_type: "uuid" }],
+    ["is STRICT", { function_is_strict: true }],
+    [
+      "has a different configured search path",
+      { function_config: ["search_path=public, pg_catalog"] }
+    ]
+  ])(
+    "fails readiness when the family lock key function %s",
+    async (_condition, patch) => {
+      jest.doMock("../src/db", () =>
+        mockDb(
+          REQUIRED_TABLE_ROWS,
+          REQUIRED_COLUMN_ROWS,
+          REQUIRED_GUARD_ROWS,
+          REQUIRED_CONSTRAINT_ROWS,
+          REQUIRED_SECURITY_ROWS,
+          REQUIRED_FAMILY_KEY_FUNCTION_ROWS.map((row) => ({
+            ...row,
+            ...patch
+          }))
+        )
+      );
+
+      const { app } = await import("../src/app");
+      const response = await request(app)
+        .get("/ops/db/readiness")
+        .set({ "x-role": "EXEC_VIEWER" });
+
+      expect(response.status).toBe(503);
+      expect(response.body.missing_guards).toEqual([
+        "outcome_evidence_family_lock_key_function"
+      ]);
+    }
+  );
+
+  it("fails readiness when the C.1 table grants a Data API role", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS.map((row) =>
+          row.table_name === "outcome_comparison_privacy_releases"
+            ? { ...row, authenticated_has_privilege: true }
+            : row
+        )
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_security).toEqual([
+      "outcome_comparison_privacy_releases"
+    ]);
+  });
+
+  it("fails readiness when a C.1 unique replay index is missing", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS,
+        REQUIRED_FAMILY_KEY_FUNCTION_ROWS,
+        REQUIRED_INDEX_ROWS.filter(
+          (row) =>
+            row.index_name !==
+            "outcome_comparison_release_proof_journal_key"
+        )
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_indexes).toEqual([
+      "outcome_comparison_release_proof_journal_key"
+    ]);
+    expect(response.body.required_indexes).toEqual([
+      "outcome_comparison_release_proof_journal_key",
+      "outcome_comparison_release_reservation_key"
+    ]);
+  });
+
+  it("fails readiness when a C.1 unique replay index is invalid", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS,
+        REQUIRED_FAMILY_KEY_FUNCTION_ROWS,
+        REQUIRED_INDEX_ROWS.map((row) =>
+          row.index_name === "outcome_comparison_release_reservation_key"
+            ? { ...row, is_valid: false }
+            : row
+        )
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_indexes).toEqual([
+      "outcome_comparison_release_reservation_key"
+    ]);
+  });
+
+  it("fails readiness when a C.1 replay index is not unique", async () => {
+    jest.doMock("../src/db", () =>
+      mockDb(
+        REQUIRED_TABLE_ROWS,
+        REQUIRED_COLUMN_ROWS,
+        REQUIRED_GUARD_ROWS,
+        REQUIRED_CONSTRAINT_ROWS,
+        REQUIRED_SECURITY_ROWS,
+        REQUIRED_FAMILY_KEY_FUNCTION_ROWS,
+        REQUIRED_INDEX_ROWS.map((row) =>
+          row.index_name ===
+          "outcome_comparison_release_proof_journal_key"
+            ? { ...row, is_unique: false }
+            : row
+        )
+      )
+    );
+
+    const { app } = await import("../src/app");
+    const response = await request(app)
+      .get("/ops/db/readiness")
+      .set({ "x-role": "EXEC_VIEWER" });
+
+    expect(response.status).toBe(503);
+    expect(response.body.missing_indexes).toEqual([
+      "outcome_comparison_release_proof_journal_key"
+    ]);
   });
 
   it("reports Phase 4 AI Value persistence tables in ops readiness error posture", async () => {

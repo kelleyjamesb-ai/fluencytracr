@@ -1055,3 +1055,72 @@ model CohortProofJournal {
   @@unique([orgId, reservationKey], name: "cohort_proof_journal_reservation_key")
   @@map("cohort_proof_journal")
 }
+
+model OutcomeComparisonPrivacyRelease {
+  id                       String   @id @default(uuid()) @db.Uuid
+  orgId                    String   @map("org_id")
+  policyVersion            String   @map("policy_version")
+  proofJournalId           String   @map("proof_journal_id") @db.Uuid
+  proofHash                String   @map("proof_hash")
+  reservationKey           String   @map("reservation_key")
+  admissionReceiptHash     String   @map("admission_receipt_hash")
+  workflowId               String   @map("workflow_id")
+  jbtdId                   String   @map("jbtd_id")
+  personaId                String   @map("persona_id")
+  outcomeMetric            String   @map("outcome_metric")
+  outcomeUnit              String   @map("outcome_unit")
+  sourceSystem             String   @map("source_system")
+  baselinePeriodStart      DateTime @map("baseline_period_start")
+  baselinePeriodEnd        DateTime @map("baseline_period_end")
+  baselineEvidenceId       String   @map("baseline_evidence_id")
+  baselineEvidenceHash     String   @map("baseline_evidence_hash")
+  baselineCohortSize       Int      @map("baseline_cohort_size")
+  baselineAggregateValue   Float    @map("baseline_aggregate_value")
+  comparisonPeriodStart    DateTime @map("comparison_period_start")
+  comparisonPeriodEnd      DateTime @map("comparison_period_end")
+  comparisonEvidenceId     String   @map("comparison_evidence_id")
+  comparisonEvidenceHash   String   @map("comparison_evidence_hash")
+  comparisonCohortSize     Int      @map("comparison_cohort_size")
+  comparisonAggregateValue Float    @map("comparison_aggregate_value")
+  projectionJson           Json     @map("projection_json")
+  projectionHash           String   @map("projection_hash")
+  contentFingerprint       String   @map("content_fingerprint")
+  decision                 String
+  comparisonPrivacyOnly    Boolean  @map("comparison_privacy_only")
+  claimAuthorityEffect     String   @map("claim_authority_effect")
+  claimAuthorized          Boolean  @map("claim_authorized")
+  modelAuthorized          Boolean  @map("model_authorized")
+  customerPublishable      Boolean  @map("customer_publishable")
+  attestationKeyId         String   @map("attestation_key_id")
+  creationAttestation      String   @map("creation_attestation")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([orgId, proofJournalId], name: "outcome_comparison_release_proof_journal_key", map: "outcome_comparison_release_proof_journal_key")
+  @@unique([orgId, reservationKey], name: "outcome_comparison_release_reservation_key", map: "outcome_comparison_release_reservation_key")
+  @@map("outcome_comparison_privacy_releases")
+}
+
+model OutcomeComparisonAttestationKey {
+  keyId         String   @id @map("key_id")
+  algorithm     String
+  secretHash    String   @map("secret_hash")
+  provisionedAt DateTime @default(now()) @map("provisioned_at") @db.Timestamptz(3)
+
+  @@map("outcome_comparison_attestation_keys")
+}
+
+model OutcomeComparisonAttestationKeyActivation {
+  activationEpoch BigInt   @id @default(autoincrement()) @map("activation_epoch")
+  keyId           String   @map("key_id")
+  activatedAt     DateTime @default(now()) @map("activated_at") @db.Timestamptz(3)
+
+  @@map("outcome_comparison_attestation_key_activations")
+}
+
+model OutcomeComparisonAttestationKeyRevocation {
+  keyId      String   @id @map("key_id")
+  reasonCode String   @map("reason_code")
+  revokedAt  DateTime @default(now()) @map("revoked_at") @db.Timestamptz(3)
+
+  @@map("outcome_comparison_attestation_key_revocations")
+}

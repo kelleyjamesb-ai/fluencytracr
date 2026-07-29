@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/outcome_comparison_projection.schema.json",
+  "title": "Outcome Comparison Atomic Projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "policy_version",
+    "org_id",
+    "workflow_id",
+    "jbtd_id",
+    "persona_id",
+    "outcome_metric",
+    "outcome_unit",
+    "source_system",
+    "baseline_window",
+    "comparison_window"
+  ],
+  "properties": {
+    "policy_version": {
+      "const": "FT_OUTCOME_COMPARISON_PRIVACY_POLICY_2026_07"
+    },
+    "org_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180,
+      "pattern": "^[a-z0-9][a-z0-9:_-]{0,179}$"
+    },
+    "workflow_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180,
+      "pattern": "^[a-z0-9][a-z0-9:_-]{0,179}$"
+    },
+    "jbtd_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "persona_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "outcome_metric": { "type": "string", "minLength": 1, "maxLength": 180 },
+    "outcome_unit": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "source_system": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "baseline_window": { "$ref": "#/$defs/window" },
+    "comparison_window": { "$ref": "#/$defs/window" }
+  },
+  "$defs": {
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "period_start",
+        "period_end",
+        "evidence_id",
+        "cohort_size",
+        "aggregate_value"
+      ],
+      "properties": {
+        "period_start": {
+          "type": "string",
+          "format": "date-time",
+          "minLength": 24,
+          "maxLength": 24,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date-time",
+          "minLength": 24,
+          "maxLength": 24,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        },
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$"
+        },
+        "cohort_size": { "type": "integer", "minimum": 5 },
+        "aggregate_value": { "type": "number" }
+      }
+    }
+  }
+}

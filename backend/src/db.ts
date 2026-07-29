@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { disconnectOutcomeComparisonRuntimePrisma } from "./outcome-comparison-runtime-client";
 
 let prisma: PrismaClient | null = null;
 
@@ -10,6 +11,7 @@ export const getPrisma = () => {
 };
 
 export const disconnectPrisma = async () => {
+  await disconnectOutcomeComparisonRuntimePrisma();
   if (!prisma) {
     return;
   }

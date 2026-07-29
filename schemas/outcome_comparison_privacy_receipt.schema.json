@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/outcome_comparison_privacy_receipt.schema.json",
+  "title": "Outcome Comparison Privacy Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "policy_version",
+    "release_id",
+    "proof_journal_id",
+    "reservation_key",
+    "content_fingerprint",
+    "projection_hash",
+    "comparison_privacy_only",
+    "claim_authority_effect",
+    "claim_authorized",
+    "model_authorized",
+    "customer_publishable"
+  ],
+  "properties": {
+    "policy_version": {
+      "const": "FT_OUTCOME_COMPARISON_PRIVACY_POLICY_2026_07"
+    },
+    "release_id": { "type": "string", "format": "uuid" },
+    "proof_journal_id": { "type": "string", "format": "uuid" },
+    "reservation_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "content_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "projection_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "comparison_privacy_only": { "const": true },
+    "claim_authority_effect": { "const": "NONE" },
+    "claim_authorized": { "const": false },
+    "model_authorized": { "const": false },
+    "customer_publishable": { "const": false }
+  }
+}
