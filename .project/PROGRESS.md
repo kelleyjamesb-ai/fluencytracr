@@ -4967,3 +4967,35 @@
   not been redeployed with the new environment revision, and no authenticated
   runtime readiness or live application proof is claimed. Slice F remains
   unactivated pending the required human-authored queue item.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice F implementation candidate)
+
+- Designed, locally implemented, focused-verified, and committed locally:
+  one binding-addressed, read-only, allowlisted claim trace; backend-only
+  binding authority and fixed HOLD behavior; legacy HTML demotion; and removal
+  of frontend packet-selection authority. The Slice F queue item's bound and
+  exclusions remain unchanged.
+- Parent implementation SHA is
+  `ba55489c0ea9c528621cac5702d17a9e79b4e574`
+  (`test(mcii): verify Slice F trace against PostgreSQL authority`). This
+  evidence-state commit records that parent; the resulting evidence commit is
+  the immutable target for all exact-SHA review.
+- Focused evidence from the implementation candidate: `npm run
+  test:canonical-claim-trace` passed `3/3`; `npm run test:ci --workspace
+  backend -- --runTestsByPath tests/canonical_claim_trace_api.test.ts
+  tests/aggregate_claim_authorization_contract.test.ts
+  tests/ai_value_objects_api.test.ts
+  tests/canonical_identity_binding_contract.test.ts` passed `4/4` suites and
+  `93/93` tests; `npm test --workspace frontend -- src/lib/aiValueApi.test.ts
+  src/pages/AIValueJourney.test.tsx
+  src/pages/AIValueReadoutPrototype.test.tsx` passed `3/3` files and `42/42`
+  tests; and `npm run verify:canonical-claim-trace:postgres` passed against a
+  fresh disposable PostgreSQL 17 fixture. `git diff --check` passed.
+- No migration was created or applied to production, and no deployment,
+  publication, push, PR, merge, or authenticated/live proof was performed.
+  The disposable verifier replayed existing migrations only in its task-owned
+  database.
+- Outstanding gates: independent CODE, BUG, and ADVERSARIAL review of the
+  resulting exact SHA; one required full-suite run on that reviewed SHA;
+  GitHub push/PR/current-head CI and review resolution; normal merge; and any
+  deployment or live proof only with separate authorization.

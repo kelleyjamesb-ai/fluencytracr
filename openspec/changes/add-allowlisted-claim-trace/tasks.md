@@ -7,19 +7,29 @@
 
 ## 2. Read-only authority path
 
-- [ ] 2.1 Add the exact-binding-only authenticated backend route and service.
-- [ ] 2.2 Revalidate all current sources, attestation, renderer, and final
+- [x] 2.1 Add the exact-binding-only authenticated backend route and service.
+- [x] 2.2 Revalidate all current sources, attestation, renderer, and final
       source/journal heads before an allowlisted projection.
-- [ ] 2.3 Return fixed `HOLD` for every authenticated lookup or authority
+- [x] 2.3 Return fixed `HOLD` for every authenticated lookup or authority
       failure without diagnostics, mutations, query input, or request body.
 
 ## 3. Legacy authority demotion
 
-- [ ] 3.1 Remove generic packet selection and packet-count trace authority.
-- [ ] 3.2 Add fixed legacy HTML deprecation headers without redirecting or
+- [x] 3.1 Remove generic packet selection and packet-count trace authority.
+- [x] 3.2 Add fixed legacy HTML deprecation headers without redirecting or
       claiming equivalence to the JSON trace.
 
 ## 4. Verification
 
 - [x] 4.1 Run focused shared contract and strict OpenSpec validation.
-- [ ] 4.2 Add focused backend, frontend, PostgreSQL, and adversarial coverage.
+- [x] 4.2 Add focused backend, frontend, PostgreSQL, and adversarial coverage.
+
+## 5. Exact-SHA release gates
+
+- [ ] 5.1 Freeze this evidence-state commit and obtain independent exact-SHA
+      CODE, BUG, and ADVERSARIAL review.
+- [ ] 5.2 Run the required full suite on the final reviewed SHA.
+- [ ] 5.3 Push, open the GitHub PR, and obtain current-head CI and review
+      resolution.
+- [ ] 5.4 Merge normally after the required approvals and current-head gates.
+- [ ] 5.5 Deploy and obtain live proof only under separate authorization.
