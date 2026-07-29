@@ -115,7 +115,8 @@ When present, the binding has schema version
 `FT_CANONICAL_SLICE_BINDING_V1` and contains:
 
 - positive `plan_version`;
-- exact `workflow_id`, `jbtd_id`, and `persona_id`;
+- domain-separated SHA-256 `workflow_commitment`, `jbtd_commitment`, and
+  `persona_commitment` values for the exact aggregate slice join keys;
 - exact baseline and comparison start/end timestamps;
 - `metric_id`;
 - version-bearing `metric_definition_ref`;
@@ -132,14 +133,16 @@ The commitment is recomputed under
 schema version and commitment itself. The bound plan version, windows,
 aggregate grain, and primary metric must exact-match the containing
 Measurement Plan. Slice E additionally exact-compares the organization,
-workflow, JBTD, persona, source, unit, permitted direction, metric-definition
+workflow, JBTD, and persona commitments plus source, unit, permitted direction, metric-definition
 commitment, aggregate grain, and windows with the selected Measurement Cell,
 authoritative Slice D source graph, accepted export, and current C.1
 projection.
 
-No aliasing, normalization, inferred equivalence, caller-provided hash, or
-latest-version lookup can repair a mismatch. Selector IDs never enter the
-reserved claim or binding payload as raw text.
+No aliasing, normalization, inferred equivalence, or latest-version lookup can
+repair a mismatch. Slice join-key commitments are recomputed by the server
+under `FT_CANONICAL_SLICE_JOIN_KEY_COMMITMENT_V1`; raw workflow, JBTD, persona,
+and selector IDs never enter the E-capable plan binding or the reserved claim
+or binding payload as raw text.
 
 ## 7. Workflow and Function Scope
 

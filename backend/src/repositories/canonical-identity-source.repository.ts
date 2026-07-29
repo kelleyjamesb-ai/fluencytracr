@@ -1,7 +1,7 @@
 import { aiValueEngine } from "@fluencytracr/shared";
 import type { Prisma } from "@prisma/client";
 
-import { getPrisma } from "../db";
+import { getCanonicalIdentityRuntimePrisma } from "../canonical-identity-runtime-client";
 
 export type CanonicalIdentitySourceKind =
   | "VALUE_HYPOTHESIS"
@@ -86,7 +86,9 @@ const journalHead = async (
   orgId: string,
   stableId: string
 ): Promise<CanonicalIdentityJournalHead | null> => {
-  const row = await getPrisma().aiValueCanonicalIdentityFamilyHeadJournal.findFirst({
+  const runtimePrisma = getCanonicalIdentityRuntimePrisma();
+  if (!runtimePrisma) return null;
+  const row = await runtimePrisma.aiValueCanonicalIdentityFamilyHeadJournal.findFirst({
     where: { sourceKind, orgId, stableSourceId: stableId },
     orderBy: { version: "desc" }
   });
@@ -111,7 +113,9 @@ const journalVersion = async (
   stableId: string,
   version: number
 ): Promise<CanonicalIdentityJournalHead | null> => {
-  const row = await getPrisma().aiValueCanonicalIdentityFamilyHeadJournal.findUnique({
+  const runtimePrisma = getCanonicalIdentityRuntimePrisma();
+  if (!runtimePrisma) return null;
+  const row = await runtimePrisma.aiValueCanonicalIdentityFamilyHeadJournal.findUnique({
     where: {
       sourceKind_orgId_stableSourceId_version: {
         sourceKind,
@@ -159,23 +163,25 @@ export async function loadCanonicalIdentityExactSources(
 ): Promise<CanonicalIdentityExactSources | null> {
   const parsed = aiValueEngine.CanonicalIdentitySelectorSchema.safeParse(selector);
   if (!parsed.success) return null;
+  const runtimePrisma = getCanonicalIdentityRuntimePrisma();
+  if (!runtimePrisma) return null;
 
   const [hypothesisRow, planRow, cellRow] = await Promise.all([
-    getPrisma().valueHypothesis.findFirst({
+    runtimePrisma.valueHypothesis.findFirst({
       where: {
         orgId,
         valueHypothesisId: parsed.data.value_hypothesis_id,
         version: parsed.data.value_hypothesis_version
       }
     }),
-    getPrisma().measurementPlan.findFirst({
+    runtimePrisma.measurementPlan.findFirst({
       where: {
         orgId,
         measurementPlanId: parsed.data.measurement_plan_id,
         version: parsed.data.measurement_plan_version
       }
     }),
-    getPrisma().measurementCellSnapshot.findFirst({
+    runtimePrisma.measurementCellSnapshot.findFirst({
       where: {
         orgId,
         measurementCellId: parsed.data.measurement_cell_id,

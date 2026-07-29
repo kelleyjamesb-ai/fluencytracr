@@ -537,6 +537,8 @@ const mockDb = (
     $queryRawUnsafe: async (query: string) =>
       query.includes("outcome_comparison_attestation_structure")
         ? [{ ok: attestationStructureOk }]
+      : query.includes("canonical_identity_family_head_structure")
+        ? [{ ok: true }]
       : query.includes("information_schema.columns")
         ? columnRows
         : query.includes("privacy_unique_indexes")

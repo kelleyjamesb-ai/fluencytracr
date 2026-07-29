@@ -10,6 +10,10 @@ const postPushPath = path.resolve(
   "../prisma/post_push/20260728230000_canonical_identity_family_head.sql"
 );
 const schemaPath = path.resolve(__dirname, "../prisma/schema.prisma");
+const workflowPaths = [
+  path.resolve(__dirname, "../../.github/workflows/assurance-harness.yml"),
+  path.resolve(__dirname, "../../.github/workflows/assurance-harness-full.yml")
+];
 
 const migrationSql = fs.readFileSync(migrationPath, "utf8");
 const postPushSql = fs.readFileSync(postPushPath, "utf8");
@@ -54,6 +58,16 @@ describe("Slice E canonical identity family-head migration", () => {
       expect(sql).toContain("canonical_identity_family_head_slice_e_runtime_select");
       expect(sql).not.toContain(
         "GRANT INSERT ON TABLE\n  public.ai_value_canonical_identity_family_head_journal"
+      );
+    }
+  );
+
+  it.each(workflowPaths)(
+    "configures the exact Slice E runtime login in %s",
+    (workflowPath) => {
+      const workflow = fs.readFileSync(workflowPath, "utf8");
+      expect(workflow).toContain(
+        "SLICE_E_RUNTIME_DATABASE_URL: postgresql://fluencytracr_slice_e_runtime:"
       );
     }
   );

@@ -4719,3 +4719,29 @@
   candidate commit, run exact-SHA CODE/BUG/ADVERSARIAL review in parallel,
   repair only an executable authorization/privacy or nine-invariant blocker,
   then run the full required suite once on the final reviewed SHA.
+- Froze candidate `af82d7228b73870c31c9415e1db2dd27a309aa88`.
+  Exact-SHA CODE review returned `HOLD`, and the BUG and ADVERSARIAL reviews
+  independently reproduced the same authorization boundary before their
+  final report channels were interrupted. The executable blockers were:
+  post-seal hypothesis supersession still returned `BOUND`; raw
+  person-identifiable text such as `persona_id: "james_kelley"` entered the
+  E-capable plan binding; and Slice E source paths used the general
+  database-owner credential instead of the restricted Slice E role.
+- Repaired only those demonstrated failures. Post-commit authorization now
+  rebuilds and exact-compares the full current canonical source/journal
+  authority. The E-capable plan binding retains domain-separated workflow,
+  JBTD, and persona commitments rather than raw join keys. Slice E source
+  creation, loading, journal readback, and family locks require the exact
+  `fluencytracr_slice_e_runtime` login from `SLICE_E_RUNTIME_DATABASE_URL`;
+  its advisory family locks span the separate atomic four-artifact seal, so
+  C.1 RLS policy history on `ai_value_objects` remains unchanged.
+- Fresh repair evidence passed: shared/backend builds; 10 focused backend
+  suites, 133/133 tests; 56/56 Measurement Plan contract tests; strict
+  OpenSpec; whitespace; and disposable PostgreSQL 16 C.0/C.1/D/E verification.
+  The PostgreSQL verifier now executes the elevated-credential rejection,
+  commitment-only slice binding, and post-seal canonical supersession HOLD.
+- State: the replacement tree is designed, locally implemented, and
+  focused-verified. It is not yet committed, exact-SHA rereviewed,
+  full-suite verified, pushed, in a PR, merged, deployed, or applied to
+  production. Next: freeze the replacement commit and rerun exact-SHA
+  CODE/BUG/ADVERSARIAL review in parallel.

@@ -11,6 +11,12 @@ import {
   exactOutcomeEvidenceSliceSegment
 } from "../outcome_evidence_admission_authority";
 import {
+  canonicalIdentityRuntimeCredentialIsReady,
+  getCanonicalIdentityRuntimePrisma
+} from "../canonical-identity-runtime-client";
+import { checkCanonicalIdentityFamilyHeadStructureReadiness } from "../canonical-identity-family-head-structure";
+import { getPrisma } from "../db";
+import {
   aiValueObjectSemanticHash,
   aiValueObjectUsesPrisma,
   getAiValueObject,
@@ -347,6 +353,14 @@ export const resolveCanonicalIdentityAuthority = async (
   comparison: Exclude<OutcomeComparisonPrivacyReleaseResult, { decision: "HOLD" }>,
   selector: aiValueEngine.CanonicalIdentitySelector
 ): Promise<CanonicalIdentityAuthority | null> => {
+  const runtimePrisma = getCanonicalIdentityRuntimePrisma();
+  if (
+    !runtimePrisma ||
+    !(await canonicalIdentityRuntimeCredentialIsReady(runtimePrisma)) ||
+    !(await checkCanonicalIdentityFamilyHeadStructureReadiness(getPrisma()))
+  ) {
+    return null;
+  }
   const sources = await loadCanonicalIdentityExactSources(graph.expectedSlice.org_id, selector);
   if (!sources) return null;
   const { hypothesis, plan, measurementCell } = sources;
@@ -403,9 +417,9 @@ export const resolveCanonicalIdentityAuthority = async (
   const bindingCandidate = {
     schema_version: sliceBinding.schema_version,
     plan_version: sliceBinding.plan_version,
-    workflow_id: sliceBinding.workflow_id,
-    jbtd_id: sliceBinding.jbtd_id,
-    persona_id: sliceBinding.persona_id,
+    workflow_commitment: sliceBinding.workflow_commitment,
+    jbtd_commitment: sliceBinding.jbtd_commitment,
+    persona_commitment: sliceBinding.persona_commitment,
     baseline_window_start: sliceBinding.baseline_window_start,
     baseline_window_end: sliceBinding.baseline_window_end,
     comparison_window_start: sliceBinding.comparison_window_start,
@@ -561,9 +575,21 @@ export const resolveCanonicalIdentityAuthority = async (
   const sourceSystem = objectRef(metricProjection.source_system);
   if (
     bindingCandidate.plan_version !== plan.version ||
-    bindingCandidate.workflow_id !== graph.expectedSlice.workflow_id ||
-    bindingCandidate.jbtd_id !== graph.expectedSlice.jbtd_id ||
-    bindingCandidate.persona_id !== graph.expectedSlice.persona_id ||
+    bindingCandidate.workflow_commitment !==
+      aiValueEngine.canonicalSliceJoinKeyCommitment(
+        "workflow_id",
+        graph.expectedSlice.workflow_id
+      ) ||
+    bindingCandidate.jbtd_commitment !==
+      aiValueEngine.canonicalSliceJoinKeyCommitment(
+        "jbtd_id",
+        graph.expectedSlice.jbtd_id
+      ) ||
+    bindingCandidate.persona_commitment !==
+      aiValueEngine.canonicalSliceJoinKeyCommitment(
+        "persona_id",
+        graph.expectedSlice.persona_id
+      ) ||
     bindingCandidate.baseline_window_start !== comparison.projection.baseline_window.period_start ||
     bindingCandidate.baseline_window_end !== comparison.projection.baseline_window.period_end ||
     bindingCandidate.comparison_window_start !==
@@ -588,7 +614,10 @@ export const resolveCanonicalIdentityAuthority = async (
     measurementCell.authority.aggregate_source_system !== bindingCandidate.outcome_source_system ||
     measurementCell.authority.metric_definition_ref !== bindingCandidate.metric_definition_ref ||
     measurementCell.authority.metric_unit !== bindingCandidate.measurement_unit ||
-    measurementCell.authority.workflow_id !== bindingCandidate.workflow_id ||
+    aiValueEngine.canonicalSliceJoinKeyCommitment(
+      "workflow_id",
+      String(measurementCell.authority.workflow_id)
+    ) !== bindingCandidate.workflow_commitment ||
     measurementCell.authority.baseline_window_start !== bindingCandidate.baseline_window_start ||
     measurementCell.authority.baseline_window_end !== bindingCandidate.baseline_window_end ||
     measurementCell.authority.comparison_window_start !==
@@ -851,6 +880,41 @@ export const authorizeAggregateClaim = async (
       readAiValueObjectSet(request.orgId, exactSourceRefs(graph)),
       readAiValueClaimBundle(request.orgId, bundle.packet.packet_id)
     ]);
+    const postCommitCanonicalAuthority =
+      canonicalAuthority && request.canonicalIdentitySelector
+        ? await resolveCanonicalIdentityAuthority(
+            graph,
+            postCommitComparison,
+            request.canonicalIdentitySelector
+          )
+        : null;
+    const canonicalBundleInvalid =
+      binding !== undefined &&
+      (!currentBundle?.binding ||
+        !deepEqual(currentBundle.binding.payload, binding) ||
+        !deepEqual(
+          currentBundle.binding.validation.canonical_artifact_creation_attestation_v1,
+          bundleAttestation
+        ) ||
+        !verifySliceEAttestation(
+          "four_artifact_bundle",
+          canonicalArtifactBundleAttestationPayload({
+            orgCommitment: canonicalAuthority!.core.org_commitment,
+            coreCommitment: canonicalAuthority!.coreCommitment,
+            binding,
+            ...bundle
+          }),
+          currentBundle.binding.validation.canonical_artifact_creation_attestation_v1
+        ) ||
+        !aiValueEngine.canonicalIdentityBundleReconciles({
+          claim: currentBundle.claim.payload,
+          packet: currentBundle.packet.payload,
+          manifest: currentBundle.manifest.payload,
+          binding: currentBundle.binding.payload
+        }) ||
+        !postCommitCanonicalAuthority ||
+        postCommitCanonicalAuthority.coreCommitment !== canonicalAuthority!.coreCommitment ||
+        !deepEqual(postCommitCanonicalAuthority.sources, canonicalAuthority!.sources));
     if (
       !currentSources ||
       !currentBundle ||
@@ -858,29 +922,7 @@ export const authorizeAggregateClaim = async (
       !deepEqual(currentBundle.claim.payload, bundle.claim) ||
       !deepEqual(currentBundle.packet.payload, bundle.packet) ||
       !deepEqual(currentBundle.manifest.payload, bundle.manifest) ||
-      (binding !== undefined &&
-        (!currentBundle.binding ||
-          !deepEqual(currentBundle.binding.payload, binding) ||
-          !deepEqual(
-            currentBundle.binding.validation.canonical_artifact_creation_attestation_v1,
-            bundleAttestation
-          ) ||
-          !verifySliceEAttestation(
-            "four_artifact_bundle",
-            canonicalArtifactBundleAttestationPayload({
-              orgCommitment: canonicalAuthority!.core.org_commitment,
-              coreCommitment: canonicalAuthority!.coreCommitment,
-              binding,
-              ...bundle
-            }),
-            currentBundle.binding.validation.canonical_artifact_creation_attestation_v1
-          ) ||
-          !aiValueEngine.canonicalIdentityBundleReconciles({
-            claim: currentBundle.claim.payload,
-            packet: currentBundle.packet.payload,
-            manifest: currentBundle.manifest.payload,
-            binding: currentBundle.binding.payload
-          }))) ||
+      canonicalBundleInvalid ||
       !aiValueEngine.aggregateClaimBundleReconciles({
         claim: currentBundle.claim.payload,
         packet: currentBundle.packet.payload,

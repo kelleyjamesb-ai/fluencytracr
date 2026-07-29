@@ -30,6 +30,9 @@ const {
   checkCanonicalIdentityFamilyHeadStructureReadiness
 } = require("../backend/dist/canonical-identity-family-head-structure.js");
 const {
+  canonicalIdentityRuntimeCredentialIsReady
+} = require("../backend/dist/canonical-identity-runtime-client.js");
+const {
   canonicalHypothesisAttestationPayload,
   canonicalPlanEdgeAttestationPayload,
   canonicalMeasurementCellAttestationPayload,
@@ -151,9 +154,18 @@ await prisma.$executeRawUnsafe(
 const sliceERuntimeUrl = new URL(process.env.DATABASE_URL);
 sliceERuntimeUrl.username = "fluencytracr_slice_e_runtime";
 sliceERuntimeUrl.password = sliceERuntimePassword;
+process.env.SLICE_E_RUNTIME_DATABASE_URL = sliceERuntimeUrl.toString();
 const sliceERuntimePrisma = new PrismaClient({
   datasources: { db: { url: sliceERuntimeUrl.toString() } }
 });
+assert(
+  await canonicalIdentityRuntimeCredentialIsReady(sliceERuntimePrisma),
+  "configured Slice E client was not the exact least-privilege runtime role"
+);
+assert(
+  !(await canonicalIdentityRuntimeCredentialIsReady(prisma)),
+  "database-owner credential was accepted as the Slice E runtime role"
+);
 await expectRejected(
   () =>
     sliceERuntimePrisma.aiValueCanonicalIdentityFamilyHeadJournal.create({
@@ -574,9 +586,18 @@ measurementPlan.windows = {
 };
 measurementPlan.canonical_slice_binding_v1 = aiValueEngine.buildCanonicalSliceBindingV1({
   plan_version: 1,
-  workflow_id: projection.workflow_id,
-  jbtd_id: projection.jbtd_id,
-  persona_id: projection.persona_id,
+  workflow_commitment: aiValueEngine.canonicalSliceJoinKeyCommitment(
+    "workflow_id",
+    projection.workflow_id
+  ),
+  jbtd_commitment: aiValueEngine.canonicalSliceJoinKeyCommitment(
+    "jbtd_id",
+    projection.jbtd_id
+  ),
+  persona_commitment: aiValueEngine.canonicalSliceJoinKeyCommitment(
+    "persona_id",
+    projection.persona_id
+  ),
   baseline_window_start: projection.baseline_window.period_start,
   baseline_window_end: projection.baseline_window.period_end,
   comparison_window_start: projection.comparison_window.period_start,
@@ -1403,6 +1424,24 @@ assert(
   "exact artifact restoration did not recover current readback"
 );
 
+let postSealCanonicalReadCount = 0;
+const postSealCanonicalSupersession = await authorizeAggregateClaim(
+  canonicalAuthorizationRequest,
+  {
+    readComparison: async () => {
+      postSealCanonicalReadCount += 1;
+      if (postSealCanonicalReadCount === 3) {
+        await appendHypothesisAttack(2, hypothesisRowId);
+      }
+      return selected.result;
+    }
+  }
+);
+expectHeld(
+  postSealCanonicalSupersession,
+  "post-commit Slice E source supersession"
+);
+
 const journal = await prisma.cohortProofJournal.findUniqueOrThrow({
   where: { id: selected.row.proofJournalId }
 });
@@ -1429,7 +1468,7 @@ assert(
 );
 
 console.log(
-  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, forged bundle-attestation rejection, commitment-only artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
+  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E runtime credential, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
 );
 
 await sliceERuntimePrisma.$disconnect();

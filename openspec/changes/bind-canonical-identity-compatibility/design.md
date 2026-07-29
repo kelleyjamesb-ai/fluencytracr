@@ -82,7 +82,8 @@ cannot supply or replace a valid edge.
 For Slice E the binding is required on the exact selected Measurement Plan
 version and contains:
 
-- exact `workflow_id`, `jbtd_id`, and `persona_id`;
+- domain-separated commitments for the exact `workflow_id`, `jbtd_id`, and
+  `persona_id`;
 - exact baseline and comparison window boundaries;
 - exact metric ID, version-bearing metric-definition ref, separate canonical
   metric-definition commitment, outcome source system, measurement unit, and
@@ -93,10 +94,12 @@ version and contains:
 - a domain-separated slice commitment derived from the complete tuple, the
   authenticated organization, and the exact plan version.
 
-The raw tuple remains in the governed Measurement Plan source record because
-it is an approved aggregate slice, not a person identity. The reserved
-canonical binding artifact stores only its commitment. Email-like,
-person-shaped, raw user, or otherwise unsafe identifiers remain rejected.
+The raw tuple does not enter the E-capable Measurement Plan binding. The
+server recomputes domain-separated workflow, JBTD, and persona commitments
+from the authoritative aggregate slice before granting authority. The
+reserved canonical binding artifact stores only the complete tuple
+commitment. Email-like, person-shaped, raw user, or otherwise unsafe
+identifiers remain rejected.
 
 An E-capable Measurement Cell Snapshot requires a server-owned
 `canonical_measurement_lineage_v1` in its stored validation envelope. The
@@ -210,6 +213,13 @@ trigger owner is a non-login owner role, and the trigger function is the only
 journal writer. Structural readiness and the PostgreSQL verifier exact-check
 these owners, ACLs, function definitions, triggers, constraints, and absence
 of privilege drift.
+
+All Slice E source reads, writes, and family locks use the dedicated
+`fluencytracr_slice_e_runtime` login configured by
+`SLICE_E_RUNTIME_DATABASE_URL`. A missing URL, a different login, or an
+elevated login fails closed. The source-family runtime transaction holds its
+locks across the separate atomic four-artifact D/E seal, preserving the
+historical C.1 RLS posture on `ai_value_objects`.
 
 E sealing and every readout must lock and exact-match the selected source row,
 version, predecessor, semantic commitment, and verified source-attestation

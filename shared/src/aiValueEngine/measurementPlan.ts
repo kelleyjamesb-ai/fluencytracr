@@ -17,9 +17,9 @@ export const CANONICAL_SLICE_BINDING_SCHEMA_VERSION =
 export interface CanonicalSliceBindingV1 {
   schema_version: typeof CANONICAL_SLICE_BINDING_SCHEMA_VERSION;
   plan_version: number;
-  workflow_id: string;
-  jbtd_id: string;
-  persona_id: string;
+  workflow_commitment: string;
+  jbtd_commitment: string;
+  persona_commitment: string;
   baseline_window_start: string;
   baseline_window_end: string;
   comparison_window_start: string;
@@ -45,16 +45,23 @@ export type BuildCanonicalSliceBindingInput = Omit<
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const VERSION_BEARING_REF =
   /(?:[/#@:](?:v|version)?\d+|(?:v|version)[_:-]?\d+)$/i;
-const PERSON_SHAPED_CANONICAL_ID =
-  /(?:@|\b(?:employee|user|person|email|name)[_:-]?[a-z0-9])/i;
+
+export const canonicalSliceJoinKeyCommitment = (
+  field: "workflow_id" | "jbtd_id" | "persona_id",
+  value: string
+): string =>
+  aggregateClaimHash("FT_CANONICAL_SLICE_JOIN_KEY_COMMITMENT_V1", {
+    field,
+    value
+  });
 
 const canonicalSliceProjection = (
   input: BuildCanonicalSliceBindingInput
 ): BuildCanonicalSliceBindingInput => ({
   plan_version: input.plan_version,
-  workflow_id: input.workflow_id,
-  jbtd_id: input.jbtd_id,
-  persona_id: input.persona_id,
+  workflow_commitment: input.workflow_commitment,
+  jbtd_commitment: input.jbtd_commitment,
+  persona_commitment: input.persona_commitment,
   baseline_window_start: input.baseline_window_start,
   baseline_window_end: input.baseline_window_end,
   comparison_window_start: input.comparison_window_start,
@@ -541,9 +548,9 @@ function collectCanonicalSliceBindingGaps(
     );
   }
   for (const field of [
-    "workflow_id",
-    "jbtd_id",
-    "persona_id",
+    "workflow_commitment",
+    "jbtd_commitment",
+    "persona_commitment",
     "metric_id",
     "metric_definition_ref",
     "canonical_metric_definition_commitment_v1",
@@ -578,17 +585,12 @@ function collectCanonicalSliceBindingGaps(
     }
   }
   for (const field of [
-    "workflow_id",
-    "jbtd_id",
-    "persona_id",
-    "approved_by_role"
+    "workflow_commitment",
+    "jbtd_commitment",
+    "persona_commitment"
   ]) {
-    if (
-      PERSON_SHAPED_CANONICAL_ID.test(String(binding?.[field] ?? ""))
-    ) {
-      gaps.push(
-        `canonical_slice_binding_v1.${field} contains a person-shaped identifier`
-      );
+    if (!SHA256_HEX.test(String(binding?.[field] ?? ""))) {
+      gaps.push(`canonical_slice_binding_v1.${field} must be SHA-256`);
     }
   }
   if (

@@ -3,6 +3,10 @@ import crypto from "node:crypto";
 import { aiValueEngine } from "@fluencytracr/shared";
 import { Prisma } from "@prisma/client";
 
+import {
+  canonicalIdentityRuntimeCredentialIsReady,
+  getCanonicalIdentityRuntimePrisma
+} from "../canonical-identity-runtime-client";
 import { getPrisma } from "../db";
 import { store, type AiValueObjectStoredRecord } from "../store";
 
@@ -310,8 +314,7 @@ const lockCanonicalIdentitySource = async (
             WHERE "org_id" = ${orgId}
               AND "value_hypothesis_id" = ${source.stableId}
               AND "version" = ${source.version}
-              AND "id" = ${source.rowId}::uuid
-            FOR UPDATE`
+              AND "id" = ${source.rowId}::uuid`
         )
       : source.sourceKind === "MEASUREMENT_PLAN"
         ? await transaction.$queryRaw<
@@ -322,8 +325,7 @@ const lockCanonicalIdentitySource = async (
               WHERE "org_id" = ${orgId}
                 AND "measurement_plan_id" = ${source.stableId}
                 AND "version" = ${source.version}
-                AND "id" = ${source.rowId}::uuid
-              FOR UPDATE`
+                AND "id" = ${source.rowId}::uuid`
           )
         : await transaction.$queryRaw<
             Array<{ id: string; version: number; supersedes_id: string | null }>
@@ -333,8 +335,7 @@ const lockCanonicalIdentitySource = async (
               WHERE "org_id" = ${orgId}
                 AND "measurement_cell_id" = ${source.stableId}
                 AND "version" = ${source.version}
-                AND "id" = ${source.rowId}::uuid
-              FOR UPDATE`
+                AND "id" = ${source.rowId}::uuid`
           );
   if (
     rows.length !== 1 ||
@@ -362,8 +363,7 @@ const lockCanonicalIdentitySource = async (
       AND "org_id" = ${orgId}
       AND "stable_source_id" = ${source.stableId}
     ORDER BY "version" DESC
-    LIMIT 1
-    FOR UPDATE`
+    LIMIT 1`
   );
   const head = heads[0];
   return Boolean(
@@ -441,18 +441,9 @@ export async function sealAiValueClaimBundleSerializable(input: {
       left.objectType.localeCompare(right.objectType) || left.objectId.localeCompare(right.objectId)
   );
 
-  try {
-    return await getPrisma().$transaction(
+  const sealArtifacts = () =>
+    getPrisma().$transaction(
       async (transaction) => {
-        for (const source of [...(input.canonicalIdentitySources ?? [])].sort(
-          (left, right) =>
-            left.sourceKind.localeCompare(right.sourceKind) ||
-            left.stableId.localeCompare(right.stableId)
-        )) {
-          if (!(await lockCanonicalIdentitySource(transaction, input.orgId, source))) {
-            throw new Error("CANONICAL_IDENTITY_SOURCE_CHANGED");
-          }
-        }
         for (const source of sourceSnapshots) {
           await transaction.$queryRaw(
             Prisma.sql`SELECT "id" FROM "ai_value_objects"
@@ -489,6 +480,33 @@ export async function sealAiValueClaimBundleSerializable(input: {
           throw new Error("CANONICAL_IDENTITY_BUNDLE_INCOMPLETE");
         }
         return { claim, packet, manifest, ...(binding ? { binding } : {}) };
+      },
+      { isolationLevel: "Serializable" }
+    );
+  try {
+    const canonicalSources = [...(input.canonicalIdentitySources ?? [])].sort(
+      (left, right) =>
+        left.sourceKind.localeCompare(right.sourceKind) ||
+        left.stableId.localeCompare(right.stableId)
+    );
+    if (canonicalSources.length === 0) {
+      return await sealArtifacts();
+    }
+    const runtimePrisma = getCanonicalIdentityRuntimePrisma();
+    if (
+      !runtimePrisma ||
+      !(await canonicalIdentityRuntimeCredentialIsReady(runtimePrisma))
+    ) {
+      return null;
+    }
+    return await runtimePrisma.$transaction(
+      async (sourceTransaction) => {
+        for (const source of canonicalSources) {
+          if (!(await lockCanonicalIdentitySource(sourceTransaction, input.orgId, source))) {
+            throw new Error("CANONICAL_IDENTITY_SOURCE_CHANGED");
+          }
+        }
+        return await sealArtifacts();
       },
       { isolationLevel: "Serializable" }
     );

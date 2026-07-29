@@ -3,6 +3,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { aiValueEngine } from "@fluencytracr/shared";
 import { Prisma } from "@prisma/client";
 
+import {
+  canonicalIdentityRuntimeCredentialIsReady,
+  getCanonicalIdentityRuntimePrisma
+} from "../canonical-identity-runtime-client";
 import { getPrisma } from "../db";
 import {
   canonicalIdentitySourceSemanticCommitment,
@@ -29,6 +33,14 @@ import {
 } from "../store";
 
 const usePrisma = () => Boolean(process.env.DATABASE_URL);
+
+const canonicalIdentityRuntimePrisma = async () => {
+  const client = getCanonicalIdentityRuntimePrisma();
+  if (!client || !(await canonicalIdentityRuntimeCredentialIsReady(client))) {
+    throw new Error("SLICE_E_RUNTIME_DATABASE_URL_MISSING");
+  }
+  return client;
+};
 
 export class AiValuePersistenceValidationError extends Error {
   gaps: string[];
@@ -4774,7 +4786,7 @@ export async function persistAiValueHypothesisFromMeasurementPlan(
       );
     }
     try {
-      const createdRecord = await getPrisma().$transaction(
+      const createdRecord = await (await canonicalIdentityRuntimePrisma()).$transaction(
         async (transaction) => {
           await lockCanonicalIdentityFamily(
             transaction,
@@ -4969,7 +4981,7 @@ export async function persistAiValueMeasurementPlan(
       );
     }
     try {
-      const createdRecord = await getPrisma().$transaction(
+      const createdRecord = await (await canonicalIdentityRuntimePrisma()).$transaction(
         async (transaction) => {
           await lockCanonicalIdentityFamily(
             transaction,
@@ -5359,7 +5371,7 @@ export async function persistAiValueMeasurementCellSnapshot(
       );
     }
     try {
-      const createdRecord = await getPrisma().$transaction(
+      const createdRecord = await (await canonicalIdentityRuntimePrisma()).$transaction(
         async (transaction) => {
           if (!record.value_hypothesis_id) {
             throw new Error("CANONICAL_CELL_HYPOTHESIS_ID_REQUIRED");
@@ -5408,7 +5420,12 @@ export async function persistAiValueMeasurementCellSnapshot(
             plan.sliceBinding.approved_direction !==
               record.metric_direction.toUpperCase() ||
             plan.sliceBinding.measurement_unit !== record.metric_unit ||
-            plan.sliceBinding.workflow_id !== record.workflow_id ||
+            !record.workflow_id ||
+            plan.sliceBinding.workflow_commitment !==
+              aiValueEngine.canonicalSliceJoinKeyCommitment(
+                "workflow_id",
+                record.workflow_id
+              ) ||
             plan.sliceBinding.baseline_window_start !==
               record.baseline_window_start ||
             plan.sliceBinding.baseline_window_end !==

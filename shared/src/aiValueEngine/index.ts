@@ -521,6 +521,7 @@ export {
   buildPlaybookMeasurementPlanDraft,
   buildCanonicalSliceBindingV1,
   canonicalSliceBindingCommitment,
+  canonicalSliceJoinKeyCommitment,
   CANONICAL_SLICE_BINDING_SCHEMA_VERSION,
   MEASUREMENT_PLAN_SCHEMA_VERSION
 } from "./measurementPlan";

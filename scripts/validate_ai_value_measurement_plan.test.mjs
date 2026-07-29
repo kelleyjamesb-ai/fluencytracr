@@ -134,9 +134,9 @@ test("optional Slice E binding is exact while legacy plans remain valid", () => 
 
   const binding = buildCanonicalSliceBindingV1({
     plan_version: 1,
-    workflow_id: "customer_support_case_resolution",
-    jbtd_id: "resolve_support_case",
-    persona_id: "support_specialist",
+    workflow_commitment: "b".repeat(64),
+    jbtd_commitment: "c".repeat(64),
+    persona_commitment: "d".repeat(64),
     baseline_window_start: legacy.windows.baseline_window_start,
     baseline_window_end: legacy.windows.baseline_window_end,
     comparison_window_start: legacy.windows.comparison_window_start,
@@ -156,11 +156,11 @@ test("optional Slice E binding is exact while legacy plans remain valid", () => 
   assert.equal(validateMeasurementPlan(legacy).valid, true);
 
   const forged = clone(legacy);
-  forged.canonical_slice_binding_v1.persona_id = "employee_12345";
+  forged.canonical_slice_binding_v1.persona_commitment = "james_kelley";
   assert.equal(validateMeasurementPlan(forged).valid, false);
   assert.match(
     validateMeasurementPlan(forged).gaps.join("; "),
-    /person-shaped|does not match exact bytes/
+    /must be SHA-256|does not match exact bytes/
   );
 
   const changedWindow = clone(legacy);
