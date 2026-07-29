@@ -26,7 +26,7 @@
 
 ## 5. Exact-SHA release gates
 
-- [ ] 5.1 Freeze this evidence-state commit and obtain independent exact-SHA
+- [x] 5.1 Freeze this evidence-state commit and obtain independent exact-SHA
       CODE, BUG, and ADVERSARIAL review.
 - [ ] 5.2 Run the required full suite on the final reviewed SHA.
 - [ ] 5.3 Push, open the GitHub PR, and obtain current-head CI and review

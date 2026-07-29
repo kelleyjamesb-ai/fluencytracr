@@ -4999,3 +4999,38 @@
   resulting exact SHA; one required full-suite run on that reviewed SHA;
   GitHub push/PR/current-head CI and review resolution; normal merge; and any
   deployment or live proof only with separate authorization.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice F exact-SHA review)
+
+- Exact candidate `39814e752e8ab444861063b3f2a3db4f65d8086a`
+  received BUG `GO` and CODE/ADVERSARIAL `HOLD`. Review demonstrated two
+  executable transport oracles: Express implicit `HEAD` exposed
+  authorization state through result-dependent `Content-Length`, and a
+  malformed percent-encoded selector could return a diagnostic `500` before
+  the route's fixed-HOLD boundary.
+- Replacement `9e9323905f4b04e16d7615c6306303c464b581c5`
+  closed those direct-backend paths. CODE and ADVERSARIAL returned `GO`; BUG
+  returned `HOLD` because the supported Vercel stripped-path normalization
+  retained both failures by matching pre-adapter `originalUrl` instead of the
+  effective mounted routing path.
+- Final runtime candidate
+  `5518970297a9a78adcdf1d6aa5611eb30ee0f70f` reconstructs the normalized
+  mounted path from `req.baseUrl + req.url`. Independent exact-SHA CODE, BUG,
+  and ADVERSARIAL reviews all returned `GO`; direct and Vercel-normalized
+  malformed GET and result-independent HEAD paths now preserve JWT, org, and
+  role authority without reaching the trace service. No executable
+  authorization/privacy failure or violation of the nine invariants remains.
+- Nonblocking follow-ups remain outside this Slice F candidate: decide the
+  future contract for a missing-binding-segment HTML `404`; replace remaining
+  future-route wording in the claim-trace README; synchronize the design's
+  authorized policy example with the strict schema; add a positive
+  accepted-selected-workflow rail/phase regression; normalize authenticated
+  `OPTIONS` and unsupported malformed-method behavior; and make the
+  PostgreSQL verifier build or prove exact source-to-`dist` identity before
+  importing ignored artifacts. The existing missing
+  `backend/dist/connectors/mappings` warning is nonfatal harness noise.
+- This evidence-only state update changes no runtime file. No full suite,
+  push, PR, merge, deployment, production migration, publication, or
+  authenticated/live proof was performed. The required full suite, GitHub
+  current-head checks and review resolution, normal merge, and any separately
+  authorized deployment/live proof remain open.
