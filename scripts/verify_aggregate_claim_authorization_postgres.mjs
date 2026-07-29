@@ -303,6 +303,101 @@ for (const identity of rawArtifactIdentities) {
   );
 }
 
+const forgedClaim = deepClone(firstBundle.claim.payload);
+const forgedPacket = deepClone(firstBundle.packet.payload);
+const forgedManifest = deepClone(firstBundle.manifest.payload);
+const forgedMovement = aiValueEngine.buildAggregateObservedMovement({
+  metricId: projection.outcome_metric,
+  measurementUnit: projection.outcome_unit,
+  baselineValue: projection.baseline_window.aggregate_value,
+  comparisonValue: projection.comparison_window.aggregate_value + 100
+});
+forgedClaim.content.movement = forgedMovement;
+forgedClaim.content_hash = aiValueEngine.aggregateClaimHash(
+  "FT_AGGREGATE_AUTHORIZED_CLAIM_CONTENT_V1",
+  forgedClaim.content
+);
+forgedPacket.content.movement = forgedMovement;
+forgedPacket.content.claim_content_hash = forgedClaim.content_hash;
+forgedPacket.content_hash = aiValueEngine.aggregateClaimHash(
+  "FT_AGGREGATE_AUTHORIZED_PACKET_CONTENT_V1",
+  forgedPacket.content
+);
+forgedManifest.core.claim_content_hash = forgedClaim.content_hash;
+forgedManifest.core.packet_content_hash = forgedPacket.content_hash;
+forgedManifest.manifest_hash = aiValueEngine.aggregateClaimHash(
+  "FT_AGGREGATE_CLAIM_AUTHORIZATION_MANIFEST_CORE_V1",
+  forgedManifest.core
+);
+forgedManifest.manifest_id = `manifest_${forgedManifest.manifest_hash}`;
+forgedManifest.claim_id = `aggregate_claim_${forgedManifest.manifest_hash}_${aiValueEngine.aggregateClaimHash(
+  "FT_AGGREGATE_AUTHORIZED_CLAIM_ID_V1",
+  { manifest_hash: forgedManifest.manifest_hash }
+)}`;
+forgedManifest.packet_id = `aggregate_packet_${forgedManifest.manifest_hash}_${aiValueEngine.aggregateClaimHash(
+  "FT_AGGREGATE_AUTHORIZED_PACKET_ID_V1",
+  { manifest_hash: forgedManifest.manifest_hash }
+)}`;
+forgedClaim.claim_id = forgedManifest.claim_id;
+forgedClaim.manifest_id = forgedManifest.manifest_id;
+forgedPacket.packet_id = forgedManifest.packet_id;
+forgedPacket.manifest_id = forgedManifest.manifest_id;
+forgedPacket.claim_id = forgedManifest.claim_id;
+assert(
+  aiValueEngine.aggregateClaimBundleReconciles({
+    claim: forgedClaim,
+    packet: forgedPacket,
+    manifest: forgedManifest
+  }),
+  "coherent movement-substitution fixture was not structurally valid"
+);
+const forgedArtifacts = [
+  {
+    objectType: aiValueEngine.INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPE,
+    objectId: forgedClaim.claim_id,
+    payload: forgedClaim
+  },
+  {
+    objectType: aiValueEngine.INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE,
+    objectId: forgedPacket.packet_id,
+    payload: forgedPacket
+  },
+  {
+    objectType: aiValueEngine.INTERNAL_AGGREGATE_MANIFEST_OBJECT_TYPE,
+    objectId: forgedManifest.manifest_id,
+    payload: forgedManifest
+  }
+];
+for (const artifact of forgedArtifacts) {
+  await prisma.aiValueObject.create({
+    data: {
+      orgId,
+      objectType: artifact.objectType,
+      objectId: artifact.objectId,
+      schemaVersion: artifact.payload.schema_version,
+      workflowFamily: null,
+      payloadJson: artifact.payload,
+      validationJson: {
+        valid: true,
+        claim_authorization_authoritative: true,
+        immutable: true,
+        manifest_id: forgedManifest.manifest_id
+      },
+      valid: true
+    }
+  });
+}
+assert(
+  (await readAuthorizedAggregateClaim(orgId, forgedPacket.packet_id)) === null,
+  "coherently rehashed movement substitution remained renderable"
+);
+await prisma.aiValueObject.deleteMany({
+  where: {
+    orgId,
+    objectId: { in: forgedArtifacts.map((artifact) => artifact.objectId) }
+  }
+});
+
 const genericList = await request(app).get("/api/v1/ai-value/objects").set(readoutAuth).expect(200);
 assert(
   genericList.body.objects.every(
@@ -588,8 +683,8 @@ const packetRow = await prisma.aiValueObject.findUniqueOrThrow({
     }
   }
 });
-const forgedPacket = deepClone(packetRow.payloadJson);
-forgedPacket.content.movement.comparison_value += 1;
+const substitutedPacket = deepClone(packetRow.payloadJson);
+substitutedPacket.content.movement.comparison_value += 1;
 await prisma.aiValueObject.update({
   where: {
     ai_value_objects_unique_key: {
@@ -598,7 +693,7 @@ await prisma.aiValueObject.update({
       objectId: packetId
     }
   },
-  data: { payloadJson: forgedPacket }
+  data: { payloadJson: substitutedPacket }
 });
 expectHeld(await authorizeAggregateClaim(authorizationRequest), "immutable artifact conflict");
 assert(
@@ -656,7 +751,7 @@ assert(
 );
 
 console.log(
-  "Slice D PostgreSQL verification passed: exact C.1 authorization, one-movement immutable replay, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
+  "Slice D PostgreSQL verification passed: exact C.1 authorization, one-movement immutable replay, commitment-only artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
 );
 
 await prisma.$disconnect();

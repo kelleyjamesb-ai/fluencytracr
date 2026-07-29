@@ -129,6 +129,8 @@ label that movement `OBSERVED_NON_ATTRIBUTABLE`.
   C.1 readback
 - **THEN** the template SHALL emit the baseline, comparison, absolute delta,
   and observed direction
+- **AND** artifact generation SHALL recompute and exact-compare the complete
+  movement from that C.1 projection
 - **AND** it SHALL emit mechanical percent change only when the baseline is
   non-zero and the computed result is finite
 - **AND** it SHALL normalize negative zero and attach fixed aggregate,
@@ -223,6 +225,13 @@ projection, and independent policy state.
   boundary, executive packet, or policy-state bytes differ from the manifest
 - **THEN** authorization and readout SHALL hold
 - **AND** the existing manifest SHALL NOT be overwritten
+
+#### Scenario: Coherently rehashed movement substitution
+
+- **WHEN** claim, packet, and manifest hashes agree with each other but their
+  movement differs from the current authoritative C.1 projection
+- **THEN** readout SHALL rebuild the complete bundle from current authority
+- **AND** rendering SHALL hold without movement or claim text
 
 #### Scenario: Deterministic non-circular artifact lookup
 

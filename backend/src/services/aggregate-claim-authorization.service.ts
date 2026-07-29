@@ -412,6 +412,9 @@ export const authorizeAggregateClaim = async (
       !currentSources ||
       !currentBundle ||
       !sourceSetMatches(sourceRecords(graph), currentSources) ||
+      !deepEqual(currentBundle.claim.payload, bundle.claim) ||
+      !deepEqual(currentBundle.packet.payload, bundle.packet) ||
+      !deepEqual(currentBundle.manifest.payload, bundle.manifest) ||
       !aiValueEngine.aggregateClaimBundleReconciles({
         claim: currentBundle.claim.payload,
         packet: currentBundle.packet.payload,
@@ -529,6 +532,14 @@ export const readAuthorizedAggregateClaim = async (
       !deepEqual(comparison.receipt, manifest.data.core.comparison_privacy_receipt) ||
       aiValueEngine.aggregateClaimComparisonProjectionCommitment(comparison.projection) !==
         manifest.data.core.comparison_projection_commitment
+    ) {
+      return null;
+    }
+    const rebuilt = buildBundle(graph, comparison);
+    if (
+      !deepEqual(claim.data, rebuilt.claim) ||
+      !deepEqual(packet.data, rebuilt.packet) ||
+      !deepEqual(manifest.data, rebuilt.manifest)
     ) {
       return null;
     }

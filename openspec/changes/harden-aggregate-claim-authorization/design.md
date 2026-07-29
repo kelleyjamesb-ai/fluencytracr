@@ -189,6 +189,12 @@ only for a non-zero baseline and finite result. Baseline, comparison, delta,
 and percent change normalize negative zero to positive zero before
 canonicalization or hashing.
 
+The bundle builder derives that complete movement again from the validated
+C.1 projection and exact-compares it before sealing. Current readback rebuilds
+the complete bundle from the current authoritative graph and C.1 readback,
+then exact-compares all three stored artifacts. Internal hash consistency
+alone cannot make a coherently substituted movement renderable.
+
 The template never describes a movement as improvement, impact, contribution,
 or caused value. Every rendered movement carries fixed aggregate-observation,
 non-attribution, non-causality, and internal-only caveats. There are no fields

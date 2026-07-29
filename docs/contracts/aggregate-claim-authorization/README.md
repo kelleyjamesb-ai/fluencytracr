@@ -17,6 +17,13 @@ productivity, prediction, probability, confidence, individual performance,
 ranking, improvement, impact, and customer-facing semantics are outside this
 contract.
 
+The builder recomputes the complete movement from the validated C.1
+projection and rejects any caller-supplied delta, percent change, or direction
+that differs. Current readback rebuilds the complete claim, packet, and
+manifest from the current authoritative source graph and C.1 projection before
+rendering. A coherently rehashed three-artifact substitution therefore remains
+non-renderable even when its internal hashes agree with each other.
+
 Before artifact generation, the movement unit must match the compiled generic
 Slice D vocabulary: `cases`, `count`, `days`, `hours`, `minutes`, `months`,
 `percent`, `percentage_points`, `rate`, `ratio`, `seconds`, `share`, or

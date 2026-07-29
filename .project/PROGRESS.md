@@ -4514,3 +4514,17 @@
   reviewed SHA; push; create the Slice D PR; wait for required current-head
   GitHub checks; and normal-merge. Slice E must start from fresh current
   `main`.
+- Exact commit `6754b42` received the same valid HOLD from CODE, BUG, and
+  ADVERSARIAL review: a coherently rehashed three-artifact substitution could
+  retain the authoritative projection commitment while replacing the
+  mechanical movement, and current readback did not rederive that movement.
+  This was an executable fixed-template/C.1-authority failure, so it met the
+  governance stop rule.
+- The narrow repair makes the builder derive and exact-compare the complete
+  movement from C.1 endpoints and makes both post-commit authorization and
+  current readback exact-compare the complete bundle rebuilt from current
+  authority. The PostgreSQL verifier now inserts a structurally reconciling,
+  coherently rehashed three-row substitution and proves it is non-renderable.
+  No new identity semantics, architecture, migration, endpoint, event,
+  suppression reason, threshold, model path, or customer-facing output was
+  added.

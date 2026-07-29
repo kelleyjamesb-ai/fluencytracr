@@ -555,6 +555,21 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
   ) {
     throw new Error("AGGREGATE_CLAIM_PROJECTION_MISMATCH");
   }
+  const derivedMovement = buildAggregateObservedMovement({
+    metricId: comparisonProjection.outcome_metric,
+    measurementUnit: comparisonProjection.outcome_unit,
+    baselineValue: comparisonProjection.baseline_window.aggregate_value,
+    comparisonValue: comparisonProjection.comparison_window.aggregate_value
+  });
+  if (
+    aggregateClaimHash("FT_AGGREGATE_CLAIM_DERIVED_MOVEMENT_COMPARE_V1", derivedMovement) !==
+    aggregateClaimHash(
+      "FT_AGGREGATE_CLAIM_DERIVED_MOVEMENT_COMPARE_V1",
+      claimInput.movement
+    )
+  ) {
+    throw new Error("AGGREGATE_CLAIM_DERIVED_MOVEMENT_MISMATCH");
+  }
   const sliceCommitment = aggregateClaimSliceCommitment({
     orgId: claimInput.org_id,
     workflowId: claimInput.workflow_id,
@@ -566,7 +581,7 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
     policy_version: claimInput.policy_version,
     template_id: claimInput.template_id,
     slice_commitment: sliceCommitment,
-    movement: claimInput.movement,
+    movement: derivedMovement,
     caveats: claimInput.caveats,
     model_use_authorized: false,
     customer_facing_output_authorized: false

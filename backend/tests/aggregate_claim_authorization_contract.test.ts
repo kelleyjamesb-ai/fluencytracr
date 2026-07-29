@@ -260,6 +260,20 @@ describe("aggregate claim authorization contracts", () => {
     );
     expect(bundle.packet.content.claim_content_hash).toBe(bundle.claim.content_hash);
     expect(aggregateClaimBundleReconciles(bundle)).toBe(true);
+    expect(() =>
+      buildAggregateClaimAuthorizationBundle({
+        ...bundleInput,
+        claimContent: {
+          ...bundleInput.claimContent,
+          movement: {
+            ...bundleInput.claimContent.movement,
+            absolute_delta: 999,
+            percent_change: 54321,
+            observed_direction: "INCREASE" as const
+          }
+        }
+      })
+    ).toThrow("AGGREGATE_CLAIM_DERIVED_MOVEMENT_MISMATCH");
     expect(
       aggregateClaimBundleReconciles({
         ...bundle,
