@@ -8,10 +8,7 @@
  * only persist stage objects that validated cleanly.
  */
 import type { Express, Response } from "express";
-import {
-  aiValueEngine,
-  outcomeEvidenceAdmissionReceiptsMatch
-} from "@fluencytracr/shared";
+import { aiValueEngine, outcomeEvidenceAdmissionReceiptsMatch } from "@fluencytracr/shared";
 import { z } from "zod";
 
 import { rbacMiddleware, type RequestWithRole } from "./rbac";
@@ -20,9 +17,7 @@ import {
   listAiValueObjects,
   upsertAiValueObject
 } from "./repositories/ai-value-object.repository";
-import {
-  listAiValueCustomerDataModelSnapshots
-} from "./repositories/ai-value-minimal-persistence.repository";
+import { listAiValueCustomerDataModelSnapshots } from "./repositories/ai-value-minimal-persistence.repository";
 import type {
   AiValueCustomerDataModelSnapshotStoredRecord,
   AiValueObjectStoredRecord
@@ -33,11 +28,12 @@ import {
   materializeRealEvidence
 } from "./ai_value_real_evidence_materializer";
 import {
+  authorizeAggregateClaim,
+  readAuthorizedAggregateClaim
+} from "./services/aggregate-claim-authorization.service";
+import {
   acceptedReadinessBoundOutcomeEvidence,
-  authoritativeOutcomeEvidenceReceipt,
-  authoritativeReadinessOutcomeEvidenceReceipt,
-  exactOutcomeEvidenceSliceSegment,
-  readinessAuthorizesOutcomeEvidence
+  authoritativeOutcomeEvidenceReceipt
 } from "./outcome_evidence_admission_authority";
 
 type StageValidation = {
@@ -143,8 +139,7 @@ const CUSTOMER_DATA_MODEL_ROUTE_CAVEATS = [
 
 const CUSTOMER_DATA_MODEL_LABEL_MAX_LENGTH = 80;
 
-const CUSTOMER_DATA_MODEL_APPROVED_LABEL_PATTERN =
-  /^[A-Za-z0-9][A-Za-z0-9 &()/+.,'-]*$/;
+const CUSTOMER_DATA_MODEL_APPROVED_LABEL_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 &()/+.,'-]*$/;
 
 const CUSTOMER_DATA_MODEL_UNSAFE_LABEL_PATTERNS = [
   /_/,
@@ -163,18 +158,15 @@ const approvedCustomerLabel = (value: unknown): string | null => {
     label.length === 0 ||
     label.length > CUSTOMER_DATA_MODEL_LABEL_MAX_LENGTH ||
     !CUSTOMER_DATA_MODEL_APPROVED_LABEL_PATTERN.test(label) ||
-    CUSTOMER_DATA_MODEL_UNSAFE_LABEL_PATTERNS.some((pattern) =>
-      pattern.test(label)
-    )
+    CUSTOMER_DATA_MODEL_UNSAFE_LABEL_PATTERNS.some((pattern) => pattern.test(label))
   ) {
     return null;
   }
   return label;
 };
 
-const customerMetricLabel = (
-  record: AiValueCustomerDataModelSnapshotStoredRecord
-) => `${customerValueDriver(record.value_driver)} metric`;
+const customerMetricLabel = (record: AiValueCustomerDataModelSnapshotStoredRecord) =>
+  `${customerValueDriver(record.value_driver)} metric`;
 
 const CUSTOMER_DATA_MODEL_VALUE_DRIVER_LABELS: Record<string, string> = {
   Revenue: "Revenue",
@@ -187,21 +179,16 @@ const CUSTOMER_DATA_MODEL_VALUE_DRIVER_LABELS: Record<string, string> = {
 const customerValueDriver = (value: string) =>
   CUSTOMER_DATA_MODEL_VALUE_DRIVER_LABELS[value] ?? "Customer value";
 
-const customerFunctionAreaLabel = (
-  record: AiValueCustomerDataModelSnapshotStoredRecord
-) => approvedCustomerLabel(record.function_area) ?? "Approved function";
+const customerFunctionAreaLabel = (record: AiValueCustomerDataModelSnapshotStoredRecord) =>
+  approvedCustomerLabel(record.function_area) ?? "Approved function";
 
-const customerWorkflowLabel = (
-  record: AiValueCustomerDataModelSnapshotStoredRecord
-) => {
+const customerWorkflowLabel = (record: AiValueCustomerDataModelSnapshotStoredRecord) => {
   const functionArea = approvedCustomerLabel(record.function_area);
   return functionArea ? `${functionArea} workflow` : "Approved workflow context";
 };
 
 const customerMetricOwnerReviewState = (value: string) =>
-  value.toLowerCase() === "approved"
-    ? "Metric owner approved"
-    : "Metric owner review held";
+  value.toLowerCase() === "approved" ? "Metric owner approved" : "Metric owner review held";
 
 const CUSTOMER_DATA_MODEL_METRIC_DIRECTIONS: Record<string, string> = {
   increase: "increase",
@@ -228,8 +215,7 @@ const CUSTOMER_DATA_MODEL_METRIC_UNITS = new Set([
 ]);
 
 const customerMetricUnit = (value: string) =>
-  CUSTOMER_DATA_MODEL_METRIC_UNITS.has(value) &&
-  approvedCustomerLabel(value) === value
+  CUSTOMER_DATA_MODEL_METRIC_UNITS.has(value) && approvedCustomerLabel(value) === value
     ? value
     : "metric unit held";
 
@@ -244,9 +230,7 @@ const customerAggregateReviewState = (value: string) =>
     ? "Aggregate export review passed"
     : "Aggregate review held";
 
-const customerValidationState = (
-  record: AiValueCustomerDataModelSnapshotStoredRecord
-) =>
+const customerValidationState = (record: AiValueCustomerDataModelSnapshotStoredRecord) =>
   record.validation_valid &&
   record.assembly_validation_valid &&
   record.validation_gap_count === 0 &&
@@ -258,26 +242,19 @@ const customerWindow = (start: string, end: string) => ({ start, end });
 
 export const setCustomerDataModelProjectionBoundaryHeaders = (res: Response) => {
   res.set("cache-control", "no-store");
-  res.set(
-    "x-ai-value-customer-projection-boundary",
-    "source_bound_customer_data_model_projection"
-  );
+  res.set("x-ai-value-customer-projection-boundary", "source_bound_customer_data_model_projection");
   res.set("x-ai-value-live-connectors", "false");
   res.set("x-ai-value-export-authorized", "false");
   res.set("x-ai-value-customer-facing-economic-output", "false");
 };
 
-const customerDataModelProjection = (
-  record: AiValueCustomerDataModelSnapshotStoredRecord
-) => ({
+const customerDataModelProjection = (record: AiValueCustomerDataModelSnapshotStoredRecord) => ({
   value_driver: customerValueDriver(record.value_driver),
   metric: {
     label: customerMetricLabel(record),
     unit: customerMetricUnit(record.metric_unit),
     direction: customerMetricDirection(record.metric_direction),
-    owner_review_state: customerMetricOwnerReviewState(
-      record.metric_owner_approval_state
-    )
+    owner_review_state: customerMetricOwnerReviewState(record.metric_owner_approval_state)
   },
   workflow_context: {
     function_area: customerFunctionAreaLabel(record),
@@ -285,26 +262,17 @@ const customerDataModelProjection = (
   },
   milestone: {
     day: record.milestone_day,
-    baseline_window: customerWindow(
-      record.baseline_window_start,
-      record.baseline_window_end
-    ),
-    comparison_window: customerWindow(
-      record.comparison_window_start,
-      record.comparison_window_end
-    )
+    baseline_window: customerWindow(record.baseline_window_start, record.baseline_window_end),
+    comparison_window: customerWindow(record.comparison_window_start, record.comparison_window_end)
   },
   evidence_status: {
-    aggregate_review_state: customerAggregateReviewState(
-      record.aggregate_export_review_state
-    ),
+    aggregate_review_state: customerAggregateReviewState(record.aggregate_export_review_state),
     validation_state: customerValidationState(record)
   },
   caveats: CUSTOMER_DATA_MODEL_ROUTE_CAVEATS,
   allowed_output: "Aggregate evidence status only",
   blocked_outputs: CUSTOMER_DATA_MODEL_BLOCKED_OUTPUTS,
-  next_action:
-    "Customer-owned outcome review is required before any stronger claim is considered."
+  next_action: "Customer-owned outcome review is required before any stronger claim is considered."
 });
 
 const workflowFamilyOf = (payload: Record<string, unknown>): string | null => {
@@ -349,90 +317,41 @@ const requireOrg = (req: RequestWithRole, res: Response): string | null => {
 };
 
 const sanitizeIdSegment = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 
 const stringRef = (value: unknown): string | null =>
   typeof value === "string" && value.trim() ? value : null;
 
 const objectRef = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : null;
 
-const humanize = (value: unknown): string | null => {
-  if (typeof value !== "string" || !value.trim()) return null;
-  return value.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const aggregateClaimHeldHtml = (): string =>
+  "<!doctype html><html><body><main><h1>Claim authorization held</h1><p>No authorized aggregate claim is available.</p></main></body></html>";
+
+const aggregateClaimReadoutHtml = (
+  content: aiValueEngine.AggregateAuthorizedPacketContent
+): string => {
+  const movementText = aiValueEngine.aggregateClaimReadoutText(content.movement);
+  const caveats = content.caveats.map((caveat) => `<li>${escapeHtml(caveat)}</li>`).join("");
+  return `<!doctype html><html><body><main><h1>Internal aggregate observation</h1><p>${escapeHtml(
+    movementText
+  )}</p><ul>${caveats}</ul></main></body></html>`;
 };
 
-const metricNamesFromPacket = (packet: Record<string, unknown>): string[] => {
-  const sections = objectRef(packet.sections);
-  const metrics = Array.isArray(sections?.metrics) ? sections.metrics : [];
-  return metrics
-    .map((metric) => stringRef(objectRef(metric)?.name))
-    .filter((name): name is string => Boolean(name));
-};
-
-const dataOwnerFromPacket = (packet: Record<string, unknown>): string | null => {
-  const sections = objectRef(packet.sections);
-  const metrics = Array.isArray(sections?.metrics) ? sections.metrics : [];
-  for (const metric of metrics) {
-    const owner = humanize(objectRef(metric)?.owner);
-    if (owner) return owner;
-  }
-  return null;
-};
-
-const evidenceReviewForReadout = (
-  packet: Record<string, unknown>,
-  outcomeEvidenceExport: Record<string, unknown> | null
-) => {
-  const metricNames = metricNamesFromPacket(packet);
-  const dataOwner = dataOwnerFromPacket(packet);
-  if (!outcomeEvidenceExport) {
-    return {
-      reviewState: "MISSING",
-      metricNames,
-      dataOwner
-    };
-  }
-
-  const sourceSystem = objectRef(outcomeEvidenceExport.source_system);
-  const windows = objectRef(outcomeEvidenceExport.windows);
-  const review = objectRef(outcomeEvidenceExport.review);
-  return {
-    reviewState: aiValueEngine.reviewStateOf(outcomeEvidenceExport),
-    metricNames,
-    sourceSystemName: stringRef(sourceSystem?.source_name),
-    approvedGrain: stringRef(sourceSystem?.approved_grain),
-    baselineWindow: stringRef(windows?.baseline),
-    comparisonWindow: stringRef(windows?.comparison),
-    reviewerRole: stringRef(review?.reviewer_role) ?? dataOwner,
-    dataOwner
-  };
-};
-
-const LEGACY_READOUT_BOUNDARY =
-  "Internal/prototype readout. Not source-bound customer output.";
-
-const LEGACY_READOUT_BANNER = `
-  <div class="banner" data-ai-value-readout-boundary="legacy_internal_prototype">
-    <strong>${LEGACY_READOUT_BOUNDARY}</strong>
-    Legacy compatibility surface only. This is not a source-bound Executive
-    Readout Snapshot, export package, customer-facing financial output, ROI
-    proof, causality proof, productivity output, probability output, or
-    confidence-model output.
-  </div>`;
-
-const applyLegacyReadoutBoundary = (html: string): string => {
-  if (!html.includes("<body>")) {
-    return `${LEGACY_READOUT_BANNER}\n${html}`;
-  }
-  return html.replace("<body>", `<body>\n${LEGACY_READOUT_BANNER}`);
-};
-
-const legacyExecutivePacketIsolationGaps = (
-  packet: Record<string, unknown>
-): string[] => {
+const legacyExecutivePacketIsolationGaps = (packet: Record<string, unknown>): string[] => {
   const summary = objectRef(packet.ebita_impact_summary);
   if (!summary) return [];
 
@@ -450,46 +369,6 @@ const legacyExecutivePacketIsolationGaps = (
     gaps.push("legacy executive packet cannot authorize causality language");
   }
   return gaps;
-};
-
-const readinessMatchesPacket = (
-  readiness: Record<string, unknown>,
-  packet: Record<string, unknown>,
-  packetSourceRefs: Record<string, unknown>
-): boolean => {
-  if (stringRef(readiness.workflow_family) !== stringRef(packet.workflow_family)) {
-    return false;
-  }
-  if (stringRef(readiness.value_route) !== stringRef(packet.value_route)) {
-    return false;
-  }
-  const readinessRefs = objectRef(readiness.source_refs);
-  if (!readinessRefs) return false;
-  for (const ref of ["blueprint_id", "metrics_library_id", "scenario_id"]) {
-    if (stringRef(readinessRefs[ref]) !== stringRef(packetSourceRefs[ref])) {
-      return false;
-    }
-  }
-  return true;
-};
-
-const fluencyBaselineMatchesPacket = (
-  baseline: Record<string, unknown>,
-  packetWorkflowFamily: string,
-  orgId: string
-): boolean => {
-  const baselineOrgId = stringRef(baseline.org_id);
-  if (baselineOrgId && baselineOrgId !== orgId) return false;
-
-  const baselineWorkflowFamily = stringRef(baseline.workflow_family);
-  if (
-    baselineWorkflowFamily &&
-    (!packetWorkflowFamily || baselineWorkflowFamily !== packetWorkflowFamily)
-  ) {
-    return false;
-  }
-
-  return true;
 };
 
 const invalidExecutivePacketGaps = (payload: Record<string, unknown>): string[] => {
@@ -535,9 +414,7 @@ export function registerAiValueRoutes(app: Express): void {
         projection_state: projectionState,
         display_mode: "customer_evidence_status",
         source_bound: true,
-        filter_applied: parsed.data.measurement_plan_id
-          ? "measurement_plan"
-          : "latest_org_scoped",
+        filter_applied: parsed.data.measurement_plan_id ? "measurement_plan" : "latest_org_scoped",
         live_connector_execution: false,
         boundary: {
           live_connectors: false,
@@ -638,8 +515,7 @@ export function registerAiValueRoutes(app: Express): void {
       const readinessId = stringRef(body.readiness_id);
       if (!dataBoundaryContractId || !roiScenarioId || !readinessId) {
         return res.status(400).json({
-          error:
-            "data_boundary_contract_id, roi_scenario_id, and readiness_id are required",
+          error: "data_boundary_contract_id, roi_scenario_id, and readiness_id are required",
           reason: "INVALID_EVIDENCE_CASE_REQUEST"
         });
       }
@@ -667,8 +543,7 @@ export function registerAiValueRoutes(app: Express): void {
       const outcomeExportRecord = outcomeExportId
         ? await getAiValueObject(orgId, "outcome_evidence_export", outcomeExportId)
         : null;
-      const outcomeReceipt =
-        authoritativeOutcomeEvidenceReceipt(outcomeExportRecord);
+      const outcomeReceipt = authoritativeOutcomeEvidenceReceipt(outcomeExportRecord);
       const roiWorkflow = objectRef(loaded.roi_scenario.workflow);
       const roiSourceRefs = objectRef(loaded.roi_scenario.source_refs);
       const outcomeExport =
@@ -679,11 +554,11 @@ export function registerAiValueRoutes(app: Express): void {
         outcomeReceipt &&
         roiWorkflow?.workflow_family === outcomeReceipt.workflow_id &&
         roiSourceRefs?.readiness_id === readinessId
-        ? outcomeExportRecord?.payload ?? null
-        : null;
+          ? (outcomeExportRecord?.payload ?? null)
+          : null;
       const improvementLoop = improvementLoopId
-        ? (await getAiValueObject(orgId, "value_improvement_loop", improvementLoopId))
-            ?.payload ?? null
+        ? ((await getAiValueObject(orgId, "value_improvement_loop", improvementLoopId))?.payload ??
+          null)
         : null;
 
       const currentRoiValidation = aiValueEngine.validateRoiScenario(loaded.roi_scenario);
@@ -791,6 +666,10 @@ export function registerAiValueRoutes(app: Express): void {
         // uploads may be reviewed, but caller receipt values are not stored.
         delete payload.admission;
       }
+      if (objectType === "evidence_readiness") {
+        delete payload.source_graph_authoritative;
+        delete payload.aggregate_claim_source_graph;
+      }
 
       if (payload[config.idField] !== objectId) {
         return res.status(400).json({
@@ -801,23 +680,32 @@ export function registerAiValueRoutes(app: Express): void {
 
       const baseValidation = config.validate(payload);
       const legacyIsolationGaps =
-        objectType === "executive_packet"
-          ? legacyExecutivePacketIsolationGaps(payload)
-          : [];
-      const validated = legacyIsolationGaps.length > 0
-        ? {
-            ...baseValidation,
-            valid: false,
-            gaps: [...baseValidation.gaps, ...legacyIsolationGaps]
-          }
-        : baseValidation;
+        objectType === "executive_packet" ? legacyExecutivePacketIsolationGaps(payload) : [];
+      const validated =
+        legacyIsolationGaps.length > 0
+          ? {
+              ...baseValidation,
+              valid: false,
+              gaps: [...baseValidation.gaps, ...legacyIsolationGaps]
+            }
+          : baseValidation;
       const validation =
         objectType === "outcome_evidence_export"
           ? {
               ...validated,
               admission_authoritative: false
             }
-          : validated;
+          : objectType === "evidence_readiness"
+            ? {
+                ...validated,
+                source_graph_authoritative: false
+              }
+            : objectType === "claim_boundary" || objectType === "executive_packet"
+              ? {
+                  ...validated,
+                  claim_authorization_authoritative: false
+                }
+              : validated;
       if (!validation.valid) {
         // Fail closed: invalid objects are rejected, never stored.
         return res.status(422).json({
@@ -919,164 +807,14 @@ export function registerAiValueRoutes(app: Express): void {
       const orgId = requireOrg(req, res);
       if (!orgId) return;
 
-      const { packetId } = req.params;
-      const packetRecord = await getAiValueObject(orgId, "executive_packet", packetId);
-      if (!packetRecord) {
-        return res.status(404).json({
-          error: "executive packet not found",
-          reason: "OBJECT_NOT_FOUND"
-        });
-      }
-      const packetValidation = aiValueEngine.validateExecutivePacket(packetRecord.payload);
-      const legacyIsolationGaps = legacyExecutivePacketIsolationGaps(packetRecord.payload);
-      if (!packetValidation.valid || legacyIsolationGaps.length > 0) {
-        // Fail closed: a stored packet that no longer validates never renders.
-        return res.status(422).json({
-          error: "executive packet failed engine validation",
-          reason: "ENGINE_VALIDATION_FAILED",
-          gaps: [...packetValidation.gaps, ...legacyIsolationGaps]
-        });
-      }
-
-      const packet = packetRecord.payload as Record<string, unknown>;
-      const packetWorkflowFamily = stringRef(packet.workflow_family);
-      if (!packetWorkflowFamily) {
-        return res.status(422).json({
-          error: "executive packet failed engine validation",
-          reason: "ENGINE_VALIDATION_FAILED",
-          gaps: ["workflow_family must be a string"]
-        });
-      }
-      const sourceRefs =
-        packet.source_refs && typeof packet.source_refs === "object"
-          ? packet.source_refs as Record<string, unknown>
-          : {};
-      const blueprintRef = stringRef(sourceRefs.blueprint_id);
-      const metricsLibraryRef = stringRef(sourceRefs.metrics_library_id);
-      const engagementRef = stringRef(sourceRefs.engagement_id);
-      const fluencyBaselineRef = stringRef(sourceRefs.fluency_baseline_id);
-      const readinessRef = stringRef(sourceRefs.readiness_id);
-
-      let engagementPayload: Record<string, unknown> | null = null;
-      if (engagementRef) {
-        const record = await getAiValueObject(orgId, "engagement", engagementRef);
-        if (record) {
-          const validation = aiValueEngine.validateEngagement(record.payload);
-          const coversPacketWorkflow = aiValueEngine.engagementCoversWorkflowFamily(
-            record.payload,
-            packetWorkflowFamily
-          );
-          if (validation.valid && coversPacketWorkflow) {
-            engagementPayload = record.payload;
-          }
-        }
-      }
-
-      let fluencySummary: Record<string, unknown> | null = null;
-      if (fluencyBaselineRef) {
-        const matchedBaseline = await getAiValueObject(
-          orgId,
-          "fluency_baseline",
-          fluencyBaselineRef
-        );
-        if (
-          matchedBaseline &&
-          aiValueEngine.validateFluencyBaseline(matchedBaseline.payload).valid &&
-          fluencyBaselineMatchesPacket(
-            matchedBaseline.payload,
-            packetWorkflowFamily,
-            orgId
-          )
-        ) {
-          fluencySummary = aiValueEngine.summarizeFluencyBaseline(matchedBaseline.payload);
-        }
-      }
-
-      const blueprintContextRecord = blueprintRef
-        ? await getAiValueObject(orgId, "blueprint", blueprintRef)
-        : null;
-      const metricsContextRecord = metricsLibraryRef
-        ? await getAiValueObject(orgId, "metrics_library", metricsLibraryRef)
-        : null;
-      const blueprintContext =
-        blueprintContextRecord &&
-        aiValueEngine.validateBlueprint(blueprintContextRecord.payload).valid
-          ? blueprintContextRecord.payload
-          : undefined;
-      const metricsContext =
-        metricsContextRecord &&
-        aiValueEngine.validateMetricsLibrary(metricsContextRecord.payload).valid
-          ? metricsContextRecord.payload
-          : undefined;
-      const validateEvidenceForReadout = (
-        record: AiValueObjectStoredRecord
-      ) =>
-        aiValueEngine.validateOutcomeEvidenceExport(record.payload, {
-          blueprint: blueprintContext,
-          metricsLibrary: metricsContext
-        });
-      const canUseEvidenceForReadout = (
-        record: AiValueObjectStoredRecord,
-        readinessRecord: AiValueObjectStoredRecord
-      ) => {
-        if (!acceptedReadinessBoundOutcomeEvidence(readinessRecord, record)) {
-          return false;
-        }
-        const validation = validateEvidenceForReadout(record);
-        return validation.valid && validation.cross_check_gaps.length === 0;
-      };
-
-      let outcomeEvidenceRef: string | null = null;
-      let matchedReadinessRecord: AiValueObjectStoredRecord | null = null;
-      if (readinessRef) {
-        const readinessRecord = await getAiValueObject(
-          orgId,
-          "evidence_readiness",
-          readinessRef
-        );
-        if (
-          readinessRecord &&
-          aiValueEngine.validateEvidenceReadiness(readinessRecord.payload).valid &&
-          readinessMatchesPacket(readinessRecord.payload, packet, sourceRefs)
-        ) {
-          matchedReadinessRecord = readinessRecord;
-          const readinessSourceRefs = objectRef(readinessRecord.payload.source_refs);
-          outcomeEvidenceRef = stringRef(readinessSourceRefs?.outcome_evidence_export_id);
-        }
-      }
-
-      let outcomeEvidencePayload: Record<string, unknown> | null = null;
-      if (outcomeEvidenceRef) {
-        const outcomeEvidenceRecord = await getAiValueObject(
-          orgId,
-          "outcome_evidence_export",
-          outcomeEvidenceRef
-        );
-        if (
-          outcomeEvidenceRecord &&
-          matchedReadinessRecord &&
-          canUseEvidenceForReadout(
-            outcomeEvidenceRecord,
-            matchedReadinessRecord
-          )
-        ) {
-          outcomeEvidencePayload = outcomeEvidenceRecord.payload;
-        }
-      }
-
-      const html = aiValueEngine.renderExecutiveReadoutHtml({
-        packet,
-        engagement: engagementPayload,
-        fluencySummary,
-        evidenceReview: evidenceReviewForReadout(packet, outcomeEvidencePayload)
-      });
-      res.set("x-ai-value-readout-boundary", "legacy_internal_prototype");
-      res.set("x-ai-value-source-bound", "false");
+      const content = await readAuthorizedAggregateClaim(orgId, req.params.packetId);
+      res.set("x-ai-value-readout-boundary", "aggregate_claim_authority");
+      res.set("x-ai-value-source-bound", content ? "true" : "false");
       res.set("x-ai-value-customer-facing-output", "false");
       res.set("x-ai-value-export-authorized", "false");
       res.set("cache-control", "no-store");
       res.set("content-type", "text/html; charset=utf-8");
-      return res.send(applyLegacyReadoutBoundary(html));
+      return res.send(content ? aggregateClaimReadoutHtml(content) : aggregateClaimHeldHtml());
     }
   );
 
@@ -1097,10 +835,7 @@ export function registerAiValueRoutes(app: Express): void {
           reason: "INVALID_REVIEW_DECISION"
         });
       }
-      if (
-        body.reviewer_role !== undefined &&
-        body.reviewer_role !== reviewerRole
-      ) {
+      if (body.reviewer_role !== undefined && body.reviewer_role !== reviewerRole) {
         return res.status(400).json({
           error: "reviewer_role must match the authenticated role",
           reason: "INVALID_REVIEW_DECISION"
@@ -1182,221 +917,18 @@ export function registerAiValueRoutes(app: Express): void {
       if (!orgId) return;
 
       const body = (req.body ?? {}) as Record<string, unknown>;
-      const blueprintId = body.blueprint_id;
-      const metricsLibraryId = body.metrics_library_id;
-      const engagementId = body.engagement_id;
-      const fluencyBaselineId = body.fluency_baseline_id;
-      const outcomeEvidenceExportId = body.outcome_evidence_export_id;
-      const outcomeEvidenceReadinessId = body.outcome_evidence_readiness_id;
-      const scenarioId = body.scenario_id;
-      const persist = body.persist !== false;
-
-      if (typeof blueprintId !== "string" || typeof metricsLibraryId !== "string") {
-        return res.status(400).json({
-          error: "blueprint_id and metrics_library_id are required",
-          reason: "INVALID_VALUE_CHAIN_REQUEST"
-        });
-      }
-
-      const load = async (objectType: string, objectId: unknown) => {
-        if (typeof objectId !== "string") return undefined;
-        const record = await getAiValueObject(orgId, objectType, objectId);
-        if (!record) {
-          res.status(404).json({
-            error: `${objectType} ${objectId} not found`,
-            reason: "OBJECT_NOT_FOUND"
-          });
-          return null;
-        }
-        return record.payload;
-      };
-
-      const blueprintPayload = await load("blueprint", blueprintId);
-      if (blueprintPayload === null) return;
-      const metricsPayload = await load("metrics_library", metricsLibraryId);
-      if (metricsPayload === null) return;
-      const engagementPayload = await load("engagement", engagementId);
-      if (engagementPayload === null) return;
-      const fluencyPayload = await load("fluency_baseline", fluencyBaselineId);
-      if (fluencyPayload === null) return;
-      const outcomeEvidenceRecord =
-        typeof outcomeEvidenceExportId === "string"
-          ? await getAiValueObject(
-              orgId,
-              "outcome_evidence_export",
-              outcomeEvidenceExportId
-            )
-          : undefined;
-      if (typeof outcomeEvidenceExportId === "string" && !outcomeEvidenceRecord) {
-        return res.status(404).json({
-          error: `outcome_evidence_export ${outcomeEvidenceExportId} not found`,
-          reason: "OBJECT_NOT_FOUND"
-        });
-      }
-      const outcomeEvidenceReadinessRecord =
-        typeof outcomeEvidenceReadinessId === "string"
-          ? await getAiValueObject(
-              orgId,
-              "evidence_readiness",
-              outcomeEvidenceReadinessId
-            )
-          : undefined;
-      if (
-        typeof outcomeEvidenceReadinessId === "string" &&
-        !outcomeEvidenceReadinessRecord
-      ) {
-        return res.status(404).json({
-          error: `evidence_readiness ${outcomeEvidenceReadinessId} not found`,
-          reason: "OBJECT_NOT_FOUND"
-        });
-      }
-      const outcomeEvidencePayload = outcomeEvidenceRecord?.payload;
-      const serverExpectedOutcomeEvidenceAdmission =
-        readinessAuthorizesOutcomeEvidence(
-          outcomeEvidenceReadinessRecord,
-          outcomeEvidenceRecord
-        )
-          ? authoritativeReadinessOutcomeEvidenceReceipt(
-              outcomeEvidenceReadinessRecord
-            ) ?? undefined
-          : undefined;
-      const scenarioPayload = await load("value_scenario", scenarioId);
-      if (scenarioPayload === null) return;
-
-      const blueprintRecord = blueprintPayload as Record<string, unknown>;
-      const blueprintWindows = objectRef(blueprintRecord.windows);
-      const familySegment = serverExpectedOutcomeEvidenceAdmission
-        ? exactOutcomeEvidenceSliceSegment({
-            workflowId: serverExpectedOutcomeEvidenceAdmission.workflow_id,
-            jbtdId: serverExpectedOutcomeEvidenceAdmission.jbtd_id,
-            personaId: serverExpectedOutcomeEvidenceAdmission.persona_id,
-            baselineWindow: String(blueprintWindows?.baseline ?? ""),
-            comparisonWindow: String(blueprintWindows?.comparison ?? "")
-          })
-        : sanitizeIdSegment(
-            blueprintRecord.workflow_family as string ?? (blueprintId as string)
-          );
-      const outcomeEvidenceValidation = outcomeEvidencePayload
-        ? aiValueEngine.validateOutcomeEvidenceExport(outcomeEvidencePayload, {
-            blueprint: blueprintPayload,
-            metricsLibrary: metricsPayload
-          })
-        : null;
-      const outcomeEvidenceContractEligible =
-        acceptedReadinessBoundOutcomeEvidence(
-          outcomeEvidenceReadinessRecord,
-          outcomeEvidenceRecord
-        ) &&
-        outcomeEvidenceValidation?.valid === true &&
-        outcomeEvidenceValidation.cross_check_gaps.length === 0;
-      const runIds = {
-        readinessId: `readiness_${familySegment}_v1`,
-        claimBoundaryId: `claim_boundary_${familySegment}_v1`,
-        packetId: `executive_packet_${familySegment}_v1`
-      };
-      const run = aiValueEngine.runValueChain({
-        engagement: engagementPayload,
-        fluencyBaseline: fluencyPayload,
-        outcomeEvidenceExport: outcomeEvidencePayload,
-        blueprint: blueprintPayload,
-        metricsLibrary: metricsPayload,
-        scenario: scenarioPayload,
-        ids: runIds
-      });
-      if (
-        outcomeEvidenceContractEligible &&
-        outcomeEvidenceValidation &&
-        outcomeEvidencePayload &&
-        outcomeEvidenceRecord
-      ) {
-        const fluencyBaselineRef =
-          typeof (fluencyPayload as Record<string, unknown> | undefined)
-            ?.baseline_id === "string"
-            ? String(
-                (fluencyPayload as Record<string, unknown>).baseline_id
-              )
-            : undefined;
-        const engagementRef =
-          typeof (engagementPayload as Record<string, unknown> | undefined)
-            ?.engagement_id === "string"
-            ? String(
-                (engagementPayload as Record<string, unknown>).engagement_id
-              )
-            : undefined;
-        const authorizedSpine = aiValueEngine.runSpine({
-          blueprint: blueprintPayload,
-          metricsLibrary: metricsPayload,
-          scenario: scenarioPayload,
-          ids: runIds,
-          sourceCoverageOverrides: { outcome: "PRESENT" },
-          evidenceRefs: {
-            ...(fluencyBaselineRef
-              ? { fluency_baseline_id: fluencyBaselineRef }
-              : {}),
-            outcome_evidence_export_id: outcomeEvidenceRecord.object_id
-          },
-          packetContextRefs: {
-            ...(engagementRef ? { engagement_id: engagementRef } : {}),
-            ...(fluencyBaselineRef
-              ? { fluency_baseline_id: fluencyBaselineRef }
-              : {})
-          }
-        });
-        run.spine = authorizedSpine;
-        run.decision = authorizedSpine.decision;
-        run.halted_at = authorizedSpine.halted_at;
-        run.outcome_evidence = {
-          status: "VALID",
-          validation: outcomeEvidenceValidation,
-          object: outcomeEvidencePayload,
-          generated: false,
-          hold_reason: null,
-          attached: true
-        };
-      }
-
-      const persisted: Array<{ object_type: string; object_id: string }> = [];
-      if (persist && run.spine) {
-        const generatedStages: Array<{ stage: "scenario" | "readiness" | "claim_boundary" | "executive_packet"; objectType: string; idField: string }> = [
-          { stage: "scenario", objectType: "value_scenario", idField: "scenario_id" },
-          { stage: "readiness", objectType: "evidence_readiness", idField: "readiness_id" },
-          { stage: "claim_boundary", objectType: "claim_boundary", idField: "claim_boundary_id" },
-          { stage: "executive_packet", objectType: "executive_packet", idField: "packet_id" }
-        ];
-        for (const { stage, objectType, idField } of generatedStages) {
-          const stageResult = run.spine.stages[stage];
-          if (stageResult.status !== "VALID" || !stageResult.generated || !stageResult.object) {
-            continue;
-          }
-          const objectPayload = stageResult.object as Record<string, unknown>;
-          const objectId = String(objectPayload[idField]);
-          const validation =
-            stage === "readiness" &&
-            serverExpectedOutcomeEvidenceAdmission &&
-            outcomeEvidenceRecord
-              ? {
-                  ...(stageResult.validation as unknown as Record<string, unknown>),
-                  outcome_evidence_admission_authoritative: true,
-                  outcome_evidence_admission_receipt:
-                    serverExpectedOutcomeEvidenceAdmission,
-                  outcome_evidence_export_id: outcomeEvidenceRecord.object_id
-                }
-              : stageResult.validation as unknown as Record<string, unknown>;
-          await upsertAiValueObject({
-            orgId,
-            objectType,
-            objectId,
-            schemaVersion: String(objectPayload.schema_version ?? "UNKNOWN"),
-            workflowFamily: workflowFamilyOf(objectPayload),
-            payload: objectPayload,
-            validation,
-            valid: true
-          });
-          persisted.push({ object_type: objectType, object_id: objectId });
-        }
-      }
-
-      return res.json({ run, persisted });
+      return res.json(
+        await authorizeAggregateClaim({
+          orgId,
+          blueprintId: stringRef(body.blueprint_id) ?? undefined,
+          metricsLibraryId: stringRef(body.metrics_library_id) ?? undefined,
+          scenarioId: stringRef(body.scenario_id) ?? undefined,
+          outcomeEvidenceExportId: stringRef(body.outcome_evidence_export_id) ?? undefined,
+          outcomeEvidenceReadinessId: stringRef(body.outcome_evidence_readiness_id) ?? undefined,
+          comparisonPrivacyReceipt: body.comparison_privacy_receipt,
+          persist: body.persist !== false
+        })
+      );
     }
   );
 
@@ -1481,11 +1013,7 @@ export function registerAiValueRoutes(app: Express): void {
           reason: "OBJECT_NOT_FOUND"
         });
       }
-      const metricsRecord = await getAiValueObject(
-        orgId,
-        "metrics_library",
-        metricsLibraryId
-      );
+      const metricsRecord = await getAiValueObject(orgId, "metrics_library", metricsLibraryId);
       if (!metricsRecord) {
         return res.status(404).json({
           error: `metrics_library ${metricsLibraryId} not found`,
@@ -1504,9 +1032,7 @@ export function registerAiValueRoutes(app: Express): void {
         scenarioPayload = scenarioRecord.payload;
       }
 
-      const familySegment = sanitizeIdSegment(
-        blueprintRecord.workflow_family ?? blueprintId
-      );
+      const familySegment = sanitizeIdSegment(blueprintRecord.workflow_family ?? blueprintId);
       const run = aiValueEngine.runSpine({
         blueprint: blueprintRecord.payload,
         metricsLibrary: metricsRecord.payload,
@@ -1518,13 +1044,33 @@ export function registerAiValueRoutes(app: Express): void {
         }
       });
 
+      if (run.stages.readiness.status === "VALID") {
+        run.stages.claim_boundary = {
+          status: "HELD",
+          validation: null,
+          object: null,
+          generated: false,
+          hold_reason: "server-owned aggregate claim authorization is required"
+        };
+        run.stages.executive_packet = {
+          status: "HELD",
+          validation: null,
+          object: null,
+          generated: false,
+          hold_reason: "server-owned aggregate claim authorization is required"
+        };
+        run.halted_at = "claim_authorization";
+      }
+
       const persisted: Array<{ object_type: string; object_id: string }> = [];
       if (persist) {
-        const generatedStages: Array<{ stage: keyof typeof run.stages; objectType: string; idField: string }> = [
+        const generatedStages: Array<{
+          stage: keyof typeof run.stages;
+          objectType: string;
+          idField: string;
+        }> = [
           { stage: "scenario", objectType: "value_scenario", idField: "scenario_id" },
-          { stage: "readiness", objectType: "evidence_readiness", idField: "readiness_id" },
-          { stage: "claim_boundary", objectType: "claim_boundary", idField: "claim_boundary_id" },
-          { stage: "executive_packet", objectType: "executive_packet", idField: "packet_id" }
+          { stage: "readiness", objectType: "evidence_readiness", idField: "readiness_id" }
         ];
         for (const { stage, objectType, idField } of generatedStages) {
           const stageResult = run.stages[stage];

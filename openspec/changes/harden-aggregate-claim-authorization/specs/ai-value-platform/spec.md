@@ -129,10 +129,43 @@ label that movement `OBSERVED_NON_ATTRIBUTABLE`.
   C.1 readback
 - **THEN** the template SHALL emit the baseline, comparison, absolute delta,
   and observed direction
+- **AND** artifact generation SHALL recompute and exact-compare the complete
+  movement from that C.1 projection
 - **AND** it SHALL emit mechanical percent change only when the baseline is
   non-zero and the computed result is finite
 - **AND** it SHALL normalize negative zero and attach fixed aggregate,
   non-attribution, non-causality, and internal-only caveats
+- **AND** the metric identifier and measurement unit SHALL each match their
+  compiled Slice D vocabulary in the synchronized JSON Schema
+
+#### Scenario: Unapproved metric identifier or measurement unit
+
+- **WHEN** the selected C.1 movement contains a metric identifier or
+  measurement unit outside the compiled Slice D vocabularies
+- **THEN** claim authorization SHALL hold before artifact generation
+- **AND** no identifier, unsupported semantic text, or source detail SHALL be
+  returned in the fixed held response
+
+#### Scenario: Unapproved source-system label
+
+- **WHEN** the exact C.1 projection contains a source-system label outside the
+  compiled server-owned Slice D vocabulary
+- **THEN** claim authorization SHALL hold before manifest persistence
+- **AND** the arbitrary label SHALL NOT enter an internal artifact or fixed
+  held response
+
+#### Scenario: Raw aggregate identity reaches the artifact boundary
+
+- **WHEN** authoritative Slice D slice, source-graph, readiness, or C.1
+  evidence identifiers are used to authorize one exact movement
+- **THEN** the claim, packet, and manifest SHALL retain only domain-separated
+  commitments to those identities and the complete C.1 projection
+- **AND** no raw identifier SHALL enter an artifact payload or fixed held
+  response
+- **AND** reserved persistence SHALL keep the authenticated organization only
+  as the tenant/RLS row envelope and SHALL store a null workflow family
+- **AND** the commitments SHALL NOT define Slice E canonical identity
+  compatibility
 
 #### Scenario: Multiple movement or overflow attempt
 
@@ -192,6 +225,13 @@ projection, and independent policy state.
   boundary, executive packet, or policy-state bytes differ from the manifest
 - **THEN** authorization and readout SHALL hold
 - **AND** the existing manifest SHALL NOT be overwritten
+
+#### Scenario: Coherently rehashed movement substitution
+
+- **WHEN** claim, packet, and manifest hashes agree with each other but their
+  movement differs from the current authoritative C.1 projection
+- **THEN** readout SHALL rebuild the complete bundle from current authority
+- **AND** rendering SHALL hold without movement or claim text
 
 #### Scenario: Deterministic non-circular artifact lookup
 

@@ -141,6 +141,14 @@ jobs:
           C1_VERIFY_EPHEMERAL_DATABASE: "1"
         run: node scripts/verify_outcome_comparison_privacy_postgres.mjs
 
+      - name: Verify Slice D PostgreSQL aggregate claim authorization
+        if: steps.lmsys-credentials.outputs.available == 'true'
+        env:
+          D_VERIFY_EPHEMERAL_DATABASE: "1"
+          DEV_HEADER_AUTH: "true"
+          NODE_ENV: development
+        run: node scripts/verify_aggregate_claim_authorization_postgres.mjs
+
       - name: Download LMSYS-Chat-1M
         if: steps.lmsys-credentials.outputs.available == 'true'
         env:

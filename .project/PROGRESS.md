@@ -4386,3 +4386,156 @@
   then implement Slice D from that fresh merged `main`. No Slice D product
   implementation, migration, deployment, publication, or live proof has
   occurred.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII Slice D implementation candidate)
+
+- Implemented the activated Slice D contract from fresh merged activation
+  `main` (`599361f`) in
+  `codex/mcii-slice-d-claim-semantics-v2`. Scope remains one internal,
+  aggregate, descriptive movement from one exact C.1 readback; no Slice E/F,
+  economic, customer-facing, migration, deployment, event, suppression, or
+  threshold scope was added.
+- Real-evidence materialization now persists its generated scenario, marks
+  admitted Outcome Evidence as a present source lane, and seals the
+  review-independent export content plus exact blueprint, metrics-library,
+  and scenario IDs and hashes into materializer-only readiness validation.
+  Generic readiness writes cannot preserve that authority marker.
+- Added strict source, movement, policy, claim, packet, manifest, authorized
+  response, and fixed redacted HOLD contracts. IDs are non-circular and
+  manifest-derived; one serializable locked source snapshot performs atomic
+  insert-or-exact persistence for the three reserved internal object types.
+  Generic create, read, list, upsert, spine, legacy packet, and direct object
+  paths cannot authorize or render them.
+- `/value-chain/run` is the sole authorization route. It derives source
+  identity and the expected exact slice from authoritative stored lineage,
+  uses one opaque C.1 receipt only for bounded readback, reconciles every
+  returned projection field, and performs initial, pre-seal, and post-commit
+  C.1 plus source/artifact/manifest checks. Every failure, including
+  `persist: false`, returns only the fixed redacted HOLD shape.
+- Focused backend verification passes `58/58`; shared/backend builds and
+  strict OpenSpec pass. The new PostgreSQL verifier passes exact C.1-backed
+  authorization, immutable exact replay, reserved-type isolation,
+  receipt/selector non-authority, cross-slice and alternate-pair holds,
+  pre-seal and post-commit mutation, a queued source-write race, artifact
+  substitution/conflict, and revocation readback.
+- Remaining gates: create the immutable candidate commit; exact-commit
+  CODE/BUG/ADVERSARIAL review; one full required suite on the final reviewed
+  SHA; push; PR; current-head GitHub checks; and normal merge. No production
+  migration was applied and nothing was deployed.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII Slice D exact-review remediation)
+
+- Exact commit `d107857` received CODE `GO` and BUG/ADVERSARIAL `HOLD` on one
+  shared executable invariant failure: arbitrary C.1 `outcome_unit` text
+  reached authorized movement prose, permitting an email-shaped identifier
+  or causal/improvement language in stored and rendered output.
+- The remediation is D-only and contract-bounded. It adds one compiled generic
+  movement-unit vocabulary at the final Slice D artifact boundary, with
+  synchronized JSON Schema and documentation. It does not alter C.1 storage,
+  readback, migration, runtime privileges, or architecture.
+- Regression coverage rejects identifier-bearing, causal, improvement,
+  customer-facing, monetary, and score units before artifact generation.
+  The CODE follow-up about expressing one-of-each persisted artifact identity
+  more precisely in JSON Schema remains non-blocking follow-up work.
+- Replacement exact review of commit `7ec89a2` closed the unit exploit. CODE
+  returned `GO`; BUG and ADVERSARIAL independently reproduced one equivalent
+  executable blocker through raw rendered `metric_id` values
+  (`employee_12345`, person-shaped values, and causal/ROI/productivity text).
+- The second D-only remediation constrains movement metric identifiers to a
+  compiled server-owned vocabulary, keeps the runtime and synchronized JSON
+  Schema enums identical by test, adds the normative OpenSpec rule, and adds
+  contract plus real PostgreSQL fixed-HOLD probes. It does not alter C.1
+  storage, release/readback semantics, SQL, privileges, or architecture.
+- Focused verification after that remediation: 71/71 Slice D backend tests,
+  shared/backend build with Prisma generation, strict OpenSpec, whitespace
+  check, full C.1 PostgreSQL verifier, and Slice D PostgreSQL verifier all
+  passed against disposable local PostgreSQL. No production migration was
+  applied and nothing was deployed.
+- Non-blocking follow-up remains: make the authorized-response JSON Schema
+  express exactly one persisted reference for each of the three internal
+  artifact types. Runtime already emits and reconciles exactly that set.
+- Exact review of commit `e332d49` returned CODE/ADVERSARIAL `GO` and BUG
+  `HOLD` for one executable invariant-5 storage path: arbitrary matching
+  C.1/export/metrics-library `source_system` text entered the internal
+  authorization manifest even though it was not rendered.
+- The third D-only remediation constrains that manifest field to a compiled
+  server-owned source-system vocabulary, synchronizes runtime/JSON
+  Schema/OpenSpec/documentation, and adds builder plus service-level
+  fixed-HOLD regressions. It does not modify C.1 schemas, SQL, policies,
+  privileges, release/readback behavior, or architecture.
+- Post-remediation focused verification passes 71/71 backend tests,
+  shared/backend build with Prisma generation, strict OpenSpec, whitespace,
+  runtime/JSON Schema vocabulary parity, and the real Slice D PostgreSQL
+  verifier against disposable local PostgreSQL.
+- Exact review of commit `2b4efa4` confirmed the prior source-label fix but
+  found two executable stored-artifact gaps: the manifest projection did not
+  independently reuse the compiled metric/unit enums, and generic slice,
+  source, readiness, and evidence IDs could contain person/direct-identifier
+  or unsupported-claim tokens.
+- The fourth D-only remediation makes the manifest projection reuse all three
+  compiled vocabularies and applies one aggregate-safe lowercase identifier
+  boundary across every Slice D stored identity field. Contract, JSON Schema,
+  OpenSpec, builder tests, and PostgreSQL fixed-HOLD probes are synchronized.
+  C.1 schemas, SQL, policies, privileges, release/readback behavior, and
+  architecture remain unchanged.
+- Post-remediation focused verification again passes 71/71 backend tests,
+  shared/backend build with Prisma generation, strict OpenSpec, whitespace,
+  builder/reconciler rejection probes, and the real Slice D PostgreSQL
+  verifier against disposable local PostgreSQL.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII Slice D commitment-only artifact repair)
+
+- James authorized the one remaining Slice D architectural move identified by
+  exact review: reserved claim, packet, and manifest payloads now replace raw
+  organization/workflow/JBTD/persona, source-object, readiness, and C.1
+  evidence identities with domain-separated commitments. The authenticated
+  organization remains only the existing database tenant/RLS envelope, and
+  reserved rows persist `workflow_family = null`.
+- Authorization still resolves and validates the exact raw upstream graph
+  transiently. Readback resolves the authoritative readiness row by its
+  readiness-reference commitment plus semantic hash, fails on zero or
+  multiple matches, reloads the materializer-owned raw seal, and repeats
+  source-graph, slice, C.1 receipt, and complete-projection commitment checks.
+  The commitments are private Slice D storage bindings; they do not define
+  canonical identity compatibility, which remains Slice E scope.
+- Runtime contracts, JSON Schema, OpenSpec, contract documentation, repository
+  storage, focused tests, and the PostgreSQL verifier are synchronized.
+  Regression coverage proves person-shaped raw identity text is absent from
+  every artifact payload, commitment domains differ, projection mutation
+  changes the manifest identity, reserved workflow columns are null, and
+  exact authorization/readback still succeeds.
+- Focused verification passes 72/72 backend tests, shared/backend builds with
+  Prisma generation, strict OpenSpec, JSON parsing, whitespace, and the full
+  C.0/C.1/Slice D PostgreSQL verifier sequence against fresh disposable
+  PostgreSQL 16. No migration was added or applied to production, and nothing
+  was deployed.
+- Remaining gates: create the immutable repair commit; run exact-commit
+  CODE/BUG/ADVERSARIAL review; run the full required suite once on the final
+  reviewed SHA; push; create the Slice D PR; wait for required current-head
+  GitHub checks; and normal-merge. Slice E must start from fresh current
+  `main`.
+- Exact commit `6754b42` received the same valid HOLD from CODE, BUG, and
+  ADVERSARIAL review: a coherently rehashed three-artifact substitution could
+  retain the authoritative projection commitment while replacing the
+  mechanical movement, and current readback did not rederive that movement.
+  This was an executable fixed-template/C.1-authority failure, so it met the
+  governance stop rule.
+- The narrow repair makes the builder derive and exact-compare the complete
+  movement from C.1 endpoints and makes both post-commit authorization and
+  current readback exact-compare the complete bundle rebuilt from current
+  authority. The PostgreSQL verifier now inserts a structurally reconciling,
+  coherently rehashed three-row substitution and proves it is non-renderable.
+  No new identity semantics, architecture, migration, endpoint, event,
+  suppression reason, threshold, model path, or customer-facing output was
+  added.
+- Replacement exact commit `ce48a31` received CODE, BUG, and ADVERSARIAL `GO`.
+  Its one full backend run passed 1,255/1,256 tests and exposed one stale
+  pre-Slice-D API-push assertion: it expected the readiness outcome lane to
+  remain `MISSING`, while the reviewed Slice D materializer contract now marks
+  admitted aggregate Outcome Evidence `PRESENT`. Runtime behavior matched the
+  focused materializer tests and contract.
+- The replacement changes only that integration-test expectation to
+  `PRESENT`. Its focused test passes 1/1. This is test synchronization for the
+  already-reviewed D behavior, not a runtime or architecture change. A new
+  immutable SHA, replacement exact reviews, and one full suite on that final
+  reviewed SHA remain required.

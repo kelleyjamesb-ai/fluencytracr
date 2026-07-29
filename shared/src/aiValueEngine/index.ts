@@ -21,10 +21,7 @@ export type { BlueprintValidationResult } from "./blueprint";
 export { validateMetricsLibrary, recommendMetricsForBlueprint } from "./metrics";
 export type { MetricsLibraryValidationResult } from "./metrics";
 
-export {
-  validateValueScenario,
-  buildValueScenarioDraftFromBlueprintAndMetrics
-} from "./scenario";
+export { validateValueScenario, buildValueScenarioDraftFromBlueprintAndMetrics } from "./scenario";
 export type { ScenarioValidationResult } from "./scenario";
 
 export {
@@ -32,20 +29,14 @@ export {
   buildRoiScenarioFromValueObjects,
   ROI_SCENARIO_SCHEMA_VERSION
 } from "./roiScenario";
-export type {
-  RoiScenarioValidationResult,
-  BuildRoiScenarioInputs
-} from "./roiScenario";
+export type { RoiScenarioValidationResult, BuildRoiScenarioInputs } from "./roiScenario";
 
 export {
   validateEbitaBridge,
   buildEbitaBridgeFromValueObjects,
   EBITA_BRIDGE_SCHEMA_VERSION
 } from "./ebitaBridge";
-export type {
-  EbitaBridgeValidationResult,
-  BuildEbitaBridgeInputs
-} from "./ebitaBridge";
+export type { EbitaBridgeValidationResult, BuildEbitaBridgeInputs } from "./ebitaBridge";
 
 export {
   validateValueImprovementLoop,
@@ -57,10 +48,7 @@ export type {
   BuildValueImprovementLoopOptions
 } from "./valueImprovement";
 
-export {
-  validateDataBoundaryContract,
-  DATA_BOUNDARY_SCHEMA_VERSION
-} from "./dataBoundary";
+export { validateDataBoundaryContract, DATA_BOUNDARY_SCHEMA_VERSION } from "./dataBoundary";
 export type { DataBoundaryValidationResult } from "./dataBoundary";
 
 export {
@@ -151,10 +139,7 @@ export {
   SourcePackageSchema,
   validateSourcePackage
 } from "./sourcePackages";
-export type {
-  SourcePackage,
-  SourcePackageValidationResult
-} from "./sourcePackages";
+export type { SourcePackage, SourcePackageValidationResult } from "./sourcePackages";
 
 export {
   SCRUBBED_GLEAN_CLIENT_EXPORT_SCHEMA_VERSION,
@@ -267,9 +252,7 @@ export {
   buildAIFluencyInstrumentSnapshotFromObject,
   validateAIFluencyInstrumentSnapshot
 } from "./aiFluencyInstrumentSnapshot";
-export type {
-  AIFluencyInstrumentSnapshotValidationResult
-} from "./aiFluencyInstrumentSnapshot";
+export type { AIFluencyInstrumentSnapshotValidationResult } from "./aiFluencyInstrumentSnapshot";
 
 export {
   AI_MANAGER_OUTCOME_FORMULA_FAMILIES,
@@ -446,10 +429,7 @@ export {
   buildMeasurementCell,
   validateMeasurementCell
 } from "./measurementCell";
-export type {
-  BuildMeasurementCellInput,
-  MeasurementCellValidationResult
-} from "./measurementCell";
+export type { BuildMeasurementCellInput, MeasurementCellValidationResult } from "./measurementCell";
 
 export {
   AI_VALUE_MEASUREMENT_CELL_ASSEMBLY_RUN_SCHEMA_VERSION,
@@ -544,14 +524,8 @@ export {
 } from "./readiness";
 export type { ReadinessValidationResult, BuildReadinessOptions } from "./readiness";
 
-export {
-  validateClaimBoundary,
-  buildClaimBoundaryFromReadiness
-} from "./claimBoundary";
-export type {
-  ClaimBoundaryValidationResult,
-  BuildClaimBoundaryOptions
-} from "./claimBoundary";
+export { validateClaimBoundary, buildClaimBoundaryFromReadiness } from "./claimBoundary";
+export type { ClaimBoundaryValidationResult, BuildClaimBoundaryOptions } from "./claimBoundary";
 
 export {
   buildExecutiveValidationPacket,
@@ -564,10 +538,7 @@ export type {
   ExecutiveEbitaImpactSummary
 } from "./executivePacket";
 
-export {
-  buildBlueprintDraftFromWorkshopIntake,
-  WORKSHOP_INTAKE_SCHEMA_VERSION
-} from "./intake";
+export { buildBlueprintDraftFromWorkshopIntake, WORKSHOP_INTAKE_SCHEMA_VERSION } from "./intake";
 export type { WorkshopIntakeResult } from "./intake";
 
 export {
@@ -668,12 +639,8 @@ export type {
   CustomerExposurePolicyValidationResult
 } from "./customerExposurePolicy";
 
-export {
-  buildSupportPilotGleanReadinessMapFromRuntimeEvidence
-} from "./supportPilotGleanReadinessAdapter";
-export type {
-  BuildSupportPilotGleanReadinessMapInput
-} from "./supportPilotGleanReadinessAdapter";
+export { buildSupportPilotGleanReadinessMapFromRuntimeEvidence } from "./supportPilotGleanReadinessAdapter";
+export type { BuildSupportPilotGleanReadinessMapInput } from "./supportPilotGleanReadinessAdapter";
 
 export {
   validateOutcomeEvidenceExport,
@@ -691,15 +658,12 @@ export { runValueChain, VALUE_CHAIN_RESULT_SCHEMA_VERSION } from "./valueChain";
 export type { ValueChainRunInput, ValueChainRunResult } from "./valueChain";
 
 export { runSpine, SPINE_RESULT_SCHEMA_VERSION } from "./spine";
-export type {
-  SpineRunInput,
-  SpineRunResult,
-  SpineStageResult,
-  SpineStageStatus
-} from "./spine";
+export type { SpineRunInput, SpineRunResult, SpineStageResult, SpineStageStatus } from "./spine";
 
 export { renderExecutiveReadoutHtml } from "./readoutHtml";
 export type { RenderExecutiveReadoutInputs } from "./readoutHtml";
+
+export * from "./aggregateClaimAuthorization";
 
 export {
   AI_VALUE_LANGUAGE_SYSTEM_VERSION,

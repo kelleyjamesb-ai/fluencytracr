@@ -1,0 +1,378 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fluencytracr.local/schemas/ai-value-intelligence/aggregate-claim-authorization.schema.json",
+  "title": "Aggregate Claim Authorization",
+  "description": "Internal Slice D response and immutable artifact contracts. This schema authorizes no customer-facing output.",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^manifest_[0-9a-f]{64}$"
+    },
+    "claim_id": {
+      "type": "string",
+      "pattern": "^aggregate_claim_[0-9a-f]{64}_[0-9a-f]{64}$"
+    },
+    "packet_id": {
+      "type": "string",
+      "pattern": "^aggregate_packet_[0-9a-f]{64}_[0-9a-f]{64}$"
+    },
+    "caveats": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "Aggregate observation only." },
+        { "const": "No attribution to AI or any intervention." },
+        { "const": "No causal conclusion." },
+        { "const": "Internal review only; not customer-facing." }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "source_system": {
+      "enum": [
+        "Aggregate AI Work Evidence",
+        "CRM activity reporting",
+        "CRM opportunity reporting",
+        "Customer Success operating metrics mart",
+        "Customer support satisfaction survey",
+        "Forecast review reporting",
+        "Support case management system",
+        "customer_crm"
+      ]
+    },
+    "movement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "measurement_unit",
+        "baseline_value",
+        "comparison_value",
+        "absolute_delta",
+        "observed_direction",
+        "claim_label"
+      ],
+      "properties": {
+        "metric_id": {
+          "enum": [
+            "account_health_review_cycle_days",
+            "at_risk_account_share",
+            "customer_health_signal_coverage_share",
+            "cycle_time",
+            "expansion_signal_followup_share",
+            "logo_churn_rate",
+            "qbr_prep_hours_per_account",
+            "renewal_action_staleness_count",
+            "renewal_rate",
+            "risk_review_coverage_share",
+            "sales_forecast_exception_rate",
+            "sales_next_step_completeness_share",
+            "sales_record_update_lag_hours",
+            "sales_stale_opportunity_count",
+            "support_backlog_count",
+            "support_escalation_rate",
+            "support_first_contact_resolution_rate",
+            "support_median_resolution_hours",
+            "support_reopen_rate",
+            "support_verification_coverage"
+          ]
+        },
+        "measurement_unit": {
+          "enum": [
+            "cases",
+            "count",
+            "days",
+            "hours",
+            "minutes",
+            "months",
+            "percent",
+            "percentage_points",
+            "rate",
+            "ratio",
+            "seconds",
+            "share",
+            "weeks"
+          ]
+        },
+        "baseline_value": { "type": "number" },
+        "comparison_value": { "type": "number" },
+        "absolute_delta": { "type": "number" },
+        "percent_change": { "type": "number" },
+        "observed_direction": {
+          "enum": ["INCREASE", "DECREASE", "NO_CHANGE"]
+        },
+        "approved_metric_direction": {
+          "enum": ["INCREASE", "DECREASE", "MAINTAIN", "MONITOR", "NO_CHANGE"]
+        },
+        "claim_label": { "const": "OBSERVED_NON_ATTRIBUTABLE" }
+      }
+    },
+    "source_graph_commitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source_graph_commitment",
+        "outcome_evidence_content_hash",
+        "blueprint_hash",
+        "metrics_library_hash",
+        "scenario_hash"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "FT_AGGREGATE_CLAIM_SOURCE_GRAPH_COMMITMENT_V1"
+        },
+        "source_graph_commitment": { "$ref": "#/$defs/sha256" },
+        "outcome_evidence_content_hash": { "$ref": "#/$defs/sha256" },
+        "blueprint_hash": { "$ref": "#/$defs/sha256" },
+        "metrics_library_hash": { "$ref": "#/$defs/sha256" },
+        "scenario_hash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "policy_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_schema_state",
+        "evidence_review_state",
+        "evidence_admission_state",
+        "comparison_privacy_state",
+        "readiness_state",
+        "model_eligibility_state",
+        "model_use_authorized",
+        "claim_authorization_state",
+        "customer_facing_output_authorized"
+      ],
+      "properties": {
+        "evidence_schema_state": { "const": "VALID" },
+        "evidence_review_state": { "const": "ACCEPTED" },
+        "evidence_admission_state": { "const": "ADMITTED" },
+        "comparison_privacy_state": {
+          "const": "ATOMIC_COMPARISON_PRIVACY_RELEASED"
+        },
+        "readiness_state": { "const": "INTERNAL_CLAIM_REVIEW_PERMITTED" },
+        "model_eligibility_state": { "const": "NOT_REQUESTED" },
+        "model_use_authorized": { "const": false },
+        "claim_authorization_state": { "const": "AUTHORIZED" },
+        "customer_facing_output_authorized": { "const": false }
+      }
+    },
+    "claim_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_version",
+        "template_id",
+        "slice_commitment",
+        "movement",
+        "caveats",
+        "model_use_authorized",
+        "customer_facing_output_authorized"
+      ],
+      "properties": {
+        "policy_version": {
+          "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
+        },
+        "template_id": { "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1" },
+        "slice_commitment": { "$ref": "#/$defs/sha256" },
+        "movement": { "$ref": "#/$defs/movement" },
+        "caveats": { "$ref": "#/$defs/caveats" },
+        "model_use_authorized": { "const": false },
+        "customer_facing_output_authorized": { "const": false }
+      }
+    },
+    "packet_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_version",
+        "template_id",
+        "slice_commitment",
+        "claim_content_hash",
+        "movement",
+        "caveats",
+        "customer_facing_output_authorized"
+      ],
+      "properties": {
+        "policy_version": {
+          "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
+        },
+        "template_id": { "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1" },
+        "slice_commitment": { "$ref": "#/$defs/sha256" },
+        "claim_content_hash": { "$ref": "#/$defs/sha256" },
+        "movement": { "$ref": "#/$defs/movement" },
+        "caveats": { "$ref": "#/$defs/caveats" },
+        "customer_facing_output_authorized": { "const": false }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "claim_id", "manifest_id", "content_hash", "content"],
+      "properties": {
+        "schema_version": {
+          "const": "FT_AGGREGATE_CLAIM_AUTHORIZED_ARTIFACT_V1"
+        },
+        "claim_id": { "$ref": "#/$defs/claim_id" },
+        "manifest_id": { "$ref": "#/$defs/manifest_id" },
+        "content_hash": { "$ref": "#/$defs/sha256" },
+        "content": { "$ref": "#/$defs/claim_content" }
+      }
+    },
+    "packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "packet_id",
+        "manifest_id",
+        "claim_id",
+        "content_hash",
+        "content"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "FT_AGGREGATE_CLAIM_AUTHORIZED_ARTIFACT_V1"
+        },
+        "packet_id": { "$ref": "#/$defs/packet_id" },
+        "manifest_id": { "$ref": "#/$defs/manifest_id" },
+        "claim_id": { "$ref": "#/$defs/claim_id" },
+        "content_hash": { "$ref": "#/$defs/sha256" },
+        "content": { "$ref": "#/$defs/packet_content" }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "manifest_id",
+        "manifest_hash",
+        "claim_id",
+        "packet_id",
+        "core"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_MANIFEST_V1"
+        },
+        "manifest_id": { "$ref": "#/$defs/manifest_id" },
+        "manifest_hash": { "$ref": "#/$defs/sha256" },
+        "claim_id": { "$ref": "#/$defs/claim_id" },
+        "packet_id": { "$ref": "#/$defs/packet_id" },
+        "core": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy_version",
+            "slice_commitment",
+            "source_graph",
+            "readiness_ref_commitment",
+            "readiness_hash",
+            "accepted_export_payload_hash",
+            "accepted_review_hash",
+            "comparison_privacy_receipt",
+            "comparison_projection_commitment",
+            "policy_state",
+            "template_id",
+            "claim_content_hash",
+            "packet_content_hash"
+          ],
+          "properties": {
+            "policy_version": {
+              "const": "FT_AGGREGATE_CLAIM_AUTHORIZATION_2026_07"
+            },
+            "slice_commitment": { "$ref": "#/$defs/sha256" },
+            "source_graph": {
+              "$ref": "#/$defs/source_graph_commitment"
+            },
+            "readiness_ref_commitment": { "$ref": "#/$defs/sha256" },
+            "readiness_hash": { "$ref": "#/$defs/sha256" },
+            "accepted_export_payload_hash": { "$ref": "#/$defs/sha256" },
+            "accepted_review_hash": { "$ref": "#/$defs/sha256" },
+            "comparison_privacy_receipt": {
+              "$ref": "../outcome_comparison_privacy_receipt.schema.json"
+            },
+            "comparison_projection_commitment": { "$ref": "#/$defs/sha256" },
+            "policy_state": { "$ref": "#/$defs/policy_state" },
+            "template_id": {
+              "const": "FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1"
+            },
+            "claim_content_hash": { "$ref": "#/$defs/sha256" },
+            "packet_content_hash": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      }
+    },
+    "held_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "reason_family", "persisted"],
+      "properties": {
+        "decision": { "const": "HOLD" },
+        "reason_family": {
+          "const": "AGGREGATE_CLAIM_AUTHORIZATION_HELD"
+        },
+        "persisted": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
+    },
+    "authorized_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "claim_authorization_state",
+        "packet_id",
+        "persisted",
+        "customer_facing_output_authorized"
+      ],
+      "properties": {
+        "decision": { "const": "AUTHORIZED" },
+        "claim_authorization_state": { "const": "AUTHORIZED" },
+        "packet_id": { "$ref": "#/$defs/packet_id" },
+        "persisted": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["object_type", "object_id"],
+            "properties": {
+              "object_type": {
+                "enum": [
+                  "aggregate_authorized_claim",
+                  "aggregate_authorized_packet",
+                  "aggregate_claim_authorization_manifest"
+                ]
+              },
+              "object_id": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "customer_facing_output_authorized": { "const": false }
+      }
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/held_response" },
+    { "$ref": "#/$defs/authorized_response" },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim", "packet", "manifest"],
+      "properties": {
+        "claim": { "$ref": "#/$defs/claim" },
+        "packet": { "$ref": "#/$defs/packet" },
+        "manifest": { "$ref": "#/$defs/manifest" }
+      }
+    }
+  ]
+}
