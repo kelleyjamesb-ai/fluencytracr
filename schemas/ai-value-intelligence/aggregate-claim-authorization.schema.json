@@ -319,7 +319,27 @@
               "$ref": "../outcome_comparison_privacy_receipt.schema.json"
             },
             "comparison_projection": {
-              "$ref": "../outcome_comparison_projection.schema.json"
+              "allOf": [
+                {
+                  "$ref": "../outcome_comparison_projection.schema.json"
+                },
+                {
+                  "properties": {
+                    "source_system": {
+                      "enum": [
+                        "Aggregate AI Work Evidence",
+                        "CRM activity reporting",
+                        "CRM opportunity reporting",
+                        "Customer Success operating metrics mart",
+                        "Customer support satisfaction survey",
+                        "Forecast review reporting",
+                        "Support case management system",
+                        "customer_crm"
+                      ]
+                    }
+                  }
+                }
+              ]
             },
             "policy_state": { "$ref": "#/$defs/policy_state" },
             "template_id": {

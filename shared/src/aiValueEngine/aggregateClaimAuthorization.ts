@@ -68,6 +68,16 @@ export const AGGREGATE_CLAIM_METRIC_IDS = [
   "support_reopen_rate",
   "support_verification_coverage"
 ] as const;
+export const AGGREGATE_CLAIM_SOURCE_SYSTEMS = [
+  "Aggregate AI Work Evidence",
+  "CRM activity reporting",
+  "CRM opportunity reporting",
+  "Customer Success operating metrics mart",
+  "Customer support satisfaction survey",
+  "Forecast review reporting",
+  "Support case management system",
+  "customer_crm"
+] as const;
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9:_-]{0,511}$/;
@@ -85,6 +95,12 @@ const finiteNumber = z.number().finite();
 const nonNegativeInteger = z.number().int().nonnegative();
 export const AggregateClaimMeasurementUnitSchema = z.enum(AGGREGATE_CLAIM_MEASUREMENT_UNITS);
 export const AggregateClaimMetricIdSchema = z.enum(AGGREGATE_CLAIM_METRIC_IDS);
+export const AggregateClaimSourceSystemSchema = z.enum(AGGREGATE_CLAIM_SOURCE_SYSTEMS);
+export const AggregateClaimComparisonProjectionSchema = OutcomeComparisonProjectionSchema.and(
+  z.object({
+    source_system: AggregateClaimSourceSystemSchema
+  })
+);
 
 export const AggregateClaimSourceGraphSealSchema = z
   .object({
@@ -194,7 +210,7 @@ export const AggregateClaimManifestCoreSchema = z
     accepted_export_payload_hash: exactHash,
     accepted_review_hash: exactHash,
     comparison_privacy_receipt: OutcomeComparisonPrivacyReceiptSchema,
-    comparison_projection: OutcomeComparisonProjectionSchema,
+    comparison_projection: AggregateClaimComparisonProjectionSchema,
     policy_state: AggregateClaimPolicyStateSchema,
     template_id: z.literal(AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID),
     claim_content_hash: exactHash,

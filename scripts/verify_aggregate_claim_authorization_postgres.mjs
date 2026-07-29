@@ -366,6 +366,18 @@ expectHeld(
   }),
   "causal metric projection"
 );
+expectHeld(
+  await authorizeAggregateClaim(authorizationRequest, {
+    readComparison: async () => ({
+      ...selected.result,
+      projection: {
+        ...selected.result.projection,
+        source_system: "james.kelley@glean.com"
+      }
+    })
+  }),
+  "identifier-bearing source-system projection"
+);
 
 const sourceRefs = [
   { objectType: "outcome_evidence_export", objectId: outcomeExportId },

@@ -195,8 +195,9 @@ non-attribution, non-causality, and internal-only caveats. There are no fields
 for ROI, money, productivity, prediction, confidence/probability, individual
 performance, ranking, customer-facing approval, or model output.
 The synchronized JSON Schema is the normative enumeration for both compiled
-vocabularies. Upstream storage, accepted review, and C.1 release do not add
-metric identifiers or measurement units to Slice D authority.
+movement vocabularies and the compiled server-owned source-system vocabulary.
+Upstream storage, accepted review, and C.1 release do not add metric
+identifiers, measurement units, or source labels to Slice D authority.
 
 ### Internal artifact namespace and non-circular identity
 

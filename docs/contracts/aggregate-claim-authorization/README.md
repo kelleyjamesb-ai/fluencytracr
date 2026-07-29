@@ -34,6 +34,14 @@ identifiers never enter an authorized artifact or readout. Extending the
 vocabulary requires a reviewed contract version; upstream storage or C.1
 acceptance does not extend Slice D authority.
 
+The C.1 projection source system must independently match the compiled
+server-owned Slice D source-system vocabulary represented by
+`manifest.core.comparison_projection.source_system` in the synchronized JSON
+Schema. This prevents arbitrary source labels, person-shaped text, or other
+customer-authored strings from entering the internal authorization manifest.
+Upstream storage, review, and C.1 release remain non-authorizing for this
+boundary.
+
 ## Authority chain
 
 1. Real-evidence materialization persists its generated scenario and seals the

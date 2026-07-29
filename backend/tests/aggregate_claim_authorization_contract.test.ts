@@ -14,6 +14,7 @@ const {
   AGGREGATE_CLAIM_HELD_REASON,
   AGGREGATE_CLAIM_METRIC_IDS,
   AGGREGATE_CLAIM_MEASUREMENT_UNITS,
+  AGGREGATE_CLAIM_SOURCE_SYSTEMS,
   AGGREGATE_CLAIM_SOURCE_GRAPH_SCHEMA_VERSION,
   AggregateClaimHeldResponseSchema,
   AggregateAuthorizedClaimContentSchema,
@@ -227,7 +228,7 @@ describe("aggregate claim authorization contracts", () => {
       baselineValue: 18.4,
       comparisonValue: 15.1
     });
-    const bundle = buildAggregateClaimAuthorizationBundle({
+    const bundleInput = {
       sourceGraphSeal,
       readinessId: "readiness_exact",
       readinessHash: aggregateClaimHash("FT_TEST_READINESS", { readiness_id: "readiness_exact" }),
@@ -251,7 +252,8 @@ describe("aggregate claim authorization contracts", () => {
         model_use_authorized: false,
         customer_facing_output_authorized: false
       }
-    });
+    };
+    const bundle = buildAggregateClaimAuthorizationBundle(bundleInput);
     expect(aggregateManifestIdFromPacketId(bundle.packet.packet_id)).toBe(
       bundle.manifest.manifest_id
     );
@@ -272,6 +274,15 @@ describe("aggregate claim authorization contracts", () => {
         }
       })
     ).toBe(false);
+    expect(() =>
+      buildAggregateClaimAuthorizationBundle({
+        ...bundleInput,
+        comparisonProjection: {
+          ...comparisonProjection,
+          source_system: "james.kelley@glean.com"
+        }
+      })
+    ).toThrow();
   });
 
   it("returns one fixed redacted HOLD shape", () => {
@@ -424,5 +435,9 @@ describe("aggregate claim authorization contracts", () => {
     expect(schema.$defs.movement.properties.measurement_unit.enum).toEqual([
       ...AGGREGATE_CLAIM_MEASUREMENT_UNITS
     ]);
+    expect(
+      schema.$defs.manifest.properties.core.properties.comparison_projection.allOf[1].properties
+        .source_system.enum
+    ).toEqual([...AGGREGATE_CLAIM_SOURCE_SYSTEMS]);
   });
 });

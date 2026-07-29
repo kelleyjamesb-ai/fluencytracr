@@ -4454,3 +4454,16 @@
 - Non-blocking follow-up remains: make the authorized-response JSON Schema
   express exactly one persisted reference for each of the three internal
   artifact types. Runtime already emits and reconciles exactly that set.
+- Exact review of commit `e332d49` returned CODE/ADVERSARIAL `GO` and BUG
+  `HOLD` for one executable invariant-5 storage path: arbitrary matching
+  C.1/export/metrics-library `source_system` text entered the internal
+  authorization manifest even though it was not rendered.
+- The third D-only remediation constrains that manifest field to a compiled
+  server-owned source-system vocabulary, synchronizes runtime/JSON
+  Schema/OpenSpec/documentation, and adds builder plus service-level
+  fixed-HOLD regressions. It does not modify C.1 schemas, SQL, policies,
+  privileges, release/readback behavior, or architecture.
+- Post-remediation focused verification passes 71/71 backend tests,
+  shared/backend build with Prisma generation, strict OpenSpec, whitespace,
+  runtime/JSON Schema vocabulary parity, and the real Slice D PostgreSQL
+  verifier against disposable local PostgreSQL.

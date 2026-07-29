@@ -144,6 +144,14 @@ label that movement `OBSERVED_NON_ATTRIBUTABLE`.
 - **AND** no identifier, unsupported semantic text, or source detail SHALL be
   returned in the fixed held response
 
+#### Scenario: Unapproved source-system label
+
+- **WHEN** the exact C.1 projection contains a source-system label outside the
+  compiled server-owned Slice D vocabulary
+- **THEN** claim authorization SHALL hold before manifest persistence
+- **AND** the arbitrary label SHALL NOT enter an internal artifact or fixed
+  held response
+
 #### Scenario: Multiple movement or overflow attempt
 
 - **WHEN** an invocation requests or derives a second movement or metric, or
