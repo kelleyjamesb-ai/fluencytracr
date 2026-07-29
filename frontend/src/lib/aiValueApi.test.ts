@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as aiValueApi from "./aiValueApi";
 import { runAiValueChain, runAiValueSpine } from "./aiValueApi";
 
 const ok = () =>
@@ -50,5 +51,9 @@ describe("AI Value non-persistent workspace runs", () => {
       fluency_baseline_id: "baseline-1",
       persist: false
     });
+  });
+
+  it("does not expose a legacy HTML readout request helper", () => {
+    expect(aiValueApi).not.toHaveProperty("fetchReadoutHtml");
   });
 });

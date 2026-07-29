@@ -199,17 +199,6 @@ export const reviewOutcomeEvidence = (
     }
   );
 
-export const fetchReadoutHtml = async (role: string, packetId: string): Promise<string> => {
-  const response = await authFetch(
-    role,
-    withApiBase(`/api/v1/ai-value/readout/${encodeURIComponent(packetId)}/html`)
-  );
-  if (!response.ok) {
-    throw new AiValueApiError(`Readout request failed: ${response.status}`, response.status);
-  }
-  return response.text();
-};
-
 export const postWorkshopIntake = (
   role: string,
   intake: Record<string, unknown>

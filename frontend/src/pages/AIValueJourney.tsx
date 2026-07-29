@@ -225,17 +225,6 @@ export const AIValueJourney = () => {
                 {stage.nextAction}
               </Link>
             )}
-            {stage.key === "readout" &&
-              journey.packetIds.map((packetId) => (
-                <button
-                  type="button"
-                  className="ai-value-step ai-value-phase-action"
-                  key={packetId}
-                  onClick={() => void journey.openReadout(packetId)}
-                >
-                  Open executive readout
-                </button>
-              ))}
           </article>
         ))}
       </section>
@@ -504,11 +493,7 @@ export const AIValueJourney = () => {
           onReview={(exportId, decision) => void journey.review(exportId, decision)}
         />
 
-        <ExecutiveReadoutPreviewPanel
-          preview={journey.executiveReadoutPreview}
-          packetIds={journey.packetIds}
-          onOpenReadout={(packetId) => void journey.openReadout(packetId)}
-        />
+        <ExecutiveReadoutPreviewPanel preview={journey.executiveReadoutPreview} />
 
         <SponsorDecisionLoopPanel loop={journey.sponsorDecisionLoop} />
 
@@ -523,7 +508,7 @@ export const AIValueJourney = () => {
                 and safe value language.
               </p>
             </div>
-            <StatusPill label={journey.executivePlan.packetStatus} tone="good" />
+            <StatusPill label={journey.executivePlan.readoutStatus} tone="neutral" />
           </div>
 
           <div className="ai-value-executive-plan-grid">

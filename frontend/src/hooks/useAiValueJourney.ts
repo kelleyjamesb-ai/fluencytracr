@@ -4,7 +4,6 @@ import {
   listAiValueObjects,
   reviewOutcomeEvidence,
   fetchAiValueObject,
-  fetchReadoutHtml,
   materializeRealEvidence as postRealEvidenceMaterializer,
   AiValueApiError,
   type AiValueObjectSummary,
@@ -97,7 +96,7 @@ export interface ExecutiveHandoff {
 }
 
 export interface ExecutiveOperatingPlan {
-  packetStatus: string;
+  readoutStatus: string;
   sponsorDecision: string;
   recommendedNextAction: string;
   handoffs: ExecutiveHandoff[];
@@ -105,14 +104,14 @@ export interface ExecutiveOperatingPlan {
 }
 
 export interface ExecutiveReadoutPreview {
+  reviewState: "READY" | "HELD";
   statusLabel: string;
   statusTone: "good" | "warn" | "neutral";
-  whatWillOpen: string;
+  reviewContents: string;
   heldLanguage: string;
   nextOwner: string;
   nextAction: string;
   caveat: string;
-  canOpen: boolean;
 }
 
 export type SponsorDecisionOptionLabel =
@@ -328,12 +327,10 @@ export interface AiValueJourney {
   executiveReadoutPreview: ExecutiveReadoutPreview;
   sponsorDecisionLoop: SponsorDecisionLoop;
   valueImprovementLoop: ValueImprovementLoop;
-  packetIds: string[];
   errorMessage: string | null;
   refresh: () => Promise<void>;
   materializeRealEvidence: () => Promise<void>;
   review: (exportId: string, decision: "ACCEPTED" | "REJECTED") => Promise<void>;
-  openReadout: (packetId: string) => Promise<void>;
 }
 
 const DECISION_LABELS: Record<string, string> = {
@@ -900,14 +897,12 @@ function buildEvidenceScenarioPlan(params: {
 }
 
 function buildExecutiveOperatingPlan(params: {
-  packetCount: number;
   evidenceScenarioPlan: EvidenceScenarioPlan;
   opportunities: ValueOpportunity[];
   customerEvidenceRequest?: CustomerEvidenceRequest;
   customerEvidenceReview?: CustomerEvidenceReviewWorkbench;
 }): ExecutiveOperatingPlan {
   const {
-    packetCount,
     evidenceScenarioPlan,
     opportunities,
     customerEvidenceRequest,
@@ -919,16 +914,13 @@ function buildExecutiveOperatingPlan(params: {
   const approvedGrain = customerEvidenceRequest?.approvedGrain ?? "approved aggregate export";
   const requestReady = customerEvidenceRequest?.available === true;
 
+  const reviewState = requestReady ? customerEvidenceReview?.reviewState ?? "MISSING" : "MISSING";
   const defaultRecommendedAction =
     opportunities.length > 0
       ? customerEvidenceRequest?.nextAction ?? evidenceScenarioPlan.nextClientAction
       : "Finish Blueprint and outcome mapping before assigning follow-up work.";
   const defaultSponsorDecision =
-    packetCount > 0
-      ? "Decide whether to expand the workflow pilot, collect stronger customer evidence, or hold external value language."
-      : "Decide what evidence is still needed before the sponsor packet is generated.";
-
-  const reviewState = requestReady ? customerEvidenceReview?.reviewState ?? "MISSING" : null;
+    "Decide what evidence is still needed before internal review planning.";
   const evidenceCadence =
     reviewState === "ACCEPTED"
       ? {
@@ -976,7 +968,10 @@ function buildExecutiveOperatingPlan(params: {
             : null;
 
   return {
-    packetStatus: packetCount > 0 ? "Sponsor packet ready" : "Needs sponsor packet",
+    readoutStatus:
+      reviewState === "ACCEPTED"
+        ? "Accepted evidence ready for internal review"
+        : "Internal review held for evidence",
     sponsorDecision: evidenceCadence?.sponsorDecision ?? defaultSponsorDecision,
     recommendedNextAction: evidenceCadence?.recommendedNextAction ?? defaultRecommendedAction,
     handoffs: [
@@ -1011,13 +1006,11 @@ function buildExecutiveOperatingPlan(params: {
 }
 
 function buildExecutiveReadoutPreview(params: {
-  packetCount: number;
   customerEvidenceRequest: CustomerEvidenceRequest;
   customerEvidenceReview: CustomerEvidenceReviewWorkbench;
   executivePlan: ExecutiveOperatingPlan;
 }): ExecutiveReadoutPreview {
   const {
-    packetCount,
     customerEvidenceRequest,
     customerEvidenceReview,
     executivePlan
@@ -1025,84 +1018,65 @@ function buildExecutiveReadoutPreview(params: {
   const reviewer = customerEvidenceReview.reviewer || "Customer data owner";
   const metricName = customerEvidenceRequest.metricName || "selected outcome signal";
 
-  if (packetCount === 0) {
-    return {
-      statusLabel: "Needs generated readout",
-      statusTone: "warn",
-      whatWillOpen:
-        "Generate the executive packet before opening the sponsor readout.",
-      heldLanguage:
-        "Value language stays held until the packet, evidence state, and caveats are ready.",
-      nextOwner: reviewer,
-      nextAction: executivePlan.recommendedNextAction,
-      caveat:
-        "The preview is planning guidance until a governed executive packet exists.",
-      canOpen: false
-    };
-  }
-
   if (customerEvidenceReview.reviewState === "ACCEPTED") {
     return {
-      statusLabel: "Caveated sponsor review",
+      reviewState: "READY",
+      statusLabel: "Accepted evidence ready for internal review",
       statusTone: "good",
-      whatWillOpen:
-        `The opened readout will include Blueprint, outcome mapping, scenario language, ` +
+      reviewContents:
+        `Internal planning includes Blueprint, outcome mapping, scenario language, ` +
         `accepted aggregate ${metricName} evidence, and blocked value language.`,
       heldLanguage:
         "Realized ROI, causality, productivity, and individual scoring stay out.",
       nextOwner: `${reviewer} and the sponsor`,
       nextAction:
-        "Review the caveated readout with accepted evidence; decide expansion, hold, or collect stronger assumptions.",
+        "Review the internal plan with accepted evidence; decide expansion, hold, or collect stronger assumptions.",
       caveat:
-        "Accepted evidence is caveated support only; it is not ROI proof and does not establish causality.",
-      canOpen: true
+        "Accepted evidence is caveated support only; it is not ROI proof and does not establish causality."
     };
   }
 
   if (customerEvidenceReview.reviewState === "SUBMITTED") {
     return {
+      reviewState: "HELD",
       statusLabel: "Review pending",
       statusTone: "warn",
-      whatWillOpen:
-        "The internal preview stays held until the submitted evidence is accepted or rejected.",
+      reviewContents:
+        "Internal planning stays held until the submitted evidence is accepted or rejected.",
       heldLanguage:
         `Stronger value language stays held until ${reviewer} accepts or rejects the export.`,
       nextOwner: reviewer,
       nextAction: customerEvidenceReview.nextAction,
-      caveat:
-        "Submitted evidence does not validate value yet.",
-      canOpen: false
+      caveat: "Submitted evidence does not validate value yet."
     };
   }
 
   if (customerEvidenceReview.reviewState === "REJECTED") {
     return {
+      reviewState: "HELD",
       statusLabel: "Corrected export needed",
       statusTone: "warn",
-      whatWillOpen:
-        "The internal preview stays held until a corrected aggregate export is accepted.",
+      reviewContents:
+        "Internal planning stays held until a corrected aggregate export is accepted.",
       heldLanguage:
         "Validated value language stays held until a corrected aggregate export is accepted.",
       nextOwner: reviewer,
       nextAction: customerEvidenceReview.nextAction,
-      caveat:
-        "Rejected evidence cannot support value claims.",
-      canOpen: false
+      caveat: "Rejected evidence cannot support value claims."
     };
   }
 
   return {
+    reviewState: "HELD",
     statusLabel: "Data owner request needed",
     statusTone: "neutral",
-    whatWillOpen:
-      "The internal preview stays held until the aggregate export arrives and passes review.",
+    reviewContents:
+      "Internal planning stays held until the aggregate export arrives and passes review.",
     heldLanguage:
       "Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review.",
     nextOwner: reviewer,
     nextAction: customerEvidenceReview.nextAction,
-    caveat:
-      "Missing evidence keeps the readout in planning status.",
-    canOpen: false
+    caveat: "Missing evidence keeps the readout in planning status."
   };
 }
 
@@ -2162,7 +2136,6 @@ function deriveStages(params: {
   const exportsList = byType.outcome_evidence_export ?? [];
   const scenarios = byType.value_scenario ?? [];
   const roiScenarios = byType.roi_scenario ?? [];
-  const packets = byType.executive_packet ?? [];
 
   const latestReadiness = latest(readiness);
   const readinessDecision = latestReadiness
@@ -2314,16 +2287,19 @@ function deriveStages(params: {
     {
       key: "readout",
       label: "Executive Readout",
-      state: packets.length > 0 ? "done" : "todo",
+      state: accepted.length > 0 ? "done" : "todo",
       detail:
-        packets.length > 0
-          ? "Sponsor-ready readout is available."
-          : "Complete the scenario and evidence review to compose the readout.",
-      objectLabel: "Decision packet and operating cadence",
-      captured: compact([packets.length > 0 && "Executive packet generated"]),
-      missing: compact([packets.length === 0 && "Decision-ready readout and next-action cadence"]),
-      feedsNext: "The readout supports renewal, expansion, or the next workflow pilot.",
-      nextAction: packets.length > 0 ? "Open executive readout." : "Generate readout after scenario review."
+        accepted.length > 0
+          ? "Accepted aggregate evidence is ready for internal review planning."
+          : "Complete the evidence review before internal planning can proceed.",
+      objectLabel: "Evidence review and planning cadence",
+      captured: compact([accepted.length > 0 && "Accepted aggregate evidence available for planning"]),
+      missing: compact([accepted.length === 0 && "Accepted aggregate evidence for internal review"]),
+      feedsNext: "Internal planning supports renewal, expansion, or the next workflow pilot.",
+      nextAction:
+        accepted.length > 0
+          ? "Review internal planning guidance."
+          : "Complete evidence review after scenario review."
     }
   ];
 }
@@ -2439,7 +2415,6 @@ export const useAiValueJourney = (): AiValueJourney => {
   );
   const [executivePlan, setExecutivePlan] = useState<ExecutiveOperatingPlan>(() =>
     buildExecutiveOperatingPlan({
-      packetCount: 0,
       evidenceScenarioPlan: buildEvidenceScenarioPlan({
         readiness: null,
         scenario: null,
@@ -2452,7 +2427,6 @@ export const useAiValueJourney = (): AiValueJourney => {
   const [executiveReadoutPreview, setExecutiveReadoutPreview] =
     useState<ExecutiveReadoutPreview>(() =>
       buildExecutiveReadoutPreview({
-        packetCount: 0,
         customerEvidenceRequest: buildCustomerEvidenceRequest({
           roiScenario: null,
           workflowHandoff: buildWorkflowHandoff({
@@ -2474,7 +2448,6 @@ export const useAiValueJourney = (): AiValueJourney => {
           roiScenario: null
         }),
         executivePlan: buildExecutiveOperatingPlan({
-          packetCount: 0,
           evidenceScenarioPlan: buildEvidenceScenarioPlan({
             readiness: null,
             scenario: null,
@@ -2501,7 +2474,6 @@ export const useAiValueJourney = (): AiValueJourney => {
       roiScenario: null
     });
     const executivePlan = buildExecutiveOperatingPlan({
-      packetCount: 0,
       evidenceScenarioPlan: buildEvidenceScenarioPlan({
         readiness: null,
         scenario: null,
@@ -2524,7 +2496,6 @@ export const useAiValueJourney = (): AiValueJourney => {
       customerEvidenceReview
     })
   );
-  const [packetIds, setPacketIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -2590,16 +2561,13 @@ export const useAiValueJourney = (): AiValueJourney => {
         evidenceItems: items,
         opportunities: mappedOpportunities
       });
-      const packetIds = (byType.executive_packet ?? []).map((summary) => summary.object_id);
       const executivePlan = buildExecutiveOperatingPlan({
-        packetCount: packetIds.length,
         evidenceScenarioPlan: plan,
         opportunities: mappedOpportunities,
         customerEvidenceRequest: evidenceRequest,
         customerEvidenceReview: evidenceReview
       });
       const readoutPreview = buildExecutiveReadoutPreview({
-        packetCount: packetIds.length,
         customerEvidenceRequest: evidenceRequest,
         customerEvidenceReview: evidenceReview,
         executivePlan
@@ -2672,7 +2640,6 @@ export const useAiValueJourney = (): AiValueJourney => {
       setExecutiveReadoutPreview(readoutPreview);
       setSponsorDecisionLoop(sponsorDecision);
       setValueImprovementLoop(improvementLoop);
-      setPacketIds(packetIds);
 
       setClientName(
         typeof engagement?.client?.client_name === "string"
@@ -2751,17 +2718,6 @@ export const useAiValueJourney = (): AiValueJourney => {
     [refresh]
   );
 
-  const openReadout = useCallback(async (packetId: string) => {
-    setErrorMessage(null);
-    try {
-      const html = await fetchReadoutHtml(sessionRole(), packetId);
-      const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-      window.open(url, "_blank", "noopener");
-    } catch {
-      setErrorMessage("The readout could not be opened.");
-    }
-  }, []);
-
   return {
     loading,
     clientName,
@@ -2782,11 +2738,9 @@ export const useAiValueJourney = (): AiValueJourney => {
     executiveReadoutPreview,
     sponsorDecisionLoop,
     valueImprovementLoop,
-    packetIds,
     errorMessage,
     refresh,
     materializeRealEvidence,
-    review,
-    openReadout
+    review
   };
 };

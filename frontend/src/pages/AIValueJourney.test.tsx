@@ -345,12 +345,6 @@ const stubJourneyFetch = (
       if (url.includes("/review")) {
         return jsonResponse({ review_state: "ACCEPTED" });
       }
-      if (url.includes("/ai-value/readout/")) {
-        return new Response("<html>Executive readout</html>", {
-          status: 200,
-          headers: { "content-type": "text/html" }
-        });
-      }
       for (const [path, payload] of Object.entries(payloads)) {
         if (url.includes(`/ai-value/objects/${path}`)) {
           const [object_type, object_id] = path.split("/");
@@ -545,8 +539,8 @@ describe("AIValueJourney", () => {
       expect(within(milestonePlan).getByText(milestone)).toBeInTheDocument();
     }
     expect(
-      screen.getAllByRole("button", { name: /Open executive readout/i }).length
-    ).toBeGreaterThan(0);
+      screen.queryByRole("button", { name: /Open executive readout/i })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Open Blueprint workshop/i })).toBeInTheDocument();
 
     expect(container.textContent).not.toMatch(
@@ -1124,8 +1118,8 @@ describe("AIValueJourney", () => {
     expect(screen.getByText(/Blueprint and metrics agent/i)).toBeInTheDocument();
     expect(screen.getAllByText(/No realized ROI claim/i).length).toBeGreaterThan(0);
     expect(
-      screen.getAllByRole("button", { name: /Open executive readout/i }).length
-    ).toBeGreaterThan(0);
+      screen.queryByRole("button", { name: /Open executive readout/i })
+    ).not.toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("executive", "_", "packet"),
@@ -1199,43 +1193,43 @@ describe("AIValueJourney", () => {
   it.each([
     {
       state: "ACCEPTED" as const,
-      status: /Caveated sponsor review/i,
+      status: /Accepted evidence ready for internal review/i,
       included: /accepted aggregate Median resolution time evidence/i,
       held: /Realized ROI, causality, productivity, and individual scoring stay out/i,
       owner: /Support Operations and the sponsor/i,
-      action: /Review the caveated report with accepted evidence/i,
+      action: /Review the internal plan with accepted evidence/i,
       caveat: /Accepted evidence is caveated support only; it is not ROI proof and does not establish causality/i,
-      canOpen: true
+      planningStatus: /Internal review planning only/i
     },
     {
       state: "SUBMITTED" as const,
       status: /Review pending/i,
-      included: /preview stays held until the submitted evidence is accepted or rejected/i,
+      included: /Internal planning stays held until the submitted evidence is accepted or rejected/i,
       held: /Stronger value language stays held until Support Operations accepts or rejects the export/i,
       owner: /Support Operations/i,
       action: /Accept the export only if the metric, source, export level, baseline window, and comparison window match the request/i,
       caveat: /Submitted evidence does not validate value yet/i,
-      canOpen: false
+      planningStatus: /Review held for evidence/i
     },
     {
       state: "REJECTED" as const,
       status: /Corrected export needed/i,
-      included: /preview stays held until a corrected aggregate export is accepted/i,
+      included: /Internal planning stays held until a corrected aggregate export is accepted/i,
       held: /Validated value language stays held until a corrected aggregate export is accepted/i,
       owner: /Support Operations/i,
       action: /Keep stronger value language blocked until a corrected export is accepted/i,
       caveat: /Rejected evidence cannot support value claims/i,
-      canOpen: false
+      planningStatus: /Review held for evidence/i
     },
     {
       state: "MISSING" as const,
       status: /Data owner request needed/i,
-      included: /preview stays held until the aggregate export arrives and passes review/i,
+      included: /Internal planning stays held until the aggregate export arrives and passes review/i,
       held: /Outcome validation and stronger ROI language stay held until the aggregate export arrives and passes review/i,
       owner: /Support Operations/i,
       action: /Ask Support Operations for an aggregate Median resolution time export/i,
       caveat: /Missing evidence keeps the report in planning status/i,
-      canOpen: false
+      planningStatus: /Review held for evidence/i
     }
   ])("previews the executive report share workflow for $state evidence", async ({
     state,
@@ -1245,15 +1239,10 @@ describe("AIValueJourney", () => {
     owner,
     action,
     caveat,
-    canOpen
+    planningStatus
   }) => {
     const fixture = withOutcomeReviewState(state);
     stubJourneyFetch(fixture.objects, fixture.details);
-    const open = vi.spyOn(window, "open").mockImplementation(() => null);
-    Object.defineProperty(URL, "createObjectURL", {
-      configurable: true,
-      value: vi.fn(() => "blob:readout-preview")
-    });
     const { container } = renderPage();
 
     await waitFor(() => {
@@ -1268,19 +1257,10 @@ describe("AIValueJourney", () => {
     expect(within(preview).getAllByText(owner).length).toBeGreaterThan(0);
     expect(within(preview).getByText(action)).toBeInTheDocument();
     expect(within(preview).getByText(caveat)).toBeInTheDocument();
-
-    if (canOpen) {
-      fireEvent.click(within(preview).getByRole("button", { name: /Open caveated internal preview/i }));
-      await waitFor(() => {
-        expect(open).toHaveBeenCalledWith("blob:readout-preview", "_blank", "noopener");
-      });
-    } else {
-      expect(
-        within(preview).queryByRole("button", { name: /Open caveated internal preview/i })
-      ).not.toBeInTheDocument();
-      expect(within(preview).getByText(/Preview held for evidence review/i)).toBeInTheDocument();
-      expect(open).not.toHaveBeenCalled();
-    }
+    expect(within(preview).getByText(planningStatus)).toBeInTheDocument();
+    expect(
+      within(preview).queryByRole("button", { name: /Open caveated internal preview/i })
+    ).not.toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent, [
       uiTerm("outcome", "_", "evidence", "_", "export"),
@@ -1288,6 +1268,24 @@ describe("AIValueJourney", () => {
       "export_v1"
     ]);
     expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
+  });
+
+  it("does not treat generic executive packets as readout authority", async () => {
+    renderPage();
+
+    await screen.findByText(/Northstar Support/);
+
+    expect(
+      screen.queryByRole("button", { name: /Open executive readout/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Open caveated internal preview/i })
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByText("Internal review held for evidence").length).toBeGreaterThan(0);
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("/ai-value/readout/"),
+      expect.anything()
+    );
   });
 
   it.each([
