@@ -18,8 +18,17 @@ export {
 } from "./blueprint";
 export type { BlueprintValidationResult } from "./blueprint";
 
-export { validateMetricsLibrary, recommendMetricsForBlueprint } from "./metrics";
-export type { MetricsLibraryValidationResult } from "./metrics";
+export {
+  validateMetricsLibrary,
+  recommendMetricsForBlueprint,
+  canonicalMetricDefinitionProjection,
+  canonicalMetricDefinitionCommitment,
+  resolveCanonicalMetricDefinition
+} from "./metrics";
+export type {
+  MetricsLibraryValidationResult,
+  CanonicalMetricDefinitionProjection
+} from "./metrics";
 
 export { validateValueScenario, buildValueScenarioDraftFromBlueprintAndMetrics } from "./scenario";
 export type { ScenarioValidationResult } from "./scenario";
@@ -510,11 +519,20 @@ export type {
 export {
   validateMeasurementPlan,
   buildPlaybookMeasurementPlanDraft,
+  buildCanonicalSliceBindingV1,
+  canonicalSliceApprovalRoleCommitment,
+  canonicalSliceBindingCommitment,
+  canonicalSliceJoinKeyCommitment,
+  CANONICAL_SLICE_APPROVAL_ROLES,
+  CANONICAL_SLICE_BINDING_SCHEMA_VERSION,
   MEASUREMENT_PLAN_SCHEMA_VERSION
 } from "./measurementPlan";
 export type {
   MeasurementPlanValidationResult,
-  BuildPlaybookMeasurementPlanInputs
+  BuildPlaybookMeasurementPlanInputs,
+  BuildCanonicalSliceBindingInput,
+  CanonicalSliceApprovalRole,
+  CanonicalSliceBindingV1
 } from "./measurementPlan";
 
 export {
@@ -664,6 +682,8 @@ export { renderExecutiveReadoutHtml } from "./readoutHtml";
 export type { RenderExecutiveReadoutInputs } from "./readoutHtml";
 
 export * from "./aggregateClaimAuthorization";
+export * from "./canonicalIdentityAttestation";
+export * from "./canonicalIdentityBinding";
 
 export {
   AI_VALUE_LANGUAGE_SYSTEM_VERSION,

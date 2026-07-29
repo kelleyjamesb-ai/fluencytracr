@@ -6,6 +6,8 @@
  * scripts/validate_ai_value_metrics.mjs per the migration contract.
  */
 
+import { aggregateClaimHash } from "./aggregateClaimAuthorization";
+
 const RESULT_SCHEMA_VERSION = "FT_AI_VALUE_METRICS_VALIDATION_2026_06";
 
 const ALLOWED_VALUE_ROUTES = new Set([
@@ -35,6 +37,76 @@ const REQUIRED_BLOCKED_CLAIMS = [
   "hr_analytics",
   "productivity_measurement"
 ];
+
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+const VERSION_BEARING_REF = /(?:[/#@:](?:v|version)?\d+|(?:v|version)[_:-]?\d+)$/i;
+const CANONICAL_DIRECTIONS = new Set(["INCREASE", "DECREASE", "MAINTAIN", "MONITOR", "NO_CHANGE"]);
+
+export interface CanonicalMetricDefinitionProjection {
+  metric_id: string;
+  metric_definition_ref: string;
+  definition: string;
+  source_system: {
+    source_type: string;
+    source_name: string;
+    approved_grain: string;
+  };
+  measurement_unit: string;
+  canonical_direction: string;
+  allowed_claim_level: string;
+  blocked_claims: string[];
+}
+
+export const canonicalMetricDefinitionProjection = (
+  metric: any
+): CanonicalMetricDefinitionProjection => ({
+  metric_id: String(metric?.metric_id ?? ""),
+  metric_definition_ref: String(metric?.metric_definition_ref ?? ""),
+  definition: String(metric?.definition ?? ""),
+  source_system: {
+    source_type: String(metric?.source_system?.source_type ?? ""),
+    source_name: String(metric?.source_system?.source_name ?? ""),
+    approved_grain: String(metric?.source_system?.approved_grain ?? "")
+  },
+  measurement_unit: String(metric?.measurement_unit ?? ""),
+  canonical_direction: String(metric?.canonical_direction ?? ""),
+  allowed_claim_level: String(metric?.allowed_claim_level ?? ""),
+  blocked_claims: Array.from(
+    new Set<string>(
+      Array.isArray(metric?.blocked_claims)
+        ? metric.blocked_claims.map((value: unknown) => String(value))
+        : []
+    )
+  ).sort()
+});
+
+export const canonicalMetricDefinitionCommitment = (metric: any): string =>
+  aggregateClaimHash(
+    "FT_CANONICAL_METRIC_DEFINITION_V1",
+    canonicalMetricDefinitionProjection(metric)
+  );
+
+export const resolveCanonicalMetricDefinition = (
+  library: any,
+  metricId: string,
+  definitionRef: string
+): CanonicalMetricDefinitionProjection => {
+  const matches = (Array.isArray(library?.metrics) ? library.metrics : []).filter(
+    (metric: any) =>
+      metric?.metric_id === metricId && metric?.metric_definition_ref === definitionRef
+  );
+  if (matches.length !== 1) {
+    throw new Error("CANONICAL_METRIC_DEFINITION_AMBIGUOUS");
+  }
+  const metric = matches[0];
+  if (
+    metric?.canonical_metric_definition_commitment_v1 !==
+    canonicalMetricDefinitionCommitment(metric)
+  ) {
+    throw new Error("CANONICAL_METRIC_DEFINITION_COMMITMENT_MISMATCH");
+  }
+  return canonicalMetricDefinitionProjection(metric);
+};
 
 const FORBIDDEN_SOURCE_METADATA_PATTERNS = [
   /employee/i,
@@ -148,6 +220,30 @@ function collectMetricFieldGaps(metric: any, index: number): string[] {
   for (const claim of REQUIRED_BLOCKED_CLAIMS) {
     if (!blockedClaims.has(claim)) {
       gaps.push(`${prefix}.blocked_claims missing ${claim}`);
+    }
+  }
+
+  const canonicalFields = [
+    metric?.metric_definition_ref,
+    metric?.canonical_metric_definition_commitment_v1,
+    metric?.canonical_direction
+  ];
+  if (canonicalFields.some((value) => value !== undefined)) {
+    if (!VERSION_BEARING_REF.test(String(metric?.metric_definition_ref ?? ""))) {
+      gaps.push(`${prefix}.metric_definition_ref must be version-bearing for Slice E`);
+    }
+    if (!SHA256_HEX.test(String(metric?.canonical_metric_definition_commitment_v1 ?? ""))) {
+      gaps.push(`${prefix}.canonical_metric_definition_commitment_v1 must be SHA-256`);
+    }
+    if (!CANONICAL_DIRECTIONS.has(String(metric?.canonical_direction ?? ""))) {
+      gaps.push(`${prefix}.canonical_direction is invalid`);
+    }
+    if (
+      SHA256_HEX.test(String(metric?.canonical_metric_definition_commitment_v1 ?? "")) &&
+      metric.canonical_metric_definition_commitment_v1 !==
+        canonicalMetricDefinitionCommitment(metric)
+    ) {
+      gaps.push(`${prefix}.canonical_metric_definition_commitment_v1 does not match exact bytes`);
     }
   }
 

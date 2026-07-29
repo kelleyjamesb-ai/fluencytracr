@@ -3,7 +3,22 @@ import { createHash, randomUUID } from "node:crypto";
 import { aiValueEngine } from "@fluencytracr/shared";
 import { Prisma } from "@prisma/client";
 
+import {
+  canonicalIdentityRuntimeCredentialIsReady,
+  getCanonicalIdentityRuntimePrisma
+} from "../canonical-identity-runtime-client";
 import { getPrisma } from "../db";
+import {
+  canonicalIdentitySourceSemanticCommitment,
+  type CanonicalIdentitySourceRow
+} from "./canonical-identity-source.repository";
+import {
+  canonicalHypothesisAttestationPayload,
+  canonicalMeasurementCellAttestationPayload,
+  canonicalPlanEdgeAttestationPayload,
+  createSliceEAttestation,
+  verifySliceEAttestation
+} from "../services/canonical-identity-attestation.service";
 import {
   store,
   type AiValueClaimReadinessSnapshotStoredRecord,
@@ -18,6 +33,14 @@ import {
 } from "../store";
 
 const usePrisma = () => Boolean(process.env.DATABASE_URL);
+
+const canonicalIdentityRuntimePrisma = async () => {
+  const client = getCanonicalIdentityRuntimePrisma();
+  if (!client || !(await canonicalIdentityRuntimeCredentialIsReady(client))) {
+    throw new Error("SLICE_E_RUNTIME_DATABASE_URL_MISSING");
+  }
+  return client;
+};
 
 export class AiValuePersistenceValidationError extends Error {
   gaps: string[];
@@ -535,6 +558,7 @@ export interface PersistAiValueMeasurementPlanInput {
   measurementPlan: Record<string, unknown>;
   version: number;
   valueHypothesisId: string;
+  valueHypothesisVersion?: number;
   createdByRole: string;
   sourceRefs?: Record<string, unknown>;
   supersedesId?: string | null;
@@ -582,6 +606,8 @@ export interface PersistAiValueMeasurementCellSnapshotInput {
   version: number;
   createdByRole: string;
   supersedesId?: string | null;
+  valueHypothesisVersion?: number;
+  measurementPlanVersion?: number;
   assemblyPayload?: Record<string, unknown> | null;
   measurementCellPreflightRun?: Record<string, unknown> | null;
   snapshotCandidateRef?: Record<string, unknown> | null;
@@ -617,6 +643,11 @@ const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+
+const asOptionalRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
 
 const asString = (value: unknown): string => (typeof value === "string" ? value : "");
 
@@ -4377,6 +4408,283 @@ export async function loadAiValueMeasurementPlan(
   return row ? measurementPlanRowToRecord(row) : null;
 }
 
+const lockCanonicalIdentityFamily = async (
+  transaction: Prisma.TransactionClient,
+  sourceKind: "VALUE_HYPOTHESIS" | "MEASUREMENT_PLAN" | "MEASUREMENT_CELL",
+  orgId: string,
+  stableId: string
+): Promise<void> => {
+  await transaction.$executeRaw(
+    Prisma.sql`SELECT pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended(
+        public.canonical_identity_family_lock_key(
+          ${sourceKind},
+          ${orgId},
+          ${stableId}
+        ),
+        0
+      )
+    )`
+  );
+};
+
+const hypothesisCanonicalSource = (
+  record: AiValueHypothesisStoredRecord
+): CanonicalIdentitySourceRow => {
+  const source = {
+    sourceKind: "VALUE_HYPOTHESIS" as const,
+    rowId: record.id,
+    orgId: record.org_id,
+    stableId: record.value_hypothesis_id,
+    version: record.version,
+    predecessorRowId: record.supersedes_id,
+    validation: record.validation,
+    payload: record.payload,
+    authority: {
+      status: record.status,
+      workflow_family: record.workflow_family,
+      value_route: record.value_route,
+      hypothesis_statement: record.hypothesis_statement,
+      business_objective: record.business_objective
+    }
+  };
+  return {
+    ...source,
+    semanticCommitment: canonicalIdentitySourceSemanticCommitment(source)
+  };
+};
+
+interface VerifiedCanonicalHypothesis {
+  source: CanonicalIdentitySourceRow;
+  attestationCommitment: string;
+}
+
+const measurementPlanCanonicalSource = (
+  record: AiValueMeasurementPlanStoredRecord
+): CanonicalIdentitySourceRow => {
+  const source = {
+    sourceKind: "MEASUREMENT_PLAN" as const,
+    rowId: record.id,
+    orgId: record.org_id,
+    stableId: record.measurement_plan_id,
+    version: record.version,
+    predecessorRowId: record.supersedes_id,
+    validation: record.validation,
+    payload: record.payload,
+    authority: {
+      value_hypothesis_id: record.value_hypothesis_id,
+      workflow_family: record.workflow_family,
+      approved_aggregate_grain: record.approved_aggregate_grain,
+      baseline_window_start: record.baseline_window_start,
+      baseline_window_end: record.baseline_window_end,
+      comparison_window_start: record.comparison_window_start,
+      comparison_window_end: record.comparison_window_end,
+      readiness_state: record.readiness_state
+    }
+  };
+  return {
+    ...source,
+    semanticCommitment: canonicalIdentitySourceSemanticCommitment(source)
+  };
+};
+
+const measurementCellCanonicalSource = (
+  record: AiValueMeasurementCellSnapshotStoredRecord
+): CanonicalIdentitySourceRow => {
+  const source = {
+    sourceKind: "MEASUREMENT_CELL" as const,
+    rowId: record.id,
+    orgId: record.org_id,
+    stableId: record.measurement_cell_id,
+    version: record.version,
+    predecessorRowId: record.supersedes_id,
+    validation: record.validation,
+    payload: record.payload,
+    authority: {
+      measurement_plan_id: record.measurement_plan_id,
+      aggregate_source_system: record.aggregate_source_system,
+      value_hypothesis_id: record.value_hypothesis_id,
+      value_hypothesis_ref: record.value_hypothesis_ref,
+      approval_state: record.approval_state,
+      approved_by_role: record.approved_by_role,
+      metric_owner_approval_state: record.metric_owner_approval_state,
+      metric_id: record.metric_id,
+      metric_definition_ref: record.metric_definition_ref,
+      metric_definition_hash: record.metric_definition_hash,
+      metric_direction: record.metric_direction,
+      metric_unit: record.metric_unit,
+      workflow_id: record.workflow_id,
+      cohort_key: record.cohort_key,
+      baseline_window_start: record.baseline_window_start,
+      baseline_window_end: record.baseline_window_end,
+      comparison_window_start: record.comparison_window_start,
+      comparison_window_end: record.comparison_window_end
+    }
+  };
+  return {
+    ...source,
+    semanticCommitment: canonicalIdentitySourceSemanticCommitment(source)
+  };
+};
+
+interface VerifiedCanonicalPlan {
+  source: CanonicalIdentitySourceRow;
+  attestationCommitment: string;
+  sliceBinding: aiValueEngine.CanonicalSliceBindingV1;
+}
+
+const loadVerifiedCanonicalPlan = async (
+  transaction: Prisma.TransactionClient,
+  orgId: string,
+  stableId: string,
+  version: number,
+  hypothesis: VerifiedCanonicalHypothesis
+): Promise<VerifiedCanonicalPlan | null> => {
+  const [row, journal] = await Promise.all([
+    transaction.measurementPlan.findFirst({
+      where: { orgId, measurementPlanId: stableId, version }
+    }),
+    transaction.aiValueCanonicalIdentityFamilyHeadJournal.findFirst({
+      where: {
+        sourceKind: "MEASUREMENT_PLAN",
+        orgId,
+        stableSourceId: stableId
+      },
+      orderBy: { version: "desc" }
+    })
+  ]);
+  if (!row || !journal) return null;
+  const source = measurementPlanCanonicalSource(measurementPlanRowToRecord(row));
+  const binding = asOptionalRecord(source.payload.canonical_slice_binding_v1);
+  const envelope = aiValueEngine.CanonicalHypothesisEdgeAttestationEnvelopeSchema.safeParse(
+    source.validation.canonical_hypothesis_edge_v1
+  );
+  if (
+    !binding ||
+    !envelope.success ||
+    journal.version !== source.version ||
+    journal.sourceRowId !== source.rowId ||
+    journal.predecessorRowId !== source.predecessorRowId ||
+    journal.sourceSemanticCommitment !== source.semanticCommitment ||
+    journal.sourceAttestationCommitment !== envelope.data.mac ||
+    journal.attestationState !== "ATTESTATION_PRESENT" ||
+    envelope.data.plan_semantic_commitment !== source.semanticCommitment ||
+    envelope.data.hypothesis_row_id !== hypothesis.source.rowId ||
+    envelope.data.hypothesis_version !== hypothesis.source.version ||
+    envelope.data.hypothesis_semantic_commitment !== hypothesis.source.semanticCommitment ||
+    envelope.data.hypothesis_creation_attestation_commitment !== hypothesis.attestationCommitment ||
+    envelope.data.approved_aggregate_grain !== binding.approved_aggregate_grain ||
+    envelope.data.canonical_slice_commitment !== binding.slice_commitment ||
+    !verifySliceEAttestation(
+      "plan_edge",
+      canonicalPlanEdgeAttestationPayload({
+        orgId: source.orgId,
+        rowId: source.rowId,
+        stableId: source.stableId,
+        version: source.version,
+        semanticCommitment: source.semanticCommitment,
+        readinessState: String(source.authority.readiness_state),
+        approvedAggregateGrain: String(binding.approved_aggregate_grain),
+        canonicalSliceCommitment: String(binding.slice_commitment),
+        canonicalMetricDefinitionCommitment: String(
+          binding.canonical_metric_definition_commitment_v1
+        ),
+        hypothesis: {
+          rowId: hypothesis.source.rowId,
+          stableId: hypothesis.source.stableId,
+          version: hypothesis.source.version,
+          semanticCommitment: hypothesis.source.semanticCommitment,
+          attestationCommitment: hypothesis.attestationCommitment
+        }
+      }),
+      envelope.data
+    )
+  ) {
+    return null;
+  }
+  return {
+    source,
+    attestationCommitment: envelope.data.mac,
+    sliceBinding: binding as unknown as aiValueEngine.CanonicalSliceBindingV1
+  };
+};
+
+const loadVerifiedCanonicalHypothesisChain = async (
+  transaction: Prisma.TransactionClient,
+  orgId: string,
+  stableId: string,
+  version: number
+): Promise<VerifiedCanonicalHypothesis | null> => {
+  const [rows, journals] = await Promise.all([
+    transaction.valueHypothesis.findMany({
+      where: { orgId, valueHypothesisId: stableId },
+      orderBy: { version: "asc" }
+    }),
+    transaction.aiValueCanonicalIdentityFamilyHeadJournal.findMany({
+      where: {
+        sourceKind: "VALUE_HYPOTHESIS",
+        orgId,
+        stableSourceId: stableId
+      },
+      orderBy: { version: "asc" }
+    })
+  ]);
+  if (rows.length !== version || journals.length !== version) return null;
+  let previous: VerifiedCanonicalHypothesis | null = null;
+  for (let index = 0; index < version; index += 1) {
+    const stored = valueHypothesisRowToRecord(rows[index]);
+    const source = hypothesisCanonicalSource(stored);
+    const journal = journals[index];
+    const envelope =
+      aiValueEngine.CanonicalValueHypothesisCreationAttestationEnvelopeSchema.safeParse(
+        source.validation.canonical_value_hypothesis_creation_attestation_v1
+      );
+    const predecessor =
+      index === 0
+        ? ({ state: "ROOT_V1" } as const)
+        : previous
+          ? ({
+              state: "EXACT_PREDECESSOR",
+              rowId: previous.source.rowId,
+              stableId: previous.source.stableId,
+              version: previous.source.version,
+              semanticCommitment: previous.source.semanticCommitment,
+              attestationCommitment: previous.attestationCommitment
+            } as const)
+          : null;
+    if (
+      !predecessor ||
+      !envelope.success ||
+      source.version !== index + 1 ||
+      source.predecessorRowId !== (previous?.source.rowId ?? null) ||
+      journal.version !== source.version ||
+      journal.sourceRowId !== source.rowId ||
+      journal.predecessorRowId !== source.predecessorRowId ||
+      journal.sourceSemanticCommitment !== source.semanticCommitment ||
+      journal.sourceAttestationCommitment !== envelope.data.mac ||
+      journal.attestationState !== "ATTESTATION_PRESENT" ||
+      envelope.data.hypothesis_semantic_commitment !== source.semanticCommitment ||
+      !verifySliceEAttestation(
+        "hypothesis_creation",
+        canonicalHypothesisAttestationPayload({
+          orgId: source.orgId,
+          rowId: source.rowId,
+          stableId: source.stableId,
+          version: source.version,
+          semanticCommitment: source.semanticCommitment,
+          status: String(source.authority.status),
+          predecessor
+        }),
+        envelope.data
+      )
+    ) {
+      return null;
+    }
+    previous = { source, attestationCommitment: envelope.data.mac };
+  }
+  return previous;
+};
+
 export async function listAiValueSourcePackageRefs(
   input: ListAiValueSourcePackageRefsInput
 ): Promise<AiValueSourcePackageRefStoredRecord[]> {
@@ -4468,6 +4776,104 @@ export async function persistAiValueHypothesisFromMeasurementPlan(
     created_at: new Date().toISOString(),
     created_by_role: input.createdByRole
   };
+  const sliceECapable = plan.canonical_slice_binding_v1 !== undefined;
+
+  if (sliceECapable) {
+    if (!usePrisma() || record.status !== "approved") {
+      throw new AiValuePersistenceValidationError(
+        "Slice E Value Hypothesis creation requires durable approved authority",
+        ["E-capable hypotheses require PostgreSQL and status approved"]
+      );
+    }
+    try {
+      const createdRecord = await (await canonicalIdentityRuntimePrisma()).$transaction(
+        async (transaction) => {
+          await lockCanonicalIdentityFamily(
+            transaction,
+            "VALUE_HYPOTHESIS",
+            record.org_id,
+            record.value_hypothesis_id
+          );
+          const predecessor =
+            record.version === 1
+              ? ({ state: "ROOT_V1" } as const)
+              : await loadVerifiedCanonicalHypothesisChain(
+                  transaction,
+                  record.org_id,
+                  record.value_hypothesis_id,
+                  record.version - 1
+                );
+          if (
+            !predecessor ||
+            record.supersedes_id !== ("source" in predecessor ? predecessor.source.rowId : null)
+          ) {
+            throw new Error("CANONICAL_HYPOTHESIS_PREDECESSOR_INVALID");
+          }
+          const source = hypothesisCanonicalSource(record);
+          const attestation = createSliceEAttestation(
+            "hypothesis_creation",
+            canonicalHypothesisAttestationPayload({
+              orgId: source.orgId,
+              rowId: source.rowId,
+              stableId: source.stableId,
+              version: source.version,
+              semanticCommitment: source.semanticCommitment,
+              status: String(source.authority.status),
+              predecessor:
+                "source" in predecessor
+                  ? {
+                      state: "EXACT_PREDECESSOR",
+                      rowId: predecessor.source.rowId,
+                      stableId: predecessor.source.stableId,
+                      version: predecessor.source.version,
+                      semanticCommitment: predecessor.source.semanticCommitment,
+                      attestationCommitment: predecessor.attestationCommitment
+                    }
+                  : predecessor
+            })
+          );
+          if (!attestation) {
+            throw new Error("CANONICAL_HYPOTHESIS_ATTESTATION_UNAVAILABLE");
+          }
+          record.validation = {
+            ...record.validation,
+            canonical_value_hypothesis_creation_attestation_v1: {
+              hypothesis_semantic_commitment: source.semanticCommitment,
+              ...attestation
+            }
+          };
+          const created = await transaction.valueHypothesis.create({
+            data: {
+              id: record.id,
+              orgId: record.org_id,
+              valueHypothesisId: record.value_hypothesis_id,
+              schemaVersion: record.schema_version,
+              derivationVersion: record.derivation_version,
+              workflowFamily: record.workflow_family,
+              functionArea: record.function_area,
+              valueRoute: record.value_route,
+              hypothesisStatement: record.hypothesis_statement,
+              businessObjective: record.business_objective,
+              status: record.status,
+              payloadJson: record.payload as Prisma.InputJsonValue,
+              validationJson: record.validation as Prisma.InputJsonValue,
+              sourceRefsJson: record.source_refs as Prisma.InputJsonValue,
+              version: record.version,
+              supersedesId: record.supersedes_id,
+              createdAt: new Date(record.created_at),
+              createdByRole: record.created_by_role
+            }
+          });
+          return valueHypothesisRowToRecord(created);
+        },
+        { isolationLevel: "Serializable" }
+      );
+      store.aiValueHypotheses.set(key, createdRecord);
+      return createdRecord;
+    } catch (error: any) {
+      return translatePrismaDuplicate(error);
+    }
+  }
 
   if (!usePrisma()) {
     store.aiValueHypotheses.set(key, record);
@@ -4565,6 +4971,121 @@ export async function persistAiValueMeasurementPlan(
   }
   if (record.comparison_window_end) {
     parseDate(record.comparison_window_end, "comparison_window_end");
+  }
+  const canonicalSliceBinding = asOptionalRecord(plan.canonical_slice_binding_v1);
+  if (canonicalSliceBinding) {
+    if (!usePrisma() || !input.valueHypothesisVersion) {
+      throw new AiValuePersistenceValidationError(
+        "Slice E Measurement Plan creation requires exact durable hypothesis authority",
+        ["E-capable plans require PostgreSQL and an explicit valueHypothesisVersion"]
+      );
+    }
+    try {
+      const createdRecord = await (await canonicalIdentityRuntimePrisma()).$transaction(
+        async (transaction) => {
+          await lockCanonicalIdentityFamily(
+            transaction,
+            "MEASUREMENT_PLAN",
+            record.org_id,
+            record.measurement_plan_id
+          );
+          await lockCanonicalIdentityFamily(
+            transaction,
+            "VALUE_HYPOTHESIS",
+            record.org_id,
+            record.value_hypothesis_id
+          );
+          const hypothesis = await loadVerifiedCanonicalHypothesisChain(
+            transaction,
+            record.org_id,
+            record.value_hypothesis_id,
+            input.valueHypothesisVersion!
+          );
+          if (!hypothesis) {
+            throw new Error("CANONICAL_PLAN_HYPOTHESIS_AUTHORITY_INVALID");
+          }
+          const source = measurementPlanCanonicalSource(record);
+          const attestation = createSliceEAttestation(
+            "plan_edge",
+            canonicalPlanEdgeAttestationPayload({
+              orgId: source.orgId,
+              rowId: source.rowId,
+              stableId: source.stableId,
+              version: source.version,
+              semanticCommitment: source.semanticCommitment,
+              readinessState: String(source.authority.readiness_state),
+              approvedAggregateGrain: String(canonicalSliceBinding.approved_aggregate_grain),
+              canonicalSliceCommitment: String(canonicalSliceBinding.slice_commitment),
+              canonicalMetricDefinitionCommitment: String(
+                canonicalSliceBinding.canonical_metric_definition_commitment_v1
+              ),
+              hypothesis: {
+                rowId: hypothesis.source.rowId,
+                stableId: hypothesis.source.stableId,
+                version: hypothesis.source.version,
+                semanticCommitment: hypothesis.source.semanticCommitment,
+                attestationCommitment: hypothesis.attestationCommitment
+              }
+            })
+          );
+          if (!attestation) {
+            throw new Error("CANONICAL_PLAN_ATTESTATION_UNAVAILABLE");
+          }
+          record.validation = {
+            ...record.validation,
+            canonical_hypothesis_edge_v1: {
+              plan_semantic_commitment: source.semanticCommitment,
+              hypothesis_row_id: hypothesis.source.rowId,
+              hypothesis_version: hypothesis.source.version,
+              hypothesis_semantic_commitment: hypothesis.source.semanticCommitment,
+              hypothesis_creation_attestation_commitment: hypothesis.attestationCommitment,
+              approved_aggregate_grain: canonicalSliceBinding.approved_aggregate_grain,
+              canonical_slice_commitment: canonicalSliceBinding.slice_commitment,
+              ...attestation
+            }
+          };
+          const created = await transaction.measurementPlan.create({
+            data: {
+              id: record.id,
+              orgId: record.org_id,
+              measurementPlanId: record.measurement_plan_id,
+              valueHypothesisId: record.value_hypothesis_id,
+              schemaVersion: record.schema_version,
+              derivationVersion: record.derivation_version,
+              workflowFamily: record.workflow_family,
+              approvedAggregateGrain: record.approved_aggregate_grain,
+              minimumCohortThreshold: record.minimum_cohort_threshold,
+              baselineWindowStart: parseDate(record.baseline_window_start, "baseline_window_start"),
+              baselineWindowEnd: parseDate(record.baseline_window_end, "baseline_window_end"),
+              comparisonWindowStart: record.comparison_window_start
+                ? parseDate(record.comparison_window_start, "comparison_window_start")
+                : null,
+              comparisonWindowEnd: record.comparison_window_end
+                ? parseDate(record.comparison_window_end, "comparison_window_end")
+                : null,
+              coverageGoal: record.coverage_goal,
+              readinessState: record.readiness_state,
+              payloadJson: record.payload as Prisma.InputJsonValue,
+              validationJson: record.validation as Prisma.InputJsonValue,
+              sourcePackageRequirementsJson:
+                record.source_package_requirements as Prisma.InputJsonValue,
+              assumptionsJson: record.assumptions as Prisma.InputJsonValue,
+              sourceRefsJson: record.source_refs as Prisma.InputJsonValue,
+              version: record.version,
+              supersedesId: record.supersedes_id,
+              createdAt: new Date(record.created_at),
+              createdByRole: record.created_by_role
+            }
+          });
+          return measurementPlanRowToRecord(created);
+        },
+        { isolationLevel: "Serializable" }
+      );
+      store.aiValueMeasurementPlans.set(key, createdRecord);
+      return createdRecord;
+    } catch (error: any) {
+      return translatePrismaDuplicate(error);
+    }
   }
 
   if (!usePrisma()) {
@@ -4829,6 +5350,278 @@ export async function persistAiValueMeasurementCellSnapshot(
   );
   rejectDuplicate(store.aiValueMeasurementCellSnapshots.has(key));
   await ensureMeasurementCellSnapshotSupersedes(record);
+  const assemblyPlan = asOptionalRecord(
+    input.measurementCellAssemblyRun.measurement_plan
+  );
+  const canonicalSliceBinding = asOptionalRecord(
+    assemblyPlan?.canonical_slice_binding_v1
+  );
+
+  if (canonicalSliceBinding) {
+    if (
+      !usePrisma() ||
+      !input.valueHypothesisVersion ||
+      !input.measurementPlanVersion
+    ) {
+      throw new AiValuePersistenceValidationError(
+        "Slice E Measurement Cell creation requires exact durable parent authority",
+        [
+          "E-capable cells require PostgreSQL, valueHypothesisVersion, and measurementPlanVersion"
+        ]
+      );
+    }
+    try {
+      const createdRecord = await (await canonicalIdentityRuntimePrisma()).$transaction(
+        async (transaction) => {
+          if (!record.value_hypothesis_id) {
+            throw new Error("CANONICAL_CELL_HYPOTHESIS_ID_REQUIRED");
+          }
+          await lockCanonicalIdentityFamily(
+            transaction,
+            "MEASUREMENT_CELL",
+            record.org_id,
+            record.measurement_cell_id
+          );
+          await lockCanonicalIdentityFamily(
+            transaction,
+            "MEASUREMENT_PLAN",
+            record.org_id,
+            record.measurement_plan_id
+          );
+          await lockCanonicalIdentityFamily(
+            transaction,
+            "VALUE_HYPOTHESIS",
+            record.org_id,
+            record.value_hypothesis_id
+          );
+          const hypothesis = await loadVerifiedCanonicalHypothesisChain(
+            transaction,
+            record.org_id,
+            record.value_hypothesis_id,
+            input.valueHypothesisVersion!
+          );
+          if (!hypothesis) {
+            throw new Error(
+              "CANONICAL_CELL_HYPOTHESIS_AUTHORITY_INVALID"
+            );
+          }
+          const plan = await loadVerifiedCanonicalPlan(
+            transaction,
+            record.org_id,
+            record.measurement_plan_id,
+            input.measurementPlanVersion!,
+            hypothesis
+          );
+          if (
+            !plan ||
+            plan.sliceBinding.metric_id !== record.metric_id ||
+            plan.sliceBinding.metric_definition_ref !==
+              record.metric_definition_ref ||
+            plan.sliceBinding.approved_direction !==
+              record.metric_direction.toUpperCase() ||
+            plan.sliceBinding.measurement_unit !== record.metric_unit ||
+            !record.workflow_id ||
+            plan.sliceBinding.workflow_commitment !==
+              aiValueEngine.canonicalSliceJoinKeyCommitment(
+                "workflow_id",
+                record.workflow_id
+              ) ||
+            plan.sliceBinding.baseline_window_start !==
+              record.baseline_window_start ||
+            plan.sliceBinding.baseline_window_end !==
+              record.baseline_window_end ||
+            plan.sliceBinding.comparison_window_start !==
+              record.comparison_window_start ||
+            plan.sliceBinding.comparison_window_end !==
+              record.comparison_window_end ||
+            record.approval_state !== "approved" ||
+            record.metric_owner_approval_state !== "approved"
+          ) {
+            throw new Error(
+              "CANONICAL_CELL_PARENT_COMPATIBILITY_INVALID"
+            );
+          }
+          const source = measurementCellCanonicalSource(record);
+          const attestation = createSliceEAttestation(
+            "measurement_cell_edge",
+            canonicalMeasurementCellAttestationPayload({
+              orgId: source.orgId,
+              rowId: source.rowId,
+              stableId: source.stableId,
+              version: source.version,
+              semanticCommitment: source.semanticCommitment,
+              approvalState: String(source.authority.approval_state),
+              metricOwnerApprovalState: String(
+                source.authority.metric_owner_approval_state
+              ),
+              approvedAggregateGrain:
+                plan.sliceBinding.approved_aggregate_grain,
+              canonicalMetricDefinitionCommitment:
+                plan.sliceBinding
+                  .canonical_metric_definition_commitment_v1,
+              canonicalDirection:
+                plan.sliceBinding.approved_direction,
+              plan: {
+                rowId: plan.source.rowId,
+                stableId: plan.source.stableId,
+                version: plan.source.version,
+                semanticCommitment: plan.source.semanticCommitment,
+                attestationCommitment: plan.attestationCommitment
+              },
+              hypothesis: {
+                rowId: hypothesis.source.rowId,
+                stableId: hypothesis.source.stableId,
+                version: hypothesis.source.version,
+                semanticCommitment:
+                  hypothesis.source.semanticCommitment,
+                attestationCommitment:
+                  hypothesis.attestationCommitment
+              }
+            })
+          );
+          if (!attestation) {
+            throw new Error("CANONICAL_CELL_ATTESTATION_UNAVAILABLE");
+          }
+          record.validation = {
+            ...record.validation,
+            canonical_measurement_lineage_v1: {
+              measurement_cell_semantic_commitment:
+                source.semanticCommitment,
+              plan_row_id: plan.source.rowId,
+              plan_version: plan.source.version,
+              plan_semantic_commitment: plan.source.semanticCommitment,
+              plan_edge_attestation_commitment:
+                plan.attestationCommitment,
+              hypothesis_row_id: hypothesis.source.rowId,
+              hypothesis_version: hypothesis.source.version,
+              hypothesis_semantic_commitment:
+                hypothesis.source.semanticCommitment,
+              hypothesis_creation_attestation_commitment:
+                hypothesis.attestationCommitment,
+              approved_aggregate_grain:
+                plan.sliceBinding.approved_aggregate_grain,
+              canonical_metric_definition_commitment_v1:
+                plan.sliceBinding
+                  .canonical_metric_definition_commitment_v1,
+              canonical_direction:
+                plan.sliceBinding.approved_direction,
+              ...attestation
+            }
+          };
+          const created =
+            await transaction.measurementCellSnapshot.create({
+              data: {
+                id: record.id,
+                orgId: record.org_id,
+                clientId: record.client_id,
+                measurementCellId: record.measurement_cell_id,
+                measurementCellAssemblyRunId:
+                  record.measurement_cell_assembly_run_id,
+                measurementPlanId: record.measurement_plan_id,
+                aggregateSourceSystem:
+                  record.aggregate_source_system,
+                aggregateExportReviewRef:
+                  record.aggregate_export_review_ref,
+                aggregateExportReviewState:
+                  record.aggregate_export_review_state,
+                aggregateSourceExportRef:
+                  record.aggregate_source_export_ref,
+                aggregateExportReviewHash:
+                  record.aggregate_export_review_hash,
+                pipelineDryRunRef: record.pipeline_dry_run_ref,
+                pipelineBoundaryHash: record.pipeline_boundary_hash,
+                aggregateBoundaryRefJson:
+                  record.aggregate_boundary_ref as Prisma.InputJsonValue,
+                valueHypothesisId: record.value_hypothesis_id,
+                valueHypothesisRef: record.value_hypothesis_ref,
+                valueHypothesisBindingState:
+                  record.value_hypothesis_binding_state,
+                approvedBlueprintRef: record.approved_blueprint_ref,
+                approvedBlueprintPayloadHash:
+                  record.approved_blueprint_payload_hash,
+                blueprintExpectationRef:
+                  record.blueprint_expectation_ref,
+                expectationPathId: record.expectation_path_id,
+                expectationPathVersion:
+                  record.expectation_path_version,
+                expectationPathHash: record.expectation_path_hash,
+                approvalState: record.approval_state,
+                approvedAt: parseDate(
+                  record.approved_at,
+                  "approved_at"
+                ),
+                approvedByRole: record.approved_by_role,
+                valueDriver: record.value_driver,
+                metricId: record.metric_id,
+                metricDefinitionRef: record.metric_definition_ref,
+                metricDefinitionHash: record.metric_definition_hash,
+                metricOwnerApprovalState:
+                  record.metric_owner_approval_state,
+                metricDirection: record.metric_direction,
+                metricUnit: record.metric_unit,
+                expectedMetricLagDays:
+                  record.expected_metric_lag_days,
+                workflowFamily: record.workflow_family,
+                workflowId: record.workflow_id,
+                functionArea: record.function_area,
+                cohortKey: record.cohort_key,
+                windowMode: record.window_mode,
+                milestoneDay: record.milestone_day,
+                baselineWindowStart: parseDate(
+                  record.baseline_window_start,
+                  "baseline_window_start"
+                ),
+                baselineWindowEnd: parseDate(
+                  record.baseline_window_end,
+                  "baseline_window_end"
+                ),
+                comparisonWindowStart: parseDate(
+                  record.comparison_window_start,
+                  "comparison_window_start"
+                ),
+                comparisonWindowEnd: parseDate(
+                  record.comparison_window_end,
+                  "comparison_window_end"
+                ),
+                assemblyDecision: record.assembly_decision,
+                payloadJson:
+                  record.payload as Prisma.InputJsonValue,
+                assemblyPayloadJson:
+                  record.assembly_payload === null
+                    ? Prisma.DbNull
+                    : (record.assembly_payload as Prisma.InputJsonValue),
+                validationJson:
+                  record.validation as Prisma.InputJsonValue,
+                assemblyValidationJson:
+                  record.assembly_validation as Prisma.InputJsonValue,
+                sourceRefsJson:
+                  record.source_refs as Prisma.InputJsonValue,
+                blueprintPathBindingJson:
+                  record.blueprint_path_binding as Prisma.InputJsonValue,
+                requiredCaveatsJson:
+                  record.required_caveats as Prisma.InputJsonValue,
+                blockedUsesJson:
+                  record.blocked_uses as Prisma.InputJsonValue,
+                version: record.version,
+                supersedesId: record.supersedes_id,
+                generatedAt: parseDate(
+                  record.generated_at,
+                  "generated_at"
+                ),
+                createdAt: new Date(record.created_at),
+                createdByRole: record.created_by_role
+              }
+            });
+          return measurementCellSnapshotRowToRecord(created);
+        },
+        { isolationLevel: "Serializable" }
+      );
+      store.aiValueMeasurementCellSnapshots.set(key, createdRecord);
+      return createdRecord;
+    } catch (error: any) {
+      return translatePrismaDuplicate(error);
+    }
+  }
 
   if (!usePrisma()) {
     store.aiValueMeasurementCellSnapshots.set(key, record);

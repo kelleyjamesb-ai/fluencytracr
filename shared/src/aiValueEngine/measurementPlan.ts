@@ -7,8 +7,133 @@
  * create executive readouts.
  */
 
+import { aggregateClaimHash } from "./aggregateClaimAuthorization";
+
 export const MEASUREMENT_PLAN_SCHEMA_VERSION =
   "FT_AI_VALUE_MEASUREMENT_PLAN_2026_06";
+export const CANONICAL_SLICE_BINDING_SCHEMA_VERSION =
+  "FT_CANONICAL_SLICE_BINDING_V1";
+export const CANONICAL_SLICE_APPROVAL_ROLES = [
+  "value_realization_pm",
+  "business_sponsor"
+] as const;
+export type CanonicalSliceApprovalRole =
+  (typeof CANONICAL_SLICE_APPROVAL_ROLES)[number];
+const CANONICAL_SLICE_APPROVAL_ROLE_SET = new Set<string>(
+  CANONICAL_SLICE_APPROVAL_ROLES
+);
+
+export interface CanonicalSliceBindingV1 {
+  schema_version: typeof CANONICAL_SLICE_BINDING_SCHEMA_VERSION;
+  plan_version: number;
+  workflow_commitment: string;
+  jbtd_commitment: string;
+  persona_commitment: string;
+  baseline_window_start: string;
+  baseline_window_end: string;
+  comparison_window_start: string;
+  comparison_window_end: string;
+  metric_id: string;
+  metric_definition_ref: string;
+  canonical_metric_definition_commitment_v1: string;
+  outcome_source_system: string;
+  measurement_unit: string;
+  approved_direction: "INCREASE" | "DECREASE" | "MAINTAIN" | "MONITOR" | "NO_CHANGE";
+  approved_aggregate_grain: string;
+  aggregate_only: true;
+  approved_at: string;
+  approved_by_role: CanonicalSliceApprovalRole;
+  approved_by_role_commitment: string;
+  slice_commitment: string;
+}
+
+export type BuildCanonicalSliceBindingInput = Omit<
+  CanonicalSliceBindingV1,
+  "schema_version" | "slice_commitment" | "approved_by_role_commitment"
+>;
+type CanonicalSliceBindingProjection = Omit<
+  CanonicalSliceBindingV1,
+  "schema_version" | "slice_commitment"
+>;
+
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+const VERSION_BEARING_REF =
+  /(?:[/#@:](?:v|version)?\d+|(?:v|version)[_:-]?\d+)$/i;
+
+export const canonicalSliceJoinKeyCommitment = (
+  field: "workflow_id" | "jbtd_id" | "persona_id",
+  value: string
+): string =>
+  aggregateClaimHash("FT_CANONICAL_SLICE_JOIN_KEY_COMMITMENT_V1", {
+    field,
+    value
+  });
+
+export const canonicalSliceApprovalRoleCommitment = (value: string): string => {
+  if (!CANONICAL_SLICE_APPROVAL_ROLE_SET.has(value)) {
+    throw new Error("CANONICAL_SLICE_APPROVAL_ROLE_INVALID");
+  }
+  return aggregateClaimHash(
+    "FT_CANONICAL_SLICE_APPROVAL_ROLE_COMMITMENT_V1",
+    {
+      approved_by_role: value
+    }
+  );
+};
+
+const canonicalSliceProjection = (
+  input: BuildCanonicalSliceBindingInput
+): CanonicalSliceBindingProjection => ({
+  plan_version: input.plan_version,
+  workflow_commitment: input.workflow_commitment,
+  jbtd_commitment: input.jbtd_commitment,
+  persona_commitment: input.persona_commitment,
+  baseline_window_start: input.baseline_window_start,
+  baseline_window_end: input.baseline_window_end,
+  comparison_window_start: input.comparison_window_start,
+  comparison_window_end: input.comparison_window_end,
+  metric_id: input.metric_id,
+  metric_definition_ref: input.metric_definition_ref,
+  canonical_metric_definition_commitment_v1:
+    input.canonical_metric_definition_commitment_v1,
+  outcome_source_system: input.outcome_source_system,
+  measurement_unit: input.measurement_unit,
+  approved_direction: input.approved_direction,
+  approved_aggregate_grain: input.approved_aggregate_grain,
+  aggregate_only: true,
+  approved_at: input.approved_at,
+  approved_by_role: input.approved_by_role,
+  approved_by_role_commitment: canonicalSliceApprovalRoleCommitment(
+    input.approved_by_role
+  )
+});
+
+export const canonicalSliceBindingCommitment = (
+  input: CanonicalSliceBindingProjection
+): string =>
+  aggregateClaimHash(
+    "FT_CANONICAL_SLICE_BINDING_COMMITMENT_V1",
+    canonicalSliceProjection(input)
+  );
+
+export const buildCanonicalSliceBindingV1 = (
+  input: BuildCanonicalSliceBindingInput
+): CanonicalSliceBindingV1 => {
+  const projection = canonicalSliceProjection(input);
+  const binding: CanonicalSliceBindingV1 = {
+    schema_version: CANONICAL_SLICE_BINDING_SCHEMA_VERSION,
+    ...projection,
+    slice_commitment: canonicalSliceBindingCommitment(projection)
+  };
+  const gaps = collectCanonicalSliceBindingGaps(
+    { canonical_slice_binding_v1: binding },
+    binding
+  );
+  if (gaps.length > 0) {
+    throw new Error(`CANONICAL_SLICE_BINDING_INVALID: ${gaps.join("; ")}`);
+  }
+  return binding;
+};
 
 const RESULT_SCHEMA_VERSION =
   "FT_AI_VALUE_MEASUREMENT_PLAN_VALIDATION_2026_06";
@@ -433,6 +558,165 @@ function collectTopLevelGaps(plan: any): string[] {
   }
   requireArray(plan?.allowed_uses, "allowed_uses", gaps);
   requireArray(plan?.blocked_uses, "blocked_uses", gaps);
+  return gaps;
+}
+
+function collectCanonicalSliceBindingGaps(
+  plan: any,
+  explicitBinding?: CanonicalSliceBindingV1
+): string[] {
+  const binding = explicitBinding ?? plan?.canonical_slice_binding_v1;
+  if (binding === undefined) return [];
+  const gaps: string[] = [];
+  if (binding?.schema_version !== CANONICAL_SLICE_BINDING_SCHEMA_VERSION) {
+    gaps.push("canonical_slice_binding_v1.schema_version is invalid");
+  }
+  if (!Number.isInteger(binding?.plan_version) || binding.plan_version < 1) {
+    gaps.push(
+      "canonical_slice_binding_v1.plan_version must be a positive integer"
+    );
+  }
+  for (const field of [
+    "workflow_commitment",
+    "jbtd_commitment",
+    "persona_commitment",
+    "metric_id",
+    "metric_definition_ref",
+    "canonical_metric_definition_commitment_v1",
+    "outcome_source_system",
+    "measurement_unit",
+    "approved_direction",
+    "approved_aggregate_grain",
+    "approved_at",
+    "approved_by_role",
+    "approved_by_role_commitment",
+    "slice_commitment"
+  ]) {
+    if (
+      typeof binding?.[field] !== "string" ||
+      binding[field].trim().length === 0
+    ) {
+      gaps.push(`canonical_slice_binding_v1.${field} is required`);
+    }
+  }
+  for (const field of [
+    "baseline_window_start",
+    "baseline_window_end",
+    "comparison_window_start",
+    "comparison_window_end"
+  ]) {
+    if (
+      typeof binding?.[field] !== "string" ||
+      !Number.isFinite(Date.parse(binding[field]))
+    ) {
+      gaps.push(
+        `canonical_slice_binding_v1.${field} must be an exact timestamp`
+      );
+    }
+  }
+  if (
+    !CANONICAL_SLICE_APPROVAL_ROLE_SET.has(
+      String(binding?.approved_by_role ?? "")
+    )
+  ) {
+    gaps.push("canonical_slice_binding_v1.approved_by_role is invalid");
+  } else if (
+    binding?.approved_by_role_commitment !==
+    canonicalSliceApprovalRoleCommitment(binding.approved_by_role)
+  ) {
+    gaps.push(
+      "canonical_slice_binding_v1.approved_by_role_commitment does not match approved_by_role"
+    );
+  }
+  for (const field of [
+    "workflow_commitment",
+    "jbtd_commitment",
+    "persona_commitment",
+    "approved_by_role_commitment"
+  ]) {
+    if (!SHA256_HEX.test(String(binding?.[field] ?? ""))) {
+      gaps.push(`canonical_slice_binding_v1.${field} must be SHA-256`);
+    }
+  }
+  if (
+    !VERSION_BEARING_REF.test(String(binding?.metric_definition_ref ?? ""))
+  ) {
+    gaps.push(
+      "canonical_slice_binding_v1.metric_definition_ref must be version-bearing"
+    );
+  }
+  if (
+    !SHA256_HEX.test(
+      String(binding?.canonical_metric_definition_commitment_v1 ?? "")
+    )
+  ) {
+    gaps.push(
+      "canonical_slice_binding_v1.canonical_metric_definition_commitment_v1 must be SHA-256"
+    );
+  }
+  if (!SHA256_HEX.test(String(binding?.slice_commitment ?? ""))) {
+    gaps.push(
+      "canonical_slice_binding_v1.slice_commitment must be SHA-256"
+    );
+  }
+  if (binding?.aggregate_only !== true) {
+    gaps.push("canonical_slice_binding_v1.aggregate_only must be true");
+  }
+  if (
+    !["INCREASE", "DECREASE", "MAINTAIN", "MONITOR", "NO_CHANGE"].includes(
+      String(binding?.approved_direction ?? "")
+    )
+  ) {
+    gaps.push("canonical_slice_binding_v1.approved_direction is invalid");
+  }
+  if (
+    typeof binding?.approved_aggregate_grain === "string" &&
+    !ALLOWED_AGGREGATE_GRAINS.has(binding.approved_aggregate_grain)
+  ) {
+    gaps.push(
+      "canonical_slice_binding_v1.approved_aggregate_grain is invalid"
+    );
+  }
+  if (explicitBinding === undefined) {
+    const comparisons = [
+      ["baseline_window_start", plan?.windows?.baseline_window_start],
+      ["baseline_window_end", plan?.windows?.baseline_window_end],
+      ["comparison_window_start", plan?.windows?.comparison_window_start],
+      ["comparison_window_end", plan?.windows?.comparison_window_end],
+      [
+        "approved_aggregate_grain",
+        plan?.workflow_scope?.approved_aggregate_grain
+      ],
+      ["metric_id", plan?.metric_selection?.primary_metric?.metric_id]
+    ] as const;
+    for (const [field, expected] of comparisons) {
+      if (binding?.[field] !== expected) {
+        gaps.push(
+          `canonical_slice_binding_v1.${field} must match the Measurement Plan`
+        );
+      }
+    }
+  }
+  if (
+    typeof binding === "object" &&
+    binding !== null &&
+    SHA256_HEX.test(String(binding.slice_commitment ?? ""))
+  ) {
+    const {
+      schema_version: _schema,
+      slice_commitment: _commitment,
+      ...projection
+    } = binding as CanonicalSliceBindingV1;
+    if (
+      canonicalSliceBindingCommitment(
+        projection as CanonicalSliceBindingProjection
+      ) !== binding.slice_commitment
+    ) {
+      gaps.push(
+        "canonical_slice_binding_v1.slice_commitment does not match exact bytes"
+      );
+    }
+  }
   return gaps;
 }
 
@@ -1364,6 +1648,7 @@ export function validateMeasurementPlan(plan: any): MeasurementPlanValidationRes
     ...collectWorkflowScopeGaps(plan),
     ...collectMetricGaps(plan),
     ...collectWindowGaps(plan),
+    ...collectCanonicalSliceBindingGaps(plan),
     ...collectPlaybookRequirementGaps(plan),
     ...collectSourcePackageGaps(plan),
     ...collectWorkforceGaps(plan),

@@ -10,7 +10,9 @@ const { app } = require("../backend/dist/app.js");
 const { aiValueEngine } = require("../shared/dist/index.js");
 const {
   authorizeAggregateClaim,
-  readAuthorizedAggregateClaim
+  readAuthorizedAggregateClaim,
+  resolveAuthoritativeSourceGraph,
+  resolveCanonicalIdentityAuthority
 } = require("../backend/dist/services/aggregate-claim-authorization.service.js");
 const {
   readAiValueClaimBundle,
@@ -20,6 +22,22 @@ const {
 const {
   readOutcomeComparisonPrivacyRelease
 } = require("../backend/dist/repositories/outcome-comparison-privacy.repository.js");
+const {
+  canonicalIdentitySourceSemanticCommitment,
+  loadCanonicalIdentityExactSources
+} = require("../backend/dist/repositories/canonical-identity-source.repository.js");
+const {
+  checkCanonicalIdentityFamilyHeadStructureReadiness
+} = require("../backend/dist/canonical-identity-family-head-structure.js");
+const {
+  canonicalIdentityRuntimeCredentialIsReady
+} = require("../backend/dist/canonical-identity-runtime-client.js");
+const {
+  canonicalHypothesisAttestationPayload,
+  canonicalPlanEdgeAttestationPayload,
+  canonicalMeasurementCellAttestationPayload,
+  createSliceEAttestation
+} = require("../backend/dist/services/canonical-identity-attestation.service.js");
 const {
   revokeCohortProducerAuthority
 } = require("../backend/dist/repositories/cohort-producer-authority.repository.js");
@@ -36,6 +54,11 @@ if (!process.env.DATABASE_URL || !process.env.C1_RUNTIME_DATABASE_URL) {
 
 const prisma = new PrismaClient();
 const runId = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID = `FT_E_HMAC_VERIFY_${runId.toUpperCase()}`;
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET = crypto
+  .randomBytes(32)
+  .toString("base64url");
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON = "{}";
 const exactHeld = {
   decision: "HOLD",
   reason_family: "AGGREGATE_CLAIM_AUTHORIZATION_HELD",
@@ -71,6 +94,114 @@ const expectHeld = (value, label) => {
     `${label} did not return the fixed redacted HOLD`
   );
 };
+
+const expectRejected = async (operation, label) => {
+  let rejected = false;
+  try {
+    await operation();
+  } catch {
+    rejected = true;
+  }
+  assert(rejected, `${label} was unexpectedly permitted`);
+};
+await expectRejected(
+  async () =>
+    aiValueEngine.canonicalSliceApprovalRoleCommitment(
+      "james.kelley@example.com"
+    ),
+  "personal Slice E approving role"
+);
+
+assert(
+  await checkCanonicalIdentityFamilyHeadStructureReadiness(prisma),
+  "Slice E family-head structure was not ready"
+);
+const expectStructureDriftDetected = async (label, mutate) => {
+  const rollbackMessage = `SLICE_E_STRUCTURE_DRIFT_ROLLBACK_${label}`;
+  try {
+    await prisma.$transaction(async (transaction) => {
+      await mutate(transaction);
+      assert(
+        !(await checkCanonicalIdentityFamilyHeadStructureReadiness(transaction)),
+        `${label} escaped Slice E structural readiness`
+      );
+      throw new Error(rollbackMessage);
+    });
+    throw new Error(`${label} drift probe did not roll back`);
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== rollbackMessage) {
+      throw error;
+    }
+  }
+  assert(
+    await checkCanonicalIdentityFamilyHeadStructureReadiness(prisma),
+    `${label} drift probe did not restore the exact Slice E structure`
+  );
+};
+await expectStructureDriftDetected("JOURNAL_INSERT_GRANT", (transaction) =>
+  transaction.$executeRawUnsafe(
+    "GRANT INSERT ON TABLE public.ai_value_canonical_identity_family_head_journal TO fluencytracr_slice_e_runtime"
+  )
+);
+await expectStructureDriftDetected("SECURITY_DEFINER_SEARCH_PATH", (transaction) =>
+  transaction.$executeRawUnsafe(
+    "ALTER FUNCTION public.append_canonical_identity_family_head() SET search_path = public"
+  )
+);
+await expectStructureDriftDetected("JOURNAL_RLS_DISABLED", (transaction) =>
+  transaction.$executeRawUnsafe(
+    "ALTER TABLE public.ai_value_canonical_identity_family_head_journal DISABLE ROW LEVEL SECURITY"
+  )
+);
+
+const sliceERuntimePassword = "slice_e_assurance_runtime_2026";
+await prisma.$executeRawUnsafe(
+  `ALTER ROLE fluencytracr_slice_e_runtime PASSWORD '${sliceERuntimePassword}'`
+);
+const sliceERuntimeUrl = new URL(process.env.DATABASE_URL);
+sliceERuntimeUrl.username = "fluencytracr_slice_e_runtime";
+sliceERuntimeUrl.password = sliceERuntimePassword;
+process.env.SLICE_E_RUNTIME_DATABASE_URL = sliceERuntimeUrl.toString();
+const sliceERuntimePrisma = new PrismaClient({
+  datasources: { db: { url: sliceERuntimeUrl.toString() } }
+});
+assert(
+  await canonicalIdentityRuntimeCredentialIsReady(sliceERuntimePrisma),
+  "configured Slice E client was not the exact least-privilege runtime role"
+);
+assert(
+  !(await canonicalIdentityRuntimeCredentialIsReady(prisma)),
+  "database-owner credential was accepted as the Slice E runtime role"
+);
+const substitutedRuntimeCredentialAccepted = await prisma.$transaction(
+  async (transaction) => {
+    await transaction.$executeRawUnsafe(
+      "SET LOCAL ROLE fluencytracr_slice_e_runtime"
+    );
+    return canonicalIdentityRuntimeCredentialIsReady(transaction);
+  }
+);
+assert(
+  !substitutedRuntimeCredentialAccepted,
+  "elevated session using SET ROLE was accepted as the Slice E runtime login"
+);
+await expectRejected(
+  () =>
+    sliceERuntimePrisma.aiValueCanonicalIdentityFamilyHeadJournal.create({
+      data: {
+        sourceKind: "VALUE_HYPOTHESIS",
+        orgId: `forbidden-${runId}`,
+        stableSourceId: `forbidden-${runId}`,
+        version: 1,
+        sourceRowId: crypto.randomUUID(),
+        predecessorRowId: null,
+        sourceSemanticCommitment: null,
+        sourceAttestationCommitment: null,
+        attestationState: "UNATTESTED_LEGACY"
+      }
+    }),
+  "direct Slice E runtime journal insert"
+);
 
 const runtimeUrl = new URL(process.env.C1_RUNTIME_DATABASE_URL);
 if (!/^[A-Za-z0-9_-]{16,128}$/.test(runtimeUrl.password)) {
@@ -151,10 +282,20 @@ metricsLibrary.metrics = [
     measurement_unit: projection.outcome_unit,
     source_system: {
       ...metricsLibrary.metrics[0].source_system,
-      source_name: projection.source_system
-    }
+      source_name: projection.source_system,
+      approved_grain: "workflow"
+    },
+    metric_definition_ref: `metric:${projection.outcome_metric}:v1`,
+    canonical_direction:
+      projection.comparison_window.aggregate_value < projection.baseline_window.aggregate_value
+        ? "DECREASE"
+        : projection.comparison_window.aggregate_value > projection.baseline_window.aggregate_value
+          ? "INCREASE"
+          : "MAINTAIN"
   }
 ];
+metricsLibrary.metrics[0].canonical_metric_definition_commitment_v1 =
+  aiValueEngine.canonicalMetricDefinitionCommitment(metricsLibrary.metrics[0]);
 
 await request(app)
   .put(`/api/v1/ai-value/objects/blueprint/${blueprint.blueprint_id}`)
@@ -426,10 +567,582 @@ const html = await request(app)
   .set(readoutAuth)
   .expect(200);
 assert(
-  html.headers["x-ai-value-source-bound"] === "true" &&
+  html.headers["x-ai-value-source-bound"] === "false" &&
+    html.headers["x-ai-value-canonical-identity-bound"] === "false" &&
     html.text.includes("OBSERVED_NON_ATTRIBUTABLE") &&
     !html.text.toLowerCase().includes("caused"),
-  "authorized readout did not preserve the bounded internal semantics"
+  "legacy Slice D readout did not preserve explicit UNBOUND semantics"
+);
+
+const canonicalMetric = metricsLibrary.metrics[0];
+const measurementPlan = JSON.parse(
+  await readFile(
+    new URL(
+      "../docs/contracts/ai-value-measurement-plan/examples/full-playbook-ready-plan.json",
+      import.meta.url
+    ),
+    "utf8"
+  )
+);
+const hypothesisId = `hypothesis_e_${runId}`;
+const measurementPlanId = `plan_e_${runId}`;
+const measurementCellId = `cell_e_${runId}`;
+measurementPlan.org_id = orgId;
+measurementPlan.measurement_plan_id = measurementPlanId;
+measurementPlan.value_hypothesis.value_hypothesis_id = hypothesisId;
+measurementPlan.workflow_scope.workflow_family = projection.workflow_id;
+measurementPlan.workflow_scope.approved_aggregate_grain =
+  canonicalMetric.source_system.approved_grain;
+measurementPlan.vbd_measurement_design.breadth.approved_aggregate_grain =
+  canonicalMetric.source_system.approved_grain;
+measurementPlan.metric_selection.primary_metric.metric_id = projection.outcome_metric;
+measurementPlan.windows = {
+  baseline_window_start: projection.baseline_window.period_start,
+  baseline_window_end: projection.baseline_window.period_end,
+  comparison_window_start: projection.comparison_window.period_start,
+  comparison_window_end: projection.comparison_window.period_end,
+  window_alignment_state: "baseline_and_comparison_selected"
+};
+measurementPlan.canonical_slice_binding_v1 = aiValueEngine.buildCanonicalSliceBindingV1({
+  plan_version: 1,
+  workflow_commitment: aiValueEngine.canonicalSliceJoinKeyCommitment(
+    "workflow_id",
+    projection.workflow_id
+  ),
+  jbtd_commitment: aiValueEngine.canonicalSliceJoinKeyCommitment(
+    "jbtd_id",
+    projection.jbtd_id
+  ),
+  persona_commitment: aiValueEngine.canonicalSliceJoinKeyCommitment(
+    "persona_id",
+    projection.persona_id
+  ),
+  baseline_window_start: projection.baseline_window.period_start,
+  baseline_window_end: projection.baseline_window.period_end,
+  comparison_window_start: projection.comparison_window.period_start,
+  comparison_window_end: projection.comparison_window.period_end,
+  metric_id: projection.outcome_metric,
+  metric_definition_ref: canonicalMetric.metric_definition_ref,
+  canonical_metric_definition_commitment_v1:
+    canonicalMetric.canonical_metric_definition_commitment_v1,
+  outcome_source_system: projection.source_system,
+  measurement_unit: projection.outcome_unit,
+  approved_direction: canonicalMetric.canonical_direction,
+  approved_aggregate_grain: canonicalMetric.source_system.approved_grain,
+  aggregate_only: true,
+  approved_at: "2026-07-28T00:00:00.000Z",
+  approved_by_role: "value_realization_pm"
+});
+const measurementPlanValidation = aiValueEngine.validateMeasurementPlan(measurementPlan);
+assert(
+  measurementPlanValidation.valid,
+  `Slice E plan fixture was invalid: ${JSON.stringify(measurementPlanValidation.gaps)}`
+);
+
+const hypothesisRowId = crypto.randomUUID();
+const hypothesisValidation = { ...measurementPlanValidation };
+const hypothesisSource = {
+  sourceKind: "VALUE_HYPOTHESIS",
+  rowId: hypothesisRowId,
+  orgId,
+  stableId: hypothesisId,
+  version: 1,
+  predecessorRowId: null,
+  validation: hypothesisValidation,
+  payload: measurementPlan.value_hypothesis,
+  authority: {
+    status: "approved",
+    workflow_family: projection.workflow_id,
+    value_route: measurementPlan.value_hypothesis.value_route,
+    hypothesis_statement: measurementPlan.value_hypothesis.hypothesis_statement,
+    business_objective: measurementPlan.value_hypothesis.business_objective
+  }
+};
+hypothesisSource.semanticCommitment = canonicalIdentitySourceSemanticCommitment(hypothesisSource);
+const hypothesisAttestation = createSliceEAttestation(
+  "hypothesis_creation",
+  canonicalHypothesisAttestationPayload({
+    orgId,
+    rowId: hypothesisRowId,
+    stableId: hypothesisId,
+    version: 1,
+    semanticCommitment: hypothesisSource.semanticCommitment,
+    status: "approved",
+    predecessor: { state: "ROOT_V1" }
+  })
+);
+assert(hypothesisAttestation, "Slice E hypothesis attestation was unavailable");
+hypothesisValidation.canonical_value_hypothesis_creation_attestation_v1 = {
+  hypothesis_semantic_commitment: hypothesisSource.semanticCommitment,
+  ...hypothesisAttestation
+};
+await prisma.valueHypothesis.create({
+  data: {
+    id: hypothesisRowId,
+    orgId,
+    valueHypothesisId: hypothesisId,
+    schemaVersion: measurementPlan.schema_version,
+    derivationVersion: measurementPlan.derivation_version,
+    workflowFamily: projection.workflow_id,
+    functionArea: measurementPlan.workflow_scope.function_area,
+    valueRoute: measurementPlan.value_hypothesis.value_route,
+    hypothesisStatement: measurementPlan.value_hypothesis.hypothesis_statement,
+    businessObjective: measurementPlan.value_hypothesis.business_objective,
+    status: "approved",
+    payloadJson: measurementPlan.value_hypothesis,
+    validationJson: hypothesisValidation,
+    sourceRefsJson: {},
+    version: 1,
+    createdByRole: "value_realization_pm"
+  }
+});
+
+const planRowId = crypto.randomUUID();
+const planValidation = { ...measurementPlanValidation };
+const planSource = {
+  sourceKind: "MEASUREMENT_PLAN",
+  rowId: planRowId,
+  orgId,
+  stableId: measurementPlanId,
+  version: 1,
+  predecessorRowId: null,
+  validation: planValidation,
+  payload: measurementPlan,
+  authority: {
+    value_hypothesis_id: hypothesisId,
+    workflow_family: projection.workflow_id,
+    approved_aggregate_grain: measurementPlan.workflow_scope.approved_aggregate_grain,
+    baseline_window_start: projection.baseline_window.period_start,
+    baseline_window_end: projection.baseline_window.period_end,
+    comparison_window_start: projection.comparison_window.period_start,
+    comparison_window_end: projection.comparison_window.period_end,
+    readiness_state: measurementPlan.readiness.measurement_plan_readiness
+  }
+};
+planSource.semanticCommitment = canonicalIdentitySourceSemanticCommitment(planSource);
+const planAttestation = createSliceEAttestation(
+  "plan_edge",
+  canonicalPlanEdgeAttestationPayload({
+    orgId,
+    rowId: planRowId,
+    stableId: measurementPlanId,
+    version: 1,
+    semanticCommitment: planSource.semanticCommitment,
+    readinessState: planSource.authority.readiness_state,
+    approvedAggregateGrain: measurementPlan.canonical_slice_binding_v1.approved_aggregate_grain,
+    canonicalSliceCommitment: measurementPlan.canonical_slice_binding_v1.slice_commitment,
+    canonicalMetricDefinitionCommitment:
+      measurementPlan.canonical_slice_binding_v1.canonical_metric_definition_commitment_v1,
+    hypothesis: {
+      rowId: hypothesisRowId,
+      stableId: hypothesisId,
+      version: 1,
+      semanticCommitment: hypothesisSource.semanticCommitment,
+      attestationCommitment: hypothesisAttestation.mac
+    }
+  })
+);
+assert(planAttestation, "Slice E plan attestation was unavailable");
+planValidation.canonical_hypothesis_edge_v1 = {
+  plan_semantic_commitment: planSource.semanticCommitment,
+  hypothesis_row_id: hypothesisRowId,
+  hypothesis_version: 1,
+  hypothesis_semantic_commitment: hypothesisSource.semanticCommitment,
+  hypothesis_creation_attestation_commitment: hypothesisAttestation.mac,
+  approved_aggregate_grain: measurementPlan.canonical_slice_binding_v1.approved_aggregate_grain,
+  canonical_slice_commitment: measurementPlan.canonical_slice_binding_v1.slice_commitment,
+  ...planAttestation
+};
+await prisma.measurementPlan.create({
+  data: {
+    id: planRowId,
+    orgId,
+    measurementPlanId,
+    valueHypothesisId: hypothesisId,
+    schemaVersion: measurementPlan.schema_version,
+    derivationVersion: measurementPlan.derivation_version,
+    workflowFamily: projection.workflow_id,
+    approvedAggregateGrain: measurementPlan.workflow_scope.approved_aggregate_grain,
+    minimumCohortThreshold: measurementPlan.workflow_scope.minimum_cohort_threshold,
+    baselineWindowStart: new Date(projection.baseline_window.period_start),
+    baselineWindowEnd: new Date(projection.baseline_window.period_end),
+    comparisonWindowStart: new Date(projection.comparison_window.period_start),
+    comparisonWindowEnd: new Date(projection.comparison_window.period_end),
+    coverageGoal: measurementPlanValidation.readiness.max_snapshot_type,
+    readinessState: measurementPlan.readiness.measurement_plan_readiness,
+    payloadJson: measurementPlan,
+    validationJson: planValidation,
+    sourcePackageRequirementsJson: measurementPlan.source_package_requirements,
+    assumptionsJson: measurementPlan.assumptions,
+    sourceRefsJson: {},
+    version: 1,
+    createdByRole: "value_realization_pm"
+  }
+});
+
+const cellRowId = crypto.randomUUID();
+const cellValidation = { valid: true };
+const cellPayload = {
+  schema_version: "FT_CANONICAL_MEASUREMENT_CELL_SOURCE_V1",
+  aggregate_only: true
+};
+const cellSource = {
+  sourceKind: "MEASUREMENT_CELL",
+  rowId: cellRowId,
+  orgId,
+  stableId: measurementCellId,
+  version: 1,
+  predecessorRowId: null,
+  validation: cellValidation,
+  payload: cellPayload,
+  authority: {
+    measurement_plan_id: measurementPlanId,
+    aggregate_source_system: projection.source_system,
+    value_hypothesis_id: hypothesisId,
+    value_hypothesis_ref: `${hypothesisId}:v1`,
+    approval_state: "approved",
+    approved_by_role: "workflow_owner",
+    metric_owner_approval_state: "approved",
+    metric_id: projection.outcome_metric,
+    metric_definition_ref: canonicalMetric.metric_definition_ref,
+    metric_definition_hash: aiValueEngine.aggregateClaimHash(
+      "FT_LEGACY_METRIC_DEFINITION_V1",
+      canonicalMetric
+    ),
+    metric_direction: canonicalMetric.canonical_direction.toLowerCase(),
+    metric_unit: projection.outcome_unit,
+    workflow_id: projection.workflow_id,
+    cohort_key: "aggregate_exact_slice",
+    baseline_window_start: projection.baseline_window.period_start,
+    baseline_window_end: projection.baseline_window.period_end,
+    comparison_window_start: projection.comparison_window.period_start,
+    comparison_window_end: projection.comparison_window.period_end
+  }
+};
+cellSource.semanticCommitment = canonicalIdentitySourceSemanticCommitment(cellSource);
+const cellAttestation = createSliceEAttestation(
+  "measurement_cell_edge",
+  canonicalMeasurementCellAttestationPayload({
+    orgId,
+    rowId: cellRowId,
+    stableId: measurementCellId,
+    version: 1,
+    semanticCommitment: cellSource.semanticCommitment,
+    approvalState: "approved",
+    metricOwnerApprovalState: "approved",
+    approvedAggregateGrain: measurementPlan.canonical_slice_binding_v1.approved_aggregate_grain,
+    canonicalMetricDefinitionCommitment: canonicalMetric.canonical_metric_definition_commitment_v1,
+    canonicalDirection: canonicalMetric.canonical_direction,
+    plan: {
+      rowId: planRowId,
+      stableId: measurementPlanId,
+      version: 1,
+      semanticCommitment: planSource.semanticCommitment,
+      attestationCommitment: planAttestation.mac
+    },
+    hypothesis: {
+      rowId: hypothesisRowId,
+      stableId: hypothesisId,
+      version: 1,
+      semanticCommitment: hypothesisSource.semanticCommitment,
+      attestationCommitment: hypothesisAttestation.mac
+    }
+  })
+);
+assert(cellAttestation, "Slice E cell attestation was unavailable");
+cellValidation.canonical_measurement_lineage_v1 = {
+  measurement_cell_semantic_commitment: cellSource.semanticCommitment,
+  plan_row_id: planRowId,
+  plan_version: 1,
+  plan_semantic_commitment: planSource.semanticCommitment,
+  plan_edge_attestation_commitment: planAttestation.mac,
+  hypothesis_row_id: hypothesisRowId,
+  hypothesis_version: 1,
+  hypothesis_semantic_commitment: hypothesisSource.semanticCommitment,
+  hypothesis_creation_attestation_commitment: hypothesisAttestation.mac,
+  approved_aggregate_grain: measurementPlan.canonical_slice_binding_v1.approved_aggregate_grain,
+  canonical_metric_definition_commitment_v1:
+    canonicalMetric.canonical_metric_definition_commitment_v1,
+  canonical_direction: canonicalMetric.canonical_direction,
+  ...cellAttestation
+};
+await prisma.measurementCellSnapshot.create({
+  data: {
+    id: cellRowId,
+    orgId,
+    measurementCellId,
+    measurementCellAssemblyRunId: crypto.randomUUID(),
+    measurementPlanId,
+    aggregateSourceSystem: projection.source_system,
+    aggregateExportReviewRef: "aggregate-review-v1",
+    aggregateExportReviewState: "PASSED_BIGQUERY_AGGREGATE_EXPORT_REVIEW",
+    aggregateSourceExportRef: "aggregate-export-v1",
+    aggregateExportReviewHash: "a".repeat(64),
+    pipelineDryRunRef: "pipeline-dry-run-v1",
+    pipelineBoundaryHash: "b".repeat(64),
+    aggregateBoundaryRefJson: { aggregate_only: true },
+    valueHypothesisId: hypothesisId,
+    valueHypothesisRef: `${hypothesisId}:v1`,
+    valueHypothesisBindingState: "approved",
+    approvedBlueprintRef: blueprint.blueprint_id,
+    approvedBlueprintPayloadHash: "c".repeat(64),
+    blueprintExpectationRef: "expectation-v1",
+    expectationPathId: "expectation-path-v1",
+    expectationPathVersion: 1,
+    expectationPathHash: "d".repeat(64),
+    approvalState: "approved",
+    approvedAt: new Date("2026-07-28T00:00:00.000Z"),
+    approvedByRole: "workflow_owner",
+    valueDriver: "Capacity",
+    metricId: projection.outcome_metric,
+    metricDefinitionRef: canonicalMetric.metric_definition_ref,
+    metricDefinitionHash: cellSource.authority.metric_definition_hash,
+    metricOwnerApprovalState: "approved",
+    metricDirection: canonicalMetric.canonical_direction.toLowerCase(),
+    metricUnit: projection.outcome_unit,
+    expectedMetricLagDays: 30,
+    workflowFamily: projection.workflow_id,
+    workflowId: projection.workflow_id,
+    functionArea: "customer_support",
+    cohortKey: "aggregate_exact_slice",
+    windowMode: "fixed",
+    milestoneDay: 30,
+    baselineWindowStart: new Date(projection.baseline_window.period_start),
+    baselineWindowEnd: new Date(projection.baseline_window.period_end),
+    comparisonWindowStart: new Date(projection.comparison_window.period_start),
+    comparisonWindowEnd: new Date(projection.comparison_window.period_end),
+    assemblyDecision: "READY",
+    payloadJson: cellPayload,
+    validationJson: cellValidation,
+    assemblyValidationJson: { valid: true },
+    sourceRefsJson: {},
+    blueprintPathBindingJson: { aggregate_only: true },
+    requiredCaveatsJson: [],
+    blockedUsesJson: ["customer_facing_output"],
+    version: 1,
+    generatedAt: new Date("2026-07-28T00:00:00.000Z"),
+    createdByRole: "value_realization_pm"
+  }
+});
+
+await expectRejected(
+  () =>
+    sliceERuntimePrisma.valueHypothesis.update({
+      where: { id: hypothesisRowId },
+      data: { status: "approved" }
+    }),
+  "Slice E runtime source update"
+);
+await expectRejected(
+  () =>
+    sliceERuntimePrisma.valueHypothesis.delete({
+      where: { id: hypothesisRowId }
+    }),
+  "Slice E runtime source delete"
+);
+await expectRejected(
+  () =>
+    prisma.valueHypothesis.update({
+      where: { id: hypothesisRowId },
+      data: { status: "approved" }
+    }),
+  "owner-level source update trigger bypass"
+);
+await expectRejected(
+  () =>
+    prisma.valueHypothesis.delete({
+      where: { id: hypothesisRowId }
+    }),
+  "owner-level source delete trigger bypass"
+);
+const hypothesisJournalKey = {
+  sourceKind: "VALUE_HYPOTHESIS",
+  orgId,
+  stableSourceId: hypothesisId,
+  version: 1
+};
+await expectRejected(
+  () =>
+    prisma.aiValueCanonicalIdentityFamilyHeadJournal.update({
+      where: {
+        sourceKind_orgId_stableSourceId_version: hypothesisJournalKey
+      },
+      data: { attestationState: "ATTESTATION_PRESENT" }
+    }),
+  "owner-level journal update trigger bypass"
+);
+await expectRejected(
+  () =>
+    prisma.aiValueCanonicalIdentityFamilyHeadJournal.delete({
+      where: {
+        sourceKind_orgId_stableSourceId_version: hypothesisJournalKey
+      }
+    }),
+  "owner-level journal delete trigger bypass"
+);
+const appendHypothesisAttack = (version, supersedesId) =>
+  prisma.valueHypothesis.create({
+    data: {
+      id: crypto.randomUUID(),
+      orgId,
+      valueHypothesisId: hypothesisId,
+      schemaVersion: measurementPlan.schema_version,
+      derivationVersion: measurementPlan.derivation_version,
+      workflowFamily: projection.workflow_id,
+      functionArea: measurementPlan.workflow_scope.function_area,
+      valueRoute: measurementPlan.value_hypothesis.value_route,
+      hypothesisStatement: measurementPlan.value_hypothesis.hypothesis_statement,
+      businessObjective: measurementPlan.value_hypothesis.business_objective,
+      status: "approved",
+      payloadJson: measurementPlan.value_hypothesis,
+      validationJson: hypothesisValidation,
+      sourceRefsJson: {},
+      version,
+      supersedesId,
+      createdByRole: "value_realization_pm"
+    }
+  });
+await expectRejected(
+  () => appendHypothesisAttack(3, hypothesisRowId),
+  "Slice E family-head gap insert"
+);
+await expectRejected(
+  () => appendHypothesisAttack(2, crypto.randomUUID()),
+  "Slice E family-head wrong-predecessor insert"
+);
+
+const canonicalSelector = {
+  value_hypothesis_id: hypothesisId,
+  value_hypothesis_version: 1,
+  measurement_plan_id: measurementPlanId,
+  measurement_plan_version: 1,
+  measurement_cell_id: measurementCellId,
+  measurement_cell_version: 1
+};
+const canonicalAuthorizationRequest = {
+  ...authorizationRequest,
+  canonicalIdentitySelector: canonicalSelector
+};
+const loadedCanonicalSources = await loadCanonicalIdentityExactSources(orgId, canonicalSelector);
+assert(
+  loadedCanonicalSources,
+  "exact Slice E source/journal reconstruction failed before authorization"
+);
+const canonicalGraph = await resolveAuthoritativeSourceGraph(canonicalAuthorizationRequest);
+assert(canonicalGraph, "Slice E authoritative D source graph failed to resolve");
+const canonicalAuthority = await resolveCanonicalIdentityAuthority(
+  canonicalGraph,
+  selected.result,
+  canonicalSelector
+);
+assert(
+  canonicalAuthority,
+  "Slice E exact source compatibility or HMAC authority failed to resolve"
+);
+const canonicalAuthorized = await authorizeAggregateClaim(canonicalAuthorizationRequest);
+const canonicalArtifactRows = await prisma.aiValueObject.findMany({
+  where: {
+    orgId,
+    objectType: {
+      in: [
+        aiValueEngine.INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPE,
+        aiValueEngine.INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE,
+        aiValueEngine.INTERNAL_AGGREGATE_MANIFEST_OBJECT_TYPE,
+        aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE
+      ]
+    }
+  },
+  select: { objectType: true, objectId: true }
+});
+assert(
+  canonicalAuthorized.decision === "AUTHORIZED" &&
+    canonicalAuthorized.canonical_identity_state === "BOUND" &&
+    canonicalAuthorized.source_bound === true &&
+    canonicalAuthorized.persisted.length === 4,
+  `exact Slice E path did not authorize one four-artifact bound bundle: response=${JSON.stringify(
+    canonicalAuthorized
+  )} rows=${JSON.stringify(canonicalArtifactRows)}`
+);
+const canonicalPacketId = canonicalAuthorized.packet_id;
+const canonicalBundle = await readAiValueClaimBundle(orgId, canonicalPacketId);
+assert(
+  canonicalBundle?.binding &&
+    aiValueEngine.canonicalIdentityBundleReconciles({
+      claim: canonicalBundle.claim.payload,
+      packet: canonicalBundle.packet.payload,
+      manifest: canonicalBundle.manifest.payload,
+      binding: canonicalBundle.binding.payload
+    }),
+  "Slice E four-artifact bundle did not reconcile"
+);
+const canonicalHtml = await request(app)
+  .get(`/api/v1/ai-value/readout/${canonicalPacketId}/html`)
+  .set(readoutAuth)
+  .expect(200);
+assert(
+  canonicalHtml.headers["x-ai-value-source-bound"] === "true" &&
+    canonicalHtml.headers["x-ai-value-canonical-identity-bound"] === "true" &&
+    canonicalHtml.text.includes("OBSERVED_NON_ATTRIBUTABLE"),
+  "Slice E readout did not prove exact bound authority"
+);
+process.env.SLICE_E_RUNTIME_DATABASE_URL = process.env.DATABASE_URL;
+assert(
+  (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) === null,
+  "elevated general credential revalidated an existing Slice E readout"
+);
+process.env.SLICE_E_RUNTIME_DATABASE_URL = sliceERuntimeUrl.toString();
+assert(
+  (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) !== null,
+  "exact Slice E runtime restoration did not recover readback"
+);
+expectHeld(
+  await authorizeAggregateClaim({
+    ...canonicalAuthorizationRequest,
+    canonicalIdentitySelector: {
+      ...canonicalSelector,
+      measurement_cell_version: 2
+    }
+  }),
+  "stale or missing canonical selector"
+);
+const bindingRow = await prisma.aiValueObject.findUniqueOrThrow({
+  where: {
+    ai_value_objects_unique_key: {
+      orgId,
+      objectType: aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+      objectId: canonicalBundle.binding.object_id
+    }
+  }
+});
+const forgedBindingValidation = deepClone(bindingRow.validationJson);
+forgedBindingValidation.canonical_artifact_creation_attestation_v1.mac = "0".repeat(64);
+await prisma.aiValueObject.update({
+  where: {
+    ai_value_objects_unique_key: {
+      orgId,
+      objectType: aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+      objectId: canonicalBundle.binding.object_id
+    }
+  },
+  data: { validationJson: forgedBindingValidation }
+});
+assert(
+  (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) === null,
+  "forged Slice E bundle attestation remained renderable"
+);
+await prisma.aiValueObject.update({
+  where: {
+    ai_value_objects_unique_key: {
+      orgId,
+      objectType: aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+      objectId: canonicalBundle.binding.object_id
+    }
+  },
+  data: { validationJson: bindingRow.validationJson }
+});
+assert(
+  (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) !== null,
+  "exact Slice E attestation restoration did not recover readback"
 );
 
 expectHeld(
@@ -740,6 +1453,24 @@ assert(
   "exact artifact restoration did not recover current readback"
 );
 
+let postSealCanonicalReadCount = 0;
+const postSealCanonicalSupersession = await authorizeAggregateClaim(
+  canonicalAuthorizationRequest,
+  {
+    readComparison: async () => {
+      postSealCanonicalReadCount += 1;
+      if (postSealCanonicalReadCount === 3) {
+        await appendHypothesisAttack(2, hypothesisRowId);
+      }
+      return selected.result;
+    }
+  }
+);
+expectHeld(
+  postSealCanonicalSupersession,
+  "post-commit Slice E source supersession"
+);
+
 const journal = await prisma.cohortProofJournal.findUniqueOrThrow({
   where: { id: selected.row.proofJournalId }
 });
@@ -766,8 +1497,9 @@ assert(
 );
 
 console.log(
-  "Slice D PostgreSQL verification passed: exact C.1 authorization, one-movement immutable replay, commitment-only artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
+  "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E session/effective runtime credential, SET ROLE substitution rejection, elevated existing-readout rejection, canonical source/journal/HMAC authority, exact privilege-drift detection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice, approval-role, and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
 );
 
+await sliceERuntimePrisma.$disconnect();
 await prisma.$disconnect();
 await disconnectPrisma();

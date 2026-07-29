@@ -22,10 +22,13 @@ export const AGGREGATE_CLAIM_HELD_REASON = "AGGREGATE_CLAIM_AUTHORIZATION_HELD";
 export const INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPE = "aggregate_authorized_claim";
 export const INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE = "aggregate_authorized_packet";
 export const INTERNAL_AGGREGATE_MANIFEST_OBJECT_TYPE = "aggregate_claim_authorization_manifest";
+export const INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE =
+  "canonical_identity_compatibility_binding";
 export const INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPES = Object.freeze([
   INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPE,
   INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE,
-  INTERNAL_AGGREGATE_MANIFEST_OBJECT_TYPE
+  INTERNAL_AGGREGATE_MANIFEST_OBJECT_TYPE,
+  INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE
 ]);
 
 export const AGGREGATE_CLAIM_CAVEATS = Object.freeze([
@@ -205,6 +208,7 @@ export const AggregateAuthorizedClaimContentSchema = z
     policy_version: z.literal(AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION),
     template_id: z.literal(AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID),
     slice_commitment: exactHash,
+    canonical_identity_core_commitment: exactHash.optional(),
     movement: AggregateObservedMovementSchema,
     caveats: exactCaveats,
     model_use_authorized: z.literal(false),
@@ -219,6 +223,7 @@ export const AggregateAuthorizedPacketContentSchema = z
     policy_version: z.literal(AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION),
     template_id: z.literal(AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID),
     slice_commitment: exactHash,
+    canonical_identity_core_commitment: exactHash.optional(),
     claim_content_hash: exactHash,
     movement: AggregateObservedMovementSchema,
     caveats: exactCaveats,
@@ -234,6 +239,7 @@ export const AggregateClaimManifestCoreSchema = z
   .object({
     policy_version: z.literal(AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION),
     slice_commitment: exactHash,
+    canonical_identity_core_commitment: exactHash.optional(),
     source_graph: AggregateClaimSourceGraphCommitmentSchema,
     readiness_ref_commitment: exactHash,
     readiness_hash: exactHash,
@@ -531,6 +537,7 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
   comparisonProjection: unknown;
   policyState: AggregateClaimPolicyState;
   claimContent: z.infer<typeof AggregateClaimAuthorizationInputContentSchema>;
+  canonicalIdentityCoreCommitment?: string;
 }): {
   claim: AggregateAuthorizedClaimArtifact;
   packet: AggregateAuthorizedPacketArtifact;
@@ -559,7 +566,8 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
     metricId: comparisonProjection.outcome_metric,
     measurementUnit: comparisonProjection.outcome_unit,
     baselineValue: comparisonProjection.baseline_window.aggregate_value,
-    comparisonValue: comparisonProjection.comparison_window.aggregate_value
+    comparisonValue: comparisonProjection.comparison_window.aggregate_value,
+    approvedMetricDirection: claimInput.movement.approved_metric_direction
   });
   if (
     aggregateClaimHash("FT_AGGREGATE_CLAIM_DERIVED_MOVEMENT_COMPARE_V1", derivedMovement) !==
@@ -581,6 +589,11 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
     policy_version: claimInput.policy_version,
     template_id: claimInput.template_id,
     slice_commitment: sliceCommitment,
+    ...(input.canonicalIdentityCoreCommitment === undefined
+      ? {}
+      : {
+          canonical_identity_core_commitment: exactHash.parse(input.canonicalIdentityCoreCommitment)
+        }),
     movement: derivedMovement,
     caveats: claimInput.caveats,
     model_use_authorized: false,
@@ -594,6 +607,11 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
     policy_version: AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION,
     template_id: AGGREGATE_DESCRIPTIVE_CLAIM_TEMPLATE_ID,
     slice_commitment: claimContent.slice_commitment,
+    ...(claimContent.canonical_identity_core_commitment === undefined
+      ? {}
+      : {
+          canonical_identity_core_commitment: claimContent.canonical_identity_core_commitment
+        }),
     claim_content_hash: claimContentHash,
     movement: claimContent.movement,
     caveats: claimContent.caveats,
@@ -606,6 +624,11 @@ export const buildAggregateClaimAuthorizationBundle = (input: {
   const core = AggregateClaimManifestCoreSchema.parse({
     policy_version: AGGREGATE_CLAIM_AUTHORIZATION_POLICY_VERSION,
     slice_commitment: claimContent.slice_commitment,
+    ...(claimContent.canonical_identity_core_commitment === undefined
+      ? {}
+      : {
+          canonical_identity_core_commitment: claimContent.canonical_identity_core_commitment
+        }),
     source_graph: sourceGraph,
     readiness_ref_commitment: aggregateClaimSourceRefCommitment(
       "evidence_readiness",
@@ -695,6 +718,12 @@ export const aggregateClaimBundleReconciles = (input: {
       policy_version: claim.data.content.policy_version,
       template_id: claim.data.content.template_id,
       slice_commitment: claim.data.content.slice_commitment,
+      ...(claim.data.content.canonical_identity_core_commitment === undefined
+        ? {}
+        : {
+            canonical_identity_core_commitment:
+              claim.data.content.canonical_identity_core_commitment
+          }),
       claim_content_hash: claimContentHash,
       movement: claim.data.content.movement,
       caveats: claim.data.content.caveats,
@@ -727,6 +756,10 @@ export const aggregateClaimBundleReconciles = (input: {
       manifest.data.core.packet_content_hash === packetContentHash &&
       manifest.data.core.slice_commitment === claim.data.content.slice_commitment &&
       packet.data.content.slice_commitment === claim.data.content.slice_commitment &&
+      manifest.data.core.canonical_identity_core_commitment ===
+        claim.data.content.canonical_identity_core_commitment &&
+      packet.data.content.canonical_identity_core_commitment ===
+        claim.data.content.canonical_identity_core_commitment &&
       manifest.data.manifest_hash === expectedManifestHash &&
       manifest.data.manifest_id === expectedManifestId &&
       claim.data.manifest_id === expectedManifestId &&

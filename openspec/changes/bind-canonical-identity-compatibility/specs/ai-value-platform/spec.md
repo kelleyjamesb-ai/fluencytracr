@@ -32,6 +32,12 @@ Measurement Plan version. Slice E authority SHALL require that binding to be
 approved, aggregate-only, and exact for organization, workflow, JBTD, persona,
 baseline window, comparison window, metric ID, version-bearing definition
 ref/hash, outcome source, unit, direction, aggregate grain, and plan version.
+The E-capable binding SHALL retain only domain-separated commitments for the
+workflow, JBTD, and persona join keys, and the server SHALL recompute them from
+the authoritative aggregate slice before granting authority. It SHALL retain
+the approving role only as a compiled non-personal role code plus its
+separately domain-separated commitment. Arbitrary or person-shaped approving
+roles and caller-supplied role commitments SHALL hold.
 
 #### Scenario: Existing plan omits Slice E binding
 
@@ -221,6 +227,17 @@ readout.
   journal, source guards, or trigger function
 - **THEN** structural readiness and PostgreSQL verification SHALL fail
 - **AND** Slice E authority SHALL remain unavailable
+
+#### Scenario: Elevated or missing Slice E runtime credential
+
+- **WHEN** `SLICE_E_RUNTIME_DATABASE_URL` is missing
+- **OR** its authenticated `session_user` and effective `current_user` are not
+  both the exact `fluencytracr_slice_e_runtime` login
+- **OR** that login is superuser, bypass-RLS, role-creating, or
+  database-creating
+- **THEN** Slice E source creation, loading, sealing, and readout authority
+  SHALL remain unavailable
+- **AND** the general database credential SHALL NOT substitute
 
 #### Scenario: Historical backfill is inconsistent
 

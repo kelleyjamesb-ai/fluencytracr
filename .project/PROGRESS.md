@@ -4679,3 +4679,111 @@
 - Activation state is designed and locally validated only. It is not yet
   committed, pushed, in a PR, merged, implemented, deployed, or applied to any
   production database.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice E runtime candidate)
+
+- Started the runtime implementation from fresh current `main` at
+  `c995521a`, the normal merge of activation PR #462. Scope remains frozen to
+  the single Slice E compatibility binding; Slice F, deployment, publication,
+  production migration application, new events/reasons/thresholds, individual
+  fields, scoring, ROI, causality, prediction, and customer-facing output
+  remain excluded.
+- Added exact hypothesis, Measurement Plan, and Measurement Cell source
+  authority with distinct Slice-E-only HMAC domains, exact parent edges,
+  canonical metric and slice commitments, deterministic family locks, and one
+  append-only family-head journal. Existing records and D readouts remain
+  explicitly `UNBOUND`; a supplied invalid E selector fails closed without
+  downgrade.
+- Added the fourth reserved, insert-or-exact canonical compatibility binding.
+  The server reconstructs the complete current B/C.1/D/E chain, binds the
+  canonical core before D content-derived IDs, atomically seals the four
+  artifacts, and revalidates the exact renderer bytes and bundle attestation
+  before a readout can set source-bound and canonical headers true.
+- Synchronized Prisma SQL, post-push CI installation, structural readiness,
+  shared contracts, JSON Schema, docs, OpenSpec, route behavior, repository
+  tests, and the real PostgreSQL verifier. The runtime defect found during the
+  verifier was Prisma attempting to deserialize the `void` advisory-lock
+  result; both new Slice E lock sites now execute the lock statement without
+  deserializing a result row.
+- Fresh focused evidence passed: shared and backend builds; 9 backend suites,
+  134/134 tests; measurement-plan and metric contract tests, 65/65; strict
+  OpenSpec; whitespace; and disposable PostgreSQL 16 C.0, C.1, and D/E
+  verification, including exact privilege-drift detection, direct journal
+  write denial, source/journal append-only guards, gap and wrong-predecessor
+  rejection, exact journal/HMAC authority, one four-artifact bound bundle,
+  forged bundle-MAC rejection, race/mutation defenses, and C.1 revocation
+  readback.
+- State: designed and locally implemented and focused-verified. It is not yet
+  committed, exact-SHA reviewed, full-suite verified, pushed, in a PR, merged,
+  deployed, or applied to production. Next: create the immutable local
+  candidate commit, run exact-SHA CODE/BUG/ADVERSARIAL review in parallel,
+  repair only an executable authorization/privacy or nine-invariant blocker,
+  then run the full required suite once on the final reviewed SHA.
+- Froze candidate `af82d7228b73870c31c9415e1db2dd27a309aa88`.
+  Exact-SHA CODE review returned `HOLD`, and the BUG and ADVERSARIAL reviews
+  independently reproduced the same authorization boundary before their
+  final report channels were interrupted. The executable blockers were:
+  post-seal hypothesis supersession still returned `BOUND`; raw
+  person-identifiable text such as `persona_id: "james_kelley"` entered the
+  E-capable plan binding; and Slice E source paths used the general
+  database-owner credential instead of the restricted Slice E role.
+- Repaired only those demonstrated failures. Post-commit authorization now
+  rebuilds and exact-compares the full current canonical source/journal
+  authority. The E-capable plan binding retains domain-separated workflow,
+  JBTD, and persona commitments rather than raw join keys. Slice E source
+  creation, loading, journal readback, and family locks require the exact
+  `fluencytracr_slice_e_runtime` login from `SLICE_E_RUNTIME_DATABASE_URL`;
+  its advisory family locks span the separate atomic four-artifact seal, so
+  C.1 RLS policy history on `ai_value_objects` remains unchanged.
+- Fresh repair evidence passed: shared/backend builds; 10 focused backend
+  suites, 133/133 tests; 56/56 Measurement Plan contract tests; strict
+  OpenSpec; whitespace; and disposable PostgreSQL 16 C.0/C.1/D/E verification.
+  The PostgreSQL verifier now executes the elevated-credential rejection,
+  commitment-only slice binding, and post-seal canonical supersession HOLD.
+- State: the replacement tree is designed, locally implemented, and
+  focused-verified. It is not yet committed, exact-SHA rereviewed,
+  full-suite verified, pushed, in a PR, merged, deployed, or applied to
+  production. Next: freeze the replacement commit and rerun exact-SHA
+  CODE/BUG/ADVERSARIAL review in parallel.
+- Froze replacement `c749864eea4bf9ae549ec6b0f5f0ce7c0ad77556`.
+  Exact-SHA CODE, BUG, and ADVERSARIAL rereviews returned `HOLD` on two
+  executable residuals: an elevated authenticated session could use
+  `SET ROLE fluencytracr_slice_e_runtime` to pass the effective-role-only
+  credential check, and a raw personal email could still enter the
+  E-capable binding through `approved_by_role`.
+- Repaired only those residuals. Slice E now requires both `session_user` and
+  `current_user` to be the exact restricted login, and the source loader
+  independently enforces that credential. The E-capable binding now retains
+  an `approved_by_role_commitment` instead of raw approving-role text.
+  Executable regressions cover `SET LOCAL ROLE` substitution, owner-URL
+  rejection for an already-bound readout, and a personal-email approver.
+- Fresh repair evidence passed: shared/backend builds; 56/56 Measurement Plan
+  contract tests; focused runtime/binding/authorization tests; strict
+  OpenSpec; whitespace; and a fresh disposable PostgreSQL 16 C.0/C.1/D/E
+  sequence including the new credential-substitution and existing-readout
+  rejection probes.
+- State: the second replacement tree is designed, locally implemented, and
+  focused-verified. It is not yet committed, exact-SHA rereviewed,
+  full-suite verified, pushed, in a PR, merged, deployed, or applied to
+  production. Next: freeze a new replacement commit and rerun all three
+  exact-SHA reviews.
+- Froze second replacement
+  `df78416b6d77c92b6c458ab0e861b8e530a464ce`. Exact BUG and ADVERSARIAL
+  rereviews returned `GO`; CODE returned `HOLD` with executable invariant-5
+  proof that the deterministic approval-role commitment helper still accepted
+  an arbitrary personal email, producing a joinable commitment that could
+  reach a bound readout.
+- Repaired only that privacy residual. Slice E now accepts exactly the
+  compiled non-personal approval-role codes `value_realization_pm` and
+  `business_sponsor`; the builder derives and stores the matching commitment,
+  and validation requires the safe code/commitment pair. Arbitrary role text,
+  personal email, and caller-supplied role commitments fail before binding.
+- Fresh repair evidence passed: shared/backend builds; 56/56 Measurement Plan
+  contract tests including personal-role rejection; 69 focused persistence,
+  authorization, and binding tests; strict OpenSpec; and a fresh disposable
+  PostgreSQL 16 C.0/C.1/D/E sequence with the complete prior attack coverage.
+- State: the third replacement tree is designed, locally implemented, and
+  focused-verified. It is not yet committed, exact-SHA rereviewed,
+  full-suite verified, pushed, in a PR, merged, deployed, or applied to
+  production. Next: freeze a new replacement commit and rerun all three
+  exact-SHA reviews.

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { disconnectCanonicalIdentityRuntimePrisma } from "./canonical-identity-runtime-client";
 import { disconnectOutcomeComparisonRuntimePrisma } from "./outcome-comparison-runtime-client";
 
 let prisma: PrismaClient | null = null;
@@ -11,6 +12,7 @@ export const getPrisma = () => {
 };
 
 export const disconnectPrisma = async () => {
+  await disconnectCanonicalIdentityRuntimePrisma();
   await disconnectOutcomeComparisonRuntimePrisma();
   if (!prisma) {
     return;
