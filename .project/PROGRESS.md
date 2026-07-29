@@ -4349,3 +4349,40 @@
   independent CODE/BUG/ADVERSARIAL review remains required. Boundary remains
   local only: no commit, push, PR, migration apply outside ephemeral test
   databases, deployment, publication, or live proof.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII C.1 merge and Slice D reactivation)
+
+- C.1 PR #458 merged normally as `9aab826`; its merge tree exactly matched
+  reviewed head `83c51cc`. All current-head checks passed, all three GitHub
+  review threads were resolved, and replacement CODE/BUG/ADVERSARIAL review
+  returned `GO/GO/GO`.
+- The final review repair permits an inactive, unreferenced attestation key to
+  be staged without making existing instances unready, still requires the
+  active key and every non-revoked release-referenced key to have a matching
+  configured secret, and removes effective `CREATE` authority on schema
+  `public` from both restricted roles. The clean PostgreSQL 16 verifier and
+  exact-head Assurance job passed.
+- C.1 is now `done`. Slice D is the sole `in_progress` queue item. The earlier
+  D blocker is resolved only by the C.1 exact two-window readback; the C.1
+  receipt itself remains non-authorizing and must not be substituted for a
+  server-owned claim-authorization decision.
+- Reopened `harden-aggregate-claim-authorization` as a contract-first Slice D
+  activation from current `main`. The revised design must derive the expected
+  exact slice from authoritative stored evidence/readiness, load one C.1
+  receipt through bounded readback, reconcile the complete returned
+  projection, and keep all adjacent gates separate.
+- Strict OpenSpec validation passed. Exact preimplementation
+  CODE/BUG/ADVERSARIAL review returned `GO/GO/GO` after closing executable
+  authorization/privacy failures: one receipt authorizes exactly one
+  movement; the real-evidence materializer persists and hash-seals the
+  generated scenario and source graph without conflating later human review;
+  request IDs only match server-derived lineage; a serializable locked source
+  snapshot atomically inserts-or-exact-compares reserved internal artifacts;
+  manifest-derived IDs are non-circular; arithmetic overflow holds; and every
+  unauthorized value-chain, spine, or HTML path redacts all claim material.
+- C.1 remains the immutable merged prerequisite at `9aab826`; no additional
+  C.1 architecture or scope was introduced. Next: commit this state-and-contract
+  activation packet, push and normally merge it after current-head checks,
+  then implement Slice D from that fresh merged `main`. No Slice D product
+  implementation, migration, deployment, publication, or live proof has
+  occurred.
