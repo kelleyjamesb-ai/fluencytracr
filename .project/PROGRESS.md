@@ -4467,3 +4467,18 @@
   shared/backend build with Prisma generation, strict OpenSpec, whitespace,
   runtime/JSON Schema vocabulary parity, and the real Slice D PostgreSQL
   verifier against disposable local PostgreSQL.
+- Exact review of commit `2b4efa4` confirmed the prior source-label fix but
+  found two executable stored-artifact gaps: the manifest projection did not
+  independently reuse the compiled metric/unit enums, and generic slice,
+  source, readiness, and evidence IDs could contain person/direct-identifier
+  or unsupported-claim tokens.
+- The fourth D-only remediation makes the manifest projection reuse all three
+  compiled vocabularies and applies one aggregate-safe lowercase identifier
+  boundary across every Slice D stored identity field. Contract, JSON Schema,
+  OpenSpec, builder tests, and PostgreSQL fixed-HOLD probes are synchronized.
+  C.1 schemas, SQL, policies, privileges, release/readback behavior, and
+  architecture remain unchanged.
+- Post-remediation focused verification again passes 71/71 backend tests,
+  shared/backend build with Prisma generation, strict OpenSpec, whitespace,
+  builder/reconciler rejection probes, and the real Slice D PostgreSQL
+  verifier against disposable local PostgreSQL.

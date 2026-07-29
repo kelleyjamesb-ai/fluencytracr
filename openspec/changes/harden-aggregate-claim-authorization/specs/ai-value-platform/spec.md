@@ -152,6 +152,15 @@ label that movement `OBSERVED_NON_ATTRIBUTABLE`.
 - **AND** the arbitrary label SHALL NOT enter an internal artifact or fixed
   held response
 
+#### Scenario: Person-shaped or claim-bearing aggregate identity
+
+- **WHEN** any Slice D slice, source-graph, readiness, or C.1 evidence
+  identifier contains person/direct-identifier tokens or unsupported claim
+  semantics
+- **THEN** claim authorization SHALL hold before artifact generation
+- **AND** the identifier SHALL NOT enter a claim, packet, manifest, or fixed
+  held response
+
 #### Scenario: Multiple movement or overflow attempt
 
 - **WHEN** an invocation requests or derives a second movement or metric, or

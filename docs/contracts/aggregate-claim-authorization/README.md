@@ -42,6 +42,14 @@ customer-authored strings from entering the internal authorization manifest.
 Upstream storage, review, and C.1 release remain non-authorizing for this
 boundary.
 
+Every Slice D slice, source-graph, readiness, and C.1 evidence identifier must
+also pass the aggregate-safe identifier boundary before artifact generation.
+The boundary accepts only lowercase machine identifiers and rejects
+identifier tokens associated with people, direct identifiers, causal or
+attribution claims, model output, financial/ROI claims, productivity,
+prediction, ranking, scoring, and customer-facing authorization. This is a
+Slice D storage boundary; it does not alter upstream C.1 contracts.
+
 ## Authority chain
 
 1. Real-evidence materialization persists its generated scenario and seals the

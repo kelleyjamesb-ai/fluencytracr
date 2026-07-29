@@ -10,9 +10,9 @@
     },
     "safe_id": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]{0,511}$",
+      "pattern": "^[a-z0-9][a-z0-9:_-]{0,511}$",
       "not": {
-        "pattern": "(^|[_:-])(causal|causality|confidence|dollar|impact|improvement|individual|money|prediction|probability|productivity|rank|revenue|roi|score)($|[_:-])"
+        "pattern": "(^|[_:-])(attributable|attribution|cause|caused|causal|causality|confidence|dollar|email|employee|facing|impact|improvement|individual|member|model|money|name|participant|person|prediction|probability|productivity|rank|respondent|revenue|roi|score|subject|user)($|[_:-])"
       }
     },
     "manifest_id": {
@@ -325,6 +325,16 @@
                 },
                 {
                   "properties": {
+                    "org_id": { "$ref": "#/$defs/safe_id" },
+                    "workflow_id": { "$ref": "#/$defs/safe_id" },
+                    "jbtd_id": { "$ref": "#/$defs/safe_id" },
+                    "persona_id": { "$ref": "#/$defs/safe_id" },
+                    "outcome_metric": {
+                      "$ref": "#/$defs/movement/properties/metric_id"
+                    },
+                    "outcome_unit": {
+                      "$ref": "#/$defs/movement/properties/measurement_unit"
+                    },
                     "source_system": {
                       "enum": [
                         "Aggregate AI Work Evidence",
@@ -336,6 +346,16 @@
                         "Support case management system",
                         "customer_crm"
                       ]
+                    },
+                    "baseline_window": {
+                      "properties": {
+                        "evidence_id": { "$ref": "#/$defs/safe_id" }
+                      }
+                    },
+                    "comparison_window": {
+                      "properties": {
+                        "evidence_id": { "$ref": "#/$defs/safe_id" }
+                      }
                     }
                   }
                 }

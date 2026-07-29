@@ -198,6 +198,9 @@ The synchronized JSON Schema is the normative enumeration for both compiled
 movement vocabularies and the compiled server-owned source-system vocabulary.
 Upstream storage, accepted review, and C.1 release do not add metric
 identifiers, measurement units, or source labels to Slice D authority.
+Every slice, source-graph, readiness, and C.1 evidence identifier is
+independently revalidated by the Slice D aggregate-safe identifier boundary
+before it can enter a reserved artifact.
 
 ### Internal artifact namespace and non-circular identity
 

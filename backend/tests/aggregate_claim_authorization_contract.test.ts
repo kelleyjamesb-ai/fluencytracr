@@ -274,12 +274,42 @@ describe("aggregate claim authorization contracts", () => {
         }
       })
     ).toBe(false);
+    for (const unsafeProjection of [
+      { ...comparisonProjection, outcome_metric: "james.kelley@glean.com" },
+      { ...comparisonProjection, outcome_unit: "james.kelley@glean.com" },
+      { ...comparisonProjection, source_system: "james.kelley@glean.com" },
+      { ...comparisonProjection, persona_id: "employee_12345" },
+      { ...comparisonProjection, workflow_id: "outcome_caused_by_ai" },
+      {
+        ...comparisonProjection,
+        baseline_window: {
+          ...comparisonProjection.baseline_window,
+          evidence_id: "user_james_kelley"
+        }
+      }
+    ]) {
+      expect(() =>
+        buildAggregateClaimAuthorizationBundle({
+          ...bundleInput,
+          comparisonProjection: unsafeProjection
+        })
+      ).toThrow();
+    }
     expect(() =>
       buildAggregateClaimAuthorizationBundle({
         ...bundleInput,
-        comparisonProjection: {
-          ...comparisonProjection,
-          source_system: "james.kelley@glean.com"
+        claimContent: {
+          ...bundleInput.claimContent,
+          persona_id: "employee_12345"
+        }
+      })
+    ).toThrow();
+    expect(() =>
+      buildAggregateClaimAuthorizationBundle({
+        ...bundleInput,
+        sourceGraphSeal: {
+          ...sourceGraphSeal,
+          scenario_id: "outcome_caused_by_ai"
         }
       })
     ).toThrow();

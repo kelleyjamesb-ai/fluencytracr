@@ -378,6 +378,18 @@ expectHeld(
   }),
   "identifier-bearing source-system projection"
 );
+expectHeld(
+  await authorizeAggregateClaim(authorizationRequest, {
+    readComparison: async () => ({
+      ...selected.result,
+      projection: {
+        ...selected.result.projection,
+        persona_id: "employee_12345"
+      }
+    })
+  }),
+  "identifier-bearing persona projection"
+);
 
 const sourceRefs = [
   { objectType: "outcome_evidence_export", objectId: outcomeExportId },

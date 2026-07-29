@@ -4,6 +4,7 @@ import { z } from "zod";
 import { canonicalCohortJsonBytes } from "../cohortProof";
 import {
   OutcomeComparisonPrivacyReceiptSchema,
+  OutcomeComparisonProjectionWindowSchema,
   OutcomeComparisonProjectionSchema
 } from "../outcomeComparisonPrivacy";
 
@@ -80,9 +81,9 @@ export const AGGREGATE_CLAIM_SOURCE_SYSTEMS = [
 ] as const;
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
-const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9:_-]{0,511}$/;
+const SAFE_ID = /^[a-z0-9][a-z0-9:_-]{0,511}$/;
 const FORBIDDEN_CLAIM_TOKEN =
-  /(?:^|[_:-])(?:causal|causality|confidence|dollar|impact|improvement|individual|money|prediction|probability|productivity|rank|revenue|roi|score)(?:$|[_:-])/i;
+  /(?:^|[_:-])(?:attributable|attribution|cause|caused|causal|causality|confidence|dollar|email|employee|facing|impact|improvement|individual|member|model|money|name|participant|person|prediction|probability|productivity|rank|respondent|revenue|roi|score|subject|user)(?:$|[_:-])/;
 
 const safeId = z
   .string()
@@ -96,9 +97,22 @@ const nonNegativeInteger = z.number().int().nonnegative();
 export const AggregateClaimMeasurementUnitSchema = z.enum(AGGREGATE_CLAIM_MEASUREMENT_UNITS);
 export const AggregateClaimMetricIdSchema = z.enum(AGGREGATE_CLAIM_METRIC_IDS);
 export const AggregateClaimSourceSystemSchema = z.enum(AGGREGATE_CLAIM_SOURCE_SYSTEMS);
+export const AggregateClaimProjectionWindowSchema = OutcomeComparisonProjectionWindowSchema.and(
+  z.object({
+    evidence_id: safeId
+  })
+);
 export const AggregateClaimComparisonProjectionSchema = OutcomeComparisonProjectionSchema.and(
   z.object({
-    source_system: AggregateClaimSourceSystemSchema
+    org_id: safeId,
+    workflow_id: safeId,
+    jbtd_id: safeId,
+    persona_id: safeId,
+    outcome_metric: AggregateClaimMetricIdSchema,
+    outcome_unit: AggregateClaimMeasurementUnitSchema,
+    source_system: AggregateClaimSourceSystemSchema,
+    baseline_window: AggregateClaimProjectionWindowSchema,
+    comparison_window: AggregateClaimProjectionWindowSchema
   })
 );
 
