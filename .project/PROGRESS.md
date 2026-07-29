@@ -5034,3 +5034,35 @@
   authenticated/live proof was performed. The required full suite, GitHub
   current-head checks and review resolution, normal merge, and any separately
   authorized deployment/live proof remain open.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice F suite precondition)
+
+- The first full-suite attempt on evidence candidate
+  `d255dbfc6ec0174ab97bd006b434fb668091861d` ran
+  `./harness/scripts/bootstrap.sh` successfully. The next command,
+  `./harness/scripts/verify.sh`, stopped during its dependency setup before
+  any tests ran because Homebrew Python enforced PEP 668 against system
+  package installation. Full-suite commands 3 through 14 were not run as part
+  of that attempt. This is a harness precondition failure, not a product test
+  failure; no product failure was observed and no source file was edited.
+- Bootstrap-created untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml` were
+  moved recoverably to
+  `/tmp/fluencytracr-slice-f-pnpm-artifacts.C1rwVW`, restoring the worktree to
+  a clean state without deleting the artifacts.
+- A task-local external virtual environment now exists at
+  `/tmp/fluencytracr-slice-f-suite-venv.BSocHx/venv`; its requirements are
+  installed and `python -m pytest --version` reports `pytest 9.1.1`. After
+  this evidence-only replacement candidate receives exact-SHA review, the
+  suite will run once with `PATH` prefixed to that virtual environment so the
+  unchanged harness resolves its Python and pytest without modifying the
+  repository.
+- This replacement state commit changes no runtime file. Its runtime tree is
+  unchanged from reviewed runtime candidate
+  `5518970297a9a78adcdf1d6aa5611eb30ee0f70f`, so the prior final runtime
+  CODE/BUG/ADVERSARIAL findings remain relevant; the new exact evidence SHA
+  still requires review before the one full-suite run. OpenSpec task 5.2
+  remains open.
+- No test suite or full suite completed, and no runtime or OpenSpec checklist
+  file, queue item, product source, push, PR, merge, deployment, migration,
+  production mutation, publication, or authenticated/live action occurred in
+  this precondition update.
