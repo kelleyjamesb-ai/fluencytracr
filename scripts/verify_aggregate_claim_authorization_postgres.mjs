@@ -205,18 +205,19 @@ assert(
   )}`
 );
 
+const materializationInput = {
+  blueprint_id: blueprint.blueprint_id,
+  metrics_library_id: metricsLibrary.library_id,
+  cohort_id: cohortId,
+  workflow_id: aggregateWorkflowId,
+  outcome_workflow_id: projection.workflow_id,
+  jbtd_id: projection.jbtd_id,
+  persona_id: projection.persona_id
+};
 const materialized = await request(app)
   .post("/api/v1/ai-value/materialize/real-evidence")
   .set(writeAuth)
-  .send({
-    blueprint_id: blueprint.blueprint_id,
-    metrics_library_id: metricsLibrary.library_id,
-    cohort_id: cohortId,
-    workflow_id: aggregateWorkflowId,
-    outcome_workflow_id: projection.workflow_id,
-    jbtd_id: projection.jbtd_id,
-    persona_id: projection.persona_id
-  })
+  .send(materializationInput)
   .expect(200);
 const outcomeExportId = materialized.body.objects?.outcome_evidence_export?.export_id;
 const readinessId = materialized.body.objects?.evidence_readiness?.readiness_id;
@@ -228,6 +229,20 @@ await request(app)
   .set(writeAuth)
   .send({ decision: "ACCEPTED", reviewer_role: "ADMIN" })
   .expect(200);
+
+const acceptedMaterialization = await request(app)
+  .post("/api/v1/ai-value/materialize/real-evidence")
+  .set(writeAuth)
+  .send(materializationInput)
+  .expect(200);
+assert(
+  acceptedMaterialization.body.objects?.outcome_evidence_export?.export_id ===
+    outcomeExportId &&
+    acceptedMaterialization.body.objects?.evidence_readiness?.readiness_id ===
+      readinessId &&
+    acceptedMaterialization.body.objects?.value_scenario?.scenario_id === scenarioId,
+  "accepted rematerialization changed exact source graph identities"
+);
 
 const authorizationRequest = {
   orgId,
