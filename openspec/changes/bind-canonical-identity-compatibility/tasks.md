@@ -93,9 +93,9 @@
       upgrade/body drift, C.1 revocation, and readout rebuilding.
 - [x] 4.2 Run focused shared/backend identity, D authorization, value-chain,
       object API, and readout tests plus shared/backend builds.
-- [ ] 4.3 Run V1 governance, Assurance Harness, docs sweep, JSON parsing,
+- [x] 4.3 Run V1 governance, Assurance Harness, docs sweep, JSON parsing,
       strict OpenSpec, and `git diff --check`.
-- [ ] 4.4 Freeze an immutable implementation candidate, obtain exact-candidate
+- [x] 4.4 Freeze an immutable implementation candidate, obtain exact-candidate
       CODE/BUG/ADVERSARIAL review, repair only executable invariant failures,
       and run the full required suite once on the final reviewed SHA.
 - [x] 4.5 Update only the Slice E queue status/last note and canonical
