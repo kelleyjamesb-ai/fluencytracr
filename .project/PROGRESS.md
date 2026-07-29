@@ -4539,3 +4539,143 @@
   already-reviewed D behavior, not a runtime or architecture change. A new
   immutable SHA, replacement exact reviews, and one full suite on that final
   reviewed SHA remain required.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII Slice D merge and Slice E activation)
+
+- Slice D PR #460 merged normally as `e4f3d55` from exact reviewed head
+  `92431d9`; the merge tree exactly matched the reviewed tree. Every required
+  current-head GitHub check passed, all review threads were resolved, and
+  final exact-head CODE/BUG/ADVERSARIAL review returned `GO/GO/GO`.
+- The final D PostgreSQL 16 sequence passed C.0, C.1, and D verification,
+  including exact C.1 authorization, immutable replay, commitment-only
+  artifacts, coherent substitution rejection, cross-slice isolation,
+  mutation/race checks, and revocation readback. No production migration was
+  applied and nothing was deployed or published.
+- James added the bounded Slice E queue item on branch
+  `kelleyjamesb-ai-patch-7`. Queue-authority PR #461 passed current-head Agent
+  CI, Assurance, Node, Python, lint, governance, enforcement, dogfood, and
+  Vercel preview checks and merged normally as `bf00324`.
+- Started fresh branch
+  `codex/mcii-canonical-identity-binding-slice-e-v2` from exact current
+  `main` `bf00324`. Slice D is now `done` and Slice E is the sole
+  `in_progress` queue item.
+- Opened contract-first change `bind-canonical-identity-compatibility`. The
+  proposed single architectural move adds an approved exact-slice commitment
+  to new Measurement Plan versions, builds one server-owned compatibility
+  core across exact hypothesis/plan/Measurement Cell versions plus current
+  B/C.1/D evidence, binds that core into D artifact IDs, and atomically stores
+  one deterministic reserved final readout binding.
+- Existing callers remain additive and explicitly `UNBOUND`; a supplied
+  invalid selector cannot downgrade. Mutable/latest selectors lose authority,
+  and the MCII HTML readout may set source-bound/canonical status only after
+  full current-chain reconstruction. The binding stores commitments rather
+  than raw slice/source identifiers.
+- Next: validate JSON/queue/OpenSpec/whitespace, then obtain exact-packet
+  preimplementation CODE/BUG/ADVERSARIAL review. No Slice E runtime,
+  migration, endpoint, deployment, publication, or live proof is included in
+  this activation packet.
+- Froze the first activation packet at aggregate SHA-256
+  `debcd6ba53a554939a93a979783a0012840188057925880560f6186e06e0cf5f`
+  and design SHA-256
+  `1c50dfd97de1454a0ce57086a0a287f15b9f6b11df00f405b79341e7ba5543cf`.
+  Exact-packet CODE, BUG, and ADVERSARIAL reviews independently returned
+  `HOLD`.
+- The blocking executable failures were: selectors could splice compatible
+  current hypothesis/plan versions because child records lacked source-owned
+  parent-version commitments; an absent concurrent superseding child was not
+  serialized with E sealing; the existing Measurement Cell metric hash had
+  incompatible legacy semantics; renderer drift could change canonical HTML
+  without changing the binding; and a direct database writer could insert
+  source-consistent reserved artifacts without non-forgeable creation
+  authority.
+- Revised only the activation contract. New E-capable plan/cell records carry
+  server-stamped parent-version commitments; append writers and E sealing
+  share deterministic source-family advisory locks; E uses a separately
+  named canonical metric-definition commitment; the binding commits a fixed
+  renderer version and exact HTML bytes; and a Slice-E-specific service-held
+  HMAC attests the four-artifact bundle in the private validation envelope.
+  Existing records remain `UNBOUND`.
+- The repair does not add a database migration and does not read, write,
+  reuse, extend, or change the C.1 key registry, activation/revocation
+  journals, provisioner, functions, roles, or migration. Next: validate and
+  freeze the revised packet, then rerun exact-packet CODE/BUG/ADVERSARIAL
+  review before any runtime implementation.
+- Froze the first repaired packet at aggregate SHA-256
+  `16179a2cb091cf2ce4eed0bd0e9f3b6fef1d0da9790592da4a9843561675ec31`
+  and design SHA-256
+  `921a166c78488df055cd91bf65a5992932e9a28c2b542cc7828bec2c9860370c`.
+  Exact CODE, BUG, and ADVERSARIAL rereviews again returned `HOLD` on two
+  executable authorization defects.
+- A renderer correction changed final binding bytes but not the packet-derived
+  binding ID, so insert-or-exact recovery was impossible. The revised core now
+  binds the fixed renderer schema/template/projection version before D IDs;
+  the final binding adds the exact rendered-body hash. A renderer correction
+  therefore requires a new version and receives new D, packet, and binding
+  IDs, while same-version drift holds.
+- Plan/cell parent edges were server-stamped but unauthenticated JSON, allowing
+  a direct database writer to inject consistent lineage that the legitimate
+  service could later attest downstream. The same Slice E service-held key
+  family now HMAC-attests each plan and cell edge inside its append transaction
+  under separate domains, and the verified edge envelopes enter the canonical
+  core before the separately domain-attested four-artifact bundle. Legacy
+  unattested rows remain `UNBOUND`.
+- Next: validate and freeze this second repair, then rerun exact-packet
+  CODE/BUG/ADVERSARIAL review. Runtime implementation remains blocked until
+  all three return `GO`.
+- Froze the second repaired packet at aggregate SHA-256
+  `3e0f491391b28cf249ccc8f6dbfe98b17785fed090a2fa5254742e0a61fcb943`
+  and design SHA-256
+  `4bac5cea8f9f7421953a18da720adcf84b500736616dc731dc667ada35c78920`.
+  Exact CODE review returned `GO`; BUG and ADVERSARIAL returned `HOLD` on one
+  remaining executable creation-authority path.
+- The plan-edge MAC proved that a trusted plan append observed an exact
+  hypothesis, but did not prove the root hypothesis itself came through a
+  trusted append. A direct database writer could inject an approved-looking
+  hypothesis before plan creation and the legitimate plan/cell/bundle paths
+  would then attest it downstream.
+- The revised packet adds
+  `FT_CANONICAL_VALUE_HYPOTHESIS_CREATION_ATTESTATION_V1` under a distinct
+  Slice E domain. It binds organization, exact internal row key, stable
+  identity/version, complete non-circular semantic projection,
+  approval/status, and fixed root or exact verified predecessor lineage.
+  Plan/cell attestations also bind exact child and parent internal row keys,
+  so copied MACs and delete/reinsert under a new physical row hold. The
+  verified hypothesis attestation enters both the plan edge and canonical
+  core. Existing unattested hypotheses remain `UNBOUND`.
+- Next: validate and freeze this third repair, then rerun exact-packet
+  CODE/BUG/ADVERSARIAL review. No runtime, migration, deployment, or C.1
+  authority change has started.
+- Froze the third repaired packet at aggregate SHA-256
+  `963f6b4a47165ca3af2122eb2cfd0af2fb91b89fd61f7a5394cdc735467e17b1`
+  and design SHA-256
+  `104d6a02ab4fe49e56e790657a182702689b3b156c4694a0e889f2f719180ff5`.
+  Exact CODE and ADVERSARIAL review returned `GO`; BUG returned `HOLD` on one
+  executable rollback path.
+- Remaining-row HMAC chains could not prove that a newer legitimately
+  attested tail had not been deleted. A direct runtime database writer could
+  delete H2/P2/C2 and make still-valid H1/P1/C1 bytes appear current again.
+  Advisory locks do not constrain such direct SQL mutation.
+- The queue excludes production migration application, not a locally verified
+  migration artifact. The revised packet therefore adds one Slice-E-only
+  append-only family-head journal maintained by source-table insert triggers,
+  exact next-version/predecessor enforcement, source/journal UPDATE/DELETE
+  guards, restricted runtime ACLs, pinned security-definer ownership, and
+  structural privilege-drift checks. E sealing/readout exact-match the durable
+  journal tail. An unattested direct append can force a fail-closed head but
+  cannot resurrect an older source.
+- The migration will run only against disposable local/CI PostgreSQL in this
+  slice. It will not be applied to production and does not modify C.1 tables,
+  keys, journals, provisioner, functions, roles, or privileges. Next: validate
+  and freeze the fourth repair for exact CODE/BUG/ADVERSARIAL rereview.
+- Froze the final activation packet at aggregate SHA-256
+  `3d9881f80860a847f2d2233427847b88da412dd042f1a0e90159accbaf54c8ec`
+  and design SHA-256
+  `7564c40764af3d6d59054ca37dd0ec576ae9d25e26a23b1e87b94043c7a0cea8`.
+  Exact CODE, BUG, and ADVERSARIAL review returned `GO/GO/GO`. Review found no
+  executable authorization/privacy failure or violation of the nine
+  invariants. Nonblocking implementation guidance is to pin security-definer
+  search paths to non-writable schemas with schema-qualified objects and lock
+  source tables during backfill/enforcement cutover.
+- Activation state is designed and locally validated only. It is not yet
+  committed, pushed, in a PR, merged, implemented, deployed, or applied to any
+  production database.

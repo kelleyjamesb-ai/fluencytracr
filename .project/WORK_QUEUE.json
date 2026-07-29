@@ -369,9 +369,9 @@
   "id": "mcii-aggregate-evidence-claim-semantics-slice-d",
   "title": "MCII Slice D — aggregate evidence approval, claim semantics, and manifest hygiene",
   "bound": "Aggregate evidence interpretation and claim-authorization paths only; acceptance: one authoritative policy keeps import or schema approval, accepted review, privacy release, readiness, and model eligibility separate from claim authorization; bounded templates permit only descriptive baseline, comparison, absolute delta, mechanically valid percent change, and declared-direction language labeled OBSERVED_NON_ATTRIBUTABLE; immutable manifests bind the admitted exact-slice input, policy state, template version, and produced artifact; missing, mutable, ambiguous, stale, or cross-slice references fail closed; unsupported causality, attribution, ROI, productivity, prediction, and customer-facing claims remain blocked; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates as required; exclude Slice E canonical identity binding, Slice F claim trace, deployment, publication, live GCP, runtime qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, or customer-facing economic output",
-  "status": "in_progress",
+  "status": "done",
   "risk": "high",
-  "last_note": "Implementation candidate prepared 2026-07-28 from merged activation main 599361f. Focused 58/58 and the real PostgreSQL Slice D verifier pass, including exact C.1 authorization, immutable replay, cross-slice/alternate-pair holds, staged and queued source mutation, artifact substitution, and revocation. Exact-commit CODE/BUG/ADVERSARIAL review, one final full suite, push, PR checks, and normal merge remain required. No migration apply or deployment."
+  "last_note": "Done 2026-07-29: PR #460 merged normally as e4f3d55 with reviewed head 92431d9 and an exact matching tree. Final CODE/BUG/ADVERSARIAL reviews returned GO, all review threads were resolved, and every required current-head check passed. No production migration, deployment, publication, or live proof."
     },
     {
   "id": "mcii-outcome-comparison-privacy-slice-c1",
@@ -393,9 +393,9 @@
   "id": "mcii-canonical-identity-compatibility-slice-e",
   "title": "MCII Slice E — append-only canonical identity compatibility binding",
   "bound": "Canonical identity compatibility binding only; acceptance: append-only identities bind the approved hypothesis, metric definition/version, exact slice/window, admitted evidence, and readout; reject stale, foreign, mutable, ambiguous, or cross-spliced lineage; source-bound or canonical status requires validation of the complete identity chain; preserve existing consumers through additive compatibility while obsolete mutable selectors lose authority; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and independent-slice governance; include focused tests, contracts, OpenSpec, progress, and queue updates; exclude Slice F claim trace, deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
-  "status": "pending",
+  "status": "in_progress",
   "risk": "high",
-  "last_note": "Human-authorized after the normal merge of Slice D PR #460. Activate only from fresh current main with contract-first design and required independent review before implementation."
+  "last_note": "Activated contract-first from main bf00324 after PR #461. Final packet 3d9881f/7564c40 passed exact CODE/BUG/ADVERSARIAL review GO/GO/GO after adding the Slice-E-only durable family-head journal and full HMAC chain. Activation commit/PR is next; migration remains local/CI only and production is untouched."
     }
   ]
 }
