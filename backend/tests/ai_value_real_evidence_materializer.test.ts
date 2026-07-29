@@ -165,7 +165,7 @@ describe("AI Value real evidence materializer", () => {
       workflow: "PRESENT",
       trust: "PRESENT",
       suppression: "PRESENT",
-      outcome: "PRESENT"
+      outcome: "MISSING"
     });
     expect(readiness.body.payload.source_refs.v3_verdict_id).toEqual(expect.any(String));
     expect(readiness.body.payload.source_refs.outcome_evidence_export_id).toEqual(

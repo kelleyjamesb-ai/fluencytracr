@@ -557,15 +557,22 @@ export async function materializeRealEvidence(
       ? { outcome_evidence_export_id: String(outcomeExport.export_id) }
       : {})
   };
+  const scenarioDraft = aiValueEngine.buildValueScenarioDraftFromBlueprintAndMetrics(
+    blueprint,
+    metricsLibrary
+  );
+  scenarioDraft.scenario_id = `scenario_${familySegment}_draft`;
+  const outcomeExportAccepted = aiValueEngine.reviewStateOf(outcomeExport) === "ACCEPTED";
   const spine = aiValueEngine.runSpine({
     blueprint,
     metricsLibrary,
+    scenario: scenarioDraft,
     ids: {
       readinessId: `readiness_${familySegment}_real_evidence_v1`
     },
     sourceCoverageOverrides: {
       ...coverage.overrides,
-      ...(outcomeExport?.export_id ? { outcome: "PRESENT" } : {})
+      ...(outcomeExportAccepted ? { outcome: "PRESENT" } : {})
     },
     evidenceRefs
   });
@@ -573,8 +580,7 @@ export async function materializeRealEvidence(
   const generatedScenario = spine.stages.scenario.object as Record<string, unknown> | null;
   if (
     !generatedScenario ||
-    !spine.stages.scenario.validation?.valid ||
-    !spine.stages.scenario.generated
+    !spine.stages.scenario.validation?.valid
   ) {
     throw new AiValueMaterializerValidationError(
       "AI Value spine did not produce a generated scenario",
@@ -612,6 +618,20 @@ export async function materializeRealEvidence(
           "outcome_evidence_export",
           String(outcomeExport.export_id)
         );
+  const sourcePayloadHash = (value: Record<string, unknown>): string =>
+    aiValueEngine.aggregateClaimHash("FT_AGGREGATE_CLAIM_SOURCE_PAYLOAD_V1", value);
+  if (
+    sourcePayloadHash(sealedBlueprint) !== sourcePayloadHash(blueprint) ||
+    sourcePayloadHash(sealedMetricsLibrary) !== sourcePayloadHash(metricsLibrary) ||
+    sourcePayloadHash(sealedScenario) !== sourcePayloadHash(persistedScenario) ||
+    (sealedOutcomeExport !== undefined &&
+      sourcePayloadHash(sealedOutcomeExport) !== sourcePayloadHash(outcomeExport!))
+  ) {
+    throw new AiValueMaterializerValidationError(
+      "AI Value source graph changed while materialization was being sealed",
+      ["source graph must remain exact across materialization"]
+    );
+  }
   await persistReadiness(
     input.orgId,
     readiness,

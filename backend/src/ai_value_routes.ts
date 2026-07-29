@@ -1044,21 +1044,23 @@ export function registerAiValueRoutes(app: Express): void {
         }
       });
 
-      run.stages.claim_boundary = {
-        status: "HELD",
-        validation: null,
-        object: null,
-        generated: false,
-        hold_reason: "server-owned aggregate claim authorization is required"
-      };
-      run.stages.executive_packet = {
-        status: "HELD",
-        validation: null,
-        object: null,
-        generated: false,
-        hold_reason: "server-owned aggregate claim authorization is required"
-      };
-      run.halted_at = "claim_authorization";
+      if (run.stages.readiness.status === "VALID") {
+        run.stages.claim_boundary = {
+          status: "HELD",
+          validation: null,
+          object: null,
+          generated: false,
+          hold_reason: "server-owned aggregate claim authorization is required"
+        };
+        run.stages.executive_packet = {
+          status: "HELD",
+          validation: null,
+          object: null,
+          generated: false,
+          hold_reason: "server-owned aggregate claim authorization is required"
+        };
+        run.halted_at = "claim_authorization";
+      }
 
       const persisted: Array<{ object_type: string; object_id: string }> = [];
       if (persist) {
