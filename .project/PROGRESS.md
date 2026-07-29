@@ -26,7 +26,7 @@
   AI Value, and pins their exact C.1 runtime read/lock policies. Real-role
   verification proves the required reads and AI Value row lock work while
   forbidden source writes and unused reads fail.
-- Fresh history-equivalent PostgreSQL 16 proof passed in 9.496 seconds. It
+- Fresh history-equivalent PostgreSQL 16 proof passed in 11.088 seconds. It
   starts with the historical Outcome Evidence and AI Value RLS posture before
   installing C.1 and covers 37
   rollback-scoped structural drift vectors, including cross-schema same-name
@@ -48,6 +48,21 @@
   missing-key/revocation, proof failure vectors, real mutation races, exact
   replay, durable readback, rollback, append-only behavior, sequential
   non-composition, and revocation serialization.
+- CI follow-through remediation is local for failed Assurance run
+  `30410853644`, job `90446347988`, at pushed head `5c77c1d3`. Both PostgreSQL
+  verifiers passed there, but the attestation rotation test had intentionally
+  left a revoked secondary key as the latest activation while the later
+  backend step correctly retained the workflow's primary-key configuration;
+  `/health` therefore stayed fail-closed for 120 seconds with
+  `outcome_comparison_attestation_runtime`. A fail-first terminal
+  direct-runtime `/ops/db/readiness` assertion reproduced that exact `503`.
+  The verifier now reactivates the valid primary after proving
+  `ACTIVE_KEY_INVALID` for the revoked secondary and reruns that real readiness
+  assertion before success. One fresh exact Assurance sequence passed C.0,
+  C.1 in 11.088 seconds, and then returned `/health` `200` on port 4002 with
+  `status=ok`, `db=postgres`, 47 tables, and zero fail-closed events. An
+  independent root rerun passed C.1 in 9.920 seconds and returned the same
+  `/health` result on port 4011. Commit/push and new-head CI remain required.
 - Current final-review verification is green: focused backend `218/218`;
   shared/backend builds; Prisma validation; V1 governance; docs sweep; strict
   OpenSpec; contract `6/6`; workflow YAML, queue JSON, verifier syntax,

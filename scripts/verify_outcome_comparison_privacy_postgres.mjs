@@ -2649,6 +2649,7 @@ const assertAttestationRotationAndRevocation = async () => {
       `revoked active key did not fail readiness: ${JSON.stringify(readinessRows)}`
     );
   }
+  await reactivatePrimaryAttestationKey();
 };
 
 const assertFinalReloadRollback = async () => {
@@ -3135,6 +3136,7 @@ try {
 
   await assertAttestationProvisioningInterleavings();
   await assertAttestationRotationAndRevocation();
+  await assertLiveReadiness();
 
   console.log(
     `C.1 PostgreSQL verification passed in ${Date.now() - verifierStartedAt} ms: preexisting restricted roles, direct-runtime live readiness, exact schema/security, rollback-scoped role/membership/RLS/FK/policy/trigger/ACL/function drift, key-journal denial, runtime C.0 INSERT/UPDATE/DELETE denial, missing/wrong-secret pre-unique rejection, SET ROLE non-masquerade, guarded lock-only UPDATE access, cross-TimeZone HMAC stability, forced activation/revocation-versus-creation ordering in both directions, key rotation/retention/missing-key/revocation, real malformed/wrong/expired/revoked proof vectors, replay-versus-durable-readback expiry, actual commit/direct-mutation races, deterministic moving-family locks, row-lock interleaving, identical concurrent replay, rollback injection, append-only, sequential non-composition, and revocation serialization.`
