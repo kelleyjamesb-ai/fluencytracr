@@ -203,6 +203,84 @@ describe("canonical claim trace API", () => {
     expect(JSON.parse(bodies[0])).toEqual(aiValueEngine.canonicalClaimTraceFixedHold());
   });
 
+  it.each(["%", "%ZZ"])(
+    "returns the byte-identical fixed HOLD for malformed percent selector %s",
+    async (selector) => {
+      traceService.mockResolvedValue(authorizedTrace);
+      const ordinaryHold = await request(app)
+        .get("/api/v1/ai-value/claim-trace/not-a-binding")
+        .set("authorization", bearer("ADMIN", "org-northstar"));
+      const malformed = await request(app)
+        .get(`/api/v1/ai-value/claim-trace/${selector}`)
+        .set("authorization", bearer("ADMIN", "org-northstar"));
+
+      expect(malformed.status).toBe(200);
+      expect(malformed.headers["cache-control"]).toBe("no-store");
+      expect(malformed.headers["content-type"]).toMatch(/application\/json/);
+      expect(malformed.text).toBe(ordinaryHold.text);
+      expect(malformed.body).toEqual(aiValueEngine.canonicalClaimTraceFixedHold());
+    }
+  );
+
+  it("keeps malformed percent selectors behind JWT and role authorization", async () => {
+    const malformedPath = "/api/v1/ai-value/claim-trace/%";
+    const missing = await request(app).get(malformedPath);
+    const forged = await request(app)
+      .get(malformedPath)
+      .set("authorization", `${bearer("ADMIN", "org-northstar")}forged`);
+    const forbidden = await request(app)
+      .get(malformedPath)
+      .set("authorization", bearer("EXEC_VIEWER", "org-northstar"));
+
+    expect(missing.status).toBe(401);
+    expect(forged.status).toBe(401);
+    expect(forbidden.status).toBe(403);
+    expect(missing.headers["cache-control"]).toBe("no-store");
+    expect(forged.headers["cache-control"]).toBe("no-store");
+    expect(forbidden.headers["cache-control"]).toBe("no-store");
+    expect(traceService).not.toHaveBeenCalled();
+  });
+
+  it("returns one result-independent 405 boundary for every authorized HEAD request", async () => {
+    traceService
+      .mockResolvedValueOnce(authorizedTrace)
+      .mockResolvedValueOnce(aiValueEngine.canonicalClaimTraceFixedHold());
+    const paths = [
+      tracePath,
+      `/api/v1/ai-value/claim-trace/canonical_identity_binding_${"0".repeat(64)}`,
+      "/api/v1/ai-value/claim-trace/%"
+    ];
+    const responses = [];
+
+    for (const path of paths) {
+      responses.push(
+        await request(app)
+          .head(path)
+          .set("authorization", bearer("ADMIN", "org-northstar"))
+      );
+    }
+
+    const boundaryShape = (response: (typeof responses)[number]) => ({
+      status: response.status,
+      cacheControl: response.headers["cache-control"],
+      allow: response.headers["allow"],
+      contentLength: response.headers["content-length"],
+      contentType: response.headers["content-type"],
+      body: response.text ?? ""
+    });
+    const shapes = responses.map(boundaryShape);
+    expect(new Set(shapes.map((shape) => JSON.stringify(shape))).size).toBe(1);
+    expect(shapes[0]).toEqual({
+      status: 405,
+      cacheControl: "no-store",
+      allow: "GET",
+      contentLength: undefined,
+      contentType: undefined,
+      body: ""
+    });
+    expect(traceService).not.toHaveBeenCalled();
+  });
+
   it("returns the same HOLD when a GET body is present", async () => {
     traceService.mockResolvedValue(authorizedTrace);
     const held = await request(app)

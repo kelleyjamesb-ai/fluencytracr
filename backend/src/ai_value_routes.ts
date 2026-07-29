@@ -362,6 +362,8 @@ const invalidExecutivePacketGaps = (payload: Record<string, unknown>): string[] 
 };
 
 export function registerAiValueRoutes(app: Express): void {
+  const claimTraceRbac = rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]);
+
   app.get(
     "/api/v1/ai-value/customer-data-model/projections",
     rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
@@ -783,9 +785,43 @@ export function registerAiValueRoutes(app: Express): void {
     }
   );
 
+  app.use(
+    "/api/v1/ai-value/claim-trace",
+    (req: RequestWithRole, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return next();
+
+      const rawPath = req.originalUrl.split("?", 1)[0] ?? "";
+      const selectorMatch =
+        /^\/api\/v1\/ai-value\/claim-trace\/([^/]+)\/?$/i.exec(rawPath);
+      if (!selectorMatch) return next();
+
+      let malformedSelector = false;
+      try {
+        decodeURIComponent(selectorMatch[1]);
+      } catch {
+        malformedSelector = true;
+      }
+      if (req.method === "GET" && !malformedSelector) return next();
+
+      return claimTraceRbac(req, res, () => {
+        if (req.method === "HEAD") {
+          res.set("allow", "GET");
+          res.removeHeader("content-length");
+          res.removeHeader("content-type");
+          return res.status(405).end();
+        }
+        return res
+          .status(200)
+          .json(aiValueEngine.CanonicalClaimTraceSchema.parse(
+            aiValueEngine.canonicalClaimTraceFixedHold()
+          ));
+      });
+    }
+  );
+
   app.get(
     "/api/v1/ai-value/claim-trace/:bindingId",
-    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    claimTraceRbac,
     async (req: RequestWithRole, res) => {
       const orgId = requireOrg(req, res);
       if (!orgId) return;
