@@ -4,8 +4,11 @@ Schema version: `FT_CANONICAL_CLAIM_TRACE_V1`.
 
 Slice F defines one internal, read-only, aggregate-only trace projection. An
 `ADMIN` or `ENABLEMENT_LEAD` may request it only through the future exact
-current canonical identity binding route. A binding identifier is a lookup
-capability, never a response field. This contract adds no endpoint by itself.
+current canonical identity binding route:
+`GET /api/v1/ai-value/claim-trace/:bindingId`. `bindingId` must be
+`canonical_identity_binding_<64 lowercase hexadecimal characters>`. A binding
+identifier is a lookup capability, never a response field. This contract adds
+no implemented endpoint by itself.
 
 The authorized variant contains only the fixed allowlisted stages: approved
 hypothesis and measurement versions; admitted aggregate evidence state;

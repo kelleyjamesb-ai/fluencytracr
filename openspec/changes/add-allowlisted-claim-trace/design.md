@@ -8,8 +8,11 @@ selector.
 
 ## Decisions
 
-- The only future selector is an exact current canonical identity binding ID;
-  it is never returned.
+- The future read-only endpoint is exactly
+  `GET /api/v1/ai-value/claim-trace/:bindingId`. Its only selector is a
+  canonical identity binding ID matching exactly
+  `canonical_identity_binding_<64 lowercase hexadecimal characters>`; it is
+  never returned.
 - `AUTHORIZED` is a strict field-by-field projection of approved hypothesis,
   measurement, evidence, policy, one fixed-caveat movement, and current
   readout state. The server must not spread stored objects or envelopes.

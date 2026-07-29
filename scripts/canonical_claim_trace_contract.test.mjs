@@ -84,6 +84,8 @@ test("Slice F JSON Schema and contract documentation are synchronized", () => {
   assert.equal(schema.$defs.held.additionalProperties, false);
   assert.match(docs, /ADMIN/);
   assert.match(docs, /ENABLEMENT_LEAD/);
+  assert.match(docs, /GET \/api\/v1\/ai-value\/claim-trace\/:bindingId/);
+  assert.match(docs, /canonical_identity_binding_<64 lowercase hexadecimal characters>/);
   assert.match(docs, /not a suppression reason/i);
   assert.match(docs, /no database migration/i);
 });
