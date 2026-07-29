@@ -5,10 +5,7 @@ import {
   type OutcomeEvidenceAdmissionResult
 } from "@fluencytracr/shared";
 
-import {
-  getAiValueObject,
-  upsertAiValueObject
-} from "./repositories/ai-value-object.repository";
+import { getAiValueObject, upsertAiValueObject } from "./repositories/ai-value-object.repository";
 import { listFluencyTracrVerdicts } from "./repositories/fluencytracr-verdict.repository";
 import { listOutcomeEvidence } from "./repositories/outcome-evidence.repository";
 import { listVelocityDistributions } from "./repositories/velocity-distribution.repository";
@@ -52,6 +49,7 @@ export interface RealEvidenceMaterializerResult {
   held_reasons: string[];
   objects: {
     evidence_readiness: Record<string, unknown>;
+    value_scenario: Record<string, unknown>;
     outcome_evidence_export?: Record<string, unknown>;
   };
   evidence_summary: {
@@ -83,7 +81,10 @@ export class AiValueMaterializerValidationError extends Error {
 }
 
 const sanitizeIdSegment = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 
 const objectPayload = async (
   orgId: string,
@@ -102,18 +103,16 @@ const workflowFamilyOf = (payload: Record<string, unknown>, fallback: string): s
     ? payload.workflow_family
     : fallback;
 
-const latestVerdict = (
-  verdicts: FluencyTracrVerdictRecord[]
-): FluencyTracrVerdictRecord | null =>
-  [...verdicts].sort(
-    (a, b) =>
-      Date.parse(a.computed_at) - Date.parse(b.computed_at) ||
-      Date.parse(a.created_at) - Date.parse(b.created_at)
-  ).at(-1) ?? null;
+const latestVerdict = (verdicts: FluencyTracrVerdictRecord[]): FluencyTracrVerdictRecord | null =>
+  [...verdicts]
+    .sort(
+      (a, b) =>
+        Date.parse(a.computed_at) - Date.parse(b.computed_at) ||
+        Date.parse(a.created_at) - Date.parse(b.created_at)
+    )
+    .at(-1) ?? null;
 
-const windowToRange = (
-  value: unknown
-): { token: string; start: string; end: string } | null => {
+const windowToRange = (value: unknown): { token: string; start: string; end: string } | null => {
   if (typeof value !== "string") return null;
   const [startDate, endDate] = value.split("_to_");
   if (!startDate || !endDate) return null;
@@ -146,8 +145,16 @@ const matchingMetricDefinition = (
 const admittedOutcomeMetrics = (
   metricsLibrary: Record<string, unknown>,
   admission: OutcomeEvidenceAdmissionResult
-): Array<{ metric: any; baseline: OutcomeEvidenceStoredRecord; comparison: OutcomeEvidenceStoredRecord }> => {
-  const pairs: Array<{ metric: any; baseline: OutcomeEvidenceStoredRecord; comparison: OutcomeEvidenceStoredRecord }> = [];
+): Array<{
+  metric: any;
+  baseline: OutcomeEvidenceStoredRecord;
+  comparison: OutcomeEvidenceStoredRecord;
+}> => {
+  const pairs: Array<{
+    metric: any;
+    baseline: OutcomeEvidenceStoredRecord;
+    comparison: OutcomeEvidenceStoredRecord;
+  }> = [];
 
   for (const { baseline, comparison } of admission.admitted_pairs) {
     const metric = matchingMetricDefinition(metricsLibrary, baseline);
@@ -266,10 +273,7 @@ const materializeOutcomeEvidenceExport = async (
     const existingReceipt = authoritativeOutcomeEvidenceReceipt(existing);
     if (
       !existingReceipt ||
-      !outcomeEvidenceAdmissionReceiptsMatch(
-        existingReceipt,
-        exportObject.admission
-      )
+      !outcomeEvidenceAdmissionReceiptsMatch(existingReceipt, exportObject.admission)
     ) {
       heldReasons.push(
         `Outcome evidence export ${exportId} is terminal but does not match the current exact slice`
@@ -329,16 +333,20 @@ const evidenceCoverageFromVerdict = (
     heldReasons.push("V3 verdict is SURFACE but forwarded_distribution is missing or invalid");
     return { overrides: {}, evidenceRefs, forwardedDistributionUsed: false };
   }
-  if (!forwardedDistributionMatchesSlice(parsed.data, {
-    cohortId: verdict.cohort_id,
-    workflowId: verdict.workflow_id,
-    jbtdId: verdict.jbtd_id,
-    personaId: verdict.persona_id,
-    windowStart: verdict.window_start,
-    windowEnd: verdict.window_end,
-    calibrationId: verdict.calibration_id
-  })) {
-    heldReasons.push("V3 verdict is SURFACE but forwarded_distribution slice does not match verdict row");
+  if (
+    !forwardedDistributionMatchesSlice(parsed.data, {
+      cohortId: verdict.cohort_id,
+      workflowId: verdict.workflow_id,
+      jbtdId: verdict.jbtd_id,
+      personaId: verdict.persona_id,
+      windowStart: verdict.window_start,
+      windowEnd: verdict.window_end,
+      calibrationId: verdict.calibration_id
+    })
+  ) {
+    heldReasons.push(
+      "V3 verdict is SURFACE but forwarded_distribution slice does not match verdict row"
+    );
     return { overrides: {}, evidenceRefs, forwardedDistributionUsed: false };
   }
 
@@ -352,7 +360,9 @@ const evidenceCoverageFromVerdict = (
   if (quality.verification_rate > 0 || quality.recovery_rate > 0) {
     overrides.trust = "PRESENT";
   } else {
-    heldReasons.push("V3 surfaced evidence trust lane held: verification and recovery evidence are absent");
+    heldReasons.push(
+      "V3 surfaced evidence trust lane held: verification and recovery evidence are absent"
+    );
   }
 
   return { overrides, evidenceRefs, forwardedDistributionUsed: true };
@@ -363,7 +373,10 @@ const persistReadiness = async (
   readiness: Record<string, unknown>,
   materialized: Array<{ object_type: string; object_id: string }>,
   outcomeAdmission: OutcomeEvidenceAdmissionResult | null,
-  outcomeExport: Record<string, unknown> | undefined
+  outcomeExport: Record<string, unknown> | undefined,
+  blueprint: Record<string, unknown>,
+  metricsLibrary: Record<string, unknown>,
+  scenario: Record<string, unknown>
 ) => {
   const validation = aiValueEngine.validateEvidenceReadiness(readiness);
   if (!validation.valid) {
@@ -373,6 +386,17 @@ const persistReadiness = async (
     );
   }
   const readinessId = String(readiness.readiness_id);
+  const sourceGraphSeal =
+    outcomeAdmission?.decision === "ADMITTED" &&
+    outcomeAdmission.receipt &&
+    outcomeExport?.export_id
+      ? aiValueEngine.buildAggregateClaimSourceGraphSeal({
+          outcomeEvidenceExport: outcomeExport,
+          blueprint,
+          metricsLibrary,
+          scenario
+        })
+      : null;
   await upsertAiValueObject({
     orgId,
     objectType: "evidence_readiness",
@@ -388,13 +412,36 @@ const persistReadiness = async (
         ? {
             outcome_evidence_admission_authoritative: true,
             outcome_evidence_admission_receipt: outcomeAdmission.receipt,
-            outcome_evidence_export_id: outcomeExport.export_id
+            outcome_evidence_export_id: outcomeExport.export_id,
+            source_graph_authoritative: true,
+            aggregate_claim_source_graph: sourceGraphSeal
           }
         : {})
     },
     valid: true
   });
   materialized.push({ object_type: "evidence_readiness", object_id: readinessId });
+};
+
+const persistMaterializedScenario = async (
+  orgId: string,
+  scenario: Record<string, unknown>,
+  validation: Record<string, unknown>,
+  materialized: Array<{ object_type: string; object_id: string }>
+): Promise<Record<string, unknown>> => {
+  const scenarioId = String(scenario.scenario_id);
+  await upsertAiValueObject({
+    orgId,
+    objectType: "value_scenario",
+    objectId: scenarioId,
+    schemaVersion: String(scenario.schema_version),
+    workflowFamily: workflowFamilyOf(scenario, scenarioId),
+    payload: scenario,
+    validation,
+    valid: true
+  });
+  materialized.push({ object_type: "value_scenario", object_id: scenarioId });
+  return scenario;
 };
 
 export async function materializeRealEvidence(
@@ -413,21 +460,23 @@ export async function materializeRealEvidence(
   const blueprintValidation = aiValueEngine.validateBlueprint(blueprint);
   const metricsValidation = aiValueEngine.validateMetricsLibrary(metricsLibrary);
   if (!blueprintValidation.valid || !metricsValidation.valid) {
-    throw new AiValueMaterializerValidationError(
-      "Upstream AI Value objects failed validation",
-      [...blueprintValidation.gaps, ...metricsValidation.gaps]
-    );
+    throw new AiValueMaterializerValidationError("Upstream AI Value objects failed validation", [
+      ...blueprintValidation.gaps,
+      ...metricsValidation.gaps
+    ]);
   }
 
   const comparisonRange = windowToRange(
     (blueprint.windows as Record<string, unknown> | undefined)?.comparison
   );
   const verdict = latestVerdict(
-    (await listFluencyTracrVerdicts({
-      orgId: input.orgId,
-      cohortId: input.cohortId,
-      workflowId: input.workflowId
-    })).filter(
+    (
+      await listFluencyTracrVerdicts({
+        orgId: input.orgId,
+        cohortId: input.cohortId,
+        workflowId: input.workflowId
+      })
+    ).filter(
       (candidate) =>
         candidate.jbtd_id === input.jbtdId &&
         candidate.persona_id === input.personaId &&
@@ -447,33 +496,35 @@ export async function materializeRealEvidence(
   const windows = blueprint.windows as Record<string, unknown> | undefined;
   const baseline = windowToRange(windows?.baseline);
   const comparison = windowToRange(windows?.comparison);
-  const outcomeRecords = baseline && comparison
-    ? await listOutcomeEvidence(input.orgId, {
-        workflow_id: input.outcomeWorkflowId,
-        period_start: baseline.start,
-        period_end: comparison.end,
-        jbtd_id: input.jbtdId,
-        persona_id: input.personaId
-      })
-    : [];
-  const outcomeAdmission = baseline && comparison
-    ? evaluateOutcomeEvidenceAdmission({
-        expected: {
+  const outcomeRecords =
+    baseline && comparison
+      ? await listOutcomeEvidence(input.orgId, {
           workflow_id: input.outcomeWorkflowId,
+          period_start: baseline.start,
+          period_end: comparison.end,
           jbtd_id: input.jbtdId,
-          persona_id: input.personaId,
-          baseline_window: {
-            period_start: baseline.start,
-            period_end: baseline.end
+          persona_id: input.personaId
+        })
+      : [];
+  const outcomeAdmission =
+    baseline && comparison
+      ? evaluateOutcomeEvidenceAdmission({
+          expected: {
+            workflow_id: input.outcomeWorkflowId,
+            jbtd_id: input.jbtdId,
+            persona_id: input.personaId,
+            baseline_window: {
+              period_start: baseline.start,
+              period_end: baseline.end
+            },
+            comparison_window: {
+              period_start: comparison.start,
+              period_end: comparison.end
+            }
           },
-          comparison_window: {
-            period_start: comparison.start,
-            period_end: comparison.end
-          }
-        },
-        records: outcomeRecords
-      })
-    : null;
+          records: outcomeRecords
+        })
+      : null;
 
   const outcomeExport = await materializeOutcomeEvidenceExport(
     input.orgId,
@@ -489,15 +540,16 @@ export async function materializeRealEvidence(
     heldReasons
   );
 
-  const familySegment = baseline && comparison
-    ? exactOutcomeEvidenceSliceSegment({
-        workflowId: input.outcomeWorkflowId,
-        jbtdId: input.jbtdId,
-        personaId: input.personaId,
-        baselineWindow: baseline.token,
-        comparisonWindow: comparison.token
-      })
-    : sanitizeIdSegment(workflowFamilyOf(blueprint, input.blueprintId));
+  const familySegment =
+    baseline && comparison
+      ? exactOutcomeEvidenceSliceSegment({
+          workflowId: input.outcomeWorkflowId,
+          jbtdId: input.jbtdId,
+          personaId: input.personaId,
+          baselineWindow: baseline.token,
+          comparisonWindow: comparison.token
+        })
+      : sanitizeIdSegment(workflowFamilyOf(blueprint, input.blueprintId));
   const evidenceRefs = {
     ...coverage.evidenceRefs,
     velocity_observations_ref: `velocity_observations:${velocityObservations.length}`,
@@ -511,22 +563,64 @@ export async function materializeRealEvidence(
     ids: {
       readinessId: `readiness_${familySegment}_real_evidence_v1`
     },
-    sourceCoverageOverrides: coverage.overrides,
+    sourceCoverageOverrides: {
+      ...coverage.overrides,
+      ...(outcomeExport?.export_id ? { outcome: "PRESENT" } : {})
+    },
     evidenceRefs
   });
   const readiness = spine.stages.readiness.object as Record<string, unknown> | null;
+  const generatedScenario = spine.stages.scenario.object as Record<string, unknown> | null;
+  if (
+    !generatedScenario ||
+    !spine.stages.scenario.validation?.valid ||
+    !spine.stages.scenario.generated
+  ) {
+    throw new AiValueMaterializerValidationError(
+      "AI Value spine did not produce a generated scenario",
+      [spine.stages.scenario.hold_reason ?? "materialized scenario must be generated and valid"]
+    );
+  }
   if (!readiness) {
     throw new AiValueMaterializerValidationError(
       "AI Value spine did not produce evidence readiness",
       [spine.stages.readiness.hold_reason ?? spine.decision]
     );
   }
+  const persistedScenario = await persistMaterializedScenario(
+    input.orgId,
+    generatedScenario,
+    spine.stages.scenario.validation as unknown as Record<string, unknown>,
+    materialized
+  );
+  const sealedBlueprint = await objectPayload(input.orgId, "blueprint", input.blueprintId);
+  const sealedMetricsLibrary = await objectPayload(
+    input.orgId,
+    "metrics_library",
+    input.metricsLibraryId
+  );
+  const sealedScenario = await objectPayload(
+    input.orgId,
+    "value_scenario",
+    String(persistedScenario.scenario_id)
+  );
+  const sealedOutcomeExport =
+    outcomeExport?.export_id === undefined
+      ? undefined
+      : await objectPayload(
+          input.orgId,
+          "outcome_evidence_export",
+          String(outcomeExport.export_id)
+        );
   await persistReadiness(
     input.orgId,
     readiness,
     materialized,
     outcomeAdmission,
-    outcomeExport
+    sealedOutcomeExport,
+    sealedBlueprint,
+    sealedMetricsLibrary,
+    sealedScenario
   );
 
   return {
@@ -535,7 +629,8 @@ export async function materializeRealEvidence(
     held_reasons: heldReasons,
     objects: {
       evidence_readiness: readiness,
-      ...(outcomeExport ? { outcome_evidence_export: outcomeExport } : {})
+      value_scenario: persistedScenario,
+      ...(sealedOutcomeExport ? { outcome_evidence_export: sealedOutcomeExport } : {})
     },
     evidence_summary: {
       cohort_id: input.cohortId,

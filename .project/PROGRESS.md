@@ -4386,3 +4386,39 @@
   then implement Slice D from that fresh merged `main`. No Slice D product
   implementation, migration, deployment, publication, or live proof has
   occurred.
+
+## 2026-07-28 (America/Los_Angeles) - Codex (MCII Slice D implementation candidate)
+
+- Implemented the activated Slice D contract from fresh merged activation
+  `main` (`599361f`) in
+  `codex/mcii-slice-d-claim-semantics-v2`. Scope remains one internal,
+  aggregate, descriptive movement from one exact C.1 readback; no Slice E/F,
+  economic, customer-facing, migration, deployment, event, suppression, or
+  threshold scope was added.
+- Real-evidence materialization now persists its generated scenario, marks
+  admitted Outcome Evidence as a present source lane, and seals the
+  review-independent export content plus exact blueprint, metrics-library,
+  and scenario IDs and hashes into materializer-only readiness validation.
+  Generic readiness writes cannot preserve that authority marker.
+- Added strict source, movement, policy, claim, packet, manifest, authorized
+  response, and fixed redacted HOLD contracts. IDs are non-circular and
+  manifest-derived; one serializable locked source snapshot performs atomic
+  insert-or-exact persistence for the three reserved internal object types.
+  Generic create, read, list, upsert, spine, legacy packet, and direct object
+  paths cannot authorize or render them.
+- `/value-chain/run` is the sole authorization route. It derives source
+  identity and the expected exact slice from authoritative stored lineage,
+  uses one opaque C.1 receipt only for bounded readback, reconciles every
+  returned projection field, and performs initial, pre-seal, and post-commit
+  C.1 plus source/artifact/manifest checks. Every failure, including
+  `persist: false`, returns only the fixed redacted HOLD shape.
+- Focused backend verification passes `58/58`; shared/backend builds and
+  strict OpenSpec pass. The new PostgreSQL verifier passes exact C.1-backed
+  authorization, immutable exact replay, reserved-type isolation,
+  receipt/selector non-authority, cross-slice and alternate-pair holds,
+  pre-seal and post-commit mutation, a queued source-write race, artifact
+  substitution/conflict, and revocation readback.
+- Remaining gates: create the immutable candidate commit; exact-commit
+  CODE/BUG/ADVERSARIAL review; one full required suite on the final reviewed
+  SHA; push; PR; current-head GitHub checks; and normal merge. No production
+  migration was applied and nothing was deployed.

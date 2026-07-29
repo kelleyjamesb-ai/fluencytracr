@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
+import { aiValueEngine } from "@fluencytracr/shared";
 import request from "supertest";
 
 import { app } from "../src/app";
@@ -16,10 +17,7 @@ const readoutAuth = { "x-role": "ENABLEMENT_LEAD", "x-org-id": ORG_ID };
 const readExample = (name: string): Record<string, any> =>
   JSON.parse(
     readFileSync(
-      resolve(
-        __dirname,
-        `../../docs/contracts/ai-value-intelligence/examples/${name}`
-      ),
+      resolve(__dirname, `../../docs/contracts/ai-value-intelligence/examples/${name}`),
       "utf8"
     )
   );
@@ -81,15 +79,9 @@ const v3Payload = (overrides: Record<string, any> = {}) => ({
 });
 
 const postV3Aggregate = (payload: Record<string, any>) =>
-  request(app)
-    .post("/api/v3/ingest/aggregate")
-    .set(writeAuth)
-    .send(payload);
+  request(app).post("/api/v3/ingest/aggregate").set(writeAuth).send(payload);
 
-const postOutcomeEvidencePair = async (
-  jbtdId = JBTD_ID,
-  personaId = PERSONA_ID
-) => {
+const postOutcomeEvidencePair = async (jbtdId = JBTD_ID, personaId = PERSONA_ID) => {
   const base = {
     workflow_id: "customer_support_case_resolution",
     outcome_metric: "support_median_resolution_hours",
@@ -156,6 +148,7 @@ describe("AI Value real evidence materializer", () => {
     });
     expect(response.body.materialized).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ object_type: "value_scenario" }),
         expect.objectContaining({ object_type: "evidence_readiness" }),
         expect.objectContaining({ object_type: "outcome_evidence_export" })
       ])
@@ -172,10 +165,41 @@ describe("AI Value real evidence materializer", () => {
       workflow: "PRESENT",
       trust: "PRESENT",
       suppression: "PRESENT",
-      outcome: "MISSING"
+      outcome: "PRESENT"
     });
     expect(readiness.body.payload.source_refs.v3_verdict_id).toEqual(expect.any(String));
-    expect(readiness.body.payload.source_refs.outcome_evidence_export_id).toEqual(expect.any(String));
+    expect(readiness.body.payload.source_refs.outcome_evidence_export_id).toEqual(
+      expect.any(String)
+    );
+    expect(readiness.body.payload.source_refs).toMatchObject({
+      blueprint_id: blueprintId,
+      metrics_library_id: metricsLibraryId,
+      scenario_id: response.body.objects.value_scenario.scenario_id
+    });
+    expect(readiness.body.validation).toMatchObject({
+      source_graph_authoritative: true,
+      aggregate_claim_source_graph: {
+        source_graph_authoritative: true,
+        outcome_evidence_export_id: response.body.objects.outcome_evidence_export.export_id,
+        blueprint_id: blueprintId,
+        metrics_library_id: metricsLibraryId,
+        scenario_id: response.body.objects.value_scenario.scenario_id,
+        outcome_evidence_content_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        blueprint_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        metrics_library_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        scenario_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        source_graph_hash: expect.stringMatching(/^[0-9a-f]{64}$/)
+      }
+    });
+    const submittedEvidenceContentHash =
+      readiness.body.validation.aggregate_claim_source_graph.outcome_evidence_content_hash;
+    const scenarioRecord = await request(app)
+      .get(
+        `/api/v1/ai-value/objects/value_scenario/${response.body.objects.value_scenario.scenario_id}`
+      )
+      .set(readAuth)
+      .expect(200);
+    expect(scenarioRecord.body.payload).toEqual(response.body.objects.value_scenario);
 
     const exportId = response.body.objects.outcome_evidence_export.export_id;
     const outcomeExport = await request(app)
@@ -214,12 +238,22 @@ describe("AI Value real evidence materializer", () => {
     }
 
     await request(app)
-      .post(
-        `/api/v1/ai-value/objects/outcome_evidence_export/${exportId}/review`
-      )
+      .post(`/api/v1/ai-value/objects/outcome_evidence_export/${exportId}/review`)
       .set(writeAuth)
       .send({ decision: "ACCEPTED", reviewer_role: "ADMIN" })
       .expect(200);
+
+    const acceptedExport = await request(app)
+      .get(`/api/v1/ai-value/objects/outcome_evidence_export/${exportId}`)
+      .set(readAuth)
+      .expect(200);
+    const acceptedSeal = aiValueEngine.buildAggregateClaimSourceGraphSeal({
+      outcomeEvidenceExport: acceptedExport.body.payload,
+      blueprint,
+      metricsLibrary,
+      scenario: response.body.objects.value_scenario
+    });
+    expect(acceptedSeal.outcome_evidence_content_hash).toBe(submittedEvidenceContentHash);
 
     const acceptedRun = await request(app)
       .post("/api/v1/ai-value/value-chain/run")
@@ -232,11 +266,11 @@ describe("AI Value real evidence materializer", () => {
       });
 
     expect(acceptedRun.status).toBe(200);
-    expect(acceptedRun.body.run.outcome_evidence.attached).toBe(true);
-    expect(
-      acceptedRun.body.run.spine.stages.readiness.object.source_refs
-        .outcome_evidence_export_id
-    ).toBe(exportId);
+    expect(acceptedRun.body).toEqual({
+      decision: "HOLD",
+      reason_family: "AGGREGATE_CLAIM_AUTHORIZATION_HELD",
+      persisted: []
+    });
 
     await request(app)
       .put(`/api/v1/ai-value/objects/blueprint/${blueprintId}`)
@@ -251,38 +285,41 @@ describe("AI Value real evidence materializer", () => {
         metrics_library_id: metricsLibraryId
       })
       .expect(200);
-    const packetId =
-      spineRun.body.run.stages.executive_packet.object.packet_id;
-    const storedPacket = store.aiValueObjects.get(
-      `${ORG_ID}:executive_packet:${packetId}`
-    );
-    expect(storedPacket).toBeDefined();
-    if (!storedPacket) return;
-    storedPacket.payload = {
-      ...storedPacket.payload,
-      source_refs: {
-        ...(storedPacket.payload.source_refs as Record<string, unknown>),
-        readiness_id: readinessId
-      }
-    };
-    const acceptedReadout = await request(app)
-      .get(`/api/v1/ai-value/readout/${packetId}/html`)
-      .set(readoutAuth)
-      .expect(200);
-    expect(acceptedReadout.text).toContain(
-      "Customer export accepted for caveated review"
+    expect(spineRun.body.run.halted_at).toBe("claim_authorization");
+    expect(spineRun.body.run.stages.claim_boundary).toMatchObject({
+      status: "HELD",
+      object: null,
+      generated: false
+    });
+    expect(spineRun.body.run.stages.executive_packet).toMatchObject({
+      status: "HELD",
+      object: null,
+      generated: false
+    });
+    expect(spineRun.body.persisted).toEqual(
+      expect.not.arrayContaining([
+        expect.objectContaining({ object_type: "claim_boundary" }),
+        expect.objectContaining({ object_type: "executive_packet" })
+      ])
     );
 
-    const storedReadiness = store.aiValueObjects.get(
-      `${ORG_ID}:evidence_readiness:${readinessId}`
-    );
+    const acceptedReadout = await request(app)
+      .get("/api/v1/ai-value/readout/not_authorized/html")
+      .set(readoutAuth)
+      .expect(200);
+    expect(acceptedReadout.text).toContain("Claim authorization held");
+    expect(acceptedReadout.text).not.toContain("support_median_resolution_hours");
+
+    const storedReadiness = store.aiValueObjects.get(`${ORG_ID}:evidence_readiness:${readinessId}`);
     expect(storedReadiness).toBeDefined();
     if (!storedReadiness) return;
     storedReadiness.validation = {
       ...storedReadiness.validation,
       outcome_evidence_admission_receipt: {
-        ...(storedReadiness.validation
-          .outcome_evidence_admission_receipt as Record<string, unknown>),
+        ...(storedReadiness.validation.outcome_evidence_admission_receipt as Record<
+          string,
+          unknown
+        >),
         persona_id: "different_persona"
       }
     };
@@ -298,21 +335,11 @@ describe("AI Value real evidence materializer", () => {
         persist: false
       })
       .expect(200);
-    expect(crossSliceRun.body.run.outcome_evidence.attached).toBe(false);
-    expect(crossSliceRun.body.run.outcome_evidence.hold_reason).toContain(
-      "authoritative exact-slice admission"
-    );
-
-    const crossSliceReadout = await request(app)
-      .get(`/api/v1/ai-value/readout/${packetId}/html`)
-      .set(readoutAuth)
-      .expect(200);
-    expect(crossSliceReadout.text).toContain(
-      "Customer outcome evidence needed"
-    );
-    expect(crossSliceReadout.text).not.toContain(
-      "Customer export accepted for caveated review"
-    );
+    expect(crossSliceRun.body).toEqual({
+      decision: "HOLD",
+      reason_family: "AGGREGATE_CLAIM_AUTHORIZATION_HELD",
+      persisted: []
+    });
   });
 
   it("materializes legacy surfaced aggregate evidence without surface taxonomy ids", async () => {
@@ -416,7 +443,8 @@ describe("AI Value real evidence materializer", () => {
     await postV3Aggregate(v3Payload()).expect(202);
 
     const verdict = Array.from(store.fluencyTracrVerdicts.values()).find(
-      (record) => record.cohort_id === "cohort-real-evidence" && record.workflow_id === "workflow:CHAT"
+      (record) =>
+        record.cohort_id === "cohort-real-evidence" && record.workflow_id === "workflow:CHAT"
     );
     expect(verdict).toBeDefined();
     const forwardedDistribution = verdict?.payload_json.forwarded_distribution as
@@ -467,17 +495,19 @@ describe("AI Value real evidence materializer", () => {
 
   it("does not upgrade trust from surfaced aggregate evidence without verification or recovery", async () => {
     await postUpstreamObjects();
-    await postV3Aggregate(v3Payload({
-      quality_signals: {
-        completion_rate: 0.92,
-        error_rate: 0,
-        abandonment_rate: 0,
-        recovery_rate: 0,
-        verification_rate: 0,
-        p50_latency_ms: 1000,
-        p95_latency_ms: 3000
-      }
-    })).expect(202);
+    await postV3Aggregate(
+      v3Payload({
+        quality_signals: {
+          completion_rate: 0.92,
+          error_rate: 0,
+          abandonment_rate: 0,
+          recovery_rate: 0,
+          verification_rate: 0,
+          p50_latency_ms: 1000,
+          p95_latency_ms: 3000
+        }
+      })
+    ).expect(202);
 
     const response = await materialize();
 
@@ -531,14 +561,14 @@ describe("AI Value real evidence materializer", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.materialized).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ object_type: "outcome_evidence_export" })
-      ])
+      expect.arrayContaining([expect.objectContaining({ object_type: "outcome_evidence_export" })])
     );
     expect(response.body.objects.outcome_evidence_export).toBeUndefined();
     expect(response.body.held_reasons).toEqual(
       expect.arrayContaining([
-        expect.stringContaining("no paired baseline/comparison evidence aligned to the metrics library")
+        expect.stringContaining(
+          "no paired baseline/comparison evidence aligned to the metrics library"
+        )
       ])
     );
     expect(response.body.objects.evidence_readiness.source_coverage.outcome).toBe("MISSING");
@@ -584,9 +614,7 @@ describe("AI Value real evidence materializer", () => {
     const secondId = second.body.objects.outcome_evidence_export.export_id;
 
     expect(secondId).not.toBe(firstId);
-    expect(second.body.objects.outcome_evidence_export.admission.jbtd_id).toBe(
-      "resolve_case"
-    );
+    expect(second.body.objects.outcome_evidence_export.admission.jbtd_id).toBe("resolve_case");
   });
 
   it("holds when a terminal direct upload squats the exact materializer identity", async () => {
@@ -621,9 +649,7 @@ describe("AI Value real evidence materializer", () => {
     expect(rerun.body.evidence_summary.outcome_evidence_export_id).toBeNull();
     expect(rerun.body.held_reasons).toEqual(
       expect.arrayContaining([
-        expect.stringContaining(
-          "terminal but does not match the current exact slice"
-        )
+        expect.stringContaining("terminal but does not match the current exact slice")
       ])
     );
   });
@@ -669,9 +695,7 @@ describe("AI Value real evidence materializer", () => {
     expect(response.status).toBe(200);
     expect(response.body.objects.outcome_evidence_export).toBeUndefined();
     expect(response.body.held_reasons).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("MISSING_EVIDENCE_PAIR")
-      ])
+      expect.arrayContaining([expect.stringContaining("MISSING_EVIDENCE_PAIR")])
     );
   });
 
@@ -702,9 +726,7 @@ describe("AI Value real evidence materializer", () => {
     expect(response.status).toBe(200);
     expect(response.body.objects.outcome_evidence_export).toBeUndefined();
     expect(response.body.held_reasons).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("AMBIGUOUS_EVIDENCE_PAIR")
-      ])
+      expect.arrayContaining([expect.stringContaining("AMBIGUOUS_EVIDENCE_PAIR")])
     );
   });
 
