@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 const read = (relativePath: string): string =>
   fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
@@ -21,6 +22,10 @@ const sliceEStructure = read(
   "../src/canonical-identity-family-head-structure.ts"
 );
 const assuranceRoles = read("../../scripts/assurance_precreate_restricted_roles.sql");
+const assuranceWorkflows = [
+  "../../.github/workflows/assurance-harness.yml",
+  "../../.github/workflows/assurance-harness-full.yml"
+].map(read);
 const c1PostgresVerifier = read(
   "../../scripts/verify_outcome_comparison_privacy_postgres.mjs"
 );
@@ -32,6 +37,26 @@ const c1ProvisioningScripts = [
   "../../scripts/activate_outcome_comparison_attestation_key.mjs",
   "../../scripts/revoke_outcome_comparison_attestation_key.mjs"
 ].map(read);
+
+const normalizedFunctionBodyHash = (
+  sql: string,
+  functionName: string
+): string => {
+  const functionStart = sql.indexOf(`FUNCTION "${functionName}"`);
+  if (functionStart < 0) {
+    throw new Error(`missing function ${functionName}`);
+  }
+  const bodyStart = sql.indexOf("AS $$", functionStart);
+  const bodyEnd = sql.indexOf("$$ LANGUAGE", bodyStart);
+  if (bodyStart < 0 || bodyEnd < 0) {
+    throw new Error(`missing function body ${functionName}`);
+  }
+  const normalizedBody = sql
+    .slice(bodyStart + "AS $$".length, bodyEnd)
+    .replace(/^ +| +$/g, "")
+    .replace(/\s+/g, " ");
+  return createHash("sha256").update(normalizedBody, "utf8").digest("hex");
+};
 
 describe("Supabase PostgreSQL migration compatibility", () => {
   it.each([c1Migration, c1PostPush])(
@@ -65,6 +90,18 @@ describe("Supabase PostgreSQL migration compatibility", () => {
     expect(c1Structure).not.toContain(
       "'public.hmac(bytea,bytea,text)'::regprocedure"
     );
+  });
+
+  it.each([
+    "stamp_outcome_comparison_creation_attestation",
+    "verify_outcome_comparison_creation_attestation",
+    "outcome_comparison_attestation_readiness"
+  ])("attests both migration installation paths for %s", (functionName) => {
+    for (const sql of [c1Migration, c1PostPush]) {
+      expect(c1Structure).toContain(
+        normalizedFunctionBodyHash(sql, functionName)
+      );
+    }
   });
 
   it.each([c1Migration, c1PostPush])(
@@ -137,9 +174,19 @@ describe("Supabase PostgreSQL migration compatibility", () => {
   });
 
   it("makes CI reproduce Supabase public-schema default grants", () => {
+    expect(assuranceRoles).toContain("CREATE ROLE fluency");
+    expect(assuranceRoles).toContain(
+      "ALTER DATABASE fluency OWNER TO fluency"
+    );
+    expect(assuranceRoles).toContain(
+      "CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions"
+    );
+    expect(assuranceRoles).toContain(
+      "ALTER ROLE fluency\n  NOSUPERUSER CREATEDB CREATEROLE INHERIT"
+    );
     expect(assuranceRoles).toContain("CREATE ROLE service_role");
     expect(assuranceRoles).toContain(
-      "ALTER DEFAULT PRIVILEGES IN SCHEMA public"
+      "ALTER DEFAULT PRIVILEGES FOR ROLE fluency IN SCHEMA public"
     );
     expect(assuranceRoles).toContain(
       "GRANT ALL ON TABLES TO anon, authenticated, service_role"
@@ -150,6 +197,13 @@ describe("Supabase PostgreSQL migration compatibility", () => {
     expect(assuranceRoles).toContain(
       "GRANT ALL ON SEQUENCES TO anon, authenticated, service_role"
     );
+    for (const workflow of assuranceWorkflows) {
+      expect(workflow).toContain("image: postgres:17");
+      expect(workflow).toContain("POSTGRES_USER: postgres");
+      expect(workflow).toContain(
+        "DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fluency?schema=public"
+      );
+    }
   });
 
   it("uses direct restricted-role sessions in the PostgreSQL verifiers", () => {
