@@ -388,6 +388,14 @@
   "status": "done",
   "risk": "high",
       "last_note": "Done 2026-07-28: PR #457 merged normally as 21daef1 with reviewed head 644b102 and an exact matching tree. Final current-head checks passed, all three review threads were resolved, and CODE/BUG/ADVERSARIAL returned GO. No migration apply, deployment, or live proof."
+    },
+    {
+  "id": "mcii-canonical-identity-compatibility-slice-e",
+  "title": "MCII Slice E — append-only canonical identity compatibility binding",
+  "bound": "Canonical identity compatibility binding only; acceptance: append-only identities bind the approved hypothesis, metric definition/version, exact slice/window, admitted evidence, and readout; reject stale, foreign, mutable, ambiguous, or cross-spliced lineage; source-bound or canonical status requires validation of the complete identity chain; preserve existing consumers through additive compatibility while obsolete mutable selectors lose authority; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and independent-slice governance; include focused tests, contracts, OpenSpec, progress, and queue updates; exclude Slice F claim trace, deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authorized after the normal merge of Slice D PR #460. Activate only from fresh current main with contract-first design and required independent review before implementation."
     }
   ]
 }
