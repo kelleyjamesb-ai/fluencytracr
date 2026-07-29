@@ -47,9 +47,15 @@ describe("C.1 exact attestation structural readiness", () => {
       "reject_c1_runtime_lock_only_mutation"
     );
     expect(inspectedSql).toContain(
-      "'public.digest(bytea,text)'::regprocedure"
+      "'extensions.digest(bytea,text)'::regprocedure"
     );
     expect(inspectedSql).toContain(
+      "'extensions.hmac(bytea,bytea,text)'::regprocedure"
+    );
+    expect(inspectedSql).not.toContain(
+      "'public.digest(bytea,text)'::regprocedure"
+    );
+    expect(inspectedSql).not.toContain(
       "'public.hmac(bytea,bytea,text)'::regprocedure"
     );
     expect(inspectedSql).toContain("function_language");
@@ -82,6 +88,12 @@ describe("C.1 exact attestation structural readiness", () => {
     );
     expect(inspectedSql).toContain(
       "'fluencytracr_c1_attestation_provisioner'"
+    );
+    expect(inspectedSql).toContain("membership.admin_option");
+    expect(inspectedSql).toContain("NOT membership.inherit_option");
+    expect(inspectedSql).toContain("NOT membership.set_option");
+    expect(inspectedSql).toContain(
+      "WHERE datname = current_database()"
     );
     expect(inspectedSql).not.toContain(
       "'public.outcome_comparison_privacy_releases', 'SELECT,INSERT'"

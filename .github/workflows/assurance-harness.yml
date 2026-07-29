@@ -47,15 +47,15 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
-          POSTGRES_USER: fluency
-          POSTGRES_PASSWORD: fluency
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: fluency
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U fluency -d fluency"
+          --health-cmd "pg_isready -U postgres -d fluency"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
@@ -77,6 +77,9 @@ jobs:
         run: npm run build --workspace shared
 
       - name: Precreate restricted database roles
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fluency?schema=public
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/fluency?schema=public
         run: npx prisma db execute --file scripts/assurance_precreate_restricted_roles.sql --schema backend/prisma/schema.prisma
 
       - name: Create current schema in fresh CI database

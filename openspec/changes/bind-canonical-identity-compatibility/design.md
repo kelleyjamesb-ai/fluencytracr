@@ -137,6 +137,11 @@ and both windows. Its Blueprint and metric-owner approval states must be
 `approved`, both stored validation results must be valid, and its metric
 definition ref must be version-bearing.
 
+The Measurement Cell's `aggregate_source_system` names the governed aggregate
+pipeline boundary and must be `bigquery_export` or `sigma_export`. It is
+separate from the plan/metric/C.1 outcome source system and must not be
+compared to customer source names such as `customer_crm`.
+
 The authoritative D metrics-library entry for the selected metric gains
 an optional additive `metric_definition_ref` and separately named
 `canonical_metric_definition_commitment_v1`. They remain optional for
@@ -243,6 +248,12 @@ can only advance the durable head into a fail-closed `UNBOUND` state; it
 cannot resurrect or authorize an older version. Database owner/superuser or
 physical-storage compromise remains outside the modeled runtime-writer
 boundary.
+
+On PostgreSQL 17 the non-superuser migration owner may retain only the
+unavoidable admin-only creator membership for each Slice E role, with
+`inherit_option = false` and `set_option = false`. The database owner cannot
+assume those roles or alter the owner-transferred source/journal objects; any
+broader membership or privilege remains fail-closed drift.
 
 ### Canonical identity core
 

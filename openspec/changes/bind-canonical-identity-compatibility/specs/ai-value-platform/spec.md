@@ -82,6 +82,10 @@ target, and health/readiness SHALL also require valid Slice E active-write and
 retained-read HMAC configuration. First-install and post-push journal cutover
 SHALL block writes to all three canonical source tables from before historical
 validation and backfill through append-trigger installation and commit.
+The Measurement Cell aggregate pipeline source SHALL be independently
+restricted to `bigquery_export` or `sigma_export`; it SHALL NOT be equated
+with the customer outcome source carried by the plan, metric definition, and
+C.1 comparison.
 
 #### Scenario: Runtime database or configuration drift
 
@@ -263,6 +267,15 @@ readout.
   journal, source guards, or trigger function
 - **THEN** structural readiness and PostgreSQL verification SHALL fail
 - **AND** Slice E authority SHALL remain unavailable
+
+#### Scenario: PostgreSQL 17 creator membership
+
+- **WHEN** the non-superuser database owner creates the Slice E owner or
+  runtime role
+- **THEN** readiness MAY allow only that database owner's unavoidable
+  admin-only membership with both `inherit_option` and `set_option` false
+- **AND** the database owner SHALL NOT be able to assume either role
+- **AND** every broader membership or owner-object privilege SHALL fail closed
 
 #### Scenario: Elevated or missing Slice E runtime credential
 

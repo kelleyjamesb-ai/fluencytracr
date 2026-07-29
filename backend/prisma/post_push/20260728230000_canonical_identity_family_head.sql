@@ -9,10 +9,21 @@ BEGIN
     SELECT 1 FROM pg_catalog.pg_roles
     WHERE rolname = 'fluencytracr_slice_e_owner'
   ) THEN
+    PERFORM pg_catalog.set_config(
+      'createrole_self_grant',
+      'set',
+      true
+    );
     CREATE ROLE fluencytracr_slice_e_owner
       NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT
       NOREPLICATION NOBYPASSRLS;
   END IF;
+
+  PERFORM pg_catalog.set_config(
+    'createrole_self_grant',
+    '',
+    true
+  );
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_roles
@@ -317,6 +328,27 @@ REVOKE ALL ON FUNCTION
   public.reject_canonical_identity_source_mutation()
 FROM PUBLIC;
 
+DO $restricted_function_acl$
+DECLARE
+  restricted_role TEXT;
+BEGIN
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON FUNCTION public.canonical_identity_family_lock_key(TEXT, TEXT, TEXT), public.canonical_identity_source_commitments(TEXT, JSONB), public.append_canonical_identity_family_head(), public.reject_canonical_identity_source_mutation() FROM %I',
+        restricted_role
+      );
+    END IF;
+  END LOOP;
+END
+$restricted_function_acl$;
+
 DO $backfill$
 DECLARE
   invalid_row RECORD;
@@ -546,22 +578,26 @@ REVOKE ALL ON TABLE public.ai_value_canonical_identity_family_head_journal
   FROM PUBLIC, fluencytracr_slice_e_runtime;
 REVOKE CREATE ON SCHEMA public FROM fluencytracr_slice_e_runtime;
 
-DO $$
+DO $restricted_acl$
+DECLARE
+  restricted_role TEXT;
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'anon') THEN
-    REVOKE ALL ON TABLE
-      public.ai_value_canonical_identity_family_head_journal
-    FROM anon;
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'authenticated'
-  ) THEN
-    REVOKE ALL ON TABLE
-      public.ai_value_canonical_identity_family_head_journal
-    FROM authenticated;
-  END IF;
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON TABLE public.value_hypotheses, public.measurement_plans, public.measurement_cell_snapshots, public.ai_value_canonical_identity_family_head_journal FROM %I',
+        restricted_role
+      );
+    END IF;
+  END LOOP;
 END
-$$;
+$restricted_acl$;
 
 GRANT SELECT, INSERT ON TABLE
   public.value_hypotheses,
@@ -612,6 +648,7 @@ CREATE POLICY "canonical_identity_family_head_slice_e_runtime_select"
 ON public.ai_value_canonical_identity_family_head_journal FOR SELECT
 TO fluencytracr_slice_e_runtime USING (true);
 
+GRANT CREATE ON SCHEMA public TO fluencytracr_slice_e_owner;
 ALTER FUNCTION public.canonical_identity_family_lock_key(TEXT, TEXT, TEXT)
   OWNER TO fluencytracr_slice_e_owner;
 ALTER FUNCTION public.canonical_identity_source_commitments(TEXT, JSONB)
@@ -625,5 +662,7 @@ ALTER TABLE public.measurement_plans OWNER TO fluencytracr_slice_e_owner;
 ALTER TABLE public.measurement_cell_snapshots OWNER TO fluencytracr_slice_e_owner;
 ALTER TABLE public.ai_value_canonical_identity_family_head_journal
   OWNER TO fluencytracr_slice_e_owner;
+REVOKE CREATE ON SCHEMA public FROM fluencytracr_slice_e_owner;
+REVOKE fluencytracr_slice_e_owner FROM CURRENT_USER;
 
 COMMIT;

@@ -273,10 +273,22 @@ export const checkCanonicalIdentityFamilyHeadStructureReadiness = async (
               'fluencytracr_slice_e_owner',
               'fluencytracr_slice_e_runtime'
             )
-             OR granted_role.rolname IN (
-              'fluencytracr_slice_e_owner',
-              'fluencytracr_slice_e_runtime'
-            )
+             OR (
+               granted_role.rolname IN (
+                 'fluencytracr_slice_e_owner',
+                 'fluencytracr_slice_e_runtime'
+               )
+               AND NOT (
+                 member_role.oid = (
+                   SELECT datdba
+                   FROM pg_catalog.pg_database
+                   WHERE datname = current_database()
+                 )
+                 AND membership.admin_option
+                 AND NOT membership.inherit_option
+                 AND NOT membership.set_option
+               )
+             )
         )
         AND NOT pg_catalog.has_schema_privilege(
           'fluencytracr_slice_e_runtime',

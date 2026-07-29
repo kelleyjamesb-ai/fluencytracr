@@ -1858,7 +1858,20 @@ const getDatabaseReadiness = async (): Promise<DatabaseReadinessResult> => {
         .map((tableName) => `'${tableName}'`)
         .join(", ");
       const columnRows = (await prisma.$queryRawUnsafe(
-        `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN (${tableNameList})`
+        `/* persistence_columns */
+         SELECT
+           table_row.relname AS table_name,
+           attribute.attname AS column_name
+         FROM pg_catalog.pg_class AS table_row
+         JOIN pg_catalog.pg_namespace AS namespace
+           ON namespace.oid = table_row.relnamespace
+         JOIN pg_catalog.pg_attribute AS attribute
+           ON attribute.attrelid = table_row.oid
+          AND attribute.attnum > 0
+          AND NOT attribute.attisdropped
+         WHERE namespace.nspname = 'public'
+           AND table_row.relkind IN ('r', 'p')
+           AND table_row.relname IN (${tableNameList})`
       )) as Array<{ table_name: string; column_name: string }>;
       const columnsByTable = new Map<string, Set<string>>();
       for (const row of columnRows) {

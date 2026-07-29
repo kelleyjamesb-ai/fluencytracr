@@ -29,6 +29,10 @@ describe("Slice E canonical identity family-head structural readiness", () => {
     expect(inspectedSql).toContain("actual.body_hash");
     expect(inspectedSql).toContain("has_schema_privilege");
     expect(inspectedSql).toContain("pg_auth_members");
+    expect(inspectedSql).toContain("membership.admin_option");
+    expect(inspectedSql).toContain("NOT membership.inherit_option");
+    expect(inspectedSql).toContain("NOT membership.set_option");
+    expect(inspectedSql).toContain("WHERE datname = current_database()");
     expect(inspectedSql).toContain("'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'");
   });
 

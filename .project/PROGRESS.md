@@ -4857,3 +4857,39 @@
   merged, deployed, or applied to any production database. Next: freeze the
   immutable repair commit and run CODE, BUG, and ADVERSARIAL review against
   that exact SHA.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (production migration compatibility)
+
+- Audited the production Supabase PostgreSQL 17 project read-only. Seven of
+  23 Prisma migrations are applied with matching checksums; 16 remain pending.
+  No production migration, credential, key lifecycle, deployment, or data
+  mutation was performed.
+- Reproduced the production boundary in a disposable PostgreSQL 17 database:
+  non-superuser database owner, Supabase `extensions.pgcrypto`, hosted
+  public-schema default grants, and PostgreSQL 17 role-membership semantics.
+  The original chain failed C.1 crypto resolution and Slice E ownership
+  transfer/readiness.
+- Repaired only the demonstrated migration blockers. C.1 is atomic, uses the
+  hosted crypto namespace, preserves Outcome Evidence and AI Value RLS while
+  adding only the exact runtime policies, removes Supabase API/default grants,
+  and keeps the provisioner limited to its three key journals and activation
+  sequence. Provision/activate/revoke now require the direct provisioner
+  login. Slice E uses the PostgreSQL 17 owner-transfer path and permits only
+  the unavoidable database-owner admin-only membership with no `SET` or
+  `INHERIT`.
+- Corrected two directly coupled readiness/runtime defects: catalog column
+  discovery now remains valid after Slice E ownership transfer, and the
+  Measurement Cell aggregate pipeline source (`bigquery_export` or
+  `sigma_export`) is no longer incorrectly equated with the customer outcome
+  source.
+- Focused evidence currently passes: all 23 migrations replayed in order;
+  C.1 and Slice E structural readiness are true; Supabase API roles have no
+  governed-table ACLs; five focused migration/readiness suites passed 58/58;
+  canonical source suites passed 14/14; the C.1 PostgreSQL verifier passed;
+  and the combined D/E PostgreSQL verifier passed with direct restricted-role
+  sessions and owner-boundary drift rejection.
+- State: designed, locally implemented, migration-replayed, and
+  focused-verified. It is not yet committed, exact-SHA reviewed, full-suite
+  verified, pushed, PR-opened, merged, deployed, production-migrated, runtime
+  credentialed, key-provisioned, or live-proved. Production remains on HOLD
+  until this repair is reviewed and merged.

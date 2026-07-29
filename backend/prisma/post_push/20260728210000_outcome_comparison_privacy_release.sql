@@ -1,9 +1,56 @@
 -- CI-only companion for the repository's db-push-and-baseline harness.
 -- Production migration authority remains the matching Prisma migration.
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-REVOKE ALL ON FUNCTION public.digest(BYTEA, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.hmac(BYTEA, BYTEA, TEXT) FROM PUBLIC;
+BEGIN;
+
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+REVOKE ALL ON FUNCTION extensions.digest(BYTEA, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION extensions.hmac(BYTEA, BYTEA, TEXT) FROM PUBLIC;
+
+ALTER TABLE public.velocity_distribution_observations
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fluencytracr_verdicts
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aggregate_privacy_release_journal
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aggregate_privacy_manifests
+  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aggregate_privacy_contribution_claims
+  ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE
+  public.velocity_distribution_observations,
+  public.fluencytracr_verdicts,
+  public.aggregate_privacy_release_journal,
+  public.aggregate_privacy_manifests,
+  public.aggregate_privacy_contribution_claims
+FROM PUBLIC;
+
+DO $aggregate_restricted_acl$
+DECLARE
+  restricted_role TEXT;
+BEGIN
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON TABLE public.velocity_distribution_observations, public.fluencytracr_verdicts, public.aggregate_privacy_release_journal, public.aggregate_privacy_manifests, public.aggregate_privacy_contribution_claims FROM %I',
+        restricted_role
+      );
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON SEQUENCE public.velocity_distribution_observations_ingest_sequence_seq FROM %I',
+        restricted_role
+      );
+    END IF;
+  END LOOP;
+END
+$aggregate_restricted_acl$;
 
 DO $$
 BEGIN
@@ -122,17 +169,36 @@ ALTER TABLE public.outcome_comparison_privacy_releases ENABLE ROW LEVEL SECURITY
 
 REVOKE ALL ON TABLE public.outcome_comparison_privacy_releases FROM PUBLIC;
 
-DO $$
+DO $restricted_acl$
+DECLARE
+  restricted_role TEXT;
+  activation_sequence TEXT;
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-    REVOKE ALL ON TABLE public.outcome_comparison_privacy_releases FROM anon;
-  END IF;
-
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-    REVOKE ALL ON TABLE public.outcome_comparison_privacy_releases FROM authenticated;
-  END IF;
+  activation_sequence := pg_catalog.pg_get_serial_sequence(
+    'public.outcome_comparison_attestation_key_activations',
+    'activation_epoch'
+  );
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON TABLE public.outcome_comparison_attestation_keys, public.outcome_comparison_attestation_key_activations, public.outcome_comparison_attestation_key_revocations, public.outcome_comparison_privacy_releases, public.cohort_producer_authorities, public.cohort_producer_authority_revocations, public.aggregate_privacy_reservations, public.cohort_proof_journal, public.outcome_evidence, public.ai_value_objects, public.aggregate_privacy_release_journal FROM %I',
+        restricted_role
+      );
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON SEQUENCE %s FROM %I',
+        activation_sequence,
+        restricted_role
+      );
+    END IF;
+  END LOOP;
 END
-$$;
+$restricted_acl$;
 
 CREATE TRIGGER "outcome_comparison_attestation_keys_append_only"
 BEFORE UPDATE OR DELETE ON "outcome_comparison_attestation_keys"
@@ -364,7 +430,7 @@ BEGIN
      OR active_algorithm <> 'HMAC-SHA-256'
      OR active_revoked
      OR active_secret_hash <> pg_catalog.encode(
-       public.digest(pg_catalog.convert_to(supplied_secret, 'UTF8'), 'sha256'), 'hex'
+       extensions.digest(pg_catalog.convert_to(supplied_secret, 'UTF8'), 'sha256'), 'hex'
      ) THEN
     RAISE EXCEPTION 'C.1 creation attestation authority rejected'
       USING ERRCODE = 'integrity_constraint_violation';
@@ -373,7 +439,7 @@ BEGIN
     pg_catalog.date_trunc('milliseconds', pg_catalog.clock_timestamp())::TIMESTAMPTZ(3);
   NEW.attestation_key_id := active_key_id;
   NEW.creation_attestation := pg_catalog.encode(
-    public.hmac(
+    extensions.hmac(
       public.outcome_comparison_creation_attestation_message(NEW),
       pg_catalog.convert_to(supplied_secret, 'UTF8'),
       'sha256'
@@ -414,12 +480,12 @@ BEGIN
   WHERE key_row.key_id = release_row.attestation_key_id;
   IF registry_hash IS NULL OR registry_algorithm <> 'HMAC-SHA-256' OR is_revoked
      OR registry_hash <> pg_catalog.encode(
-       public.digest(pg_catalog.convert_to(supplied_secret, 'UTF8'), 'sha256'), 'hex'
+       extensions.digest(pg_catalog.convert_to(supplied_secret, 'UTF8'), 'sha256'), 'hex'
      ) THEN
     RETURN false;
   END IF;
   expected_hmac := pg_catalog.encode(
-    public.hmac(
+    extensions.hmac(
       public.outcome_comparison_creation_attestation_message(release_row),
       pg_catalog.convert_to(supplied_secret, 'UTF8'),
       'sha256'
@@ -488,7 +554,7 @@ BEGIN
   END IF;
   FOR input_index IN 1..pg_catalog.cardinality(configured_key_ids) LOOP
     expected_hash := pg_catalog.encode(
-      public.digest(pg_catalog.convert_to(configured_secrets[input_index], 'UTF8'), 'sha256'), 'hex'
+      extensions.digest(pg_catalog.convert_to(configured_secrets[input_index], 'UTF8'), 'sha256'), 'hex'
     );
     SELECT key_row.secret_hash, key_row.algorithm, revocation.key_id IS NOT NULL
     INTO registry_hash, registry_algorithm, registry_revoked
@@ -613,3 +679,30 @@ REVOKE ALL ON FUNCTION public.outcome_evidence_family_lock_key(TEXT, TEXT, TEXT,
 CREATE TRIGGER "outcome_evidence_family_lock_before_mutation"
 BEFORE INSERT OR UPDATE OR DELETE ON "outcome_evidence"
 FOR EACH ROW EXECUTE FUNCTION "lock_outcome_evidence_family_mutation"();
+
+DO $restricted_function_acl$
+DECLARE
+  restricted_role TEXT;
+BEGIN
+  FOREACH restricted_role IN ARRAY
+    ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_roles
+      WHERE rolname = restricted_role
+    ) THEN
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON FUNCTION extensions.digest(BYTEA, TEXT), extensions.hmac(BYTEA, BYTEA, TEXT) FROM %I',
+        restricted_role
+      );
+      EXECUTE pg_catalog.format(
+        'REVOKE ALL ON FUNCTION public.outcome_comparison_attestation_frame(BYTEA), public.outcome_comparison_creation_attestation_message(public.outcome_comparison_privacy_releases), public.stamp_outcome_comparison_creation_attestation(), public.verify_outcome_comparison_creation_attestation(UUID), public.outcome_comparison_attestation_readiness(TEXT, TEXT[], TEXT[]), public.reject_c1_runtime_lock_only_mutation(), public.lock_outcome_evidence_family_mutation(), public.outcome_evidence_family_lock_key(TEXT, TEXT, TEXT, TEXT) FROM %I',
+        restricted_role
+      );
+    END IF;
+  END LOOP;
+END
+$restricted_function_acl$;
+
+COMMIT;

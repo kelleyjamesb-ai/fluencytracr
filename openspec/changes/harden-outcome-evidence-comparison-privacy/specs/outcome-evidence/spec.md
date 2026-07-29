@@ -116,15 +116,23 @@ attributes, security posture, search path, body, and owner-only execute ACL.
 It SHALL attest the runtime lock-only function's exact signature,
 owner, language, binary/source, volatility, parallel and strict attributes,
 security posture, search path, body, and execute ACL. It SHALL also attest the
-exact database-owner `pgcrypto` `digest` and `hmac` C-function definitions,
-extension dependencies, configuration, attributes, and owner-only execute
-ACLs. Same-named cross-schema functions, no-op replacements, owner drift,
+exact database-owner `pgcrypto` `digest` and `hmac` C-function definitions in
+the hosted `extensions` schema, extension dependencies, configuration, and
+attributes. Execute ACLs SHALL remain owner-only except for the existing
+platform `dashboard_user` grant. Same-named cross-schema functions, no-op
+replacements, owner drift,
 family-lock/codec body drift, execute-grant drift, source-table RLS drift, and
 missing or forbidden runtime table privileges SHALL fail closed.
 The provisioner SHALL have exactly `SELECT` and `INSERT` on the three key
 journals, exactly `USAGE` and `SELECT` on the activation sequence, and no
 privilege on any other public table or sequence. Additional provisioner
 authority SHALL fail structural readiness.
+Provision, activation, and revocation SHALL authenticate directly through
+`C1_ATTESTATION_PROVISIONER_DATABASE_URL`, require both `session_user` and
+`current_user` to be the exact provisioner role, and SHALL NOT use
+`SET ROLE`. On PostgreSQL 17, readiness MAY allow only the database owner's
+unavoidable admin-only creator membership when both `inherit_option` and
+`set_option` are false; every other restricted-role membership SHALL fail.
 
 #### Scenario: Exact replay returns stored projection
 

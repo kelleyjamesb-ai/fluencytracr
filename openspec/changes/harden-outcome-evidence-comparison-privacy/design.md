@@ -148,7 +148,10 @@ Runtime configuration contains:
 
 Secrets are treated as the UTF-8 bytes of that canonical 43-character encoding.
 The registry stores lowercase hexadecimal SHA-256 of those bytes. PostgreSQL
-`pgcrypto` supplies `digest` and `hmac`. The repository passes the active key
+`pgcrypto` supplies `extensions.digest` and `extensions.hmac` on hosted
+Supabase PostgreSQL. `PUBLIC` and the application/API roles lose execute
+authority; the existing platform `dashboard_user` execute ACL is preserved.
+The repository passes the active key
 ID and secret only through parameterized
 `set_config('fluencytracr.c1_attestation_key_id', $1, true)` and
 `set_config('fluencytracr.c1_attestation_secret', $2, true)` inside the current
@@ -213,6 +216,13 @@ The application supplies this least-privilege direct login through a dedicated
 `DATABASE_URL`. Structural readiness may use the general connection, but the
 bounded creation-attestation readiness function and every C.1 release
 transaction must use the dedicated direct runtime connection.
+
+The provision, activation, and revocation tools likewise authenticate
+directly as `fluencytracr_c1_attestation_provisioner` through
+`C1_ATTESTATION_PROVISIONER_DATABASE_URL`; they require both `session_user`
+and `current_user` to equal that role and never use `SET ROLE`. PostgreSQL 17
+may retain only the unavoidable database-owner admin-only creator membership
+with no `INHERIT` or `SET` option. Every other membership is structural drift.
 
 Each release binds its `attestation_key_id`. A security-definer verifier accepts
 only release ID plus parameterized transaction-local key ID/secret, reloads the
@@ -332,8 +342,9 @@ on Outcome Evidence and AI Value and add only the exact C.1 runtime policies
 needed for direct reads and AI Value row locking. Require `pgcrypto`. Add
 the Outcome Evidence family-lock trigger, release `BEFORE INSERT`
 guard/verifier, and identical bindings in the post-push companion and database
-readiness. Add separate admin role/bootstrap and idempotent provision/revoke
-commands; do not create credentials, provision or revoke a live key, apply the
+readiness. Add a separate direct-login provisioner role/bootstrap and
+idempotent provision/activate/revoke commands; do not create credentials,
+provision or revoke a live key, apply the
 migration live, or deploy in this slice. Without a provisioned non-revoked
 active key, matching retained secrets, current C.0 authority, and valid
 committed C.1 row, every commit and readback remains held.
