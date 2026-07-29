@@ -2,6 +2,7 @@ import crypto from "crypto";
 
 import type { Role } from "@fluencytracr/shared";
 import { aiValueEngine } from "@fluencytracr/shared";
+import express, { type Express } from "express";
 import request from "supertest";
 
 jest.mock("../src/services/canonical-claim-trace.service", () => ({
@@ -11,6 +12,20 @@ jest.mock("../src/services/canonical-claim-trace.service", () => ({
 import { app } from "../src/app";
 import { readCanonicalClaimTrace } from "../src/services/canonical-claim-trace.service";
 import { store } from "../src/store";
+
+let capturedVercelServiceApp: Express | undefined;
+const vercelListen = jest
+  .spyOn(express.application, "listen")
+  .mockImplementation(function (this: Express) {
+    capturedVercelServiceApp = this;
+    return {} as ReturnType<Express["listen"]>;
+  });
+jest.requireActual("../src/vercel");
+vercelListen.mockRestore();
+if (!capturedVercelServiceApp) {
+  throw new Error("Vercel service adapter did not register its Express app");
+}
+const vercelServiceApp = capturedVercelServiceApp;
 
 const jwtSecret = "slice-f-route-test-secret";
 const bindingId = `canonical_identity_binding_${"1".repeat(64)}`;
@@ -269,6 +284,64 @@ describe("canonical claim trace API", () => {
       body: response.text ?? ""
     });
     const shapes = responses.map(boundaryShape);
+    expect(new Set(shapes.map((shape) => JSON.stringify(shape))).size).toBe(1);
+    expect(shapes[0]).toEqual({
+      status: 405,
+      cacheControl: "no-store",
+      allow: "GET",
+      contentLength: undefined,
+      contentType: undefined,
+      body: ""
+    });
+    expect(traceService).not.toHaveBeenCalled();
+  });
+
+  it.each(["%", "%ZZ"])(
+    "returns fixed HOLD after the Vercel adapter normalizes stripped selector %s",
+    async (selector) => {
+      traceService.mockResolvedValue(authorizedTrace);
+      const ordinaryHold = await request(vercelServiceApp)
+        .get("/v1/ai-value/claim-trace/not-a-binding")
+        .set("authorization", bearer("ADMIN", "org-northstar"));
+      const malformed = await request(vercelServiceApp)
+        .get(`/v1/ai-value/claim-trace/${selector}`)
+        .set("authorization", bearer("ADMIN", "org-northstar"));
+
+      expect(malformed.status).toBe(200);
+      expect(malformed.headers["cache-control"]).toBe("no-store");
+      expect(malformed.headers["content-type"]).toMatch(/application\/json/);
+      expect(malformed.text).toBe(ordinaryHold.text);
+      expect(malformed.body).toEqual(aiValueEngine.canonicalClaimTraceFixedHold());
+    }
+  );
+
+  it("returns one result-independent HEAD boundary after Vercel normalization", async () => {
+    traceService
+      .mockResolvedValueOnce(authorizedTrace)
+      .mockResolvedValueOnce(aiValueEngine.canonicalClaimTraceFixedHold());
+    const paths = [
+      `/v1/ai-value/claim-trace/${bindingId}`,
+      `/v1/ai-value/claim-trace/canonical_identity_binding_${"0".repeat(64)}`,
+      "/v1/ai-value/claim-trace/%"
+    ];
+    const responses = [];
+
+    for (const path of paths) {
+      responses.push(
+        await request(vercelServiceApp)
+          .head(path)
+          .set("authorization", bearer("ADMIN", "org-northstar"))
+      );
+    }
+
+    const shapes = responses.map((response) => ({
+      status: response.status,
+      cacheControl: response.headers["cache-control"],
+      allow: response.headers["allow"],
+      contentLength: response.headers["content-length"],
+      contentType: response.headers["content-type"],
+      body: response.text ?? ""
+    }));
     expect(new Set(shapes.map((shape) => JSON.stringify(shape))).size).toBe(1);
     expect(shapes[0]).toEqual({
       status: 405,

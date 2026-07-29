@@ -790,7 +790,7 @@ export function registerAiValueRoutes(app: Express): void {
     (req: RequestWithRole, res, next) => {
       if (req.method !== "GET" && req.method !== "HEAD") return next();
 
-      const rawPath = req.originalUrl.split("?", 1)[0] ?? "";
+      const rawPath = `${req.baseUrl}${req.url}`.split("?", 1)[0] ?? "";
       const selectorMatch =
         /^\/api\/v1\/ai-value\/claim-trace\/([^/]+)\/?$/i.exec(rawPath);
       if (!selectorMatch) return next();
