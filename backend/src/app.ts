@@ -228,7 +228,36 @@ const shouldTrustProxy =
 if (shouldTrustProxy) {
   app.set("trust proxy", 1);
 }
-app.use(express.json());
+
+const CANONICAL_CLAIM_TRACE_ROUTE_PREFIX = "/api/v1/ai-value/claim-trace";
+const isCanonicalClaimTraceRequest = (req: express.Request) =>
+  req.path === CANONICAL_CLAIM_TRACE_ROUTE_PREFIX ||
+  req.path.startsWith(`${CANONICAL_CLAIM_TRACE_ROUTE_PREFIX}/`);
+const jsonBodyParser = express.json();
+
+app.use(CANONICAL_CLAIM_TRACE_ROUTE_PREFIX, (_req, res, next) => {
+  res.set("cache-control", "no-store");
+  next();
+});
+app.use(
+  CANONICAL_CLAIM_TRACE_ROUTE_PREFIX,
+  express.raw({ type: () => true, limit: "100kb" })
+);
+app.use(
+  CANONICAL_CLAIM_TRACE_ROUTE_PREFIX,
+  (
+    _error: Error,
+    req: express.Request & { canonicalClaimTraceBodyRejected?: boolean },
+    _res: express.Response,
+    next: express.NextFunction
+  ) => {
+    req.canonicalClaimTraceBodyRejected = true;
+    next();
+  }
+);
+app.use((req, res, next) =>
+  isCanonicalClaimTraceRequest(req) ? next() : jsonBodyParser(req, res, next)
+);
 
 const AuthTokenRequestSchema = z
   .object({

@@ -14,6 +14,7 @@ declare global {
       authWarning?: string;
       authSub?: string;
       authOrgId?: string;
+      canonicalClaimTraceBodyRejected?: boolean;
     }
   }
 }
@@ -23,6 +24,7 @@ export type RequestWithRole = Request & {
   authWarning?: string;
   authSub?: string;
   authOrgId?: string;
+  canonicalClaimTraceBodyRejected?: boolean;
 };
 
 const ROLE_ORDER: Role[] = ["ADMIN", "GOV_OPERATOR", "EXEC_VIEWER", "ENABLEMENT_LEAD"];
@@ -142,7 +144,11 @@ export const authMiddleware = (req: RequestWithRole, res: Response, next: NextFu
 
 const getRequestedOrgId = (req: RequestWithRole): string | null => {
   const fromParams = (req.params?.orgId ?? req.params?.org_id) as string | undefined;
-  const fromQueryRaw = req.query?.org_id ?? req.query?.orgId;
+  const isCanonicalClaimTraceRequest =
+    req.method === "GET" && req.path.startsWith("/api/v1/ai-value/claim-trace/");
+  const fromQueryRaw = isCanonicalClaimTraceRequest
+    ? undefined
+    : req.query?.org_id ?? req.query?.orgId;
   const fromQuery = typeof fromQueryRaw === "string" ? fromQueryRaw : undefined;
   const body = req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : null;
   const fromBodyOrgId = body && typeof body.org_id === "string" ? body.org_id : undefined;

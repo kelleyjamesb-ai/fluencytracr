@@ -10,6 +10,7 @@ jest.mock("../src/services/canonical-claim-trace.service", () => ({
 
 import { app } from "../src/app";
 import { readCanonicalClaimTrace } from "../src/services/canonical-claim-trace.service";
+import { store } from "../src/store";
 
 const jwtSecret = "slice-f-route-test-secret";
 const bindingId = `canonical_identity_binding_${"1".repeat(64)}`;
@@ -115,6 +116,35 @@ describe("canonical claim trace API", () => {
     expect(traceService).not.toHaveBeenCalled();
   });
 
+  it("does not replace an allowed JWT organization with an org header", async () => {
+    traceService.mockImplementation(async (orgId) =>
+      orgId === "org-northstar" ? authorizedTrace : aiValueEngine.canonicalClaimTraceFixedHold()
+    );
+
+    const response = await request(app)
+      .get(tracePath)
+      .set("authorization", bearer("ADMIN", "org-northstar"))
+      .set("x-org-id", "org-foreign");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(authorizedTrace);
+  });
+
+  it.each(["org_id", "orgId"])(
+    "returns the fixed HOLD when %s conflicts with the signed organization",
+    async (orgKey) => {
+      traceService.mockResolvedValue(authorizedTrace);
+
+      const response = await request(app)
+        .get(`${tracePath}?${orgKey}=org-foreign`)
+        .set("authorization", bearer("ADMIN", "org-northstar"));
+
+      expect(response.status).toBe(200);
+      expect(response.headers["cache-control"]).toBe("no-store");
+      expect(response.body).toEqual(aiValueEngine.canonicalClaimTraceFixedHold());
+    }
+  );
+
   it("returns byte-identical HOLD for authenticated lookup failures", async () => {
     traceService.mockImplementation(async (_orgId, requestedBindingId) =>
       requestedBindingId === bindingId
@@ -156,6 +186,28 @@ describe("canonical claim trace API", () => {
     expect(JSON.parse(withBody.text)).toEqual(aiValueEngine.canonicalClaimTraceFixedHold());
   });
 
+  it.each([
+    ["empty JSON object", "application/json", "{}"],
+    ["JSON array", "application/json", "[]"],
+    ["JSON org_id", "application/json", '{"org_id":"org-foreign"}'],
+    ["JSON orgId", "application/json", '{"orgId":"org-foreign"}'],
+    ["plain text", "text/plain", "unexpected"],
+    ["malformed JSON", "application/json", "{"],
+    ["oversized JSON", "application/json", "x".repeat(1024 * 101)]
+  ])("returns the fixed HOLD for a nonempty GET body: %s", async (_label, type, body) => {
+    traceService.mockResolvedValue(authorizedTrace);
+
+    const response = await request(app)
+      .get(tracePath)
+      .set("authorization", bearer("ADMIN", "org-northstar"))
+      .set("content-type", type)
+      .send(body);
+
+    expect(response.status).toBe(200);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.body).toEqual(aiValueEngine.canonicalClaimTraceFixedHold());
+  });
+
   it("requires a valid JWT before serving the trace", async () => {
     const missing = await request(app).get(tracePath);
     const forged = await request(app)
@@ -164,19 +216,33 @@ describe("canonical claim trace API", () => {
 
     expect(missing.status).toBe(401);
     expect(forged.status).toBe(401);
+    expect(missing.headers["cache-control"]).toBe("no-store");
+    expect(forged.headers["cache-control"]).toBe("no-store");
     expect(traceService).not.toHaveBeenCalled();
+  });
+
+  it("sets no-store on an RBAC denial", async () => {
+    const response = await request(app)
+      .get(tracePath)
+      .set("authorization", bearer("EXEC_VIEWER", "org-northstar"));
+
+    expect(response.status).toBe(403);
+    expect(response.headers["cache-control"]).toBe("no-store");
   });
 
   it.each(["post", "put", "patch", "delete"] as const)(
     "does not expose a %s mutation path for a claim trace",
     async (method) => {
+      const persistedBefore = Array.from(store.aiValueObjects.entries());
       const response = await request(app)
         [method](tracePath)
         .set("authorization", bearer("ADMIN", "org-northstar"))
         .send({ mutation: true });
 
-      expect(response.status).not.toBe(200);
+      expect(response.status).toBe(404);
+      expect(response.headers["cache-control"]).toBe("no-store");
       expect(traceService).not.toHaveBeenCalled();
+      expect(Array.from(store.aiValueObjects.entries())).toEqual(persistedBefore);
     }
   );
 });

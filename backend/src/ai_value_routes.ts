@@ -793,9 +793,11 @@ export function registerAiValueRoutes(app: Express): void {
 
       const hasUnknownInput =
         Object.keys(req.query).length > 0 ||
-        (req.body !== undefined &&
-          req.body !== null &&
-          (typeof req.body !== "object" || Object.keys(req.body).length > 0));
+        req.canonicalClaimTraceBodyRejected === true ||
+        (Buffer.isBuffer(req.body)
+          ? req.body.length > 0
+          : Number(req.header("content-length") ?? 0) > 0 ||
+            req.header("transfer-encoding") !== undefined);
       const validBindingId = /^canonical_identity_binding_[0-9a-f]{64}$/.test(
         req.params.bindingId
       );
