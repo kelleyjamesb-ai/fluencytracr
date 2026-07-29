@@ -765,6 +765,9 @@ describe("AI value spine run API", () => {
     expect(missing.headers["x-ai-value-canonical-identity-bound"]).toBe("false");
     expect(missing.headers["x-ai-value-customer-facing-output"]).toBe("false");
     expect(missing.headers["x-ai-value-export-authorized"]).toBe("false");
+    expect(missing.headers["deprecation"]).toBe("true");
+    expect(missing.headers["x-ai-value-legacy-path"]).toBe("true");
+    expect(missing.headers["x-ai-value-claim-trace-authoritative"]).toBe("false");
     expect(missing.headers["cache-control"]).toContain("no-store");
     expect(missing.text).toContain("Claim authorization held");
     expect(missing.text).toContain("No authorized aggregate claim is available.");

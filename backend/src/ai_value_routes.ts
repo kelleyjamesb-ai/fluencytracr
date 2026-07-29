@@ -31,6 +31,7 @@ import {
   authorizeAggregateClaim,
   readAuthorizedAggregateClaim
 } from "./services/aggregate-claim-authorization.service";
+import { readCanonicalClaimTrace } from "./services/canonical-claim-trace.service";
 import {
   acceptedReadinessBoundOutcomeEvidence,
   authoritativeOutcomeEvidenceReceipt
@@ -783,6 +784,30 @@ export function registerAiValueRoutes(app: Express): void {
   );
 
   app.get(
+    "/api/v1/ai-value/claim-trace/:bindingId",
+    rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+      res.set("cache-control", "no-store");
+
+      const hasUnknownInput =
+        Object.keys(req.query).length > 0 ||
+        (req.body !== undefined &&
+          req.body !== null &&
+          (typeof req.body !== "object" || Object.keys(req.body).length > 0));
+      const validBindingId = /^canonical_identity_binding_[0-9a-f]{64}$/.test(
+        req.params.bindingId
+      );
+      const trace =
+        hasUnknownInput || !validBindingId
+          ? aiValueEngine.canonicalClaimTraceFixedHold()
+          : await readCanonicalClaimTrace(orgId, req.params.bindingId);
+      return res.status(200).json(aiValueEngine.CanonicalClaimTraceSchema.parse(trace));
+    }
+  );
+
+  app.get(
     "/api/v1/ai-value/readout/:packetId/html",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
     async (req: RequestWithRole, res) => {
@@ -798,6 +823,9 @@ export function registerAiValueRoutes(app: Express): void {
       );
       res.set("x-ai-value-customer-facing-output", "false");
       res.set("x-ai-value-export-authorized", "false");
+      res.set("deprecation", "true");
+      res.set("x-ai-value-legacy-path", "true");
+      res.set("x-ai-value-claim-trace-authoritative", "false");
       res.set("cache-control", "no-store");
       res.set("content-type", "text/html; charset=utf-8");
       return res.send(readout?.html ?? aggregateClaimHeldHtml());
