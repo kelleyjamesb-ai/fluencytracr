@@ -52,7 +52,30 @@
         "claim_label"
       ],
       "properties": {
-        "metric_id": { "$ref": "#/$defs/safe_id" },
+        "metric_id": {
+          "enum": [
+            "account_health_review_cycle_days",
+            "at_risk_account_share",
+            "customer_health_signal_coverage_share",
+            "cycle_time",
+            "expansion_signal_followup_share",
+            "logo_churn_rate",
+            "qbr_prep_hours_per_account",
+            "renewal_action_staleness_count",
+            "renewal_rate",
+            "risk_review_coverage_share",
+            "sales_forecast_exception_rate",
+            "sales_next_step_completeness_share",
+            "sales_record_update_lag_hours",
+            "sales_stale_opportunity_count",
+            "support_backlog_count",
+            "support_escalation_rate",
+            "support_first_contact_resolution_rate",
+            "support_median_resolution_hours",
+            "support_reopen_rate",
+            "support_verification_coverage"
+          ]
+        },
         "measurement_unit": {
           "enum": [
             "cases",

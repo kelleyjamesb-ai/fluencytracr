@@ -342,6 +342,30 @@ expectHeld(
   }),
   "alternate evidence pair"
 );
+expectHeld(
+  await authorizeAggregateClaim(authorizationRequest, {
+    readComparison: async () => ({
+      ...selected.result,
+      projection: {
+        ...selected.result.projection,
+        outcome_metric: "employee_12345"
+      }
+    })
+  }),
+  "identifier-bearing metric projection"
+);
+expectHeld(
+  await authorizeAggregateClaim(authorizationRequest, {
+    readComparison: async () => ({
+      ...selected.result,
+      projection: {
+        ...selected.result.projection,
+        outcome_metric: "outcome_caused_by_ai"
+      }
+    })
+  }),
+  "causal metric projection"
+);
 
 const sourceRefs = [
   { objectType: "outcome_evidence_export", objectId: outcomeExportId },

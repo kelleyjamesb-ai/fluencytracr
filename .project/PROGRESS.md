@@ -4437,3 +4437,20 @@
   customer-facing, monetary, and score units before artifact generation.
   The CODE follow-up about expressing one-of-each persisted artifact identity
   more precisely in JSON Schema remains non-blocking follow-up work.
+- Replacement exact review of commit `7ec89a2` closed the unit exploit. CODE
+  returned `GO`; BUG and ADVERSARIAL independently reproduced one equivalent
+  executable blocker through raw rendered `metric_id` values
+  (`employee_12345`, person-shaped values, and causal/ROI/productivity text).
+- The second D-only remediation constrains movement metric identifiers to a
+  compiled server-owned vocabulary, keeps the runtime and synchronized JSON
+  Schema enums identical by test, adds the normative OpenSpec rule, and adds
+  contract plus real PostgreSQL fixed-HOLD probes. It does not alter C.1
+  storage, release/readback semantics, SQL, privileges, or architecture.
+- Focused verification after that remediation: 71/71 Slice D backend tests,
+  shared/backend build with Prisma generation, strict OpenSpec, whitespace
+  check, full C.1 PostgreSQL verifier, and Slice D PostgreSQL verifier all
+  passed against disposable local PostgreSQL. No production migration was
+  applied and nothing was deployed.
+- Non-blocking follow-up remains: make the authorized-response JSON Schema
+  express exactly one persisted reference for each of the three internal
+  artifact types. Runtime already emits and reconciles exactly that set.

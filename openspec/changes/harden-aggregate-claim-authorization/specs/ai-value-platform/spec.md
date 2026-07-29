@@ -133,6 +133,16 @@ label that movement `OBSERVED_NON_ATTRIBUTABLE`.
   non-zero and the computed result is finite
 - **AND** it SHALL normalize negative zero and attach fixed aggregate,
   non-attribution, non-causality, and internal-only caveats
+- **AND** the metric identifier and measurement unit SHALL each match their
+  compiled Slice D vocabulary in the synchronized JSON Schema
+
+#### Scenario: Unapproved metric identifier or measurement unit
+
+- **WHEN** the selected C.1 movement contains a metric identifier or
+  measurement unit outside the compiled Slice D vocabularies
+- **THEN** claim authorization SHALL hold before artifact generation
+- **AND** no identifier, unsupported semantic text, or source detail SHALL be
+  returned in the fixed held response
 
 #### Scenario: Multiple movement or overflow attempt
 

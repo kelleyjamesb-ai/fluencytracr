@@ -1,4 +1,6 @@
 import { aiValueEngine } from "@fluencytracr/shared";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 import {
   getAiValueObject,
@@ -10,6 +12,7 @@ import { store } from "../src/store";
 const {
   AGGREGATE_CLAIM_CAVEATS,
   AGGREGATE_CLAIM_HELD_REASON,
+  AGGREGATE_CLAIM_METRIC_IDS,
   AGGREGATE_CLAIM_MEASUREMENT_UNITS,
   AGGREGATE_CLAIM_SOURCE_GRAPH_SCHEMA_VERSION,
   AggregateClaimHeldResponseSchema,
@@ -182,7 +185,7 @@ describe("aggregate claim authorization contracts", () => {
         baselineValue: 1,
         comparisonValue: 2
       })
-    ).toThrow("blocked claim semantics");
+    ).toThrow();
   });
 
   it("keeps the source seal stable across review and detects same-id mutation", () => {
@@ -354,7 +357,7 @@ describe("aggregate claim authorization contracts", () => {
   ])("rejects identifier-bearing or unsupported unit %s", (measurementUnit) => {
     expect(() =>
       buildAggregateObservedMovement({
-        metricId: "support_resolution_hours",
+        metricId: "support_median_resolution_hours",
         measurementUnit,
         baselineValue: 18.4,
         comparisonValue: 15.1
@@ -366,12 +369,60 @@ describe("aggregate claim authorization contracts", () => {
     for (const measurementUnit of AGGREGATE_CLAIM_MEASUREMENT_UNITS) {
       expect(
         buildAggregateObservedMovement({
-          metricId: "support_resolution_hours",
+          metricId: "support_median_resolution_hours",
           measurementUnit,
           baselineValue: 18.4,
           comparisonValue: 15.1
         }).measurement_unit
       ).toBe(measurementUnit);
     }
+  });
+
+  it.each([
+    "james_kelley",
+    "employee_12345",
+    "outcome_caused_by_ai",
+    "productivityGain",
+    "roiSavings"
+  ])("rejects identifying or unsupported metric identifier %s", (metricId) => {
+    expect(() =>
+      buildAggregateObservedMovement({
+        metricId,
+        measurementUnit: "hours",
+        baselineValue: 18.4,
+        comparisonValue: 15.1
+      })
+    ).toThrow();
+  });
+
+  it("accepts only the compiled server-owned Slice D metric vocabulary", () => {
+    for (const metricId of AGGREGATE_CLAIM_METRIC_IDS) {
+      expect(
+        buildAggregateObservedMovement({
+          metricId,
+          measurementUnit: "hours",
+          baselineValue: 18.4,
+          comparisonValue: 15.1
+        }).metric_id
+      ).toBe(metricId);
+    }
+  });
+
+  it("keeps the runtime and JSON Schema vocabularies identical", () => {
+    const schema = JSON.parse(
+      readFileSync(
+        resolve(
+          __dirname,
+          "../../schemas/ai-value-intelligence/aggregate-claim-authorization.schema.json"
+        ),
+        "utf8"
+      )
+    );
+    expect(schema.$defs.movement.properties.metric_id.enum).toEqual([
+      ...AGGREGATE_CLAIM_METRIC_IDS
+    ]);
+    expect(schema.$defs.movement.properties.measurement_unit.enum).toEqual([
+      ...AGGREGATE_CLAIM_MEASUREMENT_UNITS
+    ]);
   });
 });

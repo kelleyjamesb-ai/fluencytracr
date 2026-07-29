@@ -25,6 +25,15 @@ prose, monetary units, scores, and unsupported semantic text even when an
 upstream Outcome Evidence or C.1 schema can store that value. Extending the
 vocabulary requires a reviewed contract version; it is not caller-tunable.
 
+The movement metric identifier must independently match the compiled
+server-owned Slice D vocabulary represented by the `movement.metric_id` enum
+in the synchronized JSON Schema. The vocabulary contains only reviewed,
+aggregate metric identifiers from the shipped metrics libraries. Arbitrary
+customer text, person-shaped identifiers, and unsupported claim-language
+identifiers never enter an authorized artifact or readout. Extending the
+vocabulary requires a reviewed contract version; upstream storage or C.1
+acceptance does not extend Slice D authority.
+
 ## Authority chain
 
 1. Real-evidence materialization persists its generated scenario and seals the

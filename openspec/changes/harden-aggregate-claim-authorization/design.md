@@ -170,7 +170,8 @@ separately governed contract and is outside Slice D.
 Template `FT_AGGREGATE_DESCRIPTIVE_CLAIM_V1` emits exactly one structured
 movement, never caller-authored prose:
 
-- metric identifier and approved measurement unit;
+- metric identifier from the compiled server-owned Slice D vocabulary and
+  measurement unit from the compiled generic Slice D vocabulary;
 - baseline and comparison values copied from C.1 readback;
 - absolute delta computed as `comparison - baseline`;
 - mechanical percent change computed as
@@ -193,6 +194,9 @@ or caused value. Every rendered movement carries fixed aggregate-observation,
 non-attribution, non-causality, and internal-only caveats. There are no fields
 for ROI, money, productivity, prediction, confidence/probability, individual
 performance, ranking, customer-facing approval, or model output.
+The synchronized JSON Schema is the normative enumeration for both compiled
+vocabularies. Upstream storage, accepted review, and C.1 release do not add
+metric identifiers or measurement units to Slice D authority.
 
 ### Internal artifact namespace and non-circular identity
 

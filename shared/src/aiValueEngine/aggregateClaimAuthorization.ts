@@ -46,6 +46,28 @@ export const AGGREGATE_CLAIM_MEASUREMENT_UNITS = [
   "share",
   "weeks"
 ] as const;
+export const AGGREGATE_CLAIM_METRIC_IDS = [
+  "account_health_review_cycle_days",
+  "at_risk_account_share",
+  "customer_health_signal_coverage_share",
+  "cycle_time",
+  "expansion_signal_followup_share",
+  "logo_churn_rate",
+  "qbr_prep_hours_per_account",
+  "renewal_action_staleness_count",
+  "renewal_rate",
+  "risk_review_coverage_share",
+  "sales_forecast_exception_rate",
+  "sales_next_step_completeness_share",
+  "sales_record_update_lag_hours",
+  "sales_stale_opportunity_count",
+  "support_backlog_count",
+  "support_escalation_rate",
+  "support_first_contact_resolution_rate",
+  "support_median_resolution_hours",
+  "support_reopen_rate",
+  "support_verification_coverage"
+] as const;
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9:_-]{0,511}$/;
@@ -62,6 +84,7 @@ const exactHash = z.string().regex(SHA256_HEX);
 const finiteNumber = z.number().finite();
 const nonNegativeInteger = z.number().int().nonnegative();
 export const AggregateClaimMeasurementUnitSchema = z.enum(AGGREGATE_CLAIM_MEASUREMENT_UNITS);
+export const AggregateClaimMetricIdSchema = z.enum(AGGREGATE_CLAIM_METRIC_IDS);
 
 export const AggregateClaimSourceGraphSealSchema = z
   .object({
@@ -83,7 +106,7 @@ export type AggregateClaimSourceGraphSeal = z.infer<typeof AggregateClaimSourceG
 
 export const AggregateObservedMovementSchema = z
   .object({
-    metric_id: safeId,
+    metric_id: AggregateClaimMetricIdSchema,
     measurement_unit: AggregateClaimMeasurementUnitSchema,
     baseline_value: finiteNumber,
     comparison_value: finiteNumber,
