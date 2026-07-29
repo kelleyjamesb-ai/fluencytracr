@@ -145,9 +145,33 @@ describe("canonical claim trace API", () => {
     }
   );
 
+  it.each([
+    ["case-variant route", tracePath.replace("/api/v1/ai-value", "/API/v1/AI-VALUE")],
+    ["single trailing slash", `${tracePath}/`]
+  ])("returns the fixed HOLD for %s with a conflicting organization query", async (_label, path) => {
+    traceService.mockResolvedValue(authorizedTrace);
+
+    const response = await request(app)
+      .get(`${path}?org_id=org-foreign`)
+      .set("authorization", bearer("ADMIN", "org-northstar"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.body).toEqual(aiValueEngine.canonicalClaimTraceFixedHold());
+  });
+
   it("keeps ordinary org-scope enforcement outside the exact trace path", async () => {
     const response = await request(app)
       .get(`${tracePath}/extra?org_id=org-foreign`)
+      .set("authorization", bearer("ADMIN", "org-northstar"));
+
+    expect(response.status).toBe(403);
+    expect(response.headers["cache-control"]).toBe("no-store");
+  });
+
+  it("keeps org-scope enforcement for a non-GET trace path", async () => {
+    const response = await request(app)
+      .post(`${tracePath}?orgId=org-foreign`)
       .set("authorization", bearer("ADMIN", "org-northstar"));
 
     expect(response.status).toBe(403);
