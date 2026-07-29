@@ -5,6 +5,7 @@ import { resolve } from "path";
 import {
   getAiValueObject,
   listAiValueObjects,
+  readAiValueClaimPacketIdByBindingId,
   upsertAiValueObject
 } from "../src/repositories/ai-value-object.repository";
 import { store } from "../src/store";
@@ -499,6 +500,28 @@ describe("aggregate claim authorization contracts", () => {
       await expect(listAiValueObjects("org-northstar", objectType)).resolves.toEqual([]);
       await expect(getAiValueObject("org-northstar", objectType, "forged")).resolves.toBeNull();
     }
+  });
+
+  it("rejects non-binding selectors without exposing reserved objects", async () => {
+    expect(
+      await readAiValueClaimPacketIdByBindingId(
+        "org-northstar",
+        "aggregate_packet_guessed"
+      )
+    ).toBeNull();
+    expect(
+      await getAiValueObject(
+        "org-northstar",
+        "canonical_identity_compatibility_binding",
+        `canonical_identity_binding_${"0".repeat(64)}`
+      )
+    ).toBeNull();
+    expect(
+      await listAiValueObjects(
+        "org-northstar",
+        "canonical_identity_compatibility_binding"
+      )
+    ).toEqual([]);
   });
 
   it("rejects a second movement, altered caveat, or blocked semantic field", () => {
