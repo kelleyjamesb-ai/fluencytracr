@@ -2,6 +2,39 @@
 
 ## Current Session
 
+- Section 7.5.1 reached terminal `STOP_REARCHITECT` before implementation.
+  The replacement panel reviewed exact local diagnostic commit
+  `9507fe26f6c1bfb2eda296a8d7867c1455e934c0`, tree
+  `53940503a76aff098585b4989e2106c53d5a7d1a`, packet SHA-256
+  `00951104d2b83f977beb5b8eab6a7bc79a15ecaf29fd2baeb35a78f5257450ee`,
+  and protocol SHA-256
+  `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
+  CODE, BUG, and ADVERSARIAL all returned `READINESS_HOLD`; under the
+  predeclared one-remediation stop rule, that result is `STOP_REARCHITECT`.
+- The replacement panel reproduced seven material defect classes:
+  undeclared role-partition roles and nested keys were accepted; an explicit
+  resource locator reached through a symlinked ancestor was accepted;
+  P03/P08/P14 authority ownership was reversed relative to current main;
+  controller cycles rejected instead of remaining in the Section 7.3 least
+  fixed point; nested Section 7.3 values were neither typed nor individually
+  ledgered; CLEAN_CI and ARCHIVE_CLOSEOUT outcomes/claim grades were conflated;
+  and a shallow request-shape dispatcher that printed an input scalar passed
+  all twenty-seven SUT-bound tests without verifying independent roots,
+  registry-and-receipt conjunctions, hashes, or typed closure.
+- The human architecture decision repairs the existing Section 7.5.1 queue
+  authorization rather than adding a tenth predecessor item. The corrected
+  bound preserves current-main parent ownership and later-section scope while
+  allowing only the exact Section 7.2/7.3/7.4 and Section 7.5A
+  docs/OpenSpec/offline verifier/test amendments needed to close the assigned
+  parent-owned obligations after a fresh exact-packet `READINESS_GO`.
+  Section 7.5.2 remains blocked until the corrected 7.5.1 authorization is
+  merged and that bounded parent-contract closure completes.
+- The stopped diagnostic packets created no canonical-runtime SUT,
+  parent-contract amendment, GCP/runtime action, credential, restricted
+  evidence, signing, provisioning, persistence, deployment, qualification,
+  model execution, or later-section work. Their local commits remain immutable
+  diagnostic evidence only and confer no push, PR, merge, deployment, or live
+  authority.
 - VBD reconciliation activation PR #472 merged normally at
   `99d6fceb463fb3d76f30c1d19c7ea91ab6c6cc17` from exact reviewed head
   `9441f006abce11d970f734d1d7d67a7e927e9a8a`, with all required current-head
