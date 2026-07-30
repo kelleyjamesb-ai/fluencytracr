@@ -404,6 +404,14 @@
   "status": "done",
   "risk": "high",
   "last_note": "Done 2026-07-29: PR #469 merged normally as 1161976 from exact reviewed head 50381df after CODE/BUG/ADVERSARIAL GO, the final required suite, and all current-head checks. Three P2s were dispositioned as nonblocking follow-ups. Git-connected production deployment dpl_EWJWEYyMf2eoXqqXDfBtM54tza1n is READY and traceable to the merge; authenticated database, C.1, and Slice E live health remains unproved."
+    },
+    {
+  "id": "vbd-collapsed-target-methodology-reconciliation-decision",
+  "title": "VBD collapsed-target methodology reconciliation decision",
+  "bound": "Docs/OpenSpec/status only: reconcile current main PR #434 and its sampler-free collapsed-target algebra with the missing methodology and task lineage; issue an explicit admit, repair, or reject decision while preserving the frozen model, priors, estimand, seeds, <=0.10 MCSE threshold, failed canaries, evidence gates, and fail-closed posture; no implementation, sampler execution, retry, canary 1, task 2.6 completion, S/F, concordance, evidence, real/customer/live data, public surface, promotion, or Sections 7.5-7.7 work",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored bounded methodology reconciliation item. No implementation or execution is authorized."
     }
   ]
 }
