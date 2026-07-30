@@ -11,60 +11,60 @@
       "last_note": "optional string, agent status-only"
     }
   },
-  "blueprint_ref": "artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md \u00a717 Build Phases",
+  "blueprint_ref": "artifacts/FLUENCYTRACR_V1_IMPLEMENTATION_BLUEPRINT.md §17 Build Phases",
   "items": [
     {
       "id": "phase-01-schemas-ingest",
-      "title": "Phase 1 \u2014 Schemas + ingestion (append-only POST /api/events)",
-      "bound": "shared/schemas + ingest path; DB canonical_events; strict validation, unknown fields rejected; blueprint \u00a72 (services/ingest layout), \u00a74 Event Schema, \u00a714 API, \u00a717 phase 1",
+      "title": "Phase 1 — Schemas + ingestion (append-only POST /api/events)",
+      "bound": "shared/schemas + ingest path; DB canonical_events; strict validation, unknown fields rejected; blueprint §2 (services/ingest layout), §4 Event Schema, §14 API, §17 phase 1",
       "status": "done",
       "risk": "medium",
-      "last_note": "POST /api/events + /api/ingest: Zod strict + persistFluencyEventRecord \u2192 Prisma canonical_events when DATABASE_URL set (org from JWT/x-org-id). Readers merge DB + memory via loadFluencyEventRecords."
+      "last_note": "POST /api/events + /api/ingest: Zod strict + persistFluencyEventRecord → Prisma canonical_events when DATABASE_URL set (org from JWT/x-org-id). Readers merge DB + memory via loadFluencyEventRecords."
     },
     {
       "id": "phase-02-execution-trace",
-      "title": "Phase 2 \u2014 Execution + trace reconstruction",
-      "bound": "trace_engine + lifecycle reducer; ordering, retries, tool/step grouping; blueprint \u00a75\u20136, \u00a717 phase 2",
+      "title": "Phase 2 — Execution + trace reconstruction",
+      "bound": "trace_engine + lifecycle reducer; ordering, retries, tool/step grouping; blueprint §5–6, §17 phase 2",
       "status": "done",
       "risk": "medium",
       "last_note": "trace_engine + execution_lifecycle + Jest contracts/trace tests green; blueprint target services/* layout still optional incremental migration"
     },
     {
       "id": "phase-03-fsc-min-signal",
-      "title": "Phase 3 \u2014 FSC eligibility + minimum signal gates (hard pre-classify)",
-      "bound": "PRD \u00a718 FSC + \u00a720 min signal + \u00a721 steps 1\u20132 only (not full classify); map to INCOMPLETE_EXECUTION / INSUFFICIENT_SIGNAL; code: services/gates or execution_disclosure; blueprint \u00a77 FSC, \u00a78 Min Signal (\u00a712 suppression wiring continues in phase-05)",
+      "title": "Phase 3 — FSC eligibility + minimum signal gates (hard pre-classify)",
+      "bound": "PRD §18 FSC + §20 min signal + §21 steps 1–2 only (not full classify); map to INCOMPLETE_EXECUTION / INSUFFICIENT_SIGNAL; code: services/gates or execution_disclosure; blueprint §7 FSC, §8 Min Signal (§12 suppression wiring continues in phase-05)",
       "status": "done",
       "risk": "high",
-      "last_note": "fluency_execution_gates.ts: evaluateFluencyExecutionGates \u2192 FSC + min signal; attachPhase2ToTraces skips classify when gates fail; disclosure reasons incomplete_execution / insufficient_signal + fsc:* / min_signal:*; observability_aggregate aligned"
+      "last_note": "fluency_execution_gates.ts: evaluateFluencyExecutionGates → FSC + min signal; attachPhase2ToTraces skips classify when gates fail; disclosure reasons incomplete_execution / insufficient_signal + fsc:* / min_signal:*; observability_aggregate aligned"
     },
     {
       "id": "phase-04-signals-calibration",
-      "title": "Phase 4 \u2014 Signal detection + threshold calibration (internal numeric)",
-      "bound": "execution_signals + workflow_baseline: rolling N=200 per workflow, P25/P75; categories LOW/NORMAL/HIGH internal; no numeric API leak; blueprint \u00a79\u201310",
+      "title": "Phase 4 — Signal detection + threshold calibration (internal numeric)",
+      "bound": "execution_signals + workflow_baseline: rolling N=200 per workflow, P25/P75; categories LOW/NORMAL/HIGH internal; no numeric API leak; blueprint §9–10",
       "status": "done",
       "risk": "medium",
       "last_note": "workflow_baseline: iteration_low from P25; latency P75 unchanged; WORKFLOW_BASELINE_MAX_SAMPLE_EXECUTIONS (default 200) newest-first cap per workflow"
     },
     {
       "id": "phase-05-classify-suppress",
-      "title": "Phase 5 \u2014 Deterministic pattern classification + suppression pipeline",
-      "bound": "behavioral_patterns + suppression: priority order, mutual exclusion, ambiguity \u2192 AMBIGUITY; no inference/ML on product path; blueprint \u00a711\u201312",
+      "title": "Phase 5 — Deterministic pattern classification + suppression pipeline",
+      "bound": "behavioral_patterns + suppression: priority order, mutual exclusion, ambiguity → AMBIGUITY; no inference/ML on product path; blueprint §11–12",
       "status": "done",
       "risk": "high",
-      "last_note": "Fluency path: fluency-pattern-suppression.ts maps signals \u2192 classifyBehaviorPattern + evaluateSuppression; attachPhase2ToTraces + observability_aggregate + disclosure (classification_ambiguity + suppression:* diagnostics). Legacy classifyExecutionPattern kept for direct unit tests / doc parity."
+      "last_note": "Fluency path: fluency-pattern-suppression.ts maps signals → classifyBehaviorPattern + evaluateSuppression; attachPhase2ToTraces + observability_aggregate + disclosure (classification_ambiguity + suppression:* diagnostics). Legacy classifyExecutionPattern kept for direct unit tests / doc parity."
     },
     {
       "id": "phase-06-aggregation-api",
-      "title": "Phase 6 \u2014 Workflow aggregation + observability API",
-      "bound": "observability_aggregate + GET /api/observability/:orgId; workflow-level only; cohort suppression; blueprint \u00a713\u201314",
+      "title": "Phase 6 — Workflow aggregation + observability API",
+      "bound": "observability_aggregate + GET /api/observability/:orgId; workflow-level only; cohort suppression; blueprint §13–14",
       "status": "done",
       "risk": "medium",
       "last_note": "Rollup per-execution path now uses same FSC/min gates + evaluateExecutionDisclosure as traces; still no numeric baseline leak"
     },
     {
       "id": "phase-07-hardening-verify",
-      "title": "Phase 7 \u2014 Tests, harness verify, governance regression",
-      "bound": "harness/scripts/verify.sh; harness/feature_list.json passes per docs/agent/EVALUATION.md; blueprint \u00a716 + forbidden-field API tests",
+      "title": "Phase 7 — Tests, harness verify, governance regression",
+      "bound": "harness/scripts/verify.sh; harness/feature_list.json passes per docs/agent/EVALUATION.md; blueprint §16 + forbidden-field API tests",
       "status": "done",
       "risk": "low",
       "last_note": "npm run test:ci --workspace backend; ./harness/scripts/verify.sh; python3 scripts/ci_v1_governance_gates.py; backend/tests/fluency_execution_gates.test.ts"
@@ -327,7 +327,7 @@
     },
     {
       "id": "canonical-runtime-readiness-first-protocol",
-      "title": "Canonical runtime \u2014 readiness-first protocol before Section 7.5",
+      "title": "Canonical runtime — readiness-first protocol before Section 7.5",
       "bound": "docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md and reusable template, docs/agent/SESSION_START.md, .project/GOVERNANCE.md, progress, and focused validation only; codify trust/dependency graph, environment and adversarial matrices, deterministic oracle, cost/checkpoint, remediation-stop, and review sequencing; no Sections 7.5-7.8 implementation, live GCP, credentials, signing, deployment, qualification, persistence, or model execution",
       "status": "done",
       "risk": "high",
@@ -366,196 +366,124 @@
       "last_note": "Done 2026-07-27: PR #453 merged normally as e59e770 from state-only head 02c890a, whose runtime repair a6f2a39 received CODE/BUG/ADVERSARIAL GO, 1007/1007 local backend tests, and passing current-head checks. The clean-CI Prisma generation and duplicate Node-job timeout defects are fixed. No migration or live proof occurred in Slice C; later production and deployment state is recorded in the A-F closeout."
     },
     {
-  "id": "mcii-aggregate-evidence-claim-semantics-slice-d",
-  "title": "MCII Slice D — aggregate evidence approval, claim semantics, and manifest hygiene",
-  "bound": "Aggregate evidence interpretation and claim-authorization paths only; acceptance: one authoritative policy keeps import or schema approval, accepted review, privacy release, readiness, and model eligibility separate from claim authorization; bounded templates permit only descriptive baseline, comparison, absolute delta, mechanically valid percent change, and declared-direction language labeled OBSERVED_NON_ATTRIBUTABLE; immutable manifests bind the admitted exact-slice input, policy state, template version, and produced artifact; missing, mutable, ambiguous, stale, or cross-slice references fail closed; unsupported causality, attribution, ROI, productivity, prediction, and customer-facing claims remain blocked; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates as required; exclude Slice E canonical identity binding, Slice F claim trace, deployment, publication, live GCP, runtime qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, or customer-facing economic output",
-  "status": "done",
-  "risk": "high",
-  "last_note": "Done 2026-07-29: PR #460 merged normally as e4f3d55 with reviewed head 92431d9 and an exact matching tree. Final CODE/BUG/ADVERSARIAL reviews returned GO, all review threads were resolved, and every required current-head check passed. No production migration, deployment, publication, or live proof."
+      "id": "mcii-aggregate-evidence-claim-semantics-slice-d",
+      "title": "MCII Slice D — aggregate evidence approval, claim semantics, and manifest hygiene",
+      "bound": "Aggregate evidence interpretation and claim-authorization paths only; acceptance: one authoritative policy keeps import or schema approval, accepted review, privacy release, readiness, and model eligibility separate from claim authorization; bounded templates permit only descriptive baseline, comparison, absolute delta, mechanically valid percent change, and declared-direction language labeled OBSERVED_NON_ATTRIBUTABLE; immutable manifests bind the admitted exact-slice input, policy state, template version, and produced artifact; missing, mutable, ambiguous, stale, or cross-slice references fail closed; unsupported causality, attribution, ROI, productivity, prediction, and customer-facing claims remain blocked; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates as required; exclude Slice E canonical identity binding, Slice F claim trace, deployment, publication, live GCP, runtime qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, or customer-facing economic output",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-29: PR #460 merged normally as e4f3d55 with reviewed head 92431d9 and an exact matching tree. Final CODE/BUG/ADVERSARIAL reviews returned GO, all review threads were resolved, and every required current-head check passed. No production migration, deployment, publication, or live proof."
     },
     {
-  "id": "mcii-outcome-comparison-privacy-slice-c1",
-  "title": "MCII Slice C.1 — exact two-window Outcome Evidence comparison privacy",
-  "bound": "Aggregate Outcome Evidence two-window comparison privacy only; acceptance: one server-owned immutable comparison family binds the exact organization, workflow_id, jbtd_id, persona_id, metric identity, source identity, unit, baseline window/value, and comparison window/value; the complete two-window family is evaluated and released atomically, never as independently queryable windows; complementary suppression, repeated-query protection, durable replay, contribution collision protection, and cross-slice isolation prevent partial, alternate-window, overlapping, or differencing disclosure; only the exact admitted projection may become a Slice D privacy input; default HOLD on missing, ambiguous, mutable, stale, cross-slice, conflicting, partial, or unavailable authority; preserve all nine invariants, nine canonical events, five suppression reasons, fixed thresholds, aggregate-only privacy, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude claim authorization, claim templates, canonical identity binding, claim trace, deployment, publication, live GCP, model execution, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
-  "status": "done",
-  "risk": "high",
-  "last_note": "Done 2026-07-28: PR #458 merged normally as 9aab826 with reviewed head 83c51cc and an exact matching tree. Final CODE/BUG/ADVERSARIAL reviews returned GO; all review threads were resolved; Assurance, Node, Python, lint, governance, enforcement, dogfood, Agent CI, and Vercel preview passed. No migration apply, deployment, publication, or live proof."
+      "id": "mcii-outcome-comparison-privacy-slice-c1",
+      "title": "MCII Slice C.1 — exact two-window Outcome Evidence comparison privacy",
+      "bound": "Aggregate Outcome Evidence two-window comparison privacy only; acceptance: one server-owned immutable comparison family binds the exact organization, workflow_id, jbtd_id, persona_id, metric identity, source identity, unit, baseline window/value, and comparison window/value; the complete two-window family is evaluated and released atomically, never as independently queryable windows; complementary suppression, repeated-query protection, durable replay, contribution collision protection, and cross-slice isolation prevent partial, alternate-window, overlapping, or differencing disclosure; only the exact admitted projection may become a Slice D privacy input; default HOLD on missing, ambiguous, mutable, stale, cross-slice, conflicting, partial, or unavailable authority; preserve all nine invariants, nine canonical events, five suppression reasons, fixed thresholds, aggregate-only privacy, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude claim authorization, claim templates, canonical identity binding, claim trace, deployment, publication, live GCP, model execution, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-28: PR #458 merged normally as 9aab826 with reviewed head 83c51cc and an exact matching tree. Final CODE/BUG/ADVERSARIAL reviews returned GO; all review threads were resolved; Assurance, Node, Python, lint, governance, enforcement, dogfood, Agent CI, and Vercel preview passed. No migration apply, deployment, publication, or live proof."
     },
     {
-  "id": "mcii-cohort-proof-shared-reservation-slice-c0",
-  "title": "MCII Slice C.0 — trusted cohort-equality proof and shared privacy reservation",
-  "bound": "Aggregate privacy proof infrastructure only; acceptance: a trusted customer-boundary producer emits a non-member-level proof that the exact baseline and comparison windows use the same population without transmitting or persisting member tokens; the proof binds exact organization, workflow_id, jbtd_id, persona_id, metric, source, unit, windows, cohort counts, producer policy, provenance, and freshness; one database-unique reservation authority is used atomically by both Slice C and C.1 so either release order and concurrent first writers permit at most one privacy domain; missing, stale, conflicting, aliased, cross-slice, replayed, or unavailable proof fails closed; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude C.1 comparison release, Slice D claim semantics, migration apply, deployment, publication, live proof, individual fields, member tokens, scoring, ROI, causality, productivity, prediction, ranking, new canonical events, new suppression reasons, or tunable thresholds",
-  "status": "done",
-  "risk": "high",
+      "id": "mcii-cohort-proof-shared-reservation-slice-c0",
+      "title": "MCII Slice C.0 — trusted cohort-equality proof and shared privacy reservation",
+      "bound": "Aggregate privacy proof infrastructure only; acceptance: a trusted customer-boundary producer emits a non-member-level proof that the exact baseline and comparison windows use the same population without transmitting or persisting member tokens; the proof binds exact organization, workflow_id, jbtd_id, persona_id, metric, source, unit, windows, cohort counts, producer policy, provenance, and freshness; one database-unique reservation authority is used atomically by both Slice C and C.1 so either release order and concurrent first writers permit at most one privacy domain; missing, stale, conflicting, aliased, cross-slice, replayed, or unavailable proof fails closed; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude C.1 comparison release, Slice D claim semantics, migration apply, deployment, publication, live proof, individual fields, member tokens, scoring, ROI, causality, productivity, prediction, ranking, new canonical events, new suppression reasons, or tunable thresholds",
+      "status": "done",
+      "risk": "high",
       "last_note": "Done 2026-07-28: PR #457 merged normally as 21daef1 with reviewed head 644b102 and an exact matching tree. Final current-head checks passed, all three review threads were resolved, and CODE/BUG/ADVERSARIAL returned GO. No migration apply, deployment, or live proof."
     },
     {
-  "id": "mcii-canonical-identity-compatibility-slice-e",
-  "title": "MCII Slice E — append-only canonical identity compatibility binding",
-  "bound": "Canonical identity compatibility binding only; acceptance: append-only identities bind the approved hypothesis, metric definition/version, exact slice/window, admitted evidence, and readout; reject stale, foreign, mutable, ambiguous, or cross-spliced lineage; source-bound or canonical status requires validation of the complete identity chain; preserve existing consumers through additive compatibility while obsolete mutable selectors lose authority; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and independent-slice governance; include focused tests, contracts, OpenSpec, progress, and queue updates; exclude Slice F claim trace, deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
-  "status": "done",
-  "risk": "high",
+      "id": "mcii-canonical-identity-compatibility-slice-e",
+      "title": "MCII Slice E — append-only canonical identity compatibility binding",
+      "bound": "Canonical identity compatibility binding only; acceptance: append-only identities bind the approved hypothesis, metric definition/version, exact slice/window, admitted evidence, and readout; reject stale, foreign, mutable, ambiguous, or cross-spliced lineage; source-bound or canonical status requires validation of the complete identity chain; preserve existing consumers through additive compatibility while obsolete mutable selectors lose authority; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and independent-slice governance; include focused tests, contracts, OpenSpec, progress, and queue updates; exclude Slice F claim trace, deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing output",
+      "status": "done",
+      "risk": "high",
       "last_note": "Done 2026-07-29: Slice E PR #463, Codex-review repair PR #465, and PostgreSQL 17 migration-compatibility PR #466 merged normally through b66a3ec; all required current-head checks passed. The separately authorized production operation later applied all 23 Prisma migrations and configured restricted runtime credentials and active attestation keys. No deployment or live proof was performed."
     },
     {
-  "id": "mcii-allowlisted-claim-trace-slice-f",
-  "title": "MCII Slice F — allowlisted read-only claim trace and legacy-path demotion",
-  "bound": "Allowlisted read-only claim trace and legacy-path demotion only; acceptance: one read-only allowlisted projection links the approved hypothesis, measurement, admitted evidence, policy decisions, authorized claim, and canonical readout through immutable identity; access is limited to ADMIN and ENABLEMENT_LEAD and all other roles are denied; exclude user-identifiable data, raw events, internal secrets, unrestricted payloads, and mutation controls; independent packet selection, legacy HTML readout, mutable lineage, and obsolete authority paths are removed or explicitly demoted; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing economic output",
-  "status": "done",
-  "risk": "high",
-  "last_note": "Done 2026-07-29: PR #469 merged normally as 1161976 from exact reviewed head 50381df after CODE/BUG/ADVERSARIAL GO, the final required suite, and all current-head checks. Three P2s were dispositioned as nonblocking follow-ups. Git-connected production deployment dpl_EWJWEYyMf2eoXqqXDfBtM54tza1n is READY and traceable to the merge; authenticated database, C.1, and Slice E live health remains unproved."
+      "id": "mcii-allowlisted-claim-trace-slice-f",
+      "title": "MCII Slice F — allowlisted read-only claim trace and legacy-path demotion",
+      "bound": "Allowlisted read-only claim trace and legacy-path demotion only; acceptance: one read-only allowlisted projection links the approved hypothesis, measurement, admitted evidence, policy decisions, authorized claim, and canonical readout through immutable identity; access is limited to ADMIN and ENABLEMENT_LEAD and all other roles are denied; exclude user-identifiable data, raw events, internal secrets, unrestricted payloads, and mutation controls; independent packet selection, legacy HTML readout, mutable lineage, and obsolete authority paths are removed or explicitly demoted; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing economic output",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Done 2026-07-29: PR #469 merged normally as 1161976 from exact reviewed head 50381df after CODE/BUG/ADVERSARIAL GO, the final required suite, and all current-head checks. Three P2s were dispositioned as nonblocking follow-ups. Git-connected production deployment dpl_EWJWEYyMf2eoXqqXDfBtM54tza1n is READY and traceable to the merge; authenticated database, C.1, and Slice E live health remains unproved."
     },
     {
-  "id": "vbd-collapsed-target-methodology-reconciliation-decision",
-  "title": "VBD collapsed-target methodology reconciliation decision",
-  "bound": "Docs/OpenSpec/status only: reconcile current main PR #434 and its sampler-free collapsed-target algebra with the missing methodology and task lineage; issue an explicit admit, repair, or reject decision while preserving the frozen model, priors, estimand, seeds, <=0.10 MCSE threshold, failed canaries, evidence gates, and fail-closed posture; no implementation, sampler execution, retry, canary 1, task 2.6 completion, S/F, concordance, evidence, real/customer/live data, public surface, promotion, or Sections 7.5-7.7 work",
-  "status": "done",
-  "risk": "high",
-  "last_note": "Completed locally as REPAIR_DIAGNOSTIC_LINEAGE_ONLY: PR #434 remains a held, non-evidentiary sampler-free diagnostic oracle; historical unmerged task labels are tombstones; the centered reference, task 2.6 block, failed canaries, and all later gates remain unchanged. No implementation, execution, evidence, deployment, UI, or Sections 7.5-7.7 work occurred."
+      "id": "vbd-collapsed-target-methodology-reconciliation-decision",
+      "title": "VBD collapsed-target methodology reconciliation decision",
+      "bound": "Docs/OpenSpec/status only: reconcile current main PR #434 and its sampler-free collapsed-target algebra with the missing methodology and task lineage; issue an explicit admit, repair, or reject decision while preserving the frozen model, priors, estimand, seeds, <=0.10 MCSE threshold, failed canaries, evidence gates, and fail-closed posture; no implementation, sampler execution, retry, canary 1, task 2.6 completion, S/F, concordance, evidence, real/customer/live data, public surface, promotion, or Sections 7.5-7.7 work",
+      "status": "done",
+      "risk": "high",
+      "last_note": "Completed locally as REPAIR_DIAGNOSTIC_LINEAGE_ONLY: PR #434 remains a held, non-evidentiary sampler-free diagnostic oracle; historical unmerged task labels are tombstones; the centered reference, task 2.6 block, failed canaries, and all later gates remain unchanged. No implementation, execution, evidence, deployment, UI, or Sections 7.5-7.7 work occurred."
     },
-  {
-    "id": "gcp-canonical-runtime-section-7-5-parent-authority",
-    "title": "Section 7.5.1 — parent authority and typed runtime-interface admission",
-    "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P00-P03, P05-P08, and P14 by closing exact Section 7.2 runtime-profile approval, Section 7.3 capability and controller separation, authenticated five-project/fourteen-role alias and provider-binding records, Section 7.4 typed approval/verifier/current-lineage records, shared trust-verification time, record authentication, and TLS/trust anti-rollback semantics; reject Section 7.5A and Section 7.6 authority substitution; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, model execution, or Sections 7.6-7.8 work",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored bounded prerequisite item. Activate first; missing exact evidence produces HOLD rather than invented approval."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-5-network-local",
-    "title": "Section 7.5.2 — network, channel, and local ephemeral enforcement contract",
-    "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve the Section 7.5 portions of S75A-P07, P09, and P18 by defining the nine exact enforcement records, Section 7.4-clock equality, whole-interval private ingress/egress, UDS and no-relay guarantees, caller-by-method authentication, TLS target, DNS/firewall/route/perimeter observations, and authenticated disk/tmpfs/swap/logging enforcement; no persistence mechanics, attempt-ledger semantics, SUT implementation, live GCP, credentials, provisioning, deployment, qualification, or model execution",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored bounded item. Activate only after the parent-authority item is merged."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-5-persistence-anchor",
-    "title": "Section 7.5.3 — checkpoint, GCS, Spanner, and independent-anchor contract",
-    "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P04, P10, P11, and the Section 7.5 portion of P19 by defining checkpoint schema, predecessor/fork/currentness/concurrency and restore rules, immutable GCS retention and no-replacement mechanics, Spanner transaction/idempotence/unknown-Commit handling, and independent nonrollbackable anchor currentness/check-and-use/recovery; Section 7.6 exclusively owns attempt reservation, terminal state, and retry; no SUT implementation, live GCP, credentials, provisioning, persistent resources, deployment, qualification, or model execution",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored bounded item. Activate after parent authority and network/local contracts are merged."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-5-audit-completeness",
-    "title": "Section 7.5.4 — audit universe, delivery completeness, and privacy contract",
-    "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P12 and the Section 7.5 portion of P13 by closing the complete service/method audit universe and classifier, total Policy Denied applicability, exclusion-method disposition, independently rooted routing and delivery evidence, route-timeline completeness, and privacy-safe projections; missing methods, routes, independently rooted observations, or denied-event coverage must HOLD; no SUT implementation, live GCP, logging resources, credentials, deployment, qualification, model execution, or Section 7.7 decision",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored bounded item. Activate after the persistence contract is merged."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-5-full-contract-gate",
-    "title": "Section 7.5.5 — full transport and persistence contract closure gate",
-    "bound": "Integrate the merged Section 7.5.1-7.5.4 contracts; satisfy the machine-distinct full-Section-7.5 requirement S75A-P17; mechanically reconcile S75A-P00-P14 and P17-P19 with exact forward/reverse edges; create the readiness packet and adversarial fixtures required by docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_5_CONTRACT_CLOSED or HOLD while leaving P15 to Section 7.7 and P16 to Section 7.8; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, persistence creation, or model execution",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored full-Section-7.5 gate. Activate only after all four Section 7.5 prerequisite items are merged."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
-    "title": "Section 7.6.1 — pre-execution reservation and single-use attempt contract",
-    "bound": "Docs/OpenSpec/offline verifiers/tests only: define plan and allocation manifests, parent attempt envelope, signed admission/retry lineage, monotonic attempt and retry ordinals, authenticated tenant/runtime binding, single-use reservation, anti-replay write-ahead markers, expected-request lineage, and pre-execution acceptance consumed by Section 7.4; caller-selected identity, ordinal, status, replay, duplicate reservation, or missing write-ahead evidence must HOLD; no terminal ledger, favorable-retry decision, SUT implementation, model execution, live GCP, deployment, or qualification",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored bounded Section 7.6 item. Activate only after the full Section 7.5 contract gate is merged with a non-HOLD result."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-6-terminal-ledger",
-    "title": "Section 7.6.2 — terminal ledger, completeness, crash, and retry contract",
-    "bound": "Docs/OpenSpec/offline verifiers/tests only: define controller/workload receipts, append-only terminal records, Section 7.4 verified-disposition consumption, section_7_6_terminal_proof_hash, deterministic terminal and retry precedence, completeness and no-loss proof, crash and ambiguous result/quote/sign handling, authority mutation, and proof that no favorable retry occurs unless no terminal artifact could exist; prohibit back-edges to final consumer acceptance; no SUT implementation, execution, live GCP, deployment, qualification, or evidence production",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored bounded Section 7.6 item. Activate after the pre-execution ledger contract is merged."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-6-full-contract-gate",
-    "title": "Section 7.6.3 — full attempt-ledger contract closure gate",
-    "bound": "Integrate the merged Section 7.6.1 and 7.6.2 contracts; mechanically verify the complete pre-execution-to-terminal DAG, schema ownership, causal ordering, durability, completeness, crash, consumption, and retry rules against Sections 7.2-7.5; create the readiness packet and adversarial environment/attack matrices; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_6_CONTRACT_CLOSED or HOLD; no SUT implementation, attempt execution, live GCP, credentials, deployment, qualification, or model evidence",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored full-Section-7.6 gate. Activate only after both Section 7.6 contract slices are merged."
-  },
-  {
-    "id": "gcp-canonical-runtime-section-7-7-integration-threat-model-gate",
-    "title": "Section 7.7 — whole-system integration and threat-model GO/HOLD gate",
-    "bound": "Docs/OpenSpec/offline validators/tests/decision only: reconcile Sections 7.1-7.6 across every field, enum, canonical hash, signer, approval, role, policy, trust boundary, privacy rule, lifecycle transition, failure decision, audit-delivery root, and retry outcome; resolve S75A-P13 and P15; prove the graph acyclic and ownership-complete; run exact-SHA CODE, BUG, and ADVERSARIAL review and issue explicit GO or HOLD for internal contract-set consistency; GO may authorize only creation of a separate human-authored Section 7.8 qualification-plan queue item; P16 remains open; no SUT implementation, GCP action, credentials, provisioning, deployment, qualification execution, model execution, evidence, or UI/runtime wiring",
-    "status": "pending",
-    "risk": "high",
-    "last_note": "Human-authored final Section 7.1-7.7 architecture gate. Activate only after the full Section 7.6 contract gate is merged."
-  },
     {
-  "id": "gcp-canonical-runtime-section-7-5-parent-authority",
-  "title": "Section 7.5.1 — parent authority and typed runtime-interface admission",
-  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P00-P03, P05-P08, P14, and the Section 7.3/7.4 authority-admission, authority-separation, and exact-parent-approval portions of P19 by closing exact Section 7.2 runtime-profile approval, Section 7.3 capability and controller separation, authenticated five-project/fourteen-role alias and provider-binding records, Section 7.4 typed approval/verifier/current-lineage records, shared trust-verification time, record authentication, TLS/trust anti-rollback semantics, and the parent-owned approval and authority portions of the independent-anchor obligation; reject Section 7.5A and Section 7.6 authority substitution; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, model execution, or Sections 7.6-7.8 work",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored bounded prerequisite item. Activate first; missing exact evidence produces HOLD rather than invented approval."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-5-network-local",
-  "title": "Section 7.5.2 — network, channel, and local ephemeral enforcement contract",
-  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P09, P18, and only the trust/channel/transport portions of P07 by defining the applicable trust, channel, and transport enforcement records, Section 7.4-clock equality, whole-interval private ingress/egress, UDS and no-relay guarantees, caller-by-method authentication, TLS target, DNS/firewall/route/perimeter observations, and authenticated disk/tmpfs/swap/logging enforcement; P07 replay-retention records are excluded and assigned to Section 7.5.3, and the P07 audit-mapping record is excluded and assigned to Section 7.5.4; no persistence mechanics, attempt-ledger semantics, SUT implementation, live GCP, credentials, provisioning, deployment, qualification, or model execution",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored bounded item. Activate only after the parent-authority item is merged with its required obligations closed; predecessor HOLD propagates HOLD."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-5-persistence-anchor",
-  "title": "Section 7.5.3 — checkpoint, GCS, Spanner, retention, and independent-anchor contract",
-  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P04, P10, P11, the replay-retention portions of P07, and the Section 7.5 mechanism portion of P19 by defining the three replay-retention records, checkpoint schema, predecessor/fork/currentness/concurrency and restore rules, immutable GCS retention and no-replacement mechanics, Spanner transaction/idempotence/unknown-Commit handling, and independent nonrollbackable anchor currentness/check-and-use/recovery; Section 7.6 exclusively owns attempt reservation, terminal state, and retry; no SUT implementation, live GCP, credentials, provisioning, persistent resources, deployment, qualification, or model execution",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored bounded item. Activate only after the parent-authority and network/local contracts are merged with their required obligations closed; predecessor HOLD propagates HOLD."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-5-audit-completeness",
-  "title": "Section 7.5.4 — audit universe, delivery completeness, and privacy contract",
-  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P12, the audit-mapping portion of P07, and the Section 7.5 portion of P13 by defining the audit-mapping record and closing the complete service/method audit universe and classifier, total Policy Denied applicability, exclusion-method disposition, independently rooted routing and delivery evidence, route-timeline completeness, and privacy-safe projections; missing methods, routes, independently rooted observations, audit mapping, or denied-event coverage must HOLD; no SUT implementation, live GCP, logging resources, credentials, deployment, qualification, model execution, or Section 7.7 decision",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored bounded item. Activate only after the persistence contract is merged with its required obligations closed; predecessor HOLD propagates HOLD."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-5-full-contract-gate",
-  "title": "Section 7.5.5 — full transport and persistence contract closure gate",
-  "bound": "Integrate the merged Section 7.5.1-7.5.4 contracts; satisfy the machine-distinct full-Section-7.5 requirement S75A-P17; mechanically reconcile S75A-P00-P14 and P17-P19 with exact forward/reverse edges and prove that every parent-owned, mechanism-owned, retention, audit, network, local-enforcement, and anchor portion has one explicit owner; create the readiness packet and adversarial fixtures required by docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_5_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD, while leaving P15 to Section 7.7 and P16 to Section 7.8; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, persistence creation, or model execution",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored full-Section-7.5 gate. Activate only after all four Section 7.5 prerequisite items are merged with their required obligations closed."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
-  "title": "Section 7.6.1 — pre-execution reservation and single-use attempt contract",
-  "bound": "Docs/OpenSpec/offline verifiers/tests only: define plan and allocation manifests, parent attempt envelope, signed admission/retry lineage, monotonic attempt and retry ordinals, authenticated tenant/runtime binding, single-use reservation, anti-replay write-ahead markers, expected-request lineage, and pre-execution acceptance consumed by Section 7.4; caller-selected identity, ordinal, status, replay, duplicate reservation, or missing write-ahead evidence must HOLD; no terminal ledger, favorable-retry decision, SUT implementation, model execution, live GCP, deployment, or qualification",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored bounded Section 7.6 item. Activate only after the full Section 7.5 contract gate is merged with result exactly SECTION_7_5_CONTRACT_CLOSED; any HOLD blocks activation."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-6-terminal-ledger",
-  "title": "Section 7.6.2 — terminal ledger, completeness, crash, and retry contract",
-  "bound": "Docs/OpenSpec/offline verifiers/tests only: define controller/workload receipts, append-only terminal records, Section 7.4 verified-disposition consumption, section_7_6_terminal_proof_hash, deterministic terminal and retry precedence, completeness and no-loss proof, crash and ambiguous result/quote/sign handling, authority mutation, and proof that no favorable retry occurs unless no terminal artifact could exist; prohibit back-edges to final consumer acceptance; no SUT implementation, execution, live GCP, deployment, qualification, or evidence production",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored bounded Section 7.6 item. Activate only after the pre-execution ledger contract is merged with its required obligations closed; predecessor HOLD propagates HOLD."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-6-full-contract-gate",
-  "title": "Section 7.6.3 — full attempt-ledger contract closure gate",
-  "bound": "Integrate the merged Section 7.6.1 and 7.6.2 contracts; mechanically verify the complete pre-execution-to-terminal DAG, schema ownership, causal ordering, durability, completeness, crash, consumption, and retry rules against Sections 7.2-7.5; create the readiness packet and adversarial environment/attack matrices; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_6_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD; no SUT implementation, attempt execution, live GCP, credentials, deployment, qualification, or model evidence",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored full-Section-7.6 gate. Activate only after both Section 7.6 contract slices are merged with their required obligations closed."
-},
-{
-  "id": "gcp-canonical-runtime-section-7-7-integration-threat-model-gate",
-  "title": "Section 7.7 — whole-system integration and threat-model GO/HOLD gate",
-  "bound": "Docs/OpenSpec/offline validators/tests/decision only: activation requires the exact merged Section 7.6 full-contract result to equal SECTION_7_6_CONTRACT_CLOSED; a missing, ambiguous, stale, or HOLD predecessor deterministically produces HOLD and prohibits Section 7.7 GO or creation of a Section 7.8 queue item; reconcile Sections 7.1-7.6 across every field, enum, canonical hash, signer, approval, role, policy, trust boundary, privacy rule, lifecycle transition, failure decision, audit-delivery root, and retry outcome; resolve S75A-P13 and P15; prove the graph acyclic and ownership-complete; run exact-SHA CODE, BUG, and ADVERSARIAL review and issue explicit GO or HOLD for internal contract-set consistency; GO may authorize only creation of a separate human-authored Section 7.8 qualification-plan queue item; P16 remains open; no SUT implementation, GCP action, credentials, provisioning, deployment, qualification execution, model execution, evidence, or UI/runtime wiring",
-  "status": "pending",
-  "risk": "high",
-  "last_note": "Human-authored final Section 7.1-7.7 architecture gate. Activate only after the full Section 7.6 contract gate is merged with result exactly SECTION_7_6_CONTRACT_CLOSED; any HOLD blocks activation and propagates HOLD."
-}
+      "id": "gcp-canonical-runtime-section-7-5-parent-authority",
+      "title": "Section 7.5.1 — parent authority and typed runtime-interface admission",
+      "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P00-P03, P05-P08, P14, and the Section 7.3/7.4 authority-admission, authority-separation, and exact-parent-approval portions of P19 by closing exact Section 7.2 runtime-profile approval, Section 7.3 capability and controller separation, authenticated five-project/fourteen-role alias and provider-binding records, Section 7.4 typed approval/verifier/current-lineage records, shared trust-verification time, record authentication, TLS/trust anti-rollback semantics, and the parent-owned approval and authority portions of the independent-anchor obligation; reject Section 7.5A and Section 7.6 authority substitution; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, model execution, or Sections 7.6-7.8 work",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored bounded prerequisite item. Activate first; missing exact evidence produces HOLD rather than invented approval."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-5-network-local",
+      "title": "Section 7.5.2 — network, channel, and local ephemeral enforcement contract",
+      "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P09, P18, and only the trust/channel/transport portions of P07 by defining the applicable trust, channel, and transport enforcement records, Section 7.4-clock equality, whole-interval private ingress/egress, UDS and no-relay guarantees, caller-by-method authentication, TLS target, DNS/firewall/route/perimeter observations, and authenticated disk/tmpfs/swap/logging enforcement; P07 replay-retention records are excluded and assigned to Section 7.5.3, and the P07 audit-mapping record is excluded and assigned to Section 7.5.4; no persistence mechanics, attempt-ledger semantics, SUT implementation, live GCP, credentials, provisioning, deployment, qualification, or model execution",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored bounded item. Activate only after the parent-authority item is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-5-persistence-anchor",
+      "title": "Section 7.5.3 — checkpoint, GCS, Spanner, retention, and independent-anchor contract",
+      "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P04, P10, P11, the replay-retention portions of P07, and the Section 7.5 mechanism portion of P19 by defining the three replay-retention records, checkpoint schema, predecessor/fork/currentness/concurrency and restore rules, immutable GCS retention and no-replacement mechanics, Spanner transaction/idempotence/unknown-Commit handling, and independent nonrollbackable anchor currentness/check-and-use/recovery; Section 7.6 exclusively owns attempt reservation, terminal state, and retry; no SUT implementation, live GCP, credentials, provisioning, persistent resources, deployment, qualification, or model execution",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored bounded item. Activate only after the parent-authority and network/local contracts are merged with their required obligations closed; predecessor HOLD propagates HOLD."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-5-audit-completeness",
+      "title": "Section 7.5.4 — audit universe, delivery completeness, and privacy contract",
+      "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P12, the audit-mapping portion of P07, and the Section 7.5 portion of P13 by defining the audit-mapping record and closing the complete service/method audit universe and classifier, total Policy Denied applicability, exclusion-method disposition, independently rooted routing and delivery evidence, route-timeline completeness, and privacy-safe projections; missing methods, routes, independently rooted observations, audit mapping, or denied-event coverage must HOLD; no SUT implementation, live GCP, logging resources, credentials, deployment, qualification, model execution, or Section 7.7 decision",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored bounded item. Activate only after the persistence contract is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-5-full-contract-gate",
+      "title": "Section 7.5.5 — full transport and persistence contract closure gate",
+      "bound": "Integrate the merged Section 7.5.1-7.5.4 contracts; satisfy the machine-distinct full-Section-7.5 requirement S75A-P17; mechanically reconcile S75A-P00-P14 and P17-P19 with exact forward/reverse edges and prove that every parent-owned, mechanism-owned, retention, audit, network, local-enforcement, and anchor portion has one explicit owner; create the readiness packet and adversarial fixtures required by docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_5_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD, while leaving P15 to Section 7.7 and P16 to Section 7.8; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, persistence creation, or model execution",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored full-Section-7.5 gate. Activate only after all four Section 7.5 prerequisite items are merged with their required obligations closed."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
+      "title": "Section 7.6.1 — pre-execution reservation and single-use attempt contract",
+      "bound": "Docs/OpenSpec/offline verifiers/tests only: define plan and allocation manifests, parent attempt envelope, signed admission/retry lineage, monotonic attempt and retry ordinals, authenticated tenant/runtime binding, single-use reservation, anti-replay write-ahead markers, expected-request lineage, and pre-execution acceptance consumed by Section 7.4; caller-selected identity, ordinal, status, replay, duplicate reservation, or missing write-ahead evidence must HOLD; no terminal ledger, favorable-retry decision, SUT implementation, model execution, live GCP, deployment, or qualification",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored bounded Section 7.6 item. Activate only after the full Section 7.5 contract gate is merged with result exactly SECTION_7_5_CONTRACT_CLOSED; any HOLD blocks activation."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-6-terminal-ledger",
+      "title": "Section 7.6.2 — terminal ledger, completeness, crash, and retry contract",
+      "bound": "Docs/OpenSpec/offline verifiers/tests only: define controller/workload receipts, append-only terminal records, Section 7.4 verified-disposition consumption, section_7_6_terminal_proof_hash, deterministic terminal and retry precedence, completeness and no-loss proof, crash and ambiguous result/quote/sign handling, authority mutation, and proof that no favorable retry occurs unless no terminal artifact could exist; prohibit back-edges to final consumer acceptance; no SUT implementation, execution, live GCP, deployment, qualification, or evidence production",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored bounded Section 7.6 item. Activate only after the pre-execution ledger contract is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-6-full-contract-gate",
+      "title": "Section 7.6.3 — full attempt-ledger contract closure gate",
+      "bound": "Integrate the merged Section 7.6.1 and 7.6.2 contracts; mechanically verify the complete pre-execution-to-terminal DAG, schema ownership, causal ordering, durability, completeness, crash, consumption, and retry rules against Sections 7.2-7.5; create the readiness packet and adversarial environment/attack matrices; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_6_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD; no SUT implementation, attempt execution, live GCP, credentials, deployment, qualification, or model evidence",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored full-Section-7.6 gate. Activate only after both Section 7.6 contract slices are merged with their required obligations closed."
+    },
+    {
+      "id": "gcp-canonical-runtime-section-7-7-integration-threat-model-gate",
+      "title": "Section 7.7 — whole-system integration and threat-model GO/HOLD gate",
+      "bound": "Docs/OpenSpec/offline validators/tests/decision only: activation requires the exact merged Section 7.6 full-contract result to equal SECTION_7_6_CONTRACT_CLOSED; a missing, ambiguous, stale, or HOLD predecessor deterministically produces HOLD and prohibits Section 7.7 GO or creation of a Section 7.8 queue item; reconcile Sections 7.1-7.6 across every field, enum, canonical hash, signer, approval, role, policy, trust boundary, privacy rule, lifecycle transition, failure decision, audit-delivery root, and retry outcome; resolve S75A-P13 and P15; prove the graph acyclic and ownership-complete; run exact-SHA CODE, BUG, and ADVERSARIAL review and issue explicit GO or HOLD for internal contract-set consistency; GO may authorize only creation of a separate human-authored Section 7.8 qualification-plan queue item; P16 remains open; no SUT implementation, GCP action, credentials, provisioning, deployment, qualification execution, model execution, evidence, or UI/runtime wiring",
+      "status": "pending",
+      "risk": "high",
+      "last_note": "Human-authored final Section 7.1-7.7 architecture gate. Activate only after the full Section 7.6 contract gate is merged with result exactly SECTION_7_6_CONTRACT_CLOSED; any HOLD blocks activation and propagates HOLD."
+    }
   ]
 }
