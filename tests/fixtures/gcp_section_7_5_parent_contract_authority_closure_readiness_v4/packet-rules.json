@@ -16,10 +16,111 @@
     {"member_name": "constraints-open-obligations-contract.json", "repository_path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/constraints-open-obligations-contract.json", "sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0", "owner": "Section 7.5A"}
   ],
   "closed_schemas": {
-    "candidate": {"schema_versions": ["GCP_SECTION_7_5_1_CANDIDATE_V4"], "requested_actions": ["EVALUATE_ONLY"], "synthetic_alias_pattern": "^[0-9a-f]{32}$", "unknown_edge_count": "NONNEGATIVE_INTEGER", "strings": "ENUM_OR_GOVERNED_ROLE_KEY_OR_SYNTHETIC_ALIAS_ONLY"},
-    "signed_context": {"schema_versions": ["GCP_SECTION_7_5_1_SIGNED_CONTEXT_V4"], "canonicalization": ["FT_CANONICAL_JSON_V1"], "sha256_pattern": "^[0-9a-f]{64}$", "key_id_pattern": "^P256_SPKI_SHA256:[0-9a-f]{64}$", "signer_purposes": ["IMAGE_PROVENANCE_SIGNING_CRYPTOKEY", "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY"], "modes": ["CLEAN_CI", "ARCHIVE_CLOSEOUT", "LIVE_RUNTIME"], "time_format": "UTC_RFC3339_SECONDS_Z", "nonce_pattern": "^[0-9a-f]{32}$", "authority_effect": ["NONE"], "forbidden_fields": ["path", "locator", "filesystem_locator", "resource_name", "tenant", "account", "person", "email", "phone", "address", "public_projection", "comment", "label"]},
-    "parent_bundle": {"exact_member_names": ["runtime-object-contract.json", "security-authority-contract.json", "role-capability-matrix.json", "attestation-receipt-contract.json", "constraints-open-obligations-contract.json"], "member_name_pattern": "^[a-z][a-z0-9-]*\\.json$", "sha256_pattern": "^[0-9a-f]{64}$", "locator_fields": "PROHIBITED"},
-    "result": {"schema_versions": ["GCP_SECTION_7_5_1_EVALUATION_RESULT_V4"], "decisions": ["HOLD", "REJECT"], "authority_effect": ["NONE"], "claim_grades": ["NONE", "STRUCTURAL_ONLY", "ARCHIVE_CLOSEOUT_ONLY", "DESIGN_ONLY"], "fields": ["schema_version", "decision", "reason", "authority_effect", "claim_grade"]}
+    "candidate": {
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/schema_version", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:GCP_SECTION_7_5_1_CANDIDATE_V4"},
+        {"pointer": "/requested_action", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:EVALUATE_ONLY"},
+        {"pointer": "/observation", "type": "OBJECT", "required": true, "cardinality": "ONE", "value_rule": "REF:SECTION_7_3_OBSERVATION"},
+        {"pointer": "/observation/governed_roles", "type": "ARRAY", "required": true, "cardinality": "ONE_OR_MORE", "value_rule": "SORTED_UNIQUE"},
+        {"pointer": "/observation/governed_roles/*", "type": "STRING", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "EXACT_GOVERNED_ROLE_KEY_FROM_PARENT_MATRIX"},
+        {"pointer": "/observation/synthetic_aliases", "type": "ARRAY", "required": true, "cardinality": "ZERO_OR_MORE", "value_rule": "SORTED_UNIQUE"},
+        {"pointer": "/observation/synthetic_aliases/*", "type": "STRING", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "PATTERN:^[0-9a-f]{32}$;CONTEXT_BOUND_SYNTHETIC_ONLY"},
+        {"pointer": "/observation/controller_edges", "type": "ARRAY", "required": true, "cardinality": "ZERO_OR_MORE", "value_rule": "CANONICALLY_SORTED"},
+        {"pointer": "/observation/controller_edges/*", "type": "OBJECT", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "EXACT_FIELDS:controller,controlled"},
+        {"pointer": "/observation/controller_edges/*/controller", "type": "STRING", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "EXACT_GOVERNED_ROLE_KEY_FROM_PARENT_MATRIX"},
+        {"pointer": "/observation/controller_edges/*/controlled", "type": "STRING", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "EXACT_GOVERNED_ROLE_KEY_FROM_PARENT_MATRIX"},
+        {"pointer": "/observation/controller_cycles", "type": "ARRAY", "required": true, "cardinality": "ZERO_OR_MORE", "value_rule": "CANONICALLY_SORTED"},
+        {"pointer": "/observation/controller_cycles/*", "type": "ARRAY", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "SORTED_UNIQUE_EXACT_GOVERNED_ROLE_KEYS"},
+        {"pointer": "/observation/controller_cycles/*/*", "type": "STRING", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "EXACT_GOVERNED_ROLE_KEY_FROM_PARENT_MATRIX"},
+        {"pointer": "/observation/unknown_edge_count", "type": "INTEGER", "required": true, "cardinality": "ONE", "value_rule": "NONNEGATIVE_INTEGER"}
+      ]
+    },
+    "signed_context_payload": {
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/schema_version", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:GCP_SECTION_7_5_1_SIGNED_CONTEXT_PAYLOAD_V4"},
+        {"pointer": "/policy_id", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:FT_CANONICAL_JSON_V1"},
+        {"pointer": "/candidate_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/mode", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:CLEAN_CI|ARCHIVE_CLOSEOUT|LIVE_RUNTIME"},
+        {"pointer": "/parent_manifest", "type": "ARRAY", "required": true, "cardinality": "EXACTLY_FIVE", "value_rule": "ORDERED_EXACT_PARENT_MANIFEST"},
+        {"pointer": "/parent_manifest/*", "type": "OBJECT", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "EXACT_FIELDS:member_name,sha256"},
+        {"pointer": "/parent_manifest/*/member_name", "type": "STRING", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "EXACT_PARENT_MEMBER_NAME"},
+        {"pointer": "/parent_manifest/*/sha256", "type": "STRING", "required": true, "cardinality": "ONE_PER_MEMBER", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/registry_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/receipt_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/approval_target_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/current_head_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/anti_rollback_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/role_matrix_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/signer_purpose", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:IMAGE_PROVENANCE_SIGNING_CRYPTOKEY|RUNTIME_RECEIPT_SIGNING_CRYPTOKEY"},
+        {"pointer": "/key_id", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^P256_SPKI_SHA256:[0-9a-f]{64}$"},
+        {"pointer": "/nonce_time", "type": "OBJECT", "required": true, "cardinality": "ONE", "value_rule": "REF:nonce_time"},
+        {"pointer": "/authority_effect", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:NONE"}
+      ]
+    },
+    "signed_context_envelope": {
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/schema_version", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:GCP_SECTION_7_5_1_SIGNED_CONTEXT_ENVELOPE_V4"},
+        {"pointer": "/algorithm", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:ECDSA_P256_SHA256_DER"},
+        {"pointer": "/payload", "type": "OBJECT", "required": true, "cardinality": "ONE", "value_rule": "REF:signed_context_payload"},
+        {"pointer": "/signature_der_base64", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "BASE64_DER_ECDSA_P256_SIGNATURE"}
+      ]
+    },
+    "verifier_anchor": {
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/spki_der_base64", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "BASE64_DER_P256_SPKI"},
+        {"pointer": "/key_id", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^P256_SPKI_SHA256:[0-9a-f]{64}$;DERIVED_FROM_SPKI"}
+      ]
+    },
+    "nonce_time": {
+      "root_pointer": "/nonce_time",
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/nonce", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{32}$"},
+        {"pointer": "/valid_from", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "UTC_RFC3339_SECONDS_Z"},
+        {"pointer": "/valid_until", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "UTC_RFC3339_SECONDS_Z;STRICTLY_AFTER:valid_from"},
+        {"pointer": "/trusted_time", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "UTC_RFC3339_SECONDS_Z;WITHIN_INCLUSIVE:valid_from,valid_until"}
+      ]
+    },
+    "replay_record": {
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/key_id", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^P256_SPKI_SHA256:[0-9a-f]{64}$"},
+        {"pointer": "/nonce", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{32}$"},
+        {"pointer": "/candidate_sha256", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "PATTERN:^[0-9a-f]{64}$"},
+        {"pointer": "/accepted_at", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "UTC_RFC3339_SECONDS_Z"}
+      ]
+    },
+    "parent_bundle_descriptor": {
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/fd", "type": "INTEGER", "required": true, "cardinality": "ONE", "value_rule": "NONNEGATIVE_INTEGER;NONSEMANTIC"},
+        {"pointer": "/device", "type": "INTEGER", "required": true, "cardinality": "ONE", "value_rule": "NONNEGATIVE_INTEGER"},
+        {"pointer": "/inode", "type": "INTEGER", "required": true, "cardinality": "ONE", "value_rule": "NONNEGATIVE_INTEGER"},
+        {"pointer": "/member_names", "type": "ARRAY", "required": true, "cardinality": "EXACTLY_FIVE", "value_rule": "ORDERED_EXACT_PARENT_MEMBER_NAMES"}
+      ]
+    },
+    "result": {
+      "strict_object": true,
+      "additional_properties": false,
+      "fields": [
+        {"pointer": "/schema_version", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:GCP_SECTION_7_5_1_EVALUATION_RESULT_V4"},
+        {"pointer": "/decision", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:HOLD|REJECT"},
+        {"pointer": "/reason", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:FIXED_CLOSED_REASON"},
+        {"pointer": "/authority_effect", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:NONE"},
+        {"pointer": "/claim_grade", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:NONE|STRUCTURAL_ONLY|ARCHIVE_CLOSEOUT_ONLY|DESIGN_ONLY"}
+      ]
+    }
   },
   "rule_templates": [
     {"rule_id": "RULE-PARENT-MANIFEST", "class": "COMPILE_PINNED", "admission": "ordered exact member-name and SHA-256 comparison", "failure": "REJECT", "attack_ids": ["A006", "A007", "A015", "A016", "A017"]},
@@ -27,7 +128,8 @@
     {"rule_id": "RULE-CANDIDATE-SHAPE", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON and closed candidate fields", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A006", "A007", "A018"]},
     {"rule_id": "RULE-SIGNED-CONTEXT", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON, P-256 DER signature, independently admitted SPKI, candidate digest and policy binding", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A007", "A008", "A009", "A010", "A011", "A012", "A013"]},
     {"rule_id": "RULE-REPLAY-REGISTRY-APPROVAL", "class": "AUTHENTICATED_OBSERVATION", "admission": "closed replay, registry, receipt, and approval conjunction", "failure": "REJECT", "attack_ids": ["A008", "A009", "A010", "A011"]},
-    {"rule_id": "RULE-SECTION-7-3-AUTHORITY", "class": "COMPILE_PINNED", "admission": "five projects, fourteen roles, sixteen capabilities, two signer purposes, and governed least fixed point", "failure": "REJECT_OR_HOLD", "attack_ids": ["A006", "A007", "A019"]},
+    {"rule_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "class": "COMPILE_PINNED", "admission": "five projects, fourteen roles, sixteen capabilities, two signer purposes, and governed least fixed point", "failure_condition": "invalid role, capability, HSM-purpose, owner, partition, or fixed-point semantics", "failure": "REJECT", "attack_ids": ["A006", "A007", "A019"]},
+    {"rule_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "class": "COMPILE_PINNED", "admission": "all controller edges are known and viewable", "failure_condition": "unknown or unviewable controller edge", "failure": "HOLD", "attack_ids": ["A019"]},
     {"rule_id": "RULE-PRIVACY-NONAUTHORIZATION", "class": "COMPILE_PINNED", "admission": "closed strings and fixed result projection", "failure": "REJECT", "attack_ids": ["A018", "A019"]},
     {"rule_id": "RULE-CURRENT-BLOCKERS", "class": "OPAQUE_LATER_SECTION", "admission": "all current parent obligations remain OPEN_BLOCKING", "failure": "HOLD", "attack_ids": ["A019"]}
   ],
