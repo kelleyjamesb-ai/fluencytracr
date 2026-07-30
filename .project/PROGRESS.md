@@ -30,9 +30,9 @@
 - This VBD item remains docs/OpenSpec/status only. It changes no implementation,
   sampler, generator, model, priors, estimand, seed, `<=0.10` MCSE threshold,
   failed-canary posture, schema, route, migration, deployment, public surface,
-  or UI behavior. Sections 7.5-7.7 remain a separate larger program whose 20
-  open obligations require human-authored queue breakdown after this blocker
-  closes.
+  or UI behavior. Sections 7.5-7.7 are now decomposed into nine human-authored
+  pending queue items in PR #474. None is active; after this queue-only PR
+  merges, Section 7.5.1 is the next bounded item.
 - Focused local validation passed strict
   `add-vbd-trajectory-calibration-contract` OpenSpec, agentic harness guard,
   docs contract sweep, scoped docs link check, V1 governance gates, JSON
@@ -3952,22 +3952,14 @@
   Then activate Slice B from the exact merged `main`. Do not claim deployment
   or live proof without corresponding remote and authenticated runtime evidence.
 
-- To begin future full-Section-7.5 design/readiness work, a human must first
-  satisfy `S75A-P17` by creating a separate, machine-distinct high-risk queue
-  item; P17 cannot satisfy any other prerequisite. That item must follow the
-  canonical readiness protocol, and exact `READINESS_GO` is required before any
-  SUT implementation. Each of `S75A-P00`–`S75A-P19` may close only through its
-  recorded owner's separately authorized work and exact evidence/review. All
-  parent and full-Section-7.5 obligations required by the owner/dependency graph
-  must close before full Section 7.5 can complete, expose a positive live
-  interface, or become a Section 7.6 dependency. Downstream `S75A-P15` and
-  `S75A-P16` close later through Section 7.7 reconciliation and Section 7.8
-  qualification and do not create a backward gate on the Section 7.5-to-7.6
-  handoff. The registry establishes no universal Section 7.3-before-Section 7.4
-  order. Do not perform live GCP action, credentials, persistent resources,
-  qualification, model execution, later-section work, or runtime activation
-  before the gates applicable to that exact phase are independently closed and
-  authorized.
+- PR #474 creates the separate, machine-distinct, high-risk Section 7.5-7.7
+  queue breakdown required by `S75A-P17`. Once merged, activate only
+  `gcp-canonical-runtime-section-7-5-parent-authority`; all other new items
+  remain pending. P17 creates no evidence or runtime authority and cannot
+  satisfy another prerequisite. Each high-risk item must follow the canonical
+  readiness protocol, and exact `READINESS_GO` is required before any SUT
+  implementation. `S75A-P15` and `S75A-P16` remain assigned to Section 7.7
+  reconciliation and separately authorized Section 7.8 qualification.
 - Review/commit/PR the Glean dogfood BigQuery adapter slice. Next bounded step should be an operator path that posts the generated aggregate payloads into a running local backend and opens the Workspace on the refreshed evidence, still without raw rows, identifiers, customer-facing economics, ROI proof, causality, or person-level analysis.
 - AI Value Platform North Star: the VBD canon was amended 2026-06-11 with human approval — Depth = embeddedness of AI in repeatable workflow behavior (aggregate integration signals only); the tool/surface repertoire construct is renamed Repertoire and lives under Breadth's coverage views. Canon lives in `docs/concepts/AI_VALUE_MEASUREMENT_MODEL.md` (decision note included) and `docs/agent/CLAUDE_AI_VALUE_NORTH_STAR_PROMPT.md`; the data boundary schema/fixture/validator/tests are aligned. FluencyTracr core's V4 Depth Repertoire contract is intentionally untouched. Do not "correct" Depth back to repertoire.
 - AI Value Platform North Star: the Value Evidence Case contract slice is complete (TDD, contract before UI) — schema `value-evidence-case.schema.json`, seeded Customer Support fixture, engine validator/builder `shared/src/aiValueEngine/valueEvidenceCase.ts` with fail-closed evidence-ladder gating (missing/rejected outcome evidence holds value language; SUBMITTED stays directional pending human acceptance; SUPPORTED stays caveated and non-causal; STRONG fails closed pending a governed evidence design), CLI `validate_ai_value_evidence_case.mjs`, tests, and package scripts. Next prescribed work per `docs/agent/AI_VALUE_PLATFORM_NEXT_AGENT_HANDOFF.md`: backend object-type registration/persistence for `value_evidence_case` and client-facing Workspace presentation, or the retest-result object — choose from observed review gaps; no ROI proof, causality, person-level data, or customer-facing economic output.
