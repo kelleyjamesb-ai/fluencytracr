@@ -12,6 +12,11 @@ from tests.gcp_s751_v4.ledger import (
     reconcile_rule_ledger,
     serialize_rule_ledger,
 )
+from tests.gcp_s751_v4.crypto import (
+    anchor_key_id,
+    sign_ephemeral_batch,
+    verify_batch,
+)
 from tests.gcp_s751_v4.model import (
     canonical_json,
     enumerate_all_dynamic_paths,
@@ -278,3 +283,59 @@ def test_rule_ledger_is_cold_process_deterministic_and_in_memory_only() -> None:
 
     assert first.stdout == second.stdout
     assert workspace_files() == files_before
+
+
+def test_ephemeral_batches_bind_an_out_of_band_anchor() -> None:
+    first = sign_ephemeral_batch([b"one", b"two"])
+    second = sign_ephemeral_batch([b"one", b"two"])
+
+    assert first.anchor_spki_der != second.anchor_spki_der
+    assert first.key_id == anchor_key_id(first.anchor_spki_der)
+    assert first.key_id.startswith("P256_SPKI_SHA256:")
+    assert verify_batch(first.anchor_spki_der, first.vectors) == (True, True)
+    assert verify_batch(first.anchor_spki_der, second.vectors) == (False, False)
+
+
+def test_private_material_is_absent_from_helper_fixture_environment_and_arguments(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sentinel = "s751-v4-private-material-must-not-cross-the-boundary"
+    monkeypatch.setenv("GCP_S751_V4_TEST_SECRET", sentinel)
+
+    batch = sign_ephemeral_batch([b"canonical-preimage"])
+    public_artifacts = (
+        batch.anchor_spki_der,
+        batch.key_id.encode("ascii"),
+        batch.vectors[0].preimage,
+        batch.vectors[0].signature_der,
+    )
+    prohibited_fragments = (
+        b"-----BEGIN " + b"PRIVATE " + b"KEY-----",
+        b"private" + b"_scalar",
+        b"fixed" + b"_signing_seed",
+        b"signer" + b"_capable_key",
+        b"third" + b"_hsm_purpose",
+        sentinel.encode("ascii"),
+    )
+
+    for artifact in public_artifacts:
+        assert not any(fragment in artifact for fragment in prohibited_fragments)
+
+    fixture_and_boundary_sources = (
+        PACKET.read_bytes(),
+        (ROOT / "tests/gcp_s751_v4/crypto.py").read_bytes(),
+        (ROOT / "tests/helpers/gcp_s751_v4_crypto.mjs").read_bytes(),
+    )
+    for source in fixture_and_boundary_sources:
+        assert not any(fragment in source for fragment in prohibited_fragments[:-1])
+
+
+def test_hermetic_node_uses_a_pre_resolved_executable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setenv("NODE_OPTIONS", "--require=/not-a-real-s751-v4-module")
+
+    batch = sign_ephemeral_batch([b"hermetic"])
+
+    assert batch.key_id == anchor_key_id(batch.anchor_spki_der)
