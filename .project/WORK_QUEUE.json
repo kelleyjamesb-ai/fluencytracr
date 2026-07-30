@@ -363,7 +363,7 @@
       "bound": "Aggregate rollup and query-privacy paths only; acceptance: complementary suppression prevents recovery of suppressed cells from totals or sibling values; repeated-query and adjacent-window differencing risks fail closed; every workflow_id, jbtd_id, persona_id slice is suppressed independently; rollups expose only bounded aggregate values that pass existing privacy and suppression rules; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates as required; exclude claim-semantic templates, canonical identity binding, claim trace, deployment, publication, live GCP, runtime qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ROI, causality, prediction, productivity, ranking, or customer-facing economic output",
       "status": "done",
       "risk": "high",
-      "last_note": "Done 2026-07-27 remediation: commit a6f2a39 fixed clean CI with explicit Prisma generation, lazy fail-closed client resolution, constructor-independent P2002 handling, and main-only push CI. Fresh local backend passed 1007/1007; CODE/BUG/ADVERSARIAL GO. PR #453 run 30329184071 then passed one pull-request Node job in 5m05s, proving the duplicate CI job and timeout failure are fixed. No merge, migration, deploy, or live proof."
+      "last_note": "Done 2026-07-27: PR #453 merged normally as e59e770 from state-only head 02c890a, whose runtime repair a6f2a39 received CODE/BUG/ADVERSARIAL GO, 1007/1007 local backend tests, and passing current-head checks. The clean-CI Prisma generation and duplicate Node-job timeout defects are fixed. No migration or live proof occurred in Slice C; later production and deployment state is recorded in the A-F closeout."
     },
     {
   "id": "mcii-aggregate-evidence-claim-semantics-slice-d",
@@ -401,9 +401,9 @@
   "id": "mcii-allowlisted-claim-trace-slice-f",
   "title": "MCII Slice F — allowlisted read-only claim trace and legacy-path demotion",
   "bound": "Allowlisted read-only claim trace and legacy-path demotion only; acceptance: one read-only allowlisted projection links the approved hypothesis, measurement, admitted evidence, policy decisions, authorized claim, and canonical readout through immutable identity; access is limited to ADMIN and ENABLEMENT_LEAD and all other roles are denied; exclude user-identifiable data, raw events, internal secrets, unrestricted payloads, and mutation controls; independent packet selection, legacy HTML readout, mutable lineage, and obsolete authority paths are removed or explicitly demoted; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing economic output",
-  "status": "in_progress",
+  "status": "done",
   "risk": "high",
-  "last_note": "Implemented one binding-addressed read-only allowlisted claim trace, removed frontend packet-selection authority, and explicitly demoted legacy HTML. Focused contract/API/frontend tests and the Slice F PostgreSQL verifier pass. No migration or deployment was performed. Exact-SHA review is pending."
+  "last_note": "Done 2026-07-29: PR #469 merged normally as 1161976 from exact reviewed head 50381df after CODE/BUG/ADVERSARIAL GO, the final required suite, and all current-head checks. Three P2s were dispositioned as nonblocking follow-ups. Git-connected production deployment dpl_EWJWEYyMf2eoXqqXDfBtM54tza1n is READY and traceable to the merge; authenticated database, C.1, and Slice E live health remains unproved."
     }
   ]
 }
