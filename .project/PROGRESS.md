@@ -2,6 +2,29 @@
 
 ## Current Session
 
+- James approved the committed Section 7.5.1 Approach A design at
+  `836300df0149b672e8962305e3fdf39a70ad9dab`. The approved next deliverable is
+  a preimplementation readiness packet that tests the architecture before any
+  evaluator implementation.
+- The bounded implementation plan is
+  `docs/superpowers/plans/2026-07-30-section-7-5-1-rule-ledger-v4-readiness.md`.
+  It decomposes the proof into eight testable tasks: frozen OpenSpec/compact
+  rule source, closed public shapes, generated and reconciled ledger,
+  ephemeral P-256 trust-root handling, final-directory capability admission,
+  total independent oracle, attack/metamorphic/environment/future-SUT corpus,
+  and immutable exact-SHA review.
+- The plan uses the five current-main parent files directly and does not copy
+  stopped V2/V3 packet data, parent snapshots, or the 11,191-row V3 ledger. It
+  creates no fixture-generator CLI, generated-ledger artifact, production
+  helper, or evaluator. Structural/reference tests must pass; every future-SUT
+  test must construct its mutation and oracle result before failing only with
+  literal `MISSING_SUT`.
+- Plan self-review maps every approved design decision and acceptance criterion
+  to a task, found no missing requirement, removed undefined interfaces, and
+  found no forbidden placeholder instruction. Execution has not begun and
+  remains bounded away from parent amendments, closure projection, GCP,
+  credentials, deployment, qualification, model execution, Sections
+  7.5.2-7.8, push, PR, or merge.
 - James approved Section 7.5.1 simplification Approach A as the new human
   architecture decision after the fresh V3 replacement panel stopped. This
   design phase starts from exact merged main
