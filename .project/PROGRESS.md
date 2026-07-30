@@ -2,6 +2,58 @@
 
 ## Current Session
 
+- James approved Section 7.5.1 simplification Approach A as the new human
+  architecture decision after the fresh V3 replacement panel stopped. This
+  design phase starts from exact merged main
+  `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` on isolated branch
+  `codex/gcp-section-7-5-rule-ledger-v4-design`. It does not amend or descend
+  from the stopped V3 evidence branch.
+- Approach A replaces the instance ledger with a rule ledger, removes all
+  signed locator strings, passes one harness-admitted final parent-bundle
+  directory capability, generates and verifies real ephemeral P-256 envelopes
+  during each test run, preserves exact hashes only for immutable parent and
+  protocol artifacts, and admits only closed enums, hashes, and context-bound
+  synthetic aliases. Exhaustive parent and dynamic-boundary rows will be
+  derived mechanically from their closed sources instead of committed as a
+  multi-megabyte hand-shaped fixture.
+- The stopped V3 diagnostic evidence remains local and immutable at
+  `dc9f888f84290c9de74e94d35846da075fab3ce2`, tree
+  `80f01cda353d33bc9082dc53704c7a8047f12b94`. Its replacement panel returned
+  CODE, BUG, and ADVERSARIAL HOLD because a static ledger hashed an invalid
+  synthetic P-256 envelope, A010 exposed locator names as an answer-key
+  discriminator, and signed locator components admitted identifier-shaped
+  strings. Those defects are inputs to the new design, not implementation
+  work to patch on the stopped packet.
+- Current authority is design documentation only. No V4 OpenSpec packet,
+  readiness fixture, SUT, parent-contract amendment, closure projection,
+  GCP/runtime action, credential, restricted evidence, signing service,
+  provisioning, persistence, deployment, qualification, model execution,
+  Section 7.5.2-7.8 work, push, PR, merge, or live action is authorized before
+  James reviews and approves the committed design.
+- The local Approach A design is recorded in
+  `docs/superpowers/specs/2026-07-30-section-7-5-1-rule-ledger-v4-design.md`.
+  Its first independent review returned four design holds: the final-directory
+  descriptor needed an evaluator-owned independent open-file description and
+  explicit capability boundary; the ephemeral SPKI needed an out-of-band
+  harness-owned trust-root rule and structural-only claim grade; the ledger
+  needed all closed dynamic boundaries as well as parent pointers; and the
+  anti-answer-key rule needed metamorphic proof rather than an impossible ban
+  on all normative discriminators.
+- The revised design resolves those four classes and the same independent
+  reviewer returned `DESIGN_GO`. It now separates caller path admission from
+  evaluator directory-object/content admission, reopens `"."` relative to the
+  incoming descriptor, leaves HSM/P03/P08/P14 authority open, reconciles
+  dynamic paths bidirectionally, distinguishes the acyclic trust-dependency
+  graph from the cyclic least-fixed-point controller graph, and requires
+  equivalent results across keys/signatures/aliases/descriptor numbers plus
+  opposing governed outcomes at the same normalized descriptor number.
+- Design verification passed `bash scripts/ci_docs_contract_sweep.sh`,
+  `bash scripts/ci_linkcheck_fluency_docs.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/agentic_harness_guard.mjs`, `npm run validate:agents`, JSON
+  parsing of the work queue, and `git diff --check`. This is design viability
+  only, not readiness-packet GO or evaluator implementation authority. The
+  design awaits James's review.
 - Section 7.5.1 reached terminal `STOP_REARCHITECT` before implementation.
   The replacement panel reviewed exact local diagnostic commit
   `9507fe26f6c1bfb2eda296a8d7867c1455e934c0`, tree
