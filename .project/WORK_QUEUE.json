@@ -413,7 +413,6 @@
   "risk": "high",
   "last_note": "Completed locally as REPAIR_DIAGNOSTIC_LINEAGE_ONLY: PR #434 remains a held, non-evidentiary sampler-free diagnostic oracle; historical unmerged task labels are tombstones; the centered reference, task 2.6 block, failed canaries, and all later gates remain unchanged. No implementation, execution, evidence, deployment, UI, or Sections 7.5-7.7 work occurred."
     },
-    [
   {
     "id": "gcp-canonical-runtime-section-7-5-parent-authority",
     "title": "Section 7.5.1 — parent authority and typed runtime-interface admission",
