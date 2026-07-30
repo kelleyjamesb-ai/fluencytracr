@@ -692,6 +692,89 @@ def test_bundle_admission_rejects_pre_post_directory_identity_change(
         os.close(incoming)
 
 
+def test_bundle_admission_rejects_fifo_swap_in_stat_open_gap_without_blocking(
+    exact_bundle: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    member_name = EXACT_MEMBER_NAMES[0]
+    member = exact_bundle / member_name
+    incoming = open_harness_bundle(exact_bundle)
+    real_open = os.open
+    real_stat = os.stat
+    real_fstat = os.fstat
+    stat_complete = threading.Event()
+    fifo_ready = threading.Event()
+    intercepted = False
+    owned_descriptors: list[int] = []
+    outcomes: list[BaseException] = []
+
+    def pausing_stat(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *,
+        dir_fd: int | None = None,
+        follow_symlinks: bool = True,
+    ) -> os.stat_result:
+        nonlocal intercepted
+        result = real_stat(
+            path,
+            dir_fd=dir_fd,
+            follow_symlinks=follow_symlinks,
+        )
+        if path == member_name and dir_fd is not None and not intercepted:
+            intercepted = True
+            stat_complete.set()
+            assert fifo_ready.wait(timeout=5)
+        return result
+
+    def recording_open(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        opened_fd = real_open(path, flags, mode, dir_fd=dir_fd)
+        owned_descriptors.append(opened_fd)
+        return opened_fd
+
+    def run_admission() -> None:
+        try:
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+        except BaseException as exc:
+            outcomes.append(exc)
+
+    monkeypatch.setattr(bundle_module.os, "stat", pausing_stat)
+    monkeypatch.setattr(bundle_module.os, "open", recording_open)
+    worker = threading.Thread(target=run_admission)
+    worker.start()
+    assert stat_complete.wait(timeout=5)
+    member.unlink()
+    os.mkfifo(member)
+    assert member.is_fifo()
+    fifo_ready.set()
+
+    worker.join(timeout=1)
+    completed_without_blocking = not worker.is_alive()
+    if worker.is_alive():
+        unblock_fd = real_open(member, os.O_RDWR | os.O_NONBLOCK)
+        os.close(unblock_fd)
+        worker.join(timeout=5)
+
+    try:
+        assert completed_without_blocking
+        assert len(outcomes) == 1
+        assert isinstance(outcomes[0], BundleAdmissionError)
+        assert str(outcomes[0]) == "INVALID_PARENT_RESOURCE_SET"
+        real_fstat(incoming)
+        assert owned_descriptors
+        for owned_fd in set(owned_descriptors):
+            with pytest.raises(OSError):
+                real_fstat(owned_fd)
+    finally:
+        os.close(incoming)
+    assert not worker.is_alive()
+
+
 def test_bundle_admission_rejects_concurrent_exact_content_replacement(
     exact_bundle: Path,
     exact_parent_bytes: dict[str, bytes],
