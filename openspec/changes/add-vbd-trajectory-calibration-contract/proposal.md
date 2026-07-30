@@ -79,13 +79,20 @@ trajectory contract before implementation or real-data admission can proceed.
   still requires a reviewed implementation `D2`, manifest-only authorization
   `A2`, separate human authorization, and one new launch; this amendment does
   not implement or execute it.
+- Reconcile PR #434's merged sampler-free collapsed-target algebra with the
+  missing current-main methodology and task lineage. The decision is
+  `REPAIR_DIAGNOSTIC_LINEAGE_ONLY`: retain the narrow algebra only as a held,
+  non-evidentiary diagnostic oracle; tombstone its unmerged historical task
+  labels; and preserve the centered reference, frozen model, priors, estimand,
+  seeds, MCSE threshold, failed canaries, and every later gate.
 
 ## Impact
 
 - Affected specs:
   `bayesian-ai-value-realization-and-human-transformation-model-family`.
 - Affected docs: the VBD calibration contract, model-family status, bounded
-  internal-dogfood prerequisite status, and capability ledger.
+  internal-dogfood prerequisite status, methodology reconciliation decision,
+  and capability ledger.
 - Future implementation scope, only after separate approval: `inference/` and
   a strict internal confidence-engine bridge.
 - No inference runtime, schema, route, UI, persistence, connector, export,

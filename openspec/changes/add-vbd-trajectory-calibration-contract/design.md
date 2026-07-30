@@ -201,6 +201,25 @@ balanced draw selector in the normative spec. No collapsed target,
 noncentering, post-hoc coefficient reconstruction, seed rotation, adaptive
 extension, antithetic sampling, or endpoint correction is allowed.
 
+### Collapsed-Target Diagnostic Lineage
+
+PR #434 merged sampler-free algebra that analytically marginalizes the Helmert
+zero-sum group-effect block, but the branch-local methodology and task bytes
+that originally described it did not merge. The reconciled decision is
+`REPAIR_DIAGNOSTIC_LINEAGE_ONLY`.
+
+The merged algebra may remain only as a held, non-evidentiary diagnostic oracle
+for falsifying algebraic drift. It is not a reference sampler, precision
+repair, passing diagnostic result, or partial proof. Historical task labels
+`1.12`, `1.13`, `2.16`, `2.17`, and `2.20` are tombstones. Current task `1.10`
+records this repair without importing or completing those labels.
+
+The centered reference remains mandatory for task `2.6`, both precision
+canaries, candidate `S` and freeze `F`, concordance, calibration, evidence,
+acceptance, and parent task `5.6`. The collapsed target remains prohibited in
+those paths. This repair changes no model, prior, estimand, seed, threshold,
+failed-canary state, or gate.
+
 The lane estimand is the direction-adjusted difference between the mean latent
 level over the final three predeclared evaluation windows and the mean latent
 level over all twelve pre-period windows, in that lane's pre-period standard

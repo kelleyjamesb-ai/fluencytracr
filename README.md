@@ -63,9 +63,12 @@ documented value-realization layers:
 - **VBD trajectory-model calibration contract:** defines non-overlapping
   aggregate frequency, engagement, and Breadth trajectories, with Depth kept
   as source-bound context outside the likelihood. Current state is
-  `CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING`: composite Velocity/VBD
-  scores are inadmissible, implementation approval is pending, and parent task
-  `5.6` remains incomplete.
+  `SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR`: tasks `2.2`
+  through `2.5` are implemented, while task `2.6`, precision canaries,
+  concordance, evidence, and parent task `5.6` remain incomplete. PR #434's
+  collapsed-target algebra is retained only as a held, non-evidentiary
+  diagnostic oracle under `REPAIR_DIAGNOSTIC_LINEAGE_ONLY`; it does not replace
+  the centered reference or authorize execution.
 - **Hypothesis and metric longitudinal admission:** allows companies to define
   different aggregate metric catalogs without an arbitrary count cap while
   binding each longitudinal analysis unit to one approved hypothesis and one
@@ -505,8 +508,9 @@ documented value-realization layers:
   1,200 deterministic replicated-validation slots, null/floor/lag/shock
   controls, and strict Python/TypeScript evidence bindings. AI Fluency
   measurement calibration is accepted only at the internal synthetic boundary;
-  the VBD trajectory contract is defined while implementation and evidence
-  remain future work. This is not production promotion. "Human transformation" means aggregate work-pattern and
+  VBD tasks `2.2` through `2.5` are implemented, but numerical-precision repair,
+  canaries, concordance, evidence, and acceptance remain held. This is not
+  production promotion. "Human transformation" means aggregate work-pattern and
   capability-change context only; it does not authorize HR analytics,
   individual scoring, employee productivity measurement, manager/team ranking,
   customer-facing confidence/probability output, ROI proof, finance output,

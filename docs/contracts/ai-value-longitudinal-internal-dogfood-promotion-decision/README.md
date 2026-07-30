@@ -164,7 +164,7 @@ or production capability. Broad internal distribution is not authorized.
 | --- | --- | --- |
 | Accepted longitudinal synthetic proof | `PASS` | Evidence and acceptance hashes above remain exact. |
 | AI Fluency measurement-model calibration | `SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING` | Accepted evidence and exact-byte review hashes remain valid; real aggregate calibration remains separate. |
-| VBD trajectory-model calibration | `CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING` | Implemented, fully executed, freshly recomputed, independently accepted for the exact non-overlapping aggregate exposure definitions, and explicitly accepted by the decision owner for bounded synthetic proof only. |
+| VBD trajectory-model calibration | `SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR` | Task `2.6`, both precision canaries, concordance, full execution, fresh recomputation, independent acceptance for the exact non-overlapping aggregate exposure definitions, and explicit decision-owner acceptance must all pass. The current task-`2.6` lineage is blocked, and PR #434's collapsed-target diagnostic oracle cannot satisfy any prerequisite. |
 | VBD-to-outcome interface reconciliation | `NOT_DEFINED` | Separate approved change carries all three lagged lanes with uncertainty/covariance treatment, makes optional non-numeric Depth context eligibility-invariant without numerical promotion, and reruns every affected outcome-model concordance, calibration, null, lag, shock, and negative-control gate. |
 | Real-data admission and source binding | `NOT_DEFINED` | Separate OpenSpec and contract admit exact Glean-internal aggregate sources, units, uncertainty, lineage, privacy posture, source hashes, access posture, and immutable analysis units. |
 | Runtime monitoring and fail-closed behavior | `NOT_DEFINED` | Separate implementation proves pre-fit admission, hard diagnostic HOLD, immutable prepared-input/fit/result bindings, error handling, audit evidence, and no partial release. |
@@ -229,10 +229,11 @@ customer-facing promotion contemplated by the confidence-inference methodology.
 ## Next Authorized Move
 
 AI Fluency measurement-model calibration is accepted only at the internal
-synthetic boundary. The next bounded modeling proposal is the VBD trajectory-
-model calibration contract and proof plan. Its implementation approval remains
-pending; the proposal cannot access data, fit a model, emit evidence, complete
-task `5.6`, or activate dogfood execution.
+synthetic boundary. The VBD trajectory-model contract has implemented tasks
+`2.2` through `2.5`, but numerical-precision repair remains held. Task `2.6`,
+both precision canaries, concordance, evidence, acceptance, and parent task
+`5.6` remain incomplete. The collapsed-target diagnostic reconciliation
+authorizes no data access, model fit, evidence emission, or dogfood activation.
 
 A separate docs/OpenSpec real-data admission and source-binding proposal may be
 drafted only after it reconciles the current synthetic-only admission-validator

@@ -37,6 +37,11 @@
   conformance fixture, and non-resumable hash-chained postmortem checkpoints;
   obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO for the amended
   docs bytes without implementation or execution.
+- [x] 1.10 Reconcile PR #434's merged collapsed-target algebra as a held,
+  sampler-free, non-evidentiary diagnostic oracle only; tombstone its unmerged
+  historical task labels and preserve the centered reference, frozen model,
+  priors, estimand, seeds, MCSE threshold, failed canaries, task `2.6` block,
+  and every execution and evidence gate without implementation or execution.
 
 ## 2. Future Synthetic Implementation
 
@@ -56,12 +61,15 @@
   complete negative-control suite. Smoke, partial, malformed, missing,
   duplicate, off-plan, or mixed-provenance studies MUST HOLD; do not execute
   concordance or evidence.
-- [ ] 2.6 After task `1.7` and separate implementation reactivation, implement
+- [ ] 2.6 **BLOCKED under the current amendment.** The original task required
   the numerical-precision and binary64 representable-retention amendments,
   five-field MCSE records, fixed PPC selector, old-lineage rejection, and both
-  permanently non-admissible full-setting precision canaries. Do not create
-  replacement candidate `S` until both canaries clear every otherwise
-  applicable gate.
+  permanently non-admissible full-setting precision canaries to clear every
+  otherwise applicable gate before replacement candidate `S`. Ordinal `0`
+  failed MCSE and is immutable permanent HOLD; it cannot be retried or cleared,
+  ordinal `1` cannot run under this lineage, and the stale queue item that
+  directed completion is closed NO-GO. Any different repair requires a new
+  human-authored queue item and explicit OpenSpec authority.
 - [x] 2.7 After the separate task-`1.8` implementation authorization, implement
   the exclusive diagnostic seeds and case, complete 5k/10k/20k sanitized
   projection, exact record/hash reconstruction, claim-before-import one-shot

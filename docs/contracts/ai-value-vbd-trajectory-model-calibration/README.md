@@ -11,6 +11,9 @@ Implementation approval:
 Numerical-precision amendment approval:
 `APPROVED_BY_JAMES_KELLEY_2026_07_17_FOR_DOCS_ONLY`
 
+Collapsed-target reconciliation:
+`REPAIR_DIAGNOSTIC_LINEAGE_ONLY`
+
 Parent OpenSpec task: `5.6` remains incomplete.
 
 ## Purpose
@@ -48,6 +51,22 @@ There is no canonical Velocity trajectory and no overall VBD trajectory in this
 proof. The three active primitives remain separate through source binding,
 transformation, state-space fitting, diagnostics, calibration, and evidence
 review. Existing canonical Velocity semantics remain unchanged.
+
+## Collapsed-Target Reconciliation
+
+The bounded methodology decision in
+`docs/research/VBD_COLLAPSED_TARGET_METHODOLOGY_RECONCILIATION_DECISION.md`
+classifies PR #434's merged collapsed-target algebra only as a
+`held_sampler_free_group_effect_marginalization_diagnostic_oracle`.
+
+This is a lineage repair, not admission of a replacement inference method.
+Current OpenSpec task `1.10` records the decision. Historical branch-local task
+labels `1.12`, `1.13`, `2.16`, `2.17`, and `2.20` are tombstones and create no
+current authority. The centered reference remains mandatory for task `2.6`,
+both precision canaries, candidate `S` and freeze `F`, concordance, calibration,
+evidence, acceptance, and parent task `5.6`. The existing model, priors,
+estimand, seeds, `<=0.10` MCSE-to-posterior-SD threshold, failed-canary state,
+and all later gates remain unchanged.
 
 ## Exact Active Lanes
 
@@ -1639,14 +1658,17 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Obtain separate human authorization for one bounded numerical-precision repair
-implementation item. That item must implement this amendment, add both
-disjoint full-setting precision canaries, verify the complete repaired runner,
-and only then propose a replacement candidate source `S`. Exact CODE, BUG,
-ADVERSARIAL, and statistical-methodology GO plus a new manifest-only sole-child
-freeze `F` are still required before restarting concordance from bundle 0 in a
-fresh workspace. The tombstoned lineage above must remain permanent HOLD and
-cannot contribute even a previously passing sub-result. Parent task `5.6`,
-full evidence, real-data admission, runtime monitoring, readout language, pilot
-manifest, downstream three-lane outcome integration, persistence, and UI
-remain incomplete.
+There is no authorized numerical-precision implementation or execution step
+under the current lineage. The original task-`2.6` queue item is closed NO-GO:
+ordinal `0` is immutable permanent HOLD, cannot be retried or cleared, and
+ordinal `1` cannot run under that item. Replacement candidate `S`, freeze `F`,
+concordance, evidence, and parent task `5.6` therefore remain blocked.
+
+Any future alternative methodology or repair must begin with a new
+human-authored queue item from current `main` and explicit OpenSpec authority.
+It must preserve the tombstoned lineage and then satisfy the applicable exact
+CODE, BUG, ADVERSARIAL, statistical-methodology, freeze, execution, and
+acceptance gates. This decision does not create or authorize that work.
+Real-data admission, runtime monitoring, readout language, pilot manifest,
+downstream three-lane outcome integration, persistence, and UI remain
+incomplete.
