@@ -2,6 +2,16 @@
 
 ## Current Session
 
+- The human-authorized VBD collapsed-target methodology reconciliation decision
+  is activated from merged `main` at `6dabef416040a2ad5731e596fbe662bb0d89957d`.
+  This bounded item may reconcile PR #434's sampler-free collapsed-target
+  algebra with the missing methodology and task lineage and must issue exactly
+  one `ADMIT`, `REPAIR`, or `REJECT` decision. It remains docs/OpenSpec/status
+  only: no implementation, sampler execution, retry, canary 1, task 2.6
+  completion, S/F, concordance, evidence, real/customer/live data, public
+  surface, promotion, Sections 7.5-7.7 work, or UI wiring is authorized.
+  Sections 7.5-7.7 remain a separate larger program whose 20 open obligations
+  require human-authored queue breakdown after this blocker is closed.
 - C.0 is complete: PR #457 merged normally as
   `21daef146dc2d73c760c6fa8ed0de8e729812f25` from reviewed head
   `644b10279f76450fba6cd00297d70087bc3878cb`, and the merge tree matched
