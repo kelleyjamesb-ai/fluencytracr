@@ -85,10 +85,13 @@ The allowed diagnostic statement is narrow:
 - `u` and terminal movement are reconstructed from the corresponding exact
   conditional Gaussian distribution;
 - the frozen three-lane model and estimand remain unchanged; and
-- sampler-free dense-Gaussian checks may falsify algebraic drift.
+- the already-checked-in sampler-free dense-Gaussian tests support the narrow
+  algebraic classification.
 
 This is an algebraic and structural classification, not a sampler-quality,
 precision, calibration, evidence, or product claim.
+It is retrospective only and does not authorize constructing, executing, or
+rerunning the target, reconstruction, generator, sampler, or tests.
 
 ## Preserved Reference Method
 
@@ -117,6 +120,13 @@ Historical branch-local task labels `1.12`, `1.13`, `2.16`, `2.17`, and
 `2.16` or `2.17` inside the already-merged PR #434 source are historical
 implementation annotations only. They create no active task, authorization, or
 execution path.
+
+The stale pending queue item
+`vbd-numerical-precision-implementation-canaries` is closed NO-GO. Its bound
+predated the ordinal-`0` permanent MCSE HOLD and directed completion of task
+`2.6` plus both canaries. That direction is superseded and must never execute:
+ordinal `0` cannot be retried or cleared, ordinal `1` cannot run under that
+lineage, and task `2.6`, `S/F`, concordance, and evidence remain blocked.
 
 Any future proposal to promote, execute, or use the collapsed target must begin
 with a new human-authored queue item from current `main`, new explicit

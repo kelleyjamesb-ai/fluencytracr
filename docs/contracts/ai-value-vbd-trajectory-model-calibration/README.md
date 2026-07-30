@@ -1658,14 +1658,17 @@ This contract does not authorize:
 
 ## Allowed Next Step
 
-Obtain separate human authorization for one bounded numerical-precision repair
-implementation item. That item must implement this amendment, add both
-disjoint full-setting precision canaries, verify the complete repaired runner,
-and only then propose a replacement candidate source `S`. Exact CODE, BUG,
-ADVERSARIAL, and statistical-methodology GO plus a new manifest-only sole-child
-freeze `F` are still required before restarting concordance from bundle 0 in a
-fresh workspace. The tombstoned lineage above must remain permanent HOLD and
-cannot contribute even a previously passing sub-result. Parent task `5.6`,
-full evidence, real-data admission, runtime monitoring, readout language, pilot
-manifest, downstream three-lane outcome integration, persistence, and UI
-remain incomplete.
+There is no authorized numerical-precision implementation or execution step
+under the current lineage. The original task-`2.6` queue item is closed NO-GO:
+ordinal `0` is immutable permanent HOLD, cannot be retried or cleared, and
+ordinal `1` cannot run under that item. Replacement candidate `S`, freeze `F`,
+concordance, evidence, and parent task `5.6` therefore remain blocked.
+
+Any future alternative methodology or repair must begin with a new
+human-authored queue item from current `main` and explicit OpenSpec authority.
+It must preserve the tombstoned lineage and then satisfy the applicable exact
+CODE, BUG, ADVERSARIAL, statistical-methodology, freeze, execution, and
+acceptance gates. This decision does not create or authorize that work.
+Real-data admission, runtime monitoring, readout language, pilot manifest,
+downstream three-lane outcome integration, persistence, and UI remain
+incomplete.

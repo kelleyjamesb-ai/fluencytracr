@@ -1364,10 +1364,14 @@ DiD work, or promotion.
 The system SHALL classify PR #434's merged collapsed-target implementation only
 as a
 `held_sampler_free_group_effect_marginalization_diagnostic_oracle`.
-It MAY be used without sampling to falsify algebraic drift in the exact
-Helmert-zero-sum group-effect marginalization and conditional reconstruction.
-It SHALL NOT be treated as the VBD reference sampler, a precision repair, a
-passing diagnostic result, or partial evidence.
+The repository SHALL recognize only the already-merged implementation and
+checked-in sampler-free algebraic tests as support for that retrospective
+classification. This reconciliation SHALL NOT authorize constructing,
+executing, or rerunning the target, reconstruction, generator, sampler, or
+tests. Future use requires a new human-authored queue item and explicit
+OpenSpec authority. The implementation SHALL NOT be treated as the VBD
+reference sampler, a precision repair, a passing diagnostic result, or partial
+evidence.
 
 Historical branch-local task labels `1.12`, `1.13`, `2.16`, `2.17`, and `2.20`
 SHALL be tombstones, not current task authority. Current task `1.10` SHALL
@@ -1380,15 +1384,15 @@ in those paths. The reconciliation SHALL NOT change the frozen model, priors,
 estimand, seeds, `<=0.10` MCSE-to-posterior-SD threshold, failed-canary state,
 or any execution or evidence gate.
 
-#### Scenario: Sampler-free algebra is used as a held oracle
+#### Scenario: Existing sampler-free algebra is reviewed as a held oracle
 
-- **GIVEN** a caller constructs the exact PR #434 sampler-free target and
-  conditional reconstruction without executing a generator or sampler
-- **WHEN** the reconciliation boundary classifies the use
+- **GIVEN** a reviewer inspects the already-merged PR #434 implementation and
+  checked-in algebraic tests without executing or rerunning them
+- **WHEN** the reconciliation boundary classifies the existing repository state
 - **THEN** it may label the result only as a held, non-evidentiary diagnostic
   oracle
 - **AND** it cannot clear a canary, complete task `2.6`, enter concordance or
-  evidence, or authorize any later action
+  evidence, authorize a rerun, or authorize any later action
 
 #### Scenario: Historical source annotation is offered as authority
 

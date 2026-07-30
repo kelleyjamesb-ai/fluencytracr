@@ -13,6 +13,20 @@
   parent task `5.6`. Historical unmerged task labels `1.12`, `1.13`, `2.16`,
   `2.17`, and `2.20` are tombstones, while current OpenSpec task `1.10` records
   the bounded reconciliation.
+- Exact-SHA BUG review found one executable authority contradiction: the stale
+  pending `vbd-numerical-precision-implementation-canaries` bound and the
+  contract's old allowed-next-step text still directed both canaries and task
+  `2.6`, despite the normative permanent ordinal-`0` HOLD. The stale queue item
+  is now closed NO-GO through its agent-editable status/note fields, task `2.6`
+  is explicitly blocked under this lineage, and the obsolete execution handoff
+  is removed. Any alternative methodology now requires a new human-authored
+  queue item and explicit OpenSpec authority.
+- Exact-SHA CODE review found that the initial normative `MAY be used` wording
+  could authorize a new sampler-free construction or rerun despite the
+  docs-only queue bound. The spec and decision now recognize only the
+  already-merged implementation and checked-in algebraic tests retrospectively;
+  construction, execution, or rerun requires a new human-authored queue item
+  and explicit OpenSpec authority.
 - This VBD item remains docs/OpenSpec/status only. It changes no implementation,
   sampler, generator, model, priors, estimand, seed, `<=0.10` MCSE threshold,
   failed-canary posture, schema, route, migration, deployment, public surface,
