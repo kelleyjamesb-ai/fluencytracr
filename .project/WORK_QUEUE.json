@@ -484,6 +484,78 @@
     "status": "pending",
     "risk": "high",
     "last_note": "Human-authored final Section 7.1-7.7 architecture gate. Activate only after the full Section 7.6 contract gate is merged."
-  }
-]
+  },
+    {
+  "id": "gcp-canonical-runtime-section-7-5-parent-authority",
+  "title": "Section 7.5.1 — parent authority and typed runtime-interface admission",
+  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P00-P03, P05-P08, P14, and the Section 7.3/7.4 authority-admission, authority-separation, and exact-parent-approval portions of P19 by closing exact Section 7.2 runtime-profile approval, Section 7.3 capability and controller separation, authenticated five-project/fourteen-role alias and provider-binding records, Section 7.4 typed approval/verifier/current-lineage records, shared trust-verification time, record authentication, TLS/trust anti-rollback semantics, and the parent-owned approval and authority portions of the independent-anchor obligation; reject Section 7.5A and Section 7.6 authority substitution; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, model execution, or Sections 7.6-7.8 work",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored bounded prerequisite item. Activate first; missing exact evidence produces HOLD rather than invented approval."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-5-network-local",
+  "title": "Section 7.5.2 — network, channel, and local ephemeral enforcement contract",
+  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P09, P18, and only the trust/channel/transport portions of P07 by defining the applicable trust, channel, and transport enforcement records, Section 7.4-clock equality, whole-interval private ingress/egress, UDS and no-relay guarantees, caller-by-method authentication, TLS target, DNS/firewall/route/perimeter observations, and authenticated disk/tmpfs/swap/logging enforcement; P07 replay-retention records are excluded and assigned to Section 7.5.3, and the P07 audit-mapping record is excluded and assigned to Section 7.5.4; no persistence mechanics, attempt-ledger semantics, SUT implementation, live GCP, credentials, provisioning, deployment, qualification, or model execution",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored bounded item. Activate only after the parent-authority item is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-5-persistence-anchor",
+  "title": "Section 7.5.3 — checkpoint, GCS, Spanner, retention, and independent-anchor contract",
+  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P04, P10, P11, the replay-retention portions of P07, and the Section 7.5 mechanism portion of P19 by defining the three replay-retention records, checkpoint schema, predecessor/fork/currentness/concurrency and restore rules, immutable GCS retention and no-replacement mechanics, Spanner transaction/idempotence/unknown-Commit handling, and independent nonrollbackable anchor currentness/check-and-use/recovery; Section 7.6 exclusively owns attempt reservation, terminal state, and retry; no SUT implementation, live GCP, credentials, provisioning, persistent resources, deployment, qualification, or model execution",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored bounded item. Activate only after the parent-authority and network/local contracts are merged with their required obligations closed; predecessor HOLD propagates HOLD."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-5-audit-completeness",
+  "title": "Section 7.5.4 — audit universe, delivery completeness, and privacy contract",
+  "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P12, the audit-mapping portion of P07, and the Section 7.5 portion of P13 by defining the audit-mapping record and closing the complete service/method audit universe and classifier, total Policy Denied applicability, exclusion-method disposition, independently rooted routing and delivery evidence, route-timeline completeness, and privacy-safe projections; missing methods, routes, independently rooted observations, audit mapping, or denied-event coverage must HOLD; no SUT implementation, live GCP, logging resources, credentials, deployment, qualification, model execution, or Section 7.7 decision",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored bounded item. Activate only after the persistence contract is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-5-full-contract-gate",
+  "title": "Section 7.5.5 — full transport and persistence contract closure gate",
+  "bound": "Integrate the merged Section 7.5.1-7.5.4 contracts; satisfy the machine-distinct full-Section-7.5 requirement S75A-P17; mechanically reconcile S75A-P00-P14 and P17-P19 with exact forward/reverse edges and prove that every parent-owned, mechanism-owned, retention, audit, network, local-enforcement, and anchor portion has one explicit owner; create the readiness packet and adversarial fixtures required by docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_5_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD, while leaving P15 to Section 7.7 and P16 to Section 7.8; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, persistence creation, or model execution",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored full-Section-7.5 gate. Activate only after all four Section 7.5 prerequisite items are merged with their required obligations closed."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
+  "title": "Section 7.6.1 — pre-execution reservation and single-use attempt contract",
+  "bound": "Docs/OpenSpec/offline verifiers/tests only: define plan and allocation manifests, parent attempt envelope, signed admission/retry lineage, monotonic attempt and retry ordinals, authenticated tenant/runtime binding, single-use reservation, anti-replay write-ahead markers, expected-request lineage, and pre-execution acceptance consumed by Section 7.4; caller-selected identity, ordinal, status, replay, duplicate reservation, or missing write-ahead evidence must HOLD; no terminal ledger, favorable-retry decision, SUT implementation, model execution, live GCP, deployment, or qualification",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored bounded Section 7.6 item. Activate only after the full Section 7.5 contract gate is merged with result exactly SECTION_7_5_CONTRACT_CLOSED; any HOLD blocks activation."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-6-terminal-ledger",
+  "title": "Section 7.6.2 — terminal ledger, completeness, crash, and retry contract",
+  "bound": "Docs/OpenSpec/offline verifiers/tests only: define controller/workload receipts, append-only terminal records, Section 7.4 verified-disposition consumption, section_7_6_terminal_proof_hash, deterministic terminal and retry precedence, completeness and no-loss proof, crash and ambiguous result/quote/sign handling, authority mutation, and proof that no favorable retry occurs unless no terminal artifact could exist; prohibit back-edges to final consumer acceptance; no SUT implementation, execution, live GCP, deployment, qualification, or evidence production",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored bounded Section 7.6 item. Activate only after the pre-execution ledger contract is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-6-full-contract-gate",
+  "title": "Section 7.6.3 — full attempt-ledger contract closure gate",
+  "bound": "Integrate the merged Section 7.6.1 and 7.6.2 contracts; mechanically verify the complete pre-execution-to-terminal DAG, schema ownership, causal ordering, durability, completeness, crash, consumption, and retry rules against Sections 7.2-7.5; create the readiness packet and adversarial environment/attack matrices; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_6_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD; no SUT implementation, attempt execution, live GCP, credentials, deployment, qualification, or model evidence",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored full-Section-7.6 gate. Activate only after both Section 7.6 contract slices are merged with their required obligations closed."
+},
+{
+  "id": "gcp-canonical-runtime-section-7-7-integration-threat-model-gate",
+  "title": "Section 7.7 — whole-system integration and threat-model GO/HOLD gate",
+  "bound": "Docs/OpenSpec/offline validators/tests/decision only: activation requires the exact merged Section 7.6 full-contract result to equal SECTION_7_6_CONTRACT_CLOSED; a missing, ambiguous, stale, or HOLD predecessor deterministically produces HOLD and prohibits Section 7.7 GO or creation of a Section 7.8 queue item; reconcile Sections 7.1-7.6 across every field, enum, canonical hash, signer, approval, role, policy, trust boundary, privacy rule, lifecycle transition, failure decision, audit-delivery root, and retry outcome; resolve S75A-P13 and P15; prove the graph acyclic and ownership-complete; run exact-SHA CODE, BUG, and ADVERSARIAL review and issue explicit GO or HOLD for internal contract-set consistency; GO may authorize only creation of a separate human-authored Section 7.8 qualification-plan queue item; P16 remains open; no SUT implementation, GCP action, credentials, provisioning, deployment, qualification execution, model execution, evidence, or UI/runtime wiring",
+  "status": "pending",
+  "risk": "high",
+  "last_note": "Human-authored final Section 7.1-7.7 architecture gate. Activate only after the full Section 7.6 contract gate is merged with result exactly SECTION_7_6_CONTRACT_CLOSED; any HOLD blocks activation and propagates HOLD."
+}
+  ]
 }
