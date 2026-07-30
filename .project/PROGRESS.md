@@ -5066,3 +5066,43 @@
   file, queue item, product source, push, PR, merge, deployment, migration,
   production mutation, publication, or authenticated/live action occurred in
   this precondition update.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII A-F closeout)
+
+- MCII Slices A through F are implementation-complete and normally merged:
+  A through PR #450 as `05c18f9`, B through PR #451 as `d0ac82c`, C
+  through PR #453 as `e59e770`, C.0 through PR #457 as `21daef1`, C.1
+  through PR #458 as `9aab826`, D through PR #460 as `e4f3d55`, E and
+  its bounded repairs through PRs #463, #465, and #466 as `b66a3ec`, and F
+  through PR #469 as `1161976`. The queue now has zero `in_progress` items.
+- Slice F final reviewed head `50381df` passed exact-SHA CODE, BUG, and
+  ADVERSARIAL review, the final required suite, and all required current-head
+  GitHub checks before normal merge. Its three Codex P2 findings remain
+  nonblocking follow-up work: decide the missing-binding-segment response
+  contract, normalize authenticated malformed/unsupported method behavior,
+  and make the PostgreSQL verifier build or prove exact source-to-`dist`
+  identity before importing ignored artifacts.
+- Additional unactivated Slice F polish remains outside the completed slice:
+  replace future-route README wording, synchronize the design policy example
+  with the strict schema, and add a positive selected-workflow rail/phase
+  regression. These are not executable authorization/privacy failures or
+  violations of the nine invariants.
+- The separately authorized production operation applied the authoritative
+  Prisma migration chain and configured the restricted C.1 and Slice E
+  credentials and attestation keys. Vercel deployment
+  `dpl_EWJWEYyMf2eoXqqXDfBtM54tza1n` is `READY`, production-targeted, and
+  traceable to F merge `1161976`. Authenticated `/health` proof of database,
+  C.1, and Slice E readiness remains incomplete because the deployed runtime
+  rejected locally minted application JWTs and exposes no configured token
+  issuer path. Canonical-domain/DNS repair and the two pre-existing
+  non-executable trigger-function search-path warnings remain separate,
+  unactivated operational follow-ups.
+- This closeout changes only `.project/WORK_QUEUE.json` status/notes and this
+  progress record. It creates no queue item, runtime behavior, migration,
+  deployment, credential, permission, domain, or production mutation. The next
+  recommended bounded unit is a human-created VBD collapsed-target methodology
+  reconciliation decision. Current `main` contains PR #434's clean
+  implementation and sampler-free algebraic tests, but not the earlier
+  activation/methodology/task lineage; task `2.6`, sampler execution, canary
+  admission, concordance, and evidence remain blocked. Full Sections 7.5
+  through 7.7 remain a separate larger program.
