@@ -1,18 +1,18 @@
 ## 1. Preimplementation packet
 
-- [ ] 1.1 Freeze the OpenSpec packet and compact rule source.
-- [ ] 1.2 Define every closed public schema and enumerate dynamic boundaries.
-- [ ] 1.3 Build and reconcile the deterministic rule ledger.
-- [ ] 1.4 Add ephemeral P-256 structural trust-root proof.
-- [ ] 1.5 Add final-directory capability admission proof.
-- [ ] 1.6 Add the independent total oracle.
-- [ ] 1.7 Add attack, metamorphic, environment, and future-SUT corpus.
+- [x] 1.1 Freeze the OpenSpec packet and compact rule source.
+- [x] 1.2 Define every closed public schema and enumerate dynamic boundaries.
+- [x] 1.3 Build and reconcile the deterministic rule ledger.
+- [x] 1.4 Add ephemeral P-256 structural trust-root proof.
+- [x] 1.5 Add final-directory capability admission proof.
+- [x] 1.6 Add the independent total oracle.
+- [x] 1.7 Add attack, metamorphic, environment, and future-SUT corpus.
 
 ## 2. Mechanical verification
 
-- [ ] 2.1 Run focused structural and reference verification.
-- [ ] 2.2 Validate strict OpenSpec and packet boundaries.
-- [ ] 2.3 Freeze one clean evidence commit with no evaluator implementation.
+- [x] 2.1 Run focused structural and reference verification.
+- [x] 2.2 Validate strict OpenSpec and packet boundaries.
+- [x] 2.3 Freeze one clean evidence commit with no evaluator implementation.
 
 ## 3. External review
 

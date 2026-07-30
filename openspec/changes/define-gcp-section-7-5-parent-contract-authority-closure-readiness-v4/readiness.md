@@ -5,7 +5,7 @@
 | Field | Value |
 | --- | --- |
 | Protocol version and SHA-256 | `CANONICAL_RUNTIME_PHASE_READINESS_V1` / `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d` |
-| Packet state | `DRAFT` |
+| Packet state | `READY_FOR_EXTERNAL_REVIEW` |
 | Queue item / risk | `gcp-canonical-runtime-section-7-5-parent-authority` / `high` |
 | Phase / scope kind | `Section 7.5.1` / `DOCS_CONTRACT` |
 | Base commit | `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` |
@@ -90,6 +90,11 @@ the clean exact cell is `HOLD:CURRENT_PARENT_OBLIGATIONS_OPEN` with
 `HOLD:ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN` with `ARCHIVE_CLOSEOUT_ONLY`.
 Each postimplementation command exit is `0`; before a SUT exists, cases first
 construct the mutation and independent expectation then stop at `MISSING_SUT`.
+The executable cells construct cell-specific final-directory capabilities with
+zero members for `ABSENT`, a strict subset for `PARTIAL`, all five members with
+one governed corruption for `CORRUPT`, and exact bytes for `EXACT`. Cell labels
+remain harness metadata and are not encoded in a capability path, member name,
+candidate, signed context, anchor, or evaluator argument.
 
 Every `LIVE_RUNTIME` cell (`ABSENT`, `PARTIAL`, `CORRUPT`, `EXACT`) is exactly
 `NOT_AUTHORIZED` / `NOT_RUN`, disposition
@@ -133,6 +138,35 @@ metamorphic equivalence across ephemeral keys/signatures, aliases, descriptor
 numbers, and opposing outcomes at one normalized descriptor number. Every
 future test must perform its named mutation and compute its independent oracle
 result before the single absent-SUT gate.
+
+The packet catalog now declares closed generator names for every class.
+Generated tests cover raw candidate, payload, envelope, and nested nonce/time
+unknown, missing, wrong-type, nested-extra, and truncation cases; candidate,
+payload, signature, and all-five-parent splices; forged receipt/provenance;
+process-local replay; an alternate-key complete reseal evaluated against the
+original admitted anchor; complete time reseal and stale/future time; mode
+confusion; ambient fallback; each parent missing and corrupt; extra,
+nonregular, symlink, replacement, and concurrent resource states; every public
+input string path; every result string field; and every fourteen-role,
+sixteen-capability, two-HSM-purpose, and twenty-owner boundary.
+
+`PreparedCase` labels, attack IDs, expectations, and ledger coverage remain
+harness metadata. They do not enter candidate or envelope bytes, the admitted
+SPKI, bundle names or contents, numeric descriptor semantics, or future child
+arguments. Equivalent cases vary real ephemeral anchors/signatures,
+context-bound random synthetic aliases, and descriptor numbers while
+preserving decisions. Separate exec-isolated children use `dup2` to present
+exact and corrupt parent semantics at descriptor `751` and produce the
+governed opposing results.
+
+The future child protocol is already closed even though the evaluator remains
+absent. It passes candidate, envelope, and admitted-anchor bytes through
+dedicated inherited descriptors, passes only the admitted final-directory and
+result descriptors as additional capabilities, requires zero stdout/stderr,
+and admits exactly one canonical five-field result. The harness compares that
+result with the independently computed oracle result. Current future-SUT cases
+intentionally stop only with literal `MISSING_SUT`; collected counts and audit
+results belong in the task report rather than this normative packet.
 
 ## 6. Cost, review, and stop controls
 

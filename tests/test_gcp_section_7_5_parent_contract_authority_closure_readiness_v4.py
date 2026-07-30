@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import stat
 import sys
 import threading
 from typing import Iterator
@@ -12,6 +13,7 @@ from typing import Iterator
 import pytest
 
 import tests.gcp_s751_v4.bundle as bundle_module
+import tests.gcp_s751_v4.corpus as corpus_module
 import tests.gcp_s751_v4.oracle as oracle_module
 from tests.gcp_s751_v4.bundle import (
     BundleAdmissionError,
@@ -29,6 +31,18 @@ from tests.gcp_s751_v4.crypto import (
     anchor_key_id,
     sign_ephemeral_batch,
     verify_batch,
+)
+from tests.gcp_s751_v4.corpus import (
+    EnvironmentCell,
+    PreparedCase,
+    build_attack_cases,
+    build_environment_cells,
+    build_fd_discriminator_cases,
+    build_metamorphic_groups,
+    evaluate_in_isolated_children_with_dup2,
+    evaluate_reference_case,
+    invoke_future_sut,
+    parse_closed_result_bytes,
 )
 from tests.gcp_s751_v4.model import (
     EvaluationResult,
@@ -527,6 +541,460 @@ def test_rule_ledger_reconciles_static_and_dynamic_paths() -> None:
     assert all(row.dependencies for row in rows if not row.is_root)
     assert all(row.anchor_rule for row in rows)
     assert not any(row.instance_value for row in rows if row.dynamic)
+
+
+def test_attack_catalog_and_rule_ledger_reconcile_exactly() -> None:
+    packet = load_packet()
+    rows = build_rule_ledger(packet)
+    cases = build_attack_cases(packet)
+
+    assert {case.attack_id for case in cases} == {
+        attack["attack_id"] for attack in packet.attack_catalog
+    }
+    covered = {
+        rule_id
+        for case in cases
+        for rule_id in case.covered_rule_ids
+    }
+    applicable = {row.rule_id for row in rows if row.attack_ids}
+    assert covered == applicable
+    for row in rows:
+        for attack_id in row.attack_ids:
+            assert any(
+                case.attack_id == attack_id
+                and row.rule_id in case.covered_rule_ids
+                for case in cases
+            )
+
+
+def test_packet_attack_generators_are_closed_and_executable() -> None:
+    packet = load_packet()
+    cases = build_attack_cases(packet)
+
+    generators = {
+        generator
+        for attack in packet.attack_catalog
+        for generator in attack["generators"]
+    }
+    assert generators
+    assert all(
+        isinstance(attack["generators"], tuple)
+        and attack["generators"]
+        for attack in packet.attack_catalog
+    )
+    for attack in packet.attack_catalog:
+        attack_id = attack["attack_id"]
+        assert any(case.attack_id == attack_id for case in cases)
+        for generator in attack["generators"]:
+            fragment = generator.lower().replace("_", "-")
+            assert any(
+                case.attack_id == attack_id
+                and fragment in case.case_id
+                for case in cases
+            )
+
+
+def test_semantic_equivalence_ignores_dynamic_test_artifacts() -> None:
+    groups = build_metamorphic_groups(load_packet())
+    for group in groups:
+        results = [
+            evaluate_reference_case(case)
+            for case in group.equivalent_cases
+        ]
+        assert len(set(results)) == 1
+    by_id = {group.group_id: group for group in groups}
+    key_cases = by_id["M001"].equivalent_cases
+    assert len({case.admitted_anchor_spki for case in key_cases}) == 2
+    assert len({case.envelope_bytes for case in key_cases}) == 2
+    alias_cases = by_id["M002"].equivalent_cases
+    assert len({case.candidate_bytes for case in alias_cases}) == 2
+    descriptor_cases = by_id["M003"].equivalent_cases
+    with descriptor_cases[0].bundle_factory() as first_fd:
+        with descriptor_cases[1].bundle_factory() as second_fd:
+            assert first_fd != second_fd
+
+
+def test_same_normalized_fd_number_can_produce_opposing_results() -> None:
+    exact, corrupt = build_fd_discriminator_cases()
+    outcomes = evaluate_in_isolated_children_with_dup2(
+        normalized_fd=751,
+        cases=(exact, corrupt),
+    )
+    assert outcomes == (
+        EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "HOLD",
+            "CURRENT_PARENT_OBLIGATIONS_OPEN",
+            "NONE",
+            "STRUCTURAL_ONLY",
+        ),
+        EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "REJECT",
+            "INVALID_PARENT_RESOURCE_SET",
+            "NONE",
+            "NONE",
+        ),
+    )
+
+
+def test_environment_cells_are_packet_exact_and_cell_specific() -> None:
+    packet = load_packet()
+    cells = build_environment_cells(packet)
+
+    assert {
+        (cell.environment, cell.resource_state)
+        for cell in cells
+    } == {
+        (row["environment"], row["resource_state"])
+        for row in packet.environment_table
+    }
+    assert sum(cell.executable for cell in cells) == 8
+    assert all(
+        not cell.executable
+        and cell.command == "NOT_AUTHORIZED"
+        and cell.expected_exit == "NOT_RUN"
+        for cell in cells
+        if cell.environment == "LIVE_RUNTIME"
+    )
+    for cell in cells:
+        if cell.executable:
+            assert cell.case is not None
+            assert evaluate_reference_case(cell.case) == cell.case.expected
+        else:
+            assert cell.case is None
+
+
+def test_replay_case_reuses_identical_normative_inputs() -> None:
+    replay_cases = [
+        case for case in build_attack_cases(load_packet())
+        if case.attack_id == "A009"
+    ]
+    assert len(replay_cases) == 1
+    case = replay_cases[0]
+    oracle = ReferenceOracle()
+    with case.bundle_factory() as reference_fd:
+        first = oracle.evaluate(
+            case.candidate_bytes,
+            case.envelope_bytes,
+            case.admitted_anchor_spki,
+            reference_fd,
+        )
+        second = oracle.evaluate(
+            case.candidate_bytes,
+            case.envelope_bytes,
+            case.admitted_anchor_spki,
+            reference_fd,
+        )
+    assert first.reason == "CURRENT_PARENT_OBLIGATIONS_OPEN"
+    assert second.reason == "REPLAY_DETECTED"
+
+
+def test_prepared_case_metadata_never_enters_normative_inputs() -> None:
+    for case in build_attack_cases(load_packet()):
+        normative_bytes = (
+            case.candidate_bytes
+            + case.envelope_bytes
+            + case.admitted_anchor_spki
+        )
+        assert case.case_id.encode("ascii") not in normative_bytes
+        assert case.attack_id.encode("ascii") not in normative_bytes
+
+
+def test_prepared_case_metadata_never_enters_bundle_names_or_contents() -> None:
+    for case in build_attack_cases(load_packet()):
+        labels = (
+            case.case_id.encode("ascii"),
+            case.attack_id.encode("ascii"),
+        )
+        with case.bundle_factory() as bundle_fd:
+            for member_name in os.listdir(bundle_fd):
+                encoded_name = member_name.encode("utf-8")
+                assert all(label not in encoded_name for label in labels)
+                member_fd: int | None = None
+                try:
+                    member_fd = os.open(
+                        member_name,
+                        os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW,
+                        dir_fd=bundle_fd,
+                    )
+                    if not stat.S_ISREG(os.fstat(member_fd).st_mode):
+                        continue
+                    chunks: list[bytes] = []
+                    while chunk := os.read(member_fd, 1024 * 1024):
+                        chunks.append(chunk)
+                    content = b"".join(chunks)
+                    assert all(label not in content for label in labels)
+                except OSError:
+                    continue
+                finally:
+                    if member_fd is not None:
+                        os.close(member_fd)
+
+
+def test_identifier_probes_cover_every_public_string_input_path() -> None:
+    packet = load_packet()
+    cases = [
+        case for case in build_attack_cases(packet)
+        if case.attack_id == "A018"
+    ]
+    input_boundaries = {
+        "candidate",
+        "signed_context_payload",
+        "signed_context_envelope",
+        "verifier_anchor",
+        "nonce_time",
+    }
+    expected_count = sum(
+        1
+        for boundary in input_boundaries
+        for field in packet.closed_schemas[boundary]["fields"]
+        if field["type"] == "STRING"
+    )
+    assert len(cases) == expected_count
+    assert all(
+        b"synthetic-probe@example.invalid"
+        in (
+            case.candidate_bytes
+            + case.envelope_bytes
+            + case.admitted_anchor_spki
+        )
+        for case in cases
+    )
+    assert all(
+        "synthetic-probe@example.invalid"
+        not in (
+            case.expected.schema_version,
+            case.expected.decision,
+            case.expected.reason,
+            case.expected.authority_effect,
+            case.expected.claim_grade,
+        )
+        for case in cases
+    )
+
+
+@pytest.mark.parametrize(
+    "field",
+    ("schema_version", "decision", "reason", "authority_effect", "claim_grade"),
+)
+def test_result_boundary_rejects_identifier_class_outputs(field: str) -> None:
+    result = {
+        "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+        "decision": "HOLD",
+        "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN",
+        "authority_effect": "NONE",
+        "claim_grade": "STRUCTURAL_ONLY",
+    }
+    result[field] = "synthetic-probe@example.invalid"
+
+    with pytest.raises(AssertionError, match="^INVALID_SUT_RESULT$"):
+        parse_closed_result_bytes(canonical_json(result))
+
+
+@pytest.mark.parametrize(
+    "data",
+    (
+        b"",
+        b"{}",
+        canonical_json(
+            {
+                "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+                "decision": "HOLD",
+                "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN",
+                "authority_effect": "NONE",
+                "claim_grade": "STRUCTURAL_ONLY",
+                "extra": "NONE",
+            }
+        ),
+        canonical_json(
+            {
+                "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+                "decision": "HOLD",
+                "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN",
+                "authority_effect": "NONE",
+                "claim_grade": "STRUCTURAL_ONLY",
+            }
+        )
+        + b"\n",
+    ),
+)
+def test_child_result_protocol_rejects_missing_extra_or_multiple_output(
+    data: bytes,
+) -> None:
+    with pytest.raises(AssertionError, match="^INVALID_SUT_RESULT$"):
+        parse_closed_result_bytes(data)
+
+
+def test_closed_child_result_must_match_the_independent_oracle(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_sut = tmp_path / "future-sut-protocol-double.py"
+    fake_sut.write_text(
+        "\n".join(
+            (
+                "import argparse",
+                "import os",
+                "parser = argparse.ArgumentParser()",
+                "for name in ('candidate', 'envelope', 'anchor', 'bundle', 'result'):",
+                "    parser.add_argument(f'--{name}-fd', type=int, required=True)",
+                "arguments = parser.parse_args()",
+                "for fd in (arguments.candidate_fd, arguments.envelope_fd, arguments.anchor_fd):",
+                "    while os.read(fd, 4096):",
+                "        pass",
+                "os.fstat(arguments.bundle_fd)",
+                "result = (",
+                "    b'{\"authority_effect\":\"NONE\",\"claim_grade\":\"NONE\",'",
+                "    b'\"decision\":\"REJECT\",\"reason\":\"INVALID_CANDIDATE_SHAPE\",'",
+                "    b'\"schema_version\":\"GCP_SECTION_7_5_1_EVALUATION_RESULT_V4\"}'",
+                ")",
+                "os.write(arguments.result_fd, result)",
+                "os.close(arguments.result_fd)",
+            )
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(corpus_module, "SUT_PATH", fake_sut)
+    exact, _ = build_fd_discriminator_cases()
+
+    with pytest.raises(AssertionError, match="^SUT_ORACLE_MISMATCH$"):
+        invoke_future_sut(exact)
+
+
+def test_authority_generators_cover_every_role_capability_hsm_and_owner() -> None:
+    packet = load_packet()
+    parents = {
+        name: json.loads(data)
+        for name, data in load_exact_parents(packet).items()
+    }
+    expected = (
+        len(parents["role-capability-matrix.json"]["roles"])
+        + len(parents["role-capability-matrix.json"]["capabilities"])
+        + len(
+            parents["security-authority-contract.json"][
+                "policy_template"
+            ]["hsm_key_profiles"]
+        )
+        + len(
+            parents["constraints-open-obligations-contract.json"][
+                "open_prerequisite_registry"
+            ]
+        )
+    )
+    cases = [
+        case for case in build_attack_cases(packet)
+        if case.attack_id == "A019"
+    ]
+    assert len(cases) == expected
+    assert all(
+        evaluate_reference_case(case).reason
+        == "INVALID_PARENT_RESOURCE_SET"
+        for case in cases
+    )
+
+
+def test_attack_reference_cases_match_independent_expectations() -> None:
+    for case in build_attack_cases(load_packet()):
+        assert evaluate_reference_case(case) == case.expected
+
+
+def test_named_splices_and_substitutions_execute_their_declared_mutations() -> None:
+    packet = load_packet()
+    parents = load_exact_parents(packet)
+    cases = {case.case_id: case for case in build_attack_cases(packet)}
+
+    assert cases["a007-candidate-splice"].expected.reason == (
+        "INVALID_SIGNED_CONTEXT_BINDING"
+    )
+    assert cases["a007-payload-splice"].expected.reason == "INVALID_SIGNATURE"
+    assert cases["a007-signature-splice"].expected.reason == "INVALID_SIGNATURE"
+    payload_envelope = strict_load_json(
+        cases["a007-payload-splice"].envelope_bytes
+    )
+    assert isinstance(payload_envelope, dict)
+    assert "key_id" in payload_envelope["payload"]
+
+    for index, entry in enumerate(packet.parent_manifest, start=1):
+        splice = cases[f"a007-each-parent-splice-{index}"]
+        with splice.bundle_factory() as bundle_fd:
+            member_fd = os.open(
+                entry.member_name,
+                os.O_RDONLY | os.O_NOFOLLOW,
+                dir_fd=bundle_fd,
+            )
+            try:
+                spliced_bytes = b""
+                while chunk := os.read(member_fd, 1024 * 1024):
+                    spliced_bytes += chunk
+            finally:
+                os.close(member_fd)
+        assert spliced_bytes != parents[entry.member_name]
+        assert spliced_bytes in {
+            data for name, data in parents.items()
+            if name != entry.member_name
+        }
+
+        substitution = cases[f"a006-each-parent-substitution-{index}"]
+        with substitution.bundle_factory() as bundle_fd:
+            member_fd = os.open(
+                entry.member_name,
+                os.O_RDONLY | os.O_NOFOLLOW,
+                dir_fd=bundle_fd,
+            )
+            try:
+                substituted_bytes = b""
+                while chunk := os.read(member_fd, 1024 * 1024):
+                    substituted_bytes += chunk
+            finally:
+                os.close(member_fd)
+        assert strict_load_json(substituted_bytes)
+        assert _json_scalar_difference_count(
+            json.loads(parents[entry.member_name]),
+            json.loads(substituted_bytes),
+        ) == 1
+
+
+def _json_scalar_difference_count(left: object, right: object) -> int:
+    if type(left) is not type(right):
+        return 1
+    if isinstance(left, dict):
+        if set(left) != set(right):
+            return 1
+        return sum(
+            _json_scalar_difference_count(left[key], right[key])
+            for key in left
+        )
+    if isinstance(left, list):
+        if len(left) != len(right):
+            return 1
+        return sum(
+            _json_scalar_difference_count(left_value, right_value)
+            for left_value, right_value in zip(left, right)
+        )
+    return int(left != right)
+
+
+@pytest.mark.parametrize(
+    "case",
+    build_attack_cases(load_packet()),
+    ids=lambda case: case.case_id,
+)
+def test_future_sut_attack_case(case: PreparedCase) -> None:
+    invoke_future_sut(case)
+
+
+@pytest.mark.parametrize(
+    "cell",
+    tuple(
+        cell for cell in build_environment_cells(load_packet())
+        if cell.executable
+    ),
+    ids=lambda cell: f"environment-{cell.environment}-{cell.resource_state}",
+)
+def test_future_sut_environment_cell(cell: EnvironmentCell) -> None:
+    assert cell.case is not None
+    invoke_future_sut(cell.case)
 
 
 def test_rule_ledger_is_cold_process_deterministic_and_in_memory_only() -> None:

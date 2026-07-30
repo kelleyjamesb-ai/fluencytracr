@@ -133,12 +133,12 @@
     {"rule_id": "RULE-PARENT-MANIFEST", "class": "COMPILE_PINNED", "admission": "ordered exact member-name and SHA-256 comparison", "failure": "REJECT", "attack_ids": ["A006", "A007", "A015", "A016", "A017"]},
     {"rule_id": "RULE-PARENT-BUNDLE", "class": "AUTHENTICATED_OBSERVATION", "admission": "harness-admitted final directory descriptor; exact regular members; no-follow and pre/post identity", "failure": "REJECT", "attack_ids": ["A014", "A015", "A016", "A017"]},
     {"rule_id": "RULE-CANDIDATE-SHAPE", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON and closed candidate fields", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A006", "A007", "A018"]},
-    {"rule_id": "RULE-SIGNED-CONTEXT", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON, P-256 DER signature, independently admitted SPKI, candidate digest and policy binding", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A007", "A008", "A009", "A010", "A011", "A012", "A013"]},
-    {"rule_id": "RULE-REPLAY-REGISTRY-APPROVAL", "class": "AUTHENTICATED_OBSERVATION", "admission": "closed replay, registry, receipt, and approval conjunction", "failure": "REJECT", "attack_ids": ["A008", "A009", "A010", "A011"]},
-    {"rule_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "class": "COMPILE_PINNED", "admission": "five projects, fourteen roles, sixteen capabilities, two signer purposes, and governed least fixed point", "failure_condition": "invalid role, capability, HSM-purpose, owner, partition, or fixed-point semantics", "failure": "REJECT", "attack_ids": ["A006", "A007", "A019"]},
-    {"rule_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "class": "COMPILE_PINNED", "admission": "all controller edges are known and viewable", "failure_condition": "unknown or unviewable controller edge", "failure": "HOLD", "attack_ids": ["A019"]},
+    {"rule_id": "RULE-SIGNED-CONTEXT", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON, P-256 DER signature, independently admitted SPKI, candidate digest and policy binding", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A007", "A008", "A009", "A010", "A011", "A012", "A013", "A018"]},
+    {"rule_id": "RULE-REPLAY-REGISTRY-APPROVAL", "class": "AUTHENTICATED_OBSERVATION", "admission": "closed replay, registry, receipt, and approval conjunction", "failure": "REJECT", "attack_ids": ["A006", "A007", "A008", "A009", "A010", "A011", "A015", "A016", "A017"]},
+    {"rule_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "class": "COMPILE_PINNED", "admission": "five projects, fourteen roles, sixteen capabilities, two signer purposes, and governed least fixed point", "failure_condition": "invalid role, capability, HSM-purpose, owner, partition, or fixed-point semantics", "failure": "REJECT", "attack_ids": ["A006", "A007", "A015", "A016", "A017", "A019"]},
+    {"rule_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "class": "COMPILE_PINNED", "admission": "all controller edges are known and viewable", "failure_condition": "unknown or unviewable controller edge", "failure": "HOLD", "attack_ids": ["A018", "A019"]},
     {"rule_id": "RULE-PRIVACY-NONAUTHORIZATION", "class": "COMPILE_PINNED", "admission": "closed strings and fixed result projection", "failure": "REJECT", "attack_ids": ["A018", "A019"]},
-    {"rule_id": "RULE-CURRENT-BLOCKERS", "class": "OPAQUE_LATER_SECTION", "admission": "all current parent obligations remain OPEN_BLOCKING", "failure": "HOLD", "attack_ids": ["A019"]}
+    {"rule_id": "RULE-CURRENT-BLOCKERS", "class": "OPAQUE_LATER_SECTION", "admission": "all current parent obligations remain OPEN_BLOCKING", "failure": "HOLD", "attack_ids": ["A006", "A007", "A015", "A016", "A017", "A019"]}
   ],
   "oracle_precedence": ["candidate_canonical_shape", "envelope_canonical_shape", "p256_anchor_authentication", "signed_digest_policy_mode_time_authority_binding", "replay_registry_receipt_approval", "parent_bundle_admission", "section_7_3_role_capability_controller_owner", "privacy_and_nonauthorization", "environment_claim_grade", "closed_result_projection"],
   "result_mappings": [
@@ -171,7 +171,28 @@
     {"environment": "LIVE_RUNTIME", "resource_state": "EXACT", "command": "NOT_AUTHORIZED", "expected_exit": "NOT_RUN", "expected_disposition": "HOLD:LIVE_RUNTIME_NOT_AUTHORIZED", "claim_grade": "DESIGN_ONLY", "authority_effect": "NONE"}
   ],
   "attack_catalog": [
-    {"attack_id": "A001", "class": "UNKNOWN_FIELD"}, {"attack_id": "A002", "class": "MISSING_FIELD"}, {"attack_id": "A003", "class": "WRONG_TYPE"}, {"attack_id": "A004", "class": "NESTED_EXTRA_FIELD"}, {"attack_id": "A005", "class": "TRUNCATED_OBJECT"}, {"attack_id": "A006", "class": "SINGLE_FIELD_SUBSTITUTION"}, {"attack_id": "A007", "class": "CROSS_OBJECT_SPLICE"}, {"attack_id": "A008", "class": "FORGED_RECEIPT_OR_PROVENANCE"}, {"attack_id": "A009", "class": "REPLAY_OR_REUSE"}, {"attack_id": "A010", "class": "COORDINATED_FULL_CLOSURE_RESEAL"}, {"attack_id": "A011", "class": "GLOBAL_TIMESTAMP_RESEAL"}, {"attack_id": "A012", "class": "STALE_OR_FUTURE_TIME"}, {"attack_id": "A013", "class": "MODE_DOWNGRADE_OR_CONFUSION"}, {"attack_id": "A014", "class": "AMBIENT_RESOURCE_FALLBACK"}, {"attack_id": "A015", "class": "PARTIAL_RESOURCE"}, {"attack_id": "A016", "class": "CORRUPT_RESOURCE"}, {"attack_id": "A017", "class": "CONCURRENCY_OR_INTERLEAVING"}, {"attack_id": "A018", "class": "PRIVACY_LEAKAGE"}, {"attack_id": "A019", "class": "AUTHORITY_ESCALATION"},
-    {"attack_id": "M001", "class": "METAMORPHIC_EPHEMERAL_KEY_AND_SIGNATURE_EQUIVALENCE"}, {"attack_id": "M002", "class": "METAMORPHIC_SYNTHETIC_ALIAS_EQUIVALENCE"}, {"attack_id": "M003", "class": "METAMORPHIC_DESCRIPTOR_NUMBER_EQUIVALENCE"}, {"attack_id": "M004", "class": "SAME_NORMALIZED_DESCRIPTOR_OPPOSING_OUTCOMES"}
+    {"attack_id": "A001", "class": "UNKNOWN_FIELD", "generators": ["RAW_CANDIDATE_UNKNOWN_FIELD", "RAW_PAYLOAD_UNKNOWN_FIELD", "RAW_ENVELOPE_UNKNOWN_FIELD", "RAW_NONCE_UNKNOWN_FIELD"]},
+    {"attack_id": "A002", "class": "MISSING_FIELD", "generators": ["RAW_CANDIDATE_MISSING_FIELD", "RAW_PAYLOAD_MISSING_FIELD", "RAW_ENVELOPE_MISSING_FIELD", "RAW_NONCE_MISSING_FIELD"]},
+    {"attack_id": "A003", "class": "WRONG_TYPE", "generators": ["RAW_CANDIDATE_WRONG_TYPE", "RAW_PAYLOAD_WRONG_TYPE", "RAW_ENVELOPE_WRONG_TYPE", "RAW_NONCE_WRONG_TYPE"]},
+    {"attack_id": "A004", "class": "NESTED_EXTRA_FIELD", "generators": ["CANDIDATE_NESTED_EXTRA_FIELD", "PAYLOAD_NESTED_EXTRA_FIELD"]},
+    {"attack_id": "A005", "class": "TRUNCATED_OBJECT", "generators": ["CANDIDATE_TRUNCATION", "ENVELOPE_TRUNCATION"]},
+    {"attack_id": "A006", "class": "SINGLE_FIELD_SUBSTITUTION", "generators": ["CANDIDATE_SUBSTITUTION", "PAYLOAD_SUBSTITUTION", "EACH_PARENT_SUBSTITUTION"]},
+    {"attack_id": "A007", "class": "CROSS_OBJECT_SPLICE", "generators": ["CANDIDATE_SPLICE", "PAYLOAD_SPLICE", "SIGNATURE_SPLICE", "EACH_PARENT_SPLICE"]},
+    {"attack_id": "A008", "class": "FORGED_RECEIPT_OR_PROVENANCE", "generators": ["FORGED_RECEIPT", "FORGED_PROVENANCE"]},
+    {"attack_id": "A009", "class": "REPLAY_OR_REUSE", "generators": ["PROCESS_LOCAL_REPLAY"]},
+    {"attack_id": "A010", "class": "COORDINATED_FULL_CLOSURE_RESEAL", "generators": ["ALTERNATE_ANCHOR_FULL_RESEAL"]},
+    {"attack_id": "A011", "class": "GLOBAL_TIMESTAMP_RESEAL", "generators": ["ALL_TIME_FIELDS_RESEAL"]},
+    {"attack_id": "A012", "class": "STALE_OR_FUTURE_TIME", "generators": ["STALE_TIME", "FUTURE_TIME"]},
+    {"attack_id": "A013", "class": "MODE_DOWNGRADE_OR_CONFUSION", "generators": ["MODE_CONFUSION"]},
+    {"attack_id": "A014", "class": "AMBIENT_RESOURCE_FALLBACK", "generators": ["AMBIENT_FALLBACK"]},
+    {"attack_id": "A015", "class": "PARTIAL_RESOURCE", "generators": ["EACH_PARENT_MISSING"]},
+    {"attack_id": "A016", "class": "CORRUPT_RESOURCE", "generators": ["EACH_PARENT_CORRUPT", "EXTRA_MEMBER", "NONREGULAR_MEMBER", "SYMLINK_MEMBER", "REPLACED_MEMBER"]},
+    {"attack_id": "A017", "class": "CONCURRENCY_OR_INTERLEAVING", "generators": ["CONCURRENT_REPLACEMENT"]},
+    {"attack_id": "A018", "class": "PRIVACY_LEAKAGE", "generators": ["EVERY_PUBLIC_STRING_PATH"]},
+    {"attack_id": "A019", "class": "AUTHORITY_ESCALATION", "generators": ["EVERY_SECTION_7_3_ROLE", "EVERY_SECTION_7_3_CAPABILITY", "EVERY_SECTION_7_3_HSM_PURPOSE", "EVERY_PREREQUISITE_OWNER"]},
+    {"attack_id": "M001", "class": "METAMORPHIC_EPHEMERAL_KEY_AND_SIGNATURE_EQUIVALENCE", "generators": ["EPHEMERAL_KEY_EQUIVALENCE"]},
+    {"attack_id": "M002", "class": "METAMORPHIC_SYNTHETIC_ALIAS_EQUIVALENCE", "generators": ["SYNTHETIC_ALIAS_EQUIVALENCE"]},
+    {"attack_id": "M003", "class": "METAMORPHIC_DESCRIPTOR_NUMBER_EQUIVALENCE", "generators": ["DESCRIPTOR_NUMBER_EQUIVALENCE"]},
+    {"attack_id": "M004", "class": "SAME_NORMALIZED_DESCRIPTOR_OPPOSING_OUTCOMES", "generators": ["SAME_NORMALIZED_DESCRIPTOR_OPPOSING_OUTCOMES"]}
   ]
 }
