@@ -1358,3 +1358,52 @@ DiD work, or promotion.
 - **THEN** integration HOLDS
 - **AND** the exact outcome-model interface and affected proof gates require a
   separate approved change
+
+### Requirement: VBD Collapsed-Target Methodology Reconciliation
+
+The system SHALL classify PR #434's merged collapsed-target implementation only
+as a
+`held_sampler_free_group_effect_marginalization_diagnostic_oracle`.
+It MAY be used without sampling to falsify algebraic drift in the exact
+Helmert-zero-sum group-effect marginalization and conditional reconstruction.
+It SHALL NOT be treated as the VBD reference sampler, a precision repair, a
+passing diagnostic result, or partial evidence.
+
+Historical branch-local task labels `1.12`, `1.13`, `2.16`, `2.17`, and `2.20`
+SHALL be tombstones, not current task authority. Current task `1.10` SHALL
+record the reconciliation without importing or completing those labels.
+
+The centered reference SHALL remain mandatory for task `2.6`, both precision
+canaries, candidate `S` and freeze `F`, concordance, calibration, evidence,
+acceptance, and parent task `5.6`. The collapsed target SHALL remain prohibited
+in those paths. The reconciliation SHALL NOT change the frozen model, priors,
+estimand, seeds, `<=0.10` MCSE-to-posterior-SD threshold, failed-canary state,
+or any execution or evidence gate.
+
+#### Scenario: Sampler-free algebra is used as a held oracle
+
+- **GIVEN** a caller constructs the exact PR #434 sampler-free target and
+  conditional reconstruction without executing a generator or sampler
+- **WHEN** the reconciliation boundary classifies the use
+- **THEN** it may label the result only as a held, non-evidentiary diagnostic
+  oracle
+- **AND** it cannot clear a canary, complete task `2.6`, enter concordance or
+  evidence, or authorize any later action
+
+#### Scenario: Historical source annotation is offered as authority
+
+- **GIVEN** merged source mentions historical task `2.16` or `2.17`
+- **WHEN** a caller offers that annotation as current implementation,
+  execution, or completion authority
+- **THEN** the request HOLDS
+- **AND** only current merged OpenSpec tasks plus a new human-authored queue item
+  may authorize future collapsed-target work
+
+#### Scenario: Collapsed target is offered to the governed proof
+
+- **GIVEN** a collapsed target is offered for task `2.6`, a precision canary,
+  candidate `S`, freeze `F`, concordance, calibration, evidence, acceptance, or
+  parent task `5.6`
+- **WHEN** the governed VBD path validates the method
+- **THEN** the path HOLDS
+- **AND** the unchanged centered reference remains mandatory

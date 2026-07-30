@@ -158,7 +158,7 @@ outputs.
 | `comparison_supported_bayesian_did_module` | Specialized current module for two-group pre/post comparison-supported hypotheses. | Yes, only as the existing synthetic/internal PyMC DiD proof harness and TypeScript validation boundary. | Eligible only for `TWO_GROUP_PRE_POST_COMPARISON` or `MATCHED_COMPARISON` that reduces to a valid two-group pre/post design, with every DiD gate passing. |
 | `first_longitudinal_synthetic_model_slice` | First selected non-DiD longitudinal candidate for synthetic/internal historical outcome proof mechanics. | Yes, as a smoke prototype followed by state-space/NUTS concordance and accepted 1,200-slot replicated synthetic validation. | Completed internal synthetic proof. A separate decision conditionally selects only its `HISTORICAL_STATE_SPACE` route for docs/OpenSpec prerequisite hardening while execution remains HOLD. It does not authorize real data, runtime routing or execution promotion, customer output, confidence/probability output, ROI, causality, productivity, finance output, persistence, routes, UI, or exports. |
 | `bayesian_fluency_measurement_model` | Future model for aggregate AI Fluency movement and measurement uncertainty. | Synthetic runner and full 800-slot evidence independently accepted. | State is `SYNTHETIC_CALIBRATION_ACCEPTED_REAL_DATA_PENDING`; the frozen long form, aggregate count contract, ordinal proof, full primary study, and separate 800-slot recomputation passed exact-byte review. Dimension summaries alone still do not identify latent change. No real-data model, customer posterior output, persistence, UI, routes, public exports, connectors, ROI, causality, productivity, finance output, or promotion is authorized. |
-| `bayesian_vbd_behavioral_trajectory_model` | Future model for non-overlapping aggregate frequency, engagement, and Breadth primitive movement, with optional Depth context only; canonical Velocity remains unchanged. | Contract and synthetic proof plan only; bounded synthetic implementation for tasks `2.2` through `2.5` is authorized but incomplete; no execution. | State is `SYNTHETIC_IMPLEMENTATION_AUTHORIZED_INCOMPLETE`. Composite Velocity/VBD values are inadmissible; concordance, evidence execution, independent acceptance, and parent task `5.6` remain incomplete. Downstream integration is a separate blocker. |
+| `bayesian_vbd_behavioral_trajectory_model` | Future model for non-overlapping aggregate frequency, engagement, and Breadth primitive movement, with optional Depth context only; canonical Velocity remains unchanged. | Bounded synthetic implementation for tasks `2.2` through `2.5` exists; numerical-precision repair, task `2.6`, canaries, concordance, and evidence remain incomplete and unexecuted. | State is `SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR`. PR #434's collapsed-target algebra is a held, non-evidentiary diagnostic oracle only and cannot replace the centered reference. Composite Velocity/VBD values remain inadmissible; independent acceptance and parent task `5.6` remain incomplete. Downstream integration is a separate blocker. |
 | `bayesian_hypothesis_outcome_model` | Future model for customer-owned primary metric movement for approved hypotheses. | No. | Documentation-only future module. |
 | `bayesian_economic_value_model` | Future internal review component for finance-pathway assumptions after outcome evidence exists. It must not emit ROI proof or customer-facing economic output. | No. | Documentation-only future component; cannot upgrade claim caps. |
 | `posterior_pathway_coherence_review` | Future internal review of whether predeclared fluency, behavior, and outcome evidence is directionally coherent. | No. | Documentation-only review concept; not a customer-facing probability, confidence, ROI, causality, or productivity output. |
@@ -749,10 +749,12 @@ The exact-scope contract
 `docs/contracts/ai-value-vbd-trajectory-model-calibration/README.md` records:
 
 ```text
-CONTRACT_DEFINED_SYNTHETIC_IMPLEMENTATION_PENDING
+SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR
 ```
 
-It resolves the existing exposure-definition ambiguity before implementation.
+It resolves the existing exposure-definition ambiguity. Tasks `2.2` through
+`2.5` are implemented, but task `2.6`, precision canaries, concordance,
+evidence, and acceptance remain incomplete and unexecuted.
 The product `velocity_index` already contains Breadth, so it cannot appear
 beside a separate Breadth term. Legacy weighted VBD scores also lack admitted
 aggregate uncertainty. The selected future proof instead keeps three active
@@ -784,8 +786,12 @@ term and one scalar Breadth term. This contract therefore does not authorize
 integration. A later approved change must reconcile the exact three-lane
 interface and rerun all affected outcome-model proof gates. That integration is
 a separate blocker before dogfood execution, not part of task `5.6`.
-Implementation approval, execution, evidence, independent acceptance, explicit
-human acceptance, and parent task `5.6` remain incomplete.
+The collapsed-target methodology reconciliation decision records
+`REPAIR_DIAGNOSTIC_LINEAGE_ONLY`: PR #434's sampler-free algebra remains a
+held, non-evidentiary diagnostic oracle and cannot replace the centered
+reference or satisfy any part of task `2.6`. Further implementation
+reactivation, execution, evidence, independent acceptance, explicit human
+acceptance, and parent task `5.6` remain incomplete.
 
 V2 accepts no fixture scenario or ground-truth oracle fields in its dataset
 contract. It also requires JavaScript-safe nonnegative seeds, timezone-aware

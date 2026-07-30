@@ -11,6 +11,9 @@ Implementation approval:
 Numerical-precision amendment approval:
 `APPROVED_BY_JAMES_KELLEY_2026_07_17_FOR_DOCS_ONLY`
 
+Collapsed-target reconciliation:
+`REPAIR_DIAGNOSTIC_LINEAGE_ONLY`
+
 Parent OpenSpec task: `5.6` remains incomplete.
 
 ## Purpose
@@ -48,6 +51,22 @@ There is no canonical Velocity trajectory and no overall VBD trajectory in this
 proof. The three active primitives remain separate through source binding,
 transformation, state-space fitting, diagnostics, calibration, and evidence
 review. Existing canonical Velocity semantics remain unchanged.
+
+## Collapsed-Target Reconciliation
+
+The bounded methodology decision in
+`docs/research/VBD_COLLAPSED_TARGET_METHODOLOGY_RECONCILIATION_DECISION.md`
+classifies PR #434's merged collapsed-target algebra only as a
+`held_sampler_free_group_effect_marginalization_diagnostic_oracle`.
+
+This is a lineage repair, not admission of a replacement inference method.
+Current OpenSpec task `1.10` records the decision. Historical branch-local task
+labels `1.12`, `1.13`, `2.16`, `2.17`, and `2.20` are tombstones and create no
+current authority. The centered reference remains mandatory for task `2.6`,
+both precision canaries, candidate `S` and freeze `F`, concordance, calibration,
+evidence, acceptance, and parent task `5.6`. The existing model, priors,
+estimand, seeds, `<=0.10` MCSE-to-posterior-SD threshold, failed-canary state,
+and all later gates remain unchanged.
 
 ## Exact Active Lanes
 

@@ -37,6 +37,11 @@
   conformance fixture, and non-resumable hash-chained postmortem checkpoints;
   obtain CODE, BUG, ADVERSARIAL, and statistical-methodology GO for the amended
   docs bytes without implementation or execution.
+- [x] 1.10 Reconcile PR #434's merged collapsed-target algebra as a held,
+  sampler-free, non-evidentiary diagnostic oracle only; tombstone its unmerged
+  historical task labels and preserve the centered reference, frozen model,
+  priors, estimand, seeds, MCSE threshold, failed canaries, task `2.6` block,
+  and every execution and evidence gate without implementation or execution.
 
 ## 2. Future Synthetic Implementation
 

@@ -2,16 +2,30 @@
 
 ## Current Session
 
-- The human-authorized VBD collapsed-target methodology reconciliation decision
-  is activated from merged `main` at `6dabef416040a2ad5731e596fbe662bb0d89957d`.
-  This bounded item may reconcile PR #434's sampler-free collapsed-target
-  algebra with the missing methodology and task lineage and must issue exactly
-  one `ADMIT`, `REPAIR`, or `REJECT` decision. It remains docs/OpenSpec/status
-  only: no implementation, sampler execution, retry, canary 1, task 2.6
-  completion, S/F, concordance, evidence, real/customer/live data, public
-  surface, promotion, Sections 7.5-7.7 work, or UI wiring is authorized.
-  Sections 7.5-7.7 remain a separate larger program whose 20 open obligations
-  require human-authored queue breakdown after this blocker is closed.
+- VBD reconciliation activation PR #472 merged normally at
+  `99d6fceb463fb3d76f30c1d19c7ea91ab6c6cc17` from exact reviewed head
+  `9441f006abce11d970f734d1d7d67a7e927e9a8a`, with all required current-head
+  checks green. A fresh branch now records
+  `REPAIR_DIAGNOSTIC_LINEAGE_ONLY`: PR #434's sampler-free collapsed-target
+  algebra remains a held, non-evidentiary diagnostic oracle only. It does not
+  replace the centered reference, satisfy task `2.6`, clear either precision
+  canary, enter S/F, concordance, calibration, evidence, acceptance, or complete
+  parent task `5.6`. Historical unmerged task labels `1.12`, `1.13`, `2.16`,
+  `2.17`, and `2.20` are tombstones, while current OpenSpec task `1.10` records
+  the bounded reconciliation.
+- This VBD item remains docs/OpenSpec/status only. It changes no implementation,
+  sampler, generator, model, priors, estimand, seed, `<=0.10` MCSE threshold,
+  failed-canary posture, schema, route, migration, deployment, public surface,
+  or UI behavior. Sections 7.5-7.7 remain a separate larger program whose 20
+  open obligations require human-authored queue breakdown after this blocker
+  closes.
+- Focused local validation passed strict
+  `add-vbd-trajectory-calibration-contract` OpenSpec, agentic harness guard,
+  docs contract sweep, scoped docs link check, V1 governance gates, JSON
+  parsing/state checks, stale-current-status scans, and `git diff --check`.
+  Exact-commit CODE, BUG, and ADVERSARIAL review plus push and PR checks remain
+  release gates. No deployment or production migration is required or
+  authorized for this docs/OpenSpec/status decision.
 - C.0 is complete: PR #457 merged normally as
   `21daef146dc2d73c760c6fa8ed0de8e729812f25` from reviewed head
   `644b10279f76450fba6cd00297d70087bc3878cb`, and the merge tree matched

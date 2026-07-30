@@ -409,9 +409,9 @@
   "id": "vbd-collapsed-target-methodology-reconciliation-decision",
   "title": "VBD collapsed-target methodology reconciliation decision",
   "bound": "Docs/OpenSpec/status only: reconcile current main PR #434 and its sampler-free collapsed-target algebra with the missing methodology and task lineage; issue an explicit admit, repair, or reject decision while preserving the frozen model, priors, estimand, seeds, <=0.10 MCSE threshold, failed canaries, evidence gates, and fail-closed posture; no implementation, sampler execution, retry, canary 1, task 2.6 completion, S/F, concordance, evidence, real/customer/live data, public surface, promotion, or Sections 7.5-7.7 work",
-  "status": "in_progress",
+  "status": "done",
   "risk": "high",
-  "last_note": "Activated 2026-07-29 from merged main 6dabef4 for the docs/OpenSpec/status-only admit, repair, or reject reconciliation. No implementation, sampler execution, retry/canaries, task 2.6, S/F, concordance, evidence, live/customer data, public surface, promotion, or Sections 7.5-7.7 work is authorized."
+  "last_note": "Completed locally as REPAIR_DIAGNOSTIC_LINEAGE_ONLY: PR #434 remains a held, non-evidentiary sampler-free diagnostic oracle; historical unmerged task labels are tombstones; the centered reference, task 2.6 block, failed canaries, and all later gates remain unchanged. No implementation, execution, evidence, deployment, UI, or Sections 7.5-7.7 work occurred."
     }
   ]
 }
