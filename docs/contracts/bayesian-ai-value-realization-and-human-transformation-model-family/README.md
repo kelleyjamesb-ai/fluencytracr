@@ -753,8 +753,9 @@ SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR
 ```
 
 It resolves the existing exposure-definition ambiguity. Tasks `2.2` through
-`2.5` are implemented, but task `2.6`, precision canaries, concordance,
-evidence, and acceptance remain incomplete and unexecuted.
+`2.5` are implemented. Precision canary ordinal `0` executed and is immutable
+permanent MCSE HOLD; ordinal `1` did not run. Task `2.6` remains blocked, and
+concordance, evidence, and acceptance remain incomplete and unexecuted.
 The product `velocity_index` already contains Breadth, so it cannot appear
 beside a separate Breadth term. Legacy weighted VBD scores also lack admitted
 aggregate uncertainty. The selected future proof instead keeps three active
