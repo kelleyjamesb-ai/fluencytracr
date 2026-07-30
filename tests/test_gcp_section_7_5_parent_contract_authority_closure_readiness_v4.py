@@ -1,10 +1,12 @@
-from pathlib import Path
+from base64 import b64decode, b64encode
 import hashlib
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 import threading
+from typing import Iterator
 
 import pytest
 
@@ -26,11 +28,17 @@ from tests.gcp_s751_v4.crypto import (
     verify_batch,
 )
 from tests.gcp_s751_v4.model import (
+    EvaluationResult,
+    OracleInput,
     canonical_json,
     enumerate_all_dynamic_paths,
     load_exact_parents,
     load_packet,
     strict_load_json,
+)
+from tests.gcp_s751_v4.oracle import (
+    ReferenceOracle,
+    evaluate_controller_fixed_point,
 )
 
 
@@ -61,6 +69,105 @@ def exact_bundle(
     for member_name, data in exact_parent_bytes.items():
         (bundle / member_name).write_bytes(data)
     return bundle
+
+
+def _valid_candidate() -> dict[str, object]:
+    parents = load_exact_parents(load_packet())
+    matrix = json.loads(parents["role-capability-matrix.json"])
+    return {
+        "schema_version": "GCP_SECTION_7_5_1_CANDIDATE_V4",
+        "requested_action": "EVALUATE_ONLY",
+        "observation": {
+            "governed_roles": sorted(
+                role["role_id"] for role in matrix["roles"]
+            ),
+            "synthetic_aliases": [],
+            "controller_edges": [],
+            "controller_cycles": [],
+            "unknown_edge_count": 0,
+        },
+    }
+
+
+def _signed_oracle_material(
+    *,
+    mode: str = "CLEAN_CI",
+    nonce: str = "00112233445566778899aabbccddeeff",
+    candidate: dict[str, object] | None = None,
+    payload_overrides: dict[str, object] | None = None,
+) -> tuple[bytes, bytes, bytes]:
+    packet = load_packet()
+    candidate_bytes = canonical_json(candidate or _valid_candidate())
+    parent_manifest = [
+        {"member_name": entry.member_name, "sha256": entry.sha256}
+        for entry in packet.parent_manifest
+    ]
+    base_head_sha256 = hashlib.sha256(
+        bytes.fromhex(packet.base_commit)
+    ).hexdigest()
+    payload: dict[str, object] = {
+        "schema_version": "GCP_SECTION_7_5_1_SIGNED_CONTEXT_PAYLOAD_V4",
+        "policy_id": "FT_CANONICAL_JSON_V1",
+        "candidate_sha256": hashlib.sha256(candidate_bytes).hexdigest(),
+        "mode": mode,
+        "parent_manifest": parent_manifest,
+        "registry_sha256": hashlib.sha256(
+            canonical_json(parent_manifest)
+        ).hexdigest(),
+        "receipt_sha256": next(
+            entry.sha256
+            for entry in packet.parent_manifest
+            if entry.member_name == "attestation-receipt-contract.json"
+        ),
+        "approval_target_sha256": next(
+            entry.sha256
+            for entry in packet.parent_manifest
+            if entry.member_name == "attestation-receipt-contract.json"
+        ),
+        "current_head_sha256": base_head_sha256,
+        "anti_rollback_sha256": base_head_sha256,
+        "role_matrix_sha256": next(
+            entry.sha256
+            for entry in packet.parent_manifest
+            if entry.member_name == "role-capability-matrix.json"
+        ),
+        "signer_purpose": "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY",
+        "nonce_time": {
+            "nonce": nonce,
+            "valid_from": "2026-07-30T00:00:00Z",
+            "valid_until": "2026-07-30T00:10:00Z",
+            "trusted_time": "2026-07-30T00:05:00Z",
+        },
+        "authority_effect": "NONE",
+    }
+    if payload_overrides:
+        payload.update(payload_overrides)
+    signed = sign_ephemeral_batch([canonical_json(payload)])
+    payload["key_id"] = signed.key_id
+    envelope = {
+        "schema_version": "GCP_SECTION_7_5_1_SIGNED_CONTEXT_ENVELOPE_V4",
+        "algorithm": "ECDSA_P256_SHA256_DER",
+        "payload": payload,
+        "signature_der_base64": b64encode(
+            signed.vectors[0].signature_der
+        ).decode("ascii"),
+    }
+    return candidate_bytes, canonical_json(envelope), signed.anchor_spki_der
+
+
+@pytest.fixture
+def valid_oracle_input(exact_bundle: Path) -> Iterator[OracleInput]:
+    candidate_bytes, envelope_bytes, anchor_spki = _signed_oracle_material()
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        yield OracleInput(
+            candidate_bytes=candidate_bytes,
+            signed_context_envelope_bytes=envelope_bytes,
+            verifier_anchor_spki=anchor_spki,
+            trusted_parent_bundle_fd=incoming,
+        )
+    finally:
+        os.close(incoming)
 
 
 def test_v4_packet_is_compact_closed_and_has_no_sut() -> None:
@@ -924,3 +1031,295 @@ def test_bundle_admission_errors_are_fixed_and_silent(
     captured = capsys.readouterr()
     assert captured.out == ""
     assert captured.err == ""
+
+
+def test_reference_oracle_is_total_and_preserves_current_blockers(
+    valid_oracle_input: OracleInput,
+) -> None:
+    result = ReferenceOracle().evaluate(
+        candidate_bytes=valid_oracle_input.candidate_bytes,
+        signed_context_envelope_bytes=(
+            valid_oracle_input.signed_context_envelope_bytes
+        ),
+        verifier_anchor_spki=valid_oracle_input.verifier_anchor_spki,
+        trusted_parent_bundle_fd=valid_oracle_input.trusted_parent_bundle_fd,
+    )
+    assert result == EvaluationResult(
+        schema_version="GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+        decision="HOLD",
+        reason="CURRENT_PARENT_OBLIGATIONS_OPEN",
+        authority_effect="NONE",
+        claim_grade="STRUCTURAL_ONLY",
+    )
+
+
+def test_reference_oracle_uses_deterministic_multifault_precedence(
+    valid_oracle_input: OracleInput,
+) -> None:
+    oracle = ReferenceOracle()
+    result = oracle.evaluate(
+        candidate_bytes=b'{ "unknown": true }',
+        signed_context_envelope_bytes=b'{"truncated":',
+        verifier_anchor_spki=b"not-an-anchor",
+        trusted_parent_bundle_fd=-1,
+    )
+    assert result == EvaluationResult(
+        "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+        "REJECT",
+        "INVALID_CANDIDATE_SHAPE",
+        "NONE",
+        "NONE",
+    )
+
+
+def test_reference_oracle_precedence_is_stable_after_shape_admission() -> None:
+    bad_binding_candidate, bad_binding_envelope, bad_binding_anchor = (
+        _signed_oracle_material(
+            nonce="aaaa2222333344445555666677778888",
+            payload_overrides={
+                "candidate_sha256": "0" * 64,
+                "registry_sha256": "0" * 64,
+            },
+        )
+    )
+    envelope = strict_load_json(bad_binding_envelope)
+    assert isinstance(envelope, dict)
+    signature = bytearray(
+        b64decode(envelope["signature_der_base64"])
+    )
+    signature[-1] ^= 1
+    envelope["signature_der_base64"] = b64encode(signature).decode("ascii")
+    invalid_signature = ReferenceOracle().evaluate(
+        bad_binding_candidate,
+        canonical_json(envelope),
+        bad_binding_anchor,
+        -1,
+    )
+
+    invalid_binding = ReferenceOracle().evaluate(
+        bad_binding_candidate,
+        bad_binding_envelope,
+        bad_binding_anchor,
+        -1,
+    )
+
+    bad_context_candidate, bad_context_envelope, bad_context_anchor = (
+        _signed_oracle_material(
+            nonce="bbbb2222333344445555666677778888",
+            payload_overrides={"registry_sha256": "0" * 64},
+        )
+    )
+    invalid_context = ReferenceOracle().evaluate(
+        bad_context_candidate,
+        bad_context_envelope,
+        bad_context_anchor,
+        -1,
+    )
+
+    valid_candidate, valid_envelope, valid_anchor = _signed_oracle_material(
+        nonce="cccc2222333344445555666677778888",
+    )
+    invalid_parent = ReferenceOracle().evaluate(
+        valid_candidate,
+        valid_envelope,
+        valid_anchor,
+        -1,
+    )
+
+    assert [
+        result.reason
+        for result in (
+            invalid_signature,
+            invalid_binding,
+            invalid_context,
+            invalid_parent,
+        )
+    ] == [
+        "INVALID_SIGNATURE",
+        "INVALID_SIGNED_CONTEXT_BINDING",
+        "INVALID_CONTEXT_CONJUNCTION",
+        "INVALID_PARENT_RESOURCE_SET",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("mode", "nonce", "reason", "claim_grade"),
+    (
+        (
+            "CLEAN_CI",
+            "11112222333344445555666677778888",
+            "CURRENT_PARENT_OBLIGATIONS_OPEN",
+            "STRUCTURAL_ONLY",
+        ),
+        (
+            "ARCHIVE_CLOSEOUT",
+            "22223333444455556666777788889999",
+            "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN",
+            "ARCHIVE_CLOSEOUT_ONLY",
+        ),
+        (
+            "LIVE_RUNTIME",
+            "3333444455556666777788889999aaaa",
+            "LIVE_RUNTIME_NOT_AUTHORIZED",
+            "DESIGN_ONLY",
+        ),
+    ),
+)
+def test_reference_oracle_preserves_environment_blockers(
+    exact_bundle: Path,
+    mode: str,
+    nonce: str,
+    reason: str,
+    claim_grade: str,
+) -> None:
+    candidate_bytes, envelope_bytes, anchor_spki = _signed_oracle_material(
+        mode=mode,
+        nonce=nonce,
+    )
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        assert ReferenceOracle().evaluate(
+            candidate_bytes,
+            envelope_bytes,
+            anchor_spki,
+            incoming,
+        ) == EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "HOLD",
+            reason,
+            "NONE",
+            claim_grade,
+        )
+    finally:
+        os.close(incoming)
+
+
+def test_reference_oracle_rejects_replay_per_instance_only(
+    valid_oracle_input: OracleInput,
+) -> None:
+    arguments = (
+        valid_oracle_input.candidate_bytes,
+        valid_oracle_input.signed_context_envelope_bytes,
+        valid_oracle_input.verifier_anchor_spki,
+        valid_oracle_input.trusted_parent_bundle_fd,
+    )
+    first_oracle = ReferenceOracle()
+    assert first_oracle.evaluate(*arguments).reason == (
+        "CURRENT_PARENT_OBLIGATIONS_OPEN"
+    )
+    assert first_oracle.evaluate(*arguments) == EvaluationResult(
+        "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+        "REJECT",
+        "REPLAY_DETECTED",
+        "NONE",
+        "NONE",
+    )
+    assert ReferenceOracle().evaluate(*arguments).reason == (
+        "CURRENT_PARENT_OBLIGATIONS_OPEN"
+    )
+
+
+def test_reference_oracle_preserves_parent_authority_ceiling_and_owners(
+    exact_parent_bytes: dict[str, bytes],
+) -> None:
+    security = json.loads(
+        exact_parent_bytes["security-authority-contract.json"]
+    )
+    matrix = json.loads(exact_parent_bytes["role-capability-matrix.json"])
+    receipt = json.loads(
+        exact_parent_bytes["attestation-receipt-contract.json"]
+    )
+    constraints = json.loads(
+        exact_parent_bytes["constraints-open-obligations-contract.json"]
+    )
+
+    assert len(security["project_role_contract"]["role_ids"]) == 5
+    assert len(matrix["roles"]) == 14
+    assert len(matrix["capabilities"]) == 16
+    assert len(security["policy_template"]["hsm_key_profiles"]) == 2
+    capability_ids = {
+        capability["capability_id"] for capability in matrix["capabilities"]
+    }
+    for role in matrix["roles"]:
+        allowed = set(role["allowed_capability_ids"])
+        forbidden = set(role["forbidden_capability_ids"])
+        assert allowed.isdisjoint(forbidden)
+        assert allowed | forbidden == capability_ids
+        assert role["default"] == (
+            "DENY_UNLISTED_SECURITY_SENSITIVE_CAPABILITY_OR_PERMISSION"
+        )
+    assert all(value == [] for value in receipt["approval_registries"].values())
+
+    expected_owners = {
+        "S75A-P00": "SECTION_7_2",
+        "S75A-P01": "SECTION_7_3",
+        "S75A-P02": "SECTION_7_3",
+        "S75A-P03": "SECTION_7_4",
+        "S75A-P04": "FUTURE_FULL_SECTION_7_5",
+        "S75A-P05": "SECTION_7_3_SECTION_7_4_FUTURE_FULL_SECTION_7_5",
+        "S75A-P06": "SECTION_7_3",
+        "S75A-P07": "FUTURE_FULL_SECTION_7_5_SECTION_7_4",
+        "S75A-P08": "SECTION_7_3_FUTURE_FULL_SECTION_7_5",
+        "S75A-P09": "FUTURE_FULL_SECTION_7_5",
+        "S75A-P10": "FUTURE_FULL_SECTION_7_5",
+        "S75A-P11": "FUTURE_FULL_SECTION_7_5",
+        "S75A-P12": "FUTURE_FULL_SECTION_7_5",
+        "S75A-P13": "FUTURE_FULL_SECTION_7_5_SECTION_7_7",
+        "S75A-P14": "SECTION_7_4",
+        "S75A-P15": "SECTION_7_7",
+        "S75A-P16": "SECTION_7_8",
+        "S75A-P17": "HUMAN",
+        "S75A-P18": "SECTION_7_3_FUTURE_FULL_SECTION_7_5",
+        "S75A-P19": "SECTION_7_3_FUTURE_FULL_SECTION_7_5_SECTION_7_4",
+    }
+    observed = {
+        prerequisite["prerequisite_id"]: prerequisite["owner"]
+        for prerequisite in constraints["open_prerequisite_registry"]
+    }
+    assert observed == expected_owners
+    assert {
+        prerequisite["current_state"]
+        for prerequisite in constraints["open_prerequisite_registry"]
+    } == {"OPEN_BLOCKING"}
+
+
+def test_controller_fixed_point_retains_known_governed_cycles() -> None:
+    observation = _valid_candidate()["observation"]
+    assert isinstance(observation, dict)
+    first, second = observation["governed_roles"][:2]
+    observation["controller_edges"] = sorted(
+        [
+            {"controller": first, "controlled": second},
+            {"controller": second, "controlled": first},
+        ],
+        key=canonical_json,
+    )
+    observation["controller_cycles"] = [[first, second]]
+
+    assert evaluate_controller_fixed_point(observation) == "VALID"
+
+
+def test_controller_fixed_point_holds_unknown_edges() -> None:
+    observation = _valid_candidate()["observation"]
+    assert isinstance(observation, dict)
+    observation["unknown_edge_count"] = 1
+
+    assert evaluate_controller_fixed_point(observation) == "HOLD_UNKNOWN_EDGE"
+
+
+def test_controller_fixed_point_rejects_malformed_cycle_semantics() -> None:
+    observation = _valid_candidate()["observation"]
+    assert isinstance(observation, dict)
+    first, second = observation["governed_roles"][:2]
+    observation["controller_edges"] = sorted(
+        [
+            {"controller": first, "controlled": second},
+            {"controller": second, "controlled": first},
+        ],
+        key=canonical_json,
+    )
+    observation["controller_cycles"] = []
+
+    assert evaluate_controller_fixed_point(observation) == (
+        "REJECT_INVALID_GRAPH"
+    )
