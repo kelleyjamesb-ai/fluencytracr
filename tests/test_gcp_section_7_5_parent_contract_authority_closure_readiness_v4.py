@@ -4,9 +4,17 @@ import json
 import os
 import subprocess
 import sys
+import threading
 
 import pytest
 
+import tests.gcp_s751_v4.bundle as bundle_module
+from tests.gcp_s751_v4.bundle import (
+    BundleAdmissionError,
+    admit_parent_bundle,
+    open_harness_bundle,
+    reopen_owned_bundle,
+)
 from tests.gcp_s751_v4.ledger import (
     build_rule_ledger,
     reconcile_rule_ledger,
@@ -32,6 +40,27 @@ PACKET = ROOT / (
     "gcp_section_7_5_parent_contract_authority_closure_readiness_v4/"
     "packet-rules.json"
 )
+EXACT_MEMBER_NAMES = tuple(
+    entry.member_name for entry in load_packet().parent_manifest
+)
+
+
+@pytest.fixture
+def exact_parent_bytes() -> dict[str, bytes]:
+    packet = load_packet()
+    return load_exact_parents(packet)
+
+
+@pytest.fixture
+def exact_bundle(
+    tmp_path: Path,
+    exact_parent_bytes: dict[str, bytes],
+) -> Path:
+    bundle = tmp_path / "exact-parent-bundle"
+    bundle.mkdir()
+    for member_name, data in exact_parent_bytes.items():
+        (bundle / member_name).write_bytes(data)
+    return bundle
 
 
 def test_v4_packet_is_compact_closed_and_has_no_sut() -> None:
@@ -339,3 +368,476 @@ def test_hermetic_node_uses_a_pre_resolved_executable(
     batch = sign_ephemeral_batch([b"hermetic"])
 
     assert batch.key_id == anchor_key_id(batch.anchor_spki_der)
+
+
+def test_bundle_admission_uses_an_independent_open_description(
+    exact_bundle: Path,
+) -> None:
+    incoming = open_harness_bundle(exact_bundle)
+    owned = reopen_owned_bundle(incoming)
+    try:
+        incoming_stat = os.fstat(incoming)
+        owned_stat = os.fstat(owned)
+        assert (incoming_stat.st_dev, incoming_stat.st_ino) == (
+            owned_stat.st_dev,
+            owned_stat.st_ino,
+        )
+        os.lseek(incoming, 7, os.SEEK_SET)
+        assert os.lseek(owned, 0, os.SEEK_CUR) == 0
+        os.listdir(incoming)
+        assert set(os.listdir(owned)) == set(EXACT_MEMBER_NAMES)
+    finally:
+        os.close(owned)
+        os.close(incoming)
+
+
+@pytest.mark.parametrize(
+    ("capability_state", "member_count", "corrupt", "accepted"),
+    (
+        ("ABSENT", 0, False, False),
+        ("PARTIAL", 4, False, False),
+        ("CORRUPT", 5, True, False),
+        ("EXACT", 5, False, True),
+    ),
+)
+def test_bundle_capability_cells_require_exact_parent_bytes(
+    tmp_path: Path,
+    exact_parent_bytes: dict[str, bytes],
+    capability_state: str,
+    member_count: int,
+    corrupt: bool,
+    accepted: bool,
+) -> None:
+    bundle = tmp_path / capability_state.lower()
+    bundle.mkdir()
+    for member_name in EXACT_MEMBER_NAMES[:member_count]:
+        data = exact_parent_bytes[member_name]
+        if corrupt and member_name == EXACT_MEMBER_NAMES[-1]:
+            data += b"\n"
+        (bundle / member_name).write_bytes(data)
+    incoming = open_harness_bundle(bundle)
+    try:
+        if accepted:
+            assert admit_parent_bundle(
+                incoming, load_packet().parent_manifest
+            ) == exact_parent_bytes
+        else:
+            with pytest.raises(
+                BundleAdmissionError,
+                match=r"^INVALID_PARENT_RESOURCE_SET$",
+            ):
+                admit_parent_bundle(incoming, load_packet().parent_manifest)
+        os.fstat(incoming)
+    finally:
+        os.close(incoming)
+
+
+def test_bundle_admission_rejects_an_extra_member(
+    exact_bundle: Path,
+) -> None:
+    (exact_bundle / "unexpected.json").write_bytes(b"{}")
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+        os.fstat(incoming)
+    finally:
+        os.close(incoming)
+
+
+@pytest.mark.parametrize("replacement_kind", ("directory", "fifo"))
+def test_bundle_admission_rejects_non_regular_members(
+    exact_bundle: Path,
+    replacement_kind: str,
+) -> None:
+    member = exact_bundle / EXACT_MEMBER_NAMES[0]
+    member.unlink()
+    if replacement_kind == "directory":
+        member.mkdir()
+    else:
+        os.mkfifo(member)
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+        os.fstat(incoming)
+    finally:
+        os.close(incoming)
+
+
+def test_bundle_admission_rejects_a_symlink_member(
+    exact_bundle: Path,
+    tmp_path: Path,
+) -> None:
+    member = exact_bundle / EXACT_MEMBER_NAMES[0]
+    target = tmp_path / "symlink-target"
+    target.write_bytes(member.read_bytes())
+    member.unlink()
+    member.symlink_to(target)
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+        os.fstat(incoming)
+    finally:
+        os.close(incoming)
+
+
+def test_bundle_admission_rejects_a_renamed_member(
+    exact_bundle: Path,
+    tmp_path: Path,
+) -> None:
+    member = exact_bundle / EXACT_MEMBER_NAMES[0]
+    member.rename(tmp_path / "renamed-parent")
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+        os.fstat(incoming)
+    finally:
+        os.close(incoming)
+
+
+def test_harness_path_admission_rejects_every_symlink_component(
+    exact_bundle: Path,
+    tmp_path: Path,
+) -> None:
+    final_link = tmp_path / "final-link"
+    final_link.symlink_to(exact_bundle, target_is_directory=True)
+    with pytest.raises(
+        BundleAdmissionError,
+        match=r"^INVALID_PARENT_RESOURCE_SET$",
+    ):
+        open_harness_bundle(final_link)
+
+    real_ancestor = tmp_path / "real-ancestor"
+    real_ancestor.mkdir()
+    nested_bundle = real_ancestor / "nested-bundle"
+    exact_bundle.rename(nested_bundle)
+    ancestor_link = tmp_path / "ancestor-link"
+    ancestor_link.symlink_to(real_ancestor, target_is_directory=True)
+    with pytest.raises(
+        BundleAdmissionError,
+        match=r"^INVALID_PARENT_RESOURCE_SET$",
+    ):
+        open_harness_bundle(ancestor_link / nested_bundle.name)
+
+
+def test_harness_path_admission_closes_new_descriptor_if_prior_close_fails(
+    exact_bundle: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_open = os.open
+    real_close = os.close
+    real_fstat = os.fstat
+    opened_descriptors: list[int] = []
+    injected_failure = False
+
+    def recording_open(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        opened_fd = real_open(path, flags, mode, dir_fd=dir_fd)
+        opened_descriptors.append(opened_fd)
+        return opened_fd
+
+    def fail_first_close(fd: int) -> None:
+        nonlocal injected_failure
+        if not injected_failure:
+            injected_failure = True
+            real_close(fd)
+            raise OSError("injected close failure")
+        real_close(fd)
+
+    monkeypatch.setattr(bundle_module.os, "open", recording_open)
+    monkeypatch.setattr(bundle_module.os, "close", fail_first_close)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            open_harness_bundle(exact_bundle)
+        assert len(opened_descriptors) >= 2
+        for opened_fd in set(opened_descriptors):
+            with pytest.raises(OSError):
+                real_fstat(opened_fd)
+    finally:
+        for opened_fd in set(opened_descriptors):
+            try:
+                real_close(opened_fd)
+            except OSError:
+                pass
+
+
+def test_evaluator_boundary_starts_at_the_admitted_final_directory_object(
+    exact_bundle: Path,
+    exact_parent_bytes: dict[str, bytes],
+    tmp_path: Path,
+) -> None:
+    real_ancestor = tmp_path / "real-evaluator-ancestor"
+    real_ancestor.mkdir()
+    nested_bundle = real_ancestor / "nested-bundle"
+    exact_bundle.rename(nested_bundle)
+    ancestor_link = tmp_path / "evaluator-ancestor-link"
+    ancestor_link.symlink_to(real_ancestor, target_is_directory=True)
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    incoming = os.open(ancestor_link / nested_bundle.name, flags)
+    try:
+        assert admit_parent_bundle(
+            incoming, load_packet().parent_manifest
+        ) == exact_parent_bytes
+    finally:
+        os.close(incoming)
+
+
+@pytest.mark.parametrize("invalid_population", (False, True))
+def test_bundle_admission_closes_owned_descriptors_but_not_the_callers(
+    exact_bundle: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    invalid_population: bool,
+) -> None:
+    if invalid_population:
+        corrupt_member = exact_bundle / EXACT_MEMBER_NAMES[-1]
+        corrupt_member.write_bytes(corrupt_member.read_bytes() + b"\n")
+    owned_descriptors: list[int] = []
+    real_open = os.open
+
+    def recording_open(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        opened_fd = real_open(path, flags, mode, dir_fd=dir_fd)
+        owned_descriptors.append(opened_fd)
+        return opened_fd
+
+    incoming = open_harness_bundle(exact_bundle)
+    monkeypatch.setattr(bundle_module.os, "open", recording_open)
+    try:
+        if invalid_population:
+            with pytest.raises(BundleAdmissionError):
+                admit_parent_bundle(incoming, load_packet().parent_manifest)
+        else:
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+        os.fstat(incoming)
+        assert len(owned_descriptors) == 6
+        for owned_fd in set(owned_descriptors):
+            with pytest.raises(OSError):
+                os.fstat(owned_fd)
+    finally:
+        os.close(incoming)
+
+
+def test_bundle_admission_rejects_a_closed_caller_descriptor(
+    exact_bundle: Path,
+) -> None:
+    incoming = open_harness_bundle(exact_bundle)
+    os.close(incoming)
+
+    with pytest.raises(
+        BundleAdmissionError,
+        match=r"^INVALID_PARENT_RESOURCE_SET$",
+    ):
+        admit_parent_bundle(incoming, load_packet().parent_manifest)
+
+
+@pytest.mark.parametrize("changed_field", ("device", "inode"))
+def test_bundle_admission_rejects_pre_post_directory_identity_change(
+    exact_bundle: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    changed_field: str,
+) -> None:
+    incoming = open_harness_bundle(exact_bundle)
+    real_fstat = os.fstat
+    incoming_fstat_calls = 0
+
+    def changing_fstat(fd: int) -> os.stat_result:
+        nonlocal incoming_fstat_calls
+        result = real_fstat(fd)
+        if fd != incoming:
+            return result
+        incoming_fstat_calls += 1
+        if incoming_fstat_calls < 3:
+            return result
+        fields = list(result)
+        index = 2 if changed_field == "device" else 1
+        fields[index] += 1
+        return os.stat_result(fields)
+
+    monkeypatch.setattr(bundle_module.os, "fstat", changing_fstat)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+    finally:
+        os.close(incoming)
+
+
+def test_bundle_admission_rejects_concurrent_exact_content_replacement(
+    exact_bundle: Path,
+    exact_parent_bytes: dict[str, bytes],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    member_name = EXACT_MEMBER_NAMES[0]
+    member = exact_bundle / member_name
+    member_inode = member.stat().st_ino
+    replacement = exact_bundle.parent / "exact-replacement"
+    replacement.write_bytes(exact_parent_bytes[member_name])
+    member_opened = threading.Event()
+    replacement_done = threading.Event()
+    real_read = os.read
+
+    def pausing_read(fd: int, size: int) -> bytes:
+        if os.fstat(fd).st_ino == member_inode and not member_opened.is_set():
+            member_opened.set()
+            assert replacement_done.wait(timeout=5)
+        return real_read(fd, size)
+
+    def replace_member() -> None:
+        assert member_opened.wait(timeout=5)
+        os.replace(replacement, member)
+        replacement_done.set()
+
+    monkeypatch.setattr(bundle_module.os, "read", pausing_read)
+    replacer = threading.Thread(target=replace_member)
+    replacer.start()
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+    finally:
+        os.close(incoming)
+        replacement_done.set()
+        replacer.join(timeout=5)
+    assert not replacer.is_alive()
+
+
+def test_bundle_admission_rejects_concurrent_content_mutation(
+    exact_bundle: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    member = exact_bundle / EXACT_MEMBER_NAMES[0]
+    member_inode = member.stat().st_ino
+    member_opened = threading.Event()
+    mutation_done = threading.Event()
+    real_read = os.read
+
+    def pausing_read(fd: int, size: int) -> bytes:
+        if os.fstat(fd).st_ino == member_inode and not member_opened.is_set():
+            member_opened.set()
+            assert mutation_done.wait(timeout=5)
+        return real_read(fd, size)
+
+    def mutate_member() -> None:
+        assert member_opened.wait(timeout=5)
+        member.write_bytes(b"concurrently-corrupted")
+        mutation_done.set()
+
+    monkeypatch.setattr(bundle_module.os, "read", pausing_read)
+    mutator = threading.Thread(target=mutate_member)
+    mutator.start()
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        with pytest.raises(
+            BundleAdmissionError,
+            match=r"^INVALID_PARENT_RESOURCE_SET$",
+        ):
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+    finally:
+        os.close(incoming)
+        mutation_done.set()
+        mutator.join(timeout=5)
+    assert not mutator.is_alive()
+
+
+def test_concurrent_caller_directory_iteration_does_not_perturb_admission(
+    exact_bundle: Path,
+    exact_parent_bytes: dict[str, bytes],
+) -> None:
+    incoming = open_harness_bundle(exact_bundle)
+    started = threading.Event()
+    stop = threading.Event()
+    failures: list[BaseException] = []
+
+    def iterate_caller_descriptor() -> None:
+        try:
+            started.set()
+            while not stop.is_set():
+                assert set(os.listdir(incoming)) == set(EXACT_MEMBER_NAMES)
+        except BaseException as exc:
+            failures.append(exc)
+
+    iterator = threading.Thread(target=iterate_caller_descriptor)
+    iterator.start()
+    assert started.wait(timeout=5)
+    try:
+        assert admit_parent_bundle(
+            incoming, load_packet().parent_manifest
+        ) == exact_parent_bytes
+    finally:
+        stop.set()
+        iterator.join(timeout=5)
+        os.close(incoming)
+    assert not iterator.is_alive()
+    assert failures == []
+
+
+def test_bundle_admission_ignores_fd_numbers_and_filesystem_names(
+    exact_bundle: Path,
+    exact_parent_bytes: dict[str, bytes],
+    tmp_path: Path,
+) -> None:
+    differently_named = tmp_path / "absent-corrupt-hold-answer-key-name"
+    differently_named.mkdir()
+    for member_name, data in exact_parent_bytes.items():
+        (differently_named / member_name).write_bytes(data)
+
+    first = open_harness_bundle(exact_bundle)
+    second = open_harness_bundle(differently_named)
+    try:
+        assert first != second
+        assert admit_parent_bundle(
+            first, load_packet().parent_manifest
+        ) == admit_parent_bundle(second, load_packet().parent_manifest)
+    finally:
+        os.close(second)
+        os.close(first)
+
+
+def test_bundle_admission_errors_are_fixed_and_silent(
+    exact_bundle: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    (exact_bundle / "extra").write_bytes(b"extra")
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        with pytest.raises(BundleAdmissionError) as raised:
+            admit_parent_bundle(incoming, load_packet().parent_manifest)
+        assert str(raised.value) == "INVALID_PARENT_RESOURCE_SET"
+    finally:
+        os.close(incoming)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
