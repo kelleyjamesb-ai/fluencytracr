@@ -65,7 +65,21 @@ The permitted rule classes are `COMPILE_PINNED`,
 `AUTHENTICATED_OBSERVATION`, `DERIVED`, and `OPAQUE_LATER_SECTION`.
 `OPAQUE_LATER_SECTION` cannot become an acceptance ancestor. The future
 trust-dependency graph must be acyclic; the Section 7.3 controller graph is
-separate and retains its required least fixed point.
+separate and retains its required least fixed point. Controller closure
+includes each governed role alias in its own transitive upstream set and
+enforces every exact parent-declared forbidden pair after cycle retention.
+Direct, transitive, fan-out, or cross-object-spliced controller intersections
+reject; unknown or unviewable edges hold.
+
+The signed-context rule uses
+`GCP_SECTION_7_5_1_SIGNATURE_PROJECTION_V1` and domain
+`FLUENCYTRACR:GCP_SECTION_7_5_1_SIGNED_CONTEXT:V1`. Its signature preimage is
+the domain bytes, one zero byte, and canonical JSON of the payload excluding
+`key_id`. The excluded `key_id` is separately acceptance-bound to the exact
+fingerprint of the out-of-band admitted SPKI and cannot choose the anchor.
+The packet also enumerates the complete closed
+decision/reason/authority-effect/claim-grade mapping; no free-form reason or
+alternate tuple is admitted.
 
 ## 3. Environment truth table
 
@@ -83,6 +97,12 @@ Every `LIVE_RUNTIME` cell (`ABSENT`, `PARTIAL`, `CORRUPT`, `EXACT`) is exactly
 `NONE`. The fixture records all twelve explicit cells. Hermetic later tests
 use an isolated home, absolute resolved executables, controlled config/cache,
 `PATH`, locale, timezone, thread settings, and no network mutation.
+
+For every mode, including `LIVE_RUNTIME`, signature and signed bindings are
+followed by registry/receipt/approval conjunction validation and process-local
+nonce admission. A bad live conjunction rejects and a repeated authenticated
+live nonce rejects. Only then does live return its non-authorizing hold, before
+any parent-resource activity.
 
 ## 4. Requirements and oracle inventory
 

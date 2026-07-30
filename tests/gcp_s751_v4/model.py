@@ -15,6 +15,65 @@ from typing import Literal, Mapping, TypeAlias
 
 
 ClosedSchema: TypeAlias = Mapping[str, object]
+Decision = Literal["REJECT", "HOLD"]
+AuthorityEffect = Literal["NONE"]
+ClaimGrade = Literal[
+    "NONE", "STRUCTURAL_ONLY", "ARCHIVE_CLOSEOUT_ONLY", "DESIGN_ONLY"
+]
+ResultReason = Literal[
+    "INVALID_CANDIDATE_SHAPE",
+    "INVALID_ENVELOPE_SHAPE",
+    "INVALID_SIGNATURE",
+    "INVALID_SIGNED_CONTEXT_BINDING",
+    "INVALID_CONTEXT_CONJUNCTION",
+    "REPLAY_DETECTED",
+    "INVALID_PARENT_RESOURCE_SET",
+    "INVALID_SECTION_7_3_AUTHORITY",
+    "PRIVACY_OR_NONAUTHORIZATION_INVALID",
+    "UNKNOWN_CONTROLLER_EDGE",
+    "CURRENT_PARENT_OBLIGATIONS_OPEN",
+    "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN",
+    "LIVE_RUNTIME_NOT_AUTHORIZED",
+]
+
+
+_EXPECTED_RESULT_TUPLES = frozenset(
+    {
+        ("REJECT", "INVALID_CANDIDATE_SHAPE", "NONE", "NONE"),
+        ("REJECT", "INVALID_ENVELOPE_SHAPE", "NONE", "NONE"),
+        ("REJECT", "INVALID_SIGNATURE", "NONE", "NONE"),
+        ("REJECT", "INVALID_SIGNED_CONTEXT_BINDING", "NONE", "NONE"),
+        ("REJECT", "INVALID_CONTEXT_CONJUNCTION", "NONE", "NONE"),
+        ("REJECT", "REPLAY_DETECTED", "NONE", "NONE"),
+        ("REJECT", "INVALID_PARENT_RESOURCE_SET", "NONE", "NONE"),
+        ("REJECT", "INVALID_SECTION_7_3_AUTHORITY", "NONE", "NONE"),
+        (
+            "REJECT",
+            "PRIVACY_OR_NONAUTHORIZATION_INVALID",
+            "NONE",
+            "NONE",
+        ),
+        ("HOLD", "UNKNOWN_CONTROLLER_EDGE", "NONE", "STRUCTURAL_ONLY"),
+        (
+            "HOLD",
+            "CURRENT_PARENT_OBLIGATIONS_OPEN",
+            "NONE",
+            "STRUCTURAL_ONLY",
+        ),
+        (
+            "HOLD",
+            "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN",
+            "NONE",
+            "ARCHIVE_CLOSEOUT_ONLY",
+        ),
+        (
+            "HOLD",
+            "LIVE_RUNTIME_NOT_AUTHORIZED",
+            "NONE",
+            "DESIGN_ONLY",
+        ),
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -34,6 +93,23 @@ class ManifestEntry:
 
 
 @dataclass(frozen=True)
+class ResultMapping:
+    decision: Decision
+    reason: ResultReason
+    authority_effect: AuthorityEffect
+    claim_grade: ClaimGrade
+
+    def __post_init__(self) -> None:
+        if (
+            self.decision,
+            self.reason,
+            self.authority_effect,
+            self.claim_grade,
+        ) not in _EXPECTED_RESULT_TUPLES:
+            raise ValueError("result mapping is outside the closed model")
+
+
+@dataclass(frozen=True)
 class RulePacket:
     schema_version: str
     protocol_version: str
@@ -44,8 +120,10 @@ class RulePacket:
     authority_effect: Literal["NONE"]
     parent_manifest: tuple[ManifestEntry, ...]
     closed_schemas: Mapping[str, ClosedSchema]
+    signature_projection: Mapping[str, object]
     rule_templates: tuple[Mapping[str, object], ...]
     oracle_precedence: tuple[str, ...]
+    result_mappings: tuple[ResultMapping, ...]
     environment_table: tuple[Mapping[str, object], ...]
     attack_catalog: tuple[Mapping[str, object], ...]
 
@@ -61,12 +139,21 @@ class OracleInput:
 @dataclass(frozen=True)
 class EvaluationResult:
     schema_version: str
-    decision: Literal["REJECT", "HOLD"]
-    reason: str
-    authority_effect: Literal["NONE"]
-    claim_grade: Literal[
-        "NONE", "STRUCTURAL_ONLY", "ARCHIVE_CLOSEOUT_ONLY", "DESIGN_ONLY"
-    ]
+    decision: Decision
+    reason: ResultReason
+    authority_effect: AuthorityEffect
+    claim_grade: ClaimGrade
+
+    def __post_init__(self) -> None:
+        if self.schema_version != "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4":
+            raise ValueError("result schema version is outside the closed model")
+        if (
+            self.decision,
+            self.reason,
+            self.authority_effect,
+            self.claim_grade,
+        ) not in _EXPECTED_RESULT_TUPLES:
+            raise ValueError("evaluation result is outside the closed model")
 
 
 CandidateSchemaVersion = Literal["GCP_SECTION_7_5_1_CANDIDATE_V4"]
@@ -82,13 +169,6 @@ ContextMode = Literal["CLEAN_CI", "ARCHIVE_CLOSEOUT", "LIVE_RUNTIME"]
 SignerPurpose = Literal[
     "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY", "RUNTIME_RECEIPT_SIGNING_CRYPTOKEY"
 ]
-AuthorityEffect = Literal["NONE"]
-Decision = Literal["REJECT", "HOLD"]
-ClaimGrade = Literal[
-    "NONE", "STRUCTURAL_ONLY", "ARCHIVE_CLOSEOUT_ONLY", "DESIGN_ONLY"
-]
-
-
 _ROOT = Path(__file__).resolve().parents[2]
 _PACKET_PATH = _ROOT / (
     "tests/fixtures/"
@@ -112,6 +192,37 @@ def canonical_json(value: object) -> bytes:
         ensure_ascii=True,
         allow_nan=False,
     ).encode("ascii")
+
+
+def signature_preimage(
+    packet: RulePacket,
+    payload: Mapping[str, object],
+) -> bytes:
+    """Project the versioned detached-signature preimage from closed context."""
+    projection = packet.signature_projection
+    expected = {
+        "schema_version": "GCP_SECTION_7_5_1_SIGNATURE_PROJECTION_V1",
+        "domain_separator": (
+            "FLUENCYTRACR:GCP_SECTION_7_5_1_SIGNED_CONTEXT:V1"
+        ),
+        "excluded_payload_field": "key_id",
+        "key_id_binding": (
+            "EXACT_P256_SPKI_SHA256_OF_OUT_OF_BAND_ADMITTED_SPKI"
+        ),
+        "preimage": (
+            "DOMAIN_SEPARATOR_UTF8 || 0x00 || "
+            "CANONICAL_JSON(PAYLOAD_WITHOUT_KEY_ID)"
+        ),
+    }
+    if dict(projection) != expected:
+        raise ValueError("invalid signature projection")
+    projected = dict(payload)
+    projected.pop("key_id", None)
+    return (
+        expected["domain_separator"].encode("ascii")
+        + b"\x00"
+        + canonical_json(projected)
+    )
 
 
 def strict_load_json(data: bytes) -> object:
@@ -185,6 +296,54 @@ def load_packet() -> RulePacket:
     if risk != "high" or authority_effect != "NONE":
         raise ValueError("packet risk or authority effect is outside the closed model")
 
+    result_mappings = tuple(
+        ResultMapping(
+            decision=_required_string(entry, "decision"),
+            reason=_required_string(entry, "reason"),
+            authority_effect=_required_string(entry, "authority_effect"),
+            claim_grade=_required_string(entry, "claim_grade"),
+        )
+        for entry in (
+            _as_mapping(value, "result mapping")
+            for value in _required_list(raw, "result_mappings")
+        )
+    )
+    if (
+        len(result_mappings) != len(_EXPECTED_RESULT_TUPLES)
+        or len({mapping.reason for mapping in result_mappings})
+        != len(result_mappings)
+        or {
+            (
+                mapping.decision,
+                mapping.reason,
+                mapping.authority_effect,
+                mapping.claim_grade,
+            )
+            for mapping in result_mappings
+        }
+        != _EXPECTED_RESULT_TUPLES
+    ):
+        raise ValueError("packet result mappings are outside the closed model")
+
+    signature_projection = _freeze_mapping(
+        _required_mapping(raw, "signature_projection")
+    )
+    if dict(signature_projection) != {
+        "schema_version": "GCP_SECTION_7_5_1_SIGNATURE_PROJECTION_V1",
+        "domain_separator": (
+            "FLUENCYTRACR:GCP_SECTION_7_5_1_SIGNED_CONTEXT:V1"
+        ),
+        "excluded_payload_field": "key_id",
+        "key_id_binding": (
+            "EXACT_P256_SPKI_SHA256_OF_OUT_OF_BAND_ADMITTED_SPKI"
+        ),
+        "preimage": (
+            "DOMAIN_SEPARATOR_UTF8 || 0x00 || "
+            "CANONICAL_JSON(PAYLOAD_WITHOUT_KEY_ID)"
+        ),
+    }:
+        raise ValueError("packet signature projection is outside the closed model")
+
     return RulePacket(
         schema_version=_required_string(raw, "schema_version"),
         protocol_version=_required_string(protocol, "version"),
@@ -195,8 +354,10 @@ def load_packet() -> RulePacket:
         authority_effect=authority_effect,
         parent_manifest=manifest,
         closed_schemas=closed_schemas,
+        signature_projection=signature_projection,
         rule_templates=_mapping_tuple(raw, "rule_templates"),
         oracle_precedence=_string_tuple(raw, "oracle_precedence"),
+        result_mappings=result_mappings,
         environment_table=_mapping_tuple(raw, "environment_table"),
         attack_catalog=_mapping_tuple(raw, "attack_catalog"),
     )

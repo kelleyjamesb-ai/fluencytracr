@@ -27,7 +27,9 @@ from tests.gcp_s751_v4.model import (
     EvaluationResult,
     RulePacket,
     canonical_json,
+    load_exact_parents,
     load_packet,
+    signature_preimage,
     strict_load_json,
 )
 
@@ -88,26 +90,29 @@ class ReferenceOracle:
         try:
             candidate = _parse_candidate(candidate_bytes)
         except (TypeError, ValueError):
-            return _reject("INVALID_CANDIDATE_SHAPE")
+            return _project_result(packet, "INVALID_CANDIDATE_SHAPE")
 
         try:
             envelope, payload, signature = _parse_envelope(
                 signed_context_envelope_bytes
             )
         except (TypeError, ValueError):
-            return _reject("INVALID_ENVELOPE_SHAPE")
+            return _project_result(packet, "INVALID_ENVELOPE_SHAPE")
 
         try:
-            signed_payload = dict(payload)
-            del signed_payload["key_id"]
             verified = verify_batch(
                 verifier_anchor_spki,
-                (VerifyVector(canonical_json(signed_payload), signature),),
+                (
+                    VerifyVector(
+                        signature_preimage(packet, payload),
+                        signature,
+                    ),
+                ),
             )
             if verified != (True,):
-                return _reject("INVALID_SIGNATURE")
+                return _project_result(packet, "INVALID_SIGNATURE")
         except (TypeError, ValueError):
-            return _reject("INVALID_SIGNATURE")
+            return _project_result(packet, "INVALID_SIGNATURE")
 
         try:
             if not _signed_bindings_are_valid(
@@ -116,23 +121,30 @@ class ReferenceOracle:
                 payload,
                 verifier_anchor_spki,
             ):
-                return _reject("INVALID_SIGNED_CONTEXT_BINDING")
+                return _project_result(
+                    packet, "INVALID_SIGNED_CONTEXT_BINDING"
+                )
         except (TypeError, ValueError):
-            return _reject("INVALID_SIGNED_CONTEXT_BINDING")
+            return _project_result(
+                packet, "INVALID_SIGNED_CONTEXT_BINDING"
+            )
 
         mode = payload["mode"]
-        if mode == "LIVE_RUNTIME":
-            return _hold("LIVE_RUNTIME_NOT_AUTHORIZED", "DESIGN_ONLY")
 
         try:
             if not _context_conjunction_is_valid(packet, payload):
-                return _reject("INVALID_CONTEXT_CONJUNCTION")
+                return _project_result(
+                    packet, "INVALID_CONTEXT_CONJUNCTION"
+                )
             nonce = bytes.fromhex(payload["nonce_time"]["nonce"])
             if nonce in self._replay_state:
-                return _reject("REPLAY_DETECTED")
+                return _project_result(packet, "REPLAY_DETECTED")
             self._replay_state.add(nonce)
         except (TypeError, ValueError):
-            return _reject("INVALID_CONTEXT_CONJUNCTION")
+            return _project_result(packet, "INVALID_CONTEXT_CONJUNCTION")
+
+        if mode == "LIVE_RUNTIME":
+            return _project_result(packet, "LIVE_RUNTIME_NOT_AUTHORIZED")
 
         try:
             parents = admit_parent_bundle(
@@ -140,7 +152,7 @@ class ReferenceOracle:
                 packet.parent_manifest,
             )
         except BundleAdmissionError:
-            return _reject("INVALID_PARENT_RESOURCE_SET")
+            return _project_result(packet, "INVALID_PARENT_RESOURCE_SET")
 
         try:
             parent_objects = {
@@ -149,16 +161,25 @@ class ReferenceOracle:
             if not _parent_authority_semantics_are_valid(
                 parent_objects, candidate["observation"]
             ):
-                return _reject("INVALID_SECTION_7_3_AUTHORITY")
-            controller = evaluate_controller_fixed_point(
-                candidate["observation"]
+                return _project_result(
+                    packet, "INVALID_SECTION_7_3_AUTHORITY"
+                )
+            controller = _evaluate_controller_fixed_point(
+                candidate["observation"],
+                parent_objects["role-capability-matrix.json"][
+                    "forbidden_controller_intersections"
+                ],
             )
             if controller == "REJECT_INVALID_GRAPH":
-                return _reject("INVALID_SECTION_7_3_AUTHORITY")
+                return _project_result(
+                    packet, "INVALID_SECTION_7_3_AUTHORITY"
+                )
             if controller == "HOLD_UNKNOWN_EDGE":
-                return _hold("UNKNOWN_CONTROLLER_EDGE", "STRUCTURAL_ONLY")
+                return _project_result(packet, "UNKNOWN_CONTROLLER_EDGE")
         except (KeyError, TypeError, ValueError):
-            return _reject("INVALID_SECTION_7_3_AUTHORITY")
+            return _project_result(
+                packet, "INVALID_SECTION_7_3_AUTHORITY"
+            )
 
         try:
             if not _privacy_and_nonauthorization_are_valid(
@@ -167,22 +188,39 @@ class ReferenceOracle:
                 payload,
                 envelope,
             ):
-                return _reject("PRIVACY_OR_NONAUTHORIZATION_INVALID")
+                return _project_result(
+                    packet, "PRIVACY_OR_NONAUTHORIZATION_INVALID"
+                )
         except (KeyError, TypeError, ValueError):
-            return _reject("PRIVACY_OR_NONAUTHORIZATION_INVALID")
+            return _project_result(
+                packet, "PRIVACY_OR_NONAUTHORIZATION_INVALID"
+            )
 
         if mode == "ARCHIVE_CLOSEOUT":
-            return _hold(
+            return _project_result(
+                packet,
                 "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN",
-                "ARCHIVE_CLOSEOUT_ONLY",
             )
-        return _hold("CURRENT_PARENT_OBLIGATIONS_OPEN", "STRUCTURAL_ONLY")
+        return _project_result(packet, "CURRENT_PARENT_OBLIGATIONS_OPEN")
 
 
 def evaluate_controller_fixed_point(
     observation: Mapping[str, object],
 ) -> ControllerDecision:
     """Validate and close the separate governed controller graph."""
+    try:
+        parents = load_exact_parents(load_packet())
+        matrix = _load_parent_json(parents["role-capability-matrix.json"])
+        forbidden_pairs = matrix["forbidden_controller_intersections"]
+    except (KeyError, TypeError, ValueError):
+        return "REJECT_INVALID_GRAPH"
+    return _evaluate_controller_fixed_point(observation, forbidden_pairs)
+
+
+def _evaluate_controller_fixed_point(
+    observation: Mapping[str, object],
+    forbidden_pairs: object,
+) -> ControllerDecision:
     try:
         if not isinstance(observation, Mapping):
             return "REJECT_INVALID_GRAPH"
@@ -250,8 +288,10 @@ def evaluate_controller_fixed_point(
             return "REJECT_INVALID_GRAPH"
 
         reach = {role: {role} for role in governed}
+        upstream = {role: {role} for role in governed}
         for controller, controlled in edges:
             reach[controller].add(controlled)
+            upstream[controlled].add(controller)
         changed = True
         while changed:
             changed = False
@@ -261,6 +301,12 @@ def evaluate_controller_fixed_point(
                     expanded.update(reach[controlled])
                 if expanded != reach[role]:
                     reach[role] = expanded
+                    changed = True
+                expanded_upstream = set(upstream[role])
+                for controller in tuple(upstream[role]):
+                    expanded_upstream.update(upstream[controller])
+                if expanded_upstream != upstream[role]:
+                    upstream[role] = expanded_upstream
                     changed = True
 
         remaining = set(governed)
@@ -277,6 +323,27 @@ def evaluate_controller_fixed_point(
                 observed_cycles.append(tuple(sorted(component)))
         if tuple(sorted(observed_cycles)) != tuple(declared_cycles):
             return "REJECT_INVALID_GRAPH"
+        if not isinstance(forbidden_pairs, list):
+            return "REJECT_INVALID_GRAPH"
+        normalized_pairs: list[tuple[str, str]] = []
+        for value in forbidden_pairs:
+            if (
+                not isinstance(value, list)
+                or len(value) != 2
+                or not all(isinstance(role, str) for role in value)
+                or value != sorted(set(value))
+                or not set(value) <= roles
+            ):
+                return "REJECT_INVALID_GRAPH"
+            normalized_pairs.append((value[0], value[1]))
+        if (
+            normalized_pairs != sorted(set(normalized_pairs))
+            or len(normalized_pairs) != len(roles) * (len(roles) - 1) // 2
+        ):
+            return "REJECT_INVALID_GRAPH"
+        for left, right in normalized_pairs:
+            if upstream[left] & upstream[right]:
+                return "REJECT_INVALID_GRAPH"
         if unknown:
             return "HOLD_UNKNOWN_EDGE"
         return "VALID"
@@ -519,6 +586,10 @@ def _parent_authority_semantics_are_valid(
     roles = matrix["roles"]
     capabilities = matrix["capabilities"]
     hsm_profiles = security["policy_template"]["hsm_key_profiles"]
+    security_forbidden_pairs = security["principal_role_contract"][
+        "forbidden_controller_intersections"
+    ]
+    matrix_forbidden_pairs = matrix["forbidden_controller_intersections"]
     if (
         runtime["implements_candidate_section"] != "7.2"
         or security["scope"] != "SECTION_7_3_DOCS_ONLY"
@@ -532,6 +603,7 @@ def _parent_authority_semantics_are_valid(
         or len(capabilities) != 16
         or not isinstance(hsm_profiles, list)
         or len(hsm_profiles) != 2
+        or security_forbidden_pairs != matrix_forbidden_pairs
     ):
         return False
 
@@ -712,21 +784,18 @@ def _parse_utc(value: object) -> datetime:
     return parsed.replace(tzinfo=timezone.utc)
 
 
-def _reject(reason: str) -> EvaluationResult:
+def _project_result(packet: RulePacket, reason: str) -> EvaluationResult:
+    matches = [
+        mapping for mapping in packet.result_mappings
+        if mapping.reason == reason
+    ]
+    if len(matches) != 1:
+        raise ValueError("result reason is outside the packet mapping")
+    mapping = matches[0]
     return EvaluationResult(
         schema_version="GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
-        decision="REJECT",
-        reason=reason,
-        authority_effect="NONE",
-        claim_grade="NONE",
-    )
-
-
-def _hold(reason: str, claim_grade: str) -> EvaluationResult:
-    return EvaluationResult(
-        schema_version="GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
-        decision="HOLD",
-        reason=reason,
-        authority_effect="NONE",
-        claim_grade=claim_grade,
+        decision=mapping.decision,
+        reason=mapping.reason,
+        authority_effect=mapping.authority_effect,
+        claim_grade=mapping.claim_grade,
     )

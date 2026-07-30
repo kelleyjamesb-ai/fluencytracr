@@ -8,6 +8,13 @@
   "queue_item_id": "gcp-canonical-runtime-section-7-5-parent-authority",
   "risk": "high",
   "authority_effect": "NONE",
+  "signature_projection": {
+    "schema_version": "GCP_SECTION_7_5_1_SIGNATURE_PROJECTION_V1",
+    "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_1_SIGNED_CONTEXT:V1",
+    "excluded_payload_field": "key_id",
+    "key_id_binding": "EXACT_P256_SPKI_SHA256_OF_OUT_OF_BAND_ADMITTED_SPKI",
+    "preimage": "DOMAIN_SEPARATOR_UTF8 || 0x00 || CANONICAL_JSON(PAYLOAD_WITHOUT_KEY_ID)"
+  },
   "parent_manifest": [
     {"member_name": "runtime-object-contract.json", "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json", "sha256": "0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125", "owner": "Section 7.2"},
     {"member_name": "security-authority-contract.json", "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json", "sha256": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841", "owner": "Section 7.3"},
@@ -116,7 +123,7 @@
       "fields": [
         {"pointer": "/schema_version", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:GCP_SECTION_7_5_1_EVALUATION_RESULT_V4"},
         {"pointer": "/decision", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:HOLD|REJECT"},
-        {"pointer": "/reason", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:FIXED_CLOSED_REASON"},
+        {"pointer": "/reason", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN|CURRENT_PARENT_OBLIGATIONS_OPEN|INVALID_CANDIDATE_SHAPE|INVALID_CONTEXT_CONJUNCTION|INVALID_ENVELOPE_SHAPE|INVALID_PARENT_RESOURCE_SET|INVALID_SECTION_7_3_AUTHORITY|INVALID_SIGNATURE|INVALID_SIGNED_CONTEXT_BINDING|LIVE_RUNTIME_NOT_AUTHORIZED|PRIVACY_OR_NONAUTHORIZATION_INVALID|REPLAY_DETECTED|UNKNOWN_CONTROLLER_EDGE"},
         {"pointer": "/authority_effect", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:NONE"},
         {"pointer": "/claim_grade", "type": "STRING", "required": true, "cardinality": "ONE", "value_rule": "ENUM:NONE|STRUCTURAL_ONLY|ARCHIVE_CLOSEOUT_ONLY|DESIGN_ONLY"}
       ]
@@ -134,6 +141,21 @@
     {"rule_id": "RULE-CURRENT-BLOCKERS", "class": "OPAQUE_LATER_SECTION", "admission": "all current parent obligations remain OPEN_BLOCKING", "failure": "HOLD", "attack_ids": ["A019"]}
   ],
   "oracle_precedence": ["candidate_canonical_shape", "envelope_canonical_shape", "p256_anchor_authentication", "signed_digest_policy_mode_time_authority_binding", "replay_registry_receipt_approval", "parent_bundle_admission", "section_7_3_role_capability_controller_owner", "privacy_and_nonauthorization", "environment_claim_grade", "closed_result_projection"],
+  "result_mappings": [
+    {"decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "INVALID_CONTEXT_CONJUNCTION", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "REPLAY_DETECTED", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "INVALID_SECTION_7_3_AUTHORITY", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "REJECT", "reason": "PRIVACY_OR_NONAUTHORIZATION_INVALID", "authority_effect": "NONE", "claim_grade": "NONE"},
+    {"decision": "HOLD", "reason": "UNKNOWN_CONTROLLER_EDGE", "authority_effect": "NONE", "claim_grade": "STRUCTURAL_ONLY"},
+    {"decision": "HOLD", "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN", "authority_effect": "NONE", "claim_grade": "STRUCTURAL_ONLY"},
+    {"decision": "HOLD", "reason": "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN", "authority_effect": "NONE", "claim_grade": "ARCHIVE_CLOSEOUT_ONLY"},
+    {"decision": "HOLD", "reason": "LIVE_RUNTIME_NOT_AUTHORIZED", "authority_effect": "NONE", "claim_grade": "DESIGN_ONLY"}
+  ],
   "environment_table": [
     {"environment": "CLEAN_CI", "resource_state": "ABSENT", "command": "future_sut_after_implementation", "expected_exit": "0", "expected_disposition": "REJECT:INVALID_PARENT_RESOURCE_SET", "claim_grade": "NONE", "authority_effect": "NONE"},
     {"environment": "CLEAN_CI", "resource_state": "PARTIAL", "command": "future_sut_after_implementation", "expected_exit": "0", "expected_disposition": "REJECT:INVALID_PARENT_RESOURCE_SET", "claim_grade": "NONE", "authority_effect": "NONE"},

@@ -1,4 +1,5 @@
 from base64 import b64decode, b64encode
+from dataclasses import replace
 import hashlib
 import json
 import os
@@ -11,6 +12,7 @@ from typing import Iterator
 import pytest
 
 import tests.gcp_s751_v4.bundle as bundle_module
+import tests.gcp_s751_v4.oracle as oracle_module
 from tests.gcp_s751_v4.bundle import (
     BundleAdmissionError,
     admit_parent_bundle,
@@ -23,6 +25,7 @@ from tests.gcp_s751_v4.ledger import (
     serialize_rule_ledger,
 )
 from tests.gcp_s751_v4.crypto import (
+    VerifyVector,
     anchor_key_id,
     sign_ephemeral_batch,
     verify_batch,
@@ -30,10 +33,13 @@ from tests.gcp_s751_v4.crypto import (
 from tests.gcp_s751_v4.model import (
     EvaluationResult,
     OracleInput,
+    ResultMapping,
+    RulePacket,
     canonical_json,
     enumerate_all_dynamic_paths,
     load_exact_parents,
     load_packet,
+    signature_preimage,
     strict_load_json,
 )
 from tests.gcp_s751_v4.oracle import (
@@ -71,8 +77,9 @@ def exact_bundle(
     return bundle
 
 
-def _valid_candidate() -> dict[str, object]:
-    parents = load_exact_parents(load_packet())
+def _candidate_from_parents(
+    parents: dict[str, bytes],
+) -> dict[str, object]:
     matrix = json.loads(parents["role-capability-matrix.json"])
     return {
         "schema_version": "GCP_SECTION_7_5_1_CANDIDATE_V4",
@@ -89,14 +96,19 @@ def _valid_candidate() -> dict[str, object]:
     }
 
 
+def _valid_candidate() -> dict[str, object]:
+    return _candidate_from_parents(load_exact_parents(load_packet()))
+
+
 def _signed_oracle_material(
     *,
     mode: str = "CLEAN_CI",
     nonce: str = "00112233445566778899aabbccddeeff",
     candidate: dict[str, object] | None = None,
     payload_overrides: dict[str, object] | None = None,
+    packet_override: RulePacket | None = None,
 ) -> tuple[bytes, bytes, bytes]:
-    packet = load_packet()
+    packet = packet_override or load_packet()
     candidate_bytes = canonical_json(candidate or _valid_candidate())
     parent_manifest = [
         {"member_name": entry.member_name, "sha256": entry.sha256}
@@ -142,7 +154,7 @@ def _signed_oracle_material(
     }
     if payload_overrides:
         payload.update(payload_overrides)
-    signed = sign_ephemeral_batch([canonical_json(payload)])
+    signed = sign_ephemeral_batch([signature_preimage(packet, payload)])
     payload["key_id"] = signed.key_id
     envelope = {
         "schema_version": "GCP_SECTION_7_5_1_SIGNED_CONTEXT_ENVELOPE_V4",
@@ -153,6 +165,53 @@ def _signed_oracle_material(
         ).decode("ascii"),
     }
     return candidate_bytes, canonical_json(envelope), signed.anchor_spki_der
+
+
+def _evaluate_mutated_parent_bundle(
+    *,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutations: dict[str, object],
+) -> EvaluationResult:
+    packet = load_packet()
+    parents = load_exact_parents(packet)
+    for member_name, mutation in mutations.items():
+        parent = json.loads(parents[member_name])
+        assert callable(mutation)
+        mutation(parent)
+        parents[member_name] = canonical_json(parent)
+    manifest = tuple(
+        replace(
+            entry,
+            sha256=hashlib.sha256(parents[entry.member_name]).hexdigest(),
+        )
+        for entry in packet.parent_manifest
+    )
+    mutated_packet = replace(packet, parent_manifest=manifest)
+    bundle = tmp_path / "mutated-parent-bundle"
+    bundle.mkdir()
+    for member_name, data in parents.items():
+        (bundle / member_name).write_bytes(data)
+    candidate, envelope, anchor = _signed_oracle_material(
+        candidate=_candidate_from_parents(parents),
+        nonce=hashlib.sha256(canonical_json(sorted(mutations))).hexdigest()[:32],
+        packet_override=mutated_packet,
+    )
+    monkeypatch.setattr(
+        oracle_module,
+        "load_packet",
+        lambda: mutated_packet,
+    )
+    incoming = open_harness_bundle(bundle)
+    try:
+        return ReferenceOracle().evaluate(
+            candidate,
+            envelope,
+            anchor,
+            incoming,
+        )
+    finally:
+        os.close(incoming)
 
 
 @pytest.fixture
@@ -290,6 +349,97 @@ def test_v4_rule_failures_are_closed_and_deterministic() -> None:
     assert {rule["failure"] for rule in rules.values()} <= {"REJECT", "HOLD"}
     assert rules["RULE-SECTION-7-3-AUTHORITY-INVALID"]["failure"] == "REJECT"
     assert rules["RULE-CURRENT-BLOCKERS"]["failure"] == "HOLD"
+
+
+def test_result_reason_mapping_is_closed_and_exhaustive() -> None:
+    packet = load_packet()
+    expected = {
+        ResultMapping("REJECT", "INVALID_CANDIDATE_SHAPE", "NONE", "NONE"),
+        ResultMapping("REJECT", "INVALID_ENVELOPE_SHAPE", "NONE", "NONE"),
+        ResultMapping("REJECT", "INVALID_SIGNATURE", "NONE", "NONE"),
+        ResultMapping(
+            "REJECT", "INVALID_SIGNED_CONTEXT_BINDING", "NONE", "NONE"
+        ),
+        ResultMapping(
+            "REJECT", "INVALID_CONTEXT_CONJUNCTION", "NONE", "NONE"
+        ),
+        ResultMapping("REJECT", "REPLAY_DETECTED", "NONE", "NONE"),
+        ResultMapping(
+            "REJECT", "INVALID_PARENT_RESOURCE_SET", "NONE", "NONE"
+        ),
+        ResultMapping(
+            "REJECT", "INVALID_SECTION_7_3_AUTHORITY", "NONE", "NONE"
+        ),
+        ResultMapping(
+            "REJECT",
+            "PRIVACY_OR_NONAUTHORIZATION_INVALID",
+            "NONE",
+            "NONE",
+        ),
+        ResultMapping(
+            "HOLD", "UNKNOWN_CONTROLLER_EDGE", "NONE", "STRUCTURAL_ONLY"
+        ),
+        ResultMapping(
+            "HOLD",
+            "CURRENT_PARENT_OBLIGATIONS_OPEN",
+            "NONE",
+            "STRUCTURAL_ONLY",
+        ),
+        ResultMapping(
+            "HOLD",
+            "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN",
+            "NONE",
+            "ARCHIVE_CLOSEOUT_ONLY",
+        ),
+        ResultMapping(
+            "HOLD",
+            "LIVE_RUNTIME_NOT_AUTHORIZED",
+            "NONE",
+            "DESIGN_ONLY",
+        ),
+    }
+
+    assert set(packet.result_mappings) == expected
+    reason_rule = next(
+        path.value_rule
+        for path in enumerate_all_dynamic_paths(packet)
+        if path.boundary == "result" and path.pointer == "/reason"
+    )
+    assert reason_rule == "ENUM:" + "|".join(
+        sorted(mapping.reason for mapping in expected)
+    )
+    mapping_by_disposition = {
+        f"{mapping.decision}:{mapping.reason}": mapping
+        for mapping in packet.result_mappings
+    }
+    for cell in packet.environment_table:
+        mapping = mapping_by_disposition[cell["expected_disposition"]]
+        assert mapping.claim_grade == cell["claim_grade"]
+        assert mapping.authority_effect == cell["authority_effect"]
+    for mapping in packet.result_mappings:
+        assert EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            mapping.decision,
+            mapping.reason,
+            mapping.authority_effect,
+            mapping.claim_grade,
+        )
+    with pytest.raises(ValueError):
+        EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "REJECT",
+            "ARBITRARY_REASON",
+            "NONE",
+            "NONE",
+        )
+    with pytest.raises(ValueError):
+        EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "HOLD",
+            "INVALID_SIGNATURE",
+            "NONE",
+            "STRUCTURAL_ONLY",
+        )
 
 
 def test_closed_schemas_cover_every_dynamic_boundary() -> None:
@@ -430,6 +580,82 @@ def test_ephemeral_batches_bind_an_out_of_band_anchor() -> None:
     assert first.key_id.startswith("P256_SPKI_SHA256:")
     assert verify_batch(first.anchor_spki_der, first.vectors) == (True, True)
     assert verify_batch(first.anchor_spki_der, second.vectors) == (False, False)
+
+
+def test_signature_projection_is_versioned_domain_separated_and_anchor_bound(
+) -> None:
+    packet = load_packet()
+    candidate, envelope_bytes, anchor = _signed_oracle_material(
+        nonce="ffff2222333344445555666677778888"
+    )
+    del candidate
+    envelope = strict_load_json(envelope_bytes)
+    assert isinstance(envelope, dict)
+    payload = envelope["payload"]
+    signature = b64decode(envelope["signature_der_base64"])
+
+    assert packet.signature_projection == {
+        "schema_version": "GCP_SECTION_7_5_1_SIGNATURE_PROJECTION_V1",
+        "domain_separator": (
+            "FLUENCYTRACR:GCP_SECTION_7_5_1_SIGNED_CONTEXT:V1"
+        ),
+        "excluded_payload_field": "key_id",
+        "key_id_binding": (
+            "EXACT_P256_SPKI_SHA256_OF_OUT_OF_BAND_ADMITTED_SPKI"
+        ),
+        "preimage": (
+            "DOMAIN_SEPARATOR_UTF8 || 0x00 || "
+            "CANONICAL_JSON(PAYLOAD_WITHOUT_KEY_ID)"
+        ),
+    }
+    preimage = signature_preimage(packet, payload)
+    assert preimage.startswith(
+        b"FLUENCYTRACR:GCP_SECTION_7_5_1_SIGNED_CONTEXT:V1\x00"
+    )
+    assert verify_batch(
+        anchor,
+        (VerifyVector(preimage, signature),),
+    ) == (True,)
+
+
+def test_reference_oracle_rejects_key_id_and_anchor_substitution() -> None:
+    candidate, envelope_bytes, anchor = _signed_oracle_material(
+        nonce="abcd2222333344445555666677778888"
+    )
+    envelope = strict_load_json(envelope_bytes)
+    assert isinstance(envelope, dict)
+    payload = envelope["payload"]
+    assert isinstance(payload, dict)
+    original_key_id = payload["key_id"]
+    assert isinstance(original_key_id, str)
+    payload["key_id"] = original_key_id[:-1] + (
+        "0" if original_key_id[-1] != "0" else "1"
+    )
+    tampered_key_id = ReferenceOracle().evaluate(
+        candidate,
+        canonical_json(envelope),
+        anchor,
+        -1,
+    )
+
+    replacement_anchor = sign_ephemeral_batch([b"replacement-anchor"])
+    payload["key_id"] = replacement_anchor.key_id
+    mismatched_fingerprint = ReferenceOracle().evaluate(
+        candidate,
+        canonical_json(envelope),
+        anchor,
+        -1,
+    )
+    substituted_anchor = ReferenceOracle().evaluate(
+        candidate,
+        envelope_bytes,
+        replacement_anchor.anchor_spki_der,
+        -1,
+    )
+
+    assert tampered_key_id.reason == "INVALID_SIGNED_CONTEXT_BINDING"
+    assert mismatched_fingerprint.reason == "INVALID_SIGNED_CONTEXT_BINDING"
+    assert substituted_anchor.reason == "INVALID_SIGNATURE"
 
 
 def test_private_material_is_absent_from_helper_fixture_environment_and_arguments(
@@ -1219,6 +1445,39 @@ def test_reference_oracle_rejects_replay_per_instance_only(
     )
 
 
+def test_reference_oracle_live_validates_conjunction_before_hold() -> None:
+    candidate, envelope, anchor = _signed_oracle_material(
+        mode="LIVE_RUNTIME",
+        nonce="dddd2222333344445555666677778888",
+        payload_overrides={"registry_sha256": "0" * 64},
+    )
+
+    assert ReferenceOracle().evaluate(candidate, envelope, anchor, -1) == (
+        EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "REJECT",
+            "INVALID_CONTEXT_CONJUNCTION",
+            "NONE",
+            "NONE",
+        )
+    )
+
+
+def test_reference_oracle_rejects_repeated_live_nonce() -> None:
+    candidate, envelope, anchor = _signed_oracle_material(
+        mode="LIVE_RUNTIME",
+        nonce="eeee2222333344445555666677778888",
+    )
+    oracle = ReferenceOracle()
+
+    assert oracle.evaluate(candidate, envelope, anchor, -1).reason == (
+        "LIVE_RUNTIME_NOT_AUTHORIZED"
+    )
+    assert oracle.evaluate(candidate, envelope, anchor, -1).reason == (
+        "REPLAY_DETECTED"
+    )
+
+
 def test_reference_oracle_preserves_parent_authority_ceiling_and_owners(
     exact_parent_bytes: dict[str, bytes],
 ) -> None:
@@ -1283,7 +1542,165 @@ def test_reference_oracle_preserves_parent_authority_ceiling_and_owners(
     } == {"OPEN_BLOCKING"}
 
 
-def test_controller_fixed_point_retains_known_governed_cycles() -> None:
+def _mutate_prerequisite_owner(parent: dict[str, object]) -> None:
+    parent["open_prerequisite_registry"][0]["owner"] = "HUMAN"
+
+
+def _mutate_prerequisite_state(parent: dict[str, object]) -> None:
+    parent["open_prerequisite_registry"][0]["current_state"] = "CLOSED"
+
+
+def _remove_role(parent: dict[str, object]) -> None:
+    removed = parent["roles"].pop()["role_id"]
+    parent["forbidden_controller_intersections"] = [
+        pair
+        for pair in parent["forbidden_controller_intersections"]
+        if removed not in pair
+    ]
+
+
+def _remove_principal_role(parent: dict[str, object]) -> None:
+    removed = parent["principal_role_contract"]["role_ids"].pop()
+    parent["principal_role_contract"][
+        "forbidden_controller_intersections"
+    ] = [
+        pair
+        for pair in parent["principal_role_contract"][
+            "forbidden_controller_intersections"
+        ]
+        if removed not in pair
+    ]
+
+
+def _remove_capability_and_partition(parent: dict[str, object]) -> None:
+    removed = parent["capabilities"].pop()["capability_id"]
+    for role in parent["roles"]:
+        if removed in role["allowed_capability_ids"]:
+            role["allowed_capability_ids"].remove(removed)
+        if removed in role["forbidden_capability_ids"]:
+            role["forbidden_capability_ids"].remove(removed)
+
+
+def _mutate_default_deny(parent: dict[str, object]) -> None:
+    parent["roles"][0]["default"] = "ALLOW_UNLISTED"
+
+
+def _mutate_hsm_purpose(parent: dict[str, object]) -> None:
+    parent["policy_template"]["hsm_key_profiles"][0][
+        "key_purpose_id"
+    ] = "SUBSTITUTED_SIGNING_KEY"
+
+
+def _add_section_7_4_approval(parent: dict[str, object]) -> None:
+    parent["approval_registries"]["receipt_hashes"].append("0" * 64)
+
+
+def _splice_controller_pairs(parent: dict[str, object]) -> None:
+    parent["principal_role_contract"][
+        "forbidden_controller_intersections"
+    ].pop()
+
+
+def _authorize_runtime(parent: dict[str, object]) -> None:
+    parent["non_authorization"]["runtime_authority"] = True
+
+
+def _allow_public_identifiers(parent: dict[str, object]) -> None:
+    parent["privacy"]["raw_identifiers_in_public_artifacts"] = True
+
+
+@pytest.mark.parametrize(
+    ("mutations", "expected_reason"),
+    (
+        (
+            {
+                "constraints-open-obligations-contract.json": (
+                    _mutate_prerequisite_owner
+                )
+            },
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {
+                "constraints-open-obligations-contract.json": (
+                    _mutate_prerequisite_state
+                )
+            },
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {
+                "role-capability-matrix.json": _remove_role,
+                "security-authority-contract.json": _remove_principal_role,
+            },
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {
+                "role-capability-matrix.json": (
+                    _remove_capability_and_partition
+                )
+            },
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {"role-capability-matrix.json": _mutate_default_deny},
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {"security-authority-contract.json": _mutate_hsm_purpose},
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {"attestation-receipt-contract.json": _add_section_7_4_approval},
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {"security-authority-contract.json": _splice_controller_pairs},
+            "INVALID_SECTION_7_3_AUTHORITY",
+        ),
+        (
+            {"runtime-object-contract.json": _authorize_runtime},
+            "PRIVACY_OR_NONAUTHORIZATION_INVALID",
+        ),
+        (
+            {
+                "attestation-receipt-contract.json": (
+                    _allow_public_identifiers
+                )
+            },
+            "PRIVACY_OR_NONAUTHORIZATION_INVALID",
+        ),
+    ),
+    ids=(
+        "owner_substitution",
+        "blocker_state_substitution",
+        "reduced_roles",
+        "reduced_capabilities",
+        "default_deny_drift",
+        "hsm_purpose_drift",
+        "nonempty_approval",
+        "controller_cross_object_splice",
+        "nonauthorization_drift",
+        "privacy_drift",
+    ),
+)
+def test_reference_oracle_rejects_authenticated_parent_semantic_mutations(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutations: dict[str, object],
+    expected_reason: str,
+) -> None:
+    result = _evaluate_mutated_parent_bundle(
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+        mutations=mutations,
+    )
+
+    assert result.reason == expected_reason
+
+
+def test_controller_fixed_point_retains_cycle_before_separation_reject() -> None:
     observation = _valid_candidate()["observation"]
     assert isinstance(observation, dict)
     first, second = observation["governed_roles"][:2]
@@ -1296,7 +1713,9 @@ def test_controller_fixed_point_retains_known_governed_cycles() -> None:
     )
     observation["controller_cycles"] = [[first, second]]
 
-    assert evaluate_controller_fixed_point(observation) == "VALID"
+    assert evaluate_controller_fixed_point(observation) == (
+        "REJECT_INVALID_GRAPH"
+    )
 
 
 def test_controller_fixed_point_holds_unknown_edges() -> None:
@@ -1305,6 +1724,37 @@ def test_controller_fixed_point_holds_unknown_edges() -> None:
     observation["unknown_edge_count"] = 1
 
     assert evaluate_controller_fixed_point(observation) == "HOLD_UNKNOWN_EDGE"
+
+
+@pytest.mark.parametrize(
+    "edge_indexes",
+    (
+        ((0, 1),),
+        ((0, 1), (1, 2)),
+        ((0, 1), (0, 2)),
+    ),
+    ids=("direct", "transitive", "fan_out"),
+)
+def test_controller_fixed_point_rejects_forbidden_upstream_intersections(
+    edge_indexes: tuple[tuple[int, int], ...],
+) -> None:
+    observation = _valid_candidate()["observation"]
+    assert isinstance(observation, dict)
+    roles = observation["governed_roles"]
+    observation["controller_edges"] = sorted(
+        [
+            {
+                "controller": roles[controller],
+                "controlled": roles[controlled],
+            }
+            for controller, controlled in edge_indexes
+        ],
+        key=canonical_json,
+    )
+
+    assert evaluate_controller_fixed_point(observation) == (
+        "REJECT_INVALID_GRAPH"
+    )
 
 
 def test_controller_fixed_point_rejects_malformed_cycle_semantics() -> None:
