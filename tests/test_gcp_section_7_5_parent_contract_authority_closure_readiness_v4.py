@@ -1,5 +1,16 @@
 from pathlib import Path
+import hashlib
 import json
+
+import pytest
+
+from tests.gcp_s751_v4.model import (
+    canonical_json,
+    enumerate_all_dynamic_paths,
+    load_exact_parents,
+    load_packet,
+    strict_load_json,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -130,3 +141,77 @@ def test_v4_rule_failures_are_closed_and_deterministic() -> None:
     assert {rule["failure"] for rule in rules.values()} <= {"REJECT", "HOLD"}
     assert rules["RULE-SECTION-7-3-AUTHORITY-INVALID"]["failure"] == "REJECT"
     assert rules["RULE-CURRENT-BLOCKERS"]["failure"] == "HOLD"
+
+
+def test_closed_schemas_cover_every_dynamic_boundary() -> None:
+    packet = load_packet()
+
+    paths = enumerate_all_dynamic_paths(packet)
+
+    assert {path.boundary for path in paths} == {
+        "candidate",
+        "signed_context_payload",
+        "signed_context_envelope",
+        "verifier_anchor",
+        "nonce_time",
+        "replay",
+        "bundle_capability",
+        "result",
+    }
+    assert len(paths) == len({(path.boundary, path.pointer) for path in paths})
+    assert all("locator" not in path.pointer for path in paths)
+    for path in paths:
+        if path.json_type == "STRING":
+            assert path.value_rule.startswith(
+                (
+                    "ENUM:",
+                    "PATTERN:",
+                    "EXACT_",
+                    "BASE64_",
+                    "UTC_",
+                    "FIXED_CLOSED_",
+                )
+            ), path
+
+    result_paths = {
+        path.pointer for path in paths if path.boundary == "result"
+    }
+    assert result_paths == {
+        "/schema_version",
+        "/decision",
+        "/reason",
+        "/authority_effect",
+        "/claim_grade",
+    }
+    assert next(
+        path for path in paths
+        if path.boundary == "result" and path.pointer == "/authority_effect"
+    ).value_rule == "ENUM:NONE"
+
+
+def test_strict_json_rejects_duplicate_keys_floats_and_noncanonical_bytes() -> None:
+    for raw in (
+        b'{"a":1,"a":2}',
+        b'{"a":1.0}',
+        b'{ "a": 1 }',
+    ):
+        with pytest.raises(ValueError):
+            strict_load_json(raw)
+
+
+def test_exact_parents_match_packet_hashes_and_canonical_manifest_bytes() -> None:
+    packet = load_packet()
+
+    parents = load_exact_parents(packet)
+
+    assert tuple(parents) == tuple(entry.member_name for entry in packet.parent_manifest)
+    assert len(parents) == 5
+    for entry in packet.parent_manifest:
+        assert hashlib.sha256(parents[entry.member_name]).hexdigest() == entry.sha256
+        manifest_bytes = canonical_json(
+            {"member_name": entry.member_name, "sha256": entry.sha256}
+        )
+        assert strict_load_json(manifest_bytes) == {
+            "member_name": entry.member_name,
+            "sha256": entry.sha256,
+        }
