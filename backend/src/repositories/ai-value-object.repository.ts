@@ -553,6 +553,23 @@ export async function readAiValueClaimBundle(
   return { claim, packet, manifest, ...(binding ? { binding } : {}) };
 }
 
+export async function readAiValueClaimPacketIdByBindingId(
+  orgId: string,
+  bindingId: string
+): Promise<string | null> {
+  const parsedId = /^canonical_identity_binding_[0-9a-f]{64}$/.test(bindingId);
+  if (!parsedId) return null;
+  const binding = await getAiValueObjectRaw(
+    orgId,
+    aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+    bindingId
+  );
+  const parsed = aiValueEngine.CanonicalIdentityBindingSchema.safeParse(binding?.payload);
+  if (!binding || !parsed.success || parsed.data.binding_id !== bindingId) return null;
+  const bundle = await readAiValueClaimBundle(orgId, parsed.data.packet_id);
+  return bundle?.binding?.object_id === bindingId ? parsed.data.packet_id : null;
+}
+
 function rowToRecord(row: {
   orgId: string;
   objectType: string;

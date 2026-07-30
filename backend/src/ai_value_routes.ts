@@ -31,6 +31,7 @@ import {
   authorizeAggregateClaim,
   readAuthorizedAggregateClaim
 } from "./services/aggregate-claim-authorization.service";
+import { readCanonicalClaimTrace } from "./services/canonical-claim-trace.service";
 import {
   acceptedReadinessBoundOutcomeEvidence,
   authoritativeOutcomeEvidenceReceipt
@@ -361,6 +362,8 @@ const invalidExecutivePacketGaps = (payload: Record<string, unknown>): string[] 
 };
 
 export function registerAiValueRoutes(app: Express): void {
+  const claimTraceRbac = rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]);
+
   app.get(
     "/api/v1/ai-value/customer-data-model/projections",
     rbacMiddleware(["ADMIN", "EXEC_VIEWER", "ENABLEMENT_LEAD"]),
@@ -782,6 +785,66 @@ export function registerAiValueRoutes(app: Express): void {
     }
   );
 
+  app.use(
+    "/api/v1/ai-value/claim-trace",
+    (req: RequestWithRole, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return next();
+
+      const rawPath = `${req.baseUrl}${req.url}`.split("?", 1)[0] ?? "";
+      const selectorMatch =
+        /^\/api\/v1\/ai-value\/claim-trace\/([^/]+)\/?$/i.exec(rawPath);
+      if (!selectorMatch) return next();
+
+      let malformedSelector = false;
+      try {
+        decodeURIComponent(selectorMatch[1]);
+      } catch {
+        malformedSelector = true;
+      }
+      if (req.method === "GET" && !malformedSelector) return next();
+
+      return claimTraceRbac(req, res, () => {
+        if (req.method === "HEAD") {
+          res.set("allow", "GET");
+          res.removeHeader("content-length");
+          res.removeHeader("content-type");
+          return res.status(405).end();
+        }
+        return res
+          .status(200)
+          .json(aiValueEngine.CanonicalClaimTraceSchema.parse(
+            aiValueEngine.canonicalClaimTraceFixedHold()
+          ));
+      });
+    }
+  );
+
+  app.get(
+    "/api/v1/ai-value/claim-trace/:bindingId",
+    claimTraceRbac,
+    async (req: RequestWithRole, res) => {
+      const orgId = requireOrg(req, res);
+      if (!orgId) return;
+      res.set("cache-control", "no-store");
+
+      const hasUnknownInput =
+        Object.keys(req.query).length > 0 ||
+        req.canonicalClaimTraceBodyRejected === true ||
+        (Buffer.isBuffer(req.body)
+          ? req.body.length > 0
+          : Number(req.header("content-length") ?? 0) > 0 ||
+            req.header("transfer-encoding") !== undefined);
+      const validBindingId = /^canonical_identity_binding_[0-9a-f]{64}$/.test(
+        req.params.bindingId
+      );
+      const trace =
+        hasUnknownInput || !validBindingId
+          ? aiValueEngine.canonicalClaimTraceFixedHold()
+          : await readCanonicalClaimTrace(orgId, req.params.bindingId);
+      return res.status(200).json(aiValueEngine.CanonicalClaimTraceSchema.parse(trace));
+    }
+  );
+
   app.get(
     "/api/v1/ai-value/readout/:packetId/html",
     rbacMiddleware(["ADMIN", "ENABLEMENT_LEAD"]),
@@ -798,6 +861,9 @@ export function registerAiValueRoutes(app: Express): void {
       );
       res.set("x-ai-value-customer-facing-output", "false");
       res.set("x-ai-value-export-authorized", "false");
+      res.set("deprecation", "true");
+      res.set("x-ai-value-legacy-path", "true");
+      res.set("x-ai-value-claim-trace-authoritative", "false");
       res.set("cache-control", "no-store");
       res.set("content-type", "text/html; charset=utf-8");
       return res.send(readout?.html ?? aggregateClaimHeldHtml());

@@ -15,10 +15,16 @@ const {
   resolveCanonicalIdentityAuthority
 } = require("../backend/dist/services/aggregate-claim-authorization.service.js");
 const {
+  getAiValueObject,
+  listAiValueObjects,
   readAiValueClaimBundle,
+  readAiValueClaimPacketIdByBindingId,
   readAiValueObjectSet,
   sealAiValueClaimBundleSerializable
 } = require("../backend/dist/repositories/ai-value-object.repository.js");
+const {
+  readCanonicalClaimTrace
+} = require("../backend/dist/services/canonical-claim-trace.service.js");
 const {
   readOutcomeComparisonPrivacyRelease
 } = require("../backend/dist/repositories/outcome-comparison-privacy.repository.js");
@@ -55,10 +61,14 @@ if (!process.env.DATABASE_URL || !process.env.C1_RUNTIME_DATABASE_URL) {
 
 const prisma = new PrismaClient();
 const runId = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
-process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID = `FT_E_HMAC_VERIFY_${runId.toUpperCase()}`;
-process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET = crypto
+const sliceEPrimaryAttestationKeyId = `FT_E_HMAC_VERIFY_${runId.toUpperCase()}`;
+const sliceEPrimaryAttestationSecret = crypto
   .randomBytes(32)
   .toString("base64url");
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID =
+  sliceEPrimaryAttestationKeyId;
+process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET =
+  sliceEPrimaryAttestationSecret;
 process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON = "{}";
 const exactHeld = {
   decision: "HOLD",
@@ -93,6 +103,13 @@ const expectHeld = (value, label) => {
   assert(
     JSON.stringify(value) === JSON.stringify(exactHeld),
     `${label} did not return the fixed redacted HOLD`
+  );
+};
+const exactTraceHeld = aiValueEngine.canonicalClaimTraceFixedHold();
+const expectTraceHeld = (value, label) => {
+  assert(
+    JSON.stringify(value) === JSON.stringify(exactTraceHeld),
+    `${label} did not return the exact fixed Slice F HOLD`
   );
 };
 
@@ -255,6 +272,9 @@ if (!/^[A-Za-z0-9_-]{16,128}$/.test(runtimeUrl.password)) {
 await prisma.$executeRawUnsafe(
   `ALTER ROLE fluencytracr_c1_runtime PASSWORD '${runtimeUrl.password}'`
 );
+const c1RuntimePrisma = new PrismaClient({
+  datasources: { db: { url: runtimeUrl.toString() } }
+});
 
 const findCurrentComparison = async () => {
   const rows = await prisma.outcomeComparisonPrivacyRelease.findMany({
@@ -1120,6 +1140,394 @@ assert(
     }),
   "Slice E four-artifact bundle did not reconcile"
 );
+
+const sourceRefs = [
+  { objectType: "outcome_evidence_export", objectId: outcomeExportId },
+  { objectType: "evidence_readiness", objectId: readinessId },
+  { objectType: "blueprint", objectId: blueprint.blueprint_id },
+  { objectType: "metrics_library", objectId: metricsLibrary.library_id },
+  { objectType: "value_scenario", objectId: scenarioId }
+];
+const exactSources = await readAiValueObjectSet(orgId, sourceRefs);
+assert(exactSources?.length === 5, "source snapshot was incomplete");
+const scenarioRow = exactSources.find((row) => row.object_type === "value_scenario");
+assert(scenarioRow, "scenario source row was missing");
+const changedScenario = {
+  ...scenarioRow.payload,
+  source_mutation_probe: true
+};
+
+if (process.env.VERIFY_SLICE_F_CANONICAL_CLAIM_TRACE === "1") {
+  const canonicalBindingId = canonicalBundle.binding.payload.binding_id;
+  const canonicalMetricId = projection.outcome_metric;
+  const canonicalArtifactRefs = [
+    {
+      objectType: aiValueEngine.INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPE,
+      objectId: canonicalBundle.claim.object_id
+    },
+    {
+      objectType: aiValueEngine.INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE,
+      objectId: canonicalBundle.packet.object_id
+    },
+    {
+      objectType: aiValueEngine.INTERNAL_AGGREGATE_MANIFEST_OBJECT_TYPE,
+      objectId: canonicalBundle.manifest.object_id
+    },
+    {
+      objectType: aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+      objectId: canonicalBundle.binding.object_id
+    }
+  ];
+  const readCanonicalArtifactSnapshot = () =>
+    prisma.aiValueObject.findMany({
+      where: {
+        orgId,
+        OR: canonicalArtifactRefs.map((ref) => ({
+          objectType: ref.objectType,
+          objectId: ref.objectId
+        }))
+      },
+      select: {
+        objectType: true,
+        objectId: true,
+        payloadJson: true,
+        validationJson: true,
+        valid: true,
+        updatedAt: true
+      },
+      orderBy: [{ objectType: "asc" }, { objectId: "asc" }]
+    });
+  const artifactSnapshotBeforeTrace = await readCanonicalArtifactSnapshot();
+  assert(
+    artifactSnapshotBeforeTrace.length === 4,
+    "Slice F did not begin from one exact four-artifact bundle"
+  );
+
+  const trace = await readCanonicalClaimTrace(orgId, canonicalBindingId);
+  assert(trace.trace_state === "AUTHORIZED", "exact BOUND trace was not authorized");
+  assert(trace.source_bound === true, "authorized trace was not source-bound");
+  assert(trace.read_only === true, "authorized trace was not read-only");
+  assert(
+    trace.stages.readout.canonical_identity_state === "BOUND",
+    "authorized trace omitted BOUND canonical identity"
+  );
+  assert(
+    trace.stages.claim.movement.metric_id === canonicalMetricId,
+    "authorized trace projected the wrong canonical metric"
+  );
+  assert(
+    JSON.stringify(Object.keys(trace)) ===
+      JSON.stringify([
+        "schema_version",
+        "trace_state",
+        "source_bound",
+        "read_only",
+        "customer_facing_output_authorized",
+        "stages"
+      ]) &&
+      JSON.stringify(Object.keys(trace.stages)) ===
+        JSON.stringify([
+          "hypothesis",
+          "measurement",
+          "evidence",
+          "policy",
+          "claim",
+          "readout"
+        ]) &&
+      aiValueEngine.CanonicalClaimTraceSchema.safeParse(trace).success,
+    "authorized trace exceeded the strict Slice F allowlist"
+  );
+  const artifactSnapshotAfterTrace = await readCanonicalArtifactSnapshot();
+  const sourceSnapshotAfterTrace = await readAiValueObjectSet(orgId, sourceRefs);
+  assert(
+    JSON.stringify(artifactSnapshotAfterTrace) ===
+      JSON.stringify(artifactSnapshotBeforeTrace),
+    "Slice F trace read mutated a reserved artifact"
+  );
+  assert(
+    JSON.stringify(sourceSnapshotAfterTrace) === JSON.stringify(exactSources),
+    "Slice F trace read mutated a required source row"
+  );
+
+  const c1ReleaseRead = await c1RuntimePrisma.outcomeComparisonPrivacyRelease.findUnique({
+    where: { id: selected.row.id },
+    select: { id: true }
+  });
+  const c1SourceReads = await c1RuntimePrisma.aiValueObject.findMany({
+    where: {
+      orgId,
+      OR: sourceRefs.map((ref) => ({
+        objectType: ref.objectType,
+        objectId: ref.objectId
+      }))
+    },
+    select: { objectType: true, objectId: true }
+  });
+  const sliceESourceReads = await Promise.all([
+    sliceERuntimePrisma.valueHypothesis.findUnique({
+      where: { id: hypothesisRowId },
+      select: { id: true }
+    }),
+    sliceERuntimePrisma.measurementPlan.findUnique({
+      where: { id: planRowId },
+      select: { id: true }
+    }),
+    sliceERuntimePrisma.measurementCellSnapshot.findUnique({
+      where: { id: cellRowId },
+      select: { id: true }
+    })
+  ]);
+  const sliceEHeadReads =
+    await sliceERuntimePrisma.aiValueCanonicalIdentityFamilyHeadJournal.findMany({
+      where: {
+        OR: [
+          {
+            sourceKind: "VALUE_HYPOTHESIS",
+            orgId,
+            stableSourceId: hypothesisId,
+            version: 1
+          },
+          {
+            sourceKind: "MEASUREMENT_PLAN",
+            orgId,
+            stableSourceId: measurementPlanId,
+            version: 1
+          },
+          {
+            sourceKind: "MEASUREMENT_CELL",
+            orgId,
+            stableSourceId: measurementCellId,
+            version: 1
+          }
+        ]
+      },
+      select: { sourceKind: true, sourceRowId: true }
+    });
+  assert(
+    c1ReleaseRead?.id === selected.row.id &&
+      c1SourceReads.length === sourceRefs.length &&
+      sliceESourceReads.every((row) => row !== null) &&
+      sliceEHeadReads.length === 3,
+    "restricted runtime sessions could not read the exact required C.1/Slice E rows"
+  );
+  await expectRejected(
+    () =>
+      c1RuntimePrisma.valueHypothesis.findUnique({
+        where: { id: hypothesisRowId },
+        select: { id: true }
+      }),
+    "C.1 runtime cross-boundary Slice E source read"
+  );
+  await expectRejected(
+    () =>
+      sliceERuntimePrisma.outcomeComparisonPrivacyRelease.findUnique({
+        where: { id: selected.row.id },
+        select: { id: true }
+      }),
+    "Slice E runtime cross-boundary C.1 release read"
+  );
+  await expectRejected(
+    () =>
+      c1RuntimePrisma.aiValueObject.update({
+        where: {
+          ai_value_objects_unique_key: {
+            orgId,
+            objectType: "value_scenario",
+            objectId: scenarioId
+          }
+        },
+        data: { valid: scenarioRow.valid }
+      }),
+    "C.1 runtime direct source write during Slice F read"
+  );
+  await expectRejected(
+    () =>
+      sliceERuntimePrisma.aiValueObject.update({
+        where: {
+          ai_value_objects_unique_key: {
+            orgId,
+            objectType: "value_scenario",
+            objectId: scenarioId
+          }
+        },
+        data: { valid: scenarioRow.valid }
+      }),
+    "Slice E runtime direct source write during Slice F read"
+  );
+
+  const genericReservedList = await listAiValueObjects(orgId);
+  assert(
+    genericReservedList.every(
+      (record) =>
+        !aiValueEngine.INTERNAL_AGGREGATE_CLAIM_OBJECT_TYPES.includes(
+          record.object_type
+        )
+    ),
+    "generic list exposed a reserved Slice D/E artifact"
+  );
+  for (const ref of canonicalArtifactRefs) {
+    assert(
+      (await getAiValueObject(orgId, ref.objectType, ref.objectId)) === null,
+      `generic get exposed reserved object ${ref.objectType}`
+    );
+    assert(
+      (await listAiValueObjects(orgId, ref.objectType)).length === 0,
+      `generic typed list exposed reserved object ${ref.objectType}`
+    );
+  }
+
+  expectTraceHeld(
+    await readCanonicalClaimTrace(`foreign_${runId}`, canonicalBindingId),
+    "foreign organization binding"
+  );
+  expectTraceHeld(
+    await readCanonicalClaimTrace(
+      orgId,
+      `canonical_identity_binding_${"0".repeat(64)}`
+    ),
+    "random canonical binding"
+  );
+  expectTraceHeld(
+    await readCanonicalClaimTrace(orgId, canonicalPacketId),
+    "packet selector"
+  );
+
+  await prisma.aiValueObject.update({
+    where: {
+      ai_value_objects_unique_key: {
+        orgId,
+        objectType: "value_scenario",
+        objectId: scenarioId
+      }
+    },
+    data: { payloadJson: changedScenario }
+  });
+  expectTraceHeld(
+    await readCanonicalClaimTrace(orgId, canonicalBindingId),
+    "stale source"
+  );
+  await prisma.aiValueObject.update({
+    where: {
+      ai_value_objects_unique_key: {
+        orgId,
+        objectType: "value_scenario",
+        objectId: scenarioId
+      }
+    },
+    data: { payloadJson: scenarioRow.payload }
+  });
+
+  let traceReadCount = 0;
+  const racedTrace = await readCanonicalClaimTrace(orgId, canonicalBindingId, {
+    readPacketIdByBindingId: readAiValueClaimPacketIdByBindingId,
+    readReadout: async (readOrgId, readPacketId) => {
+      traceReadCount += 1;
+      const readout = await readAuthorizedAggregateClaim(readOrgId, readPacketId);
+      if (traceReadCount === 1) {
+        await prisma.aiValueObject.update({
+          where: {
+            ai_value_objects_unique_key: {
+              orgId,
+              objectType: "value_scenario",
+              objectId: scenarioId
+            }
+          },
+          data: { payloadJson: changedScenario }
+        });
+      }
+      return readout;
+    }
+  });
+  assert(traceReadCount === 2, "Slice F race did not execute two complete reads");
+  expectTraceHeld(racedTrace, "source update between complete readbacks");
+  await prisma.aiValueObject.update({
+    where: {
+      ai_value_objects_unique_key: {
+        orgId,
+        objectType: "value_scenario",
+        objectId: scenarioId
+      }
+    },
+    data: { payloadJson: scenarioRow.payload }
+  });
+  assert(
+    (await readCanonicalClaimTrace(orgId, canonicalBindingId)).trace_state ===
+      "AUTHORIZED",
+    "exact trace did not recover after source restoration"
+  );
+
+  const canonicalPacketRow = await prisma.aiValueObject.findUniqueOrThrow({
+    where: {
+      ai_value_objects_unique_key: {
+        orgId,
+        objectType: aiValueEngine.INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE,
+        objectId: canonicalBundle.packet.object_id
+      }
+    }
+  });
+  await prisma.aiValueObject.update({
+    where: {
+      ai_value_objects_unique_key: {
+        orgId,
+        objectType: aiValueEngine.INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE,
+        objectId: canonicalBundle.packet.object_id
+      }
+    },
+    data: { payloadJson: firstBundle.packet.payload }
+  });
+  expectTraceHeld(
+    await readCanonicalClaimTrace(orgId, canonicalBindingId),
+    "cross-spliced packet artifact"
+  );
+  await prisma.aiValueObject.update({
+    where: {
+      ai_value_objects_unique_key: {
+        orgId,
+        objectType: aiValueEngine.INTERNAL_AGGREGATE_PACKET_OBJECT_TYPE,
+        objectId: canonicalBundle.packet.object_id
+      }
+    },
+    data: { payloadJson: canonicalPacketRow.payloadJson }
+  });
+
+  const rotatedKeyId = `FT_E_HMAC_ROTATED_${runId.toUpperCase()}`;
+  const rotatedSecret = crypto.randomBytes(32).toString("base64url");
+  let revokedSliceEKeyTrace;
+  try {
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID =
+      rotatedKeyId;
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET =
+      rotatedSecret;
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON =
+      JSON.stringify({
+        [sliceEPrimaryAttestationKeyId]: sliceEPrimaryAttestationSecret
+      });
+    assert(
+      (await readCanonicalClaimTrace(orgId, canonicalBindingId)).trace_state ===
+        "AUTHORIZED",
+      "retained Slice E read key did not preserve the current trace"
+    );
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON =
+      "{}";
+    revokedSliceEKeyTrace = await readCanonicalClaimTrace(
+      orgId,
+      canonicalBindingId
+    );
+  } finally {
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_KEY_ID =
+      sliceEPrimaryAttestationKeyId;
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_ACTIVE_WRITE_SECRET =
+      sliceEPrimaryAttestationSecret;
+    process.env.SLICE_E_CANONICAL_IDENTITY_ATTESTATION_RETAINED_READ_KEYS_JSON =
+      "{}";
+  }
+  expectTraceHeld(revokedSliceEKeyTrace, "revoked Slice E attestation key");
+  assert(
+    (await readCanonicalClaimTrace(orgId, canonicalBindingId)).trace_state ===
+      "AUTHORIZED",
+    "exact trace did not recover after Slice E key restoration"
+  );
+}
 const canonicalHtml = await request(app)
   .get(`/api/v1/ai-value/readout/${canonicalPacketId}/html`)
   .set(readoutAuth)
@@ -1159,7 +1567,56 @@ const bindingRow = await prisma.aiValueObject.findUniqueOrThrow({
     }
   }
 });
-const forgedBindingValidation = deepClone(bindingRow.validationJson);
+const poisonSentinels = [
+  `slice-f-${runId}@example.com`,
+  `user_slice_f_${runId}`,
+  `raw_event_slice_f_${runId}`,
+  `prompt_slice_f_${runId}`,
+  `transcript_slice_f_${runId}`,
+  `secret_slice_f_${runId}`,
+  `commitment_slice_f_${runId}`,
+  `row_locator_slice_f_${runId}`
+];
+const traceValidationFixture = deepClone(bindingRow.validationJson);
+if (process.env.VERIFY_SLICE_F_CANONICAL_CLAIM_TRACE === "1") {
+  traceValidationFixture.slice_f_nonprojected_validation = {
+    email: poisonSentinels[0],
+    user_id: poisonSentinels[1],
+    raw_event: poisonSentinels[2],
+    prompt: poisonSentinels[3],
+    transcript: poisonSentinels[4],
+    secret: poisonSentinels[5],
+    commitment: poisonSentinels[6],
+    row_locator: poisonSentinels[7]
+  };
+  await prisma.aiValueObject.update({
+    where: {
+      ai_value_objects_unique_key: {
+        orgId,
+        objectType:
+          aiValueEngine.INTERNAL_CANONICAL_IDENTITY_BINDING_OBJECT_TYPE,
+        objectId: canonicalBundle.binding.object_id
+      }
+    },
+    data: { validationJson: traceValidationFixture }
+  });
+  const poisonedAuthorizedTrace = await readCanonicalClaimTrace(
+    orgId,
+    canonicalBundle.binding.payload.binding_id
+  );
+  assert(
+    poisonedAuthorizedTrace.trace_state === "AUTHORIZED",
+    "nonprojected validation poison changed authorized trace state"
+  );
+  const serializedAuthorizedTrace = JSON.stringify(poisonedAuthorizedTrace);
+  for (const sentinel of poisonSentinels) {
+    assert(
+      !serializedAuthorizedTrace.includes(sentinel),
+      `authorized trace serialized nonprojected poison ${sentinel}`
+    );
+  }
+}
+const forgedBindingValidation = deepClone(traceValidationFixture);
 forgedBindingValidation.canonical_artifact_creation_attestation_v1.mac = "0".repeat(64);
 await prisma.aiValueObject.update({
   where: {
@@ -1175,6 +1632,20 @@ assert(
   (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) === null,
   "forged Slice E bundle attestation remained renderable"
 );
+if (process.env.VERIFY_SLICE_F_CANONICAL_CLAIM_TRACE === "1") {
+  const forgedAttestationTrace = await readCanonicalClaimTrace(
+    orgId,
+    canonicalBundle.binding.payload.binding_id
+  );
+  expectTraceHeld(forgedAttestationTrace, "forged bundle attestation");
+  const serializedHeldTrace = JSON.stringify(forgedAttestationTrace);
+  for (const sentinel of poisonSentinels) {
+    assert(
+      !serializedHeldTrace.includes(sentinel),
+      `held trace serialized nonprojected poison ${sentinel}`
+    );
+  }
+}
 await prisma.aiValueObject.update({
   where: {
     ai_value_objects_unique_key: {
@@ -1189,6 +1660,17 @@ assert(
   (await readAuthorizedAggregateClaim(orgId, canonicalPacketId)) !== null,
   "exact Slice E attestation restoration did not recover readback"
 );
+if (process.env.VERIFY_SLICE_F_CANONICAL_CLAIM_TRACE === "1") {
+  assert(
+    (
+      await readCanonicalClaimTrace(
+        orgId,
+        canonicalBundle.binding.payload.binding_id
+      )
+    ).trace_state === "AUTHORIZED",
+    "exact trace did not recover after attestation restoration"
+  );
+}
 
 expectHeld(
   await authorizeAggregateClaim({ ...authorizationRequest, persist: false }),
@@ -1284,22 +1766,6 @@ expectHeld(
   }),
   "identifier-bearing persona projection"
 );
-
-const sourceRefs = [
-  { objectType: "outcome_evidence_export", objectId: outcomeExportId },
-  { objectType: "evidence_readiness", objectId: readinessId },
-  { objectType: "blueprint", objectId: blueprint.blueprint_id },
-  { objectType: "metrics_library", objectId: metricsLibrary.library_id },
-  { objectType: "value_scenario", objectId: scenarioId }
-];
-const exactSources = await readAiValueObjectSet(orgId, sourceRefs);
-assert(exactSources?.length === 5, "source snapshot was incomplete");
-const scenarioRow = exactSources.find((row) => row.object_type === "value_scenario");
-assert(scenarioRow, "scenario source row was missing");
-const changedScenario = {
-  ...scenarioRow.payload,
-  source_mutation_probe: true
-};
 
 let comparisonReadCount = 0;
 const interleaved = await authorizeAggregateClaim(authorizationRequest, {
@@ -1498,24 +1964,6 @@ assert(
   "exact artifact restoration did not recover current readback"
 );
 
-let postSealCanonicalReadCount = 0;
-const postSealCanonicalSupersession = await authorizeAggregateClaim(
-  canonicalAuthorizationRequest,
-  {
-    readComparison: async () => {
-      postSealCanonicalReadCount += 1;
-      if (postSealCanonicalReadCount === 3) {
-        await appendHypothesisAttack(2, hypothesisRowId);
-      }
-      return selected.result;
-    }
-  }
-);
-expectHeld(
-  postSealCanonicalSupersession,
-  "post-commit Slice E source supersession"
-);
-
 const journal = await prisma.cohortProofJournal.findUniqueOrThrow({
   where: { id: selected.row.proofJournalId }
 });
@@ -1540,11 +1988,42 @@ assert(
   (await readAuthorizedAggregateClaim(orgId, packetId)) === null,
   "C.1 revocation did not hold current rendering"
 );
+if (process.env.VERIFY_SLICE_F_CANONICAL_CLAIM_TRACE === "1") {
+  expectTraceHeld(
+    await readCanonicalClaimTrace(
+      orgId,
+      canonicalBundle.binding.payload.binding_id
+    ),
+    "C.1 producer-authority revocation"
+  );
+}
+
+let postSealCanonicalReadCount = 0;
+const postSealCanonicalSupersession = await authorizeAggregateClaim(
+  canonicalAuthorizationRequest,
+  {
+    readComparison: async () => {
+      postSealCanonicalReadCount += 1;
+      if (postSealCanonicalReadCount === 3) {
+        await appendHypothesisAttack(2, hypothesisRowId);
+      }
+      return selected.result;
+    }
+  }
+);
+expectHeld(
+  postSealCanonicalSupersession,
+  "post-commit Slice E source supersession"
+);
 
 console.log(
   "Slice D/E PostgreSQL verification passed: exact C.1 authorization, legacy unbound replay, exact least-privilege Slice E session/effective runtime credential, same-server/database identity, wrong-database rejection, post-transfer database-owner source-lock and SET ROLE rejection, elevated existing-readout rejection, canonical source/journal/HMAC authority, owner-boundary privilege-drift rejection, direct journal-write denial, source/journal append-only guards, gap/wrong-predecessor rejection, one four-artifact bound bundle, post-seal canonical supersession hold, forged bundle-attestation rejection, commitment-only slice, approval-role, and artifact identity, coherent movement-substitution rejection, reserved-type isolation, redacted holds, selector/receipt non-authority, interleaved and queued source mutation, artifact substitution, and revocation readback."
 );
 
+await c1RuntimePrisma.$disconnect();
 await sliceERuntimePrisma.$disconnect();
 await prisma.$disconnect();
 await disconnectPrisma();
+if (process.env.VERIFY_SLICE_F_CANONICAL_CLAIM_TRACE === "1") {
+  console.log("Slice F PostgreSQL verification passed");
+}

@@ -36,6 +36,7 @@ describe("AIValueReadoutPrototype", () => {
 
     expect(screen.getByRole("heading", { name: /Decision Memo/i })).toBeInTheDocument();
     expect(screen.getAllByText(/Caveated internal review draft/i).length).toBeGreaterThan(0);
+    expect(screen.getByText("Illustrative example, not live evidence")).toBeInTheDocument();
 
     const context = screen.getByRole("region", { name: /Report context/i });
     expect(within(context).getByText("Example client organization")).toBeInTheDocument();

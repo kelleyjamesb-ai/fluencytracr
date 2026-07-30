@@ -4967,3 +4967,102 @@
   not been redeployed with the new environment revision, and no authenticated
   runtime readiness or live application proof is claimed. Slice F remains
   unactivated pending the required human-authored queue item.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice F implementation candidate)
+
+- Designed, locally implemented, focused-verified, and committed locally:
+  one binding-addressed, read-only, allowlisted claim trace; backend-only
+  binding authority and fixed HOLD behavior; legacy HTML demotion; and removal
+  of frontend packet-selection authority. The Slice F queue item's bound and
+  exclusions remain unchanged.
+- Parent implementation SHA is
+  `ba55489c0ea9c528621cac5702d17a9e79b4e574`
+  (`test(mcii): verify Slice F trace against PostgreSQL authority`). This
+  evidence-state commit records that parent; the resulting evidence commit is
+  the immutable target for all exact-SHA review.
+- Focused evidence from the implementation candidate: `npm run
+  test:canonical-claim-trace` passed `3/3`; `npm run test:ci --workspace
+  backend -- --runTestsByPath tests/canonical_claim_trace_api.test.ts
+  tests/aggregate_claim_authorization_contract.test.ts
+  tests/ai_value_objects_api.test.ts
+  tests/canonical_identity_binding_contract.test.ts` passed `4/4` suites and
+  `93/93` tests; `npm test --workspace frontend -- src/lib/aiValueApi.test.ts
+  src/pages/AIValueJourney.test.tsx
+  src/pages/AIValueReadoutPrototype.test.tsx` passed `3/3` files and `42/42`
+  tests; and `npm run verify:canonical-claim-trace:postgres` passed against a
+  fresh disposable PostgreSQL 17 fixture. `git diff --check` passed.
+- No migration was created or applied to production, and no deployment,
+  publication, push, PR, merge, or authenticated/live proof was performed.
+  The disposable verifier replayed existing migrations only in its task-owned
+  database.
+- Outstanding gates: independent CODE, BUG, and ADVERSARIAL review of the
+  resulting exact SHA; one required full-suite run on that reviewed SHA;
+  GitHub push/PR/current-head CI and review resolution; normal merge; and any
+  deployment or live proof only with separate authorization.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice F exact-SHA review)
+
+- Exact candidate `39814e752e8ab444861063b3f2a3db4f65d8086a`
+  received BUG `GO` and CODE/ADVERSARIAL `HOLD`. Review demonstrated two
+  executable transport oracles: Express implicit `HEAD` exposed
+  authorization state through result-dependent `Content-Length`, and a
+  malformed percent-encoded selector could return a diagnostic `500` before
+  the route's fixed-HOLD boundary.
+- Replacement `9e9323905f4b04e16d7615c6306303c464b581c5`
+  closed those direct-backend paths. CODE and ADVERSARIAL returned `GO`; BUG
+  returned `HOLD` because the supported Vercel stripped-path normalization
+  retained both failures by matching pre-adapter `originalUrl` instead of the
+  effective mounted routing path.
+- Final runtime candidate
+  `5518970297a9a78adcdf1d6aa5611eb30ee0f70f` reconstructs the normalized
+  mounted path from `req.baseUrl + req.url`. Independent exact-SHA CODE, BUG,
+  and ADVERSARIAL reviews all returned `GO`; direct and Vercel-normalized
+  malformed GET and result-independent HEAD paths now preserve JWT, org, and
+  role authority without reaching the trace service. No executable
+  authorization/privacy failure or violation of the nine invariants remains.
+- Nonblocking follow-ups remain outside this Slice F candidate: decide the
+  future contract for a missing-binding-segment HTML `404`; replace remaining
+  future-route wording in the claim-trace README; synchronize the design's
+  authorized policy example with the strict schema; add a positive
+  accepted-selected-workflow rail/phase regression; normalize authenticated
+  `OPTIONS` and unsupported malformed-method behavior; and make the
+  PostgreSQL verifier build or prove exact source-to-`dist` identity before
+  importing ignored artifacts. The existing missing
+  `backend/dist/connectors/mappings` warning is nonfatal harness noise.
+- This evidence-only state update changes no runtime file. No full suite,
+  push, PR, merge, deployment, production migration, publication, or
+  authenticated/live proof was performed. The required full suite, GitHub
+  current-head checks and review resolution, normal merge, and any separately
+  authorized deployment/live proof remain open.
+
+## 2026-07-29 (America/Los_Angeles) - Codex (MCII Slice F suite precondition)
+
+- The first full-suite attempt on evidence candidate
+  `d255dbfc6ec0174ab97bd006b434fb668091861d` ran
+  `./harness/scripts/bootstrap.sh` successfully. The next command,
+  `./harness/scripts/verify.sh`, stopped during its dependency setup before
+  any tests ran because Homebrew Python enforced PEP 668 against system
+  package installation. Full-suite commands 3 through 14 were not run as part
+  of that attempt. This is a harness precondition failure, not a product test
+  failure; no product failure was observed and no source file was edited.
+- Bootstrap-created untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml` were
+  moved recoverably to
+  `/tmp/fluencytracr-slice-f-pnpm-artifacts.C1rwVW`, restoring the worktree to
+  a clean state without deleting the artifacts.
+- A task-local external virtual environment now exists at
+  `/tmp/fluencytracr-slice-f-suite-venv.BSocHx/venv`; its requirements are
+  installed and `python -m pytest --version` reports `pytest 9.1.1`. After
+  this evidence-only replacement candidate receives exact-SHA review, the
+  suite will run once with `PATH` prefixed to that virtual environment so the
+  unchanged harness resolves its Python and pytest without modifying the
+  repository.
+- This replacement state commit changes no runtime file. Its runtime tree is
+  unchanged from reviewed runtime candidate
+  `5518970297a9a78adcdf1d6aa5611eb30ee0f70f`, so the prior final runtime
+  CODE/BUG/ADVERSARIAL findings remain relevant; the new exact evidence SHA
+  still requires review before the one full-suite run. OpenSpec task 5.2
+  remains open.
+- No test suite or full suite completed, and no runtime or OpenSpec checklist
+  file, queue item, product source, push, PR, merge, deployment, migration,
+  production mutation, publication, or authenticated/live action occurred in
+  this precondition update.

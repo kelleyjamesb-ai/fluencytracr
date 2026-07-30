@@ -16,13 +16,9 @@ const reportDisplayCopy = (value: string) =>
     .replace(/readout/g, "report");
 
 export const ExecutiveReadoutPreviewPanel = ({
-  preview,
-  packetIds,
-  onOpenReadout
+  preview
 }: {
   preview: ExecutiveReadoutPreview;
-  packetIds: string[];
-  onOpenReadout: (packetId: string) => void;
 }) => (
   <section
     className="ai-value-panel ai-value-readout-preview-panel"
@@ -33,19 +29,27 @@ export const ExecutiveReadoutPreviewPanel = ({
         <p className="eyebrow">Internal Preview</p>
         <h2>Executive Report Preview</h2>
         <p>
-          See what will open for internal sponsor review and keep the evidence
-          caveats attached to the report.
+          Review planning guidance for internal sponsor discussion while keeping
+          evidence caveats attached.
         </p>
+        <p>{reportDisplayCopy(preview.statusLabel)}</p>
       </div>
-      <StatusPill label={reportDisplayCopy(preview.statusLabel)} tone={preview.statusTone} />
+      <StatusPill
+        label={
+          preview.reviewState === "READY"
+            ? "Internal review planning only"
+            : "Review held for evidence"
+        }
+        tone={preview.reviewState === "READY" ? "neutral" : "warn"}
+      />
     </div>
 
     <div className="ai-value-map-grid">
       <div className="ai-value-map-cell ai-value-map-cell-wide">
         <span className="ai-value-map-label">
-          {preview.canOpen ? "What will open" : "Why preview is held"}
+          Review contents
         </span>
-        <p>{reportDisplayCopy(preview.whatWillOpen)}</p>
+        <p>{reportDisplayCopy(preview.reviewContents)}</p>
       </div>
       <div className="ai-value-map-cell">
         <span className="ai-value-map-label">Language held</span>
@@ -63,26 +67,6 @@ export const ExecutiveReadoutPreviewPanel = ({
         <span className="ai-value-map-label">Caveat that travels</span>
         <p>{reportDisplayCopy(preview.caveat)}</p>
       </div>
-    </div>
-
-    <div className="ai-value-chip-row">
-      {preview.canOpen && packetIds.length > 0 ? (
-        packetIds.map((packetId) => (
-          <button
-            type="button"
-            className="ai-value-step"
-            key={packetId}
-            onClick={() => onOpenReadout(packetId)}
-          >
-            Open caveated internal preview
-          </button>
-        ))
-      ) : (
-        <StatusPill
-          label={packetIds.length > 0 ? "Preview held for evidence review" : "Generate report first"}
-          tone="warn"
-        />
-      )}
     </div>
   </section>
 );

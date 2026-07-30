@@ -684,6 +684,7 @@ export type { RenderExecutiveReadoutInputs } from "./readoutHtml";
 export * from "./aggregateClaimAuthorization";
 export * from "./canonicalIdentityAttestation";
 export * from "./canonicalIdentityBinding";
+export * from "./canonicalClaimTrace";
 
 export {
   AI_VALUE_LANGUAGE_SYSTEM_VERSION,

@@ -67,6 +67,12 @@ export interface AggregateClaimReadout {
   html: string;
   canonicalIdentityState: aiValueEngine.CanonicalIdentityState;
   sourceBound: boolean;
+  traceSource?: AggregateClaimTraceSource;
+}
+
+export interface AggregateClaimTraceSource {
+  projectionInput: aiValueEngine.CanonicalClaimTraceAuthorizedInput;
+  verificationCommitment: string;
 }
 
 interface AuthoritativeSourceGraph {
@@ -102,6 +108,46 @@ const deepEqual = (left: unknown, right: unknown): boolean =>
 
 const exactHash = (domain: string, value: unknown): string =>
   aiValueEngine.aggregateClaimHash(domain, value);
+
+const canonicalClaimTraceSourceIsApproved = (
+  authority: CanonicalIdentityAuthority
+): boolean =>
+  authority.sources.hypothesis.authority.status === "approved" &&
+  authority.sources.measurementCell.authority.approval_state === "approved" &&
+  authority.sources.measurementCell.authority.metric_owner_approval_state === "approved";
+
+const buildAggregateClaimTraceSource = (
+  canonicalAuthority: CanonicalIdentityAuthority,
+  binding: aiValueEngine.CanonicalIdentityBinding,
+  rebuilt: ReturnType<typeof buildBundle>,
+  comparison: Exclude<OutcomeComparisonPrivacyReleaseResult, { decision: "HOLD" }>,
+  sourceGraphSeal: aiValueEngine.AggregateClaimSourceGraphSeal
+): AggregateClaimTraceSource => ({
+  projectionInput: {
+    hypothesisVersion: canonicalAuthority.sources.hypothesis.version,
+    planVersion: canonicalAuthority.sources.plan.version,
+    measurementCellVersion: canonicalAuthority.sources.measurementCell.version,
+    metricId: rebuilt.claim.content.movement.metric_id,
+    measurementUnit: rebuilt.claim.content.movement.measurement_unit,
+    approvedDirection: canonicalAuthority.sliceBinding.approved_direction,
+    movement: rebuilt.claim.content.movement,
+    policyState: rebuilt.manifest.core.policy_state,
+    caveats: rebuilt.claim.content.caveats
+  },
+  verificationCommitment: exactHash("FT_CANONICAL_CLAIM_TRACE_VERIFICATION_V1", {
+    canonical_identity_core_commitment: canonicalAuthority.coreCommitment,
+    binding,
+    source_semantic_commitments: {
+      hypothesis: canonicalAuthority.sources.hypothesis.semanticCommitment,
+      plan: canonicalAuthority.sources.plan.semanticCommitment,
+      measurement_cell: canonicalAuthority.sources.measurementCell.semanticCommitment
+    },
+    current_journal_heads: canonicalAuthority.sources.journalHeads,
+    comparison_receipt: comparison.receipt,
+    comparison_projection: comparison.projection,
+    source_graph_seal: sourceGraphSeal
+  })
+});
 
 export const canonicalIdentityAggregateSourceIsApproved = (
   sourceSystem: unknown
@@ -1157,7 +1203,18 @@ export const readAuthorizedAggregateClaim = async (
       return {
         html,
         canonicalIdentityState: "BOUND",
-        sourceBound: true
+        sourceBound: true,
+        ...(canonicalClaimTraceSourceIsApproved(canonicalAuthority)
+          ? {
+              traceSource: buildAggregateClaimTraceSource(
+                canonicalAuthority,
+                storedBinding.data,
+                rebuilt,
+                comparison,
+                graph.sourceGraphSeal
+              )
+            }
+          : {})
       };
     }
     return {

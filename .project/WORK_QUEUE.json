@@ -403,7 +403,7 @@
   "bound": "Allowlisted read-only claim trace and legacy-path demotion only; acceptance: one read-only allowlisted projection links the approved hypothesis, measurement, admitted evidence, policy decisions, authorized claim, and canonical readout through immutable identity; access is limited to ADMIN and ENABLEMENT_LEAD and all other roles are denied; exclude user-identifiable data, raw events, internal secrets, unrestricted payloads, and mutation controls; independent packet selection, legacy HTML readout, mutable lineage, and obsolete authority paths are removed or explicitly demoted; preserve all nine invariants, nine canonical events, five suppression reasons, aggregate-only privacy, independent-slice governance, and additive compatibility; include focused tests, contracts/OpenSpec, progress, and queue updates; exclude deployment, publication, production migrations, live qualification, new events or suppression reasons, tunable thresholds, individual fields, scoring, ranking, ROI, causality, productivity, prediction, or customer-facing economic output",
   "status": "in_progress",
   "risk": "high",
-  "last_note": "Activated 2026-07-29 by James for the bounded Slice F work in docs/agent/MCII_PLAN.md. No implementation, deployment, publication, or live proof yet."
+  "last_note": "Implemented one binding-addressed read-only allowlisted claim trace, removed frontend packet-selection authority, and explicitly demoted legacy HTML. Focused contract/API/frontend tests and the Slice F PostgreSQL verifier pass. No migration or deployment was performed. Exact-SHA review is pending."
     }
   ]
 }

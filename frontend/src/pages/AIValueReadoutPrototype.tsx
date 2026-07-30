@@ -210,6 +210,7 @@ export const AIValueReadoutPrototype = () => {
             <div>
               <h1>Decision Memo</h1>
               <p>Caveated internal review draft</p>
+              <p>Illustrative example, not live evidence</p>
             </div>
             <aside>
               <strong>Evidence supports planning, not ROI proof</strong>
