@@ -1,9 +1,17 @@
 from pathlib import Path
 import hashlib
 import json
+import os
+import subprocess
+import sys
 
 import pytest
 
+from tests.gcp_s751_v4.ledger import (
+    build_rule_ledger,
+    reconcile_rule_ledger,
+    serialize_rule_ledger,
+)
 from tests.gcp_s751_v4.model import (
     canonical_json,
     enumerate_all_dynamic_paths,
@@ -215,3 +223,58 @@ def test_exact_parents_match_packet_hashes_and_canonical_manifest_bytes() -> Non
             "member_name": entry.member_name,
             "sha256": entry.sha256,
         }
+
+
+def test_rule_ledger_reconciles_static_and_dynamic_paths() -> None:
+    packet = load_packet()
+
+    rows = build_rule_ledger(packet)
+
+    reconcile_rule_ledger(packet, rows)
+    keys = [(row.resource, row.pointer) for row in rows]
+    assert len(keys) == len(set(keys))
+    assert all(row.dependencies for row in rows if not row.is_root)
+    assert all(row.anchor_rule for row in rows)
+    assert not any(row.instance_value for row in rows if row.dynamic)
+
+
+def test_rule_ledger_is_cold_process_deterministic_and_in_memory_only() -> None:
+    def workspace_files() -> set[Path]:
+        return {
+            path.relative_to(ROOT)
+            for path in ROOT.rglob("*")
+            if path.is_file()
+            and not {".git", ".pytest_cache", "__pycache__"}.intersection(
+                path.relative_to(ROOT).parts
+            )
+        }
+
+    script = "\n".join(
+        (
+            "import sys",
+            "from tests.gcp_s751_v4.ledger import build_rule_ledger, serialize_rule_ledger",
+            "from tests.gcp_s751_v4.model import load_packet",
+            "sys.stdout.buffer.write(serialize_rule_ledger(build_rule_ledger(load_packet())))",
+        )
+    )
+    command = [sys.executable, "-c", script]
+    environment = {**os.environ, "PYTHONHASHSEED": "0"}
+    files_before = workspace_files()
+
+    first = subprocess.run(
+        command,
+        cwd=ROOT,
+        env=environment,
+        check=True,
+        capture_output=True,
+    )
+    second = subprocess.run(
+        command,
+        cwd=ROOT,
+        env=environment,
+        check=True,
+        capture_output=True,
+    )
+
+    assert first.stdout == second.stdout
+    assert workspace_files() == files_before
