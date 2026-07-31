@@ -1568,6 +1568,9 @@ def _observed_ledger_selector(
     case: PreparedCase,
 ) -> ExactLedgerSelector:
     """Derive one exact ledger row from actual mutation and oracle evidence."""
+    shape_selector = _observed_shape_mutation_selector(packet, case)
+    if shape_selector is not None:
+        return shape_selector
     if case.attack_id == "A018":
         return _observed_a018_selector(case)
     parameters = set(case.mutation_evidence.observed_parameters)
@@ -1680,6 +1683,51 @@ def _observed_ledger_selector(
             "observed result has no exact ledger selector"
         )
     return _exact_observed_selector(resource, pointer)
+
+
+def _observed_shape_mutation_selector(
+    packet: RulePacket,
+    case: PreparedCase,
+) -> ExactLedgerSelector | None:
+    """Bind closed-shape attacks to the field or containing object changed."""
+    if case.attack_id not in {"A002", "A003", "A004"}:
+        return None
+    markers = tuple(
+        value
+        for value in case.mutation_evidence.observed_parameters
+        if value.startswith(("candidate:/", "envelope:/"))
+    )
+    if len(markers) != 1:
+        return None
+    label, raw_pointer = markers[0].split(":", 1)
+    pointer = _normalize_schema_pointer(raw_pointer)
+    if label == "candidate":
+        resource = "candidate"
+    elif pointer.startswith("/payload/nonce_time/"):
+        resource = "nonce_time"
+        pointer = pointer[len("/payload/nonce_time"):]
+    elif pointer.startswith("/payload/"):
+        resource = "signed_context_payload"
+        pointer = pointer[len("/payload"):]
+    else:
+        resource = "signed_context_envelope"
+
+    schema = packet.closed_schemas.get(resource)
+    fields = schema.get("fields") if isinstance(schema, Mapping) else None
+    if not isinstance(fields, (list, tuple)):
+        raise ValueError("closed schema fields are unavailable")
+    known_pointers = {
+        field["pointer"]
+        for field in fields
+        if isinstance(field, Mapping)
+        and isinstance(field.get("pointer"), str)
+    }
+    observed_pointer = pointer
+    while observed_pointer not in known_pointers:
+        if observed_pointer in {"", "/"}:
+            return None
+        observed_pointer = observed_pointer.rsplit("/", 1)[0] or "/"
+    return _exact_observed_selector(resource, observed_pointer)
 
 
 def _observed_a018_selector(

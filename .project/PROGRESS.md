@@ -2,6 +2,32 @@
 
 ## Current Session
 
+- Exact-SHA review of final refreeze commit
+  `97b47768818b6c2bf05d7ca00d94ce96fc420842`, tree
+  `51779910faf520153f6fb58915e48d27c1aa2f25`, returned `CODE: GO`,
+  `BUG: GO`, and `ADVERSARIAL: HOLD`. The packet is back in `DRAFT`; the
+  queue remains `in_progress` and `authority_effect` remains `NONE`. Repair
+  round 2 is frozen to the sole executable blocker: A002-A007 known-field
+  missing/wrong-type cases retain the actual changed pointer, but selector
+  derivation hard-codes a generic root row from the final reason. Exact
+  candidate `requested_action`, payload `policy_id`, and envelope `algorithm`
+  substitutions reproduce the mismatch even though exact field rows already
+  exist. No evaluator, parent amendment, GCP action, later-section work, push,
+  PR, merge, deployment, or live action is authorized.
+- Task 8 fix round 2 is locally verified while the packet remains `DRAFT`.
+  The preserved-count reconciliation test failed first on the generic-root
+  substitutions, then passed `1` with `247` deselected in `13.26s`. Exactly
+  eight packet selectors changed: six A002/A003 known-field mappings and two
+  A004 containing-object mappings. Both legitimate A005 raw truncation roots
+  and every A005-A007 record remain byte-for-byte unchanged. The narrow
+  structural/reference suite passed `94` with `154` deselected in `36.18s`;
+  collection remains exactly `248`; and the single intentional-red audit
+  remains exactly `154` failures, all and only
+  `AssertionError: MISSING_SUT`, with `94` deselected in `28.73s`. Strict
+  OpenSpec, compile, packet/queue JSON, diff, evaluator-absence,
+  private/locator/identifier, DRAFT lifecycle, and selector-necessity checks
+  passed. Exact-SHA rereview and a later final broad freeze gate remain
+  pending; no review aggregate or implementation authority is recorded.
 - Fresh scoped `CLEAN` on repair commit
   `3456ef399d1b61c3c432ad23e7bac31ed418f97a`, tree
   `4e13b19457ce1ccb42030464e85da6861dcad7bd`, authorized the Task 8 final

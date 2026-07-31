@@ -801,6 +801,184 @@ def test_per_case_reconciliation_rejects_every_record_corruption_class() -> None
     ):
         resolver(first, tuple(rows) + (selected,))
 
+    candidate_exact = declarations_module.ExactLedgerSelector(
+        "candidate",
+        "/requested_action",
+        "RULE-LEDGER-"
+        "4a3da32ae3b0e8bf17ffcb54e88ed2029acf7f4709886bc3d"
+        "c85e52faf6392aa",
+    )
+    payload_exact = declarations_module.ExactLedgerSelector(
+        "signed_context_payload",
+        "/policy_id",
+        "RULE-LEDGER-"
+        "415417d6ae5e29046e2ab4fdc7c11d5dfb1984c3131ba52cc"
+        "8d32f6c797649d4",
+    )
+    envelope_exact = declarations_module.ExactLedgerSelector(
+        "signed_context_envelope",
+        "/algorithm",
+        "RULE-LEDGER-"
+        "520a61718686da54f3843261949b6cee35dee3d0df896fe3fe"
+        "2b63be3cc0e216",
+    )
+    nonce_exact = declarations_module.ExactLedgerSelector(
+        "nonce_time",
+        "/trusted_time",
+        "RULE-LEDGER-"
+        "ab966c2280bce7375ba0e5fef5e1acb93fd3e6ac983d955a5"
+        "3c55e09be33299c",
+    )
+    candidate_observation_exact = declarations_module.ExactLedgerSelector(
+        "candidate",
+        "/observation",
+        "RULE-LEDGER-"
+        "d4a0b6b95f4f89c97bae84b8e99adc42b2ce4986611ae0287"
+        "ca199b88e451281",
+    )
+    payload_manifest_entry_exact = (
+        declarations_module.ExactLedgerSelector(
+            "signed_context_payload",
+            "/parent_manifest/*",
+            "RULE-LEDGER-"
+            "cafccc2d2825024f28bff3a16d440e392724fa2b503c842f2e"
+            "b38c3c7fa36406",
+        )
+    )
+    expected_selectors = {
+        "a002-raw-candidate-missing-field": candidate_exact,
+        "a002-raw-payload-missing-field": payload_exact,
+        "a002-raw-envelope-missing-field": envelope_exact,
+        "a002-raw-nonce-missing-field": nonce_exact,
+        "a003-raw-candidate-wrong-type": candidate_exact,
+        "a003-raw-payload-wrong-type": payload_exact,
+        "a003-raw-envelope-wrong-type": envelope_exact,
+        "a003-raw-nonce-wrong-type": nonce_exact,
+        "a004-candidate-nested-extra-field": candidate_observation_exact,
+        "a004-payload-nested-extra-field": payload_manifest_entry_exact,
+    }
+    observations_by_id = {
+        observation.case_id: observation
+        for observation in observations
+    }
+    records_by_id = {record.case_id: record for record in records}
+
+    assert {
+        case_id: observations_by_id[case_id].ledger_selector
+        for case_id in expected_selectors
+    } == expected_selectors
+
+    substitutions = {
+        "a002-raw-candidate-missing-field": (
+            declarations_module.ExactLedgerSelector(
+                "candidate",
+                "/schema_version",
+                "RULE-LEDGER-"
+                "41342576504e2575ea2db3c1afdbc58860f427e213b60a043f"
+                "0f3655a7b15616",
+            ),
+            declarations_module.ExactLedgerSelector(
+                "candidate",
+                "/observation",
+                "RULE-LEDGER-"
+                "d4a0b6b95f4f89c97bae84b8e99adc42b2ce4986611ae0287"
+                "ca199b88e451281",
+            ),
+        ),
+        "a002-raw-payload-missing-field": (
+            declarations_module.ExactLedgerSelector(
+                "signed_context_payload",
+                "/schema_version",
+                "RULE-LEDGER-"
+                "87c47001c75ee7eaf68607e8560105c3e6d0d772c43ef3c945"
+                "9bd6fe8579f368",
+            ),
+            declarations_module.ExactLedgerSelector(
+                "signed_context_payload",
+                "/mode",
+                "RULE-LEDGER-"
+                "bd8cb70e55010f98add7a13112bda593ddf854c29572ed2dc4"
+                "a7bd9b323154e8",
+            ),
+        ),
+        "a002-raw-envelope-missing-field": (
+            declarations_module.ExactLedgerSelector(
+                "signed_context_envelope",
+                "/schema_version",
+                "RULE-LEDGER-"
+                "ff1b4d2a5e7ccad697c3faa2c0821c2663c3e2e226993256ea"
+                "d4836cff7ef5ae",
+            ),
+            declarations_module.ExactLedgerSelector(
+                "signed_context_envelope",
+                "/signature_der_base64",
+                "RULE-LEDGER-"
+                "3684c81d230e88a6b5507f27c26d0be5e03a014119a7e5069b"
+                "5f3fffe8d93b8a",
+            ),
+        ),
+        "a002-raw-nonce-missing-field": (
+            declarations_module.ExactLedgerSelector(
+                "signed_context_payload",
+                "/schema_version",
+                "RULE-LEDGER-"
+                "87c47001c75ee7eaf68607e8560105c3e6d0d772c43ef3c945"
+                "9bd6fe8579f368",
+            ),
+            declarations_module.ExactLedgerSelector(
+                "nonce_time",
+                "/nonce",
+                "RULE-LEDGER-"
+                "ff222ba218947d0d6d30ab8329ea783eef5007fd534ea165271e"
+                "37391b8f5b50",
+            ),
+        ),
+    }
+    root_selectors = {
+        ("candidate", "/schema_version"),
+        ("signed_context_payload", "/schema_version"),
+        ("signed_context_envelope", "/schema_version"),
+    }
+    legitimate_raw_roots = {
+        "a005-candidate-truncation",
+        "a005-envelope-truncation",
+    }
+
+    assert not {
+        record.case_id
+        for record in records
+        if record.attack_id
+        in {"A002", "A003", "A004", "A005", "A006", "A007"}
+        and (
+            record.ledger_selector.resource,
+            record.ledger_selector.pointer,
+        )
+        in root_selectors
+        and record.case_id not in legitimate_raw_roots
+    }
+
+    for case_id, (generic_root, same_stage_wrong_field) in (
+        substitutions.items()
+    ):
+        record = records_by_id[case_id]
+        for replacement in (generic_root, same_stage_wrong_field):
+            corrupted = replace(record, ledger_selector=replacement)
+            with pytest.raises(
+                ValueError,
+                match=(
+                    "case ledger selector does not match observed selector"
+                ),
+            ):
+                declarations_module.reconcile_case_records(
+                    packet,
+                    rows,
+                    tuple(
+                        corrupted if value is record else value
+                        for value in records
+                    ),
+                    observations,
+                )
+
 
 def test_a019_records_stop_at_the_actual_ledger_failure_stage() -> None:
     loader = getattr(declarations_module, "load_case_records", None)
