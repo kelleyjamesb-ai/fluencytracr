@@ -2,6 +2,11 @@
 
 ## Current Session
 
+- The docs-only VBD live product roadmap now separates statistical acceptance,
+  Sections 7.5-7.7 architecture closure, Section 7.8 qualification, minimal
+  internal runtime implementation, compact AI Value Workspace projection, and
+  restricted internal production proof. It adds no queue activation or runtime
+  authority; Section 7.5.2 remains `pending`.
 - Section 7.5.1 is `done` and merged. Final exact-tree `CODE`, `BUG`, and
   `ADVERSARIAL` review each returned `GO` on reviewed head
   `99b5c80f9439df84d2b60b2b677058f627148318`, tree
