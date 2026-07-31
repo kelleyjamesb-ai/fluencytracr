@@ -45,7 +45,7 @@ EXPECTED_ARTIFACT_SHA256 = {
     "docs/contracts/canonical-inference-gcp-runtime-object/control-plane-projection.json": "010551be219b38cc8aed25102824406bfb6a8bc3806d04b93e831f1933ae8455",
     "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json": "9bd511fd7c859413fd599fa6bfc10e35534a532e7557df3f1a036017673c2474",
     "docs/contracts/canonical-inference-gcp-runtime-object/canonicalization-vectors.json": "24081453e851f2859bb9ec7bd57302855b3085a8978caf088bc4096b561f996b",
-    "scripts/verify_gcp_runtime_object_revalidation.py": "a6fbbbe6ea83928832d45c9e67cc21cf03bd79a8666914022306b99b2bbc0d89",
+    "scripts/verify_gcp_runtime_object_revalidation.py": "b58313e5aec3a219bafe645323ebbf93f9b9bab57635f35f25bdab00cf1513a4",
 }
 EXPECTED_UPSTREAM_SHA256 = {
     "provider_contract_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
@@ -1305,6 +1305,25 @@ def test_runtime_profile_approval_interface_binds_resolved_bytes_but_stays_held(
         "state": "EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED",
     }
     verify_runtime_profile_approval_interface()
+
+
+def test_runtime_profile_approval_interface_rejects_any_live_profile_hash(
+    tmp_path: Path,
+) -> None:
+    contract = _json(CONTRACT)
+    vectors = _json(VECTORS)
+    contract["approved_runtime_profile_hashes"] = ["f" * 64]
+    contract_path = tmp_path / "runtime-object-contract.json"
+    contract_path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n")
+    vectors["runtime_object_contract_sha256"] = _sha256_file(contract_path)
+    vectors_path = tmp_path / "canonicalization-vectors.json"
+    vectors_path.write_text(json.dumps(vectors, indent=2, sort_keys=True) + "\n")
+
+    with pytest.raises(
+        RevalidationVerificationError,
+        match="runtime approval list must remain empty",
+    ):
+        verify_runtime_profile_approval_interface(contract_path, vectors_path)
 
 
 def test_control_projection_is_total_leaf_only_and_cannot_smuggle_descendants() -> None:

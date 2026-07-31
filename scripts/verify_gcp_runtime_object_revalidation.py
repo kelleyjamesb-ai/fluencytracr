@@ -189,10 +189,12 @@ def verify_runtime_profile_approval_interface(
     }
     if interface.get("resolved_profile_binding") != expected_binding:
         raise RevalidationVerificationError("resolved profile binding mismatch")
-    if expected_binding["runtime_profile_hash"] in contract.get(
-        "approved_runtime_profile_hashes"
-    , []):
-        raise RevalidationVerificationError("synthetic profile hash became runtime-approved")
+    approved_runtime_profile_hashes = contract.get("approved_runtime_profile_hashes")
+    if (
+        not isinstance(approved_runtime_profile_hashes, list)
+        or approved_runtime_profile_hashes != []
+    ):
+        raise RevalidationVerificationError("runtime approval list must remain empty")
     if vectors.get("authorization_effect") != "NONE_TEST_VECTORS_ONLY":
         raise RevalidationVerificationError("canonicalization vectors cannot authorize")
     expected_evidence = {
