@@ -5,7 +5,7 @@
 | Field | Value |
 | --- | --- |
 | Protocol version and SHA-256 | `CANONICAL_RUNTIME_PHASE_READINESS_V1` / `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d` |
-| Packet state | `DRAFT` |
+| Packet state | `PREIMPLEMENTATION_EVIDENCE_READY` |
 | Queue item / risk | `gcp-canonical-runtime-section-7-5-parent-authority` / `high` |
 | Phase / scope kind | `Section 7.5.1` / `DOCS_CONTRACT` |
 | Base commit | `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` |

@@ -2,11 +2,35 @@
 
 ## Current Session
 
+- Fresh scoped `CLEAN` on repair commit
+  `3456ef399d1b61c3c432ad23e7bac31ed418f97a`, tree
+  `4e13b19457ce1ccb42030464e85da6861dcad7bd`, authorized the Task 8 final
+  freeze attempt. The full declared Step 1 suite ran exactly once on that
+  repaired candidate: strict OpenSpec passed in `1.11s`; the V4
+  structural/reference suite passed `94` with `154` deselected in `37.51s`;
+  the three named parent-contract suites passed `92` with `7` skipped in
+  `91.22s`; V1 governance passed in `0.78s`; docs sweep passed in `4.58s`;
+  linkcheck passed in `1.54s`; harness guard passed in `0.06s`;
+  `validate:agents` passed in `1.02s`; and `git diff --check` was clean.
+- The one final intentional-red invocation exited `1` as required:
+  `154 failed, 94 deselected in 28.67s`. Its captured output contains exactly
+  `154` failed nodes and exactly `154` error lines with one unique exception,
+  `AssertionError: MISSING_SUT`. The evaluator remains absent; the exact
+  private/locator scan passed; the identifier scan found only the reserved
+  `synthetic-probe@example.invalid` harness metadata value; and the exact
+  changed-path allowlist matched all `20` approved paths with no parent or
+  canonical-runtime changes.
+- The repaired packet is now `PREIMPLEMENTATION_EVIDENCE_READY`; the queue
+  remains `in_progress` and `authority_effect` remains `NONE`. Final
+  exact-SHA `CODE`, `BUG`, and `ADVERSARIAL` reviews are pending. No
+  `READINESS_GO`, `READINESS_HOLD`, aggregate decision, evaluator, parent
+  amendment, GCP action, later-section work, push, PR, merge, deployment, or
+  live action is recorded or authorized.
 - Exact-SHA review of preimplementation evidence commit
   `805bd2c30b80eb43988bfbda538fff8170134853`, tree
   `71f3abc4e2787a96c46aaa54b72cc597f9eedd89`, returned
-  `READINESS_HOLD`. The packet is back in `DRAFT` with the queue still
-  `in_progress` and `authority_effect: NONE`. Repair is frozen to four
+  `READINESS_HOLD`. That review returned the packet to `DRAFT` with the queue
+  still `in_progress` and `authority_effect: NONE`. Repair was frozen to four
   executable harness blockers: normalize `TimeoutExpired` and `OSError` at
   the closed crypto boundary; make every authenticated A018 field probe reach
   and reconcile its exact field; require both ordered replay results in one
@@ -14,7 +38,7 @@
   harness-owned provenance. No review completion, `READINESS_GO`, evaluator,
   parent amendment, GCP action, later-section work, push, PR, merge,
   deployment, or live action is claimed.
-- Task 8 repair round 1 is locally verified while the packet remains
+- Task 8 repair round 1 was locally verified while the packet remained
   `DRAFT`. The three focused blocker regressions passed `3/3`: helper
   `TimeoutExpired` and `OSError` close to `INVALID_SIGNATURE`; all `31`
   A018 string inputs reconcile to their exact authenticated field; a
