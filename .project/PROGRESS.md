@@ -2,6 +2,61 @@
 
 ## Current Session
 
+- Section 7.5.1 Approach A V4 has reached
+  `PREIMPLEMENTATION_EVIDENCE_READY` only. The queue item remains
+  `in_progress`, `authority_effect` remains `NONE`, and the evaluator
+  `scripts/gcp_section_7_5_parent_contract_authority_closure_v4.py` remains
+  absent. Exact-SHA `CODE`, `BUG`, and `ADVERSARIAL` review is still pending;
+  no `READINESS_GO`, `READINESS_HOLD`, parent amendment, closure projection,
+  GCP action, later-section work, push, PR, merge, deployment, or live action
+  is recorded or authorized.
+- The proportional final readiness gate ran once on the clean candidate based
+  at `f94dedd6736a20e1158c3581d89f2a525684afbd`. Strict OpenSpec validation
+  passed. The V4 structural/reference suite passed `94` tests with `154`
+  future-SUT tests deselected in `33.96s`. The three named current-main parent
+  contract files passed `92` tests with `7` skipped in `90.92s`. V1
+  governance, the docs contract sweep, scoped docs linkcheck, agentic harness
+  guard, agent validation build, and `git diff --check` all exited `0`.
+- The one intentional-red future-SUT audit exited `1` exactly as required:
+  `154 failed, 94 deselected in 26.69s`. Its saved output contained exactly
+  `154` failure nodes and exactly `154` error lines, all and only
+  `AssertionError: MISSING_SUT`; it contained no collection error, traceback,
+  exception, or alternate failure class. Static safety checks confirmed the
+  evaluator is absent and found no private key block, `private_scalar`, or
+  `locator_components` in the governed fixture/OpenSpec paths.
+- The changed paths from base
+  `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` are confined to the approved
+  design/plan and progress/queue state plus the exact V4 OpenSpec, fixture,
+  helper, corpus, oracle, crypto, ledger, model, bundle, and focused-test
+  allowlist. No canonical runtime or parent-contract path changed.
+- The frozen packet identity is schema
+  `GCP_SECTION_7_5_1_READINESS_RULE_PACKET_V4`, protocol
+  `CANONICAL_RUNTIME_PHASE_READINESS_V1`, protocol SHA-256
+  `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`,
+  queue item `gcp-canonical-runtime-section-7-5-parent-authority`, risk
+  `high`, and authority effect `NONE`. Content identities prepared for the
+  immutable review commit are: readiness blob
+  `21e2d4d16f1d97c1f655fdc5255f3375614e6fa9` / SHA-256
+  `00104712973c86c709928ec91de8827f07818518f01ec26ce1e6d7ddfd5f47df`;
+  packet-rules blob `8de1979168f4e0d7000eb6f99db18f146d33e4aa` /
+  SHA-256
+  `0692509ce6be0c0bc22b80c65b84b9438e60c495a57324325387a8cbf1aab69f`;
+  focused-test blob `e0bcc9cdaa0b670c393c7ac2dbe0fbca1a8b2b64` /
+  SHA-256
+  `80f4d833a1f0ac6c2aa9cbbbb942f3381f504bf501e59d9de24781fdc8a4c666`.
+- The packet binds the five immutable parent SHA-256 identities without
+  copying their bytes: Section 7.2 runtime object
+  `0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125`;
+  Section 7.3 security authority
+  `b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841`;
+  Section 7.3 role/capability matrix
+  `90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17`;
+  Section 7.4 attestation receipt
+  `88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200`;
+  and Section 7.5A constraints/open obligations
+  `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`.
+  The final exact commit/tree identities are recorded after commit in the
+  task-owned freeze report so the packet does not self-approve.
 - James approved the committed Section 7.5.1 Approach A design at
   `836300df0149b672e8962305e3fdf39a70ad9dab`. The approved next deliverable is
   a preimplementation readiness packet that tests the architecture before any
