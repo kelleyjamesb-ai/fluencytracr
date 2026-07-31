@@ -129,7 +129,11 @@ exact full-Section-7.5 schema, kind, and domain. Every Section 7.5A schema,
 kind, domain, or hash substitution SHALL reject. Authenticated opaque
 alias/provider-binding and controller fixed-point/separation record shapes
 SHALL bind the exact target without retaining provider identifiers or actual
-alias mappings. The live binding registry SHALL remain empty and this interface
+alias mappings. Principal and exact five project-role alias slots SHALL use
+separate closed types. Every record SHALL use the closed canonical JSON,
+domain-separated SHA-256 authentication-commitment, provider-binding, and
+record-hash formulas; arbitrary commitment substitution SHALL reject. The live
+binding registries SHALL remain empty and this interface
 SHALL have `authority_effect: NONE`.
 
 The interface SHALL cover only the Section 7.3 parent-admission portions of

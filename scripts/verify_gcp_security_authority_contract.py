@@ -411,6 +411,75 @@ def validate_full_section_7_5_target_record(
         raise ValueError("target binding mismatch")
 
 
+def validate_authenticated_alias_provider_binding_record(
+    record: dict[str, Any], schema: dict[str, Any]
+) -> None:
+    """Validate derived opaque binding commitments without retaining identities."""
+    if set(record) != set(schema["required_record_keys"]):
+        raise ValueError("alias/provider binding record keys mismatch")
+    if (
+        record["schema_version"] != schema["schema_version"]
+        or record["role_id"] not in schema["role_ids"]
+        or not isinstance(record["opaque_alias"], str)
+        or len(record["opaque_alias"]) != 32
+        or any(character not in "0123456789abcdef" for character in record["opaque_alias"])
+    ):
+        raise ValueError("alias/provider binding record domain mismatch")
+    for field in (
+        "target_binding_sha256",
+        "provider_authentication_evidence_sha256",
+        "provider_binding_authentication_sha256",
+        "provider_binding_sha256",
+        "alias_provider_binding_record_sha256",
+    ):
+        value = record[field]
+        if not isinstance(value, str) or len(value) != 64 or any(
+            character not in "0123456789abcdef" for character in value
+        ):
+            raise ValueError("alias/provider binding commitment malformed")
+    authentication_material = {
+        key: record[key]
+        for key in (
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_authentication_evidence_sha256",
+        )
+    }
+    expected_authentication = digest(
+        schema["authentication_commitment_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(authentication_material)
+    )
+    if record["provider_binding_authentication_sha256"] != expected_authentication:
+        raise ValueError("alias/provider authentication commitment mismatch")
+    binding_material = {
+        key: record[key]
+        for key in (
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_binding_authentication_sha256",
+        )
+    }
+    expected_binding = digest(
+        schema["binding_commitment_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(binding_material)
+    )
+    if record["provider_binding_sha256"] != expected_binding:
+        raise ValueError("alias/provider binding commitment mismatch")
+    record_material = dict(record)
+    observed_record_hash = record_material.pop(schema["record_hash_field"])
+    expected_record_hash = digest(
+        schema["record_hash_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(record_material)
+    )
+    if observed_record_hash != expected_record_hash:
+        raise ValueError("alias/provider binding record hash mismatch")
+
+
 def verify_section_7_5_authority_admission_interface(
     contract_path: Path = CONTRACT, vectors_path: Path = VECTORS
 ) -> None:
@@ -422,11 +491,13 @@ def verify_section_7_5_authority_admission_interface(
     interface = contract.get("section_7_5_authority_admission_interface")
     expected_keys = {
         "authenticated_alias_provider_binding_schema",
+        "authenticated_project_alias_provider_binding_schema",
         "authority_effect",
         "controller_fixed_point_separation_evidence_schema",
         "full_section_7_5_target_schema",
         "held_reason",
         "live_alias_provider_binding_records",
+        "live_project_alias_provider_binding_records",
         "parent_admission_obligations",
         "schema_version",
     }
@@ -439,6 +510,7 @@ def verify_section_7_5_authority_admission_interface(
         or interface["held_reason"]
         != "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
         or interface["live_alias_provider_binding_records"] != []
+        or interface["live_project_alias_provider_binding_records"] != []
     ):
         raise ValueError("Section 7.5 authority admission interface attempted authority")
     if interface["parent_admission_obligations"] != [
@@ -477,8 +549,12 @@ def verify_section_7_5_authority_admission_interface(
     aliases = interface["authenticated_alias_provider_binding_schema"]
     roles = contract["principal_role_contract"]["role_ids"]
     expected_aliases = {
+        "authentication_commitment_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING_AUTHENTICATION:V1",
         "authentication_commitment_field": "provider_binding_authentication_sha256",
+        "authentication_evidence_field": "provider_authentication_evidence_sha256",
+        "binding_commitment_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING:V1",
         "binding_commitment_field": "provider_binding_sha256",
+        "canonicalization_version": "FT_CANONICAL_JSON_V1",
         "opaque_alias_field": "opaque_alias",
         "owner": "SECTION_7_3",
         "provider_identifier_retention": "PROHIBITED",
@@ -487,16 +563,30 @@ def verify_section_7_5_authority_admission_interface(
             "target_binding_sha256",
             "role_id",
             "opaque_alias",
+            "provider_authentication_evidence_sha256",
             "provider_binding_sha256",
             "provider_binding_authentication_sha256",
             "alias_provider_binding_record_sha256",
         ],
+        "record_hash_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING_RECORD:V1",
+        "record_hash_field": "alias_provider_binding_record_sha256",
         "role_ids": roles,
         "schema_version": "GCP_AUTHENTICATED_OPAQUE_ALIAS_PROVIDER_BINDING_V1",
+        "subject_type": "PRINCIPAL_ROLE",
         "target_binding_field": "target_binding_sha256",
     }
     if aliases != expected_aliases:
         raise ValueError("authenticated alias/provider binding schema mismatch")
+    expected_project_aliases = dict(expected_aliases)
+    expected_project_aliases.update(
+        {
+            "role_ids": contract["project_role_contract"]["role_ids"],
+            "schema_version": "GCP_AUTHENTICATED_OPAQUE_PROJECT_ALIAS_PROVIDER_BINDING_V1",
+            "subject_type": "PROJECT_ROLE",
+        }
+    )
+    if interface["authenticated_project_alias_provider_binding_schema"] != expected_project_aliases:
+        raise ValueError("authenticated project alias/provider binding schema mismatch")
     controller = interface["controller_fixed_point_separation_evidence_schema"]
     expected_controller = {
         "fixed_point_evidence_must_bind": [
@@ -508,6 +598,7 @@ def verify_section_7_5_authority_admission_interface(
             "forbidden_intersection_count",
         ],
         "fixed_point_reached_required": True,
+        "forbidden_intersection_count_required": 0,
         "forbidden_controller_intersections_source": "ROLE_CAPABILITY_MATRIX_EXACT_FORBIDDEN_CONTROLLER_INTERSECTIONS",
         "owner": "SECTION_7_3",
         "role_ids": roles,

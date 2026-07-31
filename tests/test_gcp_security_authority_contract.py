@@ -47,15 +47,15 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 # Updated only after all normative bytes are final.
 PINNED_ARTIFACTS = {
-    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "a004896544f9f76ab7d1ad222c9ae9088b8f29ac7ed84eb4c62262b02a4e82f1",
+    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "5f616c4bdcad9bc4e49e634a9a455cfad4ad44f8fa8577dfd72e0b118ed2c6ef",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-revalidation.json": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
     "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
-    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "b6e1bfc17331ea497bbf08e4ad65cc466f1a3869a8b220f32a4f5f4ca1643fae",
-    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "06f7d5b84432a9b4efbb7b97d2f029f980a1d97ab3870119990f49463d542718",
+    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "3e49066b8f9080cb7b3abb43f339d45061d4db8581aac9c25419846857da0061",
+    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "3a29cd0ab9caca39d03b40b48969fb6d38963b106620f2f0ea2ccd5cc5347085",
     "scripts/verify_gcp_security_authority_revalidation.py": "ecf35b27a96c862f1c5cad144d5a0861b12f42f9b51b65edb2810e56983a8dc0",
     "scripts/gcp_security_authority_contract_validation.py": "0e4d51d03bf177e9a0de190f058a22a4bfb8f19a11ecbf926bab4af498936074",
-    "scripts/verify_gcp_security_authority_contract.py": "83d9f7b5454b5394bbd9fc438b67e06c4bd514c953750e2d4a4fc8902c30fada",
+    "scripts/verify_gcp_security_authority_contract.py": "dfcd2b2f173148081af9e445701fa5c43bb6f70949640c0e48313a6d6aef1a75",
 }
 
 
@@ -2367,7 +2367,9 @@ def test_normative_runtime_artifacts_contain_no_direct_identifiers_or_secrets() 
     ]
 
 
-def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
+def test_full_section_7_5_authority_admission_is_typed_bound_and_held(
+    tmp_path: Path,
+) -> None:
     """Only an exact future full-Section-7.5 target may reach this held interface."""
     contract = _json(CONTRACT)
     vectors = _json(VECTORS)
@@ -2375,11 +2377,13 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
 
     assert set(interface) == {
         "authenticated_alias_provider_binding_schema",
+        "authenticated_project_alias_provider_binding_schema",
         "authority_effect",
         "controller_fixed_point_separation_evidence_schema",
         "full_section_7_5_target_schema",
         "held_reason",
         "live_alias_provider_binding_records",
+        "live_project_alias_provider_binding_records",
         "parent_admission_obligations",
         "schema_version",
     }
@@ -2391,6 +2395,7 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
         "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
     )
     assert interface["live_alias_provider_binding_records"] == []
+    assert interface["live_project_alias_provider_binding_records"] == []
     assert interface["parent_admission_obligations"] == [
         "S75A-P01",
         "S75A-P02",
@@ -2423,8 +2428,12 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
         "target_binding_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_TARGET_BINDING:V1",
     }
     assert interface["authenticated_alias_provider_binding_schema"] == {
+        "authentication_commitment_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING_AUTHENTICATION:V1",
         "authentication_commitment_field": "provider_binding_authentication_sha256",
+        "authentication_evidence_field": "provider_authentication_evidence_sha256",
+        "binding_commitment_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING:V1",
         "binding_commitment_field": "provider_binding_sha256",
+        "canonicalization_version": "FT_CANONICAL_JSON_V1",
         "opaque_alias_field": "opaque_alias",
         "owner": "SECTION_7_3",
         "provider_identifier_retention": "PROHIBITED",
@@ -2433,13 +2442,27 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
             "target_binding_sha256",
             "role_id",
             "opaque_alias",
+            "provider_authentication_evidence_sha256",
             "provider_binding_sha256",
             "provider_binding_authentication_sha256",
             "alias_provider_binding_record_sha256",
         ],
+        "record_hash_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING_RECORD:V1",
+        "record_hash_field": "alias_provider_binding_record_sha256",
         "role_ids": contract["principal_role_contract"]["role_ids"],
         "schema_version": "GCP_AUTHENTICATED_OPAQUE_ALIAS_PROVIDER_BINDING_V1",
+        "subject_type": "PRINCIPAL_ROLE",
         "target_binding_field": "target_binding_sha256",
+    }
+    assert interface["authenticated_project_alias_provider_binding_schema"] == {
+        **{
+            key: value
+            for key, value in interface["authenticated_alias_provider_binding_schema"].items()
+            if key not in {"role_ids", "schema_version", "subject_type"}
+        },
+        "role_ids": contract["project_role_contract"]["role_ids"],
+        "schema_version": "GCP_AUTHENTICATED_OPAQUE_PROJECT_ALIAS_PROVIDER_BINDING_V1",
+        "subject_type": "PROJECT_ROLE",
     }
     assert interface["controller_fixed_point_separation_evidence_schema"] == {
         "forbidden_controller_intersections_source": "ROLE_CAPABILITY_MATRIX_EXACT_FORBIDDEN_CONTROLLER_INTERSECTIONS",
@@ -2452,6 +2475,7 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
             "forbidden_intersection_count",
         ],
         "fixed_point_reached_required": True,
+        "forbidden_intersection_count_required": 0,
         "owner": "SECTION_7_3",
         "role_ids": contract["principal_role_contract"]["role_ids"],
         "schema_version": "GCP_SECTION_7_5_CONTROLLER_FIXED_POINT_SEPARATION_EVIDENCE_V1",
@@ -2471,6 +2495,17 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
     finally:
         sys.path.pop(0)
     module.verify_section_7_5_authority_admission_interface()
+
+    mutated_contract = copy.deepcopy(contract)
+    mutated_contract["section_7_5_authority_admission_interface"][
+        "controller_fixed_point_separation_evidence_schema"
+    ]["forbidden_intersection_count_required"] = 1
+    mutated_contract_path = tmp_path / "security-authority-contract.json"
+    mutated_contract_path.write_text(json.dumps(mutated_contract), encoding="utf-8")
+    with pytest.raises(ValueError, match="controller fixed-point evidence schema mismatch"):
+        module.verify_section_7_5_authority_admission_interface(
+            mutated_contract_path, VECTORS
+        )
 
     target_bytes = _canonical(
         {
@@ -2520,6 +2555,58 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
     with pytest.raises(ValueError, match="full Section 7.5 target kind mismatch"):
         module.validate_full_section_7_5_target_record(
             section_7_5a_substitution, target_schema
+        )
+
+    alias_schema = interface["authenticated_alias_provider_binding_schema"]
+    binding_record = {
+        "schema_version": alias_schema["schema_version"],
+        "target_binding_sha256": target_record["target_binding_sha256"],
+        "role_id": alias_schema["role_ids"][0],
+        "opaque_alias": "b" * 32,
+        "provider_authentication_evidence_sha256": "c" * 64,
+    }
+    authentication_material = {
+        key: binding_record[key]
+        for key in (
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_authentication_evidence_sha256",
+        )
+    }
+    binding_record["provider_binding_authentication_sha256"] = _sha(
+        alias_schema["authentication_commitment_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(authentication_material)
+    )
+    binding_material = {
+        key: binding_record[key]
+        for key in (
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_binding_authentication_sha256",
+        )
+    }
+    binding_record["provider_binding_sha256"] = _sha(
+        alias_schema["binding_commitment_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(binding_material)
+    )
+    record_material = dict(binding_record)
+    binding_record["alias_provider_binding_record_sha256"] = _sha(
+        alias_schema["record_hash_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(record_material)
+    )
+    module.validate_authenticated_alias_provider_binding_record(
+        binding_record, alias_schema
+    )
+    arbitrary_authentication = copy.deepcopy(binding_record)
+    arbitrary_authentication["provider_binding_authentication_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="alias/provider authentication commitment mismatch"):
+        module.validate_authenticated_alias_provider_binding_record(
+            arbitrary_authentication, alias_schema
         )
 
 

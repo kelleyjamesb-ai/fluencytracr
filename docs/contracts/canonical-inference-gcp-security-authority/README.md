@@ -85,7 +85,15 @@ canonical-byte-bound `FULL_SECTION_7_5` target. It rejects every Section 7.5A
 schema, kind, domain, or hash substitution before any approval or evidence
 claim. The later target must provide its exact canonical bytes and SHA-256,
 then bind authenticated opaque role aliases and provider-binding commitments to
-that target. No provider identifiers or alias mappings are retained here.
+that target. Principal and five project-role slots use separate closed record
+types. No provider identifiers or alias mappings are retained here.
+
+Each future record is canonical JSON with three domain-separated SHA-256
+commitments: authentication evidence to authentication commitment,
+authentication commitment to provider binding, then the complete record to its
+record hash. This is locally verifiable with the standard library and rejects
+arbitrary substituted commitments, but it does not establish provider
+authenticity before a future externally governed evidence process.
 
 The interface requires later fixed-point/separation evidence to bind the exact
 target, alias/provider-binding records, controller-set commitment, completeness
