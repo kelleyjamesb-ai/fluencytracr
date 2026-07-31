@@ -1099,6 +1099,7 @@ def test_section_7_5_external_approval_interface_is_typed_bound_and_held(
 
     target_bytes = canonical_json_bytes(
         {
+            "canonical_contract_body_sha256": "a" * 64,
             "contract_domain_separator": target_schema["domain_separator"],
             "contract_kind": target_schema["contract_kind"],
             "schema_version": target_schema["contract_schema_version"],
@@ -2131,17 +2132,17 @@ def test_all_checked_in_json_is_strict_and_null_free() -> None:
 # Filled only after the implementation is final. This intentionally excludes
 # this test file to avoid self-reference.
 PINNED_ARTIFACTS: dict[str, str] = {
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/README.md": "8c21cf32748c3d58e61769931232095b4a3dbcf4449ba67a222815e7842c0d3c",
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json": "3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8",
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/canonicalization-vectors.json": "f8b5734487ee6c4896ad6d00032433f63786c7c8fba962f3b6f152a3f21a2144",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/README.md": "fe23d45a3f7c20b491ec94d2544fe901ca0dd7cb62d382a22f90c23026b06b1f",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/canonicalization-vectors.json": "0399772b61073bc21af481803120a7da165d3e9b06b9c40410ebd6ffafda3766",
     "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-revalidation.json": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-source-evidence.json": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
-    "scripts/gcp_attestation_receipt_contract_validation.py": "ab62d1c745d20260b1525eb1a8a03d7bdd18f6038d4fcf3131980e72f28781cd",
-    "scripts/verify_gcp_attestation_receipt_contract.py": "cb7bf1cc435981e99f4fc55ac72b84f46326be172c2dab9d0998e5e194b710d0",
+    "scripts/gcp_attestation_receipt_contract_validation.py": "7f34c48872cb7519f88cec974e50a24041760b183fcd02db5396ceefbaab2b37",
+    "scripts/verify_gcp_attestation_receipt_contract.py": "85f51091f73b70beb630bf6b152df7cf4db943b2431fa284027cb2f789415dd2",
     "scripts/verify_gcp_attestation_receipt_revalidation.py": "d49120a1cece5e3e5d5e0b3ce24248b23de8580b86995859d18d428d199ff5d0",
     "openspec/changes/add-gcp-attestation-receipt-contract/proposal.md": "c7bbb75ed949439301f2259fe541a66a82a943b88800401c9756899fa8cc0c91",
     "openspec/changes/add-gcp-attestation-receipt-contract/design.md": "f2480f8079675a83fda2f3495453fa95cb643d3c85e3b71b35dc109fcab2c290",
-    "openspec/changes/add-gcp-attestation-receipt-contract/specs/gcp-attestation-receipt/spec.md": "03dff233550dd17d119f0e679d0fa1c749c6ced3dcaf9c37e5d4e29dafa50c07",
+    "openspec/changes/add-gcp-attestation-receipt-contract/specs/gcp-attestation-receipt/spec.md": "b652e2451a3d1aa3c3286cb2b4dc71130a5a3797ea9b961604f8dee9bf7cb698",
     "docs/contracts/canonical-inference-gcp-runtime-candidate/README.md": "b2ff9b6654d676afecdd40b9479c219e481f5b102454622d17cf668f03470d57",
     "ATTRIBUTION.md": "a0bc7c212feae50e5ec268240e09fdf6a2985ae04e28377d6ecfcd8c51f9e4a3",
 }

@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -30,13 +31,13 @@ EXPECTED_SOURCE_CONTRACTS = (
         "SECTION_7_2",
         "docs/contracts/canonical-inference-gcp-runtime-object/"
         "runtime-object-contract.json",
-        "9bd511fd7c859413fd599fa6bfc10e35534a532e7557df3f1a036017673c2474",
+        "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587",
     ),
     (
         "SECTION_7_3",
         "docs/contracts/canonical-inference-gcp-security-authority/"
         "security-authority-contract.json",
-        "3e49066b8f9080cb7b3abb43f339d45061d4db8581aac9c25419846857da0061",
+        "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a",
     ),
     (
         "SECTION_7_3",
@@ -48,7 +49,7 @@ EXPECTED_SOURCE_CONTRACTS = (
         "SECTION_7_4",
         "docs/contracts/canonical-inference-gcp-attestation-receipt/"
         "attestation-receipt-contract.json",
-        "3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8",
+        "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2",
     ),
 )
 EXPECTED_CLOSURES = (
@@ -98,12 +99,72 @@ class ProjectionValidationError(ValueError):
 
 def _load_object(path: Path, label: str) -> dict[str, Any]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raw = path.read_bytes()
+        text = raw.decode("utf-8")
+
+        def reject_duplicate_keys(
+            pairs: list[tuple[str, Any]],
+        ) -> dict[str, Any]:
+            value: dict[str, Any] = {}
+            for key, item in pairs:
+                if key in value:
+                    raise ValueError(f"duplicate JSON key: {key}")
+                value[key] = item
+            return value
+
+        def parse_integer(token: str) -> int:
+            if token == "-0":
+                raise ValueError("negative-zero integer")
+            value = int(token)
+            if not -(2**63) <= value <= 2**63 - 1:
+                raise ValueError("integer outside signed 64-bit range")
+            return value
+
+        def reject_noninteger(token: str) -> float:
+            raise ValueError(f"float/non-finite JSON number: {token}")
+
+        value = json.loads(
+            text,
+            object_pairs_hook=reject_duplicate_keys,
+            parse_int=parse_integer,
+            parse_float=reject_noninteger,
+            parse_constant=reject_noninteger,
+        )
+        _validate_canonical_value(value)
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         raise ProjectionValidationError(f"{label} is unreadable") from exc
     if not isinstance(value, dict):
         raise ProjectionValidationError(f"{label} must be an object")
     return value
+
+
+def _validate_canonical_value(value: Any) -> None:
+    if value is None or isinstance(value, float):
+        raise ValueError("null/float prohibited")
+    if type(value) is int:
+        if not -(2**63) <= value <= 2**63 - 1:
+            raise ValueError("integer outside signed 64-bit range")
+        return
+    if type(value) is bool:
+        return
+    if isinstance(value, str):
+        if unicodedata.normalize("NFC", value) != value:
+            raise ValueError("non-NFC string")
+        if any(unicodedata.category(character) in {"Cc", "Cs"} for character in value):
+            raise ValueError("control/surrogate string")
+        return
+    if isinstance(value, list):
+        for item in value:
+            _validate_canonical_value(item)
+        return
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ValueError("non-string object key")
+            _validate_canonical_value(key)
+            _validate_canonical_value(item)
+        return
+    raise ValueError("unsupported JSON value")
 
 
 def _sha256(data: bytes) -> str:

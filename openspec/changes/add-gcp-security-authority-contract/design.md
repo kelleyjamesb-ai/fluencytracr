@@ -63,10 +63,13 @@ Section 7.3 enumerates required authority operations and immutable evidence requ
 ### Full Section 7.5 parent admission remains held
 
 The parent admission shape selects only a future `FULL_SECTION_7_5` schema,
-kind, and domain after it has resolved exact canonical contract bytes and their
-hash. `SECTION_7_5A` is not a substitutable target. Authenticated opaque
-alias/provider-binding records and fixed-point/separation commitments are
-defined as closed record shapes, while all actual records remain absent. This
+kind, and domain after it has resolved the exact shared canonical identity
+bytes: those three discriminators plus `canonical_contract_body_sha256`, with
+no additional fields. `SECTION_7_5A` is not a substitutable target. Opaque
+alias/provider-binding formulas and fixed-point/separation commitments are
+closed structural shapes, while all actual records remain absent. Structural
+validation does not establish authentication. Authenticated admission requires
+an independently trusted whole-record catalog, which is exactly empty. This
 addresses only the Section 7.3 parent-admission portions of P01, P02, P05, P06,
 P08, and P19; P07 has no Section 7.3 portion and no runtime authority changes.
 

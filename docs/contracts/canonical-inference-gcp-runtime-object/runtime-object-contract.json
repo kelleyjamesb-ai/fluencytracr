@@ -2530,7 +2530,7 @@
       "field_value_types": {
         "canonical_body_sha256": "DIGEST_SHA256",
         "external_approval_artifact_sha256": "DIGEST_SHA256",
-        "external_approval_provenance": "SECTION_7_4_EXTERNAL_APPROVAL_PROVENANCE_RECORD",
+        "external_approval_provenance": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1",
         "runtime_profile_hash": "DIGEST_SHA256"
       },
       "owner": "SECTION_7_4",

@@ -49,9 +49,9 @@ from gcp_attestation_receipt_contract_validation import (
 )
 
 EXPECTED_ARTIFACT_SHA256 = {
-    "README.md": "8c21cf32748c3d58e61769931232095b4a3dbcf4449ba67a222815e7842c0d3c",
-    "attestation-receipt-contract.json": "3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8",
-    "canonicalization-vectors.json": "f8b5734487ee6c4896ad6d00032433f63786c7c8fba962f3b6f152a3f21a2144",
+    "README.md": "fe23d45a3f7c20b491ec94d2544fe901ca0dd7cb62d382a22f90c23026b06b1f",
+    "attestation-receipt-contract.json": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2",
+    "canonicalization-vectors.json": "0399772b61073bc21af481803120a7da165d3e9b06b9c40410ebd6ffafda3766",
     "provider-revalidation.json": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "provider-source-evidence.json": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
 }
@@ -117,12 +117,25 @@ def validate_full_section_7_5_external_approval_target_record(
     target_value = strict_load_json_bytes(target_bytes)
     if canonical_json_bytes(target_value) != target_bytes:
         raise ValueError("full Section 7.5 target bytes are not canonical")
-    if target_value != {
-        "contract_domain_separator": schema["domain_separator"],
-        "contract_kind": schema["contract_kind"],
-        "schema_version": schema["contract_schema_version"],
-    }:
-        raise ValueError("full Section 7.5 target resolution mismatch")
+    target_identity_schema = schema["target_identity_schema"]
+    if not isinstance(target_value, dict) or set(target_value) != set(
+        target_identity_schema["required_keys"]
+    ):
+        raise ValueError("target identity keys mismatch")
+    if (
+        target_value[schema["contract_schema_version_field"]]
+        != schema["contract_schema_version"]
+        or target_value[schema["contract_kind_field"]] != schema["contract_kind"]
+        or target_value[schema["domain_separator_field"]] != schema["domain_separator"]
+    ):
+        raise ValueError("target identity discriminator mismatch")
+    contract_body_sha256 = target_value[
+        target_identity_schema["canonical_contract_body_sha256_field"]
+    ]
+    if not isinstance(contract_body_sha256, str) or not HEX64.fullmatch(
+        contract_body_sha256
+    ):
+        raise ValueError("target identity contract body hash malformed")
     expected_binding = digest(
         schema["target_binding_domain_separator"].encode("ascii")
         + b"\x00"

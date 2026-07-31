@@ -134,12 +134,12 @@
     {
       "owner": "SECTION_7_2",
       "path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json",
-      "sha256": "9bd511fd7c859413fd599fa6bfc10e35534a532e7557df3f1a036017673c2474"
+      "sha256": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587"
     },
     {
       "owner": "SECTION_7_3",
       "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json",
-      "sha256": "3e49066b8f9080cb7b3abb43f339d45061d4db8581aac9c25419846857da0061"
+      "sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a"
     },
     {
       "owner": "SECTION_7_3",
@@ -149,7 +149,7 @@
     {
       "owner": "SECTION_7_4",
       "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json",
-      "sha256": "3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8"
+      "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2"
     }
   ]
 }

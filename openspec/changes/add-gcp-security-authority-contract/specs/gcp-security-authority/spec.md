@@ -125,15 +125,21 @@ Raw logs, principals, project/account identifiers, emails, IPs, policies, real s
 Section 7.3 SHALL define a closed parent-admission interface for the future
 full Section 7.5 contract only. Admission SHALL resolve canonical target bytes,
 verify their SHA-256 and a domain-separated target binding, and require the
-exact full-Section-7.5 schema, kind, and domain. Every Section 7.5A schema,
-kind, domain, or hash substitution SHALL reject. Authenticated opaque
-alias/provider-binding and controller fixed-point/separation record shapes
-SHALL bind the exact target without retaining provider identifiers or actual
-alias mappings. Principal and exact five project-role alias slots SHALL use
-separate closed types. Every record SHALL use the closed canonical JSON,
-domain-separated SHA-256 authentication-commitment, provider-binding, and
-record-hash formulas; arbitrary commitment substitution SHALL reject. The live
-binding registries SHALL remain empty and this interface
+exact full-Section-7.5 schema, kind, and domain plus one
+`canonical_contract_body_sha256`. Those four identity fields SHALL be the
+complete target identity and SHALL match the Section 7.4 target identity
+shape. Every Section 7.5A schema, kind, domain, hash substitution, or unknown
+identity field SHALL reject. Opaque alias/provider-binding and controller
+fixed-point/separation record shapes SHALL bind the exact target without
+retaining provider identifiers or actual alias mappings. Principal and exact
+five project-role alias slots SHALL use separate closed types. Every record
+SHALL use the closed canonical JSON, domain-separated SHA-256
+authentication-commitment, provider-binding, and record-hash formulas;
+arbitrary commitment substitution and all-zero authentication evidence SHALL
+reject. Formula validation SHALL be structural only. Authenticated admission
+MUST resolve the whole record against an independently trusted catalog; the
+current catalog MUST remain exactly empty and caller-supplied catalog values
+MUST reject. The live binding registries SHALL remain empty and this interface
 SHALL have `authority_effect: NONE`.
 
 The interface SHALL cover only the Section 7.3 parent-admission portions of

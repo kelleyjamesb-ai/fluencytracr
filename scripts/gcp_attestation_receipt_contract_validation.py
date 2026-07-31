@@ -140,6 +140,15 @@ def validate_section_7_5_external_approval_interface(
         "schema_version": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_TARGET_V1",
         "section_7_5a_substitution": "REJECT",
         "target_binding_domain_separator": "FLUENCYTRACR:GCP_ATTESTATION_RECEIPT:SECTION_7_5_TARGET_BINDING:V1",
+        "target_identity_schema": {
+            "canonical_contract_body_sha256_field": "canonical_contract_body_sha256",
+            "required_keys": [
+                "schema_version",
+                "contract_kind",
+                "contract_domain_separator",
+                "canonical_contract_body_sha256",
+            ],
+        },
     }
     if target != expected_target:
         raise ContractValidationError("full Section 7.5 external approval target schema mismatch")

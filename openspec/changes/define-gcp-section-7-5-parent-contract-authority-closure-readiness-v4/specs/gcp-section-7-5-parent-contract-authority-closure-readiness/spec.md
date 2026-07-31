@@ -85,9 +85,11 @@ Section 7.5A registry byte hash. It SHALL derive the exact ordered P00-P19
 owner/state rows and forward/reverse edges and bind those derived values by one
 canonical projection digest. It SHALL pin the current Section 7.2, Section 7.3
 authority and role-matrix, and Section 7.4 contract paths and byte hashes.
-Unknown fields, source drift, registry drift, missing or extra prerequisites,
-cross-owned closure, runtime satisfaction, live authority, or a full-Section
-7.5-closed alias SHALL reject.
+The projection and registry loaders SHALL reject duplicate JSON keys and
+non-canonical JSON value domains before semantic comparison. Unknown fields,
+source drift, registry drift, missing or extra prerequisites, cross-owned
+closure, runtime satisfaction, live authority, or a full-Section 7.5-closed
+alias SHALL reject.
 
 The only closed documentation portions SHALL be P00 for Section 7.2; P01, P02,
 P06, and the Section 7.3 portions of P05, P08, and P19; and P03, P14, the
@@ -106,3 +108,9 @@ SHALL have no Section 7.4 portion.
 - **AND** actual aliases, approvals, and live evidence remain absent
 - **AND** `LIVE_RUNTIME` remains `NOT_AUTHORIZED` / `NOT_RUN`
 - **AND** authority remains `NONE`
+
+#### Scenario: Projection repeats an authority-bearing key
+
+- **WHEN** a projection repeats `authority_effect` or `decision`, even when
+  the final repeated value equals the expected value
+- **THEN** strict loading rejects before semantic projection

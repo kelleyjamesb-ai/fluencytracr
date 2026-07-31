@@ -18,6 +18,11 @@ PROVIDER_DIR = ROOT / "docs/contracts/canonical-inference-gcp-provider-vocabular
 DEFAULT_REVALIDATION = RUNTIME_DIR / "provider-revalidation.json"
 RUNTIME_CONTRACT = RUNTIME_DIR / "runtime-object-contract.json"
 CANONICALIZATION_VECTORS = RUNTIME_DIR / "canonicalization-vectors.json"
+SECTION_7_4_CONTRACT = (
+    ROOT
+    / "docs/contracts/canonical-inference-gcp-attestation-receipt"
+    / "attestation-receipt-contract.json"
+)
 EXPECTED_REVALIDATION_ARTIFACT_SHA256 = (
     "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc"
 )
@@ -214,7 +219,7 @@ def verify_runtime_profile_approval_interface(
         "field_value_types": {
             "canonical_body_sha256": "DIGEST_SHA256",
             "external_approval_artifact_sha256": "DIGEST_SHA256",
-            "external_approval_provenance": "SECTION_7_4_EXTERNAL_APPROVAL_PROVENANCE_RECORD",
+            "external_approval_provenance": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1",
             "runtime_profile_hash": "DIGEST_SHA256",
         },
         "owner": "SECTION_7_4",
@@ -230,6 +235,26 @@ def verify_runtime_profile_approval_interface(
     }
     if interface.get("approval_provenance_schema") != expected_provenance_schema:
         raise RevalidationVerificationError("external approval provenance schema mismatch")
+    section_7_4 = _strict_json_loads(
+        SECTION_7_4_CONTRACT.read_text(encoding="utf-8")
+    )
+    try:
+        resolved_provenance_type = section_7_4[
+            "section_7_5_external_approval_interface"
+        ]["external_approval_policy_verifier_record_schema"]["schema_version"]
+    except (KeyError, TypeError) as exc:
+        raise RevalidationVerificationError(
+            "Section 7.4 external approval provenance type is unresolved"
+        ) from exc
+    if (
+        expected_provenance_schema["field_value_types"][
+            "external_approval_provenance"
+        ]
+        != resolved_provenance_type
+    ):
+        raise RevalidationVerificationError(
+            "Section 7.4 external approval provenance type mismatch"
+        )
 
 
 def verify_revalidation_bundle(

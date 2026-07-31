@@ -55,9 +55,11 @@ Contract closure means only that Section 7.2 fields and hashes are deterministic
 
 The approval interface binds only the resolved profile canonical-body SHA-256
 and runtime-profile hash to a future Section 7.4 external-approval provenance
-record. Its approval and runtime-record registries remain empty. A synthetic
-vector is evidence of canonical bytes only; it cannot populate either registry
-or promote runtime authority.
+record whose exact resolved type is
+`GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1`. Its approval and
+runtime-record registries remain empty. A synthetic vector is evidence of
+canonical bytes only; it cannot populate either registry or promote runtime
+authority.
 
 ## Alternatives Considered
 

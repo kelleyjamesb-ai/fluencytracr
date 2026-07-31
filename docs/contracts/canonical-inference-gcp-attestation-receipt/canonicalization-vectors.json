@@ -49,7 +49,7 @@
     "state": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
   },
   "artifact_bindings": {
-    "attestation_receipt_contract_sha256": "3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8",
+    "attestation_receipt_contract_sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2",
     "provider_revalidation_sha256": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "provider_source_evidence_sha256": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12"
   },

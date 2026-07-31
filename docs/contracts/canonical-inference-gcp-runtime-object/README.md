@@ -213,8 +213,9 @@ The closed `GCP_RUNTIME_PROFILE_APPROVAL_INTERFACE_V1` binds the resolved
 profile's canonical-body SHA-256 and runtime-profile hash to the future
 external approval provenance record required from Section 7.4. Its typed
 provenance record must carry those two identities, an external approval
-artifact SHA-256, and the Section 7.4 provenance record. This interface owns
-no approval verification mechanics and creates no approval record.
+artifact SHA-256, and the exact Section 7.4 type
+`GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1`. This interface
+owns no approval verification mechanics and creates no approval record.
 
 Both `external_approval_records` and `runtime_record_references` are empty.
 The current profile vector is synthetic-only and can establish neither list;

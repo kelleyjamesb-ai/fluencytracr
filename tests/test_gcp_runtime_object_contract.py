@@ -31,6 +31,11 @@ REVALIDATION = CONTRACT_DIR / "provider-revalidation.json"
 CONTROL = CONTRACT_DIR / "control-plane-projection.json"
 CONTRACT = CONTRACT_DIR / "runtime-object-contract.json"
 VECTORS = CONTRACT_DIR / "canonicalization-vectors.json"
+SECTION_7_4_CONTRACT = (
+    ROOT
+    / "docs/contracts/canonical-inference-gcp-attestation-receipt"
+    / "attestation-receipt-contract.json"
+)
 CANDIDATE = ROOT / "docs/contracts/canonical-inference-gcp-runtime-candidate/README.md"
 REVALIDATION_VERIFIER = ROOT / "scripts/verify_gcp_runtime_object_revalidation.py"
 RECOVERY_BUNDLE = (
@@ -40,12 +45,12 @@ RECOVERY_BUNDLE = (
 )
 
 EXPECTED_ARTIFACT_SHA256 = {
-    "docs/contracts/canonical-inference-gcp-runtime-object/README.md": "6efc2eef1e91efc5fdca7ccf79d49d66caa858c7c4921d63bab518bde87b5ef2",
+    "docs/contracts/canonical-inference-gcp-runtime-object/README.md": "7a3307d8820aa918cf433747adc1ee8aa5b9038fe161144c61dff50c03e099c3",
     "docs/contracts/canonical-inference-gcp-runtime-object/provider-revalidation.json": "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc",
     "docs/contracts/canonical-inference-gcp-runtime-object/control-plane-projection.json": "010551be219b38cc8aed25102824406bfb6a8bc3806d04b93e831f1933ae8455",
-    "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json": "9bd511fd7c859413fd599fa6bfc10e35534a532e7557df3f1a036017673c2474",
-    "docs/contracts/canonical-inference-gcp-runtime-object/canonicalization-vectors.json": "24081453e851f2859bb9ec7bd57302855b3085a8978caf088bc4096b561f996b",
-    "scripts/verify_gcp_runtime_object_revalidation.py": "b58313e5aec3a219bafe645323ebbf93f9b9bab57635f35f25bdab00cf1513a4",
+    "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587",
+    "docs/contracts/canonical-inference-gcp-runtime-object/canonicalization-vectors.json": "75de470b64880cf2dbc2b142b0fe37332f042e66fe17d8d15d8d7028bfed83a0",
+    "scripts/verify_gcp_runtime_object_revalidation.py": "fa8fbdcd5760515583ac393f3474a5e72a189f8b85458da79c3011b5b5fc50b7",
 }
 EXPECTED_UPSTREAM_SHA256 = {
     "provider_contract_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
@@ -1275,7 +1280,7 @@ def test_runtime_profile_approval_interface_binds_resolved_bytes_but_stays_held(
         "field_value_types": {
             "canonical_body_sha256": "DIGEST_SHA256",
             "external_approval_artifact_sha256": "DIGEST_SHA256",
-            "external_approval_provenance": "SECTION_7_4_EXTERNAL_APPROVAL_PROVENANCE_RECORD",
+            "external_approval_provenance": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1",
             "runtime_profile_hash": "DIGEST_SHA256",
         },
         "owner": "SECTION_7_4",
@@ -1324,6 +1329,19 @@ def test_runtime_profile_approval_interface_rejects_any_live_profile_hash(
         match="runtime approval list must remain empty",
     ):
         verify_runtime_profile_approval_interface(contract_path, vectors_path)
+
+
+def test_runtime_profile_approval_provenance_type_resolves_to_section_7_4() -> None:
+    runtime_contract = _json(CONTRACT)
+    attestation_contract = _json(SECTION_7_4_CONTRACT)
+    provenance_type = runtime_contract["runtime_profile_approval_interface"][
+        "approval_provenance_schema"
+    ]["field_value_types"]["external_approval_provenance"]
+    section_7_4_type = attestation_contract[
+        "section_7_5_external_approval_interface"
+    ]["external_approval_policy_verifier_record_schema"]["schema_version"]
+
+    assert provenance_type == section_7_4_type
 
 
 def test_control_projection_is_total_leaf_only_and_cannot_smuggle_descendants() -> None:

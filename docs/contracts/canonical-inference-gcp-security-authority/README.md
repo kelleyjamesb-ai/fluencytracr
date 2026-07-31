@@ -83,17 +83,22 @@ an actually approved live policy/evidence pair; the approved lists are empty.
 Section 7.3 defines a closed future admission interface only for a typed,
 canonical-byte-bound `FULL_SECTION_7_5` target. It rejects every Section 7.5A
 schema, kind, domain, or hash substitution before any approval or evidence
-claim. The later target must provide its exact canonical bytes and SHA-256,
-then bind authenticated opaque role aliases and provider-binding commitments to
-that target. Principal and five project-role slots use separate closed record
-types. No provider identifiers or alias mappings are retained here.
+claim. The later target must provide the exact canonical identity bytes shared
+with Section 7.4: schema version, `FULL_SECTION_7_5` kind, full-Section-7.5
+domain separator, and `canonical_contract_body_sha256`, with no additional
+fields. The target record binds those identity bytes and their SHA-256.
+Principal and five project-role slots use separate closed record types. No
+provider identifiers or alias mappings are retained here.
 
 Each future record is canonical JSON with three domain-separated SHA-256
 commitments: authentication evidence to authentication commitment,
 authentication commitment to provider binding, then the complete record to its
-record hash. This is locally verifiable with the standard library and rejects
-arbitrary substituted commitments, but it does not establish provider
-authenticity before a future externally governed evidence process.
+record hash. Local validation proves only closed structure and formula
+consistency. It rejects all-zero evidence but cannot prove that an alias was
+random or that caller-chosen evidence is authentic. Authenticated admission
+therefore resolves only through an independently trusted whole-record catalog;
+that catalog is exactly empty, so every current authenticated admission fails
+closed. No external trust record is defined here.
 
 The interface requires later fixed-point/separation evidence to bind the exact
 target, alias/provider-binding records, controller-set commitment, completeness

@@ -47,15 +47,15 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 # Updated only after all normative bytes are final.
 PINNED_ARTIFACTS = {
-    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "5f616c4bdcad9bc4e49e634a9a455cfad4ad44f8fa8577dfd72e0b118ed2c6ef",
+    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "72d961ab537c2ee7c37d660435968e9d04e1b297faf04cb5eaadfb1f3cdeb149",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-revalidation.json": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
     "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
-    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "3e49066b8f9080cb7b3abb43f339d45061d4db8581aac9c25419846857da0061",
-    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "3a29cd0ab9caca39d03b40b48969fb6d38963b106620f2f0ea2ccd5cc5347085",
+    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a",
+    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "00bdd0f7d06a57c6d18f81c69356f7119c7f4c45478bf8470816271699a9fbe5",
     "scripts/verify_gcp_security_authority_revalidation.py": "ecf35b27a96c862f1c5cad144d5a0861b12f42f9b51b65edb2810e56983a8dc0",
     "scripts/gcp_security_authority_contract_validation.py": "0e4d51d03bf177e9a0de190f058a22a4bfb8f19a11ecbf926bab4af498936074",
-    "scripts/verify_gcp_security_authority_contract.py": "dfcd2b2f173148081af9e445701fa5c43bb6f70949640c0e48313a6d6aef1a75",
+    "scripts/verify_gcp_security_authority_contract.py": "8825b6d2ff24e5a04b175c8af4842a181964fba87028cb4db66939643a424ab4",
 }
 
 
@@ -163,6 +163,70 @@ def _seal(stored: dict[str, Any], node: dict[str, Any], field: str) -> None:
         + b"\x00"
         + _canonical(body)
     )
+
+
+def _load_contract_verifier_module(module_name: str) -> Any:
+    spec = importlib.util.spec_from_file_location(module_name, CONTRACT_VERIFIER)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.pop(0)
+    return module
+
+
+def _alias_provider_binding_record(
+    schema: dict[str, Any],
+    *,
+    opaque_alias: str = "b" * 32,
+    provider_authentication_evidence_sha256: str = "c" * 64,
+) -> dict[str, Any]:
+    record = {
+        "schema_version": schema["schema_version"],
+        "target_binding_sha256": "d" * 64,
+        "role_id": schema["role_ids"][0],
+        "opaque_alias": opaque_alias,
+        "provider_authentication_evidence_sha256": (
+            provider_authentication_evidence_sha256
+        ),
+    }
+    authentication_material = {
+        key: record[key]
+        for key in (
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_authentication_evidence_sha256",
+        )
+    }
+    record["provider_binding_authentication_sha256"] = _sha(
+        schema["authentication_commitment_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(authentication_material)
+    )
+    binding_material = {
+        key: record[key]
+        for key in (
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_binding_authentication_sha256",
+        )
+    }
+    record["provider_binding_sha256"] = _sha(
+        schema["binding_commitment_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(binding_material)
+    )
+    record_material = dict(record)
+    record["alias_provider_binding_record_sha256"] = _sha(
+        schema["record_hash_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(record_material)
+    )
+    return record
 
 
 def _validate_policy(
@@ -2426,6 +2490,15 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held(
         "schema_version": "GCP_SECTION_7_5_FULL_TARGET_ADMISSION_V1",
         "section_7_5a_substitution": "REJECT",
         "target_binding_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_TARGET_BINDING:V1",
+        "target_identity_schema": {
+            "canonical_contract_body_sha256_field": "canonical_contract_body_sha256",
+            "required_keys": [
+                "schema_version",
+                "contract_kind",
+                "contract_domain_separator",
+                "canonical_contract_body_sha256",
+            ],
+        },
     }
     assert interface["authenticated_alias_provider_binding_schema"] == {
         "authentication_commitment_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING_AUTHENTICATION:V1",
@@ -2434,6 +2507,7 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held(
         "binding_commitment_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:ALIAS_PROVIDER_BINDING:V1",
         "binding_commitment_field": "provider_binding_sha256",
         "canonicalization_version": "FT_CANONICAL_JSON_V1",
+        "independently_trusted_alias_provider_binding_record_sha256_catalog": [],
         "opaque_alias_field": "opaque_alias",
         "owner": "SECTION_7_3",
         "provider_identifier_retention": "PROHIBITED",
@@ -2509,6 +2583,7 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held(
 
     target_bytes = _canonical(
         {
+            "canonical_contract_body_sha256": "a" * 64,
             "contract_domain_separator": target_schema["domain_separator"],
             "contract_kind": target_schema["contract_kind"],
             "schema_version": target_schema["contract_schema_version"],
@@ -2599,7 +2674,7 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held(
         + b"\x00"
         + _canonical(record_material)
     )
-    module.validate_authenticated_alias_provider_binding_record(
+    module.validate_alias_provider_binding_record_shape(
         binding_record, alias_schema
     )
     arbitrary_authentication = copy.deepcopy(binding_record)
@@ -2608,6 +2683,70 @@ def test_full_section_7_5_authority_admission_is_typed_bound_and_held(
         module.validate_authenticated_alias_provider_binding_record(
             arbitrary_authentication, alias_schema
         )
+
+
+def test_alias_provider_binding_formula_validation_is_structural_only() -> None:
+    module = _load_contract_verifier_module("gcp73_alias_shape_only")
+    contract = _json(CONTRACT)
+    schema = contract["section_7_5_authority_admission_interface"][
+        "authenticated_alias_provider_binding_schema"
+    ]
+    record = _alias_provider_binding_record(schema)
+
+    module.validate_alias_provider_binding_record_shape(record, schema)
+    with pytest.raises(ValueError, match="independently trusted catalog is empty"):
+        module.validate_authenticated_alias_provider_binding_record(record, schema)
+
+
+def test_alias_provider_binding_shape_rejects_all_zero_evidence() -> None:
+    module = _load_contract_verifier_module("gcp73_alias_zero_evidence")
+    contract = _json(CONTRACT)
+    schema = contract["section_7_5_authority_admission_interface"][
+        "authenticated_alias_provider_binding_schema"
+    ]
+    record = _alias_provider_binding_record(
+        schema,
+        provider_authentication_evidence_sha256="0" * 64,
+    )
+
+    with pytest.raises(ValueError, match="all-zero authentication evidence"):
+        module.validate_authenticated_alias_provider_binding_record(record, schema)
+
+
+def test_identifier_derived_alias_cannot_claim_authentication_without_catalog() -> None:
+    module = _load_contract_verifier_module("gcp73_identifier_derived_alias")
+    contract = _json(CONTRACT)
+    schema = contract["section_7_5_authority_admission_interface"][
+        "authenticated_alias_provider_binding_schema"
+    ]
+    identifier_derived_alias = hashlib.md5(  # noqa: S324 - attack regression only
+        b"synthetic-principal-identifier",
+        usedforsecurity=False,
+    ).hexdigest()
+    record = _alias_provider_binding_record(
+        schema,
+        opaque_alias=identifier_derived_alias,
+    )
+
+    with pytest.raises(ValueError, match="independently trusted catalog is empty"):
+        module.validate_authenticated_alias_provider_binding_record(record, schema)
+
+
+def test_caller_cannot_forge_the_independently_trusted_alias_catalog() -> None:
+    module = _load_contract_verifier_module("gcp73_forged_alias_catalog")
+    contract = _json(CONTRACT)
+    schema = copy.deepcopy(
+        contract["section_7_5_authority_admission_interface"][
+            "authenticated_alias_provider_binding_schema"
+        ]
+    )
+    record = _alias_provider_binding_record(schema)
+    schema[
+        "independently_trusted_alias_provider_binding_record_sha256_catalog"
+    ] = [record["alias_provider_binding_record_sha256"]]
+
+    with pytest.raises(ValueError, match="caller-supplied trusted catalog"):
+        module.validate_authenticated_alias_provider_binding_record(record, schema)
 
 
 def test_docs_parent_attribution_and_scope_are_consistent() -> None:

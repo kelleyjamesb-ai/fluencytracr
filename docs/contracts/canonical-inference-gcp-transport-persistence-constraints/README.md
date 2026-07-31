@@ -49,7 +49,7 @@ Public example identifiers remain external restricted provenance. Checked-in art
 
 - Section 7.2 contributes the exact ten `PROFILE_FREEZE_AND_SECTION_7_5_POLICY` obligations; approved profile hashes remain empty.
 - Section 7.3 contributes five project roles, fourteen principal roles, ten authority-operation IDs, ten positive audit-interface keys, privacy/role-separation requirements, and empty runtime approvals. It has no admitted Section 7.5 mechanism/network/anchor capability.
-- Section 7.4 is bound by exact current raw bytes (`3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8`) with live approval records empty. Its nine Section 7.5 acceptance nodes and token-freshness time feed remain runtime-unsatisfied and blocking.
+- Section 7.4 is bound by exact current raw bytes (`a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2`) with live approval records empty. Its nine Section 7.5 acceptance nodes and token-freshness time feed remain runtime-unsatisfied and blocking.
 - Section 7.6 may not substitute attempt-ledger roles or semantics for Section 7.5 persistence mechanics.
 
 ## Why the HOLD is mandatory

@@ -867,12 +867,12 @@
         },
         {
           "owner_section": "SECTION_7_2",
-          "raw_file_sha256": "6efc2eef1e91efc5fdca7ccf79d49d66caa858c7c4921d63bab518bde87b5ef2",
+          "raw_file_sha256": "7a3307d8820aa918cf433747adc1ee8aa5b9038fe161144c61dff50c03e099c3",
           "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/README.md"
         },
         {
           "owner_section": "SECTION_7_2",
-          "raw_file_sha256": "24081453e851f2859bb9ec7bd57302855b3085a8978caf088bc4096b561f996b",
+          "raw_file_sha256": "75de470b64880cf2dbc2b142b0fe37332f042e66fe17d8d15d8d7028bfed83a0",
           "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/canonicalization-vectors.json"
         },
         {
@@ -887,17 +887,17 @@
         },
         {
           "owner_section": "SECTION_7_2",
-          "raw_file_sha256": "9bd511fd7c859413fd599fa6bfc10e35534a532e7557df3f1a036017673c2474",
+          "raw_file_sha256": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587",
           "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json"
         },
         {
           "owner_section": "SECTION_7_3",
-          "raw_file_sha256": "5f616c4bdcad9bc4e49e634a9a455cfad4ad44f8fa8577dfd72e0b118ed2c6ef",
+          "raw_file_sha256": "72d961ab537c2ee7c37d660435968e9d04e1b297faf04cb5eaadfb1f3cdeb149",
           "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/README.md"
         },
         {
           "owner_section": "SECTION_7_3",
-          "raw_file_sha256": "3a29cd0ab9caca39d03b40b48969fb6d38963b106620f2f0ea2ccd5cc5347085",
+          "raw_file_sha256": "00bdd0f7d06a57c6d18f81c69356f7119c7f4c45478bf8470816271699a9fbe5",
           "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json"
         },
         {
@@ -917,11 +917,11 @@
         },
         {
           "owner_section": "SECTION_7_3",
-          "raw_file_sha256": "3e49066b8f9080cb7b3abb43f339d45061d4db8581aac9c25419846857da0061",
+          "raw_file_sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a",
           "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json"
         }
       ],
-      "manifest_sha256": "789b22e3a0fbfe960abb4ead2fe1fb1b61d8dbbcb7e380c1fee5d106a758b48b",
+      "manifest_sha256": "a5d83f75eb22a540c6f46a77ef94107b9ad468b22a0aafdf600301263db759d7",
       "owner_registries": {
         "SECTION_7_1": {
           "claim_count": 20,
@@ -1850,7 +1850,16 @@
       ],
       "schema_version": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_TARGET_V1",
       "section_7_5a_substitution": "REJECT",
-      "target_binding_domain_separator": "FLUENCYTRACR:GCP_ATTESTATION_RECEIPT:SECTION_7_5_TARGET_BINDING:V1"
+      "target_binding_domain_separator": "FLUENCYTRACR:GCP_ATTESTATION_RECEIPT:SECTION_7_5_TARGET_BINDING:V1",
+      "target_identity_schema": {
+        "canonical_contract_body_sha256_field": "canonical_contract_body_sha256",
+        "required_keys": [
+          "schema_version",
+          "contract_kind",
+          "contract_domain_separator",
+          "canonical_contract_body_sha256"
+        ]
+      }
     },
     "held_reason": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED",
     "live_external_approval_policy_verifier_records": [],
@@ -3425,7 +3434,7 @@
     "design_path": "openspec/changes/add-gcp-attestation-receipt-contract/design.md",
     "design_sha256": "f2480f8079675a83fda2f3495453fa95cb643d3c85e3b71b35dc109fcab2c290",
     "spec_path": "openspec/changes/add-gcp-attestation-receipt-contract/specs/gcp-attestation-receipt/spec.md",
-    "spec_sha256": "03dff233550dd17d119f0e679d0fa1c749c6ced3dcaf9c37e5d4e29dafa50c07"
+    "spec_sha256": "b652e2451a3d1aa3c3286cb2b4dc71130a5a3797ea9b961604f8dee9bf7cb698"
   },
   "object_envelope_contract": {
     "all_nonexcluded_nodes_required": true,

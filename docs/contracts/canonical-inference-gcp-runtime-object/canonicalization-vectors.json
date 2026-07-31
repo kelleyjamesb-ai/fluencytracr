@@ -3,7 +3,7 @@
   "canonicalization_version": "FT_CANONICAL_JSON_V1",
   "control_plane_projection_sha256": "010551be219b38cc8aed25102824406bfb6a8bc3806d04b93e831f1933ae8455",
   "provider_revalidation_artifact_sha256": "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc",
-  "runtime_object_contract_sha256": "9bd511fd7c859413fd599fa6bfc10e35534a532e7557df3f1a036017673c2474",
+  "runtime_object_contract_sha256": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587",
   "runtime_profile_approval_interface_evidence": {
     "external_approval_record_count": 0,
     "resolved_profile_canonical_body_sha256": "4d5b3522bff17c228c576b540c330b1f6ed8aee517667ac120ddd7a97fce03a6",

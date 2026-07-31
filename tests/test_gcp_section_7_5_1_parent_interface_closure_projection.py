@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import base64
 import copy
 import hashlib
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -65,6 +67,50 @@ def _copy_verifier_inputs(tmp_path: Path) -> Path:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)
     return tmp_path
+
+
+def _load_verifier_module(relative_path: str, module_name: str) -> Any:
+    spec = importlib.util.spec_from_file_location(module_name, ROOT / relative_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.pop(0)
+    return module
+
+
+def _canonical_json(value: dict[str, Any]) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+
+
+def _target_record(
+    schema: dict[str, Any],
+    target_identity_bytes: bytes,
+) -> dict[str, Any]:
+    record = {
+        "schema_version": schema["schema_version"],
+        "contract_kind": schema["contract_kind"],
+        "contract_domain_separator": schema["domain_separator"],
+        "canonical_contract_bytes_base64": base64.b64encode(
+            target_identity_bytes
+        ).decode("ascii"),
+        "canonical_contract_bytes_sha256": hashlib.sha256(
+            target_identity_bytes
+        ).hexdigest(),
+    }
+    record["target_binding_sha256"] = hashlib.sha256(
+        schema["target_binding_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical_json(record)
+    ).hexdigest()
+    return record
 
 
 def test_projection_closes_only_documentation_parent_interfaces_and_stays_silent(
@@ -167,6 +213,39 @@ def test_verifier_rejects_changed_registry_bytes(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    ("field", "forged_value"),
+    [
+        ("authority_effect", "AUTHORIZED"),
+        ("decision", "SECTION_7_5_CONTRACT_CLOSED"),
+    ],
+)
+def test_verifier_rejects_duplicate_projection_authority_keys(
+    tmp_path: Path,
+    field: str,
+    forged_value: str,
+) -> None:
+    root = _copy_verifier_inputs(tmp_path)
+    projection_path = root / PROJECTION_PATH
+    legitimate_line = next(
+        line
+        for line in projection_path.read_text(encoding="utf-8").splitlines()
+        if line.startswith(f'  "{field}": ')
+    )
+    raw = projection_path.read_text(encoding="utf-8")
+    projection_path.write_text(
+        raw.replace(
+            legitimate_line,
+            f'  "{field}": {json.dumps(forged_value)},\n{legitimate_line}',
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ProjectionValidationError, match="unreadable"):
+        validate_projection(root)
+
+
+@pytest.mark.parametrize(
     "mutate",
     [
         lambda value: value["source_contracts"][0].update(
@@ -236,6 +315,126 @@ def test_verifier_rejects_forbidden_cross_parent_portions(
 
     with pytest.raises(ProjectionValidationError):
         validate_projection(root)
+
+
+def test_section_7_3_and_7_4_accept_the_same_closed_full_target_identity_bytes() -> None:
+    section_7_3 = _load_verifier_module(
+        "scripts/verify_gcp_security_authority_contract.py",
+        "gcp73_shared_target_identity",
+    )
+    section_7_4 = _load_verifier_module(
+        "scripts/verify_gcp_attestation_receipt_contract.py",
+        "gcp74_shared_target_identity",
+    )
+    security_contract = _load_json(ROOT / SOURCE_PATHS[1])
+    attestation_contract = _load_json(ROOT / SOURCE_PATHS[3])
+    section_7_3_schema = security_contract[
+        "section_7_5_authority_admission_interface"
+    ]["full_section_7_5_target_schema"]
+    section_7_4_schema = attestation_contract[
+        "section_7_5_external_approval_interface"
+    ]["full_section_7_5_target_schema"]
+    identity_bytes = _canonical_json(
+        {
+            "canonical_contract_body_sha256": "a" * 64,
+            "contract_domain_separator": (
+                "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1"
+            ),
+            "contract_kind": "FULL_SECTION_7_5",
+            "schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+        }
+    )
+
+    assert identity_bytes
+    section_7_3.validate_full_section_7_5_target_record(
+        _target_record(section_7_3_schema, identity_bytes),
+        section_7_3_schema,
+    )
+    section_7_4.validate_full_section_7_5_external_approval_target_record(
+        _target_record(section_7_4_schema, identity_bytes),
+        section_7_4_schema,
+    )
+
+
+def test_both_parents_reject_open_ended_full_target_identity_fields() -> None:
+    section_7_3 = _load_verifier_module(
+        "scripts/verify_gcp_security_authority_contract.py",
+        "gcp73_closed_target_identity",
+    )
+    section_7_4 = _load_verifier_module(
+        "scripts/verify_gcp_attestation_receipt_contract.py",
+        "gcp74_closed_target_identity",
+    )
+    security_contract = _load_json(ROOT / SOURCE_PATHS[1])
+    attestation_contract = _load_json(ROOT / SOURCE_PATHS[3])
+    section_7_3_schema = security_contract[
+        "section_7_5_authority_admission_interface"
+    ]["full_section_7_5_target_schema"]
+    section_7_4_schema = attestation_contract[
+        "section_7_5_external_approval_interface"
+    ]["full_section_7_5_target_schema"]
+    attacked_identity_bytes = _canonical_json(
+        {
+            "canonical_contract_body_sha256": "a" * 64,
+            "contract_domain_separator": (
+                "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1"
+            ),
+            "contract_kind": "FULL_SECTION_7_5",
+            "schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+            "unknown_future_authority": "ALLOW",
+        }
+    )
+
+    with pytest.raises(ValueError, match="target identity keys mismatch"):
+        section_7_3.validate_full_section_7_5_target_record(
+            _target_record(section_7_3_schema, attacked_identity_bytes),
+            section_7_3_schema,
+        )
+    with pytest.raises(ValueError, match="target identity keys mismatch"):
+        section_7_4.validate_full_section_7_5_external_approval_target_record(
+            _target_record(section_7_4_schema, attacked_identity_bytes),
+            section_7_4_schema,
+        )
+
+
+def test_both_parents_reject_section_7_5a_target_identity_bytes() -> None:
+    section_7_3 = _load_verifier_module(
+        "scripts/verify_gcp_security_authority_contract.py",
+        "gcp73_section_7_5a_target_identity",
+    )
+    section_7_4 = _load_verifier_module(
+        "scripts/verify_gcp_attestation_receipt_contract.py",
+        "gcp74_section_7_5a_target_identity",
+    )
+    security_contract = _load_json(ROOT / SOURCE_PATHS[1])
+    attestation_contract = _load_json(ROOT / SOURCE_PATHS[3])
+    section_7_3_schema = security_contract[
+        "section_7_5_authority_admission_interface"
+    ]["full_section_7_5_target_schema"]
+    section_7_4_schema = attestation_contract[
+        "section_7_5_external_approval_interface"
+    ]["full_section_7_5_target_schema"]
+    attacked_identity_bytes = _canonical_json(
+        {
+            "canonical_contract_body_sha256": "a" * 64,
+            "contract_domain_separator": (
+                "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5A:V1"
+            ),
+            "contract_kind": "SECTION_7_5A",
+            "schema_version": "GCP_SECTION_7_5A_CONSTRAINTS_OPEN_OBLIGATIONS_V1",
+        }
+    )
+
+    with pytest.raises(ValueError, match="target identity discriminator mismatch"):
+        section_7_3.validate_full_section_7_5_target_record(
+            _target_record(section_7_3_schema, attacked_identity_bytes),
+            section_7_3_schema,
+        )
+    with pytest.raises(ValueError, match="target identity discriminator mismatch"):
+        section_7_4.validate_full_section_7_5_external_approval_target_record(
+            _target_record(section_7_4_schema, attacked_identity_bytes),
+            section_7_4_schema,
+        )
 
 
 def test_cli_emits_one_bounded_success_line() -> None:
