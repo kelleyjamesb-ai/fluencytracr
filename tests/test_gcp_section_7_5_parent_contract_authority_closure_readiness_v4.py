@@ -14,6 +14,7 @@ import pytest
 
 import tests.gcp_s751_v4.bundle as bundle_module
 import tests.gcp_s751_v4.corpus as corpus_module
+import tests.gcp_s751_v4.corpus_declarations as declarations_module
 import tests.gcp_s751_v4.oracle as oracle_module
 from tests.gcp_s751_v4.bundle import (
     BundleAdmissionError,
@@ -44,14 +45,6 @@ from tests.gcp_s751_v4.corpus import (
     evaluate_reference_sequence,
     invoke_future_sut,
     parse_closed_result_bytes,
-)
-from tests.gcp_s751_v4.corpus_declarations import (
-    declared_expected_result,
-    declared_ledger_ids,
-    load_case_declarations,
-    reconcile_case_declarations,
-    resolve_immutable_root_sha256,
-    validate_declared_test_id,
 )
 from tests.gcp_s751_v4.model import (
     EvaluationResult,
@@ -560,123 +553,205 @@ def test_attack_catalog_and_rule_ledger_reconcile_exactly() -> None:
     assert {case.attack_id for case in cases} == {
         attack["attack_id"] for attack in packet.attack_catalog
     }
-    covered = {
-        rule_id
+    row_ids = {row.rule_id for row in rows}
+    assert all(
+        len(case.covered_rule_ids) == 1
+        and case.covered_rule_ids[0] in row_ids
         for case in cases
-        for rule_id in case.covered_rule_ids
-    }
-    result_protocol_rows = {
-        row.rule_id
-        for row in rows
-        if row.resource == "result" and row.attack_ids == ("A018",)
-    }
-    applicable = {row.rule_id for row in rows if row.attack_ids}
-    assert covered | result_protocol_rows == applicable
-    for row in rows:
-        for attack_id in row.attack_ids:
-            if row.resource == "result" and attack_id == "A018":
-                assert row.pointer in {
-                    "/schema_version",
-                    "/decision",
-                    "/reason",
-                    "/authority_effect",
-                    "/claim_grade",
-                }
-                continue
-            assert any(
-                case.attack_id == attack_id
-                and row.rule_id in case.covered_rule_ids
-                for case in cases
-            )
+    )
 
 
-def test_packet_case_declarations_bind_exact_mutations_roots_and_ledger_rows() -> None:
+def test_packet_owns_one_closed_record_for_every_emitted_case() -> None:
+    loader = getattr(declarations_module, "load_case_records", None)
+    observation_builder = getattr(
+        corpus_module, "build_case_observations", None
+    )
+    reconciler = getattr(
+        declarations_module, "reconcile_case_records", None
+    )
+
+    assert loader is not None, "per-case packet record loader is missing"
+    assert observation_builder is not None
+    assert reconciler is not None
+
     packet = load_packet()
-    declarations = load_case_declarations(packet)
     rows = build_rule_ledger(packet)
+    records = loader(packet)
+    observations = observation_builder(packet)
 
-    reconcile_case_declarations(packet, rows, declarations)
-
-    assert {
-        (declaration.attack_id, declaration.generator)
-        for declaration in declarations
-    } == {
-        (attack["attack_id"], generator)
-        for attack in packet.attack_catalog
-        for generator in attack["generators"]
+    assert len(records) == len(observations) == 159
+    assert {record.case_id for record in records} == {
+        observation.case_id for observation in observations
     }
-    assert all(declaration.mutation_id for declaration in declarations)
-    assert all(declaration.immutable_root_id for declaration in declarations)
-    assert all(declaration.test_id_template for declaration in declarations)
-    assert all(declaration.ledger_bindings for declaration in declarations)
+    assert len({record.case_id for record in records}) == len(records)
+    assert all(record.mutation_operator for record in records)
+    assert all(record.mutation_parameters for record in records)
+    assert all(record.source_relationship for record in records)
+    assert all(record.target_relationship for record in records)
+    assert all(record.immutable_root_id for record in records)
+    assert all(record.immutable_root_sha256 for record in records)
+    assert all(record.expected_sequence for record in records)
+    assert all(record.oracle_id for record in records)
+    assert all(record.pytest_node.startswith("tests/") for record in records)
+    reconciler(packet, rows, records, observations)
 
 
-def test_case_declaration_reconciliation_rejects_deleted_or_misbound_records() -> None:
+def test_per_case_reconciliation_rejects_every_record_corruption_class() -> None:
+    loader = getattr(declarations_module, "load_case_records", None)
+    observation_builder = getattr(
+        corpus_module, "build_case_observations", None
+    )
+    reconciler = getattr(
+        declarations_module, "reconcile_case_records", None
+    )
+    resolver = getattr(
+        declarations_module, "resolve_case_ledger_row", None
+    )
+    assert all(
+        value is not None
+        for value in (loader, observation_builder, reconciler, resolver)
+    )
+
     packet = load_packet()
-    declarations = load_case_declarations(packet)
     rows = build_rule_ledger(packet)
+    records = loader(packet)
+    observations = observation_builder(packet)
+    first = records[0]
 
-    with pytest.raises(
-        ValueError,
-        match="^case declaration set does not match attack catalog$",
-    ):
-        reconcile_case_declarations(packet, rows, declarations[:-1])
+    with pytest.raises(ValueError, match="case record set mismatch"):
+        reconciler(packet, rows, records[:-1], observations)
+    with pytest.raises(ValueError, match="case record set mismatch"):
+        reconciler(packet, rows, records + (first,), observations)
 
-    first = declarations[0]
-    misbound = replace(
+    changed_mutation = replace(
         first,
-        ledger_bindings=(
-            replace(
-                first.ledger_bindings[0],
-                resource="result",
-                pointer_rule="EXACT:/reason",
-            ),
+        mutation_operator="WRONG_MUTATION_OPERATOR",
+    )
+    with pytest.raises(
+        ValueError, match="case record does not match observed mutation"
+    ):
+        reconciler(
+            packet,
+            rows,
+            (changed_mutation,) + records[1:],
+            observations,
+        )
+
+    wrong_sequence = replace(
+        first,
+        expected_sequence=records[1].expected_sequence,
+    )
+    with pytest.raises(
+        ValueError, match="case record expected sequence mismatch"
+    ):
+        reconciler(
+            packet,
+            rows,
+            (wrong_sequence,) + records[1:],
+            observations,
+        )
+
+    alternate_root = next(
+        record
+        for record in records
+        if record.immutable_root_id != first.immutable_root_id
+    )
+    wrong_root = replace(
+        first,
+        immutable_root_id=alternate_root.immutable_root_id,
+        immutable_root_sha256=alternate_root.immutable_root_sha256,
+    )
+    with pytest.raises(
+        ValueError, match="case record immutable root mismatch"
+    ):
+        reconciler(
+            packet,
+            rows,
+            (wrong_root,) + records[1:],
+            observations,
+        )
+
+    wrong_selector = replace(
+        first,
+        ledger_selector=replace(
+            first.ledger_selector,
+            pointer="/not-a-ledger-row",
         ),
     )
     with pytest.raises(
-        ValueError,
-        match="^case declaration ledger binding has no exact match$",
+        ValueError, match="case ledger selector must match exactly one row"
     ):
-        reconcile_case_declarations(
+        reconciler(
             packet,
             rows,
-            (misbound,) + declarations[1:],
+            (wrong_selector,) + records[1:],
+            observations,
         )
 
+    replay_record = next(
+        record
+        for record in records
+        if record.case_id == "a009-process-local-replay"
+    )
+    wrong_stage_selector = replace(
+        first,
+        ledger_selector=replay_record.ledger_selector,
+    )
+    with pytest.raises(
+        ValueError,
+        match="case expected boundary does not match ledger row stage",
+    ):
+        reconciler(
+            packet,
+            rows,
+            (wrong_stage_selector,) + records[1:],
+            observations,
+        )
 
-def test_constructed_cases_emit_declared_mutation_root_result_and_ledger_evidence() -> None:
+    selected = resolver(first, rows)
+    with pytest.raises(
+        ValueError, match="case ledger selector must match exactly one row"
+    ):
+        resolver(first, tuple(rows) + (selected,))
+
+
+def test_a019_records_stop_at_the_actual_ledger_failure_stage() -> None:
+    loader = getattr(declarations_module, "load_case_records", None)
+    resolver = getattr(
+        declarations_module, "resolve_case_ledger_row", None
+    )
+    assert loader is not None and resolver is not None
+
     packet = load_packet()
     rows = build_rule_ledger(packet)
-    declarations = {
-        (declaration.attack_id, declaration.generator): declaration
-        for declaration in load_case_declarations(packet)
+    records = {
+        record.case_id: record
+        for record in loader(packet)
+        if record.attack_id == "A019"
+    }
+    cases = {
+        case.case_id: case
+        for case in build_attack_cases(packet)
+        if case.attack_id == "A019"
     }
 
-    for case in build_attack_cases(packet):
-        declaration = declarations[(case.attack_id, case.generator)]
-        assert case.oracle_id == declaration.oracle_id
-        assert case.mutation_evidence.mutation_id == declaration.mutation_id
-        assert (
-            case.mutation_evidence.immutable_root_id
-            == declaration.immutable_root_id
-        )
-        assert (
-            case.mutation_evidence.immutable_root_sha256
-            == resolve_immutable_root_sha256(
-                packet, declaration.immutable_root_id
+    assert records.keys() == cases.keys()
+    for case_id, case in cases.items():
+        row = resolver(records[case_id], rows)
+        if case.expected.reason == "INVALID_SECTION_7_3_AUTHORITY":
+            assert row.resource == "role-capability-matrix.json"
+            assert row.pointer.startswith("/roles/")
+            assert row.pointer.endswith("/role_id")
+            assert "SECTION_7_3_ROLE_CAPABILITY_ADMISSION" in (
+                row.decision_use
             )
-            == declaration.immutable_root_sha256
-        )
-        assert case.mutation_evidence.observed_sha256
-        assert case.expected == declared_expected_result(
-            declaration, case.case_id
-        )
-        validate_declared_test_id(declaration, case.case_id)
-        assert case.covered_rule_ids == declared_ledger_ids(
-            declaration,
-            rows,
-            case.mutation_evidence.observed_resources,
-        )
+        else:
+            assert case.expected.reason == "INVALID_PARENT_RESOURCE_SET"
+            assert row.resource == "bundle_capability"
+            assert row.pointer == "/member_names"
+            assert "EXACT_PARENT_BUNDLE_ADMISSION" in row.decision_use
+            assert "SECTION_7_3" not in row.decision_use
+            assert "OPEN_BLOCKER" not in row.decision_use
 
 
 def test_packet_attack_generators_are_closed_and_executable() -> None:

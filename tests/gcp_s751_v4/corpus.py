@@ -25,11 +25,11 @@ from typing import Callable, ContextManager, Iterator, Mapping, Sequence
 
 from tests.gcp_s751_v4.bundle import open_harness_bundle
 from tests.gcp_s751_v4.corpus_declarations import (
-    CaseDeclaration,
-    declared_expected_result,
-    declared_ledger_ids,
-    load_case_declarations,
-    reconcile_case_declarations,
+    CaseRecord,
+    load_case_records,
+    reconcile_case_records,
+    resolve_case_ledger_row,
+    resolve_immutable_root_sha256,
 )
 from tests.gcp_s751_v4.crypto import sign_ephemeral_batch
 from tests.gcp_s751_v4.ledger import build_rule_ledger
@@ -94,17 +94,47 @@ class PreparedCase:
 
 @dataclass(frozen=True)
 class MutationEvidence:
-    mutation_id: str
     immutable_root_id: str
     immutable_root_sha256: str
     source_sha256: str
     observed_sha256: str
-    observed_resources: tuple[str, ...]
     source_object_sha256: str
     source_envelope_sha256: str
     source_anchor_sha256: str
     source_result: EvaluationResult | None
     observed_ordering: tuple[str, ...]
+    observed_operator: str
+    observed_parameters: tuple[str, ...]
+    source_relationship: str
+    target_relationship: str
+
+
+@dataclass(frozen=True)
+class CaseObservation:
+    case_id: str
+    attack_id: str
+    generator_id: str
+    mutation_operator: str
+    mutation_parameters: tuple[str, ...]
+    source_relationship: str
+    target_relationship: str
+    immutable_root_id: str
+    immutable_root_sha256: str
+    expected_sequence: tuple[tuple[str, ...], ...]
+    oracle_id: str
+    pytest_node: str
+
+
+@dataclass(frozen=True)
+class OutputBoundaryCase:
+    case_id: str
+    attack_id: str
+    generator_id: str
+    field: str
+    input_bytes: bytes
+    expected_failure: str
+    oracle_id: str
+    pytest_node: str
 
 
 @dataclass(frozen=True)
@@ -136,13 +166,14 @@ class _CaseDraft:
     envelope_bytes: bytes
     admitted_anchor_spki: bytes
     bundle_factory: Callable[[], ContextManager[int]]
-    target_resources: tuple[str, ...]
     source_sha256: str
-    declaration: CaseDeclaration | None
     source_object_sha256: str = ""
     source_envelope_sha256: str = ""
     source_anchor_sha256: str = ""
     source_result: EvaluationResult | None = None
+    baseline_candidate_bytes: bytes = b""
+    baseline_envelope_bytes: bytes = b""
+    baseline_anchor_spki: bytes = b""
 
 
 @dataclass(frozen=True)
@@ -181,6 +212,101 @@ def build_environment_cells(
 def build_fd_discriminator_cases() -> tuple[PreparedCase, PreparedCase]:
     """Return exact and corrupt semantics for one normalized child descriptor."""
     return _corpus().fd_cases
+
+
+def build_output_boundary_cases(
+    packet: RulePacket,
+) -> tuple[OutputBoundaryCase, ...]:
+    """Construct the five packet-visible closed-result protocol probes."""
+    _require_current_packet(packet)
+    base = {
+        "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+        "decision": "HOLD",
+        "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN",
+        "authority_effect": "NONE",
+        "claim_grade": "STRUCTURAL_ONLY",
+    }
+    cases: list[OutputBoundaryCase] = []
+    for field in (
+        "schema_version",
+        "decision",
+        "reason",
+        "authority_effect",
+        "claim_grade",
+    ):
+        value = dict(base)
+        value[field] = _IDENTIFIER_PROBE
+        input_bytes = canonical_json(value)
+        try:
+            parse_closed_result_bytes(input_bytes)
+        except AssertionError as exc:
+            if str(exc) != "INVALID_SUT_RESULT":
+                raise
+        else:
+            raise ValueError("closed-result boundary probe was accepted")
+        cases.append(
+            OutputBoundaryCase(
+                case_id=f"a018-result-string-path-{field}",
+                attack_id="A018",
+                generator_id="RESULT_STRING_PATH",
+                field=field,
+                input_bytes=input_bytes,
+                expected_failure="INVALID_SUT_RESULT",
+                oracle_id="CLOSED_RESULT_PARSER_V4",
+                pytest_node=(
+                    "tests/"
+                    "test_gcp_section_7_5_parent_contract_"
+                    "authority_closure_readiness_v4.py::"
+                    "test_result_boundary_rejects_identifier_"
+                    f"class_outputs[{field}]"
+                ),
+            )
+        )
+    return tuple(cases)
+
+
+def build_case_observations(
+    packet: RulePacket,
+) -> tuple[CaseObservation, ...]:
+    """Return independent observations for every emitted packet case."""
+    _require_current_packet(packet)
+    attack_observations = tuple(
+        _prepared_case_observation(packet, case)
+        for case in build_attack_cases(packet)
+    )
+    environment_observations = tuple(
+        _prepared_case_observation(packet, cell.case)
+        for cell in build_environment_cells(packet)
+        if cell.executable and cell.case is not None
+    )
+    output_observations = _output_case_observations(packet)
+    return attack_observations + environment_observations + output_observations
+
+
+def _output_case_observations(
+    packet: RulePacket,
+) -> tuple[CaseObservation, ...]:
+    return tuple(
+        CaseObservation(
+            case_id=case.case_id,
+            attack_id=case.attack_id,
+            generator_id=case.generator_id,
+            mutation_operator="IDENTIFIER_INJECTION",
+            mutation_parameters=(f"result:/{case.field}",),
+            source_relationship="CLOSED_VALID_RESULT",
+            target_relationship="IDENTIFIER_CLASS_RESULT_VALUE",
+            immutable_root_id="PUBLIC_BOUNDARY_SCHEMA_SET_V4",
+            immutable_root_sha256=resolve_immutable_root_sha256(
+                packet, "PUBLIC_BOUNDARY_SCHEMA_SET_V4"
+            ),
+            expected_sequence=(
+                ("PROTOCOL_FAILURE", case.expected_failure),
+            ),
+            oracle_id=case.oracle_id,
+            pytest_node=case.pytest_node,
+        )
+        for case in build_output_boundary_cases(packet)
+    )
 
 
 def evaluate_reference_case(case: PreparedCase) -> EvaluationResult:
@@ -325,12 +451,8 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
     base_candidate, base_envelope, base_anchor = base_material
     exact_factory = _bundle_factory(packet, "EXACT")
     rows = build_rule_ledger(packet)
-    declarations = load_case_declarations(packet)
-    reconcile_case_declarations(packet, rows, declarations)
-    declarations_by_key = {
-        (declaration.attack_id, declaration.generator): declaration
-        for declaration in declarations
-    }
+    records = load_case_records(packet)
+    records_by_id = {record.case_id: record for record in records}
     source_sha256 = _normative_source_sha256(
         packet,
         base_candidate,
@@ -351,7 +473,6 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
         attack_id = _required_attack_text(attack, "attack_id")
         generators = _attack_generators(attack)
         for generator in generators:
-            declaration = declarations_by_key[(attack_id, generator)]
             generated = _generate_cases(
                 packet=packet,
                 attack_id=attack_id,
@@ -362,7 +483,6 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
                 base_anchor=base_anchor,
                 exact_factory=exact_factory,
                 source_sha256=source_sha256,
-                declaration=declaration,
                 time_reseal_material=time_reseal_material,
             )
             if attack_id in metamorphic_drafts:
@@ -372,7 +492,10 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
             else:
                 attack_drafts.extend(generated)
 
-    scored_attacks = [_score_draft(draft, rows) for draft in attack_drafts]
+    scored_attacks = [
+        _score_draft(draft, rows, records_by_id[draft.case_id])
+        for draft in attack_drafts
+    ]
     scored_groups: list[MetamorphicGroup] = []
     varied = {
         "M001": ("ephemeral_key", "signature"),
@@ -381,7 +504,9 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
     }
     for attack_id in ("M001", "M002", "M003"):
         equivalents = tuple(
-            _score_draft(draft, rows)
+            _score_draft(
+                draft, rows, records_by_id[draft.case_id]
+            )
             for draft in metamorphic_drafts[attack_id]
         )
         if len(equivalents) < 2:
@@ -397,7 +522,10 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
 
     if len(fd_drafts) != 2:
         raise ValueError("descriptor discriminator must create two cases")
-    fd_cases = tuple(_score_draft(draft, rows) for draft in fd_drafts)
+    fd_cases = tuple(
+        _score_draft(draft, rows, records_by_id[draft.case_id])
+        for draft in fd_drafts
+    )
     if len(fd_cases) != 2:
         raise ValueError("descriptor discriminator must create two cases")
     scored_attacks.extend(fd_cases)
@@ -416,13 +544,29 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
         scored_by_id[fd_cases[0].case_id],
         scored_by_id[fd_cases[1].case_id],
     )
-    environments = _build_environment_cells(packet)
+    environments = _build_environment_cells(
+        packet, rows, records_by_id
+    )
 
     expected_attack_ids = {
         _required_attack_text(attack, "attack_id") for attack in attacks
     }
     if {case.attack_id for case in scored_attacks} != expected_attack_ids:
         raise ValueError("packet attack catalog did not construct exactly")
+    local_observations = tuple(
+        _prepared_case_observation(packet, case)
+        for case in scored_attacks
+    ) + tuple(
+        _prepared_case_observation(packet, cell.case)
+        for cell in environments
+        if cell.executable and cell.case is not None
+    ) + _output_case_observations(packet)
+    reconcile_case_records(
+        packet,
+        rows,
+        records,
+        local_observations,
+    )
     return _Corpus(
         attack_cases=tuple(scored_attacks),
         metamorphic_groups=tuple(scored_groups),
@@ -442,7 +586,6 @@ def _generate_cases(
     base_anchor: bytes,
     exact_factory: Callable[[], ContextManager[int]],
     source_sha256: str,
-    declaration: CaseDeclaration,
     time_reseal_material: tuple[bytes, bytes, bytes],
 ) -> list[_CaseDraft]:
     prefix = f"{attack_id.lower()}-{generator.lower().replace('_', '-')}"
@@ -454,7 +597,6 @@ def _generate_cases(
         envelope_bytes: bytes = base_envelope,
         anchor: bytes = base_anchor,
         bundle_factory: Callable[[], ContextManager[int]] = exact_factory,
-        resources: tuple[str, ...] = ("*",),
         source_object_sha256: str = "",
         source_envelope_sha256: str = "",
         source_anchor_sha256: str = "",
@@ -469,13 +611,14 @@ def _generate_cases(
             envelope_bytes=envelope_bytes,
             admitted_anchor_spki=anchor,
             bundle_factory=bundle_factory,
-            target_resources=resources,
             source_sha256=source_sha256,
-            declaration=declaration,
             source_object_sha256=source_object_sha256,
             source_envelope_sha256=source_envelope_sha256,
             source_anchor_sha256=source_anchor_sha256,
             source_result=source_result,
+            baseline_candidate_bytes=base_candidate,
+            baseline_envelope_bytes=base_envelope,
+            baseline_anchor_spki=base_anchor,
         )
 
     if generator.startswith("RAW_CANDIDATE_"):
@@ -491,7 +634,7 @@ def _generate_cases(
             data = canonical_json(value)
         else:
             raise ValueError("unknown candidate raw generator")
-        return [draft("", candidate_bytes=data, resources=("candidate",))]
+        return [draft("", candidate_bytes=data)]
 
     if generator.startswith("RAW_PAYLOAD_"):
         envelope = _decode_envelope(base_envelope)
@@ -510,7 +653,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=canonical_json(envelope),
-                resources=("signed_context_payload",),
             )
         ]
 
@@ -528,7 +670,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=canonical_json(envelope),
-                resources=("signed_context_envelope",),
             )
         ]
 
@@ -549,7 +690,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=canonical_json(envelope),
-                resources=("nonce_time",),
             )
         ]
 
@@ -563,7 +703,6 @@ def _generate_cases(
             draft(
                 "",
                 candidate_bytes=canonical_json(value),
-                resources=("candidate",),
             )
         ]
 
@@ -577,7 +716,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=canonical_json(envelope),
-                resources=("signed_context_payload",),
             )
         ]
 
@@ -586,7 +724,6 @@ def _generate_cases(
             draft(
                 "",
                 candidate_bytes=base_candidate[:-1],
-                resources=("candidate",),
             )
         ]
 
@@ -595,7 +732,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=base_envelope[:-1],
-                resources=("signed_context_envelope",),
             )
         ]
 
@@ -611,7 +747,6 @@ def _generate_cases(
             draft(
                 "",
                 candidate_bytes=canonical_json(value),
-                resources=("candidate",),
             )
         ]
 
@@ -651,7 +786,6 @@ def _generate_cases(
             draft(
                 "",
                 candidate_bytes=source_candidate,
-                resources=("candidate",),
                 source_object_sha256=hashlib.sha256(
                     source_candidate
                 ).hexdigest(),
@@ -672,7 +806,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=canonical_json(envelope),
-                resources=("signed_context_payload",),
             )
         ]
 
@@ -690,7 +823,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=canonical_json(envelope),
-                resources=("signed_context_payload",),
             )
         ]
 
@@ -708,7 +840,6 @@ def _generate_cases(
             draft(
                 "",
                 envelope_bytes=canonical_json(envelope),
-                resources=("signed_context_envelope", "verifier_anchor"),
             )
         ]
 
@@ -722,7 +853,6 @@ def _generate_cases(
                     target_member=entry.member_name,
                     parent_mutator=_mutate_first_scalar,
                 ),
-                resources=("bundle_capability", entry.member_name),
             )
             for index, entry in enumerate(packet.parent_manifest)
         ]
@@ -734,7 +864,6 @@ def _generate_cases(
                 bundle_factory=_bundle_factory(
                     packet, "SPLICE", target_member=entry.member_name
                 ),
-                resources=("bundle_capability", entry.member_name),
             )
             for index, entry in enumerate(packet.parent_manifest)
         ]
@@ -743,15 +872,9 @@ def _generate_cases(
         payload = _base_payload(packet, base_candidate, "CLEAN_CI")
         if generator == "FORGED_RECEIPT":
             payload["receipt_sha256"] = "0" * 64
-            resources = (
-                "signed_context_payload",
-                "replay",
-                "attestation-receipt-contract.json",
-            )
         else:
             payload["current_head_sha256"] = "0" * 64
             payload["anti_rollback_sha256"] = "0" * 64
-            resources = ("signed_context_payload", "replay")
         _, envelope, anchor = _sign_material(
             packet, base_candidate, payload
         )
@@ -760,23 +883,12 @@ def _generate_cases(
                 "",
                 envelope_bytes=envelope,
                 anchor=anchor,
-                resources=resources,
             )
         ]
 
     if generator == "PROCESS_LOCAL_REPLAY":
         return [
-            draft(
-                "",
-                resources=(
-                    "signed_context_payload",
-                    "signed_context_envelope",
-                    "verifier_anchor",
-                    "nonce_time",
-                    "replay",
-                    "attestation-receipt-contract.json",
-                ),
-            )
+            draft("")
         ]
 
     if generator == "ALTERNATE_ANCHOR_FULL_RESEAL":
@@ -798,13 +910,6 @@ def _generate_cases(
                 candidate_bytes=resealed_candidate,
                 envelope_bytes=envelope,
                 anchor=base_anchor,
-                resources=(
-                    "signed_context_payload",
-                    "signed_context_envelope",
-                    "verifier_anchor",
-                    "replay",
-                    "attestation-receipt-contract.json",
-                ),
             )
         ]
 
@@ -819,11 +924,6 @@ def _generate_cases(
                 "",
                 envelope_bytes=envelope,
                 anchor=anchor,
-                resources=(
-                    "signed_context_payload",
-                    "signed_context_envelope",
-                    "nonce_time",
-                ),
             )
         ]
 
@@ -847,12 +947,6 @@ def _generate_cases(
                 "",
                 envelope_bytes=envelope,
                 anchor=anchor,
-                resources=(
-                    "signed_context_payload",
-                    "signed_context_envelope",
-                    "verifier_anchor",
-                    "nonce_time",
-                ),
             )
         ]
 
@@ -867,7 +961,6 @@ def _generate_cases(
                 "",
                 envelope_bytes=envelope,
                 anchor=anchor,
-                resources=("signed_context_payload",),
             )
         ]
 
@@ -876,7 +969,6 @@ def _generate_cases(
             draft(
                 "",
                 bundle_factory=_bundle_factory(packet, "ABSENT"),
-                resources=("bundle_capability",),
             )
         ]
 
@@ -887,7 +979,6 @@ def _generate_cases(
                 bundle_factory=_bundle_factory(
                     packet, "PARTIAL", target_member=entry.member_name
                 ),
-                resources=("bundle_capability", entry.member_name),
             )
             for index, entry in enumerate(packet.parent_manifest)
         ]
@@ -899,7 +990,6 @@ def _generate_cases(
                 bundle_factory=_bundle_factory(
                     packet, "CORRUPT", target_member=entry.member_name
                 ),
-                resources=("bundle_capability", entry.member_name),
             )
             for index, entry in enumerate(packet.parent_manifest)
         ]
@@ -916,11 +1006,6 @@ def _generate_cases(
             draft(
                 "",
                 bundle_factory=_bundle_factory(packet, resource_variant),
-                resources=("bundle_capability",) + (
-                    (packet.parent_manifest[0].member_name,)
-                    if resource_variant != "EXTRA"
-                    else ()
-                ),
             )
         ]
 
@@ -935,7 +1020,7 @@ def _generate_cases(
             base_anchor=base_anchor,
             exact_factory=exact_factory,
             source_sha256=source_sha256,
-            declaration=declaration,
+            generator=generator,
         )
 
     if (
@@ -952,7 +1037,6 @@ def _generate_cases(
             base_anchor=base_anchor,
             exact_factory=exact_factory,
             source_sha256=source_sha256,
-            declaration=declaration,
         )
 
     if generator == "EPHEMERAL_KEY_EQUIVALENCE":
@@ -967,12 +1051,6 @@ def _generate_cases(
                     str(ordinal + 1),
                     envelope_bytes=envelope,
                     anchor=anchor,
-                    resources=(
-                        "signed_context_payload",
-                        "signed_context_envelope",
-                        "verifier_anchor",
-                        "nonce_time",
-                    ),
                 )
             )
         return drafts
@@ -998,13 +1076,6 @@ def _generate_cases(
                     candidate_bytes=varied_candidate,
                     envelope_bytes=envelope,
                     anchor=anchor,
-                    resources=(
-                        "candidate",
-                        "signed_context_payload",
-                        "signed_context_envelope",
-                        "verifier_anchor",
-                        "nonce_time",
-                    ),
                 )
             )
         return drafts
@@ -1014,12 +1085,10 @@ def _generate_cases(
             draft(
                 "1",
                 bundle_factory=_bundle_factory(packet, "EXACT", fd_padding=0),
-                resources=("bundle_capability",),
             ),
             draft(
                 "2",
                 bundle_factory=_bundle_factory(packet, "EXACT", fd_padding=9),
-                resources=("bundle_capability",),
             ),
         ]
 
@@ -1028,12 +1097,10 @@ def _generate_cases(
             draft(
                 "exact",
                 bundle_factory=_bundle_factory(packet, "EXACT"),
-                resources=("bundle_capability",),
             ),
             draft(
                 "corrupt",
                 bundle_factory=_bundle_factory(packet, "CORRUPT"),
-                resources=("bundle_capability",),
             ),
         ]
 
@@ -1051,7 +1118,7 @@ def _privacy_probe_drafts(
     base_anchor: bytes,
     exact_factory: Callable[[], ContextManager[int]],
     source_sha256: str,
-    declaration: CaseDeclaration,
+    generator: str,
 ) -> list[_CaseDraft]:
     drafts: list[_CaseDraft] = []
     boundaries = (
@@ -1101,14 +1168,15 @@ def _privacy_probe_drafts(
                 _CaseDraft(
                     case_id=f"{prefix}-{suffix}",
                     attack_id=attack_id,
-                    generator=declaration.generator,
+                    generator=generator,
                     candidate_bytes=candidate_bytes,
                     envelope_bytes=envelope_bytes,
                     admitted_anchor_spki=anchor,
                     bundle_factory=exact_factory,
-                    target_resources=(boundary,),
                     source_sha256=source_sha256,
-                    declaration=declaration,
+                    baseline_candidate_bytes=base_candidate,
+                    baseline_envelope_bytes=base_envelope,
+                    baseline_anchor_spki=base_anchor,
                 )
             )
     return drafts
@@ -1125,7 +1193,6 @@ def _authority_drafts(
     base_anchor: bytes,
     exact_factory: Callable[[], ContextManager[int]],
     source_sha256: str,
-    declaration: CaseDeclaration,
 ) -> list[_CaseDraft]:
     parents = {
         name: json.loads(data)
@@ -1180,12 +1247,10 @@ def _authority_drafts(
                     envelope_bytes=envelope_bytes,
                     admitted_anchor_spki=anchor,
                     bundle_factory=exact_factory,
-                    target_resources=(
-                        "candidate",
-                        "role-capability-matrix.json",
-                    ),
                     source_sha256=source_sha256,
-                    declaration=declaration,
+                    baseline_candidate_bytes=base_candidate,
+                    baseline_envelope_bytes=base_envelope,
+                    baseline_anchor_spki=base_anchor,
                 )
             )
         return drafts
@@ -1214,9 +1279,10 @@ def _authority_drafts(
                     target_member=member,
                     parent_mutator=mutate,
                 ),
-                target_resources=(member,),
                 source_sha256=source_sha256,
-                declaration=declaration,
+                baseline_candidate_bytes=base_candidate,
+                baseline_envelope_bytes=base_envelope,
+                baseline_anchor_spki=base_anchor,
             )
         )
     return drafts
@@ -1224,6 +1290,8 @@ def _authority_drafts(
 
 def _build_environment_cells(
     packet: RulePacket,
+    rows: Sequence[object],
+    records_by_id: Mapping[str, CaseRecord],
 ) -> tuple[EnvironmentCell, ...]:
     signed_by_mode: dict[str, tuple[bytes, bytes, bytes]] = {}
     cells: list[EnvironmentCell] = []
@@ -1259,13 +1327,16 @@ def _build_environment_cells(
                 envelope_bytes=envelope,
                 admitted_anchor_spki=anchor,
                 bundle_factory=_bundle_factory(packet, resource_state),
-                target_resources=(),
                 source_sha256=_normative_source_sha256(
                     packet, candidate, envelope, anchor
                 ),
-                declaration=None,
+                baseline_candidate_bytes=candidate,
+                baseline_envelope_bytes=envelope,
+                baseline_anchor_spki=anchor,
             )
-            prepared = _score_draft(draft, build_rule_ledger(packet))
+            prepared = _score_draft(
+                draft, rows, records_by_id[draft.case_id]
+            )
             observed_disposition = (
                 f"{prepared.expected.decision}:{prepared.expected.reason}"
             )
@@ -1296,6 +1367,7 @@ def _build_environment_cells(
 def _score_draft(
     draft: _CaseDraft,
     rows: Sequence[object],
+    record: CaseRecord,
 ) -> PreparedCase:
     try:
         oracle = ReferenceOracle()
@@ -1317,43 +1389,27 @@ def _score_draft(
         raise ValueError(
             f"case setup failed before oracle evaluation: {draft.case_id}"
         ) from exc
-    if draft.declaration is None:
-        expected = observed_sequence[-1]
-        covered_rule_ids: tuple[str, ...] = ()
-        oracle_id = "REFERENCE_ORACLE_V4"
-        root_id = "EXACT_PARENT_MANIFEST"
-        root_sha256 = hashlib.sha256(
-            canonical_json(
-                [
-                    {
-                        "member_name": entry.member_name,
-                        "sha256": entry.sha256,
-                    }
-                    for entry in load_packet().parent_manifest
-                ]
-            )
-        ).hexdigest()
-        mutation_id = "CONSTRUCT_PACKET_ENVIRONMENT_CELL"
-    else:
-        expected = declared_expected_result(
-            draft.declaration, draft.case_id
-        )
-        if observed_sequence[-1] != expected:
-            raise ValueError(
-                f"declared result disagrees with oracle: {draft.case_id}"
-            )
-        covered_rule_ids = declared_ledger_ids(
-            draft.declaration,
-            rows,
-            draft.target_resources,
-        )
-        oracle_id = draft.declaration.oracle_id
-        root_id = draft.declaration.immutable_root_id
-        root_sha256 = draft.declaration.immutable_root_sha256
-        mutation_id = draft.declaration.mutation_id
+    if record.case_id != draft.case_id:
+        raise ValueError("case record ID does not match constructed case")
+    selected_row = resolve_case_ledger_row(record, rows)
+    expected = observed_sequence[-1]
+    covered_rule_ids = (selected_row.rule_id,)
+    oracle_id = "REFERENCE_ORACLE_V4"
+    root_id = record.immutable_root_id
+    root_sha256 = record.immutable_root_sha256
     observed_sha256 = _observed_mutation_sha256(
         draft,
         observed_sequence,
+    )
+    (
+        observed_operator,
+        observed_parameters,
+        source_relationship,
+        target_relationship,
+    ) = _observe_mutation_relationship(
+        draft,
+        observed_sequence,
+        observed_ordering,
     )
     return PreparedCase(
         case_id=draft.case_id,
@@ -1367,20 +1423,354 @@ def _score_draft(
         expected_sequence=observed_sequence,
         oracle_id=oracle_id,
         mutation_evidence=MutationEvidence(
-            mutation_id=mutation_id,
             immutable_root_id=root_id,
             immutable_root_sha256=root_sha256,
             source_sha256=draft.source_sha256,
             observed_sha256=observed_sha256,
-            observed_resources=draft.target_resources,
             source_object_sha256=draft.source_object_sha256,
             source_envelope_sha256=draft.source_envelope_sha256,
             source_anchor_sha256=draft.source_anchor_sha256,
             source_result=draft.source_result,
             observed_ordering=observed_ordering,
+            observed_operator=observed_operator,
+            observed_parameters=observed_parameters,
+            source_relationship=source_relationship,
+            target_relationship=target_relationship,
         ),
         covered_rule_ids=covered_rule_ids,
     )
+
+
+def _prepared_case_observation(
+    packet: RulePacket,
+    case: PreparedCase,
+) -> CaseObservation:
+    test_function = (
+        "test_future_sut_environment_cell"
+        if case.attack_id == "ENVIRONMENT"
+        else "test_future_sut_attack_case"
+    )
+    immutable_root_id = _observed_immutable_root_id(case)
+    return CaseObservation(
+        case_id=case.case_id,
+        attack_id=case.attack_id,
+        generator_id=case.generator,
+        mutation_operator=case.mutation_evidence.observed_operator,
+        mutation_parameters=case.mutation_evidence.observed_parameters,
+        source_relationship=(
+            case.mutation_evidence.source_relationship
+        ),
+        target_relationship=(
+            case.mutation_evidence.target_relationship
+        ),
+        immutable_root_id=immutable_root_id,
+        immutable_root_sha256=resolve_immutable_root_sha256(
+            packet, immutable_root_id
+        ),
+        expected_sequence=tuple(
+            (
+                "EVALUATION_RESULT",
+                result.schema_version,
+                result.decision,
+                result.reason,
+                result.authority_effect,
+                result.claim_grade,
+            )
+            for result in case.expected_sequence
+        ),
+        oracle_id=case.oracle_id,
+        pytest_node=(
+            "tests/"
+            "test_gcp_section_7_5_parent_contract_"
+            "authority_closure_readiness_v4.py::"
+            f"{test_function}[{case.case_id}]"
+        ),
+    )
+
+
+def _observed_immutable_root_id(case: PreparedCase) -> str:
+    """Identify the normative root from the constructed case boundary."""
+    generator = case.generator
+    if case.attack_id == "ENVIRONMENT":
+        return "EXACT_PARENT_MANIFEST"
+    if case.attack_id == "A019":
+        if generator in {
+            "EVERY_SECTION_7_3_ROLE",
+            "EVERY_SECTION_7_3_CAPABILITY",
+        }:
+            return "PARENT:role-capability-matrix.json"
+        if generator == "EVERY_SECTION_7_3_HSM_PURPOSE":
+            return "PARENT:security-authority-contract.json"
+        if generator == "EVERY_PREREQUISITE_OWNER":
+            return "PARENT:constraints-open-obligations-contract.json"
+    if case.attack_id == "A018" or generator in {
+        "EVERY_PUBLIC_STRING_PATH",
+        "SYNTHETIC_ALIAS_EQUIVALENCE",
+    }:
+        return "PUBLIC_BOUNDARY_SCHEMA_SET_V4"
+    if generator.startswith("RAW_CANDIDATE_") or generator in {
+        "CANDIDATE_NESTED_EXTRA_FIELD",
+        "CANDIDATE_TRUNCATION",
+        "CANDIDATE_SUBSTITUTION",
+        "CANDIDATE_SPLICE",
+    }:
+        return "SCHEMA:candidate"
+    if generator.startswith("RAW_PAYLOAD_") or generator in {
+        "PAYLOAD_NESTED_EXTRA_FIELD",
+        "PAYLOAD_SUBSTITUTION",
+        "PAYLOAD_SPLICE",
+        "MODE_CONFUSION",
+    }:
+        return "SCHEMA:signed_context_payload"
+    if generator.startswith("RAW_ENVELOPE_") or generator == (
+        "ENVELOPE_TRUNCATION"
+    ):
+        return "SCHEMA:signed_context_envelope"
+    if generator.startswith("RAW_NONCE_"):
+        return "SCHEMA:nonce_time"
+    if generator in {
+        "SIGNATURE_SPLICE",
+        "FORGED_PROVENANCE",
+        "ALTERNATE_ANCHOR_FULL_RESEAL",
+        "EPHEMERAL_KEY_EQUIVALENCE",
+    }:
+        return "SIGNATURE_PROJECTION"
+    if generator == "FORGED_RECEIPT":
+        return "PARENT:attestation-receipt-contract.json"
+    if generator == "PROCESS_LOCAL_REPLAY":
+        return "SCHEMA:replay_record"
+    if generator in {
+        "ALL_TIME_FIELDS_RESEAL",
+        "STALE_TIME",
+        "FUTURE_TIME",
+    }:
+        return "TRUSTED_TIME_POLICY_V1"
+    if generator in {
+        "EACH_PARENT_SUBSTITUTION",
+        "EACH_PARENT_SPLICE",
+        "EACH_PARENT_MISSING",
+        "EACH_PARENT_CORRUPT",
+    }:
+        return "EXACT_PARENT_MANIFEST"
+    if generator in {
+        "AMBIENT_FALLBACK",
+        "EXTRA_MEMBER",
+        "NONREGULAR_MEMBER",
+        "SYMLINK_MEMBER",
+        "REPLACED_MEMBER",
+        "CONCURRENT_REPLACEMENT",
+        "DESCRIPTOR_NUMBER_EQUIVALENCE",
+        "SAME_NORMALIZED_DESCRIPTOR_OPPOSING_OUTCOMES",
+    }:
+        return "SCHEMA:parent_bundle_descriptor"
+    raise ValueError("constructed case has no independent immutable root")
+
+
+def _observe_mutation_relationship(
+    draft: _CaseDraft,
+    observed_sequence: Sequence[EvaluationResult],
+    observed_ordering: Sequence[str],
+) -> tuple[str, tuple[str, ...], str, str]:
+    parameters: list[str] = []
+    candidate_changes = _json_change_markers(
+        "candidate",
+        draft.baseline_candidate_bytes,
+        draft.candidate_bytes,
+    )
+    envelope_changes = _json_change_markers(
+        "envelope",
+        draft.baseline_envelope_bytes,
+        draft.envelope_bytes,
+    )
+    anchor_changed = (
+        draft.baseline_anchor_spki != draft.admitted_anchor_spki
+    )
+    variant = str(
+        getattr(draft.bundle_factory, "bundle_variant", "UNDECLARED")
+    )
+    target = str(
+        getattr(draft.bundle_factory, "bundle_target", "UNDECLARED")
+    )
+    fd_padding = int(
+        getattr(draft.bundle_factory, "fd_padding", -1)
+    )
+    role_set_markers = _candidate_role_set_markers(
+        draft.baseline_candidate_bytes,
+        draft.candidate_bytes,
+    )
+    if role_set_markers:
+        candidate_changes = tuple(
+            marker
+            for marker in candidate_changes
+            if not marker.startswith(
+                "candidate:/observation/governed_roles/"
+            )
+        )
+    parameters.extend(candidate_changes)
+    parameters.extend(envelope_changes)
+    parameters.extend(
+        tuple(
+            getattr(
+                draft.bundle_factory,
+                "parent_change_markers",
+                (),
+            )
+        )
+    )
+    parameters.extend(role_set_markers)
+    parameters.extend(
+        (
+            f"anchor_changed:{str(anchor_changed).lower()}",
+            f"bundle_target:{target}",
+            f"bundle_variant:{variant}",
+            f"fd_padding:{fd_padding}",
+            f"session_calls:{len(observed_sequence)}",
+        )
+    )
+    parameters.extend(
+        f"ordering:{event}" for event in observed_ordering
+    )
+    if draft.source_result is not None:
+        parameters.append("independent_source_authenticated:true")
+
+    if draft.source_result is not None:
+        operator = "AUTHENTICATED_SOURCE_SPLICE"
+        source_relationship = "INDEPENDENT_AUTHENTICATED_SOURCE_OBJECT"
+    elif len(observed_sequence) == 2:
+        operator = "PROCESS_LOCAL_REPLAY"
+        source_relationship = "IDENTICAL_FIRST_CALL_NORMATIVE_INPUT"
+    elif variant != "EXACT":
+        operator = "BUNDLE_STATE_CHANGE"
+        source_relationship = "EXACT_PARENT_BUNDLE"
+    elif any(marker.endswith(":RAW_BYTES_CHANGED") for marker in parameters):
+        operator = "RAW_BYTES_CHANGE"
+        source_relationship = "BASELINE_NORMATIVE_INPUT"
+    elif candidate_changes and envelope_changes:
+        operator = "RESIGNED_CANDIDATE_CHANGE"
+        source_relationship = "BASELINE_NORMATIVE_INPUT"
+    elif candidate_changes:
+        operator = "CANDIDATE_CHANGE"
+        source_relationship = "BASELINE_CANDIDATE"
+    elif anchor_changed:
+        operator = "CRYPTOGRAPHIC_CONTEXT_CHANGE"
+        source_relationship = "BASELINE_CRYPTOGRAPHIC_CONTEXT"
+    elif envelope_changes:
+        operator = "ENVELOPE_CHANGE"
+        source_relationship = "BASELINE_ENVELOPE"
+    elif fd_padding > 0:
+        operator = "DESCRIPTOR_NUMBER_CHANGE"
+        source_relationship = "BASELINE_BUNDLE_CAPABILITY"
+    else:
+        operator = "UNCHANGED_INPUT_EVALUATION"
+        source_relationship = "BASELINE_NORMATIVE_INPUT"
+
+    if len(observed_sequence) == 2:
+        target_relationship = "PROCESS_LOCAL_REPLAY_SESSION"
+    elif variant != "EXACT":
+        target_relationship = "MUTATED_PARENT_BUNDLE"
+    elif draft.source_result is not None:
+        target_relationship = "SOURCE_OBJECT_UNDER_BASELINE_ENVELOPE"
+    elif candidate_changes or envelope_changes or anchor_changed:
+        target_relationship = "MUTATED_NORMATIVE_INPUT"
+    elif fd_padding > 0:
+        target_relationship = "EQUIVALENT_DESCRIPTOR_CAPABILITY"
+    else:
+        target_relationship = "UNCHANGED_NORMATIVE_INPUT"
+    return (
+        operator,
+        tuple(sorted(parameters)),
+        source_relationship,
+        target_relationship,
+    )
+
+
+def _json_change_markers(
+    label: str,
+    source: bytes,
+    target: bytes,
+) -> tuple[str, ...]:
+    if source == target:
+        return ()
+    try:
+        source_value = strict_load_json(source)
+        target_value = strict_load_json(target)
+    except ValueError:
+        return (f"{label}:RAW_BYTES_CHANGED",)
+    pointers: list[str] = []
+    _collect_changed_pointers(source_value, target_value, "", pointers)
+    if not pointers:
+        return (f"{label}:CANONICAL_BYTES_CHANGED",)
+    return tuple(
+        f"{label}:{pointer or '/'}" for pointer in sorted(set(pointers))
+    )
+
+
+def _candidate_role_set_markers(
+    source: bytes,
+    target: bytes,
+) -> tuple[str, ...]:
+    try:
+        source_value = strict_load_json(source)
+        target_value = strict_load_json(target)
+        source_roles = source_value["observation"]["governed_roles"]
+        target_roles = target_value["observation"]["governed_roles"]
+    except (KeyError, TypeError, ValueError):
+        return ()
+    if not isinstance(source_roles, list) or not isinstance(target_roles, list):
+        return ()
+    removed = sorted(set(source_roles) - set(target_roles))
+    added = sorted(set(target_roles) - set(source_roles))
+    if not removed and not added:
+        return ()
+    return tuple(
+        [f"candidate_role_removed:{value}" for value in removed]
+        + [f"candidate_role_added:{value}" for value in added]
+    )
+
+
+def _collect_changed_pointers(
+    source: object,
+    target: object,
+    pointer: str,
+    output: list[str],
+) -> None:
+    if type(source) is not type(target):
+        output.append(pointer)
+        return
+    if isinstance(source, dict):
+        source_keys = set(source)
+        target_keys = set(target)
+        for key in sorted(source_keys | target_keys):
+            child_pointer = f"{pointer}/{_pointer_escape(key)}"
+            if key not in source or key not in target:
+                output.append(child_pointer)
+            else:
+                _collect_changed_pointers(
+                    source[key],
+                    target[key],
+                    child_pointer,
+                    output,
+                )
+        return
+    if isinstance(source, list):
+        for index in range(max(len(source), len(target))):
+            child_pointer = f"{pointer}/{index}"
+            if index >= len(source) or index >= len(target):
+                output.append(child_pointer)
+            else:
+                _collect_changed_pointers(
+                    source[index],
+                    target[index],
+                    child_pointer,
+                    output,
+                )
+        return
+    if source != target:
+        output.append(pointer)
+
+
+def _pointer_escape(value: object) -> str:
+    return str(value).replace("~", "~0").replace("/", "~1")
 
 
 def _valid_candidate(packet: RulePacket) -> dict[str, object]:
@@ -1609,6 +1999,19 @@ def _bundle_factory(
     fd_padding: int = 0,
 ) -> Callable[[], ContextManager[int]]:
     observed_events: list[str] = []
+    parent_change_markers: tuple[str, ...] = ()
+    resolved_target = (
+        target_member or packet.parent_manifest[0].member_name
+    )
+    if parent_mutator is not None:
+        parent_bytes = load_exact_parents(packet)[resolved_target]
+        parent_value = json.loads(parent_bytes)
+        parent_mutator(parent_value)
+        parent_change_markers = _json_change_markers(
+            f"bundle:{resolved_target}",
+            parent_bytes,
+            canonical_json(parent_value),
+        )
 
     def factory() -> ContextManager[int]:
         observed_events.clear()
@@ -1622,6 +2025,14 @@ def _bundle_factory(
         )
 
     setattr(factory, "observed_events", observed_events)
+    setattr(factory, "bundle_variant", variant)
+    setattr(
+        factory,
+        "bundle_target",
+        resolved_target,
+    )
+    setattr(factory, "fd_padding", fd_padding)
+    setattr(factory, "parent_change_markers", parent_change_markers)
     return factory
 
 

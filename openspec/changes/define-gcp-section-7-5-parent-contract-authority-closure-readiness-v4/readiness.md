@@ -143,7 +143,16 @@ numbers, and opposing outcomes at one normalized descriptor number. Every
 future test must perform its named mutation and compute its independent oracle
 result before the single absent-SUT gate.
 
-The packet catalog now declares closed generator names for every class.
+The packet catalog now owns one exact closed record for every emitted case:
+146 attack/metamorphic cases, eight executable environment cells, and five
+closed-result-parser boundaries. Each record fixes its stable case ID,
+generator ID, literal mutation operator and parameters, source and target
+relationship, authenticated immutable root, full expected sequence, oracle,
+exact pytest node, and one exact ledger selector. The corpus constructs and
+observes mutations independently, then requires a bijective field-for-field
+reconciliation with those records. A selector must resolve exactly one ledger
+row, and the row's stage must equal the observed rejection or hold boundary.
+
 Generated tests cover raw candidate, payload, envelope, and nested nonce/time
 unknown, missing, wrong-type, nested-extra, and truncation cases; candidate,
 payload, signature, and all-five-parent splices; forged receipt/provenance;
@@ -156,8 +165,12 @@ capability-first atomic replacement, and separately concurrent resource
 states; every public input string path; every result string field through the
 closed result parser; and every fourteen-role, sixteen-capability,
 two-HSM-purpose, and twenty-owner boundary. Role mutations reach the Section
-7.3 authority oracle after valid resealing; manifest-bound capability, HSM,
-and owner mutations remain honestly classified as parent-resource rejection.
+7.3 authority oracle after valid resealing and select the exact semantic role
+row. Manifest-bound capability, HSM, and owner mutations stop earlier at
+resource admission, select only that exact resource-admission row, and remain
+honestly classified as parent-resource rejection. The replay record fixes both
+expected sequence entries, and each output-parser field has its own packet
+record rather than inheriting generator metadata.
 
 `PreparedCase` labels, attack IDs, expectations, and ledger coverage remain
 harness metadata. They do not enter candidate or envelope bytes, the admitted

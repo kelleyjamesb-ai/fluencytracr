@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
-import re
 from typing import Mapping, Sequence
 
 from tests.gcp_s751_v4.ledger import RuleRow
@@ -20,266 +19,278 @@ from tests.gcp_s751_v4.model import (
 )
 
 
-_HEX_64 = re.compile(r"^[0-9a-f]{64}$")
-_ORACLE_ID = "REFERENCE_ORACLE_V4"
-_RULE_ID_RULE = "SHA256_RESOURCE_NUL_POINTER_V1"
-_DECLARATION_FIELDS = {
+_CASE_RECORD_FIELDS = {
+    "case_id",
     "attack_id",
-    "generator",
-    "mutation_id",
+    "generator_id",
+    "mutation_operator",
+    "mutation_parameters",
+    "source_relationship",
+    "target_relationship",
     "immutable_root_id",
     "immutable_root_sha256",
-    "expected_results",
+    "expected_sequence",
     "oracle_id",
-    "test_id_template",
-    "ledger_bindings",
+    "pytest_node",
+    "ledger_selector",
 }
-_EXPECTED_FIELDS = {
-    "test_id_rule",
-    "schema_version",
-    "decision",
-    "reason",
-    "authority_effect",
-    "claim_grade",
-}
-_BINDING_FIELDS = {
-    "resource",
-    "pointer_rule",
-    "template_id",
-    "rule_id_rule",
-}
+_EXACT_SELECTOR_FIELDS = {"resource", "pointer", "rule_id"}
 
 
 @dataclass(frozen=True)
-class LedgerBindingRule:
+class ExactLedgerSelector:
     resource: str
-    pointer_rule: str
-    template_id: str
-    rule_id_rule: str
+    pointer: str
+    rule_id: str
 
 
 @dataclass(frozen=True)
-class CaseDeclaration:
+class CaseRecord:
+    case_id: str
     attack_id: str
-    generator: str
-    mutation_id: str
+    generator_id: str
+    mutation_operator: str
+    mutation_parameters: tuple[str, ...]
+    source_relationship: str
+    target_relationship: str
     immutable_root_id: str
     immutable_root_sha256: str
-    expected_results: tuple[tuple[str, EvaluationResult], ...]
+    expected_sequence: tuple[tuple[str, ...], ...]
     oracle_id: str
-    test_id_template: str
-    ledger_bindings: tuple[LedgerBindingRule, ...]
+    pytest_node: str
+    ledger_selector: ExactLedgerSelector
 
 
-def load_case_declarations(
-    packet: RulePacket,
-) -> tuple[CaseDeclaration, ...]:
-    """Parse exact generator records already frozen into the packet model."""
-    declarations: list[CaseDeclaration] = []
-    for raw_declaration in packet.case_catalog:
-        attack_id = _required_text(raw_declaration, "attack_id")
-        if set(raw_declaration) != _DECLARATION_FIELDS:
-            raise ValueError("case declaration fields are not closed")
-        expected_raw = raw_declaration["expected_results"]
+def load_case_records(packet: RulePacket) -> tuple[CaseRecord, ...]:
+    """Parse the packet-owned exact record for every emitted case."""
+    records: list[CaseRecord] = []
+    for raw in packet.case_catalog:
+        if set(raw) != _CASE_RECORD_FIELDS:
+            raise ValueError("case record fields are not closed")
+        selector_raw = raw["ledger_selector"]
+        if (
+            not isinstance(selector_raw, Mapping)
+            or set(selector_raw) != _EXACT_SELECTOR_FIELDS
+        ):
+            raise ValueError("case ledger selector fields are not closed")
+        parameters = _text_tuple(raw, "mutation_parameters")
+        expected_raw = raw["expected_sequence"]
         if not isinstance(expected_raw, tuple) or not expected_raw:
-            raise ValueError("case declaration expected result is not closed")
-        expected_results: list[tuple[str, EvaluationResult]] = []
-        for raw_expected in expected_raw:
+            raise ValueError("case record expected sequence is empty")
+        expected_sequence: list[tuple[str, ...]] = []
+        for outcome in expected_raw:
             if (
-                not isinstance(raw_expected, Mapping)
-                or set(raw_expected) != _EXPECTED_FIELDS
+                not isinstance(outcome, tuple)
+                or not outcome
+                or not all(
+                    isinstance(value, str) and value
+                    for value in outcome
+                )
             ):
                 raise ValueError(
-                    "case declaration expected result is not closed"
+                    "case record expected outcome is not closed"
                 )
-            expected_results.append(
-                (
-                    _required_text(raw_expected, "test_id_rule"),
-                    EvaluationResult(
-                        schema_version=_required_text(
-                            raw_expected, "schema_version"
-                        ),
-                        decision=_required_text(
-                            raw_expected, "decision"
-                        ),
-                        reason=_required_text(raw_expected, "reason"),
-                        authority_effect=_required_text(
-                            raw_expected, "authority_effect"
-                        ),
-                        claim_grade=_required_text(
-                            raw_expected, "claim_grade"
-                        ),
-                    ),
+            if outcome[0] == "EVALUATION_RESULT" and len(outcome) == 6:
+                EvaluationResult(
+                    schema_version=outcome[1],
+                    decision=outcome[2],
+                    reason=outcome[3],
+                    authority_effect=outcome[4],
+                    claim_grade=outcome[5],
                 )
-            )
-        bindings_raw = raw_declaration["ledger_bindings"]
-        if not isinstance(bindings_raw, tuple) or not bindings_raw:
-            raise ValueError("case declaration requires ledger bindings")
-        bindings: list[LedgerBindingRule] = []
-        for raw_binding in bindings_raw:
-            if (
-                not isinstance(raw_binding, Mapping)
-                or set(raw_binding) != _BINDING_FIELDS
+            elif outcome != (
+                "PROTOCOL_FAILURE",
+                "INVALID_SUT_RESULT",
             ):
                 raise ValueError(
-                    "case declaration ledger binding fields are not closed"
+                    "case record expected outcome is not closed"
                 )
-            binding = LedgerBindingRule(
-                resource=_required_text(raw_binding, "resource"),
-                pointer_rule=_required_text(raw_binding, "pointer_rule"),
-                template_id=_required_text(raw_binding, "template_id"),
-                rule_id_rule=_required_text(raw_binding, "rule_id_rule"),
-            )
-            if binding.rule_id_rule != _RULE_ID_RULE:
-                raise ValueError(
-                    "case declaration rule ID derivation is not closed"
-                )
-            _parse_pointer_rule(binding.pointer_rule)
-            bindings.append(binding)
-        declaration = CaseDeclaration(
-            attack_id=attack_id,
-            generator=_required_text(raw_declaration, "generator"),
-            mutation_id=_required_text(raw_declaration, "mutation_id"),
+            expected_sequence.append(outcome)
+        record = CaseRecord(
+            case_id=_required_text(raw, "case_id"),
+            attack_id=_required_text(raw, "attack_id"),
+            generator_id=_required_text(raw, "generator_id"),
+            mutation_operator=_required_text(
+                raw, "mutation_operator"
+            ),
+            mutation_parameters=parameters,
+            source_relationship=_required_text(
+                raw, "source_relationship"
+            ),
+            target_relationship=_required_text(
+                raw, "target_relationship"
+            ),
             immutable_root_id=_required_text(
-                raw_declaration, "immutable_root_id"
+                raw, "immutable_root_id"
             ),
             immutable_root_sha256=_required_text(
-                raw_declaration, "immutable_root_sha256"
+                raw, "immutable_root_sha256"
             ),
-            expected_results=tuple(expected_results),
-            oracle_id=_required_text(raw_declaration, "oracle_id"),
-            test_id_template=_required_text(
-                raw_declaration, "test_id_template"
+            expected_sequence=tuple(expected_sequence),
+            oracle_id=_required_text(raw, "oracle_id"),
+            pytest_node=_required_text(raw, "pytest_node"),
+            ledger_selector=ExactLedgerSelector(
+                resource=_required_text(selector_raw, "resource"),
+                pointer=_required_text_allow_empty(
+                    selector_raw, "pointer"
+                ),
+                rule_id=_required_text(selector_raw, "rule_id"),
             ),
-            ledger_bindings=tuple(bindings),
         )
         if (
-            declaration.oracle_id != _ORACLE_ID
-            or not _HEX_64.fullmatch(declaration.immutable_root_sha256)
-            or declaration.immutable_root_sha256
+            tuple(sorted(set(parameters))) != parameters
+            or record.immutable_root_sha256
             != resolve_immutable_root_sha256(
-                packet, declaration.immutable_root_id
+                packet, record.immutable_root_id
             )
         ):
             raise ValueError(
-                "case declaration oracle or immutable root is not closed"
+                "case record parameters or immutable root are invalid"
             )
-        declarations.append(declaration)
-    keys = [
-        (declaration.attack_id, declaration.generator)
-        for declaration in declarations
+        records.append(record)
+    return tuple(records)
+
+
+def resolve_case_ledger_row(
+    record: CaseRecord,
+    rows: Sequence[RuleRow],
+) -> RuleRow:
+    """Resolve one exact selector and reject zero or multiple matches."""
+    matches = [
+        row
+        for row in rows
+        if row.resource == record.ledger_selector.resource
+        and row.pointer == record.ledger_selector.pointer
+        and row.rule_id == record.ledger_selector.rule_id
     ]
-    if len(keys) != len(set(keys)):
-        raise ValueError("case declaration keys are not unique")
-    return tuple(declarations)
+    if len(matches) != 1:
+        raise ValueError(
+            "case ledger selector must match exactly one row"
+        )
+    return matches[0]
 
 
-def reconcile_case_declarations(
+def reconcile_case_records(
     packet: RulePacket,
     rows: Sequence[RuleRow],
-    declarations: Sequence[CaseDeclaration],
+    records: Sequence[CaseRecord],
+    observations: Sequence[object],
 ) -> None:
-    """Reject missing, extra, or nonmatching attack-to-ledger declarations."""
-    observed = tuple(declarations)
-    expected_keys = {
-        (_required_text(attack, "attack_id"), generator)
-        for attack in packet.attack_catalog
-        for generator in _generator_names(attack)
-    }
-    observed_keys = {
-        (declaration.attack_id, declaration.generator)
-        for declaration in observed
-    }
+    """Reconcile exact packet records with independently observed cases."""
+    frozen_records = tuple(records)
+    frozen_observations = tuple(observations)
+    record_ids = [record.case_id for record in frozen_records]
+    observation_ids = [
+        _observation_text(observation, "case_id")
+        for observation in frozen_observations
+    ]
     if (
-        observed_keys != expected_keys
-        or len(observed_keys) != len(observed)
-        or not all(isinstance(value, CaseDeclaration) for value in observed)
+        len(record_ids) != len(set(record_ids))
+        or len(observation_ids) != len(set(observation_ids))
+        or set(record_ids) != set(observation_ids)
     ):
-        raise ValueError("case declaration set does not match attack catalog")
-
-    declared_pairs: set[tuple[str, str]] = set()
-    for declaration in observed:
-        for binding in declaration.ledger_bindings:
-            matched = _matching_rows(declaration, binding, rows)
-            if not matched:
-                raise ValueError(
-                    "case declaration ledger binding has no exact match"
-                )
-            declared_pairs.update(
-                (declaration.attack_id, row.rule_id) for row in matched
-            )
-
-    ledger_pairs = {
-        (attack_id, row.rule_id)
-        for row in rows
-        for attack_id in row.attack_ids
+        raise ValueError("case record set mismatch")
+    observations_by_id = {
+        _observation_text(observation, "case_id"): observation
+        for observation in frozen_observations
     }
-    if declared_pairs != ledger_pairs:
+    for record in frozen_records:
+        observation = observations_by_id[record.case_id]
+        observed_mutation = (
+            _observation_text(observation, "attack_id"),
+            _observation_text(observation, "generator_id"),
+            _observation_text(observation, "mutation_operator"),
+            tuple(getattr(observation, "mutation_parameters")),
+            _observation_text(observation, "source_relationship"),
+            _observation_text(observation, "target_relationship"),
+            _observation_text(observation, "oracle_id"),
+            _observation_text(observation, "pytest_node"),
+        )
+        recorded_mutation = (
+            record.attack_id,
+            record.generator_id,
+            record.mutation_operator,
+            record.mutation_parameters,
+            record.source_relationship,
+            record.target_relationship,
+            record.oracle_id,
+            record.pytest_node,
+        )
+        if recorded_mutation != observed_mutation:
+            raise ValueError(
+                "case record does not match observed mutation"
+            )
+        if (
+            record.immutable_root_id
+            != _observation_text(observation, "immutable_root_id")
+            or record.immutable_root_sha256
+            != _observation_text(
+                observation, "immutable_root_sha256"
+            )
+        ):
+            raise ValueError("case record immutable root mismatch")
+        if record.expected_sequence != tuple(
+            getattr(observation, "expected_sequence")
+        ):
+            raise ValueError(
+                "case record expected sequence mismatch"
+            )
+        row = resolve_case_ledger_row(record, rows)
+        _validate_expected_stage(record, row)
+
+
+def _validate_expected_stage(
+    record: CaseRecord,
+    row: RuleRow,
+) -> None:
+    outcome = record.expected_sequence[-1]
+    if outcome[0] == "PROTOCOL_FAILURE":
+        reason = outcome[1]
+        decision = "REJECT"
+    else:
+        decision = outcome[2]
+        reason = outcome[3]
+    allowed_stage = {
+        "INVALID_CANDIDATE_SHAPE": ("CANDIDATE_SHAPE_ADMISSION",),
+        "INVALID_ENVELOPE_SHAPE": (
+            "SIGNED_CONTEXT_BINDING",
+            "SIGNED_ENVELOPE_AUTHENTICATION",
+            "NONCE_AND_TIME_ADMISSION",
+        ),
+        "INVALID_SIGNATURE": (
+            "SIGNED_ENVELOPE_AUTHENTICATION",
+            "VERIFIER_ANCHOR_AUTHENTICATION",
+        ),
+        "INVALID_SIGNED_CONTEXT_BINDING": (
+            "SIGNED_CONTEXT_BINDING",
+            "NONCE_AND_TIME_ADMISSION",
+        ),
+        "INVALID_CONTEXT_CONJUNCTION": (
+            "RECEIPT_AND_APPROVAL_ADMISSION",
+        ),
+        "REPLAY_DETECTED": ("REPLAY_REGISTRY_ADMISSION",),
+        "INVALID_PARENT_RESOURCE_SET": (
+            "EXACT_PARENT_BUNDLE_ADMISSION",
+        ),
+        "INVALID_SECTION_7_3_AUTHORITY": (
+            "SECTION_7_3_ROLE_CAPABILITY_ADMISSION",
+        ),
+        "CURRENT_PARENT_OBLIGATIONS_OPEN": ("OPEN_BLOCKER_HOLD",),
+        "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN": (
+            "OPEN_BLOCKER_HOLD",
+        ),
+        "INVALID_SUT_RESULT": ("CLOSED_NONAUTHORIZING_RESULT",),
+    }.get(reason)
+    if (
+        allowed_stage is None
+        or row.failure != decision
+        or not any(stage in row.decision_use for stage in allowed_stage)
+    ):
         raise ValueError(
-            "case declarations do not reconcile every attack ledger row"
+            "case expected boundary does not match ledger row stage"
         )
 
 
-def declared_ledger_ids(
-    declaration: CaseDeclaration,
-    rows: Sequence[RuleRow],
-    observed_resources: Sequence[str],
-) -> tuple[str, ...]:
-    """Resolve only bindings explicitly associated with observed mutation roots."""
-    resources = set(observed_resources)
-    selected: set[str] = set()
-    applicable = [
-        binding
-        for binding in declaration.ledger_bindings
-        if binding.resource in resources
-    ]
-    if not applicable:
-        raise ValueError("observed mutation has no declared ledger binding")
-    for binding in applicable:
-        matched = _matching_rows(declaration, binding, rows)
-        if not matched:
-            raise ValueError(
-                "case declaration ledger binding has no exact match"
-            )
-        selected.update(row.rule_id for row in matched)
-    if not selected:
-        raise ValueError("observed mutation has no declared ledger IDs")
-    return tuple(sorted(selected))
-
-
-def declared_expected_result(
-    declaration: CaseDeclaration,
-    test_id: str,
-) -> EvaluationResult:
-    """Resolve one literal packet result rule for an emitted test ID."""
-    validate_declared_test_id(declaration, test_id)
-    matched = [
-        result
-        for rule, result in declaration.expected_results
-        if _test_id_matches(rule, test_id)
-    ]
-    if len(matched) != 1:
-        raise ValueError("case test ID has no unique declared expected result")
-    return matched[0]
-
-
-def validate_declared_test_id(
-    declaration: CaseDeclaration,
-    test_id: str,
-) -> None:
-    """Reject emitted IDs that are not instances of the packet template."""
-    expression = re.escape(declaration.test_id_template)
-    replacements = {
-        r"\{ordinal\}": r"[1-9][0-9]*",
-        r"\{boundary\}": r"[a-z0-9]+(?:-[a-z0-9]+)*",
-        r"\{semantic\}": r"(?:exact|corrupt)",
-    }
-    for placeholder, pattern in replacements.items():
-        expression = expression.replace(placeholder, pattern)
-    if r"\{" in expression or r"\}" in expression:
-        raise ValueError("case test ID template is not closed")
-    if re.fullmatch(expression, test_id) is None:
-        raise ValueError("case test ID does not match declared template")
 
 
 def resolve_immutable_root_sha256(
@@ -343,76 +354,41 @@ def resolve_immutable_root_sha256(
     return observed
 
 
-def _matching_rows(
-    declaration: CaseDeclaration,
-    binding: LedgerBindingRule,
-    rows: Sequence[RuleRow],
-) -> tuple[RuleRow, ...]:
-    kind, pointer = _parse_pointer_rule(binding.pointer_rule)
-    return tuple(
-        row
-        for row in rows
-        if row.resource == binding.resource
-        and declaration.attack_id in row.attack_ids
-        and row.decision_use.startswith(
-            f"TEMPLATE:{binding.template_id};"
-        )
-        and (
-            kind == "ALL"
-            or (kind == "EXACT" and row.pointer == pointer)
-            or (
-                kind == "PREFIX"
-                and (
-                    row.pointer == pointer
-                    or row.pointer.startswith(f"{pointer}/")
-                )
-            )
-        )
-    )
-
-
-def _parse_pointer_rule(value: str) -> tuple[str, str]:
-    if value == "ALL":
-        return "ALL", ""
-    for kind in ("EXACT", "PREFIX"):
-        prefix = f"{kind}:"
-        if value.startswith(prefix):
-            pointer = value[len(prefix):]
-            if not pointer.startswith("/"):
-                raise ValueError(
-                    "case declaration pointer rule is not closed"
-                )
-            return kind, pointer
-    raise ValueError("case declaration pointer rule is not closed")
-
-
-def _generator_names(
-    attack: Mapping[str, object],
-) -> tuple[str, ...]:
-    raw = attack.get("generators")
-    if (
-        not isinstance(raw, tuple)
-        or not raw
-        or not all(isinstance(value, str) and value for value in raw)
-    ):
-        raise ValueError("attack generators must be closed names")
-    return raw
-
-
-def _test_id_matches(rule: str, test_id: str) -> bool:
-    if rule == "ALL":
-        return True
-    if rule.startswith("EXACT:"):
-        return test_id == rule[len("EXACT:"):]
-    if rule.startswith("PREFIX:"):
-        return test_id.startswith(rule[len("PREFIX:"):])
-    raise ValueError("case expected-result test ID rule is not closed")
-
-
 def _required_text(value: Mapping[str, object], field: str) -> str:
     result = value.get(field)
     if not isinstance(result, str) or not result:
         raise ValueError(f"{field} must be a nonempty string")
+    return result
+
+
+def _required_text_allow_empty(
+    value: Mapping[str, object],
+    field: str,
+) -> str:
+    result = value.get(field)
+    if not isinstance(result, str):
+        raise ValueError(f"{field} must be a string")
+    return result
+
+
+def _text_tuple(
+    value: Mapping[str, object],
+    field: str,
+) -> tuple[str, ...]:
+    result = value.get(field)
+    if (
+        not isinstance(result, tuple)
+        or not result
+        or not all(isinstance(item, str) and item for item in result)
+    ):
+        raise ValueError(f"{field} must be a nonempty string tuple")
+    return result
+
+
+def _observation_text(observation: object, field: str) -> str:
+    result = getattr(observation, field, None)
+    if not isinstance(result, str) or not result:
+        raise ValueError("case observation fields are not closed")
     return result
 
 
