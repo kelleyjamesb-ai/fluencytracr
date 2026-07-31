@@ -11,6 +11,7 @@ The user explicitly authorized this bounded Section 7.2 continuation from merged
 - Add a docs-only canonical runtime object contract with separate deterministic-profile and restricted per-instance observation registries.
 - Classify every frozen Compute field and fail closed on unknown, secret, unconstrained host/topology, raw metadata, and noncanonical identity material.
 - Define strict canonical JSON, domain-separated SHA-256 preimages, an acyclic four-node Section 7.2 graph, golden vectors, and exact-byte evidence pins.
+- Close the typed runtime-profile approval interface while preserving empty live approval and runtime-record registries.
 - Attach fresh, replayable `EXACT_MAPPING_RECONFIRMED` evidence for the exact Section 7.1 vocabulary.
 - Define visibility/sufficiency posture, chronology, requalification, escalation, privacy, and nonauthorization requirements.
 - Add an offline verifier and focused mutation/regression tests.

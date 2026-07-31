@@ -16,6 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_DIR = ROOT / "docs/contracts/canonical-inference-gcp-runtime-object"
 PROVIDER_DIR = ROOT / "docs/contracts/canonical-inference-gcp-provider-vocabulary"
 DEFAULT_REVALIDATION = RUNTIME_DIR / "provider-revalidation.json"
+RUNTIME_CONTRACT = RUNTIME_DIR / "runtime-object-contract.json"
+CANONICALIZATION_VECTORS = RUNTIME_DIR / "canonicalization-vectors.json"
 EXPECTED_REVALIDATION_ARTIFACT_SHA256 = (
     "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc"
 )
@@ -133,6 +135,99 @@ def _load_provider_verifier() -> Any:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def verify_runtime_profile_approval_interface(
+    contract_path: Path = RUNTIME_CONTRACT,
+    vectors_path: Path = CANONICALIZATION_VECTORS,
+) -> None:
+    """Verify the held Section 7.2 profile-approval interface stays closed."""
+    contract_bytes = contract_path.read_bytes()
+    contract = _strict_json_loads(contract_bytes.decode("utf-8"))
+    vectors = _strict_json_loads(vectors_path.read_text(encoding="utf-8"))
+    if not isinstance(contract, dict) or not isinstance(vectors, dict):
+        raise RevalidationVerificationError("approval artifacts are not objects")
+    if vectors.get("runtime_object_contract_sha256") != _sha256(contract_bytes):
+        raise RevalidationVerificationError("runtime contract binding mismatch")
+    interface = contract.get("runtime_profile_approval_interface")
+    if not isinstance(interface, dict) or set(interface) != {
+        "approval_provenance_schema",
+        "authority_effect",
+        "external_approval_records",
+        "held_reason",
+        "resolved_profile_binding",
+        "runtime_record_references",
+        "schema_version",
+    }:
+        raise RevalidationVerificationError("runtime profile approval interface is not closed")
+    if interface.get("schema_version") != "GCP_RUNTIME_PROFILE_APPROVAL_INTERFACE_V1":
+        raise RevalidationVerificationError("runtime profile approval schema mismatch")
+    if interface.get("authority_effect") != "NONE":
+        raise RevalidationVerificationError("runtime profile approval cannot authorize")
+    if interface.get("held_reason") != "EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED":
+        raise RevalidationVerificationError("runtime profile approval hold mismatch")
+    if interface.get("external_approval_records") != []:
+        raise RevalidationVerificationError("external approval registry must remain empty")
+    if interface.get("runtime_record_references") != []:
+        raise RevalidationVerificationError("runtime record registry must remain empty")
+    profile_vectors = vectors.get("vectors")
+    if not isinstance(profile_vectors, list):
+        raise RevalidationVerificationError("canonicalization vectors are not a list")
+    profile_vector = next(
+        (
+            item
+            for item in profile_vectors
+            if isinstance(item, dict) and item.get("node_id") == "runtime_profile_hash"
+        ),
+        None,
+    )
+    if not isinstance(profile_vector, dict):
+        raise RevalidationVerificationError("runtime profile vector is missing")
+    expected_binding = {
+        "canonical_body_sha256": profile_vector.get("canonical_body_sha256"),
+        "runtime_profile_hash": profile_vector.get("expected_hash"),
+    }
+    if interface.get("resolved_profile_binding") != expected_binding:
+        raise RevalidationVerificationError("resolved profile binding mismatch")
+    if expected_binding["runtime_profile_hash"] in contract.get(
+        "approved_runtime_profile_hashes"
+    , []):
+        raise RevalidationVerificationError("synthetic profile hash became runtime-approved")
+    if vectors.get("authorization_effect") != "NONE_TEST_VECTORS_ONLY":
+        raise RevalidationVerificationError("canonicalization vectors cannot authorize")
+    expected_evidence = {
+        "external_approval_record_count": 0,
+        "resolved_profile_canonical_body_sha256": expected_binding[
+            "canonical_body_sha256"
+        ],
+        "runtime_profile_hash": expected_binding["runtime_profile_hash"],
+        "runtime_record_reference_count": 0,
+        "state": "EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED",
+    }
+    if vectors.get("runtime_profile_approval_interface_evidence") != expected_evidence:
+        raise RevalidationVerificationError("runtime profile approval evidence mismatch")
+    expected_provenance_schema = {
+        "external_approval_artifact_sha256_field": "external_approval_artifact_sha256",
+        "external_approval_provenance_field": "external_approval_provenance",
+        "field_value_types": {
+            "canonical_body_sha256": "DIGEST_SHA256",
+            "external_approval_artifact_sha256": "DIGEST_SHA256",
+            "external_approval_provenance": "SECTION_7_4_EXTERNAL_APPROVAL_PROVENANCE_RECORD",
+            "runtime_profile_hash": "DIGEST_SHA256",
+        },
+        "owner": "SECTION_7_4",
+        "required_keys": [
+            "schema_version",
+            "canonical_body_sha256",
+            "runtime_profile_hash",
+            "external_approval_provenance",
+            "external_approval_artifact_sha256",
+        ],
+        "resolved_profile_canonical_body_sha256_field": "canonical_body_sha256",
+        "schema_version": "GCP_RUNTIME_PROFILE_EXTERNAL_APPROVAL_PROVENANCE_V1",
+    }
+    if interface.get("approval_provenance_schema") != expected_provenance_schema:
+        raise RevalidationVerificationError("external approval provenance schema mismatch")
 
 
 def verify_revalidation_bundle(
@@ -344,6 +439,7 @@ def main() -> None:
     parser.add_argument("bundle", type=Path)
     parser.add_argument("--revalidation", type=Path, default=DEFAULT_REVALIDATION)
     args = parser.parse_args()
+    verify_runtime_profile_approval_interface()
     verify_revalidation_bundle(args.bundle, args.revalidation)
     payload = json.loads(args.revalidation.read_text(encoding="utf-8"))
     print(

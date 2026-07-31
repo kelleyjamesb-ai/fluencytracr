@@ -11,6 +11,7 @@
 - [x] 2.3 Define strict canonical serialization, domain-separated hash preimages, and the acyclic Section 7.2 graph.
 - [x] 2.4 Define visibility, sufficiency, chronology, requalification, and fixed-physical escalation decisions.
 - [x] 2.5 Record fresh provider revalidation evidence and synthetic golden vectors.
+- [x] 2.6 Close the typed runtime-profile approval interface with resolved-byte/hash binding, external provenance fields, and empty approval/runtime-record registries.
 
 ## 3. Verification
 

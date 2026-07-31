@@ -100,12 +100,17 @@ The contract SHALL enumerate every mandatory invalidation/requalification trigge
 
 ### Requirement: Runtime authority and privacy remain held
 
-Section 7.2 objects, hashes, test vectors, and evidence SHALL have no authorization effect. The runtime-approved profile list MUST remain empty; any compiled synthetic profile hash SHALL be labeled test-only and MUST NOT become runtime-admissible. Runtime identity SHALL remain insufficient without later trust, attestation, integration, and qualification contracts/evidence. Runtime objects, model inputs, logs, results, receipts, and customer output MUST NOT contain person, user, employee, account, email, session, device, or IP identifiers, raw customer data, prompts, responses, credentials, posterior material, or arbitrary payloads. Raw TCB acceptance status MUST remain deferred to Section 7.4 and MUST NOT be retained under an invented Section 7.2 literal.
+Section 7.2 objects, hashes, test vectors, and evidence SHALL have no authorization effect. The runtime-approved profile list MUST remain empty; any compiled synthetic profile hash SHALL be labeled test-only and MUST NOT become runtime-admissible. The contract SHALL provide a closed typed runtime-profile approval interface that binds the resolved profile canonical-body SHA-256 and runtime-profile hash to a future Section 7.4 external-approval provenance record. Its external-approval and runtime-record registries MUST remain empty, and no canonical vector MAY populate them. Runtime identity SHALL remain insufficient without later trust, attestation, integration, and qualification contracts/evidence. Runtime objects, model inputs, logs, results, receipts, and customer output MUST NOT contain person, user, employee, account, email, session, device, or IP identifiers, raw customer data, prompts, responses, credentials, posterior material, or arbitrary payloads. Raw TCB acceptance status MUST remain deferred to Section 7.4 and MUST NOT be retained under an invented Section 7.2 literal.
 
 #### Scenario: Well-formed object attempts self-authorization
 
 - **WHEN** a caller adds an authority override or changes the held authority constant
 - **THEN** closed-schema validation rejects
+
+#### Scenario: External approval is absent
+
+- **WHEN** the resolved profile bytes and hash match the current synthetic vector but no external approval provenance or runtime record is present
+- **THEN** the typed interface remains held with empty registries and `authority_effect: NONE`
 
 #### Scenario: Section 7.2 closes
 

@@ -3,7 +3,14 @@
   "canonicalization_version": "FT_CANONICAL_JSON_V1",
   "control_plane_projection_sha256": "010551be219b38cc8aed25102824406bfb6a8bc3806d04b93e831f1933ae8455",
   "provider_revalidation_artifact_sha256": "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc",
-  "runtime_object_contract_sha256": "0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125",
+  "runtime_object_contract_sha256": "9bd511fd7c859413fd599fa6bfc10e35534a532e7557df3f1a036017673c2474",
+  "runtime_profile_approval_interface_evidence": {
+    "external_approval_record_count": 0,
+    "resolved_profile_canonical_body_sha256": "4d5b3522bff17c228c576b540c330b1f6ed8aee517667ac120ddd7a97fce03a6",
+    "runtime_profile_hash": "cb37e1bcaac15df0a82a377184bc7f78c429d6d3e87fa6bba77461ca1e041af7",
+    "runtime_record_reference_count": 0,
+    "state": "EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED"
+  },
   "schema_version": "GCP_RUNTIME_CANONICALIZATION_VECTORS_V1",
   "separation_assertions": {
     "attempt_nonce_timestamp_tenant_and_receipt_fields_never_enter_runtime_profile_preimage": true,

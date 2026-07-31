@@ -53,6 +53,12 @@ Every retained Compute timestamp is RFC3339-typed; `-00:00` and leap seconds rej
 
 Contract closure means only that Section 7.2 fields and hashes are deterministic. Hidden fields retain parent-governance treatment, runtime identity remains insufficient, and no object can authorize itself. Parent rejection, unbindable required identity, or exact qualification mismatch deterministically rejects C3/TDX and requires fixed-physical candidate selection.
 
+The approval interface binds only the resolved profile canonical-body SHA-256
+and runtime-profile hash to a future Section 7.4 external-approval provenance
+record. Its approval and runtime-record registries remain empty. A synthetic
+vector is evidence of canonical bytes only; it cannot populate either registry
+or promote runtime authority.
+
 ## Alternatives Considered
 
 - **Hash the raw Compute response:** rejected because it retains prohibited/volatile fields and couples identity to provider response noise.
