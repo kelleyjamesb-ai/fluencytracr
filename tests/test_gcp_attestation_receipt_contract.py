@@ -2138,7 +2138,7 @@ PINNED_ARTIFACTS: dict[str, str] = {
     "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-revalidation.json": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-source-evidence.json": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
     "scripts/gcp_attestation_receipt_contract_validation.py": "7f34c48872cb7519f88cec974e50a24041760b183fcd02db5396ceefbaab2b37",
-    "scripts/verify_gcp_attestation_receipt_contract.py": "85f51091f73b70beb630bf6b152df7cf4db943b2431fa284027cb2f789415dd2",
+    "scripts/verify_gcp_attestation_receipt_contract.py": "780ac12ecfc216063cf7e107a949aa2892d4ac48d2e70f0a3868974c5966ea8e",
     "scripts/verify_gcp_attestation_receipt_revalidation.py": "d49120a1cece5e3e5d5e0b3ce24248b23de8580b86995859d18d428d199ff5d0",
     "openspec/changes/add-gcp-attestation-receipt-contract/proposal.md": "c7bbb75ed949439301f2259fe541a66a82a943b88800401c9756899fa8cc0c91",
     "openspec/changes/add-gcp-attestation-receipt-contract/design.md": "f2480f8079675a83fda2f3495453fa95cb643d3c85e3b71b35dc109fcab2c290",

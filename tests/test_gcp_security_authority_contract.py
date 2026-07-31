@@ -55,7 +55,7 @@ PINNED_ARTIFACTS = {
     "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "00bdd0f7d06a57c6d18f81c69356f7119c7f4c45478bf8470816271699a9fbe5",
     "scripts/verify_gcp_security_authority_revalidation.py": "ecf35b27a96c862f1c5cad144d5a0861b12f42f9b51b65edb2810e56983a8dc0",
     "scripts/gcp_security_authority_contract_validation.py": "0e4d51d03bf177e9a0de190f058a22a4bfb8f19a11ecbf926bab4af498936074",
-    "scripts/verify_gcp_security_authority_contract.py": "8825b6d2ff24e5a04b175c8af4842a181964fba87028cb4db66939643a424ab4",
+    "scripts/verify_gcp_security_authority_contract.py": "96d6b81c47d1b95df18a870e8f36b03f5dfff58cbfc3ba89f3dcf33714fd4375",
 }
 
 

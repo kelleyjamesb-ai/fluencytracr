@@ -146,18 +146,10 @@ def test_projection_closes_only_documentation_parent_interfaces_and_stays_silent
     }
 
 
-def test_registry_is_byte_pinned_and_unchanged_from_origin_main() -> None:
+def test_registry_is_byte_pinned_without_requiring_a_remote_ref() -> None:
     registry = ROOT / REGISTRY_PATH
 
     assert hashlib.sha256(registry.read_bytes()).hexdigest() == EXPECTED_REGISTRY_SHA256
-    result = subprocess.run(
-        ["git", "diff", "--exit-code", "origin/main", "--", REGISTRY_PATH],
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.mark.parametrize(
@@ -209,6 +201,39 @@ def test_verifier_rejects_changed_registry_bytes(tmp_path: Path) -> None:
     registry_path.write_bytes(registry_path.read_bytes() + b"\n")
 
     with pytest.raises(ProjectionValidationError, match="registry byte hash"):
+        validate_projection(root)
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    (PROJECTION_PATH, REGISTRY_PATH, *SOURCE_PATHS),
+)
+def test_verifier_rejects_symlinked_explicit_locator(
+    tmp_path: Path,
+    relative_path: str,
+) -> None:
+    root = _copy_verifier_inputs(tmp_path)
+    locator = root / relative_path
+    target = root / f"same-bytes-{hashlib.sha256(relative_path.encode()).hexdigest()}.json"
+    target.write_bytes(locator.read_bytes())
+    locator.unlink()
+    locator.symlink_to(target)
+
+    with pytest.raises(ProjectionValidationError, match="unreadable"):
+        validate_projection(root)
+
+
+def test_verifier_rejects_symlinked_registry_parent_component(
+    tmp_path: Path,
+) -> None:
+    root = _copy_verifier_inputs(tmp_path)
+    registry = root / REGISTRY_PATH
+    component = registry.parent
+    moved = root / "same-registry-parent"
+    component.rename(moved)
+    component.symlink_to(moved, target_is_directory=True)
+
+    with pytest.raises(ProjectionValidationError, match="unreadable"):
         validate_projection(root)
 
 
@@ -354,6 +379,66 @@ def test_section_7_3_and_7_4_accept_the_same_closed_full_target_identity_bytes()
         _target_record(section_7_4_schema, identity_bytes),
         section_7_4_schema,
     )
+
+
+def test_both_parents_reject_noncanonical_base64_target_aliases() -> None:
+    section_7_3 = _load_verifier_module(
+        "scripts/verify_gcp_security_authority_contract.py",
+        "gcp73_canonical_target_base64",
+    )
+    section_7_4 = _load_verifier_module(
+        "scripts/verify_gcp_attestation_receipt_contract.py",
+        "gcp74_canonical_target_base64",
+    )
+    security_contract = _load_json(ROOT / SOURCE_PATHS[1])
+    attestation_contract = _load_json(ROOT / SOURCE_PATHS[3])
+    section_7_3_schema = security_contract[
+        "section_7_5_authority_admission_interface"
+    ]["full_section_7_5_target_schema"]
+    section_7_4_schema = attestation_contract[
+        "section_7_5_external_approval_interface"
+    ]["full_section_7_5_target_schema"]
+    identity_bytes = _canonical_json(
+        {
+            "canonical_contract_body_sha256": "a" * 64,
+            "contract_domain_separator": (
+                "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1"
+            ),
+            "contract_kind": "FULL_SECTION_7_5",
+            "schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+        }
+    )
+    canonical = base64.b64encode(identity_bytes).decode("ascii")
+    assert canonical.endswith("==")
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    final_value = alphabet.index(canonical[-3])
+    alias_value = (final_value & 0b110000) | ((final_value + 1) & 0b001111)
+    aliased = canonical[:-3] + alphabet[alias_value] + "=="
+    assert aliased != canonical
+    assert base64.b64decode(aliased, validate=True) == identity_bytes
+
+    for validator, schema in (
+        (section_7_3.validate_full_section_7_5_target_record, section_7_3_schema),
+        (
+            section_7_4.validate_full_section_7_5_external_approval_target_record,
+            section_7_4_schema,
+        ),
+    ):
+        record = _target_record(schema, identity_bytes)
+        record["canonical_contract_bytes_base64"] = aliased
+        record["target_binding_sha256"] = hashlib.sha256(
+            schema["target_binding_domain_separator"].encode("ascii")
+            + b"\x00"
+            + _canonical_json(
+                {
+                    key: value
+                    for key, value in record.items()
+                    if key != "target_binding_sha256"
+                }
+            )
+        ).hexdigest()
+        with pytest.raises(ValueError, match="canonical base64"):
+            validator(record, schema)
 
 
 def test_both_parents_reject_open_ended_full_target_identity_fields() -> None:

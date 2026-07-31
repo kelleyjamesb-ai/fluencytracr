@@ -6,6 +6,8 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
+import stat
 import sys
 import unicodedata
 from pathlib import Path
@@ -97,9 +99,58 @@ class ProjectionValidationError(ValueError):
     """The closure projection is not the exact nonauthorizing contract."""
 
 
-def _load_object(path: Path, label: str) -> dict[str, Any]:
+def _read_regular_file_once(
+    root: Path,
+    relative_path: str,
+    label: str,
+) -> bytes:
+    path = Path(relative_path)
+    parts = path.parts
+    if (
+        path.is_absolute()
+        or not parts
+        or any(part in {"", ".", ".."} for part in parts)
+        or not hasattr(os, "O_NOFOLLOW")
+    ):
+        raise ProjectionValidationError(f"{label} is unreadable")
+    opened: list[int] = []
     try:
-        raw = path.read_bytes()
+        directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        current = os.open(root, directory_flags)
+        opened.append(current)
+        for part in parts[:-1]:
+            current = os.open(
+                part,
+                directory_flags,
+                dir_fd=current,
+            )
+            opened.append(current)
+        file_descriptor = os.open(
+            parts[-1],
+            os.O_RDONLY | os.O_NOFOLLOW,
+            dir_fd=current,
+        )
+        opened.append(file_descriptor)
+        if not stat.S_ISREG(os.fstat(file_descriptor).st_mode):
+            raise OSError("locator is not a regular file")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(file_descriptor, 64 * 1024)
+            if not chunk:
+                return b"".join(chunks)
+            chunks.append(chunk)
+    except OSError as exc:
+        raise ProjectionValidationError(f"{label} is unreadable") from exc
+    finally:
+        for descriptor in reversed(opened):
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+
+
+def _load_object(raw: bytes, label: str) -> dict[str, Any]:
+    try:
         text = raw.decode("utf-8")
 
         def reject_duplicate_keys(
@@ -131,7 +182,7 @@ def _load_object(path: Path, label: str) -> dict[str, Any]:
             parse_constant=reject_noninteger,
         )
         _validate_canonical_value(value)
-    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
+    except (UnicodeError, json.JSONDecodeError, ValueError) as exc:
         raise ProjectionValidationError(f"{label} is unreadable") from exc
     if not isinstance(value, dict):
         raise ProjectionValidationError(f"{label} must be an object")
@@ -280,21 +331,22 @@ def validate_projection(repo_root: Path | str) -> dict[str, Any]:
     """Validate all source bytes and return the projection plus derived rows."""
 
     root = Path(repo_root)
-    projection = _load_object(root / PROJECTION_PATH, "closure projection")
+    projection_bytes = _read_regular_file_once(
+        root,
+        PROJECTION_PATH,
+        "closure projection",
+    )
+    projection = _load_object(projection_bytes, "closure projection")
     expected = _expected_projection()
     if projection != expected:
         raise ProjectionValidationError(
             "closure projection differs from the closed schema or values"
         )
 
-    registry_path = root / REGISTRY_PATH
-    try:
-        registry_bytes = registry_path.read_bytes()
-    except OSError as exc:
-        raise ProjectionValidationError("registry is unreadable") from exc
+    registry_bytes = _read_regular_file_once(root, REGISTRY_PATH, "registry")
     if _sha256(registry_bytes) != EXPECTED_REGISTRY_SHA256:
         raise ProjectionValidationError("registry byte hash mismatch")
-    registry = _load_object(registry_path, "registry")
+    registry = _load_object(registry_bytes, "registry")
     derived = _derive_registry_projection(registry)
     if _canonical_sha256(derived) != EXPECTED_CANONICAL_PROJECTION_SHA256:
         raise ProjectionValidationError(
@@ -302,12 +354,11 @@ def validate_projection(repo_root: Path | str) -> dict[str, Any]:
         )
 
     for _owner, relative_path, expected_sha256 in EXPECTED_SOURCE_CONTRACTS:
-        try:
-            source_bytes = (root / relative_path).read_bytes()
-        except OSError as exc:
-            raise ProjectionValidationError(
-                f"source contract is unreadable: {relative_path}"
-            ) from exc
+        source_bytes = _read_regular_file_once(
+            root,
+            relative_path,
+            f"source contract: {relative_path}",
+        )
         if _sha256(source_bytes) != expected_sha256:
             raise ProjectionValidationError(
                 f"source contract hash mismatch: {relative_path}"

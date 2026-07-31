@@ -112,6 +112,11 @@ def validate_full_section_7_5_external_approval_target_record(
         )
     except (TypeError, ValueError) as exc:
         raise ValueError("full Section 7.5 target bytes malformed") from exc
+    if (
+        base64.b64encode(target_bytes).decode("ascii")
+        != record["canonical_contract_bytes_base64"]
+    ):
+        raise ValueError("full Section 7.5 target bytes are not canonical base64")
     if digest(target_bytes) != record["canonical_contract_bytes_sha256"]:
         raise ValueError("target bytes hash mismatch")
     target_value = strict_load_json_bytes(target_bytes)

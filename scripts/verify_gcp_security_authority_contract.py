@@ -388,6 +388,11 @@ def validate_full_section_7_5_target_record(
     except Exception as error:
         raise ValueError("target bytes are not base64") from error
     if (
+        base64.b64encode(target_bytes).decode("ascii")
+        != record["canonical_contract_bytes_base64"]
+    ):
+        raise ValueError("target bytes are not canonical base64")
+    if (
         not isinstance(record["canonical_contract_bytes_sha256"], str)
         or record["canonical_contract_bytes_sha256"] != digest(target_bytes)
     ):
