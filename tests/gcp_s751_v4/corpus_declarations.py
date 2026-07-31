@@ -236,6 +236,17 @@ def reconcile_case_records(
                 "case record expected sequence mismatch"
             )
         row = resolve_case_ledger_row(record, rows)
+        observed_selector = getattr(
+            observation, "ledger_selector", None
+        )
+        if (
+            not isinstance(observed_selector, ExactLedgerSelector)
+            or record.ledger_selector != observed_selector
+        ):
+            raise ValueError(
+                "case ledger selector does not match observed selector: "
+                f"{record.case_id}"
+            )
         _validate_expected_stage(record, row)
 
 

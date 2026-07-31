@@ -149,9 +149,11 @@ closed-result-parser boundaries. Each record fixes its stable case ID,
 generator ID, literal mutation operator and parameters, source and target
 relationship, authenticated immutable root, full expected sequence, oracle,
 exact pytest node, and one exact ledger selector. The corpus constructs and
-observes mutations independently, then requires a bijective field-for-field
+observes mutations independently, derives the exact resource, pointer, and
+rule ID from that observed evidence, then requires a bijective field-for-field
 reconciliation with those records. A selector must resolve exactly one ledger
-row, and the row's stage must equal the observed rejection or hold boundary.
+row, equal the independently observed selector, and match the observed
+rejection or hold boundary.
 
 Generated tests cover raw candidate, payload, envelope, and nested nonce/time
 unknown, missing, wrong-type, nested-extra, and truncation cases; candidate,

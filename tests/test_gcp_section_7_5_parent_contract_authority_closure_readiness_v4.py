@@ -699,7 +699,7 @@ def test_per_case_reconciliation_rejects_every_record_corruption_class() -> None
     )
     with pytest.raises(
         ValueError,
-        match="case expected boundary does not match ledger row stage",
+        match="case ledger selector does not match observed selector",
     ):
         reconciler(
             packet,
@@ -707,6 +707,91 @@ def test_per_case_reconciliation_rejects_every_record_corruption_class() -> None
             (wrong_stage_selector,) + records[1:],
             observations,
         )
+
+    candidate_observation = next(
+        value
+        for value in observations
+        if value.case_id == first.case_id
+    )
+    candidate_same_stage_swap = replace(
+        first,
+        ledger_selector=declarations_module.ExactLedgerSelector(
+            resource="candidate",
+            pointer="/observation",
+            rule_id=(
+                "RULE-LEDGER-"
+                "d4a0b6b95f4f89c97bae84b8e99adc42b2ce4986611ae0287"
+                "ca199b88e451281"
+            ),
+        ),
+    )
+    with pytest.raises(
+        ValueError,
+        match="case ledger selector does not match observed selector",
+    ):
+        reconciler(
+            packet,
+            rows,
+            (candidate_same_stage_swap,) + records[1:],
+            observations,
+        )
+    assert candidate_observation.ledger_selector == (
+        declarations_module.ExactLedgerSelector(
+            resource="candidate",
+            pointer="/schema_version",
+            rule_id=(
+                "RULE-LEDGER-"
+                "41342576504e2575ea2db3c1afdbc58860f427e213b60a043f"
+                "0f3655a7b15616"
+            ),
+        )
+    )
+
+    role_one = next(
+        value
+        for value in records
+        if value.case_id == "a019-every-section-7-3-role-1"
+    )
+    role_two = next(
+        value
+        for value in records
+        if value.case_id == "a019-every-section-7-3-role-2"
+    )
+    role_one_observation = next(
+        value
+        for value in observations
+        if value.case_id == role_one.case_id
+    )
+    role_same_stage_swap = replace(
+        role_one,
+        ledger_selector=role_two.ledger_selector,
+    )
+    with pytest.raises(
+        ValueError,
+        match="case ledger selector does not match observed selector",
+    ):
+        reconciler(
+            packet,
+            rows,
+            tuple(
+                role_same_stage_swap
+                if value is role_one
+                else value
+                for value in records
+            ),
+            observations,
+        )
+    assert role_one_observation.ledger_selector == (
+        declarations_module.ExactLedgerSelector(
+            resource="role-capability-matrix.json",
+            pointer="/roles/0/role_id",
+            rule_id=(
+                "RULE-LEDGER-"
+                "cbd61fe83a685942351b192d9430e9e34051921f1856d5c09"
+                "444489abdfe1dc7"
+            ),
+        )
+    )
 
     selected = resolver(first, rows)
     with pytest.raises(

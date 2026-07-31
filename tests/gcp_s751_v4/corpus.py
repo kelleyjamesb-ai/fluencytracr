@@ -26,6 +26,7 @@ from typing import Callable, ContextManager, Iterator, Mapping, Sequence
 from tests.gcp_s751_v4.bundle import open_harness_bundle
 from tests.gcp_s751_v4.corpus_declarations import (
     CaseRecord,
+    ExactLedgerSelector,
     load_case_records,
     reconcile_case_records,
     resolve_case_ledger_row,
@@ -120,6 +121,7 @@ class CaseObservation:
     target_relationship: str
     immutable_root_id: str
     immutable_root_sha256: str
+    ledger_selector: ExactLedgerSelector
     expected_sequence: tuple[tuple[str, ...], ...]
     oracle_id: str
     pytest_node: str
@@ -298,6 +300,9 @@ def _output_case_observations(
             immutable_root_id="PUBLIC_BOUNDARY_SCHEMA_SET_V4",
             immutable_root_sha256=resolve_immutable_root_sha256(
                 packet, "PUBLIC_BOUNDARY_SCHEMA_SET_V4"
+            ),
+            ledger_selector=_exact_observed_selector(
+                "result", f"/{case.field}"
             ),
             expected_sequence=(
                 ("PROTOCOL_FAILURE", case.expected_failure),
@@ -1451,6 +1456,7 @@ def _prepared_case_observation(
         else "test_future_sut_attack_case"
     )
     immutable_root_id = _observed_immutable_root_id(case)
+    ledger_selector = _observed_ledger_selector(packet, case)
     return CaseObservation(
         case_id=case.case_id,
         attack_id=case.attack_id,
@@ -1467,6 +1473,7 @@ def _prepared_case_observation(
         immutable_root_sha256=resolve_immutable_root_sha256(
             packet, immutable_root_id
         ),
+        ledger_selector=ledger_selector,
         expected_sequence=tuple(
             (
                 "EVALUATION_RESULT",
@@ -1485,6 +1492,135 @@ def _prepared_case_observation(
             "authority_closure_readiness_v4.py::"
             f"{test_function}[{case.case_id}]"
         ),
+    )
+
+
+def _observed_ledger_selector(
+    packet: RulePacket,
+    case: PreparedCase,
+) -> ExactLedgerSelector:
+    """Derive one exact ledger row from actual mutation and oracle evidence."""
+    parameters = set(case.mutation_evidence.observed_parameters)
+    reason = case.expected.reason
+    if reason == "INVALID_CANDIDATE_SHAPE":
+        resource, pointer = "candidate", "/schema_version"
+    elif reason == "INVALID_ENVELOPE_SHAPE":
+        if any(
+            value.startswith("envelope:/payload/nonce_time/")
+            for value in parameters
+        ):
+            resource, pointer = "nonce_time", "/trusted_time"
+        elif (
+            "envelope:RAW_BYTES_CHANGED" in parameters
+            or any(
+                value.startswith("envelope:/")
+                and not value.startswith("envelope:/payload/")
+                for value in parameters
+            )
+        ):
+            resource, pointer = (
+                "signed_context_envelope",
+                "/schema_version",
+            )
+        else:
+            resource, pointer = (
+                "signed_context_payload",
+                "/schema_version",
+            )
+    elif reason == "INVALID_SIGNED_CONTEXT_BINDING":
+        if "envelope:/payload/mode" in parameters:
+            resource, pointer = "signed_context_payload", "/mode"
+        elif any("/nonce_time/" in value for value in parameters):
+            resource, pointer = "nonce_time", "/trusted_time"
+        else:
+            resource, pointer = (
+                "signed_context_payload",
+                "/candidate_sha256",
+            )
+    elif reason == "INVALID_SIGNATURE":
+        candidate_changed = any(
+            value.startswith("candidate:")
+            or value.startswith("candidate_role_")
+            for value in parameters
+        )
+        envelope_changed = any(
+            value.startswith("envelope:") for value in parameters
+        )
+        anchor_changed = "anchor_changed:true" in parameters
+        if (
+            (anchor_changed and not envelope_changed)
+            or (candidate_changed and envelope_changed)
+        ):
+            resource, pointer = (
+                "verifier_anchor",
+                "/spki_der_base64",
+            )
+        else:
+            resource, pointer = (
+                "signed_context_envelope",
+                "/signature_der_base64",
+            )
+    elif reason == "INVALID_CONTEXT_CONJUNCTION":
+        resource, pointer = "attestation-receipt-contract.json", ""
+    elif reason == "REPLAY_DETECTED":
+        resource, pointer = "replay", "/nonce"
+    elif reason == "INVALID_PARENT_RESOURCE_SET":
+        resource, pointer = "bundle_capability", "/member_names"
+    elif reason == "INVALID_SECTION_7_3_AUTHORITY":
+        removed_roles = [
+            value[len("candidate_role_removed:"):]
+            for value in parameters
+            if value.startswith("candidate_role_removed:")
+        ]
+        parents = load_exact_parents(packet)
+        matrix = json.loads(
+            parents["role-capability-matrix.json"]
+        )
+        roles = (
+            matrix.get("roles")
+            if isinstance(matrix, Mapping)
+            else None
+        )
+        if len(removed_roles) != 1 or not isinstance(roles, list):
+            raise ValueError(
+                "observed authority mutation has no exact role row"
+            )
+        matches = [
+            index
+            for index, value in enumerate(roles)
+            if isinstance(value, Mapping)
+            and value.get("role_id") == removed_roles[0]
+        ]
+        if len(matches) != 1:
+            raise ValueError(
+                "observed authority mutation has no exact role row"
+            )
+        resource = "role-capability-matrix.json"
+        pointer = f"/roles/{matches[0]}/role_id"
+    elif reason in {
+        "CURRENT_PARENT_OBLIGATIONS_OPEN",
+        "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN",
+    }:
+        resource, pointer = (
+            "constraints-open-obligations-contract.json",
+            "",
+        )
+    else:
+        raise ValueError(
+            "observed result has no exact ledger selector"
+        )
+    return _exact_observed_selector(resource, pointer)
+
+
+def _exact_observed_selector(
+    resource: str,
+    pointer: str,
+) -> ExactLedgerSelector:
+    material = f"{resource}\x00{pointer}".encode("utf-8")
+    return ExactLedgerSelector(
+        resource=resource,
+        pointer=pointer,
+        rule_id=f"RULE-LEDGER-{hashlib.sha256(material).hexdigest()}",
     )
 
 
