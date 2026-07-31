@@ -120,6 +120,28 @@ Raw logs, principals, project/account identifiers, emails, IPs, policies, real s
 - **WHEN** KMS Data Access is not enabled, an exemption exists, Policy Denied can be excluded for required scope, or router/retention custody collides
 - **THEN** audit evidence remains incomplete and authority holds
 
+### Requirement: Full Section 7.5 parent admission is typed and held
+
+Section 7.3 SHALL define a closed parent-admission interface for the future
+full Section 7.5 contract only. Admission SHALL resolve canonical target bytes,
+verify their SHA-256 and a domain-separated target binding, and require the
+exact full-Section-7.5 schema, kind, and domain. Every Section 7.5A schema,
+kind, domain, or hash substitution SHALL reject. Authenticated opaque
+alias/provider-binding and controller fixed-point/separation record shapes
+SHALL bind the exact target without retaining provider identifiers or actual
+alias mappings. The live binding registry SHALL remain empty and this interface
+SHALL have `authority_effect: NONE`.
+
+The interface SHALL cover only the Section 7.3 parent-admission portions of
+`S75A-P01`, `S75A-P02`, `S75A-P05`, `S75A-P06`, `S75A-P08`, and `S75A-P19`.
+It SHALL not claim a Section 7.3 P07 portion, add a role, capability, or HSM
+purpose, or close runtime satisfaction.
+
+#### Scenario: Section 7.5A target is offered
+
+- **WHEN** a candidate presents a `SECTION_7_5A` kind, schema, domain, or hash
+- **THEN** parent admission rejects before an approval or live-evidence claim
+
 ### Requirement: Section 7.3 closure has no authority
 
 Decision precedence SHALL be privacy/boundary rejection, provider conflict rejection, source-unavailable HOLD, role/controller collision rejection, key/WIF/policy mismatch rejection, incomplete/stale/ambiguous evidence HOLD, then `GCP_SECURITY_AUTHORITY_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD`. Unknown/missing inputs reject or HOLD exactly; no override exists.

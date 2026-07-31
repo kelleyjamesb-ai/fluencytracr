@@ -2623,6 +2623,106 @@
       "SECURITY_POLICY_PROJECT"
     ]
   },
+  "section_7_5_authority_admission_interface": {
+    "authenticated_alias_provider_binding_schema": {
+      "authentication_commitment_field": "provider_binding_authentication_sha256",
+      "binding_commitment_field": "provider_binding_sha256",
+      "opaque_alias_field": "opaque_alias",
+      "owner": "SECTION_7_3",
+      "provider_identifier_retention": "PROHIBITED",
+      "required_record_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "role_id",
+        "opaque_alias",
+        "provider_binding_sha256",
+        "provider_binding_authentication_sha256",
+        "alias_provider_binding_record_sha256"
+      ],
+      "role_ids": [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "AUDIT_ROUTER_ADMIN",
+        "DEPLOYER",
+        "IMAGE_BUILDER",
+        "IMAGE_PUBLISHER",
+        "IMAGE_SIGNER",
+        "KEY_DESTRUCTION_APPROVER",
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KEY_LIFECYCLE_ADMIN",
+        "KMS_IAM_ADMIN",
+        "PUBLIC_KEY_VERIFIER",
+        "RUNTIME_SIGNER",
+        "SECURITY_AUDITOR",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      "schema_version": "GCP_AUTHENTICATED_OPAQUE_ALIAS_PROVIDER_BINDING_V1",
+      "target_binding_field": "target_binding_sha256"
+    },
+    "authority_effect": "NONE",
+    "controller_fixed_point_separation_evidence_schema": {
+      "fixed_point_evidence_must_bind": [
+        "target_binding_sha256",
+        "alias_provider_binding_record_sha256s",
+        "credential_controller_sets_sha256",
+        "completeness_witness_sha256",
+        "fixed_point_reached",
+        "forbidden_intersection_count"
+      ],
+      "fixed_point_reached_required": true,
+      "forbidden_controller_intersections_source": "ROLE_CAPABILITY_MATRIX_EXACT_FORBIDDEN_CONTROLLER_INTERSECTIONS",
+      "owner": "SECTION_7_3",
+      "role_ids": [
+        "AUDIT_RETENTION_CUSTODIAN",
+        "AUDIT_ROUTER_ADMIN",
+        "DEPLOYER",
+        "IMAGE_BUILDER",
+        "IMAGE_PUBLISHER",
+        "IMAGE_SIGNER",
+        "KEY_DESTRUCTION_APPROVER",
+        "KEY_DESTRUCTION_EXECUTOR",
+        "KEY_LIFECYCLE_ADMIN",
+        "KMS_IAM_ADMIN",
+        "PUBLIC_KEY_VERIFIER",
+        "RUNTIME_SIGNER",
+        "SECURITY_AUDITOR",
+        "WIF_PROVIDER_ADMIN"
+      ],
+      "schema_version": "GCP_SECTION_7_5_CONTROLLER_FIXED_POINT_SEPARATION_EVIDENCE_V1",
+      "unknown_or_unviewable_edge": "HOLD"
+    },
+    "full_section_7_5_target_schema": {
+      "canonicalization_version": "FT_CANONICAL_JSON_V1",
+      "candidate_bytes_required_before_hash_admission": true,
+      "contract_kind": "FULL_SECTION_7_5",
+      "contract_kind_field": "contract_kind",
+      "contract_schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+      "contract_schema_version_field": "schema_version",
+      "domain_separator": "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1",
+      "domain_separator_field": "contract_domain_separator",
+      "required_record_keys": [
+        "schema_version",
+        "contract_kind",
+        "contract_domain_separator",
+        "canonical_contract_bytes_base64",
+        "canonical_contract_bytes_sha256",
+        "target_binding_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_FULL_TARGET_ADMISSION_V1",
+      "section_7_5a_substitution": "REJECT",
+      "target_binding_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_TARGET_BINDING:V1"
+    },
+    "held_reason": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED",
+    "live_alias_provider_binding_records": [],
+    "parent_admission_obligations": [
+      "S75A-P01",
+      "S75A-P02",
+      "S75A-P05_SECTION_7_3_PARENT_ADMISSION",
+      "S75A-P06",
+      "S75A-P08_SECTION_7_3_PARENT_ADMISSION",
+      "S75A-P19_SECTION_7_3_PARENT_ADMISSION"
+    ],
+    "schema_version": "GCP_SECTION_7_5_AUTHORITY_ADMISSION_INTERFACE_V1"
+  },
   "role_capability_matrix_sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
   "rollover_state_machine": {
     "automatic_rotation": "PROHIBITED",

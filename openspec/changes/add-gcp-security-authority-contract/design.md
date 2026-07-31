@@ -60,6 +60,16 @@ Rollover creates a new CryptoKey generation, revokes and proves denial on the ol
 
 Section 7.3 enumerates required authority operations and immutable evidence requirements. Except for source-closed KMS `AsymmetricSign` Data Access behavior, Section 7.5 maps operations to exact provider service/method/log semantics and selects/proves sinks, buckets, routing, retention, and persistence. Raw Cloud logs remain externally restricted because they can contain principal emails and IPs.
 
+### Full Section 7.5 parent admission remains held
+
+The parent admission shape selects only a future `FULL_SECTION_7_5` schema,
+kind, and domain after it has resolved exact canonical contract bytes and their
+hash. `SECTION_7_5A` is not a substitutable target. Authenticated opaque
+alias/provider-binding records and fixed-point/separation commitments are
+defined as closed record shapes, while all actual records remain absent. This
+addresses only the Section 7.3 parent-admission portions of P01, P02, P05, P06,
+P08, and P19; P07 has no Section 7.3 portion and no runtime authority changes.
+
 ## Alternatives Rejected
 
 - **Service-account impersonation:** rejected due extra authority paths and parent account/email boundary.

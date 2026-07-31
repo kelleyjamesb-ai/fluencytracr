@@ -60,6 +60,7 @@ def verify_current_contract() -> dict[str, Any]:
         "evidence_snapshot_schema",
         "project_role_contract",
         "principal_role_contract",
+        "section_7_5_authority_admission_interface",
         "policy_template",
         "effective_access_evidence_schema",
         "audit_evidence_interface",
@@ -107,6 +108,7 @@ def verify_current_contract() -> dict[str, Any]:
         "role_capability_matrix_sha256",
         "synthetic_only",
         "authorization_effect",
+        "section_7_5_authority_admission_interface_evidence",
         "vectors",
     }
     if set(vectors) != expected_vector_keys:
@@ -351,12 +353,174 @@ def verify_current_contract() -> dict[str, Any]:
         raise ValueError("absent evidence policy dependency mismatch")
     if absent["authority_effect"] != "NONE_EVIDENCE_ABSENT_CANNOT_AUTHORIZE":
         raise ValueError("absent evidence attempted authority")
+    verify_section_7_5_authority_admission_interface()
     return {
         "contract_sha256": digest(CONTRACT.read_bytes()),
         "policy_hash": policy_hash,
         "evidence_state": absent["evidence_state"],
         "decision": contract["decision_algorithm"]["recorded_decision"],
     }
+
+
+def validate_full_section_7_5_target_record(
+    record: dict[str, Any], schema: dict[str, Any]
+) -> None:
+    """Validate a future target binding without granting runtime authority."""
+    required = schema["required_record_keys"]
+    if set(record) != set(required):
+        raise ValueError("full Section 7.5 target record keys mismatch")
+    if (
+        record["schema_version"] != schema["schema_version"]
+        or record[schema["contract_kind_field"]] != schema["contract_kind"]
+    ):
+        raise ValueError("full Section 7.5 target kind mismatch")
+    if record[schema["domain_separator_field"]] != schema["domain_separator"]:
+        raise ValueError("full Section 7.5 target domain mismatch")
+    if not isinstance(record["canonical_contract_bytes_base64"], str):
+        raise ValueError("target bytes are not base64")
+    try:
+        target_bytes = base64.b64decode(
+            record["canonical_contract_bytes_base64"], validate=True
+        )
+    except Exception as error:
+        raise ValueError("target bytes are not base64") from error
+    if (
+        not isinstance(record["canonical_contract_bytes_sha256"], str)
+        or record["canonical_contract_bytes_sha256"] != digest(target_bytes)
+    ):
+        raise ValueError("target bytes hash mismatch")
+    target = strict_load_json_bytes(target_bytes)
+    if not isinstance(target, dict) or _canonical(target) != target_bytes:
+        raise ValueError("target bytes are not canonical JSON")
+    if (
+        target.get(schema["contract_schema_version_field"])
+        != schema["contract_schema_version"]
+        or target.get(schema["contract_kind_field"]) != schema["contract_kind"]
+    ):
+        raise ValueError("full Section 7.5 target bytes discriminator mismatch")
+    if target.get(schema["domain_separator_field"]) != schema["domain_separator"]:
+        raise ValueError("full Section 7.5 target bytes domain mismatch")
+    binding = dict(record)
+    observed = binding.pop("target_binding_sha256")
+    expected = digest(
+        schema["target_binding_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(binding)
+    )
+    if not isinstance(observed, str) or observed != expected:
+        raise ValueError("target binding mismatch")
+
+
+def verify_section_7_5_authority_admission_interface(
+    contract_path: Path = CONTRACT, vectors_path: Path = VECTORS
+) -> None:
+    """Verify the closed, non-authorizing Section 7.3 parent admission shape."""
+    contract = strict_load_json_bytes(contract_path.read_bytes())
+    vectors = strict_load_json_bytes(vectors_path.read_bytes())
+    if not isinstance(contract, dict) or not isinstance(vectors, dict):
+        raise ValueError("Section 7.5 admission artifacts are not objects")
+    interface = contract.get("section_7_5_authority_admission_interface")
+    expected_keys = {
+        "authenticated_alias_provider_binding_schema",
+        "authority_effect",
+        "controller_fixed_point_separation_evidence_schema",
+        "full_section_7_5_target_schema",
+        "held_reason",
+        "live_alias_provider_binding_records",
+        "parent_admission_obligations",
+        "schema_version",
+    }
+    if not isinstance(interface, dict) or set(interface) != expected_keys:
+        raise ValueError("Section 7.5 authority admission interface is not closed")
+    if (
+        interface["schema_version"]
+        != "GCP_SECTION_7_5_AUTHORITY_ADMISSION_INTERFACE_V1"
+        or interface["authority_effect"] != "NONE"
+        or interface["held_reason"]
+        != "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
+        or interface["live_alias_provider_binding_records"] != []
+    ):
+        raise ValueError("Section 7.5 authority admission interface attempted authority")
+    if interface["parent_admission_obligations"] != [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05_SECTION_7_3_PARENT_ADMISSION",
+        "S75A-P06",
+        "S75A-P08_SECTION_7_3_PARENT_ADMISSION",
+        "S75A-P19_SECTION_7_3_PARENT_ADMISSION",
+    ]:
+        raise ValueError("Section 7.5 parent admission obligation mismatch")
+    target = interface["full_section_7_5_target_schema"]
+    expected_target = {
+        "canonicalization_version": "FT_CANONICAL_JSON_V1",
+        "candidate_bytes_required_before_hash_admission": True,
+        "contract_kind": "FULL_SECTION_7_5",
+        "contract_kind_field": "contract_kind",
+        "contract_schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+        "contract_schema_version_field": "schema_version",
+        "domain_separator": "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1",
+        "domain_separator_field": "contract_domain_separator",
+        "required_record_keys": [
+            "schema_version",
+            "contract_kind",
+            "contract_domain_separator",
+            "canonical_contract_bytes_base64",
+            "canonical_contract_bytes_sha256",
+            "target_binding_sha256",
+        ],
+        "schema_version": "GCP_SECTION_7_5_FULL_TARGET_ADMISSION_V1",
+        "section_7_5a_substitution": "REJECT",
+        "target_binding_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_TARGET_BINDING:V1",
+    }
+    if target != expected_target:
+        raise ValueError("full Section 7.5 target schema mismatch")
+    aliases = interface["authenticated_alias_provider_binding_schema"]
+    roles = contract["principal_role_contract"]["role_ids"]
+    expected_aliases = {
+        "authentication_commitment_field": "provider_binding_authentication_sha256",
+        "binding_commitment_field": "provider_binding_sha256",
+        "opaque_alias_field": "opaque_alias",
+        "owner": "SECTION_7_3",
+        "provider_identifier_retention": "PROHIBITED",
+        "required_record_keys": [
+            "schema_version",
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_binding_sha256",
+            "provider_binding_authentication_sha256",
+            "alias_provider_binding_record_sha256",
+        ],
+        "role_ids": roles,
+        "schema_version": "GCP_AUTHENTICATED_OPAQUE_ALIAS_PROVIDER_BINDING_V1",
+        "target_binding_field": "target_binding_sha256",
+    }
+    if aliases != expected_aliases:
+        raise ValueError("authenticated alias/provider binding schema mismatch")
+    controller = interface["controller_fixed_point_separation_evidence_schema"]
+    expected_controller = {
+        "fixed_point_evidence_must_bind": [
+            "target_binding_sha256",
+            "alias_provider_binding_record_sha256s",
+            "credential_controller_sets_sha256",
+            "completeness_witness_sha256",
+            "fixed_point_reached",
+            "forbidden_intersection_count",
+        ],
+        "fixed_point_reached_required": True,
+        "forbidden_controller_intersections_source": "ROLE_CAPABILITY_MATRIX_EXACT_FORBIDDEN_CONTROLLER_INTERSECTIONS",
+        "owner": "SECTION_7_3",
+        "role_ids": roles,
+        "schema_version": "GCP_SECTION_7_5_CONTROLLER_FIXED_POINT_SEPARATION_EVIDENCE_V1",
+        "unknown_or_unviewable_edge": "HOLD",
+    }
+    if controller != expected_controller:
+        raise ValueError("controller fixed-point evidence schema mismatch")
+    if vectors.get("section_7_5_authority_admission_interface_evidence") != {
+        "live_alias_provider_binding_record_count": 0,
+        "state": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED",
+    }:
+        raise ValueError("Section 7.5 admission vector evidence mismatch")
 
 
 def main() -> int:

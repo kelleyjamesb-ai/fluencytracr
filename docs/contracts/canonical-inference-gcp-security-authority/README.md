@@ -78,6 +78,23 @@ Ownership remains explicit:
 No forward interface contains a placeholder live hash. Later sections must bind
 an actually approved live policy/evidence pair; the approved lists are empty.
 
+### Section 7.5 parent-admission interface
+
+Section 7.3 defines a closed future admission interface only for a typed,
+canonical-byte-bound `FULL_SECTION_7_5` target. It rejects every Section 7.5A
+schema, kind, domain, or hash substitution before any approval or evidence
+claim. The later target must provide its exact canonical bytes and SHA-256,
+then bind authenticated opaque role aliases and provider-binding commitments to
+that target. No provider identifiers or alias mappings are retained here.
+
+The interface requires later fixed-point/separation evidence to bind the exact
+target, alias/provider-binding records, controller-set commitment, completeness
+witness, fixed-point result, and zero forbidden intersections. It closes only
+the Section 7.3 parent-admission portions of `S75A-P01`, `S75A-P02`, `S75A-P05`,
+`S75A-P06`, `S75A-P08`, and `S75A-P19`; it does not close their future
+full-Section-7.5 mechanics, P07, any runtime satisfaction, or authority.
+All live alias/provider-binding records remain empty.
+
 ## 4. Provider Claims Closed Here
 
 The public-source bundle establishes only the provider mechanics used by this

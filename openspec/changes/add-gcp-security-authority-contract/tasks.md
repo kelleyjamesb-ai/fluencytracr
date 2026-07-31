@@ -11,6 +11,7 @@
 - [x] 2.4 Define role/capability matrix, transitive controller closure, and effective-access tuples.
 - [x] 2.5 Define held rollover and authority-audit interfaces.
 - [x] 2.6 Keep all live admission lists empty and authority held.
+- [x] 2.7 Define the held full-Section-7.5 parent-admission interface and reject Section 7.5A substitution.
 
 ## 3. Verification
 

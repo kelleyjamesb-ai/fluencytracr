@@ -47,15 +47,15 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 # Updated only after all normative bytes are final.
 PINNED_ARTIFACTS = {
-    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "05f153b012f453ea9c289632b55905327988a068a7b101394479aa5ba199744e",
+    "docs/contracts/canonical-inference-gcp-security-authority/README.md": "a004896544f9f76ab7d1ad222c9ae9088b8f29ac7ed84eb4c62262b02a4e82f1",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-source-evidence.json": "83074b19ee9b2fe74409387a989a1b88c2ff5231182f8617ae0800dd19b48577",
     "docs/contracts/canonical-inference-gcp-security-authority/provider-revalidation.json": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
     "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
-    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841",
-    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "7fc57bf6d241399dc858667602d8eb8f6264c5f6d90322131d02ea415288eed1",
+    "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json": "b6e1bfc17331ea497bbf08e4ad65cc466f1a3869a8b220f32a4f5f4ca1643fae",
+    "docs/contracts/canonical-inference-gcp-security-authority/canonicalization-vectors.json": "06f7d5b84432a9b4efbb7b97d2f029f980a1d97ab3870119990f49463d542718",
     "scripts/verify_gcp_security_authority_revalidation.py": "ecf35b27a96c862f1c5cad144d5a0861b12f42f9b51b65edb2810e56983a8dc0",
     "scripts/gcp_security_authority_contract_validation.py": "0e4d51d03bf177e9a0de190f058a22a4bfb8f19a11ecbf926bab4af498936074",
-    "scripts/verify_gcp_security_authority_contract.py": "4f1a2ab1ba127f8ac58b99a5641fea00c2dfe67c4d097f33ef3f45f827f46cac",
+    "scripts/verify_gcp_security_authority_contract.py": "83d9f7b5454b5394bbd9fc438b67e06c4bd514c953750e2d4a4fc8902c30fada",
 }
 
 
@@ -2365,6 +2365,162 @@ def test_normative_runtime_artifacts_contain_no_direct_identifiers_or_secrets() 
     assert "PLAIN_OR_DICTIONARYABLE_IDENTIFIER_HASHES" in contract["privacy"][
         "prohibited"
     ]
+
+
+def test_full_section_7_5_authority_admission_is_typed_bound_and_held() -> None:
+    """Only an exact future full-Section-7.5 target may reach this held interface."""
+    contract = _json(CONTRACT)
+    vectors = _json(VECTORS)
+    interface = contract["section_7_5_authority_admission_interface"]
+
+    assert set(interface) == {
+        "authenticated_alias_provider_binding_schema",
+        "authority_effect",
+        "controller_fixed_point_separation_evidence_schema",
+        "full_section_7_5_target_schema",
+        "held_reason",
+        "live_alias_provider_binding_records",
+        "parent_admission_obligations",
+        "schema_version",
+    }
+    assert interface["schema_version"] == (
+        "GCP_SECTION_7_5_AUTHORITY_ADMISSION_INTERFACE_V1"
+    )
+    assert interface["authority_effect"] == "NONE"
+    assert interface["held_reason"] == (
+        "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
+    )
+    assert interface["live_alias_provider_binding_records"] == []
+    assert interface["parent_admission_obligations"] == [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05_SECTION_7_3_PARENT_ADMISSION",
+        "S75A-P06",
+        "S75A-P08_SECTION_7_3_PARENT_ADMISSION",
+        "S75A-P19_SECTION_7_3_PARENT_ADMISSION",
+    ]
+
+    target_schema = interface["full_section_7_5_target_schema"]
+    assert target_schema == {
+        "canonicalization_version": "FT_CANONICAL_JSON_V1",
+        "candidate_bytes_required_before_hash_admission": True,
+        "contract_kind": "FULL_SECTION_7_5",
+        "contract_kind_field": "contract_kind",
+        "contract_schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+        "contract_schema_version_field": "schema_version",
+        "domain_separator": "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1",
+        "domain_separator_field": "contract_domain_separator",
+        "required_record_keys": [
+            "schema_version",
+            "contract_kind",
+            "contract_domain_separator",
+            "canonical_contract_bytes_base64",
+            "canonical_contract_bytes_sha256",
+            "target_binding_sha256",
+        ],
+        "schema_version": "GCP_SECTION_7_5_FULL_TARGET_ADMISSION_V1",
+        "section_7_5a_substitution": "REJECT",
+        "target_binding_domain_separator": "FLUENCYTRACR:GCP_SECURITY_AUTHORITY:SECTION_7_5_TARGET_BINDING:V1",
+    }
+    assert interface["authenticated_alias_provider_binding_schema"] == {
+        "authentication_commitment_field": "provider_binding_authentication_sha256",
+        "binding_commitment_field": "provider_binding_sha256",
+        "opaque_alias_field": "opaque_alias",
+        "owner": "SECTION_7_3",
+        "provider_identifier_retention": "PROHIBITED",
+        "required_record_keys": [
+            "schema_version",
+            "target_binding_sha256",
+            "role_id",
+            "opaque_alias",
+            "provider_binding_sha256",
+            "provider_binding_authentication_sha256",
+            "alias_provider_binding_record_sha256",
+        ],
+        "role_ids": contract["principal_role_contract"]["role_ids"],
+        "schema_version": "GCP_AUTHENTICATED_OPAQUE_ALIAS_PROVIDER_BINDING_V1",
+        "target_binding_field": "target_binding_sha256",
+    }
+    assert interface["controller_fixed_point_separation_evidence_schema"] == {
+        "forbidden_controller_intersections_source": "ROLE_CAPABILITY_MATRIX_EXACT_FORBIDDEN_CONTROLLER_INTERSECTIONS",
+        "fixed_point_evidence_must_bind": [
+            "target_binding_sha256",
+            "alias_provider_binding_record_sha256s",
+            "credential_controller_sets_sha256",
+            "completeness_witness_sha256",
+            "fixed_point_reached",
+            "forbidden_intersection_count",
+        ],
+        "fixed_point_reached_required": True,
+        "owner": "SECTION_7_3",
+        "role_ids": contract["principal_role_contract"]["role_ids"],
+        "schema_version": "GCP_SECTION_7_5_CONTROLLER_FIXED_POINT_SEPARATION_EVIDENCE_V1",
+        "unknown_or_unviewable_edge": "HOLD",
+    }
+    assert vectors["section_7_5_authority_admission_interface_evidence"] == {
+        "live_alias_provider_binding_record_count": 0,
+        "state": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED",
+    }
+
+    spec = importlib.util.spec_from_file_location("gcp73_contract_verifier", CONTRACT_VERIFIER)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.pop(0)
+    module.verify_section_7_5_authority_admission_interface()
+
+    target_bytes = _canonical(
+        {
+            "contract_domain_separator": target_schema["domain_separator"],
+            "contract_kind": target_schema["contract_kind"],
+            "schema_version": target_schema["contract_schema_version"],
+        }
+    )
+    target_record = {
+        "schema_version": target_schema["schema_version"],
+        "contract_kind": target_schema["contract_kind"],
+        "contract_domain_separator": target_schema["domain_separator"],
+        "canonical_contract_bytes_base64": base64.b64encode(target_bytes).decode(
+            "ascii"
+        ),
+        "canonical_contract_bytes_sha256": _sha(target_bytes),
+    }
+    target_record["target_binding_sha256"] = _sha(
+        target_schema["target_binding_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(target_record)
+    )
+    module.validate_full_section_7_5_target_record(target_record, target_schema)
+
+    byte_substitution = copy.deepcopy(target_record)
+    byte_substitution["canonical_contract_bytes_base64"] = base64.b64encode(
+        target_bytes + b" "
+    ).decode("ascii")
+    with pytest.raises(ValueError, match="target bytes hash mismatch"):
+        module.validate_full_section_7_5_target_record(
+            byte_substitution, target_schema
+        )
+
+    section_7_5a_substitution = copy.deepcopy(target_record)
+    section_7_5a_substitution["contract_kind"] = "SECTION_7_5A"
+    section_7_5a_substitution["target_binding_sha256"] = _sha(
+        target_schema["target_binding_domain_separator"].encode("ascii")
+        + b"\x00"
+        + _canonical(
+            {
+                key: value
+                for key, value in section_7_5a_substitution.items()
+                if key != "target_binding_sha256"
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="full Section 7.5 target kind mismatch"):
+        module.validate_full_section_7_5_target_record(
+            section_7_5a_substitution, target_schema
+        )
 
 
 def test_docs_parent_attribution_and_scope_are_consistent() -> None:
