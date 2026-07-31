@@ -77,3 +77,32 @@ SHALL be `NOT_AUTHORIZED` / `NOT_RUN`.
 
 - **WHEN** the `LIVE_RUNTIME × EXACT` environment cell is read
 - **THEN** it is `NOT_AUTHORIZED`, `NOT_RUN`, `DESIGN_ONLY`, and `NONE`
+
+### Requirement: Final closure is a canonical nonauthorizing projection
+
+The Section 7.5.1 closure artifact SHALL pin and recompute the unchanged
+Section 7.5A registry byte hash. It SHALL derive the exact ordered P00-P19
+owner/state rows and forward/reverse edges and bind those derived values by one
+canonical projection digest. It SHALL pin the current Section 7.2, Section 7.3
+authority and role-matrix, and Section 7.4 contract paths and byte hashes.
+Unknown fields, source drift, registry drift, missing or extra prerequisites,
+cross-owned closure, runtime satisfaction, live authority, or a full-Section
+7.5-closed alias SHALL reject.
+
+The only closed documentation portions SHALL be P00 for Section 7.2; P01, P02,
+P06, and the Section 7.3 portions of P05, P08, and P19; and P03, P14, the
+Section 7.4 verification-time portions of P05 and P07, and the Section 7.4
+approval-only portion of P19. P07 SHALL have no Section 7.3 portion and P08
+SHALL have no Section 7.4 portion.
+
+#### Scenario: Exact parent documentation is projected
+
+- **WHEN** the offline verifier reads the unchanged registry, exact projection,
+  and exact parent contract bytes
+- **THEN** it validates
+  `SECTION_7_5_1_PARENT_INTERFACES_CLOSED_FULL_SECTION_7_5_CONTRACT_OPEN_BLOCKING`
+- **AND** every future/full Section 7.5 component plus P04, P09-P13, and
+  P15-P18 remains `OPEN_BLOCKING`
+- **AND** actual aliases, approvals, and live evidence remain absent
+- **AND** `LIVE_RUNTIME` remains `NOT_AUTHORIZED` / `NOT_RUN`
+- **AND** authority remains `NONE`

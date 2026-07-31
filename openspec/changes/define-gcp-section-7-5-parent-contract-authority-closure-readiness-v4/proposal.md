@@ -15,12 +15,19 @@ future evaluator must satisfy.
   public boundaries, all twelve environment cells, nine oracle classes, and
   nineteen mandatory attacks plus four V4 metamorphic cases.
 - Preserve every parent owner and every current blocker as open.
+- After the separately completed Section 7.2, 7.3, and 7.4 documentation
+  amendments, add one compact canonical projection that records only those
+  parent-interface portions as closed and keeps the full Section 7.5 contract
+  open.
 
 ## Impact
 
 - Affected spec: `gcp-section-7-5-parent-contract-authority-closure-readiness`.
 - Affected test evidence: one compact JSON fixture and one structural test.
-- No evaluator, parent-contract amendment, closure projection, GCP access,
-  credential, signature fixture, network mutation, deployment, or live action.
+- Closure evidence is a docs-only projection and offline verifier; it is not an
+  evaluator, runtime contract, new architecture layer, or governance layer.
+- No GCP access, credential, signature fixture, network mutation, deployment,
+  or live action.
 - `authority_effect: NONE`; structural evidence cannot close HSM custody,
-  P03, P08, P14, production authority, or any later-section obligation.
+  actual aliases/approvals/evidence, production authority, the full Section
+  7.5 contract, or any later-section obligation.

@@ -227,3 +227,20 @@ blocking truth, or make evidence nonreproducible.
 External reviewers record identities and verdicts outside this packet. No
 self-approval, evidence commit/tree, packet self-hash, or review verdict is a
 packet field.
+
+## 7. Final bounded closure projection
+
+The later docs-only closure step does not change this packet's historical
+preimplementation evidence. It adds
+`docs/contracts/canonical-inference-gcp-transport-persistence-constraints/section-7-5-1-parent-interface-closure-projection.json`
+and an offline verifier. The projection binds the immutable Section 7.5A
+registry at SHA-256
+`2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`,
+derives the exact ordered prerequisite owner/state and bidirectional-edge
+projection, and pins the current Section 7.2, 7.3, and 7.4 source contracts.
+
+Its decision is exactly
+`SECTION_7_5_1_PARENT_INTERFACES_CLOSED_FULL_SECTION_7_5_CONTRACT_OPEN_BLOCKING`.
+The decision is documentation-only, has `authority_effect: NONE`, records
+actual aliases/approvals/live evidence as absent, and leaves live runtime
+`NOT_AUTHORIZED` / `NOT_RUN`.

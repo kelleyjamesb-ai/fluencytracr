@@ -51,3 +51,27 @@ cross-object pair splices, or any forbidden upstream intersection reject.
 - Compactness must not hide coverage: later builders mechanically reconcile
   parent and closed dynamic paths to templates, oracle precedence, attacks, and
   all environment cells.
+
+## Bounded Section 7.5.1 closure projection
+
+After the parent documentation amendments, Section 7.5.1 records one canonical
+projection under the existing Section 7.5A constraints contract. The
+projection pins the unchanged registry byte hash and a canonical digest derived
+from its exact ordered P00-P19 IDs, owners, `OPEN_BLOCKING` states, and
+forward/reverse edges. It pins the current Section 7.2, Section 7.3 authority
+and role-matrix, and Section 7.4 contract paths and hashes without copying
+their contents.
+
+The only documentation interface closures are:
+
+- P00 for Section 7.2;
+- P01, P02, P06, and the Section 7.3 portions of P05, P08, and P19; and
+- P03, P14, the Section 7.4 verification-time portions of P05 and P07, and the
+  Section 7.4 approval-only portion of P19.
+
+P07 has no Section 7.3 portion and P08 has no Section 7.4 portion. Every
+future/full Section 7.5 component, plus P04, P09-P13, and P15-P18, remains
+`OPEN_BLOCKING`. The projection decision closes only the named Section 7.5.1
+parent interfaces; it does not alias or imply `SECTION_7_5_CONTRACT_CLOSED`.
+Actual aliases, approvals, and live evidence remain absent. `LIVE_RUNTIME` is
+`NOT_AUTHORIZED` / `NOT_RUN`, and `authority_effect` remains `NONE`.

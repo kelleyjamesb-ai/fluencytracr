@@ -26,6 +26,11 @@ Section 7.5A is the human-selected constraints/debt ledger, not a qualification 
 ## Artifacts
 
 - `constraints-open-obligations-contract.json` — exact parent projections, seven negative-constraint families, four parent-interface obligation families, 20 open prerequisites, bidirectional edges, non-substitution surface, 12-node compile hash DAG, and mandatory-HOLD decision.
+- `section-7-5-1-parent-interface-closure-projection.json` — compact
+  documentation-only projection of the closed Section 7.2, 7.3, and 7.4
+  parent-interface portions. It binds the unchanged registry and its exact
+  ordered owner/state/edge projection by hash; it does not copy or amend the
+  registry.
 - `provider-source-evidence.json` — 53 sanitized official public-document source records and 30 docs-only claims.
 - `provider-revalidation.json` — exact source/inventory composition with semantic classifier and live configuration explicitly unclosed.
 - `audit-method-inventory.json` — 89-row research inventory (88 methods plus one platform log), exact ten inherited Section 7.3 operation IDs, complete Exclusion method vocabulary, and 89/89 literal replay. It is not a live classifier.
@@ -44,12 +49,18 @@ Public example identifiers remain external restricted provenance. Checked-in art
 
 - Section 7.2 contributes the exact ten `PROFILE_FREEZE_AND_SECTION_7_5_POLICY` obligations; approved profile hashes remain empty.
 - Section 7.3 contributes five project roles, fourteen principal roles, ten authority-operation IDs, ten positive audit-interface keys, privacy/role-separation requirements, and empty runtime approvals. It has no admitted Section 7.5 mechanism/network/anchor capability.
-- Section 7.4 is bound by exact current raw bytes (`88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200`) with all 16 approval arrays empty. Its nine Section 7.5 acceptance nodes and token-freshness time feed remain `UNSATISFIED_BLOCKING`.
+- Section 7.4 is bound by exact current raw bytes (`3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8`) with live approval records empty. Its nine Section 7.5 acceptance nodes and token-freshness time feed remain runtime-unsatisfied and blocking.
 - Section 7.6 may not substitute attempt-ledger roles or semantics for Section 7.5 persistence mechanics.
 
 ## Why the HOLD is mandatory
 
 Every prerequisite `S75A-P00` through `S75A-P19` is `OPEN_BLOCKING`. Key gaps include profile/security approvals, writer/reader/authenticator/network/anchor capability admission, actual aliases, external typed approvals, exact verified records, local and network enforcement, GCS/Spanner mechanics, semantic audit and Policy Denied completeness, independent anchoring, whole-system reconciliation, and later qualification authority.
+
+Section 7.5.1 closes only the documentation-level parent interfaces projected
+from the separately amended Section 7.2, 7.3, and 7.4 contracts. It does not
+close the full Section 7.5 contract or any runtime prerequisite. P07 has no
+Section 7.3 portion; P08 has no Section 7.4 portion. All future/full Section
+7.5 components and P04, P09-P13, and P15-P18 remain explicitly open.
 
 The Section 7.5A hash uses only `SECTION_7_5A` domains and is prohibited from every full-Section-7.5 parent slot, decision, status, opaque record, or approval registry. Parent amendments must resolve future hashes to typed full-Section-7.5 bytes and reject Section 7.5A even when an approver supplies its hash.
 
