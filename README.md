@@ -68,7 +68,9 @@ documented value-realization layers:
   concordance, evidence, and parent task `5.6` remain incomplete. PR #434's
   collapsed-target algebra is retained only as a held, non-evidentiary
   diagnostic oracle under `REPAIR_DIAGNOSTIC_LINEAGE_ONLY`; it does not replace
-  the centered reference or authorize execution.
+  the centered reference or authorize execution. The bounded path from this
+  held research state to a qualified internal product readout is defined in the
+  [VBD Live Product Roadmap](docs/superpowers/plans/2026-07-31-vbd-live-product-roadmap.md).
 - **Hypothesis and metric longitudinal admission:** allows companies to define
   different aggregate metric catalogs without an arbitrary count cap while
   binding each longitudinal analysis unit to one approved hypothesis and one
