@@ -2,12 +2,13 @@
 
 ## Current Session
 
-- Section 7.5.1 is `done` locally. The bounded parent-contract repair is frozen
-  at exact implementation commit
-  `dabdd8dfd2476031d2afaf731e0e34a7929ce1cb`, tree
-  `737962459233cf3b30ec318b883d0170bedde825`. Replacement exact-tree `CODE`,
-  `BUG`, and `ADVERSARIAL` review each returned `GO`; no executable
-  authorization, privacy, invariant, or closure-projection failure remains.
+- Section 7.5.1 is `done` and merged. Final exact-tree `CODE`, `BUG`, and
+  `ADVERSARIAL` review each returned `GO` on reviewed head
+  `99b5c80f9439df84d2b60b2b677058f627148318`, tree
+  `6ca5384d6ef7b34cb16198b93fec0239bb455fc1`. PR #477 normal-merged as
+  `7efdf82a9aaefb7e78fcc253f2705ea2b8061a67` on 2026-07-31 after all
+  applicable current-head checks passed; no executable authorization, privacy,
+  invariant, or closure-projection failure remains.
 - The repair rejects duplicate projection authority/decision keys, gives
   Sections 7.3 and 7.4 one exact closed full-Section-7.5 target identity,
   rejects unknown and Section 7.5A target identities, resolves Section 7.2
@@ -15,17 +16,17 @@
   alias formula validation from authenticated admission. The independent
   trusted catalog remains compile-pinned empty, so authenticated live admission
   remains fail-closed.
-- Focused parent and closure tests passed `125` with `7` skipped. All four
-  direct verifiers, all four strict OpenSpec validations, V1 governance, docs
-  contract sweep, docs linkcheck, and `git diff --check` passed. The immutable
-  20-row Section 7.5A registry remains byte-identical at SHA-256
+- The final exact-head parent and closure suites passed `134` with `7` skipped,
+  and the closure suite passed `33`. All four direct verifiers, all four strict
+  OpenSpec validations, V1 governance, docs contract sweep, docs linkcheck,
+  `git diff --check`, and all applicable GitHub current-head checks passed. The
+  immutable 20-row Section 7.5A registry remains byte-identical at SHA-256
   `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`.
   Authority remains `NONE`; all live approval, alias, trust-distribution, and
   runtime registries remain empty.
 - Section 7.5.2 remains `pending` and is not activated. No runtime satisfaction,
-  actual aliases, approval, GCP record, credential, evaluator, push, PR, merge,
-  deployment, migration, production activity, or Sections 7.5.2-7.8 work
-  occurred.
+  actual aliases, approval, GCP record, credential, evaluator, deployment,
+  migration, production activity, or Sections 7.5.2-7.8 work occurred.
 - Task 8 Step 5 is `READINESS_GO`. Independent `CODE`, `BUG`, and
   `ADVERSARIAL` reviews each returned `GO` against exact evidence commit
   `7834c866d2c6ef234837f52a4b3bb209872b6ae9`, tree
