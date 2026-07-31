@@ -1,0 +1,155 @@
+{
+  "actual_evidence": {
+    "aliases_present": false,
+    "approvals_present": false,
+    "live_evidence_present": false
+  },
+  "authority_effect": "NONE",
+  "canonicalization_version": "FT_CANONICAL_JSON_V1",
+  "decision": "SECTION_7_5_1_PARENT_INTERFACES_CLOSED_FULL_SECTION_7_5_CONTRACT_OPEN_BLOCKING",
+  "forbidden_parent_interface_portions": [
+    {
+      "portion": "SECTION_7_3_PARENT_ADMISSION",
+      "prerequisite_id": "S75A-P07"
+    },
+    {
+      "portion": "SECTION_7_4_PARENT_APPROVAL",
+      "prerequisite_id": "S75A-P08"
+    }
+  ],
+  "live_runtime": {
+    "command": "NOT_AUTHORIZED",
+    "expected_exit": "NOT_RUN"
+  },
+  "parent_interface_closures": [
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_2",
+      "portion": "SECTION_7_2_PARENT_INTERFACE",
+      "prerequisite_id": "S75A-P00"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_3",
+      "portion": "SECTION_7_3_PARENT_ADMISSION",
+      "prerequisite_id": "S75A-P01"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_3",
+      "portion": "SECTION_7_3_PARENT_ADMISSION",
+      "prerequisite_id": "S75A-P02"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_4",
+      "portion": "SECTION_7_4_PARENT_APPROVAL",
+      "prerequisite_id": "S75A-P03"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_3",
+      "portion": "SECTION_7_3_PARENT_ADMISSION",
+      "prerequisite_id": "S75A-P05"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_4",
+      "portion": "SECTION_7_4_PARENT_VERIFICATION_TIME",
+      "prerequisite_id": "S75A-P05"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_3",
+      "portion": "SECTION_7_3_PARENT_ADMISSION",
+      "prerequisite_id": "S75A-P06"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_4",
+      "portion": "SECTION_7_4_PARENT_VERIFICATION_TIME",
+      "prerequisite_id": "S75A-P07"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_3",
+      "portion": "SECTION_7_3_PARENT_ADMISSION",
+      "prerequisite_id": "S75A-P08"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_4",
+      "portion": "SECTION_7_4_PARENT_APPROVAL",
+      "prerequisite_id": "S75A-P14"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_3",
+      "portion": "SECTION_7_3_PARENT_ADMISSION",
+      "prerequisite_id": "S75A-P19"
+    },
+    {
+      "closure_state": "DOCUMENTATION_INTERFACE_CLOSED",
+      "owner": "SECTION_7_4",
+      "portion": "SECTION_7_4_APPROVAL_ONLY",
+      "prerequisite_id": "S75A-P19"
+    }
+  ],
+  "registry": {
+    "canonical_projection_sha256": "ca2205c2c8ef69222db4815abc988dc318cb0cb9cbc2e13dd119c6ead8eefad4",
+    "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/constraints-open-obligations-contract.json",
+    "sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0"
+  },
+  "remaining_open_blocking": {
+    "explicit_unclosed_prerequisite_ids": [
+      "S75A-P04",
+      "S75A-P09",
+      "S75A-P10",
+      "S75A-P11",
+      "S75A-P12",
+      "S75A-P13",
+      "S75A-P15",
+      "S75A-P16",
+      "S75A-P17",
+      "S75A-P18"
+    ],
+    "full_section_7_5_contract_state": "OPEN_BLOCKING",
+    "future_full_section_7_5_component_ids": [
+      "S75A-P04",
+      "S75A-P05",
+      "S75A-P07",
+      "S75A-P08",
+      "S75A-P09",
+      "S75A-P10",
+      "S75A-P11",
+      "S75A-P12",
+      "S75A-P13",
+      "S75A-P18",
+      "S75A-P19"
+    ],
+    "registry_prerequisite_states_unchanged": true
+  },
+  "schema_version": "GCP_SECTION_7_5_1_PARENT_INTERFACE_CLOSURE_PROJECTION_V1",
+  "source_contracts": [
+    {
+      "owner": "SECTION_7_2",
+      "path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json",
+      "sha256": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587"
+    },
+    {
+      "owner": "SECTION_7_3",
+      "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json",
+      "sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a"
+    },
+    {
+      "owner": "SECTION_7_3",
+      "path": "docs/contracts/canonical-inference-gcp-security-authority/role-capability-matrix.json",
+      "sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17"
+    },
+    {
+      "owner": "SECTION_7_4",
+      "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json",
+      "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2"
+    }
+  ]
+}

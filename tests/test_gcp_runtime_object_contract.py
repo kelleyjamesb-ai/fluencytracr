@@ -19,6 +19,7 @@ from scripts.verify_gcp_runtime_object_revalidation import (
     EXPECTED_PROVIDER_ARTIFACTS,
     RevalidationVerificationError,
     _strict_json_loads as _strict_revalidation_json_loads,
+    verify_runtime_profile_approval_interface,
     verify_revalidation_bundle,
 )
 
@@ -30,6 +31,11 @@ REVALIDATION = CONTRACT_DIR / "provider-revalidation.json"
 CONTROL = CONTRACT_DIR / "control-plane-projection.json"
 CONTRACT = CONTRACT_DIR / "runtime-object-contract.json"
 VECTORS = CONTRACT_DIR / "canonicalization-vectors.json"
+SECTION_7_4_CONTRACT = (
+    ROOT
+    / "docs/contracts/canonical-inference-gcp-attestation-receipt"
+    / "attestation-receipt-contract.json"
+)
 CANDIDATE = ROOT / "docs/contracts/canonical-inference-gcp-runtime-candidate/README.md"
 REVALIDATION_VERIFIER = ROOT / "scripts/verify_gcp_runtime_object_revalidation.py"
 RECOVERY_BUNDLE = (
@@ -39,12 +45,12 @@ RECOVERY_BUNDLE = (
 )
 
 EXPECTED_ARTIFACT_SHA256 = {
-    "docs/contracts/canonical-inference-gcp-runtime-object/README.md": "5335a4afe28cd347b85be0fc83bb935dd4ac6e04fbe152b078733fc5a9dde7ab",
+    "docs/contracts/canonical-inference-gcp-runtime-object/README.md": "7a3307d8820aa918cf433747adc1ee8aa5b9038fe161144c61dff50c03e099c3",
     "docs/contracts/canonical-inference-gcp-runtime-object/provider-revalidation.json": "63acb3c62c38aa96f1f6452bfd2449242071fd4bc46f65cfb35ec217b72916cc",
     "docs/contracts/canonical-inference-gcp-runtime-object/control-plane-projection.json": "010551be219b38cc8aed25102824406bfb6a8bc3806d04b93e831f1933ae8455",
-    "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json": "0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125",
-    "docs/contracts/canonical-inference-gcp-runtime-object/canonicalization-vectors.json": "d09e4db3f9cab19e87aeec9ffcba632e39a9d0654861acbaf3d4945ce914d067",
-    "scripts/verify_gcp_runtime_object_revalidation.py": "720a17b4759287b209ba6960ad31552105ee8e5b3da8e282a8bc43d0703058b7",
+    "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587",
+    "docs/contracts/canonical-inference-gcp-runtime-object/canonicalization-vectors.json": "75de470b64880cf2dbc2b142b0fe37332f042e66fe17d8d15d8d7028bfed83a0",
+    "scripts/verify_gcp_runtime_object_revalidation.py": "fa8fbdcd5760515583ac393f3474a5e72a189f8b85458da79c3011b5b5fc50b7",
 }
 EXPECTED_UPSTREAM_SHA256 = {
     "provider_contract_sha256": "a85e18b93f51303d26c46e0839705437a794c23957cde9f07b81afdf9d77bcda",
@@ -1243,6 +1249,99 @@ def test_profile_instance_registries_are_closed_typed_and_honestly_insufficient(
         "INSUFFICIENT_NO_OBSERVED_INSTANCE_ATTESTATION_OR_QUALIFICATION"
     )
     assert contract["runtime_identity_sufficiency"]["runtime_authority"] == "HELD"
+
+
+def test_runtime_profile_approval_interface_binds_resolved_bytes_but_stays_held() -> None:
+    contract = _json(CONTRACT)
+    vector_payload, vectors = _vectors()
+    interface = contract["runtime_profile_approval_interface"]
+
+    assert set(interface) == {
+        "approval_provenance_schema",
+        "authority_effect",
+        "external_approval_records",
+        "held_reason",
+        "resolved_profile_binding",
+        "runtime_record_references",
+        "schema_version",
+    }
+    assert interface["schema_version"] == "GCP_RUNTIME_PROFILE_APPROVAL_INTERFACE_V1"
+    assert interface["authority_effect"] == "NONE"
+    assert interface["held_reason"] == "EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED"
+    assert interface["resolved_profile_binding"] == {
+        "canonical_body_sha256": vectors["runtime_profile_hash"][
+            "canonical_body_sha256"
+        ],
+        "runtime_profile_hash": vectors["runtime_profile_hash"]["expected_hash"],
+    }
+    assert interface["external_approval_records"] == []
+    assert interface["runtime_record_references"] == []
+    assert interface["approval_provenance_schema"] == {
+        "field_value_types": {
+            "canonical_body_sha256": "DIGEST_SHA256",
+            "external_approval_artifact_sha256": "DIGEST_SHA256",
+            "external_approval_provenance": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1",
+            "runtime_profile_hash": "DIGEST_SHA256",
+        },
+        "owner": "SECTION_7_4",
+        "required_keys": [
+            "schema_version",
+            "canonical_body_sha256",
+            "runtime_profile_hash",
+            "external_approval_provenance",
+            "external_approval_artifact_sha256",
+        ],
+        "external_approval_artifact_sha256_field": "external_approval_artifact_sha256",
+        "external_approval_provenance_field": "external_approval_provenance",
+        "resolved_profile_canonical_body_sha256_field": "canonical_body_sha256",
+        "schema_version": "GCP_RUNTIME_PROFILE_EXTERNAL_APPROVAL_PROVENANCE_V1",
+    }
+    assert vector_payload["authorization_effect"] == "NONE_TEST_VECTORS_ONLY"
+    assert vectors["runtime_profile_hash"]["expected_hash"] not in contract[
+        "approved_runtime_profile_hashes"
+    ]
+    assert vector_payload["runtime_profile_approval_interface_evidence"] == {
+        "external_approval_record_count": 0,
+        "resolved_profile_canonical_body_sha256": vectors["runtime_profile_hash"][
+            "canonical_body_sha256"
+        ],
+        "runtime_profile_hash": vectors["runtime_profile_hash"]["expected_hash"],
+        "runtime_record_reference_count": 0,
+        "state": "EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED",
+    }
+    verify_runtime_profile_approval_interface()
+
+
+def test_runtime_profile_approval_interface_rejects_any_live_profile_hash(
+    tmp_path: Path,
+) -> None:
+    contract = _json(CONTRACT)
+    vectors = _json(VECTORS)
+    contract["approved_runtime_profile_hashes"] = ["f" * 64]
+    contract_path = tmp_path / "runtime-object-contract.json"
+    contract_path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n")
+    vectors["runtime_object_contract_sha256"] = _sha256_file(contract_path)
+    vectors_path = tmp_path / "canonicalization-vectors.json"
+    vectors_path.write_text(json.dumps(vectors, indent=2, sort_keys=True) + "\n")
+
+    with pytest.raises(
+        RevalidationVerificationError,
+        match="runtime approval list must remain empty",
+    ):
+        verify_runtime_profile_approval_interface(contract_path, vectors_path)
+
+
+def test_runtime_profile_approval_provenance_type_resolves_to_section_7_4() -> None:
+    runtime_contract = _json(CONTRACT)
+    attestation_contract = _json(SECTION_7_4_CONTRACT)
+    provenance_type = runtime_contract["runtime_profile_approval_interface"][
+        "approval_provenance_schema"
+    ]["field_value_types"]["external_approval_provenance"]
+    section_7_4_type = attestation_contract[
+        "section_7_5_external_approval_interface"
+    ]["external_approval_policy_verifier_record_schema"]["schema_version"]
+
+    assert provenance_type == section_7_4_type
 
 
 def test_control_projection_is_total_leaf_only_and_cannot_smuggle_descendants() -> None:

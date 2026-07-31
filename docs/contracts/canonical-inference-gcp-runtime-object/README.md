@@ -32,7 +32,7 @@ The normative machine artifacts are:
   `EXACT_MAPPING_RECONFIRMED` evidence for the exact Section 7.1 vocabulary;
 - [`canonicalization-vectors.json`](canonicalization-vectors.json): synthetic
   golden objects, exact canonical body bytes, domain-separated preimages, and
-  SHA-256 results.
+  SHA-256 results, plus the held runtime-profile approval-interface evidence.
 
 `scripts/verify_gcp_runtime_object_revalidation.py` independently replays the
 fresh external source bundle, every claim context/commitment, the retained
@@ -206,6 +206,24 @@ last-start/observation time, boot-epoch commitment, and fresh nonce. Section
 source-authentication reference. Section 7.8's future plan/result must bind the
 predeclared complete set of instance observations and attested identities.
 Section 7.2 has no runtime-identity candidate object and cannot authorize one.
+
+### 4.4 Runtime-profile approval interface remains held
+
+The closed `GCP_RUNTIME_PROFILE_APPROVAL_INTERFACE_V1` binds the resolved
+profile's canonical-body SHA-256 and runtime-profile hash to the future
+external approval provenance record required from Section 7.4. Its typed
+provenance record must carry those two identities, an external approval
+artifact SHA-256, and the exact Section 7.4 type
+`GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1`. This interface
+owns no approval verification mechanics and creates no approval record.
+
+Both `external_approval_records` and `runtime_record_references` are empty.
+The current profile vector is synthetic-only and can establish neither list;
+its hash is not in `approved_runtime_profile_hashes`. The state remains
+`EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED` with `authority_effect: NONE`.
+An actual approval, any runtime-record mechanics, and their evidence remain
+outside Section 7.2 and cannot be inferred from canonical bytes or matching
+hashes.
 
 ## 5. Presence, Visibility, and Sufficiency
 

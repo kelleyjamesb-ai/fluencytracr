@@ -4,7 +4,11 @@
   "provider_revalidation_sha256": "6d50908f947f3f6be258b18646007446a895c3e7236c4e38b984a2f056e77aa4",
   "role_capability_matrix_sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17",
   "schema_version": "GCP_SECURITY_AUTHORITY_CANONICALIZATION_VECTORS_V1",
-  "security_authority_contract_sha256": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841",
+  "security_authority_contract_sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a",
+  "section_7_5_authority_admission_interface_evidence": {
+    "live_alias_provider_binding_record_count": 0,
+    "state": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
+  },
   "synthetic_only": true,
   "vectors": [
     {

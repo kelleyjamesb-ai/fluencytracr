@@ -12,6 +12,8 @@ Section 7.2 closes canonical runtime objects and hashes but deliberately leaves 
 - Define two distinct Cloud HSM asymmetric-signing key profiles for image provenance and runtime receipts.
 - Define a default-deny 14-role capability matrix and transitive controller fixed-point proof.
 - Define alternate-credential denial, effective-access tuple, held rollover, and authority-audit interfaces.
+- Define a held, typed future full-Section-7.5 authority-admission interface
+  that rejects Section 7.5A substitution and retains no live alias/provider binding.
 - Keep live policy/evidence approval lists empty and runtime authority held.
 
 ## Impact

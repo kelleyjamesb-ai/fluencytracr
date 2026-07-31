@@ -78,6 +78,36 @@ Ownership remains explicit:
 No forward interface contains a placeholder live hash. Later sections must bind
 an actually approved live policy/evidence pair; the approved lists are empty.
 
+### Section 7.5 parent-admission interface
+
+Section 7.3 defines a closed future admission interface only for a typed,
+canonical-byte-bound `FULL_SECTION_7_5` target. It rejects every Section 7.5A
+schema, kind, domain, or hash substitution before any approval or evidence
+claim. The later target must provide the exact canonical identity bytes shared
+with Section 7.4: schema version, `FULL_SECTION_7_5` kind, full-Section-7.5
+domain separator, and `canonical_contract_body_sha256`, with no additional
+fields. The target record binds those identity bytes and their SHA-256.
+Principal and five project-role slots use separate closed record types. No
+provider identifiers or alias mappings are retained here.
+
+Each future record is canonical JSON with three domain-separated SHA-256
+commitments: authentication evidence to authentication commitment,
+authentication commitment to provider binding, then the complete record to its
+record hash. Local validation proves only closed structure and formula
+consistency. It rejects all-zero evidence but cannot prove that an alias was
+random or that caller-chosen evidence is authentic. Authenticated admission
+therefore resolves only through an independently trusted whole-record catalog;
+that catalog is exactly empty, so every current authenticated admission fails
+closed. No external trust record is defined here.
+
+The interface requires later fixed-point/separation evidence to bind the exact
+target, alias/provider-binding records, controller-set commitment, completeness
+witness, fixed-point result, and zero forbidden intersections. It closes only
+the Section 7.3 parent-admission portions of `S75A-P01`, `S75A-P02`, `S75A-P05`,
+`S75A-P06`, `S75A-P08`, and `S75A-P19`; it does not close their future
+full-Section-7.5 mechanics, P07, any runtime satisfaction, or authority.
+All live alias/provider-binding records remain empty.
+
 ## 4. Provider Claims Closed Here
 
 The public-source bundle establishes only the provider mechanics used by this

@@ -984,6 +984,164 @@ def test_contract_graph_registries_and_ownership_are_exact() -> None:
     assert "section_7_5_transport_record_hash" not in node_ids
 
 
+def test_section_7_5_external_approval_interface_is_typed_bound_and_held(
+    tmp_path: Path,
+) -> None:
+    """Section 7.4 admits only typed future approval evidence, never live state."""
+    contract = load_json(CONTRACT)
+    vectors = load_json(VECTORS)
+    interface = contract["section_7_5_external_approval_interface"]
+
+    acceptance_nodes = [
+        "trust_distribution_acceptance_hash",
+        "channel_enforcement_acceptance_hash",
+        "pre_quote_transport_acceptance_hash",
+        "terminal_quote_transport_acceptance_hash",
+        "kms_sign_transport_acceptance_hash",
+        "audit_mapping_acceptance_hash",
+        "initial_section_7_4_replay_retention_acceptance_hash",
+        "current_section_7_4_replay_retention_acceptance_hash",
+        "final_consumer_replay_retention_acceptance_hash",
+    ]
+    assert set(interface) == {
+        "acceptance_node_conjunction_schema",
+        "authority_effect",
+        "external_approval_policy_verifier_record_schema",
+        "full_section_7_5_target_schema",
+        "held_reason",
+        "live_external_approval_policy_verifier_records",
+        "live_trust_distribution_approval_records",
+        "parent_approval_obligations",
+        "p14_trust_distribution_approval_schema",
+        "schema_version",
+        "trust_lineage_evidence_schema",
+    }
+    assert interface["schema_version"] == "GCP_SECTION_7_5_EXTERNAL_APPROVAL_INTERFACE_V1"
+    assert interface["authority_effect"] == "NONE"
+    assert interface["held_reason"] == "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
+    assert interface["live_external_approval_policy_verifier_records"] == []
+    assert interface["live_trust_distribution_approval_records"] == []
+    assert interface["parent_approval_obligations"] == [
+        "S75A-P03",
+        "S75A-P05_SECTION_7_4_PARENT_VERIFICATION_TIME",
+        "S75A-P07_SECTION_7_4_PARENT_VERIFICATION_TIME",
+        "S75A-P14",
+        "S75A-P19_SECTION_7_4_APPROVAL_ONLY",
+    ]
+
+    target_schema = interface["full_section_7_5_target_schema"]
+    assert target_schema["contract_kind"] == "FULL_SECTION_7_5"
+    assert target_schema["section_7_5a_substitution"] == "REJECT"
+    assert target_schema["candidate_bytes_required_before_hash_admission"] is True
+
+    approval_schema = interface["external_approval_policy_verifier_record_schema"]
+    assert approval_schema["external_authentication_required"] is True
+    assert approval_schema["owner"] == "SECTION_7_4"
+    assert approval_schema["target_binding_field"] == "target_binding_sha256"
+    assert approval_schema["current_head_field"] == "approved_current_head_sha256"
+    assert approval_schema["record_mechanics_owner"] == "FULL_SECTION_7_5"
+
+    lineage_schema = interface["trust_lineage_evidence_schema"]
+    assert lineage_schema["owner"] == "SECTION_7_4"
+    assert lineage_schema["record_mechanics_owner"] == "FULL_SECTION_7_5"
+    assert lineage_schema["required_predicates"] == [
+        "AUTHENTICATED_CURRENT_HEAD",
+        "STRICT_MONOTONIC_PREDECESSOR_LINEAGE",
+        "SHARED_LINEARIZABLE_CHECK_AND_USE",
+        "INDEPENDENT_NONROLLBACKABLE_EXTERNAL_ANCHOR",
+        "STALE_READER_REJECTION",
+        "WHOLE_STATE_RESTORE_DETECTION",
+        "FAIL_CLOSED_BEFORE_COMMIT_RECOVERY",
+        "FAIL_CLOSED_AFTER_COMMIT_RECOVERY",
+    ]
+    assert interface["p14_trust_distribution_approval_schema"] == {
+        "approval_record_schema": "GCP_SECTION_7_5_TRUST_DISTRIBUTION_APPROVAL_V1",
+        "approval_required": True,
+        "authority_effect": "NONE",
+        "owner": "SECTION_7_4",
+        "required_acceptance_node_id": "trust_distribution_acceptance_hash",
+        "required_lineage_predicates": lineage_schema["required_predicates"],
+        "section_7_5a_substitution": "REJECT",
+    }
+
+    conjunction = interface["acceptance_node_conjunction_schema"]
+    assert conjunction["acceptance_node_ids"] == acceptance_nodes
+    assert conjunction["required_conjunct_fields"] == [
+        "target_binding_sha256",
+        "external_approval_policy_verifier_record_sha256",
+        "trust_lineage_evidence_record_sha256",
+        "acceptance_node_evidence_sha256",
+        "acceptance_node_conjunction_sha256",
+    ]
+    assert conjunction["all_nodes_required"] is True
+    assert conjunction["record_mechanics_owner"] == "FULL_SECTION_7_5"
+
+    spec = importlib.util.spec_from_file_location("gcp74_contract_verifier", CONTRACT_VERIFIER)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.pop(0)
+    module.verify_section_7_5_external_approval_interface()
+
+    mutated_contract = copy.deepcopy(contract)
+    mutated_contract["section_7_5_external_approval_interface"][
+        "p14_trust_distribution_approval_schema"
+    ]["required_acceptance_node_id"] = "audit_mapping_acceptance_hash"
+    mutated_contract_path = tmp_path / "attestation-receipt-contract.json"
+    mutated_contract_path.write_text(json.dumps(mutated_contract), encoding="utf-8")
+    with pytest.raises(ValueError, match="P14 trust-distribution approval schema mismatch"):
+        module.verify_section_7_5_external_approval_interface(
+            mutated_contract_path, VECTORS
+        )
+
+    target_bytes = canonical_json_bytes(
+        {
+            "canonical_contract_body_sha256": "a" * 64,
+            "contract_domain_separator": target_schema["domain_separator"],
+            "contract_kind": target_schema["contract_kind"],
+            "schema_version": target_schema["contract_schema_version"],
+        }
+    )
+    target_record = {
+        "schema_version": target_schema["schema_version"],
+        "contract_kind": target_schema["contract_kind"],
+        "contract_domain_separator": target_schema["domain_separator"],
+        "canonical_contract_bytes_base64": base64.b64encode(target_bytes).decode("ascii"),
+        "canonical_contract_bytes_sha256": _sha(target_bytes),
+    }
+    target_record["target_binding_sha256"] = _sha(
+        target_schema["target_binding_domain_separator"].encode("ascii")
+        + b"\x00"
+        + canonical_json_bytes(target_record)
+    )
+    module.validate_full_section_7_5_external_approval_target_record(
+        target_record, target_schema
+    )
+
+    section_7_5a_substitution = copy.deepcopy(target_record)
+    section_7_5a_substitution["contract_kind"] = "SECTION_7_5A"
+    section_7_5a_substitution["target_binding_sha256"] = _sha(
+        target_schema["target_binding_domain_separator"].encode("ascii")
+        + b"\x00"
+        + canonical_json_bytes(
+            {key: value for key, value in section_7_5a_substitution.items() if key != "target_binding_sha256"}
+        )
+    )
+    with pytest.raises(ValueError, match="full Section 7.5 target kind mismatch"):
+        module.validate_full_section_7_5_external_approval_target_record(
+            section_7_5a_substitution, target_schema
+        )
+
+    assert vectors["section_7_5_external_approval_interface_evidence"] == {
+        "live_external_approval_policy_verifier_record_count": 0,
+        "live_trust_distribution_approval_record_count": 0,
+        "state": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED",
+    }
+
+
 def test_composition_envelope_and_condition_registry_resealing_reject() -> None:
     contract = load_json(CONTRACT)
     attacked = copy.deepcopy(contract)
@@ -1974,17 +2132,17 @@ def test_all_checked_in_json_is_strict_and_null_free() -> None:
 # Filled only after the implementation is final. This intentionally excludes
 # this test file to avoid self-reference.
 PINNED_ARTIFACTS: dict[str, str] = {
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/README.md": "7cbef6fed6b332808b08af468937b12e092ed0e5edb793caafdf7736b513f519",
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json": "88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200",
-    "docs/contracts/canonical-inference-gcp-attestation-receipt/canonicalization-vectors.json": "744f22d70788bd47b680f73ab8745670e00d3f54d3e13099ef7d57d146c4f63c",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/README.md": "fe23d45a3f7c20b491ec94d2544fe901ca0dd7cb62d382a22f90c23026b06b1f",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2",
+    "docs/contracts/canonical-inference-gcp-attestation-receipt/canonicalization-vectors.json": "0399772b61073bc21af481803120a7da165d3e9b06b9c40410ebd6ffafda3766",
     "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-revalidation.json": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "docs/contracts/canonical-inference-gcp-attestation-receipt/provider-source-evidence.json": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
-    "scripts/gcp_attestation_receipt_contract_validation.py": "f4bbaaf0b325cd6b8eaa54774151e6120db65524b282fc3d5e8889ac4fbb3ae3",
-    "scripts/verify_gcp_attestation_receipt_contract.py": "0ae573ab5b727930ba703d8f146a245c15f4ee5f6d5d4c5568bc0fbff45506c2",
+    "scripts/gcp_attestation_receipt_contract_validation.py": "7f34c48872cb7519f88cec974e50a24041760b183fcd02db5396ceefbaab2b37",
+    "scripts/verify_gcp_attestation_receipt_contract.py": "780ac12ecfc216063cf7e107a949aa2892d4ac48d2e70f0a3868974c5966ea8e",
     "scripts/verify_gcp_attestation_receipt_revalidation.py": "d49120a1cece5e3e5d5e0b3ce24248b23de8580b86995859d18d428d199ff5d0",
     "openspec/changes/add-gcp-attestation-receipt-contract/proposal.md": "c7bbb75ed949439301f2259fe541a66a82a943b88800401c9756899fa8cc0c91",
-    "openspec/changes/add-gcp-attestation-receipt-contract/design.md": "b16ac89583fda9e3603c4f4037a7016e9c7ab4f76411f3b0941899ad461e9659",
-    "openspec/changes/add-gcp-attestation-receipt-contract/specs/gcp-attestation-receipt/spec.md": "eff27b0d176a3d221a103bdbaf328daa9d68f4cb6a520368ac13d8d4752673e7",
+    "openspec/changes/add-gcp-attestation-receipt-contract/design.md": "f2480f8079675a83fda2f3495453fa95cb643d3c85e3b71b35dc109fcab2c290",
+    "openspec/changes/add-gcp-attestation-receipt-contract/specs/gcp-attestation-receipt/spec.md": "b652e2451a3d1aa3c3286cb2b4dc71130a5a3797ea9b961604f8dee9bf7cb698",
     "docs/contracts/canonical-inference-gcp-runtime-candidate/README.md": "b2ff9b6654d676afecdd40b9479c219e481f5b102454622d17cf668f03470d57",
     "ATTRIBUTION.md": "a0bc7c212feae50e5ec268240e09fdf6a2985ae04e28377d6ecfcd8c51f9e4a3",
 }

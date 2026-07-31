@@ -2523,6 +2523,37 @@
     "runtime": "REJECT_UNLESS_HASH_IS_IN_approved_runtime_profile_hashes; EMPTY_IN_SECTION_7_2",
     "synthetic_contract_test": "ALLOW_ONLY_HASHES_IN_synthetic_test_profile_hashes; NO_AUTHORITY_EFFECT"
   },
+  "runtime_profile_approval_interface": {
+    "approval_provenance_schema": {
+      "external_approval_artifact_sha256_field": "external_approval_artifact_sha256",
+      "external_approval_provenance_field": "external_approval_provenance",
+      "field_value_types": {
+        "canonical_body_sha256": "DIGEST_SHA256",
+        "external_approval_artifact_sha256": "DIGEST_SHA256",
+        "external_approval_provenance": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1",
+        "runtime_profile_hash": "DIGEST_SHA256"
+      },
+      "owner": "SECTION_7_4",
+      "required_keys": [
+        "schema_version",
+        "canonical_body_sha256",
+        "runtime_profile_hash",
+        "external_approval_provenance",
+        "external_approval_artifact_sha256"
+      ],
+      "resolved_profile_canonical_body_sha256_field": "canonical_body_sha256",
+      "schema_version": "GCP_RUNTIME_PROFILE_EXTERNAL_APPROVAL_PROVENANCE_V1"
+    },
+    "authority_effect": "NONE",
+    "external_approval_records": [],
+    "held_reason": "EXTERNAL_APPROVAL_AND_RUNTIME_RECORD_REQUIRED",
+    "resolved_profile_binding": {
+      "canonical_body_sha256": "4d5b3522bff17c228c576b540c330b1f6ed8aee517667ac120ddd7a97fce03a6",
+      "runtime_profile_hash": "cb37e1bcaac15df0a82a377184bc7f78c429d6d3e87fa6bba77461ca1e041af7"
+    },
+    "runtime_record_references": [],
+    "schema_version": "GCP_RUNTIME_PROFILE_APPROVAL_INTERFACE_V1"
+  },
   "requalification_triggers": [
     {
       "prior_identity_reusable": false,
