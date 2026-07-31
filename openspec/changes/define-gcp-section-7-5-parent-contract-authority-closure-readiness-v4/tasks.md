@@ -16,10 +16,10 @@
 
 ## 3. External review
 
-- [ ] 3.1 Obtain independent CODE review on the exact evidence identity.
-- [ ] 3.2 Obtain independent BUG review on the same identity.
-- [ ] 3.3 Obtain independent ADVERSARIAL review on the same identity.
-- [ ] 3.4 Record external verdicts in separately authorized coordination.
+- [x] 3.1 Obtain independent CODE review on the exact evidence identity.
+- [x] 3.2 Obtain independent BUG review on the same identity.
+- [x] 3.3 Obtain independent ADVERSARIAL review on the same identity.
+- [x] 3.4 Record external verdicts in separately authorized coordination.
 
 ## 4. Explicitly deferred
 

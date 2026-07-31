@@ -177,6 +177,7 @@ _PACKET_PATH = _ROOT / (
     "gcp_section_7_5_parent_contract_authority_closure_readiness_v4/"
     "packet-rules.json"
 )
+_PROTOCOL_PATH = _ROOT / "docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md"
 _BOUNDARY_NAMES = MappingProxyType(
     {
         "replay_record": "replay",
@@ -269,6 +270,14 @@ def load_packet() -> RulePacket:
     """Load the reviewed compact rule packet without creating a second schema."""
     raw = _load_packet_object()
     protocol = _required_mapping(raw, "protocol")
+    protocol_version = _required_string(protocol, "version")
+    protocol_sha256 = _required_string(protocol, "sha256")
+    try:
+        protocol_bytes = _PROTOCOL_PATH.read_bytes()
+    except OSError as exc:
+        raise ValueError("canonical readiness protocol is unavailable") from exc
+    if hashlib.sha256(protocol_bytes).hexdigest() != protocol_sha256:
+        raise ValueError("protocol hash mismatch")
     manifest_raw = _required_list(raw, "parent_manifest")
     schemas_raw = _required_mapping(raw, "closed_schemas")
 
@@ -348,8 +357,8 @@ def load_packet() -> RulePacket:
 
     return RulePacket(
         schema_version=_required_string(raw, "schema_version"),
-        protocol_version=_required_string(protocol, "version"),
-        protocol_sha256=_required_string(protocol, "sha256"),
+        protocol_version=protocol_version,
+        protocol_sha256=protocol_sha256,
         base_commit=_required_string(raw, "base_commit"),
         queue_item_id=_required_string(raw, "queue_item_id"),
         risk=risk,

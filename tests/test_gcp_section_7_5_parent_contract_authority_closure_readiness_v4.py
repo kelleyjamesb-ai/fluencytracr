@@ -16,6 +16,7 @@ import tests.gcp_s751_v4.bundle as bundle_module
 import tests.gcp_s751_v4.corpus as corpus_module
 import tests.gcp_s751_v4.corpus_declarations as declarations_module
 import tests.gcp_s751_v4.crypto as crypto_module
+import tests.gcp_s751_v4.model as model_module
 import tests.gcp_s751_v4.oracle as oracle_module
 from tests.gcp_s751_v4.bundle import (
     BundleAdmissionError,
@@ -504,6 +505,23 @@ def test_closed_schemas_cover_every_dynamic_boundary() -> None:
         path for path in paths
         if path.boundary == "result" and path.pointer == "/authority_effect"
     ).value_rule == "ENUM:NONE"
+
+
+def test_packet_rejects_protocol_digest_that_does_not_match_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    packet_object = json.loads(PACKET.read_text(encoding="utf-8"))
+    packet_object["protocol"]["sha256"] = "0" * 64
+    modified_packet = tmp_path / "packet-rules.json"
+    modified_packet.write_text(
+        json.dumps(packet_object),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(model_module, "_PACKET_PATH", modified_packet)
+
+    with pytest.raises(ValueError, match="protocol hash mismatch"):
+        model_module.load_packet()
 
 
 def test_strict_json_rejects_duplicate_keys_floats_and_noncanonical_bytes() -> None:
@@ -2888,6 +2906,20 @@ def test_controller_fixed_point_retains_cycle_before_separation_reject() -> None
         key=canonical_json,
     )
     observation["controller_cycles"] = [[first, second]]
+
+    assert evaluate_controller_fixed_point(observation) == (
+        "REJECT_INVALID_GRAPH"
+    )
+
+
+def test_controller_fixed_point_rejects_undeclared_self_cycle() -> None:
+    observation = _valid_candidate()["observation"]
+    assert isinstance(observation, dict)
+    role = observation["governed_roles"][0]
+    observation["controller_edges"] = [
+        {"controller": role, "controlled": role}
+    ]
+    observation["controller_cycles"] = []
 
     assert evaluate_controller_fixed_point(observation) == (
         "REJECT_INVALID_GRAPH"

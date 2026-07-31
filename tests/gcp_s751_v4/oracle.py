@@ -268,6 +268,7 @@ def _evaluate_controller_fixed_point(
                 or not isinstance(controlled, str)
                 or controller not in roles
                 or controlled not in roles
+                or controller == controlled
             ):
                 return "REJECT_INVALID_GRAPH"
             edges.append((controller, controlled))
