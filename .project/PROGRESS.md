@@ -2,6 +2,244 @@
 
 ## Current Session
 
+- Task 8 Step 5 is `READINESS_GO`. Independent `CODE`, `BUG`, and
+  `ADVERSARIAL` reviews each returned `GO` against exact evidence commit
+  `7834c866d2c6ef234837f52a4b3bb209872b6ae9`, tree
+  `c70c67e0ea81cff8ed93bb0522cbc835789ec258`, and packet SHA-256
+  `ac7b66fba227ae7fecdbc4662abb21a0282a774e8075fca90273735605860197`.
+  The queue remains `in_progress`, `authority_effect` remains `NONE`, and the
+  evaluator remains absent. This readiness decision authorizes no evaluator
+  implementation, parent amendment, GCP action, later-section work, push, PR,
+  merge, deployment, or live action.
+- Terminal scoped `CLEAN` on selector-repair commit
+  `89d83809bf455b5c9009dfa186e649f612f029e0`, tree
+  `1043be37e866afca4398cfd5c08b3d3af22e0e81`, authorized the final Task 8
+  freeze. The full declared suite ran exactly once: strict OpenSpec passed in
+  `1.04s`; V4 structural/reference passed `94` with `154` deselected in
+  `37.43s`; the three parent-contract suites passed `92` with `7` skipped in
+  `91.49s`; V1 governance passed in `0.79s`; docs sweep passed in `4.54s`;
+  linkcheck passed in `1.48s`; harness guard passed in `0.06s`;
+  `validate:agents` passed in `0.95s`; and `git diff --check` was clean.
+- The one terminal intentional-red invocation exited `1` as required:
+  `154 failed, 94 deselected in 28.79s`. Its captured output contains exactly
+  `154` failed nodes and `154` exact `AssertionError: MISSING_SUT` lines with
+  no alternate exception. The evaluator is absent; private/locator scans
+  passed; the identifier scan found only reserved
+  `synthetic-probe@example.invalid` harness metadata; and the exact
+  changed-path allowlist matched all `20` approved paths.
+- The packet is now `PREIMPLEMENTATION_EVIDENCE_READY`; the queue remains
+  `in_progress`, risk remains `high`, and `authority_effect` remains `NONE`.
+  Final exact-SHA `CODE`, `BUG`, and `ADVERSARIAL` reviews are pending. No
+  `READINESS_GO`, `READINESS_HOLD`, aggregate decision, evaluator, parent
+  amendment, GCP action, later-section work, push, PR, merge, deployment, or
+  live action is recorded or authorized.
+- Exact-SHA review of final refreeze commit
+  `97b47768818b6c2bf05d7ca00d94ce96fc420842`, tree
+  `51779910faf520153f6fb58915e48d27c1aa2f25`, returned `CODE: GO`,
+  `BUG: GO`, and `ADVERSARIAL: HOLD`. The packet is back in `DRAFT`; the
+  queue remains `in_progress` and `authority_effect` remains `NONE`. Repair
+  round 2 is frozen to the sole executable blocker: A002-A007 known-field
+  missing/wrong-type cases retain the actual changed pointer, but selector
+  derivation hard-codes a generic root row from the final reason. Exact
+  candidate `requested_action`, payload `policy_id`, and envelope `algorithm`
+  substitutions reproduce the mismatch even though exact field rows already
+  exist. No evaluator, parent amendment, GCP action, later-section work, push,
+  PR, merge, deployment, or live action is authorized.
+- Task 8 fix round 2 is locally verified while the packet remains `DRAFT`.
+  The preserved-count reconciliation test failed first on the generic-root
+  substitutions, then passed `1` with `247` deselected in `13.26s`. Exactly
+  eight packet selectors changed: six A002/A003 known-field mappings and two
+  A004 containing-object mappings. Both legitimate A005 raw truncation roots
+  and every A005-A007 record remain byte-for-byte unchanged. The narrow
+  structural/reference suite passed `94` with `154` deselected in `36.18s`;
+  collection remains exactly `248`; and the single intentional-red audit
+  remains exactly `154` failures, all and only
+  `AssertionError: MISSING_SUT`, with `94` deselected in `28.73s`. Strict
+  OpenSpec, compile, packet/queue JSON, diff, evaluator-absence,
+  private/locator/identifier, DRAFT lifecycle, and selector-necessity checks
+  passed. Exact-SHA rereview and a later final broad freeze gate remain
+  pending; no review aggregate or implementation authority is recorded.
+- Fresh scoped `CLEAN` on repair commit
+  `3456ef399d1b61c3c432ad23e7bac31ed418f97a`, tree
+  `4e13b19457ce1ccb42030464e85da6861dcad7bd`, authorized the Task 8 final
+  freeze attempt. The full declared Step 1 suite ran exactly once on that
+  repaired candidate: strict OpenSpec passed in `1.11s`; the V4
+  structural/reference suite passed `94` with `154` deselected in `37.51s`;
+  the three named parent-contract suites passed `92` with `7` skipped in
+  `91.22s`; V1 governance passed in `0.78s`; docs sweep passed in `4.58s`;
+  linkcheck passed in `1.54s`; harness guard passed in `0.06s`;
+  `validate:agents` passed in `1.02s`; and `git diff --check` was clean.
+- The one final intentional-red invocation exited `1` as required:
+  `154 failed, 94 deselected in 28.67s`. Its captured output contains exactly
+  `154` failed nodes and exactly `154` error lines with one unique exception,
+  `AssertionError: MISSING_SUT`. The evaluator remains absent; the exact
+  private/locator scan passed; the identifier scan found only the reserved
+  `synthetic-probe@example.invalid` harness metadata value; and the exact
+  changed-path allowlist matched all `20` approved paths with no parent or
+  canonical-runtime changes.
+- The repaired packet is now `PREIMPLEMENTATION_EVIDENCE_READY`; the queue
+  remains `in_progress` and `authority_effect` remains `NONE`. Final
+  exact-SHA `CODE`, `BUG`, and `ADVERSARIAL` reviews are pending. No
+  `READINESS_GO`, `READINESS_HOLD`, aggregate decision, evaluator, parent
+  amendment, GCP action, later-section work, push, PR, merge, deployment, or
+  live action is recorded or authorized.
+- Exact-SHA review of preimplementation evidence commit
+  `805bd2c30b80eb43988bfbda538fff8170134853`, tree
+  `71f3abc4e2787a96c46aaa54b72cc597f9eedd89`, returned
+  `READINESS_HOLD`. That review returned the packet to `DRAFT` with the queue
+  still `in_progress` and `authority_effect: NONE`. Repair was frozen to four
+  executable harness blockers: normalize `TimeoutExpired` and `OSError` at
+  the closed crypto boundary; make every authenticated A018 field probe reach
+  and reconcile its exact field; require both ordered replay results in one
+  child session; and mechanically bind accepted synthetic aliases to
+  harness-owned provenance. No review completion, `READINESS_GO`, evaluator,
+  parent amendment, GCP action, later-section work, push, PR, merge,
+  deployment, or live action is claimed.
+- Task 8 repair round 1 was locally verified while the packet remained
+  `DRAFT`. The three focused blocker regressions passed `3/3`: helper
+  `TimeoutExpired` and `OSError` close to `INVALID_SIGNATURE`; all `31`
+  A018 string inputs reconcile to their exact authenticated field; a
+  terminal-only replay response is invalid and a hard-coded two-result fake
+  that ignores normative inputs fails an independently scored mutation; and
+  the exact signed `MD5(victim@example.com)` alias substitution rejects at
+  `PRIVACY_OR_NONAUTHORIZATION_INVALID`. The structural/reference suite
+  passed `94` with `154` deselected in `36.35s`; collection remains exactly
+  `248`; and the intentional-red audit remains exactly `154` failures, all
+  `AssertionError: MISSING_SUT`, with `94` deselected in `28.84s`. Strict
+  OpenSpec, compile, packet/queue JSON, lifecycle, evaluator-absence,
+  private/locator/real-identifier fixture scans, and diff checks passed.
+  Exact-SHA rereview and a later final broad freeze gate remain pending; no
+  review GO or implementation authority is recorded.
+- Before the exact-SHA HOLD, Section 7.5.1 Approach A V4 had reached
+  `PREIMPLEMENTATION_EVIDENCE_READY` only. The queue item remains
+  `in_progress`, `authority_effect` remains `NONE`, and the evaluator
+  `scripts/gcp_section_7_5_parent_contract_authority_closure_v4.py` remains
+  absent. Exact-SHA `CODE`, `BUG`, and `ADVERSARIAL` review is still pending;
+  no `READINESS_GO`, `READINESS_HOLD`, parent amendment, closure projection,
+  GCP action, later-section work, push, PR, merge, deployment, or live action
+  is recorded or authorized.
+- The proportional final readiness gate ran once on the clean candidate based
+  at `f94dedd6736a20e1158c3581d89f2a525684afbd`. Strict OpenSpec validation
+  passed. The V4 structural/reference suite passed `94` tests with `154`
+  future-SUT tests deselected in `33.96s`. The three named current-main parent
+  contract files passed `92` tests with `7` skipped in `90.92s`. V1
+  governance, the docs contract sweep, scoped docs linkcheck, agentic harness
+  guard, agent validation build, and `git diff --check` all exited `0`.
+- The one intentional-red future-SUT audit exited `1` exactly as required:
+  `154 failed, 94 deselected in 26.69s`. Its saved output contained exactly
+  `154` failure nodes and exactly `154` error lines, all and only
+  `AssertionError: MISSING_SUT`; it contained no collection error, traceback,
+  exception, or alternate failure class. Static safety checks confirmed the
+  evaluator is absent and found no private key block, `private_scalar`, or
+  `locator_components` in the governed fixture/OpenSpec paths.
+- The changed paths from base
+  `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` are confined to the approved
+  design/plan and progress/queue state plus the exact V4 OpenSpec, fixture,
+  helper, corpus, oracle, crypto, ledger, model, bundle, and focused-test
+  allowlist. No canonical runtime or parent-contract path changed.
+- The frozen packet identity is schema
+  `GCP_SECTION_7_5_1_READINESS_RULE_PACKET_V4`, protocol
+  `CANONICAL_RUNTIME_PHASE_READINESS_V1`, protocol SHA-256
+  `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`,
+  queue item `gcp-canonical-runtime-section-7-5-parent-authority`, risk
+  `high`, and authority effect `NONE`. Content identities prepared for the
+  immutable review commit are: readiness blob
+  `21e2d4d16f1d97c1f655fdc5255f3375614e6fa9` / SHA-256
+  `00104712973c86c709928ec91de8827f07818518f01ec26ce1e6d7ddfd5f47df`;
+  packet-rules blob `8de1979168f4e0d7000eb6f99db18f146d33e4aa` /
+  SHA-256
+  `0692509ce6be0c0bc22b80c65b84b9438e60c495a57324325387a8cbf1aab69f`;
+  focused-test blob `e0bcc9cdaa0b670c393c7ac2dbe0fbca1a8b2b64` /
+  SHA-256
+  `80f4d833a1f0ac6c2aa9cbbbb942f3381f504bf501e59d9de24781fdc8a4c666`.
+- The packet binds the five immutable parent SHA-256 identities without
+  copying their bytes: Section 7.2 runtime object
+  `0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125`;
+  Section 7.3 security authority
+  `b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841`;
+  Section 7.3 role/capability matrix
+  `90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17`;
+  Section 7.4 attestation receipt
+  `88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200`;
+  and Section 7.5A constraints/open obligations
+  `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`.
+  The final exact commit/tree identities are recorded after commit in the
+  task-owned freeze report so the packet does not self-approve.
+- James approved the committed Section 7.5.1 Approach A design at
+  `836300df0149b672e8962305e3fdf39a70ad9dab`. The approved next deliverable is
+  a preimplementation readiness packet that tests the architecture before any
+  evaluator implementation.
+- The bounded implementation plan is
+  `docs/superpowers/plans/2026-07-30-section-7-5-1-rule-ledger-v4-readiness.md`.
+  It decomposes the proof into eight testable tasks: frozen OpenSpec/compact
+  rule source, closed public shapes, generated and reconciled ledger,
+  ephemeral P-256 trust-root handling, final-directory capability admission,
+  total independent oracle, attack/metamorphic/environment/future-SUT corpus,
+  and immutable exact-SHA review.
+- The plan uses the five current-main parent files directly and does not copy
+  stopped V2/V3 packet data, parent snapshots, or the 11,191-row V3 ledger. It
+  creates no fixture-generator CLI, generated-ledger artifact, production
+  helper, or evaluator. Structural/reference tests must pass; every future-SUT
+  test must construct its mutation and oracle result before failing only with
+  literal `MISSING_SUT`.
+- Plan self-review maps every approved design decision and acceptance criterion
+  to a task, found no missing requirement, removed undefined interfaces, and
+  found no forbidden placeholder instruction. Execution has not begun and
+  remains bounded away from parent amendments, closure projection, GCP,
+  credentials, deployment, qualification, model execution, Sections
+  7.5.2-7.8, push, PR, or merge.
+- James approved Section 7.5.1 simplification Approach A as the new human
+  architecture decision after the fresh V3 replacement panel stopped. This
+  design phase starts from exact merged main
+  `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` on isolated branch
+  `codex/gcp-section-7-5-rule-ledger-v4-design`. It does not amend or descend
+  from the stopped V3 evidence branch.
+- Approach A replaces the instance ledger with a rule ledger, removes all
+  signed locator strings, passes one harness-admitted final parent-bundle
+  directory capability, generates and verifies real ephemeral P-256 envelopes
+  during each test run, preserves exact hashes only for immutable parent and
+  protocol artifacts, and admits only closed enums, hashes, and context-bound
+  synthetic aliases. Exhaustive parent and dynamic-boundary rows will be
+  derived mechanically from their closed sources instead of committed as a
+  multi-megabyte hand-shaped fixture.
+- The stopped V3 diagnostic evidence remains local and immutable at
+  `dc9f888f84290c9de74e94d35846da075fab3ce2`, tree
+  `80f01cda353d33bc9082dc53704c7a8047f12b94`. Its replacement panel returned
+  CODE, BUG, and ADVERSARIAL HOLD because a static ledger hashed an invalid
+  synthetic P-256 envelope, A010 exposed locator names as an answer-key
+  discriminator, and signed locator components admitted identifier-shaped
+  strings. Those defects are inputs to the new design, not implementation
+  work to patch on the stopped packet.
+- Current authority is design documentation only. No V4 OpenSpec packet,
+  readiness fixture, SUT, parent-contract amendment, closure projection,
+  GCP/runtime action, credential, restricted evidence, signing service,
+  provisioning, persistence, deployment, qualification, model execution,
+  Section 7.5.2-7.8 work, push, PR, merge, or live action is authorized before
+  James reviews and approves the committed design.
+- The local Approach A design is recorded in
+  `docs/superpowers/specs/2026-07-30-section-7-5-1-rule-ledger-v4-design.md`.
+  Its first independent review returned four design holds: the final-directory
+  descriptor needed an evaluator-owned independent open-file description and
+  explicit capability boundary; the ephemeral SPKI needed an out-of-band
+  harness-owned trust-root rule and structural-only claim grade; the ledger
+  needed all closed dynamic boundaries as well as parent pointers; and the
+  anti-answer-key rule needed metamorphic proof rather than an impossible ban
+  on all normative discriminators.
+- The revised design resolves those four classes and the same independent
+  reviewer returned `DESIGN_GO`. It now separates caller path admission from
+  evaluator directory-object/content admission, reopens `"."` relative to the
+  incoming descriptor, leaves HSM/P03/P08/P14 authority open, reconciles
+  dynamic paths bidirectionally, distinguishes the acyclic trust-dependency
+  graph from the cyclic least-fixed-point controller graph, and requires
+  equivalent results across keys/signatures/aliases/descriptor numbers plus
+  opposing governed outcomes at the same normalized descriptor number.
+- Design verification passed `bash scripts/ci_docs_contract_sweep.sh`,
+  `bash scripts/ci_linkcheck_fluency_docs.sh`,
+  `python3 scripts/ci_v1_governance_gates.py`,
+  `node scripts/agentic_harness_guard.mjs`, `npm run validate:agents`, JSON
+  parsing of the work queue, and `git diff --check`. This is design viability
+  only, not readiness-packet GO or evaluator implementation authority. The
+  design awaits James's review.
 - Section 7.5.1 reached terminal `STOP_REARCHITECT` before implementation.
   The replacement panel reviewed exact local diagnostic commit
   `9507fe26f6c1bfb2eda296a8d7867c1455e934c0`, tree
