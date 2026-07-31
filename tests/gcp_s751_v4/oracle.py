@@ -42,7 +42,9 @@ ReplayState: TypeAlias = set[bytes]
 _HEX_32 = re.compile(r"^[0-9a-f]{32}$")
 _HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 _KEY_ID = re.compile(r"^P256_SPKI_SHA256:[0-9a-f]{64}$")
+_GOVERNED_ROLE_ID = re.compile(r"^[A-Z][A-Z0-9_]*$")
 _UTC_SECONDS = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+_SYNTHETIC_ALIAS_DOMAIN = b"GCP_SECTION_7_5_1_SYNTHETIC_ALIAS_V1"
 _MODES = {"CLEAN_CI", "ARCHIVE_CLOSEOUT", "LIVE_RUNTIME"}
 _SIGNER_PURPOSES = {
     "IMAGE_PROVENANCE_SIGNING_CRYPTOKEY",
@@ -374,7 +376,10 @@ def _parse_candidate(data: bytes) -> dict[str, object]:
     )
     governed = _sorted_unique_strings(observation["governed_roles"], False)
     aliases = _sorted_unique_strings(observation["synthetic_aliases"], True)
-    if not all(_HEX_32.fullmatch(alias) for alias in aliases):
+    if (
+        not all(_GOVERNED_ROLE_ID.fullmatch(role) for role in governed)
+        or not all(_HEX_32.fullmatch(alias) for alias in aliases)
+    ):
         raise ValueError("invalid candidate")
 
     edges = observation["controller_edges"]
@@ -385,6 +390,8 @@ def _parse_candidate(data: bytes) -> dict[str, object]:
         edge = _exact_dict(edge_value, {"controller", "controlled"})
         if not all(isinstance(edge[field], str) for field in edge):
             raise ValueError("invalid candidate")
+        if not all(_GOVERNED_ROLE_ID.fullmatch(edge[field]) for field in edge):
+            raise ValueError("invalid candidate")
         edge_bytes.append(canonical_json(edge))
     if edge_bytes != sorted(set(edge_bytes)):
         raise ValueError("invalid candidate")
@@ -394,7 +401,9 @@ def _parse_candidate(data: bytes) -> dict[str, object]:
         raise ValueError("invalid candidate")
     cycle_bytes: list[bytes] = []
     for cycle in cycles:
-        _sorted_unique_strings(cycle, False)
+        cycle_roles = _sorted_unique_strings(cycle, False)
+        if not all(_GOVERNED_ROLE_ID.fullmatch(role) for role in cycle_roles):
+            raise ValueError("invalid candidate")
         cycle_bytes.append(canonical_json(cycle))
     if cycle_bytes != sorted(set(cycle_bytes)):
         raise ValueError("invalid candidate")
@@ -709,6 +718,7 @@ def _privacy_and_nonauthorization_are_valid(
     if (
         candidate["requested_action"] != "EVALUATE_ONLY"
         or payload["authority_effect"] != "NONE"
+        or not _synthetic_aliases_are_valid(candidate, payload)
         or set(envelope)
         != {
             "schema_version",
@@ -739,6 +749,51 @@ def _privacy_and_nonauthorization_are_valid(
         and receipt_privacy["public_receipt_projection"] is False
         and receipt_privacy["raw_identifiers_in_public_artifacts"] is False
     )
+
+
+def _synthetic_aliases_are_valid(
+    candidate: Mapping[str, object],
+    payload: Mapping[str, object],
+) -> bool:
+    observation = candidate.get("observation")
+    nonce_time = payload.get("nonce_time")
+    if not isinstance(observation, Mapping) or not isinstance(
+        nonce_time, Mapping
+    ):
+        return False
+    aliases = observation.get("synthetic_aliases")
+    nonce = nonce_time.get("nonce")
+    if (
+        not isinstance(aliases, list)
+        or not all(isinstance(alias, str) for alias in aliases)
+        or not isinstance(nonce, str)
+        or not _HEX_32.fullmatch(nonce)
+    ):
+        return False
+    candidate_projection = {
+        "schema_version": candidate.get("schema_version"),
+        "requested_action": candidate.get("requested_action"),
+        "observation": {
+            **dict(observation),
+            "synthetic_aliases": [],
+        },
+    }
+    context_digest = hashlib.sha256(
+        canonical_json(candidate_projection)
+    ).digest()
+    nonce_bytes = bytes.fromhex(nonce)
+    expected = sorted(
+        hashlib.sha256(
+            _SYNTHETIC_ALIAS_DOMAIN
+            + b"\x00"
+            + context_digest
+            + b"\x00"
+            + nonce_bytes
+            + ordinal.to_bytes(4, "big")
+        ).hexdigest()[:32]
+        for ordinal in range(len(aliases))
+    )
+    return aliases == expected
 
 
 def _load_parent_json(data: bytes) -> Mapping[str, object]:

@@ -15,6 +15,7 @@ import pytest
 import tests.gcp_s751_v4.bundle as bundle_module
 import tests.gcp_s751_v4.corpus as corpus_module
 import tests.gcp_s751_v4.corpus_declarations as declarations_module
+import tests.gcp_s751_v4.crypto as crypto_module
 import tests.gcp_s751_v4.oracle as oracle_module
 from tests.gcp_s751_v4.bundle import (
     BundleAdmissionError,
@@ -37,6 +38,7 @@ from tests.gcp_s751_v4.corpus import (
     EnvironmentCell,
     PreparedCase,
     build_attack_cases,
+    build_case_observations,
     build_environment_cells,
     build_fd_discriminator_cases,
     build_metamorphic_groups,
@@ -1023,7 +1025,40 @@ def test_future_replay_protocol_executes_both_calls_in_one_process(
         if case.attack_id == "A009"
     )
 
-    assert invoke_future_sut(case) == case.expected
+    with pytest.raises(AssertionError, match="^INVALID_SUT_RESULT$"):
+        invoke_future_sut(case)
+
+    fake_sut.write_text(
+        "\n".join(
+            (
+                "import argparse",
+                "import os",
+                "parser = argparse.ArgumentParser()",
+                "for name in ('candidate', 'envelope', 'anchor', 'replay-candidate', 'replay-envelope', 'replay-anchor', 'bundle', 'result'):",
+                "    parser.add_argument(f'--{name}-fd', type=int, required=True)",
+                "args = parser.parse_args()",
+                "result = b'[{\"authority_effect\":\"NONE\",\"claim_grade\":\"STRUCTURAL_ONLY\",\"decision\":\"HOLD\",\"reason\":\"CURRENT_PARENT_OBLIGATIONS_OPEN\",\"schema_version\":\"GCP_SECTION_7_5_1_EVALUATION_RESULT_V4\"},{\"authority_effect\":\"NONE\",\"claim_grade\":\"NONE\",\"decision\":\"REJECT\",\"reason\":\"REPLAY_DETECTED\",\"schema_version\":\"GCP_SECTION_7_5_1_EVALUATION_RESULT_V4\"}]'",
+                "os.write(args.result_fd, result)",
+                "os.close(args.result_fd)",
+            )
+        ),
+        encoding="utf-8",
+    )
+    invalid_candidate = EvaluationResult(
+        "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+        "REJECT",
+        "INVALID_CANDIDATE_SHAPE",
+        "NONE",
+        "NONE",
+    )
+    challenged_case = replace(
+        case,
+        candidate_bytes=b"{}",
+        expected=invalid_candidate,
+        expected_sequence=(invalid_candidate, invalid_candidate),
+    )
+    with pytest.raises(AssertionError, match="^SUT_ORACLE_MISMATCH$"):
+        invoke_future_sut(challenged_case)
 
 
 def test_prepared_case_metadata_never_enters_normative_inputs() -> None:
@@ -1068,11 +1103,19 @@ def test_prepared_case_metadata_never_enters_bundle_names_or_contents() -> None:
                         os.close(member_fd)
 
 
-def test_identifier_probes_cover_every_public_string_input_path() -> None:
+def test_identifier_probes_cover_every_public_string_input_path(
+    exact_bundle: Path,
+) -> None:
     packet = load_packet()
     cases = [
         case for case in build_attack_cases(packet)
         if case.attack_id == "A018"
+    ]
+    observations = [
+        observation
+        for observation in build_case_observations(packet)
+        if observation.attack_id == "A018"
+        and observation.generator_id == "EVERY_PUBLIC_STRING_PATH"
     ]
     input_boundaries = {
         "candidate",
@@ -1088,15 +1131,83 @@ def test_identifier_probes_cover_every_public_string_input_path() -> None:
         if field["type"] == "STRING"
     )
     assert len(cases) == expected_count
+    assert len(observations) == expected_count
+    assert {
+        (
+            observation.ledger_selector.resource,
+            observation.ledger_selector.pointer,
+        )
+        for observation in observations
+    } == {
+        (boundary, field["pointer"])
+        for boundary in input_boundaries
+        for field in packet.closed_schemas[boundary]["fields"]
+        if field["type"] == "STRING"
+    }
     assert all(
+        case.expected.reason != "INVALID_SIGNATURE"
+        for case in cases
+        if "signed-context-payload" in case.case_id
+        or "nonce-time" in case.case_id
+    )
+    observations_by_id = {
+        observation.case_id: observation
+        for observation in observations
+    }
+    alias_probe = hashlib.md5(b"victim@example.com").hexdigest().encode(
+        "ascii"
+    )
+    key_id_probe = hashlib.sha256(
         b"synthetic-probe@example.invalid"
-        in (
+    ).hexdigest().encode("ascii")
+    for case in cases:
+        normative_bytes = (
             case.candidate_bytes
             + case.envelope_bytes
             + case.admitted_anchor_spki
         )
-        for case in cases
+        selector = observations_by_id[case.case_id].ledger_selector
+        if (selector.resource, selector.pointer) == (
+            "candidate",
+            "/observation/synthetic_aliases/*",
+        ):
+            assert alias_probe in normative_bytes
+        elif (selector.resource, selector.pointer) == (
+            "verifier_anchor",
+            "/key_id",
+        ):
+            assert key_id_probe in normative_bytes
+        else:
+            assert (
+                b"synthetic-probe@example.invalid" in normative_bytes
+            )
+
+    candidate = _valid_candidate()
+    observation = candidate["observation"]
+    assert isinstance(observation, dict)
+    observation["synthetic_aliases"] = [
+        hashlib.md5(b"victim@example.com").hexdigest()
+    ]
+    candidate_bytes, envelope_bytes, anchor = _signed_oracle_material(
+        candidate=candidate,
+        nonce="a018a018a018a018a018a018a018a018",
     )
+    incoming = open_harness_bundle(exact_bundle)
+    try:
+        assert ReferenceOracle().evaluate(
+            candidate_bytes,
+            envelope_bytes,
+            anchor,
+            incoming,
+        ) == EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "REJECT",
+            "PRIVACY_OR_NONAUTHORIZATION_INVALID",
+            "NONE",
+            "NONE",
+        )
+    finally:
+        os.close(incoming)
     assert all(
         "synthetic-probe@example.invalid"
         not in (
@@ -1481,7 +1592,9 @@ def test_signature_projection_is_versioned_domain_separated_and_anchor_bound(
     ) == (True,)
 
 
-def test_reference_oracle_rejects_key_id_and_anchor_substitution() -> None:
+def test_reference_oracle_rejects_key_id_and_anchor_substitution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     candidate, envelope_bytes, anchor = _signed_oracle_material(
         nonce="abcd2222333344445555666677778888"
     )
@@ -1519,6 +1632,28 @@ def test_reference_oracle_rejects_key_id_and_anchor_substitution() -> None:
     assert tampered_key_id.reason == "INVALID_SIGNED_CONTEXT_BINDING"
     assert mismatched_fingerprint.reason == "INVALID_SIGNED_CONTEXT_BINDING"
     assert substituted_anchor.reason == "INVALID_SIGNATURE"
+
+    for helper_failure in (
+        subprocess.TimeoutExpired("node", 15),
+        OSError("crypto helper unavailable"),
+    ):
+        def fail_helper(*args: object, **kwargs: object) -> object:
+            del args, kwargs
+            raise helper_failure
+
+        monkeypatch.setattr(crypto_module.subprocess, "run", fail_helper)
+        assert ReferenceOracle().evaluate(
+            candidate,
+            envelope_bytes,
+            anchor,
+            -1,
+        ) == EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "REJECT",
+            "INVALID_SIGNATURE",
+            "NONE",
+            "NONE",
+        )
 
 
 def test_private_material_is_absent_from_helper_fixture_environment_and_arguments(

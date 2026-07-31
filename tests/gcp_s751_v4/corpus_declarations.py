@@ -275,6 +275,7 @@ def _validate_expected_stage(
         "INVALID_SIGNED_CONTEXT_BINDING": (
             "SIGNED_CONTEXT_BINDING",
             "NONCE_AND_TIME_ADMISSION",
+            "VERIFIER_ANCHOR_AUTHENTICATION",
         ),
         "INVALID_CONTEXT_CONJUNCTION": (
             "RECEIPT_AND_APPROVAL_ADMISSION",
@@ -285,6 +286,9 @@ def _validate_expected_stage(
         ),
         "INVALID_SECTION_7_3_AUTHORITY": (
             "SECTION_7_3_ROLE_CAPABILITY_ADMISSION",
+        ),
+        "PRIVACY_OR_NONAUTHORIZATION_INVALID": (
+            "PRIVACY_AND_NONAUTHORIZATION_ADMISSION",
         ),
         "CURRENT_PARENT_OBLIGATIONS_OPEN": ("OPEN_BLOCKER_HOLD",),
         "ARCHIVE_CLOSEOUT_PARENT_OBLIGATIONS_OPEN": (

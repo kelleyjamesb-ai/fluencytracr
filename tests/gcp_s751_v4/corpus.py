@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import stat
@@ -32,7 +33,7 @@ from tests.gcp_s751_v4.corpus_declarations import (
     resolve_case_ledger_row,
     resolve_immutable_root_sha256,
 )
-from tests.gcp_s751_v4.crypto import sign_ephemeral_batch
+from tests.gcp_s751_v4.crypto import anchor_key_id, sign_ephemeral_batch
 from tests.gcp_s751_v4.ledger import build_rule_ledger
 from tests.gcp_s751_v4.model import (
     EvaluationResult,
@@ -392,14 +393,14 @@ def evaluate_in_isolated_children_with_dup2(
 
 def invoke_future_sut(case: PreparedCase) -> EvaluationResult:
     """Prove construction and oracle truth before the intentional absent-SUT red."""
-    observed_reference = evaluate_reference_case(case)
-    assert case.expected == observed_reference
+    observed_reference = evaluate_reference_sequence(case)
+    assert case.expected_sequence == observed_reference
     if not SUT_PATH.exists():
         raise AssertionError("MISSING_SUT")
     observed_sut = _invoke_closed_child(case)
-    if observed_sut != case.expected:
+    if observed_sut != case.expected_sequence:
         raise AssertionError("SUT_ORACLE_MISMATCH")
-    return observed_sut
+    return observed_sut[-1]
 
 
 def parse_closed_result_bytes(data: bytes) -> EvaluationResult:
@@ -426,6 +427,27 @@ def parse_closed_result_bytes(data: bytes) -> EvaluationResult:
         )
     except (TypeError, ValueError) as exc:
         raise AssertionError("INVALID_SUT_RESULT") from exc
+
+
+def _parse_closed_result_sequence_bytes(
+    data: bytes,
+    expected_count: int,
+) -> tuple[EvaluationResult, ...]:
+    """Admit one result, or the exact ordered two-result replay sequence."""
+    if expected_count == 1:
+        return (parse_closed_result_bytes(data),)
+    if expected_count != 2:
+        raise AssertionError("INVALID_SUT_RESULT")
+    try:
+        value = strict_load_json(data)
+    except ValueError as exc:
+        raise AssertionError("INVALID_SUT_RESULT") from exc
+    if not isinstance(value, list) or len(value) != 2:
+        raise AssertionError("INVALID_SUT_RESULT")
+    return tuple(
+        parse_closed_result_bytes(canonical_json(result))
+        for result in value
+    )
 
 
 def _corpus() -> _Corpus:
@@ -746,7 +768,7 @@ def _generate_cases(
         if not isinstance(observation, dict):
             raise ValueError("candidate observation is not an object")
         observation["synthetic_aliases"] = [
-            _synthetic_alias(base_candidate)
+            _synthetic_alias(base_candidate, "0" * 32)
         ]
         return [
             draft(
@@ -760,13 +782,15 @@ def _generate_cases(
         source_observation = source_value["observation"]
         if not isinstance(source_observation, dict):
             raise ValueError("candidate observation is not an object")
+        source_nonce = secrets.token_hex(16)
         source_observation["synthetic_aliases"] = [
-            _synthetic_alias(base_candidate)
+            _synthetic_alias(base_candidate, source_nonce)
         ]
         source_candidate = canonical_json(source_value)
         source_payload = _base_payload(
             packet, source_candidate, "CLEAN_CI"
         )
+        source_payload["nonce_time"]["nonce"] = source_nonce
         _, source_envelope, source_anchor = _sign_material(
             packet, source_candidate, source_payload
         )
@@ -901,11 +925,13 @@ def _generate_cases(
         observation = value["observation"]
         if not isinstance(observation, dict):
             raise ValueError("candidate observation is not an object")
+        alias_nonce = secrets.token_hex(16)
         observation["synthetic_aliases"] = [
-            _synthetic_alias(base_candidate)
+            _synthetic_alias(base_candidate, alias_nonce)
         ]
         resealed_candidate = canonical_json(value)
         payload = _base_payload(packet, resealed_candidate, "CLEAN_CI")
+        payload["nonce_time"]["nonce"] = alias_nonce
         _, envelope, _alternate_anchor = _sign_material(
             packet, resealed_candidate, payload
         )
@@ -1067,11 +1093,13 @@ def _generate_cases(
             observation = value["observation"]
             if not isinstance(observation, dict):
                 raise ValueError("candidate observation is not an object")
+            alias_nonce = secrets.token_hex(16)
             observation["synthetic_aliases"] = [
-                _synthetic_alias(base_candidate)
+                _synthetic_alias(base_candidate, alias_nonce)
             ]
             varied_candidate = canonical_json(value)
             payload = _base_payload(packet, varied_candidate, "CLEAN_CI")
+            payload["nonce_time"]["nonce"] = alias_nonce
             _, envelope, anchor = _sign_material(
                 packet, varied_candidate, payload
             )
@@ -1151,24 +1179,64 @@ def _privacy_probe_drafts(
             if boundary == "candidate":
                 value = _candidate_for_pointer(candidate, pointer)
                 _set_pointer_probe(value, pointer)
+                if pointer == "/observation/synthetic_aliases/*":
+                    value["observation"]["synthetic_aliases"] = [
+                        hashlib.md5(b"victim@example.com").hexdigest()
+                    ]
                 candidate_bytes = canonical_json(value)
+                payload = _base_payload(
+                    packet, candidate_bytes, "CLEAN_CI"
+                )
+                _, envelope_bytes, anchor = _sign_material(
+                    packet, candidate_bytes, payload
+                )
             elif boundary == "signed_context_payload":
                 envelope = _decode_envelope(base_envelope)
-                _set_pointer_probe(_payload(envelope), pointer)
-                envelope_bytes = canonical_json(envelope)
+                payload = _payload(envelope)
+                _set_pointer_probe(payload, pointer)
+                _, envelope_bytes, anchor = _sign_material(
+                    packet, base_candidate, payload
+                )
+                if pointer == "/key_id":
+                    envelope = _decode_envelope(envelope_bytes)
+                    _payload(envelope)["key_id"] = _IDENTIFIER_PROBE
+                    envelope_bytes = canonical_json(envelope)
             elif boundary == "signed_context_envelope":
                 envelope = _decode_envelope(base_envelope)
                 _set_pointer_probe(envelope, pointer)
                 envelope_bytes = canonical_json(envelope)
             elif boundary == "nonce_time":
                 envelope = _decode_envelope(base_envelope)
-                nonce_time = _payload(envelope)["nonce_time"]
+                payload = _payload(envelope)
+                nonce_time = payload["nonce_time"]
                 if not isinstance(nonce_time, dict):
                     raise ValueError("base nonce/time is not an object")
                 _set_pointer_probe(nonce_time, pointer)
-                envelope_bytes = canonical_json(envelope)
+                _, envelope_bytes, anchor = _sign_material(
+                    packet, base_candidate, payload
+                )
             else:
-                anchor = _IDENTIFIER_PROBE.encode("ascii")
+                if pointer == "/spki_der_base64":
+                    anchor = _IDENTIFIER_PROBE.encode("ascii")
+                elif pointer == "/key_id":
+                    payload = _base_payload(
+                        packet, base_candidate, "CLEAN_CI"
+                    )
+                    _, envelope_bytes, anchor = _sign_material(
+                        packet, base_candidate, payload
+                    )
+                    envelope = _decode_envelope(envelope_bytes)
+                    _payload(envelope)["key_id"] = (
+                        "P256_SPKI_SHA256:"
+                        + hashlib.sha256(
+                            _IDENTIFIER_PROBE.encode("ascii")
+                        ).hexdigest()
+                    )
+                    envelope_bytes = canonical_json(envelope)
+                else:
+                    raise ValueError(
+                        "unknown verifier-anchor string boundary"
+                    )
             drafts.append(
                 _CaseDraft(
                     case_id=f"{prefix}-{suffix}",
@@ -1500,6 +1568,8 @@ def _observed_ledger_selector(
     case: PreparedCase,
 ) -> ExactLedgerSelector:
     """Derive one exact ledger row from actual mutation and oracle evidence."""
+    if case.attack_id == "A018":
+        return _observed_a018_selector(case)
     parameters = set(case.mutation_evidence.observed_parameters)
     reason = case.expected.reason
     if reason == "INVALID_CANDIDATE_SHAPE":
@@ -1610,6 +1680,128 @@ def _observed_ledger_selector(
             "observed result has no exact ledger selector"
         )
     return _exact_observed_selector(resource, pointer)
+
+
+def _observed_a018_selector(
+    case: PreparedCase,
+) -> ExactLedgerSelector:
+    """Resolve the attacked public field only from the mutated inputs."""
+    candidate = strict_load_json(case.candidate_bytes)
+    envelope = strict_load_json(case.envelope_bytes)
+    if not isinstance(candidate, dict) or not isinstance(envelope, dict):
+        raise ValueError("A018 inputs are not closed objects")
+
+    candidate_pointers = _value_pointers(
+        candidate, _IDENTIFIER_PROBE
+    )
+    if len(candidate_pointers) == 1:
+        return _exact_observed_selector(
+            "candidate",
+            _normalize_schema_pointer(candidate_pointers[0]),
+        )
+
+    observation = candidate.get("observation")
+    payload = envelope.get("payload")
+    if isinstance(observation, dict) and isinstance(payload, dict):
+        aliases = observation.get("synthetic_aliases")
+        nonce_time = payload.get("nonce_time")
+        if (
+            isinstance(aliases, list)
+            and aliases
+            and all(isinstance(alias, str) for alias in aliases)
+            and isinstance(nonce_time, dict)
+            and isinstance(nonce_time.get("nonce"), str)
+        ):
+            candidate_projection = _copy_json(candidate)
+            projected_observation = candidate_projection.get(
+                "observation"
+            )
+            if not isinstance(projected_observation, dict):
+                raise ValueError("A018 candidate projection is invalid")
+            projected_observation["synthetic_aliases"] = []
+            expected_aliases = sorted(
+                _synthetic_alias(
+                    canonical_json(candidate_projection),
+                    nonce_time["nonce"],
+                    ordinal,
+                )
+                for ordinal in range(len(aliases))
+            )
+            if aliases != expected_aliases:
+                return _exact_observed_selector(
+                    "candidate",
+                    "/observation/synthetic_aliases/*",
+                )
+
+    envelope_pointers = _value_pointers(
+        envelope, _IDENTIFIER_PROBE
+    )
+    if len(envelope_pointers) == 1:
+        pointer = _normalize_schema_pointer(envelope_pointers[0])
+        if pointer.startswith("/payload/nonce_time/"):
+            return _exact_observed_selector(
+                "nonce_time",
+                pointer[len("/payload/nonce_time"):],
+            )
+        if pointer.startswith("/payload/"):
+            return _exact_observed_selector(
+                "signed_context_payload",
+                pointer[len("/payload"):],
+            )
+        return _exact_observed_selector(
+            "signed_context_envelope",
+            pointer,
+        )
+
+    if case.admitted_anchor_spki == _IDENTIFIER_PROBE.encode("ascii"):
+        return _exact_observed_selector(
+            "verifier_anchor",
+            "/spki_der_base64",
+        )
+    if isinstance(payload, dict):
+        key_id = payload.get("key_id")
+        try:
+            expected_key_id = anchor_key_id(
+                case.admitted_anchor_spki
+            )
+        except (TypeError, ValueError):
+            expected_key_id = None
+        if (
+            isinstance(key_id, str)
+            and key_id.startswith("P256_SPKI_SHA256:")
+            and key_id != expected_key_id
+        ):
+            return _exact_observed_selector(
+                "verifier_anchor",
+                "/key_id",
+            )
+    raise ValueError("A018 mutation has no exact observed string boundary")
+
+
+def _value_pointers(
+    value: object,
+    target: str,
+    pointer: str = "",
+) -> tuple[str, ...]:
+    pointers: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_pointer = f"{pointer}/{_pointer_escape(key)}"
+            pointers.extend(
+                _value_pointers(child, target, child_pointer)
+            )
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            pointers.extend(
+                _value_pointers(child, target, f"{pointer}/{index}")
+            )
+    elif value == target:
+        pointers.append(pointer or "/")
+    return tuple(pointers)
+
+
+def _normalize_schema_pointer(pointer: str) -> str:
+    return re.sub(r"/[0-9]+(?=/|$)", "/*", pointer)
 
 
 def _exact_observed_selector(
@@ -2185,7 +2377,7 @@ def _candidate_for_pointer(
         raise ValueError("candidate roles are unavailable")
     if pointer.startswith("/observation/synthetic_aliases/"):
         observation["synthetic_aliases"] = [
-            _synthetic_alias(canonical_json(value))
+            "0" * 32
         ]
     elif pointer.startswith("/observation/controller_edges/"):
         observation["controller_edges"] = [
@@ -2279,11 +2471,26 @@ def _copy_json(value: object) -> object:
     return json.loads(json.dumps(value))
 
 
-def _synthetic_alias(context: bytes) -> str:
+def _synthetic_alias(
+    context: bytes,
+    nonce: str,
+    ordinal: int = 0,
+) -> str:
+    if (
+        not isinstance(context, bytes)
+        or not isinstance(nonce, str)
+        or len(nonce) != 32
+        or any(character not in "0123456789abcdef" for character in nonce)
+        or type(ordinal) is not int
+        or ordinal < 0
+    ):
+        raise ValueError("synthetic alias derivation inputs are invalid")
     return hashlib.sha256(
         b"GCP_SECTION_7_5_1_SYNTHETIC_ALIAS_V1\x00"
         + hashlib.sha256(context).digest()
-        + secrets.token_bytes(32)
+        + b"\x00"
+        + bytes.fromhex(nonce)
+        + ordinal.to_bytes(4, "big")
     ).hexdigest()[:32]
 
 
@@ -2457,7 +2664,9 @@ def _read_bounded(fd: int, limit: int) -> bytes:
     return b"".join(chunks)
 
 
-def _invoke_closed_child(case: PreparedCase) -> EvaluationResult:
+def _invoke_closed_child(
+    case: PreparedCase,
+) -> tuple[EvaluationResult, ...]:
     primary_input_values = (
         case.candidate_bytes,
         case.envelope_bytes,
@@ -2550,7 +2759,10 @@ def _invoke_closed_child(case: PreparedCase) -> EvaluationResult:
                     or len(result_chunks) != 1
                 ):
                     raise AssertionError("INVALID_SUT_RESULT")
-                return parse_closed_result_bytes(result_chunks[0])
+                return _parse_closed_result_sequence_bytes(
+                    result_chunks[0],
+                    len(case.expected_sequence),
+                )
             finally:
                 if process is not None and process.poll() is None:
                     process.kill()

@@ -186,6 +186,16 @@ _SECTION_7_3_CONTROLLER_BINDING = _Binding(
     "SECTION_7_3_CONTROLLER_GRAPH_ADMISSION",
 )
 
+_SYNTHETIC_ALIAS_PRIVACY_BINDING = _Binding(
+    "RULE-PRIVACY-NONAUTHORIZATION",
+    "SECTION_7_5_1",
+    "AUTHENTICATED_HARNESS_ALIAS_DERIVATION",
+    "TEST_HARNESS",
+    "SIGNED_CANDIDATE_AND_NONCE_DERIVATION",
+    "FUTURE_SECTION_7_5_1_EVALUATOR",
+    "PRIVACY_AND_NONAUTHORIZATION_ADMISSION",
+)
+
 _DYNAMIC_ROOT_POINTERS = {
     "candidate": "/schema_version",
     "signed_context_payload": "/schema_version",
@@ -417,6 +427,7 @@ def _templates_by_id(packet: RulePacket) -> dict[str, Mapping[str, object]]:
         for binding in (*_PARENT_BINDINGS.values(), *_DYNAMIC_BINDINGS.values())
     }
     required.add(_SECTION_7_3_CONTROLLER_BINDING.template_id)
+    required.add(_SYNTHETIC_ALIAS_PRIVACY_BINDING.template_id)
     if set(templates) != required:
         raise ValueError("rule packet template set is not closed for ledger derivation")
     return templates
@@ -446,6 +457,17 @@ def _parent_binding(resource: str) -> _Binding:
 
 
 def _dynamic_binding(boundary: str, pointer: str) -> _Binding:
+    if (
+        boundary == "candidate"
+        and pointer == "/observation/synthetic_aliases/*"
+    ):
+        return _SYNTHETIC_ALIAS_PRIVACY_BINDING
+    if boundary == "candidate" and pointer in {
+        "/observation/controller_edges/*/controller",
+        "/observation/controller_edges/*/controlled",
+        "/observation/controller_cycles/*/*",
+    }:
+        return _DYNAMIC_BINDINGS["candidate"]
     if boundary == "candidate" and pointer.startswith("/observation/controller_"):
         return _SECTION_7_3_CONTROLLER_BINDING
     try:

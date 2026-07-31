@@ -2,7 +2,34 @@
 
 ## Current Session
 
-- Section 7.5.1 Approach A V4 has reached
+- Exact-SHA review of preimplementation evidence commit
+  `805bd2c30b80eb43988bfbda538fff8170134853`, tree
+  `71f3abc4e2787a96c46aaa54b72cc597f9eedd89`, returned
+  `READINESS_HOLD`. The packet is back in `DRAFT` with the queue still
+  `in_progress` and `authority_effect: NONE`. Repair is frozen to four
+  executable harness blockers: normalize `TimeoutExpired` and `OSError` at
+  the closed crypto boundary; make every authenticated A018 field probe reach
+  and reconcile its exact field; require both ordered replay results in one
+  child session; and mechanically bind accepted synthetic aliases to
+  harness-owned provenance. No review completion, `READINESS_GO`, evaluator,
+  parent amendment, GCP action, later-section work, push, PR, merge,
+  deployment, or live action is claimed.
+- Task 8 repair round 1 is locally verified while the packet remains
+  `DRAFT`. The three focused blocker regressions passed `3/3`: helper
+  `TimeoutExpired` and `OSError` close to `INVALID_SIGNATURE`; all `31`
+  A018 string inputs reconcile to their exact authenticated field; a
+  terminal-only replay response is invalid and a hard-coded two-result fake
+  that ignores normative inputs fails an independently scored mutation; and
+  the exact signed `MD5(victim@example.com)` alias substitution rejects at
+  `PRIVACY_OR_NONAUTHORIZATION_INVALID`. The structural/reference suite
+  passed `94` with `154` deselected in `36.35s`; collection remains exactly
+  `248`; and the intentional-red audit remains exactly `154` failures, all
+  `AssertionError: MISSING_SUT`, with `94` deselected in `28.84s`. Strict
+  OpenSpec, compile, packet/queue JSON, lifecycle, evaluator-absence,
+  private/locator/real-identifier fixture scans, and diff checks passed.
+  Exact-SHA rereview and a later final broad freeze gate remain pending; no
+  review GO or implementation authority is recorded.
+- Before the exact-SHA HOLD, Section 7.5.1 Approach A V4 had reached
   `PREIMPLEMENTATION_EVIDENCE_READY` only. The queue item remains
   `in_progress`, `authority_effect` remains `NONE`, and the evaluator
   `scripts/gcp_section_7_5_parent_contract_authority_closure_v4.py` remains

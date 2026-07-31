@@ -112,16 +112,19 @@ def verify_batch(
 
 
 def _run_helper(request: Mapping[str, object]) -> dict[str, object]:
-    completed = subprocess.run(
-        [str(_NODE_EXECUTABLE), str(_HELPER)],
-        check=False,
-        cwd=_ROOT,
-        env={},
-        input=canonical_json(request),
-        stderr=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        timeout=15,
-    )
+    try:
+        completed = subprocess.run(
+            [str(_NODE_EXECUTABLE), str(_HELPER)],
+            check=False,
+            cwd=_ROOT,
+            env={},
+            input=canonical_json(request),
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            timeout=15,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise ValueError("ephemeral crypto helper failed") from exc
     if completed.returncode != 0 or completed.stderr:
         raise ValueError("ephemeral crypto helper failed")
     try:

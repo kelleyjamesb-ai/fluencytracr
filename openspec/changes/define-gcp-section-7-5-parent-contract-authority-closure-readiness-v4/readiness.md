@@ -5,7 +5,7 @@
 | Field | Value |
 | --- | --- |
 | Protocol version and SHA-256 | `CANONICAL_RUNTIME_PHASE_READINESS_V1` / `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d` |
-| Packet state | `PREIMPLEMENTATION_EVIDENCE_READY` |
+| Packet state | `DRAFT` |
 | Queue item / risk | `gcp-canonical-runtime-section-7-5-parent-authority` / `high` |
 | Phase / scope kind | `Section 7.5.1` / `DOCS_CONTRACT` |
 | Base commit | `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` |
@@ -64,6 +64,16 @@ parent pointer and dynamic closed boundary from those sources. Candidate
 hashes are recomputed, no candidate-controlled value is a root, dynamic
 signatures and envelopes are never frozen, and context schemas prohibit every
 locator.
+
+Each accepted synthetic alias is mechanically derived by the harness and
+recomputed by the independent oracle. For alias ordinal `i`, the derivation is
+the first 32 lowercase hex characters of
+`SHA256("GCP_SECTION_7_5_1_SYNTHETIC_ALIAS_V1" || 0x00 ||
+SHA256(CANONICAL_JSON(candidate with synthetic_aliases=[])) || 0x00 ||
+nonce_bytes || UINT32_BE(i))`; the resulting list is sorted before admission.
+The nonce is inside the authenticated payload. A merely shape-valid 32-hex
+value, including an identifier-derived digest, therefore rejects at
+`PRIVACY_OR_NONAUTHORIZATION_INVALID`.
 
 The permitted rule classes are `COMPILE_PINNED`,
 `AUTHENTICATED_OBSERVATION`, `DERIVED`, and `OPAQUE_LATER_SECTION`.
@@ -178,7 +188,7 @@ record rather than inheriting generator metadata.
 harness metadata. They do not enter candidate or envelope bytes, the admitted
 SPKI, bundle names or contents, numeric descriptor semantics, or future child
 arguments. Equivalent cases vary real ephemeral anchors/signatures,
-context-bound random synthetic aliases, and descriptor numbers while
+authenticated nonce-bound synthetic aliases, and descriptor numbers while
 preserving decisions. Separate exec-isolated children use `dup2` to present
 exact and corrupt parent semantics at descriptor `751` and produce the
 governed opposing results.
@@ -187,8 +197,10 @@ The future child protocol is already closed even though the evaluator remains
 absent. It passes candidate, envelope, and admitted-anchor bytes through
 dedicated inherited descriptors, passes only the admitted final-directory and
 result descriptors as additional capabilities, requires zero stdout/stderr,
-and admits exactly one canonical five-field result. The harness compares that
-result with the independently computed oracle result. The replay case adds a
+and admits exactly one canonical five-field result for a one-call case. A
+replay session must instead emit one canonical ordered two-element array
+containing the independently checked first-call and second-call five-field
+results; a terminal-only replay result is invalid. The replay case adds a
 second dedicated candidate/envelope/anchor descriptor triple to the same child
 process and requires those bytes to be identical to the first call. Current
 future-SUT cases intentionally stop only with literal `MISSING_SUT`; collected
