@@ -5,6 +5,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -235,6 +236,37 @@ def test_verifier_rejects_symlinked_registry_parent_component(
 
     with pytest.raises(ProjectionValidationError, match="unreadable"):
         validate_projection(root)
+
+
+def test_verifier_rejects_fifo_locator_without_blocking(
+    tmp_path: Path,
+) -> None:
+    root = _copy_verifier_inputs(tmp_path)
+    registry = root / REGISTRY_PATH
+    registry.unlink()
+    os.mkfifo(registry)
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys;"
+                "from scripts.verify_gcp_section_7_5_1_parent_interface_closure_projection "
+                "import ProjectionValidationError,validate_projection;"
+                "\ntry: validate_projection(sys.argv[1])"
+                "\nexcept ProjectionValidationError: raise SystemExit(0)"
+                "\nraise SystemExit(1)"
+            ),
+            str(root),
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert probe.returncode == 0, probe.stdout + probe.stderr
 
 
 @pytest.mark.parametrize(

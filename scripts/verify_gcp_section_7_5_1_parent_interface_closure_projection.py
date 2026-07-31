@@ -127,7 +127,7 @@ def _read_regular_file_once(
             opened.append(current)
         file_descriptor = os.open(
             parts[-1],
-            os.O_RDONLY | os.O_NOFOLLOW,
+            os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
             dir_fd=current,
         )
         opened.append(file_descriptor)
