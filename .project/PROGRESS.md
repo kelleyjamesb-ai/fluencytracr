@@ -2,6 +2,28 @@
 
 ## Current Session
 
+- Terminal scoped `CLEAN` on selector-repair commit
+  `89d83809bf455b5c9009dfa186e649f612f029e0`, tree
+  `1043be37e866afca4398cfd5c08b3d3af22e0e81`, authorized the final Task 8
+  freeze. The full declared suite ran exactly once: strict OpenSpec passed in
+  `1.04s`; V4 structural/reference passed `94` with `154` deselected in
+  `37.43s`; the three parent-contract suites passed `92` with `7` skipped in
+  `91.49s`; V1 governance passed in `0.79s`; docs sweep passed in `4.54s`;
+  linkcheck passed in `1.48s`; harness guard passed in `0.06s`;
+  `validate:agents` passed in `0.95s`; and `git diff --check` was clean.
+- The one terminal intentional-red invocation exited `1` as required:
+  `154 failed, 94 deselected in 28.79s`. Its captured output contains exactly
+  `154` failed nodes and `154` exact `AssertionError: MISSING_SUT` lines with
+  no alternate exception. The evaluator is absent; private/locator scans
+  passed; the identifier scan found only reserved
+  `synthetic-probe@example.invalid` harness metadata; and the exact
+  changed-path allowlist matched all `20` approved paths.
+- The packet is now `PREIMPLEMENTATION_EVIDENCE_READY`; the queue remains
+  `in_progress`, risk remains `high`, and `authority_effect` remains `NONE`.
+  Final exact-SHA `CODE`, `BUG`, and `ADVERSARIAL` reviews are pending. No
+  `READINESS_GO`, `READINESS_HOLD`, aggregate decision, evaluator, parent
+  amendment, GCP action, later-section work, push, PR, merge, deployment, or
+  live action is recorded or authorized.
 - Exact-SHA review of final refreeze commit
   `97b47768818b6c2bf05d7ca00d94ce96fc420842`, tree
   `51779910faf520153f6fb58915e48d27c1aa2f25`, returned `CODE: GO`,
