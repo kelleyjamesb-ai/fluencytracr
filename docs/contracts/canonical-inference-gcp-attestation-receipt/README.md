@@ -23,6 +23,7 @@ This docs-only contract closes the canonical Section 7.4 attestation and receipt
 7. Replay is exact-set, challenge-bound, verifier-identity-bound, and cannot use checkout or digest-only fallback. Canonical numerical-body/model/plan bytes are restricted replay evidence.
 8. Every approval registry is empty. Structural success therefore maps live admission to `HOLD_FOR_ATTESTATION_VERIFIER_UNCLOSED`.
 9. Every Section 7.4 object and composition is nonauthorizing. Nonverified results block retry and leave reservation/consumption semantics exclusively to Section 7.6.
+10. Section 7.4 exposes only typed, externally authenticated full-Section-7.5 approval/policy/verifier and trust-lineage interfaces. They bind canonical target bytes/hash, current head, anti-rollback predicates, and all nine required acceptance-node conjunctions; every Section 7.5A substitute rejects. P14 requires the trust-distribution approval conjunction, while P19 is approval-only here. Anchor selection and writer/reader/currentness/recovery mechanics remain Section 7.5-owned. All live interface registries are empty.
 
 ## Provider-source conclusions
 

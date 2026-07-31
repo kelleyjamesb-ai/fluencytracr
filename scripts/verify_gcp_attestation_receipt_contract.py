@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import sys
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,7 @@ from gcp_attestation_receipt_contract_validation import (
     HEX64,
     ContractValidationError,
     build_envelope_graph,
+    canonical_json_bytes,
     candidate_envelope_root_hash,
     derive_live_disposition,
     derive_validated_candidate_facts,
@@ -35,6 +37,7 @@ from gcp_attestation_receipt_contract_validation import (
     validate_replay_manifest,
     validate_replay_semantic_bindings,
     validate_runtime_profile_and_signer_projection,
+    validate_section_7_5_external_approval_interface,
     validate_structural_replay_chain_commitments,
     validate_structural_replay_chain_shape,
     validate_synthetic_cross_bindings,
@@ -42,12 +45,13 @@ from gcp_attestation_receipt_contract_validation import (
     validate_terminal_payload,
     validate_timeline,
     validate_verifier_identity,
+    strict_load_json_bytes,
 )
 
 EXPECTED_ARTIFACT_SHA256 = {
-    "README.md": "7cbef6fed6b332808b08af468937b12e092ed0e5edb793caafdf7736b513f519",
-    "attestation-receipt-contract.json": "88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200",
-    "canonicalization-vectors.json": "744f22d70788bd47b680f73ab8745670e00d3f54d3e13099ef7d57d146c4f63c",
+    "README.md": "8c21cf32748c3d58e61769931232095b4a3dbcf4449ba67a222815e7842c0d3c",
+    "attestation-receipt-contract.json": "3d72985a84f538c66ee16bba2f90f894fa6f0919c4ab39b0f7926b323c49e8f8",
+    "canonicalization-vectors.json": "f8b5734487ee6c4896ad6d00032433f63786c7c8fba962f3b6f152a3f21a2144",
     "provider-revalidation.json": "ad7dfcfa345274c22952aeaea3fe6aae7c00e9eb4a0a8e63aa2da3c484376ead",
     "provider-source-evidence.json": "60355202cccd7157d3a102a30379f3a5e5aa74de0ce43b77a41a2ff87a35dc12",
 }
@@ -85,6 +89,68 @@ def verify_literal_registries(artifacts: dict[str, Any]) -> None:
         raise ContractValidationError("composition compile-pinned count mismatch")
     if contract["replay_manifest_contract"]["kind_count"] != 42:
         raise ContractValidationError("replay kind compile-pinned count mismatch")
+
+
+def validate_full_section_7_5_external_approval_target_record(
+    record: dict[str, Any], schema: dict[str, Any]
+) -> None:
+    """Validate exact, canonical full-Section-7.5 target admission bytes."""
+    if set(record) != set(schema["required_record_keys"]):
+        raise ValueError("full Section 7.5 target record keys mismatch")
+    if (
+        record["schema_version"] != schema["schema_version"]
+        or record["contract_kind"] != schema["contract_kind"]
+        or record["contract_domain_separator"] != schema["domain_separator"]
+    ):
+        raise ValueError("full Section 7.5 target kind mismatch")
+    for field in ("canonical_contract_bytes_sha256", "target_binding_sha256"):
+        if not isinstance(record[field], str) or not HEX64.fullmatch(record[field]):
+            raise ValueError("full Section 7.5 target hash malformed")
+    try:
+        target_bytes = base64.b64decode(
+            record["canonical_contract_bytes_base64"], validate=True
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("full Section 7.5 target bytes malformed") from exc
+    if digest(target_bytes) != record["canonical_contract_bytes_sha256"]:
+        raise ValueError("target bytes hash mismatch")
+    target_value = strict_load_json_bytes(target_bytes)
+    if canonical_json_bytes(target_value) != target_bytes:
+        raise ValueError("full Section 7.5 target bytes are not canonical")
+    if target_value != {
+        "contract_domain_separator": schema["domain_separator"],
+        "contract_kind": schema["contract_kind"],
+        "schema_version": schema["contract_schema_version"],
+    }:
+        raise ValueError("full Section 7.5 target resolution mismatch")
+    expected_binding = digest(
+        schema["target_binding_domain_separator"].encode("ascii")
+        + b"\x00"
+        + canonical_json_bytes(
+            {key: value for key, value in record.items() if key != "target_binding_sha256"}
+        )
+    )
+    if record["target_binding_sha256"] != expected_binding:
+        raise ValueError("full Section 7.5 target binding mismatch")
+
+
+def verify_section_7_5_external_approval_interface(
+    contract_path: Path = CONTRACT_DIR / "attestation-receipt-contract.json",
+    vectors_path: Path = CONTRACT_DIR / "canonicalization-vectors.json",
+) -> None:
+    """Verify the Section 7.4-owned, nonauthorizing approval interface only."""
+    contract = load_json(contract_path)
+    interface = contract.get("section_7_5_external_approval_interface")
+    if not isinstance(interface, dict):
+        raise ValueError("Section 7.5 external approval interface missing")
+    validate_section_7_5_external_approval_interface(interface)
+    vectors = load_json(vectors_path)
+    if vectors.get("section_7_5_external_approval_interface_evidence") != {
+        "live_external_approval_policy_verifier_record_count": 0,
+        "live_trust_distribution_approval_record_count": 0,
+        "state": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED",
+    }:
+        raise ValueError("Section 7.5 external approval vector evidence mismatch")
 
 
 def _candidate(
@@ -298,6 +364,7 @@ def main() -> int:
         verify_artifact_pins()
         artifacts = validate_current_artifacts()
         verify_literal_registries(artifacts)
+        verify_section_7_5_external_approval_interface()
         if args.candidate:
             from verify_gcp_attestation_receipt_revalidation import (
                 DEFAULT_SECTION71_BUNDLE,

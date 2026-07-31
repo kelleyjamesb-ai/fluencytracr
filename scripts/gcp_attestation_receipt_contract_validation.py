@@ -78,12 +78,145 @@ EXPECTED_CONTRACT_ROOT_KEYS = {
     "composition_contract",
     "replay_manifest_contract",
     "approval_registries",
+    "section_7_5_external_approval_interface",
     "source_trust_condition_registry",
     "decision_algorithms",
     "privacy",
     "future_interfaces",
     "non_authorization",
 }
+
+
+def validate_section_7_5_external_approval_interface(
+    interface: dict[str, Any],
+) -> None:
+    """Validate the nonauthorizing Section 7.4-to-7.5 approval boundary."""
+    expected_keys = {
+        "acceptance_node_conjunction_schema",
+        "authority_effect",
+        "external_approval_policy_verifier_record_schema",
+        "full_section_7_5_target_schema",
+        "held_reason",
+        "live_external_approval_policy_verifier_records",
+        "live_trust_distribution_approval_records",
+        "p14_trust_distribution_approval_schema",
+        "parent_approval_obligations",
+        "schema_version",
+        "trust_lineage_evidence_schema",
+    }
+    _ensure_exact_keys(interface, expected_keys, "Section 7.5 external approval interface")
+    if (
+        interface["schema_version"] != "GCP_SECTION_7_5_EXTERNAL_APPROVAL_INTERFACE_V1"
+        or interface["authority_effect"] != "NONE"
+        or interface["held_reason"]
+        != "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED"
+        or interface["live_external_approval_policy_verifier_records"] != []
+        or interface["live_trust_distribution_approval_records"] != []
+    ):
+        raise ContractValidationError("Section 7.5 external approval interface attempted authority")
+    if interface["parent_approval_obligations"] != [
+        "S75A-P03",
+        "S75A-P05_SECTION_7_4_PARENT_VERIFICATION_TIME",
+        "S75A-P07_SECTION_7_4_PARENT_VERIFICATION_TIME",
+        "S75A-P14",
+        "S75A-P19_SECTION_7_4_APPROVAL_ONLY",
+    ]:
+        raise ContractValidationError("Section 7.4 parent approval obligation mismatch")
+    target = interface["full_section_7_5_target_schema"]
+    expected_target = {
+        "candidate_bytes_required_before_hash_admission": True,
+        "canonicalization_version": "FT_CANONICAL_JSON_V1",
+        "contract_kind": "FULL_SECTION_7_5",
+        "contract_kind_field": "contract_kind",
+        "contract_schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+        "contract_schema_version_field": "schema_version",
+        "domain_separator": "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1",
+        "domain_separator_field": "contract_domain_separator",
+        "required_record_keys": [
+            "schema_version", "contract_kind", "contract_domain_separator",
+            "canonical_contract_bytes_base64", "canonical_contract_bytes_sha256",
+            "target_binding_sha256",
+        ],
+        "schema_version": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_TARGET_V1",
+        "section_7_5a_substitution": "REJECT",
+        "target_binding_domain_separator": "FLUENCYTRACR:GCP_ATTESTATION_RECEIPT:SECTION_7_5_TARGET_BINDING:V1",
+    }
+    if target != expected_target:
+        raise ContractValidationError("full Section 7.5 external approval target schema mismatch")
+    predicates = [
+        "AUTHENTICATED_CURRENT_HEAD", "STRICT_MONOTONIC_PREDECESSOR_LINEAGE",
+        "SHARED_LINEARIZABLE_CHECK_AND_USE", "INDEPENDENT_NONROLLBACKABLE_EXTERNAL_ANCHOR",
+        "STALE_READER_REJECTION", "WHOLE_STATE_RESTORE_DETECTION",
+        "FAIL_CLOSED_BEFORE_COMMIT_RECOVERY", "FAIL_CLOSED_AFTER_COMMIT_RECOVERY",
+    ]
+    approval = interface["external_approval_policy_verifier_record_schema"]
+    if approval != {
+        "canonicalization_version": "FT_CANONICAL_JSON_V1",
+        "current_head_field": "approved_current_head_sha256",
+        "external_authentication_required": True,
+        "owner": "SECTION_7_4",
+        "record_mechanics_owner": "FULL_SECTION_7_5",
+        "required_record_keys": [
+            "schema_version", "target_binding_sha256", "approved_current_head_sha256",
+            "approval_policy_sha256", "verifier_binary_sha256", "verifier_policy_sha256",
+            "external_authentication_evidence_sha256",
+            "external_authentication_verification_sha256",
+            "external_approval_policy_verifier_record_sha256",
+        ],
+        "schema_version": "GCP_SECTION_7_5_EXTERNAL_APPROVAL_POLICY_VERIFIER_RECORD_V1",
+        "section_7_5a_substitution": "REJECT",
+        "target_binding_field": "target_binding_sha256",
+    }:
+        raise ContractValidationError("external approval/policy/verifier schema mismatch")
+    lineage = interface["trust_lineage_evidence_schema"]
+    if lineage != {
+        "owner": "SECTION_7_4",
+        "record_mechanics_owner": "FULL_SECTION_7_5",
+        "required_predicates": predicates,
+        "required_record_keys": [
+            "schema_version", "target_binding_sha256", "record_bound_target_binding_sha256",
+            "current_head_sha256", "predecessor_head_sha256", "anti_rollback_verification_sha256",
+            "linearizable_check_and_use_verification_sha256",
+            "independent_anchor_verification_sha256", "stale_reader_rejection_verification_sha256",
+            "whole_state_restore_detection_verification_sha256",
+            "before_commit_recovery_verification_sha256",
+            "after_commit_recovery_verification_sha256", "trust_lineage_evidence_record_sha256",
+        ],
+        "schema_version": "GCP_SECTION_7_5_TRUST_LINEAGE_EVIDENCE_RECORD_V1",
+        "section_7_5a_substitution": "REJECT",
+    }:
+        raise ContractValidationError("trust lineage evidence schema mismatch")
+    conjunction = interface["acceptance_node_conjunction_schema"]
+    if conjunction != {
+        "acceptance_node_ids": [
+            "trust_distribution_acceptance_hash", "channel_enforcement_acceptance_hash",
+            "pre_quote_transport_acceptance_hash", "terminal_quote_transport_acceptance_hash",
+            "kms_sign_transport_acceptance_hash", "audit_mapping_acceptance_hash",
+            "initial_section_7_4_replay_retention_acceptance_hash",
+            "current_section_7_4_replay_retention_acceptance_hash",
+            "final_consumer_replay_retention_acceptance_hash",
+        ],
+        "all_nodes_required": True,
+        "record_mechanics_owner": "FULL_SECTION_7_5",
+        "required_conjunct_fields": [
+            "target_binding_sha256", "external_approval_policy_verifier_record_sha256",
+            "trust_lineage_evidence_record_sha256", "acceptance_node_evidence_sha256",
+            "acceptance_node_conjunction_sha256",
+        ],
+        "schema_version": "GCP_SECTION_7_5_ACCEPTANCE_NODE_CONJUNCTION_V1",
+        "section_7_5a_substitution": "REJECT",
+    }:
+        raise ContractValidationError("Section 7.5 acceptance-node conjunction schema mismatch")
+    if interface["p14_trust_distribution_approval_schema"] != {
+        "approval_record_schema": "GCP_SECTION_7_5_TRUST_DISTRIBUTION_APPROVAL_V1",
+        "approval_required": True,
+        "authority_effect": "NONE",
+        "owner": "SECTION_7_4",
+        "required_acceptance_node_id": "trust_distribution_acceptance_hash",
+        "required_lineage_predicates": predicates,
+        "section_7_5a_substitution": "REJECT",
+    }:
+        raise ContractValidationError("P14 trust-distribution approval schema mismatch")
 EXPECTED_APPROVAL_REGISTRIES = {
     "challenge_store",
     "consumer_verifier",
@@ -676,6 +809,9 @@ def validate_contract(contract: dict[str, Any]) -> None:
         raise ContractValidationError("approval registry keyset mismatch")
     if any(value != [] for value in contract["approval_registries"].values()):
         raise ContractValidationError("runtime approval registry is not empty")
+    validate_section_7_5_external_approval_interface(
+        contract["section_7_5_external_approval_interface"]
+    )
     if any(contract["non_authorization"].values()):
         raise ContractValidationError("contract attempted authorization")
     if contract["privacy"] != {
@@ -4077,6 +4213,7 @@ def validate_vectors(vectors: dict[str, Any], contract: dict[str, Any]) -> None:
         "synthetic_only",
         "authorization_effect",
         "approval_registries_expected_empty",
+        "section_7_5_external_approval_interface_evidence",
         "primitive_vectors",
         "graph_summary",
         "structural_scenarios",
@@ -4090,6 +4227,12 @@ def validate_vectors(vectors: dict[str, Any], contract: dict[str, Any]) -> None:
         EXPECTED_APPROVAL_REGISTRIES
     ):
         raise ContractValidationError("vector approval registry mismatch")
+    if vectors["section_7_5_external_approval_interface_evidence"] != {
+        "live_external_approval_policy_verifier_record_count": 0,
+        "live_trust_distribution_approval_record_count": 0,
+        "state": "FULL_SECTION_7_5_EXTERNAL_APPROVAL_AND_LIVE_EVIDENCE_REQUIRED",
+    }:
+        raise ContractValidationError("external approval interface vector mismatch")
     bindings = vectors["artifact_bindings"]
     if bindings != {
         "attestation_receipt_contract_sha256": digest(CONTRACT_PATH.read_bytes()),
