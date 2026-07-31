@@ -126,6 +126,8 @@ class RulePacket:
     result_mappings: tuple[ResultMapping, ...]
     environment_table: tuple[Mapping[str, object], ...]
     attack_catalog: tuple[Mapping[str, object], ...]
+    case_catalog: tuple[Mapping[str, object], ...]
+    compile_pinned_roots: tuple[Mapping[str, object], ...]
 
 
 @dataclass(frozen=True)
@@ -360,6 +362,8 @@ def load_packet() -> RulePacket:
         result_mappings=result_mappings,
         environment_table=_mapping_tuple(raw, "environment_table"),
         attack_catalog=_mapping_tuple(raw, "attack_catalog"),
+        case_catalog=_mapping_tuple(raw, "case_catalog"),
+        compile_pinned_roots=_mapping_tuple(raw, "compile_pinned_roots"),
     )
 
 

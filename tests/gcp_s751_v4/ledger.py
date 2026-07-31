@@ -82,7 +82,7 @@ _PARENT_BINDINGS = {
         "SECTION_7_3_ROLE_CAPABILITY_ADMISSION",
     ),
     "attestation-receipt-contract.json": _Binding(
-        "RULE-REPLAY-REGISTRY-APPROVAL",
+        "RULE-ATTESTATION-RECEIPT",
         "SECTION_7_4",
         "SECTION_7_4_ATTESTATION_RECEIPT_CONTRACT",
         "SECTION_7_4",
@@ -112,7 +112,7 @@ _DYNAMIC_BINDINGS = {
         "CANDIDATE_SHAPE_ADMISSION",
     ),
     "signed_context_payload": _Binding(
-        "RULE-SIGNED-CONTEXT",
+        "RULE-SIGNED-PAYLOAD",
         "SECTION_7_5_1",
         "SECTION_7_5_1_SIGNED_CONTEXT_POLICY",
         "TEST_HARNESS",
@@ -121,7 +121,7 @@ _DYNAMIC_BINDINGS = {
         "SIGNED_CONTEXT_BINDING",
     ),
     "signed_context_envelope": _Binding(
-        "RULE-SIGNED-CONTEXT",
+        "RULE-SIGNED-ENVELOPE",
         "SECTION_7_5_1",
         "SECTION_7_5_1_SIGNED_CONTEXT_POLICY",
         "TEST_HARNESS",
@@ -130,7 +130,7 @@ _DYNAMIC_BINDINGS = {
         "SIGNED_ENVELOPE_AUTHENTICATION",
     ),
     "verifier_anchor": _Binding(
-        "RULE-SIGNED-CONTEXT",
+        "RULE-VERIFIER-ANCHOR",
         "SECTION_7_5_1",
         "HARNESS_ADMITTED_OUT_OF_BAND_ANCHOR",
         "TEST_HARNESS",
@@ -139,7 +139,7 @@ _DYNAMIC_BINDINGS = {
         "VERIFIER_ANCHOR_AUTHENTICATION",
     ),
     "nonce_time": _Binding(
-        "RULE-SIGNED-CONTEXT",
+        "RULE-NONCE-TIME",
         "SECTION_7_5_1",
         "SECTION_7_5_1_SIGNED_CONTEXT_POLICY",
         "TEST_HARNESS",
@@ -148,7 +148,7 @@ _DYNAMIC_BINDINGS = {
         "NONCE_AND_TIME_ADMISSION",
     ),
     "replay": _Binding(
-        "RULE-REPLAY-REGISTRY-APPROVAL",
+        "RULE-REPLAY-REGISTRY",
         "SECTION_7_5_1",
         "PROCESS_LOCAL_REPLAY_REGISTRY",
         "FUTURE_SECTION_7_5_1_EVALUATOR",

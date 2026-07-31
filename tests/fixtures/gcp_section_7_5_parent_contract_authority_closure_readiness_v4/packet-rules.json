@@ -15,6 +15,14 @@
     "key_id_binding": "EXACT_P256_SPKI_SHA256_OF_OUT_OF_BAND_ADMITTED_SPKI",
     "preimage": "DOMAIN_SEPARATOR_UTF8 || 0x00 || CANONICAL_JSON(PAYLOAD_WITHOUT_KEY_ID)"
   },
+  "compile_pinned_roots": [
+    {
+      "root_id": "TRUSTED_TIME_POLICY_V1",
+      "schema_version": "GCP_SECTION_7_5_1_TRUSTED_TIME_POLICY_V1",
+      "trusted_time": "2026-07-30T00:05:00Z",
+      "sha256": "ffc6c038f83093df05bf7af5bd7a1320bcbbdc13af125d7a026a1f8433998e71"
+    }
+  ],
   "parent_manifest": [
     {"member_name": "runtime-object-contract.json", "repository_path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json", "sha256": "0babaaef50d2101bcc7096308fe6adef8b56a8ff29f4c9790e2a35735cfa1125", "owner": "Section 7.2"},
     {"member_name": "security-authority-contract.json", "repository_path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json", "sha256": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841", "owner": "Section 7.3"},
@@ -130,15 +138,19 @@
     }
   },
   "rule_templates": [
-    {"rule_id": "RULE-PARENT-MANIFEST", "class": "COMPILE_PINNED", "admission": "ordered exact member-name and SHA-256 comparison", "failure": "REJECT", "attack_ids": ["A006", "A007", "A015", "A016", "A017"]},
-    {"rule_id": "RULE-PARENT-BUNDLE", "class": "AUTHENTICATED_OBSERVATION", "admission": "harness-admitted final directory descriptor; exact regular members; no-follow and pre/post identity", "failure": "REJECT", "attack_ids": ["A014", "A015", "A016", "A017"]},
-    {"rule_id": "RULE-CANDIDATE-SHAPE", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON and closed candidate fields", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A006", "A007", "A018"]},
-    {"rule_id": "RULE-SIGNED-CONTEXT", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON, P-256 DER signature, independently admitted SPKI, candidate digest and policy binding", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A007", "A008", "A009", "A010", "A011", "A012", "A013", "A018"]},
-    {"rule_id": "RULE-REPLAY-REGISTRY-APPROVAL", "class": "AUTHENTICATED_OBSERVATION", "admission": "closed replay, registry, receipt, and approval conjunction", "failure": "REJECT", "attack_ids": ["A006", "A007", "A008", "A009", "A010", "A011", "A015", "A016", "A017"]},
-    {"rule_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "class": "COMPILE_PINNED", "admission": "five projects, fourteen roles, sixteen capabilities, two signer purposes, and governed least fixed point", "failure_condition": "invalid role, capability, HSM-purpose, owner, partition, or fixed-point semantics", "failure": "REJECT", "attack_ids": ["A006", "A007", "A015", "A016", "A017", "A019"]},
+    {"rule_id": "RULE-PARENT-MANIFEST", "class": "COMPILE_PINNED", "admission": "ordered exact member-name and SHA-256 comparison", "failure": "REJECT", "attack_ids": ["A006", "A007"]},
+    {"rule_id": "RULE-PARENT-BUNDLE", "class": "AUTHENTICATED_OBSERVATION", "admission": "harness-admitted final directory descriptor; exact regular members; no-follow and pre/post identity", "failure": "REJECT", "attack_ids": ["A006", "A007", "A014", "A015", "A016", "A017", "M003", "M004"]},
+    {"rule_id": "RULE-CANDIDATE-SHAPE", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical JSON and closed candidate fields", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A005", "A006", "A007", "A018", "A019", "M002"]},
+    {"rule_id": "RULE-SIGNED-PAYLOAD", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical closed payload, candidate digest, policy, mode, time, authority, and parent bindings", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A004", "A006", "A007", "A008", "A009", "A010", "A011", "A012", "A013", "A018", "M001", "M002"]},
+    {"rule_id": "RULE-SIGNED-ENVELOPE", "class": "AUTHENTICATED_OBSERVATION", "admission": "canonical closed envelope and P-256 DER signature", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A005", "A007", "A009", "A010", "A011", "A012", "A018", "M001", "M002"]},
+    {"rule_id": "RULE-VERIFIER-ANCHOR", "class": "AUTHENTICATED_OBSERVATION", "admission": "independently admitted P-256 SPKI and exact key fingerprint", "failure": "REJECT", "attack_ids": ["A007", "A009", "A010", "A012", "A018", "M001", "M002"]},
+    {"rule_id": "RULE-NONCE-TIME", "class": "AUTHENTICATED_OBSERVATION", "admission": "closed nonce and compile-pinned trusted-time policy binding", "failure": "REJECT", "attack_ids": ["A001", "A002", "A003", "A009", "A011", "A012", "A018", "M001", "M002"]},
+    {"rule_id": "RULE-ATTESTATION-RECEIPT", "class": "COMPILE_PINNED", "admission": "exact Section 7.4 receipt and approval parent", "failure": "REJECT", "attack_ids": ["A006", "A007", "A008", "A009"]},
+    {"rule_id": "RULE-REPLAY-REGISTRY", "class": "AUTHENTICATED_OBSERVATION", "admission": "process-local nonce admission after registry, receipt, and approval conjunction", "failure": "REJECT", "attack_ids": ["A008", "A009"]},
+    {"rule_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "class": "COMPILE_PINNED", "admission": "five projects, fourteen roles, sixteen capabilities, two signer purposes, and governed least fixed point", "failure_condition": "invalid role, capability, HSM-purpose, owner, partition, or fixed-point semantics", "failure": "REJECT", "attack_ids": ["A006", "A007", "A019"]},
     {"rule_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "class": "COMPILE_PINNED", "admission": "all controller edges are known and viewable", "failure_condition": "unknown or unviewable controller edge", "failure": "HOLD", "attack_ids": ["A018", "A019"]},
-    {"rule_id": "RULE-PRIVACY-NONAUTHORIZATION", "class": "COMPILE_PINNED", "admission": "closed strings and fixed result projection", "failure": "REJECT", "attack_ids": ["A018", "A019"]},
-    {"rule_id": "RULE-CURRENT-BLOCKERS", "class": "OPAQUE_LATER_SECTION", "admission": "all current parent obligations remain OPEN_BLOCKING", "failure": "HOLD", "attack_ids": ["A006", "A007", "A015", "A016", "A017", "A019"]}
+    {"rule_id": "RULE-PRIVACY-NONAUTHORIZATION", "class": "COMPILE_PINNED", "admission": "closed strings and fixed result projection", "failure": "REJECT", "attack_ids": ["A018"]},
+    {"rule_id": "RULE-CURRENT-BLOCKERS", "class": "OPAQUE_LATER_SECTION", "admission": "all current parent obligations remain OPEN_BLOCKING", "failure": "HOLD", "attack_ids": ["A006", "A007", "A019"]}
   ],
   "oracle_precedence": ["candidate_canonical_shape", "envelope_canonical_shape", "p256_anchor_authentication", "signed_digest_policy_mode_time_authority_binding", "replay_registry_receipt_approval", "parent_bundle_admission", "section_7_3_role_capability_controller_owner", "privacy_and_nonauthorization", "environment_claim_grade", "closed_result_projection"],
   "result_mappings": [
@@ -169,6 +181,300 @@
     {"environment": "LIVE_RUNTIME", "resource_state": "PARTIAL", "command": "NOT_AUTHORIZED", "expected_exit": "NOT_RUN", "expected_disposition": "HOLD:LIVE_RUNTIME_NOT_AUTHORIZED", "claim_grade": "DESIGN_ONLY", "authority_effect": "NONE"},
     {"environment": "LIVE_RUNTIME", "resource_state": "CORRUPT", "command": "NOT_AUTHORIZED", "expected_exit": "NOT_RUN", "expected_disposition": "HOLD:LIVE_RUNTIME_NOT_AUTHORIZED", "claim_grade": "DESIGN_ONLY", "authority_effect": "NONE"},
     {"environment": "LIVE_RUNTIME", "resource_state": "EXACT", "command": "NOT_AUTHORIZED", "expected_exit": "NOT_RUN", "expected_disposition": "HOLD:LIVE_RUNTIME_NOT_AUTHORIZED", "claim_grade": "DESIGN_ONLY", "authority_effect": "NONE"}
+  ],
+  "case_catalog": [
+    {
+      "attack_id": "A001", "generator": "RAW_CANDIDATE_UNKNOWN_FIELD", "mutation_id": "INSERT_UNKNOWN_FIELD_AT_CANDIDATE_ROOT", "immutable_root_id": "SCHEMA:candidate", "immutable_root_sha256": "714ff9bd84604d14bf48af5648580b41840abd3eb85c23bff5ed153b528e9139", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a001-raw-candidate-unknown-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A001", "generator": "RAW_PAYLOAD_UNKNOWN_FIELD", "mutation_id": "INSERT_UNKNOWN_FIELD_AT_SIGNED_PAYLOAD_ROOT", "immutable_root_id": "SCHEMA:signed_context_payload", "immutable_root_sha256": "26c6725e55216a150913e3e6c431be4f4909a403b1a0a7e3e44b28caa586645b", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a001-raw-payload-unknown-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A001", "generator": "RAW_ENVELOPE_UNKNOWN_FIELD", "mutation_id": "INSERT_UNKNOWN_FIELD_AT_ENVELOPE_ROOT", "immutable_root_id": "SCHEMA:signed_context_envelope", "immutable_root_sha256": "30fee1161bee3fb8036a2ebfc6141664e76574b489542fb7f0d234bdb378a793", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a001-raw-envelope-unknown-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A001", "generator": "RAW_NONCE_UNKNOWN_FIELD", "mutation_id": "INSERT_UNKNOWN_FIELD_AT_NONCE_TIME_ROOT", "immutable_root_id": "SCHEMA:nonce_time", "immutable_root_sha256": "a1f9bbdc6373e611123bad27d89d6d85b852064adbcb8f799cb19fec4d9456c7", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a001-raw-nonce-unknown-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A002", "generator": "RAW_CANDIDATE_MISSING_FIELD", "mutation_id": "DELETE_CANDIDATE_REQUESTED_ACTION", "immutable_root_id": "SCHEMA:candidate", "immutable_root_sha256": "714ff9bd84604d14bf48af5648580b41840abd3eb85c23bff5ed153b528e9139", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a002-raw-candidate-missing-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A002", "generator": "RAW_PAYLOAD_MISSING_FIELD", "mutation_id": "DELETE_PAYLOAD_POLICY_ID", "immutable_root_id": "SCHEMA:signed_context_payload", "immutable_root_sha256": "26c6725e55216a150913e3e6c431be4f4909a403b1a0a7e3e44b28caa586645b", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a002-raw-payload-missing-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A002", "generator": "RAW_ENVELOPE_MISSING_FIELD", "mutation_id": "DELETE_ENVELOPE_ALGORITHM", "immutable_root_id": "SCHEMA:signed_context_envelope", "immutable_root_sha256": "30fee1161bee3fb8036a2ebfc6141664e76574b489542fb7f0d234bdb378a793", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a002-raw-envelope-missing-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A002", "generator": "RAW_NONCE_MISSING_FIELD", "mutation_id": "DELETE_NONCE_TIME_TRUSTED_TIME", "immutable_root_id": "SCHEMA:nonce_time", "immutable_root_sha256": "a1f9bbdc6373e611123bad27d89d6d85b852064adbcb8f799cb19fec4d9456c7", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a002-raw-nonce-missing-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A003", "generator": "RAW_CANDIDATE_WRONG_TYPE", "mutation_id": "SET_CANDIDATE_REQUESTED_ACTION_INTEGER", "immutable_root_id": "SCHEMA:candidate", "immutable_root_sha256": "714ff9bd84604d14bf48af5648580b41840abd3eb85c23bff5ed153b528e9139", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a003-raw-candidate-wrong-type",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A003", "generator": "RAW_PAYLOAD_WRONG_TYPE", "mutation_id": "SET_PAYLOAD_POLICY_ID_INTEGER", "immutable_root_id": "SCHEMA:signed_context_payload", "immutable_root_sha256": "26c6725e55216a150913e3e6c431be4f4909a403b1a0a7e3e44b28caa586645b", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a003-raw-payload-wrong-type",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A003", "generator": "RAW_ENVELOPE_WRONG_TYPE", "mutation_id": "SET_ENVELOPE_ALGORITHM_INTEGER", "immutable_root_id": "SCHEMA:signed_context_envelope", "immutable_root_sha256": "30fee1161bee3fb8036a2ebfc6141664e76574b489542fb7f0d234bdb378a793", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a003-raw-envelope-wrong-type",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A003", "generator": "RAW_NONCE_WRONG_TYPE", "mutation_id": "SET_NONCE_TIME_TRUSTED_TIME_INTEGER", "immutable_root_id": "SCHEMA:nonce_time", "immutable_root_sha256": "a1f9bbdc6373e611123bad27d89d6d85b852064adbcb8f799cb19fec4d9456c7", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a003-raw-nonce-wrong-type",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A004", "generator": "CANDIDATE_NESTED_EXTRA_FIELD", "mutation_id": "INSERT_UNKNOWN_FIELD_AT_CANDIDATE_OBSERVATION", "immutable_root_id": "SCHEMA:candidate", "immutable_root_sha256": "714ff9bd84604d14bf48af5648580b41840abd3eb85c23bff5ed153b528e9139", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a004-candidate-nested-extra-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A004", "generator": "PAYLOAD_NESTED_EXTRA_FIELD", "mutation_id": "INSERT_UNKNOWN_FIELD_AT_PARENT_MANIFEST_ENTRY", "immutable_root_id": "SCHEMA:signed_context_payload", "immutable_root_sha256": "26c6725e55216a150913e3e6c431be4f4909a403b1a0a7e3e44b28caa586645b", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a004-payload-nested-extra-field",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A005", "generator": "CANDIDATE_TRUNCATION", "mutation_id": "TRUNCATE_CANDIDATE_FINAL_BYTE", "immutable_root_id": "SCHEMA:candidate", "immutable_root_sha256": "714ff9bd84604d14bf48af5648580b41840abd3eb85c23bff5ed153b528e9139", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a005-candidate-truncation",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A005", "generator": "ENVELOPE_TRUNCATION", "mutation_id": "TRUNCATE_ENVELOPE_FINAL_BYTE", "immutable_root_id": "SCHEMA:signed_context_envelope", "immutable_root_sha256": "30fee1161bee3fb8036a2ebfc6141664e76574b489542fb7f0d234bdb378a793", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a005-envelope-truncation",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A006", "generator": "CANDIDATE_SUBSTITUTION", "mutation_id": "SUBSTITUTE_ONE_CANDIDATE_ALIAS", "immutable_root_id": "SCHEMA:candidate", "immutable_root_sha256": "714ff9bd84604d14bf48af5648580b41840abd3eb85c23bff5ed153b528e9139", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a006-candidate-substitution",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A006", "generator": "PAYLOAD_SUBSTITUTION", "mutation_id": "SUBSTITUTE_PAYLOAD_CANDIDATE_HASH", "immutable_root_id": "SCHEMA:signed_context_payload", "immutable_root_sha256": "26c6725e55216a150913e3e6c431be4f4909a403b1a0a7e3e44b28caa586645b", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a006-payload-substitution",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A006", "generator": "EACH_PARENT_SUBSTITUTION", "mutation_id": "SUBSTITUTE_FIRST_SCALAR_IN_EACH_PARENT", "immutable_root_id": "EXACT_PARENT_MANIFEST", "immutable_root_sha256": "0c98b6ae4af0732a5854f32ff3b94beab98bf61621b2af3a4933274fd99892cf", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a006-each-parent-substitution-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [
+        {"resource": "runtime-object-contract.json", "pointer_rule": "ALL", "template_id": "RULE-PARENT-MANIFEST", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "security-authority-contract.json", "pointer_rule": "ALL", "template_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "role-capability-matrix.json", "pointer_rule": "ALL", "template_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "attestation-receipt-contract.json", "pointer_rule": "ALL", "template_id": "RULE-ATTESTATION-RECEIPT", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "constraints-open-obligations-contract.json", "pointer_rule": "ALL", "template_id": "RULE-CURRENT-BLOCKERS", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}
+      ]
+    },
+    {
+      "attack_id": "A007", "generator": "CANDIDATE_SPLICE", "mutation_id": "SPLICE_INDEPENDENT_VALID_CANDIDATE_UNDER_ORIGINAL_ENVELOPE", "immutable_root_id": "SCHEMA:candidate", "immutable_root_sha256": "714ff9bd84604d14bf48af5648580b41840abd3eb85c23bff5ed153b528e9139", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a007-candidate-splice",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A007", "generator": "PAYLOAD_SPLICE", "mutation_id": "SPLICE_COMPLETE_INDEPENDENT_PAYLOAD_UNDER_ORIGINAL_SIGNATURE", "immutable_root_id": "SCHEMA:signed_context_payload", "immutable_root_sha256": "26c6725e55216a150913e3e6c431be4f4909a403b1a0a7e3e44b28caa586645b", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a007-payload-splice",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A007", "generator": "SIGNATURE_SPLICE", "mutation_id": "SPLICE_INDEPENDENT_SIGNATURE_UNDER_ORIGINAL_PAYLOAD", "immutable_root_id": "SIGNATURE_PROJECTION", "immutable_root_sha256": "b00ca8e3c554d37b1d188f70a788cc80f020d5070819f9841df3471923d48562", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a007-signature-splice",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A007", "generator": "EACH_PARENT_SPLICE", "mutation_id": "SPLICE_EXACT_BYTES_FROM_DIFFERENT_PARENT_MEMBER", "immutable_root_id": "EXACT_PARENT_MANIFEST", "immutable_root_sha256": "0c98b6ae4af0732a5854f32ff3b94beab98bf61621b2af3a4933274fd99892cf", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a007-each-parent-splice-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [
+        {"resource": "runtime-object-contract.json", "pointer_rule": "ALL", "template_id": "RULE-PARENT-MANIFEST", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "security-authority-contract.json", "pointer_rule": "ALL", "template_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "role-capability-matrix.json", "pointer_rule": "ALL", "template_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "attestation-receipt-contract.json", "pointer_rule": "ALL", "template_id": "RULE-ATTESTATION-RECEIPT", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "constraints-open-obligations-contract.json", "pointer_rule": "ALL", "template_id": "RULE-CURRENT-BLOCKERS", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}
+      ]
+    },
+    {
+      "attack_id": "A008", "generator": "FORGED_RECEIPT", "mutation_id": "RESEAL_FORGED_RECEIPT_HASH", "immutable_root_id": "PARENT:attestation-receipt-contract.json", "immutable_root_sha256": "88c58b9a07ab84fffe6a98f6c14561b522a18428e355ee2d8a636fd901d85200", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a008-forged-receipt",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CONTEXT_CONJUNCTION", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "replay", "pointer_rule": "ALL", "template_id": "RULE-REPLAY-REGISTRY", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "attestation-receipt-contract.json", "pointer_rule": "ALL", "template_id": "RULE-ATTESTATION-RECEIPT", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A008", "generator": "FORGED_PROVENANCE", "mutation_id": "RESEAL_FORGED_HEAD_AND_ANTI_ROLLBACK", "immutable_root_id": "SIGNATURE_PROJECTION", "immutable_root_sha256": "b00ca8e3c554d37b1d188f70a788cc80f020d5070819f9841df3471923d48562", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a008-forged-provenance",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CONTEXT_CONJUNCTION", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "replay", "pointer_rule": "ALL", "template_id": "RULE-REPLAY-REGISTRY", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A009", "generator": "PROCESS_LOCAL_REPLAY", "mutation_id": "REUSE_IDENTICAL_NORMATIVE_INPUTS_IN_ONE_SESSION", "immutable_root_id": "SCHEMA:replay_record", "immutable_root_sha256": "ed9f641cf28f507b55b0044ed4451d5cd51418fefa29d423af96f90b11bc0d51", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a009-process-local-replay",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "REPLAY_DETECTED", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "replay", "pointer_rule": "ALL", "template_id": "RULE-REPLAY-REGISTRY", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "attestation-receipt-contract.json", "pointer_rule": "ALL", "template_id": "RULE-ATTESTATION-RECEIPT", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A010", "generator": "ALTERNATE_ANCHOR_FULL_RESEAL", "mutation_id": "RESEAL_COMPLETE_CLOSURE_WITH_UNADMITTED_ALTERNATE_ANCHOR", "immutable_root_id": "SIGNATURE_PROJECTION", "immutable_root_sha256": "b00ca8e3c554d37b1d188f70a788cc80f020d5070819f9841df3471923d48562", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a010-alternate-anchor-full-reseal",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A011", "generator": "ALL_TIME_FIELDS_RESEAL", "mutation_id": "RESEAL_ALL_TIME_FIELDS_WITH_ORIGINAL_BATCH_ANCHOR", "immutable_root_id": "TRUSTED_TIME_POLICY_V1", "immutable_root_sha256": "ffc6c038f83093df05bf7af5bd7a1320bcbbdc13af125d7a026a1f8433998e71", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a011-all-time-fields-reseal",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A012", "generator": "STALE_TIME", "mutation_id": "RESEAL_TRUSTED_TIME_BEFORE_WINDOW", "immutable_root_id": "TRUSTED_TIME_POLICY_V1", "immutable_root_sha256": "ffc6c038f83093df05bf7af5bd7a1320bcbbdc13af125d7a026a1f8433998e71", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a012-stale-time",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A012", "generator": "FUTURE_TIME", "mutation_id": "RESEAL_TRUSTED_TIME_AFTER_WINDOW", "immutable_root_id": "TRUSTED_TIME_POLICY_V1", "immutable_root_sha256": "ffc6c038f83093df05bf7af5bd7a1320bcbbdc13af125d7a026a1f8433998e71", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a012-future-time",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A013", "generator": "MODE_CONFUSION", "mutation_id": "RESEAL_MODE_OUTSIDE_CLOSED_MODE_SET", "immutable_root_id": "SCHEMA:signed_context_payload", "immutable_root_sha256": "26c6725e55216a150913e3e6c431be4f4909a403b1a0a7e3e44b28caa586645b", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a013-mode-confusion",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A014", "generator": "AMBIENT_FALLBACK", "mutation_id": "SUPPLY_EMPTY_ADMITTED_DIRECTORY_WITH_NO_AMBIENT_FALLBACK", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a014-ambient-fallback",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A015", "generator": "EACH_PARENT_MISSING", "mutation_id": "REMOVE_EACH_PARENT_MEMBER", "immutable_root_id": "EXACT_PARENT_MANIFEST", "immutable_root_sha256": "0c98b6ae4af0732a5854f32ff3b94beab98bf61621b2af3a4933274fd99892cf", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a015-each-parent-missing-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A016", "generator": "EACH_PARENT_CORRUPT", "mutation_id": "CORRUPT_EACH_PARENT_MEMBER_BYTES", "immutable_root_id": "EXACT_PARENT_MANIFEST", "immutable_root_sha256": "0c98b6ae4af0732a5854f32ff3b94beab98bf61621b2af3a4933274fd99892cf", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a016-each-parent-corrupt-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A016", "generator": "EXTRA_MEMBER", "mutation_id": "INSERT_UNDECLARED_DIRECTORY_MEMBER", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a016-extra-member",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A016", "generator": "NONREGULAR_MEMBER", "mutation_id": "REPLACE_PARENT_MEMBER_WITH_DIRECTORY", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a016-nonregular-member",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A016", "generator": "SYMLINK_MEMBER", "mutation_id": "REPLACE_PARENT_MEMBER_WITH_SYMLINK", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a016-symlink-member",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A016", "generator": "REPLACED_MEMBER", "mutation_id": "ADMIT_CAPABILITY_THEN_ATOMICALLY_REPLACE_PARENT_MEMBER", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a016-replaced-member",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A017", "generator": "CONCURRENT_REPLACEMENT", "mutation_id": "REPLACE_PARENT_MEMBER_DURING_GOVERNED_READ", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a017-concurrent-replacement",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A018", "generator": "EVERY_PUBLIC_STRING_PATH", "mutation_id": "INJECT_IDENTIFIER_AT_EVERY_PUBLIC_STRING_PATH", "immutable_root_id": "PUBLIC_BOUNDARY_SCHEMA_SET_V4", "immutable_root_sha256": "b335c8256710d6e3530c0b5cfebc64b3be2e348a5171dc630d3ea6a642e888d1", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a018-every-public-string-path-{boundary}-{ordinal}",
+      "expected_results": [
+        {"test_id_rule": "EXACT:a018-every-public-string-path-candidate-1", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-candidate-2", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-candidate-3", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-candidate-4", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-candidate-5", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-candidate-6", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNED_CONTEXT_BINDING", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-candidate-7", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_CANDIDATE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-1", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-2", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-3", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-4", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-5", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-6", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-7", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-8", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-9", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-10", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-11", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-12", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-13", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-14", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "EXACT:a018-every-public-string-path-signed-context-payload-15", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "PREFIX:a018-every-public-string-path-signed-context-envelope-", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "PREFIX:a018-every-public-string-path-verifier-anchor-", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SIGNATURE", "authority_effect": "NONE", "claim_grade": "NONE"},
+        {"test_id_rule": "PREFIX:a018-every-public-string-path-nonce-time-", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_ENVELOPE_SHAPE", "authority_effect": "NONE", "claim_grade": "NONE"}
+      ],
+      "ledger_bindings": [
+        {"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "candidate", "pointer_rule": "PREFIX:/observation/controller_edges", "template_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "candidate", "pointer_rule": "PREFIX:/observation/controller_cycles", "template_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"},
+        {"resource": "result", "pointer_rule": "ALL", "template_id": "RULE-PRIVACY-NONAUTHORIZATION", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}
+      ]
+    },
+    {
+      "attack_id": "A019", "generator": "EVERY_SECTION_7_3_ROLE", "mutation_id": "SUBSTITUTE_EACH_GOVERNED_ROLE_IN_SIGNED_CANDIDATE", "immutable_root_id": "PARENT:role-capability-matrix.json", "immutable_root_sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a019-every-section-7-3-role-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_SECTION_7_3_AUTHORITY", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "candidate", "pointer_rule": "PREFIX:/observation/controller_edges", "template_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "candidate", "pointer_rule": "PREFIX:/observation/controller_cycles", "template_id": "RULE-SECTION-7-3-UNKNOWN-CONTROLLER-EDGE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "role-capability-matrix.json", "pointer_rule": "ALL", "template_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A019", "generator": "EVERY_SECTION_7_3_CAPABILITY", "mutation_id": "SUBSTITUTE_EACH_COMPILE_PINNED_CAPABILITY_PARENT_VALUE", "immutable_root_id": "PARENT:role-capability-matrix.json", "immutable_root_sha256": "90209f2c60018205a3479ca38981cf8738d17813fa4e6ade4b72407bf4a8ca17", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a019-every-section-7-3-capability-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "role-capability-matrix.json", "pointer_rule": "ALL", "template_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A019", "generator": "EVERY_SECTION_7_3_HSM_PURPOSE", "mutation_id": "SUBSTITUTE_EACH_COMPILE_PINNED_HSM_PURPOSE_PARENT_VALUE", "immutable_root_id": "PARENT:security-authority-contract.json", "immutable_root_sha256": "b0ae3db7e424f458e4a304c804aa320f3679fd47b9ced756fb10dc9f20aa3841", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a019-every-section-7-3-hsm-purpose-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "security-authority-contract.json", "pointer_rule": "ALL", "template_id": "RULE-SECTION-7-3-AUTHORITY-INVALID", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "A019", "generator": "EVERY_PREREQUISITE_OWNER", "mutation_id": "SUBSTITUTE_EACH_COMPILE_PINNED_PREREQUISITE_OWNER_PARENT_VALUE", "immutable_root_id": "PARENT:constraints-open-obligations-contract.json", "immutable_root_sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "a019-every-prerequisite-owner-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}],
+      "ledger_bindings": [{"resource": "constraints-open-obligations-contract.json", "pointer_rule": "ALL", "template_id": "RULE-CURRENT-BLOCKERS", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "M001", "generator": "EPHEMERAL_KEY_EQUIVALENCE", "mutation_id": "VARY_EPHEMERAL_KEY_AND_SIGNATURE_ONLY", "immutable_root_id": "SIGNATURE_PROJECTION", "immutable_root_sha256": "b00ca8e3c554d37b1d188f70a788cc80f020d5070819f9841df3471923d48562", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "m001-ephemeral-key-equivalence-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "HOLD", "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN", "authority_effect": "NONE", "claim_grade": "STRUCTURAL_ONLY"}],
+      "ledger_bindings": [{"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "M002", "generator": "SYNTHETIC_ALIAS_EQUIVALENCE", "mutation_id": "VARY_CONTEXT_BOUND_SYNTHETIC_ALIAS_ONLY", "immutable_root_id": "PUBLIC_BOUNDARY_SCHEMA_SET_V4", "immutable_root_sha256": "b335c8256710d6e3530c0b5cfebc64b3be2e348a5171dc630d3ea6a642e888d1", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "m002-synthetic-alias-equivalence-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "HOLD", "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN", "authority_effect": "NONE", "claim_grade": "STRUCTURAL_ONLY"}],
+      "ledger_bindings": [{"resource": "candidate", "pointer_rule": "ALL", "template_id": "RULE-CANDIDATE-SHAPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_payload", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-PAYLOAD", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "signed_context_envelope", "pointer_rule": "ALL", "template_id": "RULE-SIGNED-ENVELOPE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "verifier_anchor", "pointer_rule": "ALL", "template_id": "RULE-VERIFIER-ANCHOR", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}, {"resource": "nonce_time", "pointer_rule": "ALL", "template_id": "RULE-NONCE-TIME", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "M003", "generator": "DESCRIPTOR_NUMBER_EQUIVALENCE", "mutation_id": "VARY_NONSEMANTIC_DESCRIPTOR_NUMBER_ONLY", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "m003-descriptor-number-equivalence-{ordinal}",
+      "expected_results": [{"test_id_rule": "ALL", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "HOLD", "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN", "authority_effect": "NONE", "claim_grade": "STRUCTURAL_ONLY"}],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    },
+    {
+      "attack_id": "M004", "generator": "SAME_NORMALIZED_DESCRIPTOR_OPPOSING_OUTCOMES", "mutation_id": "PRESENT_EXACT_AND_CORRUPT_SEMANTICS_AT_FD_751", "immutable_root_id": "SCHEMA:parent_bundle_descriptor", "immutable_root_sha256": "923a6995f6a47224444266eb11f2cef19a8ea172e61ba0d75427194fa23a3e7c", "oracle_id": "REFERENCE_ORACLE_V4", "test_id_template": "m004-same-normalized-descriptor-opposing-outcomes-{semantic}",
+      "expected_results": [
+        {"test_id_rule": "EXACT:m004-same-normalized-descriptor-opposing-outcomes-exact", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "HOLD", "reason": "CURRENT_PARENT_OBLIGATIONS_OPEN", "authority_effect": "NONE", "claim_grade": "STRUCTURAL_ONLY"},
+        {"test_id_rule": "EXACT:m004-same-normalized-descriptor-opposing-outcomes-corrupt", "schema_version": "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4", "decision": "REJECT", "reason": "INVALID_PARENT_RESOURCE_SET", "authority_effect": "NONE", "claim_grade": "NONE"}
+      ],
+      "ledger_bindings": [{"resource": "bundle_capability", "pointer_rule": "ALL", "template_id": "RULE-PARENT-BUNDLE", "rule_id_rule": "SHA256_RESOURCE_NUL_POINTER_V1"}]
+    }
   ],
   "attack_catalog": [
     {"attack_id": "A001", "class": "UNKNOWN_FIELD", "generators": ["RAW_CANDIDATE_UNKNOWN_FIELD", "RAW_PAYLOAD_UNKNOWN_FIELD", "RAW_ENVELOPE_UNKNOWN_FIELD", "RAW_NONCE_UNKNOWN_FIELD"]},

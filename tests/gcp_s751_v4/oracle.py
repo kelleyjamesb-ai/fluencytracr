@@ -522,6 +522,7 @@ def _signed_bindings_are_valid(
     valid_from = _parse_utc(nonce_time["valid_from"])
     valid_until = _parse_utc(nonce_time["valid_until"])
     trusted_time = _parse_utc(nonce_time["trusted_time"])
+    compile_pinned_trusted_time = _compile_pinned_trusted_time(packet)
     role_matrix_sha256 = next(
         entry.sha256
         for entry in packet.parent_manifest
@@ -534,12 +535,44 @@ def _signed_bindings_are_valid(
         and payload["mode"] in _MODES
         and valid_from < valid_until
         and valid_from <= trusted_time <= valid_until
+        and trusted_time == compile_pinned_trusted_time
         and payload["key_id"] == anchor_key_id(anchor_spki)
         and payload["signer_purpose"] in _SIGNER_PURPOSES
         and payload["authority_effect"] == "NONE"
         and payload["parent_manifest"] == expected_manifest
         and payload["role_matrix_sha256"] == role_matrix_sha256
     )
+
+
+def _compile_pinned_trusted_time(packet: RulePacket) -> datetime:
+    roots = [
+        root
+        for root in packet.compile_pinned_roots
+        if root.get("root_id") == "TRUSTED_TIME_POLICY_V1"
+    ]
+    if len(roots) != 1:
+        raise ValueError("trusted time policy root is not unique")
+    root = roots[0]
+    if set(root) != {
+        "root_id",
+        "schema_version",
+        "trusted_time",
+        "sha256",
+    }:
+        raise ValueError("trusted time policy root is not closed")
+    projected = {
+        "schema_version": root["schema_version"],
+        "trusted_time": root["trusted_time"],
+    }
+    if (
+        root["schema_version"]
+        != "GCP_SECTION_7_5_1_TRUSTED_TIME_POLICY_V1"
+        or not isinstance(root["sha256"], str)
+        or hashlib.sha256(canonical_json(projected)).hexdigest()
+        != root["sha256"]
+    ):
+        raise ValueError("trusted time policy root does not authenticate")
+    return _parse_utc(root["trusted_time"])
 
 
 def _context_conjunction_is_valid(

@@ -9,13 +9,14 @@ from __future__ import annotations
 
 from base64 import b64encode
 from contextlib import contextmanager
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 import os
 from pathlib import Path
 import secrets
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -23,6 +24,13 @@ import threading
 from typing import Callable, ContextManager, Iterator, Mapping, Sequence
 
 from tests.gcp_s751_v4.bundle import open_harness_bundle
+from tests.gcp_s751_v4.corpus_declarations import (
+    CaseDeclaration,
+    declared_expected_result,
+    declared_ledger_ids,
+    load_case_declarations,
+    reconcile_case_declarations,
+)
 from tests.gcp_s751_v4.crypto import sign_ephemeral_batch
 from tests.gcp_s751_v4.ledger import build_rule_ledger
 from tests.gcp_s751_v4.model import (
@@ -72,12 +80,31 @@ _REFERENCE_CHILD_SOURCE = "\n".join(
 class PreparedCase:
     case_id: str
     attack_id: str
+    generator: str
     candidate_bytes: bytes
     envelope_bytes: bytes
     admitted_anchor_spki: bytes
     bundle_factory: Callable[[], ContextManager[int]]
     expected: EvaluationResult
+    expected_sequence: tuple[EvaluationResult, ...]
+    oracle_id: str
+    mutation_evidence: MutationEvidence
     covered_rule_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class MutationEvidence:
+    mutation_id: str
+    immutable_root_id: str
+    immutable_root_sha256: str
+    source_sha256: str
+    observed_sha256: str
+    observed_resources: tuple[str, ...]
+    source_object_sha256: str
+    source_envelope_sha256: str
+    source_anchor_sha256: str
+    source_result: EvaluationResult | None
+    observed_ordering: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -104,11 +131,18 @@ class EnvironmentCell:
 class _CaseDraft:
     case_id: str
     attack_id: str
+    generator: str
     candidate_bytes: bytes
     envelope_bytes: bytes
     admitted_anchor_spki: bytes
     bundle_factory: Callable[[], ContextManager[int]]
     target_resources: tuple[str, ...]
+    source_sha256: str
+    declaration: CaseDeclaration | None
+    source_object_sha256: str = ""
+    source_envelope_sha256: str = ""
+    source_anchor_sha256: str = ""
+    source_result: EvaluationResult | None = None
 
 
 @dataclass(frozen=True)
@@ -151,12 +185,23 @@ def build_fd_discriminator_cases() -> tuple[PreparedCase, PreparedCase]:
 
 def evaluate_reference_case(case: PreparedCase) -> EvaluationResult:
     """Evaluate only normative case inputs, never case metadata."""
+    return evaluate_reference_sequence(case)[-1]
+
+
+def evaluate_reference_sequence(
+    case: PreparedCase,
+) -> tuple[EvaluationResult, ...]:
+    """Evaluate one call, or the declared two-call replay session."""
+    oracle = ReferenceOracle()
     with case.bundle_factory() as reference_fd:
-        return ReferenceOracle().evaluate(
-            candidate_bytes=case.candidate_bytes,
-            signed_context_envelope_bytes=case.envelope_bytes,
-            verifier_anchor_spki=case.admitted_anchor_spki,
-            trusted_parent_bundle_fd=reference_fd,
+        return tuple(
+            oracle.evaluate(
+                candidate_bytes=case.candidate_bytes,
+                signed_context_envelope_bytes=case.envelope_bytes,
+                verifier_anchor_spki=case.admitted_anchor_spki,
+                trusted_parent_bundle_fd=reference_fd,
+            )
+            for _ in case.expected_sequence
         )
 
 
@@ -263,10 +308,35 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
     candidate = _valid_candidate(packet)
     candidate_bytes = canonical_json(candidate)
     base_payload = _base_payload(packet, candidate_bytes, "CLEAN_CI")
-    base_candidate, base_envelope, base_anchor = _sign_material(
-        packet, candidate_bytes, base_payload
+    time_reseal_payload = _base_payload(
+        packet, candidate_bytes, "CLEAN_CI"
     )
+    time_reseal_payload["nonce_time"] = {
+        "nonce": secrets.token_hex(16),
+        "valid_from": "2026-07-31T00:00:00Z",
+        "valid_until": "2026-07-31T00:10:00Z",
+        "trusted_time": "2026-07-31T00:05:00Z",
+    }
+    base_material, time_reseal_material = _sign_material_batch(
+        packet,
+        candidate_bytes,
+        (base_payload, time_reseal_payload),
+    )
+    base_candidate, base_envelope, base_anchor = base_material
     exact_factory = _bundle_factory(packet, "EXACT")
+    rows = build_rule_ledger(packet)
+    declarations = load_case_declarations(packet)
+    reconcile_case_declarations(packet, rows, declarations)
+    declarations_by_key = {
+        (declaration.attack_id, declaration.generator): declaration
+        for declaration in declarations
+    }
+    source_sha256 = _normative_source_sha256(
+        packet,
+        base_candidate,
+        base_envelope,
+        base_anchor,
+    )
 
     attack_drafts: list[_CaseDraft] = []
     metamorphic_drafts: dict[str, list[_CaseDraft]] = {
@@ -281,6 +351,7 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
         attack_id = _required_attack_text(attack, "attack_id")
         generators = _attack_generators(attack)
         for generator in generators:
+            declaration = declarations_by_key[(attack_id, generator)]
             generated = _generate_cases(
                 packet=packet,
                 attack_id=attack_id,
@@ -290,6 +361,9 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
                 base_envelope=base_envelope,
                 base_anchor=base_anchor,
                 exact_factory=exact_factory,
+                source_sha256=source_sha256,
+                declaration=declaration,
+                time_reseal_material=time_reseal_material,
             )
             if attack_id in metamorphic_drafts:
                 metamorphic_drafts[attack_id].extend(generated)
@@ -298,7 +372,7 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
             else:
                 attack_drafts.extend(generated)
 
-    scored_attacks = [_score_draft(draft) for draft in attack_drafts]
+    scored_attacks = [_score_draft(draft, rows) for draft in attack_drafts]
     scored_groups: list[MetamorphicGroup] = []
     varied = {
         "M001": ("ephemeral_key", "signature"),
@@ -307,7 +381,8 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
     }
     for attack_id in ("M001", "M002", "M003"):
         equivalents = tuple(
-            _score_draft(draft) for draft in metamorphic_drafts[attack_id]
+            _score_draft(draft, rows)
+            for draft in metamorphic_drafts[attack_id]
         )
         if len(equivalents) < 2:
             raise ValueError("metamorphic generator did not create equivalents")
@@ -322,26 +397,11 @@ def _build_corpus(packet: RulePacket) -> _Corpus:
 
     if len(fd_drafts) != 2:
         raise ValueError("descriptor discriminator must create two cases")
-    fd_cases = tuple(_score_draft(draft) for draft in fd_drafts)
+    fd_cases = tuple(_score_draft(draft, rows) for draft in fd_drafts)
     if len(fd_cases) != 2:
         raise ValueError("descriptor discriminator must create two cases")
     scored_attacks.extend(fd_cases)
 
-    scored_attacks = list(
-        _assign_ledger_coverage(
-            packet,
-            tuple(scored_attacks),
-            tuple(
-                attack_drafts
-                + [
-                    draft
-                    for attack_id in ("M001", "M002", "M003")
-                    for draft in metamorphic_drafts[attack_id]
-                ]
-                + fd_drafts
-            ),
-        )
-    )
     scored_by_id = {case.case_id: case for case in scored_attacks}
     scored_groups = [
         replace(
@@ -381,6 +441,9 @@ def _generate_cases(
     base_envelope: bytes,
     base_anchor: bytes,
     exact_factory: Callable[[], ContextManager[int]],
+    source_sha256: str,
+    declaration: CaseDeclaration,
+    time_reseal_material: tuple[bytes, bytes, bytes],
 ) -> list[_CaseDraft]:
     prefix = f"{attack_id.lower()}-{generator.lower().replace('_', '-')}"
 
@@ -392,16 +455,27 @@ def _generate_cases(
         anchor: bytes = base_anchor,
         bundle_factory: Callable[[], ContextManager[int]] = exact_factory,
         resources: tuple[str, ...] = ("*",),
+        source_object_sha256: str = "",
+        source_envelope_sha256: str = "",
+        source_anchor_sha256: str = "",
+        source_result: EvaluationResult | None = None,
     ) -> _CaseDraft:
         case_id = prefix if not suffix else f"{prefix}-{suffix}"
         return _CaseDraft(
             case_id=case_id,
             attack_id=attack_id,
+            generator=generator,
             candidate_bytes=candidate_bytes,
             envelope_bytes=envelope_bytes,
             admitted_anchor_spki=anchor,
             bundle_factory=bundle_factory,
             target_resources=resources,
+            source_sha256=source_sha256,
+            declaration=declaration,
+            source_object_sha256=source_object_sha256,
+            source_envelope_sha256=source_envelope_sha256,
+            source_anchor_sha256=source_anchor_sha256,
+            source_result=source_result,
         )
 
     if generator.startswith("RAW_CANDIDATE_"):
@@ -525,7 +599,7 @@ def _generate_cases(
             )
         ]
 
-    if generator in {"CANDIDATE_SUBSTITUTION", "CANDIDATE_SPLICE"}:
+    if generator == "CANDIDATE_SUBSTITUTION":
         value = _copy_json(candidate)
         observation = value["observation"]
         if not isinstance(observation, dict):
@@ -538,6 +612,56 @@ def _generate_cases(
                 "",
                 candidate_bytes=canonical_json(value),
                 resources=("candidate",),
+            )
+        ]
+
+    if generator == "CANDIDATE_SPLICE":
+        source_value = _copy_json(candidate)
+        source_observation = source_value["observation"]
+        if not isinstance(source_observation, dict):
+            raise ValueError("candidate observation is not an object")
+        source_observation["synthetic_aliases"] = [
+            _synthetic_alias(base_candidate)
+        ]
+        source_candidate = canonical_json(source_value)
+        source_payload = _base_payload(
+            packet, source_candidate, "CLEAN_CI"
+        )
+        _, source_envelope, source_anchor = _sign_material(
+            packet, source_candidate, source_payload
+        )
+        with exact_factory() as source_bundle_fd:
+            source_result = ReferenceOracle().evaluate(
+                candidate_bytes=source_candidate,
+                signed_context_envelope_bytes=source_envelope,
+                verifier_anchor_spki=source_anchor,
+                trusted_parent_bundle_fd=source_bundle_fd,
+            )
+        if source_result != EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "HOLD",
+            "CURRENT_PARENT_OBLIGATIONS_OPEN",
+            "NONE",
+            "STRUCTURAL_ONLY",
+        ):
+            raise ValueError(
+                "candidate splice source did not authenticate independently"
+            )
+        return [
+            draft(
+                "",
+                candidate_bytes=source_candidate,
+                resources=("candidate",),
+                source_object_sha256=hashlib.sha256(
+                    source_candidate
+                ).hexdigest(),
+                source_envelope_sha256=hashlib.sha256(
+                    source_envelope
+                ).hexdigest(),
+                source_anchor_sha256=hashlib.sha256(
+                    source_anchor
+                ).hexdigest(),
+                source_result=source_result,
             )
         ]
 
@@ -598,7 +722,7 @@ def _generate_cases(
                     target_member=entry.member_name,
                     parent_mutator=_mutate_first_scalar,
                 ),
-                resources=(entry.member_name,),
+                resources=("bundle_capability", entry.member_name),
             )
             for index, entry in enumerate(packet.parent_manifest)
         ]
@@ -610,7 +734,7 @@ def _generate_cases(
                 bundle_factory=_bundle_factory(
                     packet, "SPLICE", target_member=entry.member_name
                 ),
-                resources=(entry.member_name,),
+                resources=("bundle_capability", entry.member_name),
             )
             for index, entry in enumerate(packet.parent_manifest)
         ]
@@ -685,16 +809,11 @@ def _generate_cases(
         ]
 
     if generator == "ALL_TIME_FIELDS_RESEAL":
-        payload = _base_payload(packet, base_candidate, "CLEAN_CI")
-        payload["nonce_time"] = {
-            "nonce": secrets.token_hex(16),
-            "valid_from": "2026-07-31T00:00:00Z",
-            "valid_until": "2026-07-31T00:10:00Z",
-            "trusted_time": "2026-07-31T00:05:00Z",
-        }
-        _, envelope, anchor = _sign_material(
-            packet, base_candidate, payload
-        )
+        resealed_candidate, envelope, anchor = time_reseal_material
+        if resealed_candidate != base_candidate or anchor != base_anchor:
+            raise ValueError(
+                "time reseal did not retain the original signing batch anchor"
+            )
         return [
             draft(
                 "",
@@ -704,8 +823,6 @@ def _generate_cases(
                     "signed_context_payload",
                     "signed_context_envelope",
                     "nonce_time",
-                    "replay",
-                    "attestation-receipt-contract.json",
                 ),
             )
         ]
@@ -730,7 +847,12 @@ def _generate_cases(
                 "",
                 envelope_bytes=envelope,
                 anchor=anchor,
-                resources=("signed_context_payload", "nonce_time"),
+                resources=(
+                    "signed_context_payload",
+                    "signed_context_envelope",
+                    "verifier_anchor",
+                    "nonce_time",
+                ),
             )
         ]
 
@@ -812,6 +934,8 @@ def _generate_cases(
             base_envelope=base_envelope,
             base_anchor=base_anchor,
             exact_factory=exact_factory,
+            source_sha256=source_sha256,
+            declaration=declaration,
         )
 
     if (
@@ -827,6 +951,8 @@ def _generate_cases(
             base_envelope=base_envelope,
             base_anchor=base_anchor,
             exact_factory=exact_factory,
+            source_sha256=source_sha256,
+            declaration=declaration,
         )
 
     if generator == "EPHEMERAL_KEY_EQUIVALENCE":
@@ -841,7 +967,12 @@ def _generate_cases(
                     str(ordinal + 1),
                     envelope_bytes=envelope,
                     anchor=anchor,
-                    resources=(),
+                    resources=(
+                        "signed_context_payload",
+                        "signed_context_envelope",
+                        "verifier_anchor",
+                        "nonce_time",
+                    ),
                 )
             )
         return drafts
@@ -867,7 +998,13 @@ def _generate_cases(
                     candidate_bytes=varied_candidate,
                     envelope_bytes=envelope,
                     anchor=anchor,
-                    resources=(),
+                    resources=(
+                        "candidate",
+                        "signed_context_payload",
+                        "signed_context_envelope",
+                        "verifier_anchor",
+                        "nonce_time",
+                    ),
                 )
             )
         return drafts
@@ -877,12 +1014,12 @@ def _generate_cases(
             draft(
                 "1",
                 bundle_factory=_bundle_factory(packet, "EXACT", fd_padding=0),
-                resources=(),
+                resources=("bundle_capability",),
             ),
             draft(
                 "2",
                 bundle_factory=_bundle_factory(packet, "EXACT", fd_padding=9),
-                resources=(),
+                resources=("bundle_capability",),
             ),
         ]
 
@@ -891,12 +1028,12 @@ def _generate_cases(
             draft(
                 "exact",
                 bundle_factory=_bundle_factory(packet, "EXACT"),
-                resources=(),
+                resources=("bundle_capability",),
             ),
             draft(
                 "corrupt",
                 bundle_factory=_bundle_factory(packet, "CORRUPT"),
-                resources=(),
+                resources=("bundle_capability",),
             ),
         ]
 
@@ -913,6 +1050,8 @@ def _privacy_probe_drafts(
     base_envelope: bytes,
     base_anchor: bytes,
     exact_factory: Callable[[], ContextManager[int]],
+    source_sha256: str,
+    declaration: CaseDeclaration,
 ) -> list[_CaseDraft]:
     drafts: list[_CaseDraft] = []
     boundaries = (
@@ -962,11 +1101,14 @@ def _privacy_probe_drafts(
                 _CaseDraft(
                     case_id=f"{prefix}-{suffix}",
                     attack_id=attack_id,
+                    generator=declaration.generator,
                     candidate_bytes=candidate_bytes,
                     envelope_bytes=envelope_bytes,
                     admitted_anchor_spki=anchor,
                     bundle_factory=exact_factory,
                     target_resources=(boundary,),
+                    source_sha256=source_sha256,
+                    declaration=declaration,
                 )
             )
     return drafts
@@ -982,6 +1124,8 @@ def _authority_drafts(
     base_envelope: bytes,
     base_anchor: bytes,
     exact_factory: Callable[[], ContextManager[int]],
+    source_sha256: str,
+    declaration: CaseDeclaration,
 ) -> list[_CaseDraft]:
     parents = {
         name: json.loads(data)
@@ -1009,11 +1153,46 @@ def _authority_drafts(
         raise ValueError("authority source is not a list")
 
     drafts: list[_CaseDraft] = []
+    if generator == "EVERY_SECTION_7_3_ROLE":
+        for index in range(len(values)):
+            candidate_value = strict_load_json(base_candidate)
+            if not isinstance(candidate_value, dict):
+                raise ValueError("authority candidate is not an object")
+            observation = candidate_value["observation"]
+            if not isinstance(observation, dict):
+                raise ValueError("authority observation is not an object")
+            governed_roles = observation["governed_roles"]
+            if not isinstance(governed_roles, list):
+                raise ValueError("authority roles are not a list")
+            governed_roles[index] = "UNRECOGNIZED_AUTHORITY_VALUE"
+            observation["governed_roles"] = sorted(governed_roles)
+            candidate_bytes = canonical_json(candidate_value)
+            payload = _base_payload(packet, candidate_bytes, "CLEAN_CI")
+            _, envelope_bytes, anchor = _sign_material(
+                packet, candidate_bytes, payload
+            )
+            drafts.append(
+                _CaseDraft(
+                    case_id=f"{prefix}-{index + 1}",
+                    attack_id=attack_id,
+                    generator=generator,
+                    candidate_bytes=candidate_bytes,
+                    envelope_bytes=envelope_bytes,
+                    admitted_anchor_spki=anchor,
+                    bundle_factory=exact_factory,
+                    target_resources=(
+                        "candidate",
+                        "role-capability-matrix.json",
+                    ),
+                    source_sha256=source_sha256,
+                    declaration=declaration,
+                )
+            )
+        return drafts
+
     for index in range(len(values)):
         def mutate(value: dict[str, object], *, position: int = index) -> None:
-            if generator == "EVERY_SECTION_7_3_ROLE":
-                target = value["roles"][position]
-            elif generator == "EVERY_SECTION_7_3_CAPABILITY":
+            if generator == "EVERY_SECTION_7_3_CAPABILITY":
                 target = value["capabilities"][position]
             elif generator == "EVERY_SECTION_7_3_HSM_PURPOSE":
                 target = value["policy_template"]["hsm_key_profiles"][position]
@@ -1025,6 +1204,7 @@ def _authority_drafts(
             _CaseDraft(
                 case_id=f"{prefix}-{index + 1}",
                 attack_id=attack_id,
+                generator=generator,
                 candidate_bytes=base_candidate,
                 envelope_bytes=base_envelope,
                 admitted_anchor_spki=base_anchor,
@@ -1035,6 +1215,8 @@ def _authority_drafts(
                     parent_mutator=mutate,
                 ),
                 target_resources=(member,),
+                source_sha256=source_sha256,
+                declaration=declaration,
             )
         )
     return drafts
@@ -1072,13 +1254,18 @@ def _build_environment_cells(
                     f"{resource_state.lower()}"
                 ),
                 attack_id="ENVIRONMENT",
+                generator="ENVIRONMENT_CELL",
                 candidate_bytes=candidate,
                 envelope_bytes=envelope,
                 admitted_anchor_spki=anchor,
                 bundle_factory=_bundle_factory(packet, resource_state),
                 target_resources=(),
+                source_sha256=_normative_source_sha256(
+                    packet, candidate, envelope, anchor
+                ),
+                declaration=None,
             )
-            prepared = _score_draft(draft)
+            prepared = _score_draft(draft, build_rule_ledger(packet))
             observed_disposition = (
                 f"{prepared.expected.decision}:{prepared.expected.reason}"
             )
@@ -1106,67 +1293,93 @@ def _build_environment_cells(
     return tuple(cells)
 
 
-def _score_draft(draft: _CaseDraft) -> PreparedCase:
+def _score_draft(
+    draft: _CaseDraft,
+    rows: Sequence[object],
+) -> PreparedCase:
     try:
+        oracle = ReferenceOracle()
         with draft.bundle_factory() as reference_fd:
-            expected = ReferenceOracle().evaluate(
-                candidate_bytes=draft.candidate_bytes,
-                signed_context_envelope_bytes=draft.envelope_bytes,
-                verifier_anchor_spki=draft.admitted_anchor_spki,
-                trusted_parent_bundle_fd=reference_fd,
+            call_count = 2 if draft.attack_id == "A009" else 1
+            observed_sequence = tuple(
+                oracle.evaluate(
+                    candidate_bytes=draft.candidate_bytes,
+                    signed_context_envelope_bytes=draft.envelope_bytes,
+                    verifier_anchor_spki=draft.admitted_anchor_spki,
+                    trusted_parent_bundle_fd=reference_fd,
+                )
+                for _ in range(call_count)
             )
+        observed_ordering = tuple(
+            getattr(draft.bundle_factory, "observed_events", ())
+        )
     except Exception as exc:
         raise ValueError(
             f"case setup failed before oracle evaluation: {draft.case_id}"
         ) from exc
+    if draft.declaration is None:
+        expected = observed_sequence[-1]
+        covered_rule_ids: tuple[str, ...] = ()
+        oracle_id = "REFERENCE_ORACLE_V4"
+        root_id = "EXACT_PARENT_MANIFEST"
+        root_sha256 = hashlib.sha256(
+            canonical_json(
+                [
+                    {
+                        "member_name": entry.member_name,
+                        "sha256": entry.sha256,
+                    }
+                    for entry in load_packet().parent_manifest
+                ]
+            )
+        ).hexdigest()
+        mutation_id = "CONSTRUCT_PACKET_ENVIRONMENT_CELL"
+    else:
+        expected = declared_expected_result(
+            draft.declaration, draft.case_id
+        )
+        if observed_sequence[-1] != expected:
+            raise ValueError(
+                f"declared result disagrees with oracle: {draft.case_id}"
+            )
+        covered_rule_ids = declared_ledger_ids(
+            draft.declaration,
+            rows,
+            draft.target_resources,
+        )
+        oracle_id = draft.declaration.oracle_id
+        root_id = draft.declaration.immutable_root_id
+        root_sha256 = draft.declaration.immutable_root_sha256
+        mutation_id = draft.declaration.mutation_id
+    observed_sha256 = _observed_mutation_sha256(
+        draft,
+        observed_sequence,
+    )
     return PreparedCase(
         case_id=draft.case_id,
         attack_id=draft.attack_id,
+        generator=draft.generator,
         candidate_bytes=draft.candidate_bytes,
         envelope_bytes=draft.envelope_bytes,
         admitted_anchor_spki=draft.admitted_anchor_spki,
         bundle_factory=draft.bundle_factory,
         expected=expected,
-        covered_rule_ids=(),
-    )
-
-
-def _assign_ledger_coverage(
-    packet: RulePacket,
-    cases: tuple[PreparedCase, ...],
-    drafts: tuple[_CaseDraft, ...],
-) -> tuple[PreparedCase, ...]:
-    if [case.case_id for case in cases] != [draft.case_id for draft in drafts]:
-        raise ValueError("case/draft ordering diverged")
-    mutable: dict[str, set[str]] = {case.case_id: set() for case in cases}
-    cases_by_attack: dict[str, list[tuple[PreparedCase, _CaseDraft]]] = {}
-    for case, draft in zip(cases, drafts):
-        cases_by_attack.setdefault(case.attack_id, []).append((case, draft))
-
-    next_case: dict[tuple[str, str], int] = {}
-    for row in build_rule_ledger(packet):
-        for attack_id in row.attack_ids:
-            candidates = cases_by_attack.get(attack_id, [])
-            if not candidates:
-                raise ValueError("ledger attack has no executable case")
-            matching = [
-                pair for pair in candidates
-                if "*" in pair[1].target_resources
-                or row.resource in pair[1].target_resources
-            ]
-            available = matching or candidates
-            cursor_key = (attack_id, row.resource)
-            cursor = next_case.get(cursor_key, 0)
-            chosen = available[cursor % len(available)][0]
-            next_case[cursor_key] = cursor + 1
-            mutable[chosen.case_id].add(row.rule_id)
-
-    return tuple(
-        replace(
-            case,
-            covered_rule_ids=tuple(sorted(mutable[case.case_id])),
-        )
-        for case in cases
+        expected_sequence=observed_sequence,
+        oracle_id=oracle_id,
+        mutation_evidence=MutationEvidence(
+            mutation_id=mutation_id,
+            immutable_root_id=root_id,
+            immutable_root_sha256=root_sha256,
+            source_sha256=draft.source_sha256,
+            observed_sha256=observed_sha256,
+            observed_resources=draft.target_resources,
+            source_object_sha256=draft.source_object_sha256,
+            source_envelope_sha256=draft.source_envelope_sha256,
+            source_anchor_sha256=draft.source_anchor_sha256,
+            source_result=draft.source_result,
+            observed_ordering=observed_ordering,
+        ),
+        covered_rule_ids=covered_rule_ids,
     )
 
 
@@ -1240,18 +1453,46 @@ def _sign_material(
     candidate_bytes: bytes,
     payload: dict[str, object],
 ) -> tuple[bytes, bytes, bytes]:
-    signed = sign_ephemeral_batch([signature_preimage(packet, payload)])
-    signed_payload = _copy_json(payload)
-    signed_payload["key_id"] = signed.key_id
-    envelope = {
-        "schema_version": "GCP_SECTION_7_5_1_SIGNED_CONTEXT_ENVELOPE_V4",
-        "algorithm": "ECDSA_P256_SHA256_DER",
-        "payload": signed_payload,
-        "signature_der_base64": b64encode(
-            signed.vectors[0].signature_der
-        ).decode("ascii"),
-    }
-    return candidate_bytes, canonical_json(envelope), signed.anchor_spki_der
+    return _sign_material_batch(
+        packet, candidate_bytes, (payload,)
+    )[0]
+
+
+def _sign_material_batch(
+    packet: RulePacket,
+    candidate_bytes: bytes,
+    payloads: Sequence[dict[str, object]],
+) -> tuple[tuple[bytes, bytes, bytes], ...]:
+    frozen_payloads = tuple(_copy_json(payload) for payload in payloads)
+    signed = sign_ephemeral_batch(
+        [
+            signature_preimage(packet, payload)
+            for payload in frozen_payloads
+        ]
+    )
+    materials: list[tuple[bytes, bytes, bytes]] = []
+    for payload, vector in zip(frozen_payloads, signed.vectors):
+        if not isinstance(payload, dict):
+            raise ValueError("signed payload batch is not closed")
+        payload["key_id"] = signed.key_id
+        envelope = {
+            "schema_version": (
+                "GCP_SECTION_7_5_1_SIGNED_CONTEXT_ENVELOPE_V4"
+            ),
+            "algorithm": "ECDSA_P256_SHA256_DER",
+            "payload": payload,
+            "signature_der_base64": b64encode(
+                vector.signature_der
+            ).decode("ascii"),
+        }
+        materials.append(
+            (
+                candidate_bytes,
+                canonical_json(envelope),
+                signed.anchor_spki_der,
+            )
+        )
+    return tuple(materials)
 
 
 @contextmanager
@@ -1261,6 +1502,7 @@ def _open_bundle(
     target_member: str | None,
     parent_mutator: Callable[[dict[str, object]], None] | None,
     fd_padding: int,
+    observed_events: list[str],
 ) -> Iterator[int]:
     parents = load_exact_parents(packet)
     target = target_member or packet.parent_manifest[0].member_name
@@ -1304,10 +1546,6 @@ def _open_bundle(
             (directory / target).unlink()
             replacement = next(name for name in parents if name != target)
             (directory / target).symlink_to(replacement)
-        elif variant == "REPLACED":
-            replacement = directory / "replacement"
-            replacement.write_bytes(parents[target] + b"\n")
-            os.replace(replacement, directory / target)
         elif variant == "MUTATED_JSON":
             if parent_mutator is None:
                 raise ValueError("JSON mutation requires a mutator")
@@ -1317,28 +1555,40 @@ def _open_bundle(
         elif variant == "SPLICE":
             replacement = next(name for name in parents if name != target)
             (directory / target).write_bytes(parents[replacement])
-        elif variant == "CONCURRENT":
-            mutated = parents[target] + b"\n"
-            first_replacement = threading.Event()
-
-            def replace_repeatedly() -> None:
-                while not stop.is_set():
-                    replacement = directory / "replacement"
-                    replacement.write_bytes(mutated)
-                    os.replace(replacement, directory / target)
-                    first_replacement.set()
-
-            worker = threading.Thread(target=replace_repeatedly, daemon=True)
-            worker.start()
-            if not first_replacement.wait(timeout=2):
-                stop.set()
-                worker.join(timeout=2)
-                raise RuntimeError("concurrent replacement did not start")
-
         try:
             for _ in range(fd_padding):
                 padding_fds.append(os.open(os.devnull, os.O_RDONLY))
             incoming_fd = open_harness_bundle(directory)
+            observed_events.append("CAPABILITY_OPENED")
+            if variant == "REPLACED":
+                replacement = directory / "replacement"
+                replacement.write_bytes(parents[target] + b"\n")
+                os.replace(replacement, directory / target)
+                observed_events.append("MEMBER_REPLACED")
+            elif variant == "CONCURRENT":
+                mutated = parents[target] + b"\n"
+                first_replacement = threading.Event()
+
+                def replace_repeatedly() -> None:
+                    while not stop.is_set():
+                        replacement = directory / "replacement"
+                        replacement.write_bytes(mutated)
+                        os.replace(replacement, directory / target)
+                        first_replacement.set()
+
+                worker = threading.Thread(
+                    target=replace_repeatedly, daemon=True
+                )
+                worker.start()
+                observed_events.append(
+                    "CONCURRENT_REPLACEMENT_STARTED"
+                )
+                if not first_replacement.wait(timeout=2):
+                    stop.set()
+                    worker.join(timeout=2)
+                    raise RuntimeError(
+                        "concurrent replacement did not start"
+                    )
             yield incoming_fd
         finally:
             stop.set()
@@ -1358,15 +1608,20 @@ def _bundle_factory(
     parent_mutator: Callable[[dict[str, object]], None] | None = None,
     fd_padding: int = 0,
 ) -> Callable[[], ContextManager[int]]:
+    observed_events: list[str] = []
+
     def factory() -> ContextManager[int]:
+        observed_events.clear()
         return _open_bundle(
             packet,
             variant,
             target_member,
             parent_mutator,
             fd_padding,
+            observed_events,
         )
 
+    setattr(factory, "observed_events", observed_events)
     return factory
 
 
@@ -1485,6 +1740,117 @@ def _synthetic_alias(context: bytes) -> str:
     ).hexdigest()[:32]
 
 
+def _normative_source_sha256(
+    packet: RulePacket,
+    candidate_bytes: bytes,
+    envelope_bytes: bytes,
+    anchor_bytes: bytes,
+) -> str:
+    return hashlib.sha256(
+        canonical_json(
+            {
+                "anchor_sha256": hashlib.sha256(anchor_bytes).hexdigest(),
+                "candidate_sha256": hashlib.sha256(
+                    candidate_bytes
+                ).hexdigest(),
+                "envelope_sha256": hashlib.sha256(
+                    envelope_bytes
+                ).hexdigest(),
+                "parent_manifest": [
+                    {
+                        "member_name": entry.member_name,
+                        "sha256": entry.sha256,
+                    }
+                    for entry in packet.parent_manifest
+                ],
+            }
+        )
+    ).hexdigest()
+
+
+def _observed_mutation_sha256(
+    draft: _CaseDraft,
+    observed_sequence: Sequence[EvaluationResult],
+) -> str:
+    bundle_members: list[dict[str, object]] = []
+    try:
+        with draft.bundle_factory() as bundle_fd:
+            for member_name in sorted(os.listdir(bundle_fd)):
+                try:
+                    member_stat = os.stat(
+                        member_name,
+                        dir_fd=bundle_fd,
+                        follow_symlinks=False,
+                    )
+                    kind = (
+                        "REGULAR"
+                        if stat.S_ISREG(member_stat.st_mode)
+                        else "NONREGULAR"
+                    )
+                    content_sha256 = ""
+                    if kind == "REGULAR":
+                        member_fd = os.open(
+                            member_name,
+                            os.O_RDONLY
+                            | os.O_NONBLOCK
+                            | os.O_NOFOLLOW,
+                            dir_fd=bundle_fd,
+                        )
+                        try:
+                            chunks: list[bytes] = []
+                            while chunk := os.read(
+                                member_fd, 1024 * 1024
+                            ):
+                                chunks.append(chunk)
+                            content_sha256 = hashlib.sha256(
+                                b"".join(chunks)
+                            ).hexdigest()
+                        finally:
+                            os.close(member_fd)
+                    bundle_members.append(
+                        {
+                            "content_sha256": content_sha256,
+                            "kind": kind,
+                            "member_name": member_name,
+                        }
+                    )
+                except OSError:
+                    bundle_members.append(
+                        {
+                            "content_sha256": "",
+                            "kind": "UNSTABLE",
+                            "member_name": member_name,
+                        }
+                    )
+    except OSError:
+        bundle_members.append(
+            {
+                "content_sha256": "",
+                "kind": "UNSTABLE_DIRECTORY",
+                "member_name": "",
+            }
+        )
+    return hashlib.sha256(
+        canonical_json(
+            {
+                "anchor_sha256": hashlib.sha256(
+                    draft.admitted_anchor_spki
+                ).hexdigest(),
+                "bundle_members": bundle_members,
+                "candidate_sha256": hashlib.sha256(
+                    draft.candidate_bytes
+                ).hexdigest(),
+                "envelope_sha256": hashlib.sha256(
+                    draft.envelope_bytes
+                ).hexdigest(),
+                "oracle_sequence": [
+                    asdict(result) for result in observed_sequence
+                ],
+            }
+        )
+    ).hexdigest()
+
+
 def _attack_entries(packet: RulePacket) -> tuple[Mapping[str, object], ...]:
     entries = tuple(packet.attack_catalog)
     ids = [_required_attack_text(entry, "attack_id") for entry in entries]
@@ -1545,11 +1911,15 @@ def _read_bounded(fd: int, limit: int) -> bytes:
 
 
 def _invoke_closed_child(case: PreparedCase) -> EvaluationResult:
-    input_values = (
+    primary_input_values = (
         case.candidate_bytes,
         case.envelope_bytes,
         case.admitted_anchor_spki,
     )
+    replay_input_values = (
+        primary_input_values if len(case.expected_sequence) == 2 else ()
+    )
+    input_values = primary_input_values + replay_input_values
     input_pipes = [os.pipe() for _ in input_values]
     result_read_fd, result_write_fd = os.pipe()
     process: subprocess.Popen[bytes] | None = None
@@ -1577,6 +1947,17 @@ def _invoke_closed_child(case: PreparedCase) -> EvaluationResult:
                 "--result-fd",
                 str(result_write_fd),
             ]
+            if replay_input_values:
+                command.extend(
+                    [
+                        "--replay-candidate-fd",
+                        str(input_pipes[3][0]),
+                        "--replay-envelope-fd",
+                        str(input_pipes[4][0]),
+                        "--replay-anchor-fd",
+                        str(input_pipes[5][0]),
+                    ]
+                )
             inherited = tuple(
                 [read_fd for read_fd, _ in input_pipes]
                 + [bundle_fd, result_write_fd]

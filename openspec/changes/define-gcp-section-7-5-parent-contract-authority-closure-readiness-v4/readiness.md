@@ -5,7 +5,7 @@
 | Field | Value |
 | --- | --- |
 | Protocol version and SHA-256 | `CANONICAL_RUNTIME_PHASE_READINESS_V1` / `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d` |
-| Packet state | `READY_FOR_EXTERNAL_REVIEW` |
+| Packet state | `DRAFT` |
 | Queue item / risk | `gcp-canonical-runtime-section-7-5-parent-authority` / `high` |
 | Phase / scope kind | `Section 7.5.1` / `DOCS_CONTRACT` |
 | Base commit | `c2eb0f4c14c7aa7dfaef4d2c61605a45156ce02a` |
@@ -56,10 +56,14 @@ review. `READINESS_GO` retains `authority_effect: NONE`.
 The compact rule source is
 `tests/fixtures/gcp_section_7_5_parent_contract_authority_closure_readiness_v4/packet-rules.json`.
 It defines the ordered five-member manifest, closed schemas, rule templates,
-and fixed oracle precedence. Later work must mechanically derive every parent
-pointer and dynamic closed boundary from those sources. Candidate hashes are
-recomputed, no candidate-controlled value is a root, dynamic signatures and
-envelopes are never frozen, and context schemas prohibit every locator.
+fixed oracle precedence, compile-pinned trusted-time root, and one closed case
+declaration for every attack/metamorphic generator. Each declaration binds its
+literal mutation, immutable root and hash, expected result rule, oracle, test
+ID template, and exact ledger rows. Later work must mechanically derive every
+parent pointer and dynamic closed boundary from those sources. Candidate
+hashes are recomputed, no candidate-controlled value is a root, dynamic
+signatures and envelopes are never frozen, and context schemas prohibit every
+locator.
 
 The permitted rule classes are `COMPILE_PINNED`,
 `AUTHENTICATED_OBSERVATION`, `DERIVED`, and `OPAQUE_LATER_SECTION`.
@@ -143,12 +147,17 @@ The packet catalog now declares closed generator names for every class.
 Generated tests cover raw candidate, payload, envelope, and nested nonce/time
 unknown, missing, wrong-type, nested-extra, and truncation cases; candidate,
 payload, signature, and all-five-parent splices; forged receipt/provenance;
-process-local replay; an alternate-key complete reseal evaluated against the
-original admitted anchor; complete time reseal and stale/future time; mode
-confusion; ambient fallback; each parent missing and corrupt; extra,
-nonregular, symlink, replacement, and concurrent resource states; every public
-input string path; every result string field; and every fourteen-role,
-sixteen-capability, two-HSM-purpose, and twenty-owner boundary.
+process-local replay as two identical calls in one oracle/evaluator process; an
+alternate-key complete reseal evaluated against the original admitted anchor;
+complete time reseal under the original signing-batch anchor and an independent
+packet-owned trusted-time root; stale/future time; mode confusion; ambient
+fallback; each parent missing and corrupt; extra, nonregular, symlink,
+capability-first atomic replacement, and separately concurrent resource
+states; every public input string path; every result string field through the
+closed result parser; and every fourteen-role, sixteen-capability,
+two-HSM-purpose, and twenty-owner boundary. Role mutations reach the Section
+7.3 authority oracle after valid resealing; manifest-bound capability, HSM,
+and owner mutations remain honestly classified as parent-resource rejection.
 
 `PreparedCase` labels, attack IDs, expectations, and ledger coverage remain
 harness metadata. They do not enter candidate or envelope bytes, the admitted
@@ -164,9 +173,12 @@ absent. It passes candidate, envelope, and admitted-anchor bytes through
 dedicated inherited descriptors, passes only the admitted final-directory and
 result descriptors as additional capabilities, requires zero stdout/stderr,
 and admits exactly one canonical five-field result. The harness compares that
-result with the independently computed oracle result. Current future-SUT cases
-intentionally stop only with literal `MISSING_SUT`; collected counts and audit
-results belong in the task report rather than this normative packet.
+result with the independently computed oracle result. The replay case adds a
+second dedicated candidate/envelope/anchor descriptor triple to the same child
+process and requires those bytes to be identical to the first call. Current
+future-SUT cases intentionally stop only with literal `MISSING_SUT`; collected
+counts and audit results belong in the task report rather than this normative
+packet.
 
 ## 6. Cost, review, and stop controls
 

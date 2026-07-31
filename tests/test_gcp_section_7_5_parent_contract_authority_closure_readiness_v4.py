@@ -41,8 +41,17 @@ from tests.gcp_s751_v4.corpus import (
     build_metamorphic_groups,
     evaluate_in_isolated_children_with_dup2,
     evaluate_reference_case,
+    evaluate_reference_sequence,
     invoke_future_sut,
     parse_closed_result_bytes,
+)
+from tests.gcp_s751_v4.corpus_declarations import (
+    declared_expected_result,
+    declared_ledger_ids,
+    load_case_declarations,
+    reconcile_case_declarations,
+    resolve_immutable_root_sha256,
+    validate_declared_test_id,
 )
 from tests.gcp_s751_v4.model import (
     EvaluationResult,
@@ -556,15 +565,118 @@ def test_attack_catalog_and_rule_ledger_reconcile_exactly() -> None:
         for case in cases
         for rule_id in case.covered_rule_ids
     }
+    result_protocol_rows = {
+        row.rule_id
+        for row in rows
+        if row.resource == "result" and row.attack_ids == ("A018",)
+    }
     applicable = {row.rule_id for row in rows if row.attack_ids}
-    assert covered == applicable
+    assert covered | result_protocol_rows == applicable
     for row in rows:
         for attack_id in row.attack_ids:
+            if row.resource == "result" and attack_id == "A018":
+                assert row.pointer in {
+                    "/schema_version",
+                    "/decision",
+                    "/reason",
+                    "/authority_effect",
+                    "/claim_grade",
+                }
+                continue
             assert any(
                 case.attack_id == attack_id
                 and row.rule_id in case.covered_rule_ids
                 for case in cases
             )
+
+
+def test_packet_case_declarations_bind_exact_mutations_roots_and_ledger_rows() -> None:
+    packet = load_packet()
+    declarations = load_case_declarations(packet)
+    rows = build_rule_ledger(packet)
+
+    reconcile_case_declarations(packet, rows, declarations)
+
+    assert {
+        (declaration.attack_id, declaration.generator)
+        for declaration in declarations
+    } == {
+        (attack["attack_id"], generator)
+        for attack in packet.attack_catalog
+        for generator in attack["generators"]
+    }
+    assert all(declaration.mutation_id for declaration in declarations)
+    assert all(declaration.immutable_root_id for declaration in declarations)
+    assert all(declaration.test_id_template for declaration in declarations)
+    assert all(declaration.ledger_bindings for declaration in declarations)
+
+
+def test_case_declaration_reconciliation_rejects_deleted_or_misbound_records() -> None:
+    packet = load_packet()
+    declarations = load_case_declarations(packet)
+    rows = build_rule_ledger(packet)
+
+    with pytest.raises(
+        ValueError,
+        match="^case declaration set does not match attack catalog$",
+    ):
+        reconcile_case_declarations(packet, rows, declarations[:-1])
+
+    first = declarations[0]
+    misbound = replace(
+        first,
+        ledger_bindings=(
+            replace(
+                first.ledger_bindings[0],
+                resource="result",
+                pointer_rule="EXACT:/reason",
+            ),
+        ),
+    )
+    with pytest.raises(
+        ValueError,
+        match="^case declaration ledger binding has no exact match$",
+    ):
+        reconcile_case_declarations(
+            packet,
+            rows,
+            (misbound,) + declarations[1:],
+        )
+
+
+def test_constructed_cases_emit_declared_mutation_root_result_and_ledger_evidence() -> None:
+    packet = load_packet()
+    rows = build_rule_ledger(packet)
+    declarations = {
+        (declaration.attack_id, declaration.generator): declaration
+        for declaration in load_case_declarations(packet)
+    }
+
+    for case in build_attack_cases(packet):
+        declaration = declarations[(case.attack_id, case.generator)]
+        assert case.oracle_id == declaration.oracle_id
+        assert case.mutation_evidence.mutation_id == declaration.mutation_id
+        assert (
+            case.mutation_evidence.immutable_root_id
+            == declaration.immutable_root_id
+        )
+        assert (
+            case.mutation_evidence.immutable_root_sha256
+            == resolve_immutable_root_sha256(
+                packet, declaration.immutable_root_id
+            )
+            == declaration.immutable_root_sha256
+        )
+        assert case.mutation_evidence.observed_sha256
+        assert case.expected == declared_expected_result(
+            declaration, case.case_id
+        )
+        validate_declared_test_id(declaration, case.case_id)
+        assert case.covered_rule_ids == declared_ledger_ids(
+            declaration,
+            rows,
+            case.mutation_evidence.observed_resources,
+        )
 
 
 def test_packet_attack_generators_are_closed_and_executable() -> None:
@@ -688,6 +800,70 @@ def test_replay_case_reuses_identical_normative_inputs() -> None:
         )
     assert first.reason == "CURRENT_PARENT_OBLIGATIONS_OPEN"
     assert second.reason == "REPLAY_DETECTED"
+
+
+def test_replay_case_computes_first_and_second_outcomes_in_one_session() -> None:
+    case = next(
+        case for case in build_attack_cases(load_packet())
+        if case.attack_id == "A009"
+    )
+
+    sequence = evaluate_reference_sequence(case)
+
+    assert sequence == case.expected_sequence == (
+        EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "HOLD",
+            "CURRENT_PARENT_OBLIGATIONS_OPEN",
+            "NONE",
+            "STRUCTURAL_ONLY",
+        ),
+        EvaluationResult(
+            "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+            "REJECT",
+            "REPLAY_DETECTED",
+            "NONE",
+            "NONE",
+        ),
+    )
+
+
+def test_future_replay_protocol_executes_both_calls_in_one_process(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_sut = tmp_path / "stateful-replay-sut.py"
+    fake_sut.write_text(
+        "\n".join(
+            (
+                "import argparse",
+                "import os",
+                "parser = argparse.ArgumentParser()",
+                "for name in ('candidate', 'envelope', 'anchor', 'replay-candidate', 'replay-envelope', 'replay-anchor', 'bundle', 'result'):",
+                "    parser.add_argument(f'--{name}-fd', type=int, required=True)",
+                "args = parser.parse_args()",
+                "def read_all(fd):",
+                "    chunks = []",
+                "    while chunk := os.read(fd, 4096): chunks.append(chunk)",
+                "    return b''.join(chunks)",
+                "first = tuple(read_all(fd) for fd in (args.candidate_fd, args.envelope_fd, args.anchor_fd))",
+                "second = tuple(read_all(fd) for fd in (args.replay_candidate_fd, args.replay_envelope_fd, args.replay_anchor_fd))",
+                "assert first == second",
+                "os.fstat(args.bundle_fd)",
+                "result = b'{\"authority_effect\":\"NONE\",\"claim_grade\":\"NONE\",\"decision\":\"REJECT\",\"reason\":\"REPLAY_DETECTED\",\"schema_version\":\"GCP_SECTION_7_5_1_EVALUATION_RESULT_V4\"}'",
+                "os.write(args.result_fd, result)",
+                "os.close(args.result_fd)",
+            )
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(corpus_module, "SUT_PATH", fake_sut)
+    case = next(
+        case for case in build_attack_cases(load_packet())
+        if case.attack_id == "A009"
+    )
+
+    assert invoke_future_sut(case) == case.expected
 
 
 def test_prepared_case_metadata_never_enters_normative_inputs() -> None:
@@ -887,10 +1063,69 @@ def test_authority_generators_cover_every_role_capability_hsm_and_owner() -> Non
         if case.attack_id == "A019"
     ]
     assert len(cases) == expected
-    assert all(
-        evaluate_reference_case(case).reason
-        == "INVALID_PARENT_RESOURCE_SET"
-        for case in cases
+    for case in cases:
+        expected_reason = (
+            "INVALID_SECTION_7_3_AUTHORITY"
+            if case.generator == "EVERY_SECTION_7_3_ROLE"
+            else "INVALID_PARENT_RESOURCE_SET"
+        )
+        assert evaluate_reference_case(case).reason == expected_reason
+
+
+def test_time_reseal_uses_original_anchor_and_compile_pinned_time_root() -> None:
+    packet = load_packet()
+    cases = build_attack_cases(packet)
+    reseal = next(case for case in cases if case.attack_id == "A011")
+    baseline = next(case for case in cases if case.attack_id == "A009")
+    payload = strict_load_json(reseal.envelope_bytes)["payload"]
+
+    assert reseal.admitted_anchor_spki == baseline.admitted_anchor_spki
+    assert payload["nonce_time"]["trusted_time"] == "2026-07-31T00:05:00Z"
+    assert reseal.mutation_evidence.immutable_root_id == (
+        "TRUSTED_TIME_POLICY_V1"
+    )
+    assert reseal.expected.reason == "INVALID_SIGNED_CONTEXT_BINDING"
+
+
+def test_candidate_splice_uses_an_independently_authenticated_source_object() -> None:
+    splice = next(
+        case for case in build_attack_cases(load_packet())
+        if case.generator == "CANDIDATE_SPLICE"
+    )
+
+    assert splice.mutation_evidence.source_object_sha256 == (
+        hashlib.sha256(splice.candidate_bytes).hexdigest()
+    )
+    assert splice.mutation_evidence.source_envelope_sha256
+    assert splice.mutation_evidence.source_anchor_sha256 != hashlib.sha256(
+        splice.admitted_anchor_spki
+    ).hexdigest()
+    assert splice.mutation_evidence.source_result == EvaluationResult(
+        "GCP_SECTION_7_5_1_EVALUATION_RESULT_V4",
+        "HOLD",
+        "CURRENT_PARENT_OBLIGATIONS_OPEN",
+        "NONE",
+        "STRUCTURAL_ONLY",
+    )
+    assert splice.expected.reason == "INVALID_SIGNED_CONTEXT_BINDING"
+
+
+def test_replaced_member_opens_capability_before_atomic_replacement() -> None:
+    cases = {
+        case.generator: case
+        for case in build_attack_cases(load_packet())
+        if case.generator in {"REPLACED_MEMBER", "CONCURRENT_REPLACEMENT"}
+    }
+
+    assert cases["REPLACED_MEMBER"].mutation_evidence.observed_ordering == (
+        "CAPABILITY_OPENED",
+        "MEMBER_REPLACED",
+    )
+    assert cases[
+        "CONCURRENT_REPLACEMENT"
+    ].mutation_evidence.observed_ordering == (
+        "CAPABILITY_OPENED",
+        "CONCURRENT_REPLACEMENT_STARTED",
     )
 
 
