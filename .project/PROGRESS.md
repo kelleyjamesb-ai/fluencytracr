@@ -2,6 +2,43 @@
 
 ## Current Session
 
+- Section 7.5.2 is locally complete on
+  `codex/section-7-5-2-network-local`. The bounded contract defines exactly six
+  closed record schemas and projects only P09, P18, and the five owned
+  trust/channel/transport P07 nodes. It requires exact target, interval,
+  authentication, freshness, approved-contract, Section 7.4 clock, caller
+  method, TLS, network-control, and local-ephemeral bindings. Audit mapping and
+  three replay-retention nodes remain assigned to Sections 7.5.4 and 7.5.3.
+  The immutable 20-row registry remains byte-identical at SHA-256
+  `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`.
+- The silent offline verifier and 42 focused adversarial tests pass. Strict
+  OpenSpec, docs contract sweep, docs linkcheck, V1 governance, provider-source
+  pin/readiness assertions, JSON validation, Python compilation, and whitespace
+  checks pass. The final CI-equivalent Python command passed 557 with 10
+  skipped and 154 intentional future-SUT tests deselected. An unfiltered
+  harness attempt produced only the known `MISSING_SUT` failures from those 154
+  tests; adding that future SUT is explicitly outside this docs-only slice.
+- Integrated CODE review found and repaired two genuine closure gaps before
+  closeout: caller methods are now an exact two-method set bound to Section 7.3
+  authority operations, and all material nested contract objects reject shape
+  expansion. Replacement CODE, BUG, and ADVERSARIAL review of the final staged
+  tree returned GO: no executable authorization, privacy, invariant,
+  ownership, or closure failure remains. Runtime evidence registries stay
+  empty and authority remains `NONE`. No SUT, GCP access, credentials,
+  provisioning, persistence, deployment, migration, qualification, model
+  execution, or Sections 7.5.3-7.8 work occurred.
+- Section 7.5.2 is the sole active queue item on branch
+  `codex/section-7-5-2-network-local`, based on current `origin/main`
+  `8949107da5e1c4769f129b15237a8ad1fe1e23f1`. The merged Section 7.5.1
+  predecessor `7efdf82a9aaefb7e78fcc253f2705ea2b8061a67` is present. Exact SHA-256
+  pins for the immutable Section 7.5A registry, the Section 7.5.1 projection,
+  and Sections 7.2-7.4 contracts match the authorized bound. This slice closes
+  only P09, P18, and five trust/channel/transport portions of P07 through a
+  docs-only contract, offline verifier, tests, and OpenSpec. Runtime authority
+  remains held; no SUT, GCP access, credentials, provisioning, persistence,
+  deployment, qualification, model execution, or Sections 7.5.3-7.8 work is
+  authorized. This activation record is retained as session history; the item
+  is now `done` as recorded above.
 - The docs-only VBD live product roadmap now separates statistical acceptance,
   Sections 7.5-7.7 architecture closure, Section 7.8 qualification, minimal
   internal runtime implementation, compact AI Value Workspace projection, and

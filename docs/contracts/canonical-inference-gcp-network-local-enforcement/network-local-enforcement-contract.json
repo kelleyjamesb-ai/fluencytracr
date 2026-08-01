@@ -1,0 +1,279 @@
+{
+  "actual_evidence": {
+    "approvals_present": false,
+    "live_evidence_present": false,
+    "runtime_records_present": false
+  },
+  "authority_effect": "NONE",
+  "canonicalization": {
+    "encoding": "UTF-8_NO_BOM_NO_TRAILING_BYTES",
+    "numbers": "SIGNED_64_BIT_INTEGER_ONLY_BOOLEAN_NOT_INTEGER_NEGATIVE_ZERO_REJECT",
+    "object_keys": "LEXICOGRAPHIC_UNICODE_CODE_POINT",
+    "separators": "MINIFIED_COMMA_COLON",
+    "unicode": "INPUT_ALREADY_NFC_NON_NFC_CONTROL_SURROGATE_REJECT",
+    "unknown_null_float_duplicate_implicit_default": "REJECT_BEFORE_HASHING",
+    "version": "FT_CANONICAL_JSON_V1"
+  },
+  "decision": "GCP_SECTION_7_5_2_NETWORK_LOCAL_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+  "decision_precedence": [
+    "PRIVACY_OR_BOUNDARY_REJECT",
+    "PARENT_TARGET_OR_SOURCE_CONFLICT_REJECT",
+    "SCHEMA_OR_CANONICALIZATION_REJECT",
+    "AUTHENTICATION_OR_FRESHNESS_REJECT",
+    "INTERVAL_COMPLETENESS_HOLD",
+    "NETWORK_CHANNEL_OR_LOCAL_MECHANISM_HOLD",
+    "APPROVAL_OR_EVIDENCE_ABSENT_HOLD",
+    "CONTRACT_CLOSED_RUNTIME_AUTHORITY_HELD"
+  ],
+  "full_section_7_5_target_schema": {
+    "candidate_bytes_required_before_hash_admission": true,
+    "canonicalization_version": "FT_CANONICAL_JSON_V1",
+    "contract_domain_separator": "FLUENCYTRACR:GCP_CANONICAL_RUNTIME:SECTION_7_5:V1",
+    "contract_kind": "FULL_SECTION_7_5",
+    "contract_schema_version": "GCP_CANONICAL_RUNTIME_SECTION_7_5_FULL_V1",
+    "required_record_keys": [
+      "schema_version",
+      "contract_kind",
+      "contract_domain_separator",
+      "canonical_contract_bytes_base64",
+      "canonical_contract_bytes_sha256",
+      "target_binding_sha256"
+    ],
+    "section_7_5a_substitution": "REJECT"
+  },
+  "live_runtime": {
+    "command": "NOT_AUTHORIZED",
+    "expected_exit": "NOT_RUN"
+  },
+  "network_method_contract": {
+    "caller_method_ids": [
+      "KMS_ASYMMETRIC_SIGN",
+      "STS_TOKEN_EXCHANGE"
+    ],
+    "missing_duplicate_or_unknown_method": "REJECT_AUTHENTICATION_OR_FRESHNESS",
+    "source_authority_operation_ids": [
+      "ASYMMETRIC_SIGN_ALLOW_DENY",
+      "TOKEN_EXCHANGE"
+    ]
+  },
+  "privacy": {
+    "allowed_checked_in": [
+      "SCHEMA_AND_DOMAIN_IDENTIFIERS",
+      "PARENT_AND_CONTRACT_SHA256_VALUES",
+      "SYNTHETIC_CANONICALIZATION_VECTORS",
+      "EMPTY_RUNTIME_REGISTRIES"
+    ],
+    "prohibited": [
+      "RUNTIME_GCP_RESOURCE_LOCATORS",
+      "RAW_OR_DICTIONARYABLE_IDENTIFIERS",
+      "RAW_LOG_TOKEN_QUOTE_SIGNATURE_KEY_CERTIFICATE_BYTES",
+      "CREDENTIALS",
+      "CUSTOMER_OR_PERSON_LEVEL_DATA",
+      "PUBLIC_RUNTIME_EVIDENCE_COUNTS_WINDOWS_COVERAGE_ALIASES_CHECKPOINTS"
+    ]
+  },
+  "record_schemas": [
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_2:TRUST_DISTRIBUTION_ENFORCEMENT:V1",
+      "record_hash_field": "record_sha256",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "observation_interval_start",
+        "observation_interval_end",
+        "authentication_verification_sha256",
+        "freshness_anti_replay_sha256",
+        "approved_section_7_5_contract_sha256",
+        "trust_snapshot_sha256",
+        "current_head_anti_rollback_verification_sha256",
+        "section_7_5_trust_record_verified_at",
+        "trusted_utc_clock_policy_sha256",
+        "exact_target_match",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_2_TRUST_DISTRIBUTION_ENFORCEMENT_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_2:CHANNEL_INTERVAL_ENFORCEMENT:V1",
+      "record_hash_field": "record_sha256",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "observation_interval_start",
+        "observation_interval_end",
+        "authentication_verification_sha256",
+        "freshness_anti_replay_sha256",
+        "approved_section_7_5_contract_sha256",
+        "private_ingress_full_interval",
+        "private_egress_full_interval",
+        "uds_only_local_delivery",
+        "no_relay_process",
+        "caller_method_authentication_complete",
+        "tls_target_certificate_binding_verified",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_2_CHANNEL_INTERVAL_ENFORCEMENT_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_2:QUOTE_TRANSPORT_ENFORCEMENT:V1",
+      "record_hash_field": "record_sha256",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "observation_interval_start",
+        "observation_interval_end",
+        "authentication_verification_sha256",
+        "freshness_anti_replay_sha256",
+        "approved_section_7_5_contract_sha256",
+        "transport_phase",
+        "expected_wire_request_sha256",
+        "recomputed_wire_request_sha256",
+        "trust_distribution_record_sha256",
+        "exact_wire_match",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_2_QUOTE_TRANSPORT_ENFORCEMENT_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_2:KMS_SIGN_TRANSPORT_ENFORCEMENT:V1",
+      "record_hash_field": "record_sha256",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "observation_interval_start",
+        "observation_interval_end",
+        "authentication_verification_sha256",
+        "freshness_anti_replay_sha256",
+        "approved_section_7_5_contract_sha256",
+        "expected_wire_request_sha256",
+        "recomputed_wire_request_sha256",
+        "channel_context_sha256",
+        "measured_context_match",
+        "binder_owned_send",
+        "no_relay_process",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_2_KMS_SIGN_TRANSPORT_ENFORCEMENT_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_2:NETWORK_CONTROL_OBSERVATION:V1",
+      "record_hash_field": "record_sha256",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "observation_interval_start",
+        "observation_interval_end",
+        "authentication_verification_sha256",
+        "freshness_anti_replay_sha256",
+        "approved_section_7_5_contract_sha256",
+        "dns_observation_complete",
+        "firewall_observation_complete",
+        "route_observation_complete",
+        "perimeter_observation_complete",
+        "caller_method_ids",
+        "caller_method_authentication_sha256",
+        "tls_target_sha256",
+        "certificate_binding_sha256",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_2_NETWORK_CONTROL_OBSERVATION_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_2:LOCAL_EPHEMERAL_ENFORCEMENT:V1",
+      "record_hash_field": "record_sha256",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "observation_interval_start",
+        "observation_interval_end",
+        "authentication_verification_sha256",
+        "freshness_anti_replay_sha256",
+        "approved_section_7_5_contract_sha256",
+        "disk_policy_approved_full_interval",
+        "tmpfs_only_full_interval",
+        "swap_disabled_full_interval",
+        "prohibited_logging_disabled_full_interval",
+        "unapproved_local_persistence_absent_full_interval",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_2_LOCAL_EPHEMERAL_ENFORCEMENT_RECORD_V1",
+      "unknown_fields": "REJECT"
+    }
+  ],
+  "runtime_evidence_registries": {
+    "approval_records": [],
+    "authentication_records": [],
+    "enforcement_records": [],
+    "freshness_records": []
+  },
+  "schema_version": "GCP_SECTION_7_5_2_NETWORK_LOCAL_ENFORCEMENT_CONTRACT_V1",
+  "scope": {
+    "excluded_p07_nodes": [
+      "audit_mapping_acceptance_hash",
+      "initial_section_7_4_replay_retention_acceptance_hash",
+      "current_section_7_4_replay_retention_acceptance_hash",
+      "final_consumer_replay_retention_acceptance_hash"
+    ],
+    "immutable_registry": {
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/constraints-open-obligations-contract.json",
+      "sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0"
+    },
+    "owned_p07_nodes": [
+      "trust_distribution_acceptance_hash",
+      "channel_enforcement_acceptance_hash",
+      "pre_quote_transport_acceptance_hash",
+      "terminal_quote_transport_acceptance_hash",
+      "kms_sign_transport_acceptance_hash"
+    ],
+    "owned_prerequisite_ids": [
+      "S75A-P09",
+      "S75A-P18"
+    ],
+    "registry_rows_owners_states_edges_unchanged": true
+  },
+  "section_7_4_clock_equality": {
+    "alternate_timezone": "REJECT",
+    "caller_replacement": "REJECT",
+    "conversion_or_rounding": "REJECT",
+    "required_equal_fields": [
+      "trust_distribution_record.section_7_5_trust_record_verified_at",
+      "token_freshness_interface.section_7_5_trust_record_verified_at"
+    ],
+    "required_equal_policy_fields": [
+      "trust_distribution_record.trusted_utc_clock_policy_sha256",
+      "token_freshness_interface.trusted_utc_clock_policy_sha256"
+    ]
+  },
+  "source_contracts": [
+    {
+      "owner": "SECTION_7_5A",
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/constraints-open-obligations-contract.json",
+      "sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0"
+    },
+    {
+      "owner": "SECTION_7_5_1",
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/section-7-5-1-parent-interface-closure-projection.json",
+      "sha256": "275dbfabae763830047950ccddf5557fc2d6b5f4fb80cda62e45971be9051414"
+    },
+    {
+      "owner": "SECTION_7_2",
+      "path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json",
+      "sha256": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587"
+    },
+    {
+      "owner": "SECTION_7_3",
+      "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json",
+      "sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a"
+    },
+    {
+      "owner": "SECTION_7_4",
+      "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json",
+      "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2"
+    }
+  ]
+}

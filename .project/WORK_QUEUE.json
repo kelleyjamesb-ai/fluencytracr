@@ -425,9 +425,9 @@
       "id": "gcp-canonical-runtime-section-7-5-network-local",
       "title": "Section 7.5.2 — network, channel, and local ephemeral enforcement contract",
       "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P09, P18, and only the trust/channel/transport portions of P07 by defining the applicable trust, channel, and transport enforcement records, Section 7.4-clock equality, whole-interval private ingress/egress, UDS and no-relay guarantees, caller-by-method authentication, TLS target, DNS/firewall/route/perimeter observations, and authenticated disk/tmpfs/swap/logging enforcement; P07 replay-retention records are excluded and assigned to Section 7.5.3, and the P07 audit-mapping record is excluded and assigned to Section 7.5.4; no persistence mechanics, attempt-ledger semantics, SUT implementation, live GCP, credentials, provisioning, deployment, qualification, or model execution",
-      "status": "pending",
+      "status": "done",
       "risk": "high",
-      "last_note": "Human-authored bounded item. Activate only after the parent-authority item is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+      "last_note": "Done locally 2026-07-31. Closed only P09, P18, and five trust/channel/transport P07 nodes with six closed schemas, synthetic vectors, a silent offline verifier, 42 focused adversarial tests, and strict OpenSpec/docs/governance validation. The immutable registry is unchanged; excluded audit/retention nodes remain later-owned, runtime evidence is absent, and authority remains NONE. No SUT, GCP, credentials, persistence, deployment, qualification, or model execution occurred."
     },
     {
       "id": "gcp-canonical-runtime-section-7-5-persistence-anchor",
