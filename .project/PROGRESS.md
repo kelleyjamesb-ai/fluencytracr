@@ -19,9 +19,9 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `a6ad2016683509815c4ce3e7742878ab6c2e064ed3f54105147c5c5a0a8befeb`,
+  `666c35fec927f411970220e30ef82ac1b2497224dd157ea88ac7dd8c6d5a54a4`,
   and focused contract test
-  `2cbe33b3d6469d1c01c67de392ae9d7c7216ff5f69177cedfb7f20a7a63d2f3a`.
+  `cd17b380e72a961f23d4b3cc34ab09d1aafdcaf81a16f6e68863b34f498e0e47`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
@@ -41,8 +41,13 @@
   return READY twice before replay identities were recorded. A fail-first
   regression reproduced it; exact readback now consumes both identities before
   the caller-controlled exposure callback, so reentry holds and exposure
-  failure remains fail-closed. Replacement exact implementation commit and
-  CODE/BUG/ADVERSARIAL review remain pending.
+  failure remains fail-closed. The replacement BUG review then proved that the
+  source-interleaving callback could mutate the caller-owned candidate after
+  its initial validation. A second fail-first regression reproduced the READY
+  false clear. Evaluation now uses a deep-copied canonical candidate snapshot,
+  rechecks that the caller object did not change across the callback, and uses
+  only the snapshot for state, transaction, readback, and exposure. Replacement
+  exact implementation commit and CODE/BUG/ADVERSARIAL review remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

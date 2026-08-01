@@ -295,7 +295,12 @@ def evaluate_candidate(
     if mode not in {"CLEAN_CI", "ARCHIVE_CLOSEOUT"}:
         return "HOLD"
     archive_hold = mode == "ARCHIVE_CLOSEOUT"
-    if not BOOTSTRAP_VALID or _candidate_vector(candidate) is None:
+    try:
+        candidate_snapshot = copy.deepcopy(candidate)
+        candidate_snapshot_bytes = _canonical_bytes(candidate_snapshot)
+    except Exception:
+        return "HOLD_ARCHIVE_CLOSEOUT_ONLY" if archive_hold else "HOLD"
+    if not BOOTSTRAP_VALID or _candidate_vector(candidate_snapshot) is None:
         return "HOLD_ARCHIVE_CLOSEOUT_ONLY" if archive_hold else "HOLD"
     try:
         resource = _resource_state(Path(root), interleaving)
@@ -308,6 +313,11 @@ def evaluate_candidate(
             "HOLD_ARCHIVE_SOURCE_SET_" if archive_hold else "HOLD_SOURCE_SET_"
         )
         return prefix + resource
+    try:
+        if _canonical_bytes(candidate) != candidate_snapshot_bytes:
+            return "HOLD_ARCHIVE_CLOSEOUT_ONLY" if archive_hold else "HOLD"
+    except Exception:
+        return "HOLD_ARCHIVE_CLOSEOUT_ONLY" if archive_hold else "HOLD"
     if not _trusted_context_matches(Path(root), trusted_context):
         return "HOLD_ARCHIVE_CLOSEOUT_ONLY" if archive_hold else "HOLD"
     if not _queue_matches(Path(root)):
@@ -318,8 +328,8 @@ def evaluate_candidate(
     try:
         if type(state) is not dict:
             return "HOLD"
-        reservation_key = candidate["records"]["reservation"]["reservation_key"]
-        lineage_token = candidate["records"]["lineage_input"][
+        reservation_key = candidate_snapshot["records"]["reservation"]["reservation_key"]
+        lineage_token = candidate_snapshot["records"]["lineage_input"][
             "authenticated_lineage_token_hash"
         ]
         with _STATE_LOCK:
@@ -335,15 +345,19 @@ def evaluate_candidate(
             if reservation_key in used_reservations or lineage_token in used_tokens:
                 return "HOLD"
             if transaction is not None:
-                disposition = transaction.commit(_write_set(candidate))
+                disposition = transaction.commit(_write_set(candidate_snapshot))
                 if disposition != "UNKNOWN_AFTER_WRITE":
                     return "HOLD"
                 readback = transaction.readback(reservation_key)
-                if _canonical_bytes(readback) != _canonical_bytes(candidate["records"]):
+                if _canonical_bytes(readback) != _canonical_bytes(
+                    candidate_snapshot["records"]
+                ):
                     return "HOLD"
                 used_reservations.add(reservation_key)
                 used_tokens.add(lineage_token)
-                transaction.expose(candidate["records"]["pre_execution_record"])
+                transaction.expose(
+                    candidate_snapshot["records"]["pre_execution_record"]
+                )
             else:
                 used_reservations.add(reservation_key)
                 used_tokens.add(lineage_token)

@@ -191,6 +191,28 @@ def test_transaction_exposure_reentry_has_exactly_one_ready(tmp_path: Path) -> N
     assert transaction.reentrant_result == "HOLD"
 
 
+def test_interleaving_candidate_mutation_holds_before_state_effects(
+    tmp_path: Path,
+) -> None:
+    root = _isolated_root(tmp_path)
+    candidate = _candidate(root)
+    state: dict = {}
+
+    def mutate_candidate() -> None:
+        candidate["authority_effect"] = "RUNTIME"
+        readiness._reseal(candidate)
+
+    assert verifier.evaluate_candidate(
+        root,
+        candidate,
+        "CLEAN_CI",
+        state,
+        mutate_candidate,
+        _context(),
+    ) == "HOLD"
+    assert not state
+
+
 def test_command_line_verifier_is_silent() -> None:
     completed = subprocess.run(
         ["/usr/bin/python3", str(ROOT / "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py")],
