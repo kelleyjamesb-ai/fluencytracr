@@ -250,8 +250,14 @@ def test_transaction_write_set_cannot_mutate_readback_authority(
         transaction=transaction,
     ) == "HOLD"
     assert state == {
-        "used_reservation_keys": set(),
-        "used_lineage_tokens": set(),
+        "used_reservation_keys": {
+            candidate["records"]["reservation"]["reservation_key"]
+        },
+        "used_lineage_tokens": {
+            candidate["records"]["lineage_input"][
+                "authenticated_lineage_token_hash"
+            ]
+        },
     }
     assert not transaction.exposed
     assert "credential" not in candidate["records"]["reservation"]
@@ -300,6 +306,57 @@ def test_committed_and_unknown_transactions_read_back_exact_write_set(
         "COMMITTED": verifier.READY,
         "UNKNOWN_AFTER_WRITE": verifier.READY,
     }
+
+
+def test_admitted_commit_failed_readback_is_single_use(tmp_path: Path) -> None:
+    for disposition in ("COMMITTED", "UNKNOWN_AFTER_WRITE"):
+        for failure in ("mismatch", "raise"):
+            root = _isolated_root(tmp_path / disposition / failure)
+            candidate = _candidate(root)
+            state: dict = {}
+            reservation = candidate["records"]["reservation"]["reservation_key"]
+            token = candidate["records"]["lineage_input"][
+                "authenticated_lineage_token_hash"
+            ]
+
+            class FailedReadbackTransaction:
+                def __init__(self) -> None:
+                    self.write_set: dict = {}
+                    self.commit_calls = 0
+                    self.exposed = False
+
+                def commit(self, write_set: dict) -> str:
+                    self.commit_calls += 1
+                    self.write_set = copy.deepcopy(write_set)
+                    return disposition
+
+                def readback(self, _reservation_key: str) -> dict:
+                    if failure == "raise":
+                        raise RuntimeError("readback unavailable")
+                    readback = copy.deepcopy(self.write_set)
+                    readback["reservation"]["reservation_status"] = "MISMATCHED"
+                    return readback
+
+                def expose(self, _opaque_record: dict) -> None:
+                    self.exposed = True
+
+            transaction = FailedReadbackTransaction()
+            assert verifier.evaluate_candidate(
+                root,
+                candidate,
+                "CLEAN_CI",
+                state,
+                None,
+                _context(),
+                transaction=transaction,
+            ) == "HOLD"
+            assert reservation in state["used_reservation_keys"]
+            assert token in state["used_lineage_tokens"]
+            assert verifier.evaluate_candidate(
+                root, candidate, "CLEAN_CI", state, None, _context()
+            ) == "HOLD"
+            assert transaction.commit_calls == 1
+            assert not transaction.exposed
 
 
 def test_transaction_commit_and_readback_reentry_have_one_ready(

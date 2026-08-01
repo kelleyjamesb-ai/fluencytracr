@@ -19,15 +19,15 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `ff53b73d32d691208a8eeb3bd27d57358e6cfe7418ea2551812eac0e3c4faf75`,
+  `48d6f91b3edd9161c276fd3378fe9386bb43ec1c858dfca49bb6e94e5c3af066`,
   and focused contract test
-  `42d36f1fd2f124751b57e383aae6fdab1b75638faa2938927f4aba76d01ed144`.
+  `ed3e7e69772534b0e60cb09233a43b5febe62279a1af6dee494ac80328c208f9`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
   closed for archive/live/unknown modes and preserves Section 7.4/7.6.2
   ownership. The focused implementation plus frozen future-SUT profile passes
-  `111` with only the immutable preimplementation absence assertion deselected;
+  `112` with only the immutable preimplementation absence assertion deselected;
   strict OpenSpec, governance, stdlib compilation, silent CLI, JSON, YAML,
   collection, and diff checks pass. The same exact absence assertion is now
   deselected in all three synchronized Python runners, matching the established
@@ -74,7 +74,11 @@
   recheck mutable queue authority. Fail-first regressions reproduce all three.
   Both admitted commit dispositions now require exact fixed-write-set readback,
   full-bundle compatibility is allowed only for a byte-exact candidate bundle,
-  and every CLI invocation revalidates unique queue authority. Section 7.6.1
+  and every CLI invocation revalidates unique queue authority. Replacement
+  review then proved that admitted commits with failed readback left replay
+  identities reusable. A fail-first mismatch/exception regression now requires
+  both identities to remain consumed immediately after an admitted disposition,
+  so readback failure HOLDs without exposure or a second attempt. Section 7.6.1
   remains bounded to docs, OpenSpec, offline verifier, and tests; PR #484 needs
   replacement exact-tree review and current-head checks before normal merge.
 - Section 7.6.1 is the sole active queue item on

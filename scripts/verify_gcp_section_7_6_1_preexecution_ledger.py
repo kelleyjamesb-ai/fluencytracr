@@ -370,7 +370,7 @@ def evaluate_candidate(
             if transaction is not None:
                 prior_reservations = set(used_reservations)
                 prior_tokens = set(used_tokens)
-                readback_confirmed = False
+                commit_admitted = False
                 _IN_FLIGHT_STATES.add(state_identity)
                 try:
                     disposition = transaction.commit(
@@ -378,16 +378,16 @@ def evaluate_candidate(
                     )
                     if disposition not in {"COMMITTED", "UNKNOWN_AFTER_WRITE"}:
                         return "HOLD"
+                    commit_admitted = True
+                    state["used_reservation_keys"] = prior_reservations | {
+                        reservation_key
+                    }
+                    state["used_lineage_tokens"] = prior_tokens | {lineage_token}
                     readback = transaction.readback(reservation_key)
                     if not _readback_matches_fixed_write_set(
                         candidate_snapshot, readback
                     ):
                         return "HOLD"
-                    readback_confirmed = True
-                    state["used_reservation_keys"] = prior_reservations | {
-                        reservation_key
-                    }
-                    state["used_lineage_tokens"] = prior_tokens | {lineage_token}
                     transaction.expose(
                         copy.deepcopy(
                             candidate_snapshot["records"]["pre_execution_record"]
@@ -395,10 +395,10 @@ def evaluate_candidate(
                     )
                 finally:
                     state["used_reservation_keys"] = prior_reservations | (
-                        {reservation_key} if readback_confirmed else set()
+                        {reservation_key} if commit_admitted else set()
                     )
                     state["used_lineage_tokens"] = prior_tokens | (
-                        {lineage_token} if readback_confirmed else set()
+                        {lineage_token} if commit_admitted else set()
                     )
                     _IN_FLIGHT_STATES.discard(state_identity)
             else:
