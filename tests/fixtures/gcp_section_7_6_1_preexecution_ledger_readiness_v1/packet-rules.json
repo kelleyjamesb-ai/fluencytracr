@@ -1,0 +1,233 @@
+{
+  "schema_version": "GCP_SECTION_7_6_1_PREEXECUTION_LEDGER_READINESS_RULES_V1",
+  "queue_item_id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
+  "base_commit": "66fc4d89f4e2084ec4a4fc07d392d04692d18239",
+  "authority_effect": "NONE",
+  "queue_authorization_root": {
+    "path": ".project/WORK_QUEUE.json",
+    "immutable_projection_fields": ["id", "title", "bound", "risk"],
+    "canonical_sha256": "177fed66474f33fb9f727f94c340b3e6446ac3aa517a7a8ec23896b1c751120a",
+    "exact_row_fields": ["id", "title", "bound", "status", "risk", "last_note"],
+    "admitted_statuses": ["in_progress", "done"]
+  },
+  "source_manifest": [
+    {"owner": "SECTION_7_2", "path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json", "sha256": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587", "decision": null},
+    {"owner": "SECTION_7_3", "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json", "sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a", "decision": null},
+    {"owner": "SECTION_7_4", "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json", "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2", "decision": null},
+    {"owner": "SECTION_7_5", "path": "docs/contracts/canonical-inference-gcp-full-contract-closure/full-contract-closure-contract.json", "sha256": "a23f7afad3f32d6e6a1bc2ddc4eb3fb1c02af5b12826f3f4dd412a304858cb19", "decision": "SECTION_7_5_CONTRACT_CLOSED"}
+  ],
+  "synthetic_trusted_context_root": {
+    "path": "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/trusted-context.json",
+    "sha256": "22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df"
+  },
+  "environment_worker_root": {
+    "path": "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/hermetic_environment_worker.py",
+    "sha256": "1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac"
+  },
+  "section_7_4_consumer_contract": {
+    "consumer": "SECTION_7_4_ONLY",
+    "required_inputs": [
+      "pre_ledger_request_context_hash",
+      "parent_attempt_envelope_hash",
+      "opaque_section_7_6_pre_execution_record_hash",
+      "record_bound_pre_ledger_request_context_hash",
+      "record_bound_parent_attempt_envelope_hash",
+      "single_use_attempt_claim",
+      "record_bound_single_use_attempt_claim",
+      "section_7_6_record_authentication_verification_hash",
+      "section_7_6_record_freshness_hash",
+      "opaque_pre_execution_record_single_use_verification_hash",
+      "approved_section_7_6_contract_hash"
+    ],
+    "section_7_4_owned_outputs": [
+      "pre_execution_attempt_acceptance_hash",
+      "pre_execution_request_context_exact_match",
+      "pre_execution_parent_attempt_exact_match",
+      "pre_execution_single_use_attempt_claim_exact_match",
+      "section_7_4_opaque_pre_execution_record_acceptance"
+    ]
+  },
+  "section_7_6_2_exclusive_ownership": [
+    "retry_eligibility",
+    "favorable_retry_decision",
+    "retry_token_issuance",
+    "crash_classification",
+    "terminal_classification",
+    "terminal_proof",
+    "authority_mutation"
+  ],
+  "record_schemas": {
+    "plan_manifest": ["schema_version", "numerical_body_hash", "model_hash", "execution_plan_hash", "model_plan_sha256", "runtime_profile_hash", "plan_manifest_hash"],
+    "allocation_manifest": ["schema_version", "runtime_profile_hash", "allocation_incarnation", "zone_commitment", "instance_commitment", "plan_manifest_hash", "allocation_manifest_hash"],
+    "lineage_input": ["schema_version", "lineage_kind", "authenticated_lineage_token_hash", "initial_token_hash", "opaque_retry_authorization_hash", "token_authentication_verification_hash", "token_freshness_verification_hash", "token_single_use_claim"],
+    "parent_attempt_envelope": ["schema_version", "numerical_body_hash", "plan_manifest_hash", "allocation_manifest_hash", "authenticated_lineage_token_hash", "admission_lineage_hash", "attempt_ordinal", "retry_ordinal", "keyed_tenant_commitment", "runtime_profile_hash", "single_use_attempt_claim", "parent_producer_policy_hash", "parent_record_authentication_verification_hash", "parent_attempt_envelope_hash"],
+    "current_attempt_family_head": ["schema_version", "attempt_family_key", "lineage_state", "attempt_ordinal", "retry_ordinal", "last_reservation_key", "last_write_ahead_marker_hash", "last_expected_request_lineage_hash", "head_version", "head_authentication_verification_hash", "attempt_family_head_hash"],
+    "expected_request_lineage": ["schema_version", "expected_request_context_record_hash", "pre_ledger_request_context_hash", "parent_attempt_envelope_hash", "plan_manifest_hash", "allocation_manifest_hash", "derived_attempt_ordinal", "derived_retry_ordinal", "single_use_attempt_claim", "expected_request_lineage_hash"],
+    "reservation": ["schema_version", "reservation_key", "keyed_tenant_commitment", "runtime_profile_hash", "allocation_incarnation", "numerical_body_hash", "plan_manifest_hash", "allocation_manifest_hash", "lineage_input_hash", "derived_attempt_ordinal", "derived_retry_ordinal", "parent_attempt_envelope_hash", "expected_request_lineage_hash", "single_use_attempt_claim", "reserved_at", "reservation_status"],
+    "token_consumption_marker": ["schema_version", "authenticated_lineage_token_hash", "token_single_use_claim", "reservation_key", "derived_attempt_ordinal", "derived_retry_ordinal", "consumed_at", "token_consumption_marker_hash"],
+    "write_ahead_marker": ["schema_version", "reservation_key", "token_consumption_marker_hash", "expected_request_lineage_hash", "previous_attempt_family_head_hash", "derived_attempt_ordinal", "derived_retry_ordinal", "write_order", "marker_created_at", "write_ahead_marker_hash"],
+    "new_attempt_family_head": ["schema_version", "attempt_family_key", "lineage_state", "attempt_ordinal", "retry_ordinal", "last_reservation_key", "last_write_ahead_marker_hash", "last_expected_request_lineage_hash", "head_version", "head_authentication_verification_hash", "attempt_family_head_hash"],
+    "pre_execution_record": ["schema_version", "opaque_section_7_6_pre_execution_record_hash", "record_bound_pre_ledger_request_context_hash", "record_bound_parent_attempt_envelope_hash", "record_bound_single_use_attempt_claim", "section_7_6_record_authentication_verification_hash", "section_7_6_record_freshness_hash", "opaque_pre_execution_record_single_use_verification_hash", "approved_section_7_6_contract_hash", "record_created_at", "record_expires_at", "record_status", "authority_effect"]
+  },
+  "transition_schema": ["schema_version", "authenticated_inputs_hash", "authenticated_current_head_hash", "reservation_absence_proof_hash", "token_absence_proof_hash", "atomic_write_set_hash", "commit_disposition", "unknown_commit_recovery", "readback_bundle_hash", "readback_disposition", "exposure_disposition"],
+  "fixed_write_order": ["RESERVATION", "TOKEN_CONSUMPTION_MARKER", "WRITE_AHEAD_MARKER", "NEW_ATTEMPT_FAMILY_HEAD", "EXPECTED_REQUEST_LINEAGE_LINK"],
+  "reservation_key_bindings": ["keyed_tenant_commitment", "runtime_profile_hash", "allocation_incarnation", "numerical_body_hash", "plan_manifest_hash", "allocation_manifest_hash", "lineage_input_hash", "derived_attempt_ordinal", "derived_retry_ordinal", "parent_attempt_envelope_hash", "expected_request_lineage_hash", "single_use_attempt_claim"],
+  "public_projection_fields": ["opaque_section_7_6_pre_execution_record_hash", "record_bound_pre_ledger_request_context_hash", "record_bound_parent_attempt_envelope_hash", "record_bound_single_use_attempt_claim", "section_7_6_record_authentication_verification_hash", "section_7_6_record_freshness_hash", "opaque_pre_execution_record_single_use_verification_hash", "approved_section_7_6_contract_hash", "record_created_at", "record_expires_at", "record_status", "authority_effect"],
+  "ledger": [
+    {"id": "L-PREDECESSORS", "owner": "SECTIONS_7_2_TO_7_5", "trust_class": "COMPILE_PINNED", "controller": "repository", "producer": "named_sections", "authenticator": "byte_sha256_and_exact_decision", "consumer": "SECTION_7_6_1", "dependencies": [], "anchor": "PINNED_SOURCE_BYTES", "attacks": ["A002", "A007", "A008", "A010", "A014", "A015", "A016", "A017", "A018"], "failure": "HOLD"},
+    {"id": "L-QUEUE", "owner": "HUMAN", "trust_class": "AUTHENTICATED_OBSERVATION", "controller": "human", "producer": "WORK_QUEUE", "authenticator": "immutable_projection_sha256", "consumer": "SECTION_7_6_1", "dependencies": [], "anchor": "UNIQUE_HUMAN_QUEUE_ROW", "attacks": ["A010", "A018"], "failure": "HOLD"},
+    {"id": "L-TRUSTED-CONTEXT", "owner": "READINESS_HARNESS", "trust_class": "COMPILE_PINNED", "controller": "readiness_fixture", "producer": "synthetic_independent_roots", "authenticator": "byte_sha256_before_use", "consumer": "SECTION_7_6_1_TEST_ORACLE", "dependencies": [], "anchor": "PINNED_TEST_ONLY_TRUSTED_CONTEXT", "attacks": ["A008"], "failure": "HOLD"},
+    {"id": "L-PLAN", "owner": "SECTION_7_6_1", "trust_class": "AUTHENTICATED_OBSERVATION", "controller": "approved_plan_producer", "producer": "plan_registry", "authenticator": "plan_authentication_evidence", "consumer": "SECTION_7_6_1", "dependencies": ["L-PREDECESSORS"], "anchor": "APPROVED_PLAN_REGISTRY", "attacks": ["A004", "A007", "A010", "A018"], "failure": "HOLD"},
+    {"id": "L-ALLOCATION", "owner": "SECTION_7_6_1", "trust_class": "AUTHENTICATED_OBSERVATION", "controller": "approved_allocator", "producer": "allocation_controller", "authenticator": "allocation_authentication_evidence", "consumer": "SECTION_7_6_1", "dependencies": ["L-PLAN"], "anchor": "APPROVED_ALLOCATION_POLICY", "attacks": ["A007", "A010", "A018"], "failure": "HOLD"},
+    {"id": "L-LINEAGE", "owner": "PARENT_OR_SECTION_7_6_2", "trust_class": "AUTHENTICATED_OBSERVATION", "controller": "approved_token_producer", "producer": "initial_or_retry_authority", "authenticator": "token_authentication_and_freshness", "consumer": "SECTION_7_6_1", "dependencies": ["L-PREDECESSORS"], "anchor": "APPROVED_TOKEN_POLICY", "attacks": ["A005", "A008", "A009", "A010", "A018", "A019"], "failure": "HOLD"},
+    {"id": "L-PARENT", "owner": "PARENT", "trust_class": "AUTHENTICATED_OBSERVATION", "controller": "parent", "producer": "parent_attempt_envelope_producer", "authenticator": "parent_record_authentication", "consumer": "SECTION_7_6_1", "dependencies": ["L-PLAN", "L-ALLOCATION", "L-LINEAGE"], "anchor": "APPROVED_PARENT_POLICY", "attacks": ["A003", "A005", "A007", "A008", "A010", "A018"], "failure": "HOLD"},
+    {"id": "L-HEAD-IN", "owner": "SECTION_7_6_1", "trust_class": "AUTHENTICATED_OBSERVATION", "controller": "ledger_store", "producer": "attempt_family_head_store", "authenticator": "head_record_authentication", "consumer": "SECTION_7_6_1", "dependencies": ["L-PREDECESSORS"], "anchor": "AUTHENTICATED_CURRENT_HEAD", "attacks": ["A003", "A006", "A008", "A010", "A018"], "failure": "HOLD"},
+    {"id": "L-ORDINALS", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "verifier", "producer": "ordinal_derivation", "authenticator": "literal_integer_oracle", "consumer": "SECTION_7_6_1", "dependencies": ["L-LINEAGE", "L-HEAD-IN"], "anchor": "AUTHENTICATED_HEAD_PLUS_LINEAGE_KIND", "attacks": ["A003", "A006", "A009", "A010", "A017"], "failure": "HOLD"},
+    {"id": "L-EXPECTED", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "verifier", "producer": "expected_request_builder", "authenticator": "exact_dependency_oracle", "consumer": "SECTION_7_4", "dependencies": ["L-PLAN", "L-ALLOCATION", "L-PARENT", "L-ORDINALS"], "anchor": "ADMITTED_REQUEST_CONTEXT", "attacks": ["A007", "A010", "A018"], "failure": "HOLD"},
+    {"id": "L-RESERVATION", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "atomic_transition", "producer": "reservation_builder", "authenticator": "canonical_preimage_oracle", "consumer": "ledger_store", "dependencies": ["L-PLAN", "L-ALLOCATION", "L-LINEAGE", "L-PARENT", "L-ORDINALS", "L-EXPECTED"], "anchor": "EXACT_RESERVATION_BINDINGS", "attacks": ["A003", "A006", "A007", "A009", "A010", "A011", "A012", "A017", "A018"], "failure": "HOLD"},
+    {"id": "L-TOKEN", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "atomic_transition", "producer": "token_consumption_writer", "authenticator": "absence_and_exact_write_oracle", "consumer": "ledger_store", "dependencies": ["L-LINEAGE", "L-RESERVATION", "L-ORDINALS"], "anchor": "TOKEN_ABSENCE_PROOF", "attacks": ["A002", "A008", "A009", "A010", "A011", "A017", "A018"], "failure": "HOLD"},
+    {"id": "L-WAL", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "atomic_transition", "producer": "write_ahead_writer", "authenticator": "fixed_write_order_oracle", "consumer": "ledger_store", "dependencies": ["L-RESERVATION", "L-TOKEN", "L-EXPECTED", "L-HEAD-IN"], "anchor": "FIXED_WRITE_ORDER", "attacks": ["A002", "A006", "A009", "A010", "A011", "A017", "A018"], "failure": "HOLD"},
+    {"id": "L-HEAD-OUT", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "atomic_transition", "producer": "head_writer", "authenticator": "monotonic_head_oracle", "consumer": "ledger_store", "dependencies": ["L-HEAD-IN", "L-ORDINALS", "L-RESERVATION", "L-WAL", "L-EXPECTED"], "anchor": "AUTHENTICATED_PREVIOUS_HEAD", "attacks": ["A006", "A009", "A010", "A017", "A018"], "failure": "HOLD"},
+    {"id": "L-TRANSITION", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "atomic_transition", "producer": "transaction", "authenticator": "commit_and_exact_readback", "consumer": "SECTION_7_6_1", "dependencies": ["L-RESERVATION", "L-TOKEN", "L-WAL", "L-HEAD-OUT", "L-EXPECTED"], "anchor": "ATOMIC_STORE_AND_READBACK", "attacks": ["A002", "A006", "A009", "A010", "A011", "A017", "A018"], "failure": "HOLD"},
+    {"id": "L-OPAQUE", "owner": "SECTION_7_6_1", "trust_class": "DERIVED", "controller": "verifier", "producer": "opaque_record_builder", "authenticator": "record_authentication_freshness_single_use", "consumer": "SECTION_7_4", "dependencies": ["L-PARENT", "L-EXPECTED", "L-TRANSITION"], "anchor": "EXACT_COMMITTED_READBACK", "attacks": ["A001", "A003", "A010", "A011", "A012", "A018", "A019"], "failure": "HOLD"},
+    {"id": "L-CONSUMER", "owner": "SECTION_7_4", "trust_class": "OPAQUE_LATER_SECTION", "controller": "SECTION_7_4", "producer": "SECTION_7_4", "authenticator": "SECTION_7_4", "consumer": "SECTION_7_4", "dependencies": ["L-OPAQUE"], "anchor": "SECTION_7_4_CONTRACT", "attacks": ["A001", "A010", "A013", "A018", "A019"], "failure": "HOLD"},
+    {"id": "L-PRIVACY", "owner": "HUMAN", "trust_class": "COMPILE_PINNED", "controller": "closed_schema", "producer": "schema", "authenticator": "recursive_key_oracle", "consumer": "all", "dependencies": [], "anchor": "PROHIBITED_FIELD_SET", "attacks": ["A004", "A010", "A018", "A019"], "failure": "HOLD"},
+    {"id": "L-AUTHORITY", "owner": "HUMAN_AND_SECTION_7_6_2", "trust_class": "OPAQUE_LATER_SECTION", "controller": "human_and_later_section", "producer": "not_section_7_6_1", "authenticator": "authority_ceiling_oracle", "consumer": "all", "dependencies": [], "anchor": "AUTHORITY_NONE", "attacks": ["A003", "A010", "A013", "A019"], "failure": "HOLD"}
+  ],
+  "candidate_leaf_ledger_patterns": [
+    {"pattern": "/schema_version", "ledger": "L-CONSUMER"},
+    {"pattern": "/scope_kind", "ledger": "L-CONSUMER"},
+    {"pattern": "/authority_effect", "ledger": "L-AUTHORITY"},
+    {"pattern": "/predecessor_contracts/*/owner", "ledger": "L-PREDECESSORS"},
+    {"pattern": "/predecessor_contracts/*/path", "ledger": "L-PREDECESSORS"},
+    {"pattern": "/predecessor_contracts/*/sha256", "ledger": "L-PREDECESSORS"},
+    {"pattern": "/predecessor_contracts/*/decision", "ledger": "L-PREDECESSORS"},
+    {"pattern": "/queue_authorization_projection/*", "ledger": "L-QUEUE"},
+    {"pattern": "/records/plan_manifest/*", "ledger": "L-PLAN"},
+    {"pattern": "/records/allocation_manifest/*", "ledger": "L-ALLOCATION"},
+    {"pattern": "/records/lineage_input/*", "ledger": "L-LINEAGE"},
+    {"pattern": "/records/parent_attempt_envelope/*", "ledger": "L-PARENT"},
+    {"pattern": "/records/current_attempt_family_head/*", "ledger": "L-HEAD-IN"},
+    {"pattern": "/records/expected_request_lineage/*", "ledger": "L-EXPECTED"},
+    {"pattern": "/records/reservation/*", "ledger": "L-RESERVATION"},
+    {"pattern": "/records/token_consumption_marker/*", "ledger": "L-TOKEN"},
+    {"pattern": "/records/write_ahead_marker/*", "ledger": "L-WAL"},
+    {"pattern": "/records/write_ahead_marker/write_order/*", "ledger": "L-WAL"},
+    {"pattern": "/records/new_attempt_family_head/*", "ledger": "L-HEAD-OUT"},
+    {"pattern": "/records/pre_execution_record/*", "ledger": "L-OPAQUE"},
+    {"pattern": "/transition/*", "ledger": "L-TRANSITION"},
+    {"pattern": "/ownership_exclusions/*", "ledger": "L-AUTHORITY"},
+    {"pattern": "/public_projection/*", "ledger": "L-OPAQUE"},
+    {"pattern": "/result/*", "ledger": "L-CONSUMER"},
+    {"pattern": "/hashes/*", "ledger": "L-TRANSITION"}
+  ],
+  "attacks": [
+    {"id": "A001", "class": "UNKNOWN_FIELD", "mutation": "add unknown top-level and opaque-record fields then reseal", "root": "CLOSED_SCHEMAS", "descendants": ["opaque_record_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-OPAQUE", "L-CONSUMER"]},
+    {"id": "A002", "class": "MISSING_FIELD", "mutation": "remove a required field/record or present an exact predecessor HOLD decision then reseal", "root": "REQUIRED_SCHEMA_FIELDS_AND_PREDECESSOR_DECISIONS", "descendants": ["records_bundle_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-TOKEN", "L-WAL", "L-TRANSITION"]},
+    {"id": "A003", "class": "WRONG_TYPE", "mutation": "inject caller identity/status or Boolean attempt/retry ordinal and reseal", "root": "LITERAL_TYPE_AND_DERIVATION_ORACLE", "descendants": ["parent_hash", "reservation_key", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PARENT", "L-HEAD-IN", "L-ORDINALS", "L-RESERVATION", "L-OPAQUE", "L-AUTHORITY"]},
+    {"id": "A004", "class": "NESTED_EXTRA_FIELD", "mutation": "add raw plan bytes inside plan manifest and reseal", "root": "CLOSED_PLAN_SCHEMA", "descendants": ["plan_manifest_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PLAN", "L-PRIVACY"]},
+    {"id": "A005", "class": "TRUNCATED_OBJECT", "mutation": "truncate parent envelope or lineage object and reseal", "root": "CLOSED_PARENT_AND_LINEAGE_SCHEMAS", "descendants": ["parent_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-LINEAGE", "L-PARENT"]},
+    {"id": "A006", "class": "SINGLE_FIELD_SUBSTITUTION", "mutation": "substitute derived ordinal, head lineage, reservation status, or write order and reseal", "root": "AUTHENTICATED_HEAD_AND_FIXED_TRANSITION", "descendants": ["reservation_key", "write_ahead_hash", "head_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-HEAD-IN", "L-ORDINALS", "L-RESERVATION", "L-WAL", "L-HEAD-OUT", "L-TRANSITION"]},
+    {"id": "A007", "class": "CROSS_OBJECT_SPLICE", "mutation": "splice plan, allocation, parent, expected-request, reservation, or predecessor identity and reseal", "root": "INDEPENDENT_PIN_AND_EXACT_DEPENDENCY_ORACLE", "descendants": ["record_hashes", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-PLAN", "L-ALLOCATION", "L-PARENT", "L-EXPECTED", "L-RESERVATION"]},
+    {"id": "A008", "class": "FORGED_PROVENANCE", "mutation": "replace token, parent, head, predecessor, or independently pinned trusted-context authentication/provenance and reseal", "root": "APPROVED_AUTHENTICATORS_AND_BYTE_PINS", "descendants": ["lineage_hash", "parent_hash", "head_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-TRUSTED-CONTEXT", "L-LINEAGE", "L-PARENT", "L-HEAD-IN", "L-TOKEN"]},
+    {"id": "A009", "class": "REPLAY_REUSE", "mutation": "replay an identical candidate twice, preseed only the used reservation-key set, or preseed only the used lineage-token set", "root": "TEST_OWNED_ORTHOGONAL_SINGLE_USE_STATE", "descendants": [], "expected": "HOLD", "ledger": ["L-LINEAGE", "L-ORDINALS", "L-RESERVATION", "L-TOKEN", "L-WAL", "L-HEAD-OUT", "L-TRANSITION"]},
+    {"id": "A010", "class": "COORDINATED_FULL_CLOSURE_RESEAL", "mutation": "change pinned source and queue roots plus every attacker-owned record and descendant hash while preserving internal consistency", "root": "COMPILE_PINNED_BYTES_AND_HUMAN_QUEUE_PROJECTION", "descendants": ["all_records", "all_transition_fields", "public_projection", "all_hashes"], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-QUEUE", "L-PLAN", "L-ALLOCATION", "L-LINEAGE", "L-PARENT", "L-HEAD-IN", "L-ORDINALS", "L-EXPECTED", "L-RESERVATION", "L-TOKEN", "L-WAL", "L-HEAD-OUT", "L-TRANSITION", "L-OPAQUE", "L-CONSUMER", "L-PRIVACY", "L-AUTHORITY"]},
+    {"id": "A011", "class": "GLOBAL_TIMESTAMP_RESEAL", "mutation": "shift every reservation, marker, transition, and opaque-record time by the same delta and reseal", "root": "AUTHENTICATED_TIME_POLICY", "descendants": ["all_time_dependent_records", "all_hashes"], "expected": "HOLD", "ledger": ["L-RESERVATION", "L-TOKEN", "L-WAL", "L-TRANSITION", "L-OPAQUE"]},
+    {"id": "A012", "class": "STALE_FUTURE_TIME", "mutation": "make reservation or opaque record stale/future and reseal", "root": "AUTHENTICATED_TIME_POLICY", "descendants": ["reservation_hash", "opaque_record_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-RESERVATION", "L-OPAQUE"]},
+    {"id": "A013", "class": "MODE_CONFUSION", "mutation": "change docs-contract mode to live, archive acceptance, or runtime authority", "root": "COMPILE_PINNED_SCOPE_AND_AUTHORITY", "descendants": ["candidate_hash"], "expected": "HOLD", "ledger": ["L-CONSUMER", "L-AUTHORITY"]},
+    {"id": "A014", "class": "AMBIENT_FALLBACK", "mutation": "remove an explicit predecessor and place matching bytes at an ambient path", "root": "EXPLICIT_LOCATORS", "descendants": [], "expected": "HOLD_SOURCE_SET_ABSENT", "ledger": ["L-PREDECESSORS"]},
+    {"id": "A015", "class": "PARTIAL_RESOURCE", "mutation": "truncate a pinned predecessor byte range", "root": "PINNED_SOURCE_BYTES", "descendants": [], "expected": "HOLD_SOURCE_SET_PARTIAL", "ledger": ["L-PREDECESSORS"]},
+    {"id": "A016", "class": "CORRUPT_RESOURCE", "mutation": "change a pinned predecessor byte while preserving JSON shape", "root": "PINNED_SOURCE_BYTES", "descendants": [], "expected": "HOLD_SOURCE_SET_CORRUPT", "ledger": ["L-PREDECESSORS"]},
+    {"id": "A017", "class": "CONCURRENCY_INTERLEAVING", "mutation": "race duplicate reservations with exactly one winner or atomically replace a source between admission steps", "root": "TEST_OWNED_BARRIER_AND_OPEN_FILE_DESCRIPTION", "descendants": [], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-ORDINALS", "L-RESERVATION", "L-TOKEN", "L-WAL", "L-HEAD-OUT", "L-TRANSITION"]},
+    {"id": "A018", "class": "PRIVACY_LEAKAGE", "mutation": "inject raw/private fields at every top-level and nested record boundary then reseal", "root": "CLOSED_PRIVACY_SCHEMA", "descendants": ["all_affected_record_hashes", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-QUEUE", "L-PLAN", "L-ALLOCATION", "L-LINEAGE", "L-PARENT", "L-HEAD-IN", "L-EXPECTED", "L-RESERVATION", "L-TOKEN", "L-WAL", "L-HEAD-OUT", "L-TRANSITION", "L-OPAQUE", "L-CONSUMER", "L-PRIVACY"]},
+    {"id": "A019", "class": "AUTHORITY_ESCALATION", "mutation": "inject Section 7.4 acceptance, actual boot truth, terminal/retry fields, PASS booleans, or non-NONE authority", "root": "SECTION_OWNERSHIP_AND_AUTHORITY_NONE", "descendants": ["candidate_hash"], "expected": "HOLD", "ledger": ["L-LINEAGE", "L-OPAQUE", "L-CONSUMER", "L-PRIVACY", "L-AUTHORITY"]}
+  ],
+  "attack_variants": {
+    "A002": ["TOP_LEVEL_RESULT", "PREDECESSOR_DECISION", "PREDECESSOR_HOLD", "TOKEN_MARKER", "WRITE_AHEAD_MARKER", "TRANSITION_READBACK"],
+    "A003": ["CALLER_IDENTITY", "CALLER_ORDINAL", "BOOLEAN_ATTEMPT_ORDINAL", "BOOLEAN_RETRY_ORDINAL", "CALLER_STATUS", "CALLER_RECORD_STATUS"],
+    "A005": ["PARENT_ENVELOPE", "LINEAGE_INPUT"],
+    "A006": ["DERIVED_ORDINAL", "HEAD_LINEAGE", "RESERVATION_STATUS", "MISORDERED_WRITE_AHEAD"],
+    "A007": ["PLAN_ALLOCATION", "PARENT_EXPECTED", "PREDECESSOR_SOURCE"],
+    "A008": ["LINEAGE_AUTH", "PARENT_AUTH", "HEAD_AUTH", "SOURCE_PROVENANCE", "TRUSTED_CONTEXT_ROOT"],
+    "A009": ["IDENTICAL_CANDIDATE", "RESERVATION_KEY", "LINEAGE_TOKEN"],
+    "A011": ["ALL_TIMESTAMPS"],
+    "A012": ["STALE", "FUTURE"],
+    "A013": ["LIVE_RUNTIME", "ARCHIVE_ACCEPT"],
+    "A017": ["CONCURRENT_DUPLICATE_RESERVATION", "ATOMIC_SOURCE_REPLACEMENT"],
+    "A018": ["TOP_LEVEL", "PREDECESSOR_ROW", "QUEUE_ROW", "QUEUE_LAST_NOTE_NESTED", "PLAN", "ALLOCATION", "LINEAGE", "PARENT", "HEAD_IN", "EXPECTED", "RESERVATION", "TOKEN_MARKER", "WRITE_AHEAD", "HEAD_OUT", "TRANSITION", "OPAQUE_RECORD", "PUBLIC_PROJECTION", "RESULT"],
+    "A019": ["TOP_LEVEL_AUTHORITY", "PRE_EXECUTION_ACCEPTANCE_HASH", "SECTION_7_4_PASS_BOOLEAN", "ACTUAL_BOOT_TRUTH", "TERMINAL_STATE", "RETRY_ELIGIBILITY", "FAVORABLE_RETRY_DECISION", "RETRY_TOKEN_ISSUANCE", "CRASH_CLASSIFICATION", "TERMINAL_CLASSIFICATION", "TERMINAL_PROOF", "AUTHORITY_MUTATION"]
+  },
+  "replay_ready_controls": [
+    {
+      "id": "UNRELATED_RESERVATION_STATE",
+      "used_reservation_keys": ["a3f2f570a3ed323f2553643b159a393ec65bfa1a5dfd8b605e313f2a12e28b6f"],
+      "used_lineage_tokens": [],
+      "expected": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+    },
+    {
+      "id": "UNRELATED_LINEAGE_STATE",
+      "used_reservation_keys": [],
+      "used_lineage_tokens": ["8f8d287b5233b2b9771fd5317b2d12548e78f24d9b2378c416710c09cfa230f8"],
+      "expected": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+    },
+    {
+      "id": "UNRELATED_RESERVATION_AND_LINEAGE_STATE",
+      "used_reservation_keys": ["a3f2f570a3ed323f2553643b159a393ec65bfa1a5dfd8b605e313f2a12e28b6f"],
+      "used_lineage_tokens": ["8f8d287b5233b2b9771fd5317b2d12548e78f24d9b2378c416710c09cfa230f8"],
+      "expected": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+    }
+  ],
+  "requirements": [
+    {"id": "S761-R01", "requirement": "exact four-source byte admission", "oracle": "S761_SOURCE_PIN_ORACLE", "test": "test_source_queue_and_section_7_4_interface_are_exact"},
+    {"id": "S761-R02", "requirement": "unique immutable human queue projection", "oracle": "S761_QUEUE_PROJECTION_ORACLE", "test": "test_source_queue_and_section_7_4_interface_are_exact"},
+    {"id": "S761-R03", "requirement": "closed record schemas", "oracle": "S761_CLOSED_SCHEMA_ORACLE", "test": "test_closed_schemas_hash_dag_and_public_projection"},
+    {"id": "S761-R04", "requirement": "authenticated inputs are not hash trust roots", "oracle": "S761_AUTHENTICATOR_SEPARATION_ORACLE", "test": "test_ledger_attack_and_requirement_reconciliation"},
+    {"id": "S761-R05", "requirement": "verifier-derived initial and opaque-retry integer ordinals excluding Boolean", "oracle": "S761_ORDINAL_LITERAL_ORACLE", "test": "test_future_sut_opaque_retry_lineage_ready"},
+    {"id": "S761-R06", "requirement": "exact reservation key bindings", "oracle": "S761_RESERVATION_PREIMAGE_ORACLE", "test": "test_closed_schemas_hash_dag_and_public_projection"},
+    {"id": "S761-R07", "requirement": "fixed atomic write-ahead order", "oracle": "S761_ATOMIC_WRITE_ORDER_ORACLE", "test": "test_closed_schemas_hash_dag_and_public_projection"},
+    {"id": "S761-R08", "requirement": "commit then exact readback before exposure", "oracle": "S761_EXACT_READBACK_ORACLE", "test": "test_future_sut_unknown_commit_mismatched_readback_holds"},
+    {"id": "S761-R09", "requirement": "unknown commit same-key readback only with no new ordinal", "oracle": "S761_UNKNOWN_COMMIT_ORACLE", "test": "test_future_sut_unknown_commit_same_key_readback"},
+    {"id": "S761-R10", "requirement": "stateful replay and concurrency exactly-one winner", "oracle": "S761_STATEFUL_CONCURRENCY_ORACLE", "test": "test_future_sut_declared_attack"},
+    {"id": "S761-R11", "requirement": "Section 7.4-only opaque consumption", "oracle": "S761_SECTION_7_4_CONSUMER_ORACLE", "test": "test_source_queue_and_section_7_4_interface_are_exact"},
+    {"id": "S761-R12", "requirement": "Section 7.6.2 terminal and retry exclusivity", "oracle": "S761_LATER_SECTION_OWNERSHIP_ORACLE", "test": "test_closed_schemas_hash_dag_and_public_projection"},
+    {"id": "S761-R13", "requirement": "expected allocation only not actual boot truth", "oracle": "S761_EXPECTED_NOT_ACTUAL_RUNTIME_ORACLE", "test": "test_closed_schemas_hash_dag_and_public_projection"},
+    {"id": "S761-R14", "requirement": "recursive privacy and authority ceiling", "oracle": "S761_PRIVACY_AUTHORITY_ORACLE", "test": "test_future_sut_declared_attack"},
+    {"id": "S761-R15", "requirement": "twelve hermetic environment cells", "oracle": "S761_ENVIRONMENT_LITERAL_ORACLE", "test": "test_future_sut_environment_cell"},
+    {"id": "S761-R16", "requirement": "no numerical or statistical semantic change", "oracle": "S761_NONINTERFERENCE_ORACLE", "test": "test_scope_allowlist_and_noninterference"},
+    {"id": "S761-R17", "requirement": "unrelated used reservation and lineage identities remain READY in every one-set and two-set state shape", "oracle": "S761_CANDIDATE_SPECIFIC_SINGLE_USE_ORACLE", "test": "test_future_sut_unrelated_replay_state_ready"}
+  ],
+  "attack_oracle_id": "S761_INDEPENDENT_LITERAL_ATTACK_ORACLE_V1",
+  "attack_pytest_node_template": "tests/test_gcp_section_7_6_1_preexecution_ledger_readiness.py::test_future_sut_declared_attack[{case_id}]",
+  "environment_oracle_id": "S761_INDEPENDENT_ENVIRONMENT_ORACLE_V1",
+  "environment_pytest_node_template": "tests/test_gcp_section_7_6_1_preexecution_ledger_readiness.py::test_future_sut_environment_cell[{environment}-{resource}]",
+  "sut_paths": [
+    "docs/contracts/canonical-inference-gcp-preexecution-ledger/preexecution-ledger-contract.json",
+    "docs/contracts/canonical-inference-gcp-preexecution-ledger/canonicalization-vectors.json",
+    "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py"
+  ],
+  "environment_command_template": "env -i HOME={tmp_home} XDG_CACHE_HOME={tmp_cache} PYTHONPYCACHEPREFIX={tmp_pycache} PYTHONPATH={repo_root} GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL={empty_gitconfig} PYTHONHASHSEED=0 PATH=/usr/bin:/bin TZ=UTC LC_ALL=C.UTF-8 LANG=C.UTF-8 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 /usr/bin/python3 {worker_path} --repo {repo_root} --root {isolated_root} --candidate {candidate_json} --mode {environment}",
+  "environment_controlled_prerequisites": ["isolated_tmp_root", "explicit_source_manifest", "closed_candidate", "no_ambient_fallback", "network_disabled", "authority_effect_NONE", "trusted_time_fixture", "controlled_home", "controlled_caches", "controlled_pythonpath", "controlled_path", "controlled_locale", "controlled_timezone", "single_threaded_native_libraries"],
+  "environment_controls": {
+    "TZ": "UTC",
+    "LC_ALL": "C.UTF-8",
+    "LANG": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "environment_cells": [
+    {"environment": "CLEAN_CI", "resource": "ABSENT", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "HOLD_SOURCE_SET_ABSENT", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "CLEAN_CI", "resource": "PARTIAL", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "HOLD_SOURCE_SET_PARTIAL", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "CLEAN_CI", "resource": "CORRUPT", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "HOLD_SOURCE_SET_CORRUPT", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "CLEAN_CI", "resource": "EXACT", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "ABSENT", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_ABSENT", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "PARTIAL", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_PARTIAL", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "CORRUPT", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_CORRUPT", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "EXACT", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_CLOSEOUT_ONLY", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "ABSENT", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "PARTIAL", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "CORRUPT", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "EXACT", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"}
+  ]
+}

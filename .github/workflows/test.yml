@@ -17,6 +17,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v6
@@ -33,9 +35,10 @@ jobs:
 
     - name: Run Tests
       run: |
-        # Future-SUT cases and the frozen Section 7.5.5 preimplementation
-        # absence assertion remain explicit lifecycle audits.
+        # Future-SUT cases and frozen preimplementation absence assertions
+        # remain explicit lifecycle audits.
         pytest tests/ \
           --deselect=tests/test_gcp_section_7_5_parent_contract_authority_closure_readiness_v4.py::test_future_sut_attack_case \
           --deselect=tests/test_gcp_section_7_5_parent_contract_authority_closure_readiness_v4.py::test_future_sut_environment_cell \
-          --deselect=tests/test_gcp_section_7_5_5_full_contract_readiness.py::test_packet_sources_are_exact_and_preimplementation_sut_is_absent
+          --deselect=tests/test_gcp_section_7_5_5_full_contract_readiness.py::test_packet_sources_are_exact_and_preimplementation_sut_is_absent \
+          --deselect=tests/test_gcp_section_7_6_1_preexecution_ledger_readiness.py::test_source_queue_and_section_7_4_interface_are_exact

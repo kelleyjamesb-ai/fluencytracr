@@ -2,6 +2,103 @@
 
 ## Current Session
 
+- Section 7.6.1 readiness reached unanimous CODE/BUG/ADVERSARIAL
+  `READINESS_GO` on exact commit
+  `73a61d3786bbe21484af86ba38a4fa2676aef631`. Its five frozen artifacts remain
+  byte-identical: readiness packet
+  `e786a66b1a8da7394df895a3a464fd10a5be74afc0cea41ca19b931f794fc307`,
+  rules `9da8f5469ba88b6fd4489b4a299d15401a028411610141edfdd9d65776786b27`,
+  trusted context
+  `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
+  environment worker
+  `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
+  and readiness test
+  `e4bfad85b50f21e0b340242514b55dd94a3750075593237532c53af387389767`.
+  The bounded implementation now adds the docs contract
+  `b6b2cbdd26b4d9941fb0681ec9049933877af16318dae45429bdd43eaf655083`,
+  synthetic vectors
+  `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
+  silent offline verifier
+  `ced2324bcf4ea0ad16a2a6644c53919de10ed8fda5f6752ee795eee904fe73fb`,
+  and focused contract test
+  `9898d500a815a2a631bfd258fa4c96465fb910d2300c80a3396cfe5ee37e7041`.
+  The verifier admits only exact initial or opaque-retry synthetic candidates,
+  exact predecessor/queue/trusted-context roots, candidate-specific unused
+  reservation and lineage identities, and exact commit readback. It fails
+  closed for archive/live/unknown modes and preserves Section 7.4/7.6.2
+  ownership. The focused implementation plus frozen future-SUT profile passes
+  `113` with only the immutable preimplementation absence assertion deselected;
+  strict OpenSpec, governance, stdlib compilation, silent CLI, JSON, YAML,
+  collection, and diff checks pass. The same exact absence assertion is now
+  deselected in all three synchronized Python runners, matching the established
+  Section 7.5.5 lifecycle pattern while retaining every implementation-facing
+  test. The final full harness on the reviewed implementation SHA passed `868`
+  tests with `10` skipped and `156` intentional lifecycle deselections. No
+  runtime SUT, GCP action, credential,
+  persistence, execution, deployment, migration, qualification,
+  terminal/retry decision, or authority was added. The first exact
+  implementation review found a transaction-exposure reentrancy that could
+  return READY twice before replay identities were recorded. A fail-first
+  regression reproduced it; exact readback now consumes both identities before
+  the caller-controlled exposure callback, so reentry holds and exposure
+  failure remains fail-closed. The replacement BUG review then proved that the
+  source-interleaving callback could mutate the caller-owned candidate after
+  its initial validation. A second fail-first regression reproduced the READY
+  false clear. Evaluation now uses a deep-copied canonical candidate snapshot,
+  rechecks that the caller object did not change across the callback, and uses
+  only the snapshot for state, transaction, readback, and exposure. CODE and
+  BUG then independently found that the transaction received nested snapshot
+  objects by reference and could mutate its own readback authority. Two
+  fail-first regressions cover write-set mutation plus commit/readback reentry.
+  Transaction callbacks now receive deep copies, readback compares against
+  pre-callback canonical bytes, a private in-flight guard rejects callback
+  reentry, and exact-readback identities remain consumed through exposure. The
+  next exact review proved callbacks could rebind the caller state dictionary
+  away from the consumed set objects. A fail-first regression now covers
+  commit, readback, and exposure rebinding. The verifier snapshots the prior
+  replay sets and atomically restores fresh authoritative bindings in `finally`;
+  candidate identities are added only after exact readback and remain consumed
+  even if exposure fails. The next review identified two ordering consequences:
+  exposure must observe the consumed state, and a different accepted candidate
+  must not enter on the same state during any transaction callback. Two
+  fail-first regressions now cover both. Exact readback binds consumed state
+  before exposure, the private in-flight guard serializes the entire state
+  rather than one candidate identity, and `finally` still restores the exact
+  prior-plus-consumed sets. Final CODE, BUG, and independent callback review
+  returned GO on exact implementation commit
+  `44e654f81b1a27dc999961967ae8e14d838d37ea` / tree
+  `196775e09e393915b96e49c0290d9258ceb4a132`. PR #484 review subsequently
+  found three executable closure failures: the normal `COMMITTED` disposition
+  held before readback, unknown-commit readback compared the fixed five-record
+  write set with the entire candidate bundle, and the standalone CLI did not
+  recheck mutable queue authority. Fail-first regressions reproduce all three.
+  Both admitted commit dispositions now require exact fixed-write-set readback,
+  full-bundle compatibility is allowed only for a byte-exact candidate bundle,
+  and every CLI invocation revalidates unique queue authority. Replacement
+  review then proved that admitted commits with failed readback left replay
+  identities reusable. A fail-first mismatch/exception regression now requires
+  both identities to remain consumed immediately after an admitted disposition,
+  so readback failure HOLDs without exposure or a second attempt. Replacement
+  BUG review then found that value-equal caller objects could impersonate an
+  admitted disposition. The disposition gate now requires an exact built-in
+  string before literal comparison; spoof objects and string subclasses HOLD
+  before readback or exposure. Section 7.6.1 remains bounded to docs, OpenSpec,
+  offline verifier, and tests; PR #484 needs replacement exact-tree review and
+  current-head checks before normal merge.
+- Section 7.6.1 is the sole active queue item on
+  `codex/section-7-6-1-preexecution-ledger`, based on merged current main
+  `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5
+  projection records exactly `SECTION_7_5_CONTRACT_CLOSED`, satisfying the
+  human-authored activation dependency. This slice is limited to the
+  pre-execution plan/allocation manifests, parent attempt envelope, signed
+  admission/retry lineage, monotonic ordinals, authenticated tenant/runtime
+  binding, single-use reservation, anti-replay write-ahead markers,
+  expected-request lineage, and Section 7.4 consumption contract. The
+  readiness-first packet and executable adversarial evidence precede any
+  docs-contract/offline-verifier implementation. Section 7.6.2 terminal
+  semantics, runtime SUT, model execution, live GCP, credentials, deployment,
+  migration, qualification, and evidence production remain excluded;
+  authority effect is `NONE`.
 - Replacement review of `98a349ed` confirmed the two PR P1 findings fixed,
   then reproduced one remaining nested privacy false-clear inside the allowed
   `last_note` queue key. The bounded repair now requires `last_note` to be an

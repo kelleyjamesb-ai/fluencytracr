@@ -1,0 +1,33 @@
+{
+  "schema_version": "GCP_SECTION_7_6_1_PREEXECUTION_LEDGER_VECTORS_V1",
+  "authority_effect": "NONE",
+  "purpose": "DOCS_ONLY_OFFLINE_VERIFICATION_NOT_RUNTIME_AUTHORITY",
+  "readiness_ancestor_commit": "73a61d3786bbe21484af86ba38a4fa2676aef631",
+  "readiness_artifacts": {
+    "openspec/changes/add-gcp-section-7-6-1-preexecution-ledger-contract/readiness.md": "e786a66b1a8da7394df895a3a464fd10a5be74afc0cea41ca19b931f794fc307",
+    "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/packet-rules.json": "9da8f5469ba88b6fd4489b4a299d15401a028411610141edfdd9d65776786b27",
+    "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/trusted-context.json": "22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df",
+    "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/hermetic_environment_worker.py": "1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac",
+    "tests/test_gcp_section_7_6_1_preexecution_ledger_readiness.py": "e4bfad85b50f21e0b340242514b55dd94a3750075593237532c53af387389767"
+  },
+  "accepted_candidates": [
+    {
+      "lineage_kind": "INITIAL",
+      "candidate_sha256": "fc05618a60749e734078d11e2ca3350468fef546db6d27c8f5d6e8b16b50e34f",
+      "reservation_key": "4f327fae7bc468e6afa6197d4b130a7ead6b0e2f2aedf47abd70a67e257cbd1c",
+      "authenticated_lineage_token_hash": "9fab5a86d67d219c6973eb3b4ad39f907f86e2aaaeb067b70278a92c23facc32",
+      "derived_attempt_ordinal": 1,
+      "derived_retry_ordinal": 0,
+      "decision": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+    },
+    {
+      "lineage_kind": "OPAQUE_RETRY",
+      "candidate_sha256": "dd53019b91b5cffcaee05838a1ab9a9344329e461af75bad197b6c554dd34af1",
+      "reservation_key": "1bc8d886fc7c272c2d1995184d55f1b0ed2b1fde8abf897a754585f812d3ceed",
+      "authenticated_lineage_token_hash": "3f17cb54ecb5e733fbfdfaeb4328671d4609faea7e9189dfc0c857cc7fdac2ea",
+      "derived_attempt_ordinal": 4,
+      "derived_retry_ordinal": 2,
+      "decision": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+    }
+  ]
+}

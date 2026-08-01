@@ -1,0 +1,333 @@
+{
+  "schema_version": "GCP_SECTION_7_6_1_PREEXECUTION_LEDGER_CONTRACT_V1",
+  "section": "7.6.1",
+  "scope_kind": "DOCS_CONTRACT",
+  "authority_effect": "NONE",
+  "decision": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION",
+  "consumer": "SECTION_7_4_ONLY",
+  "source_contracts": [
+    {
+      "owner": "SECTION_7_2",
+      "path": "docs/contracts/canonical-inference-gcp-runtime-object/runtime-object-contract.json",
+      "sha256": "450946eca205f190482b644ef02ad79547f44e1a0eb4689f1807123382516587",
+      "decision": null
+    },
+    {
+      "owner": "SECTION_7_3",
+      "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json",
+      "sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a",
+      "decision": null
+    },
+    {
+      "owner": "SECTION_7_4",
+      "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json",
+      "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2",
+      "decision": null
+    },
+    {
+      "owner": "SECTION_7_5",
+      "path": "docs/contracts/canonical-inference-gcp-full-contract-closure/full-contract-closure-contract.json",
+      "sha256": "a23f7afad3f32d6e6a1bc2ddc4eb3fb1c02af5b12826f3f4dd412a304858cb19",
+      "decision": "SECTION_7_5_CONTRACT_CLOSED"
+    }
+  ],
+  "queue_authorization": {
+    "path": ".project/WORK_QUEUE.json",
+    "item_id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
+    "immutable_projection_fields": [
+      "id",
+      "title",
+      "bound",
+      "risk"
+    ],
+    "exact_row_fields": [
+      "id",
+      "title",
+      "bound",
+      "status",
+      "risk",
+      "last_note"
+    ],
+    "admitted_statuses": [
+      "in_progress",
+      "done"
+    ],
+    "canonical_sha256": "177fed66474f33fb9f727f94c340b3e6446ac3aa517a7a8ec23896b1c751120a",
+    "projection": {
+      "id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
+      "title": "Section 7.6.1 — pre-execution reservation and single-use attempt contract",
+      "bound": "Docs/OpenSpec/offline verifiers/tests only: define plan and allocation manifests, parent attempt envelope, signed admission/retry lineage, monotonic attempt and retry ordinals, authenticated tenant/runtime binding, single-use reservation, anti-replay write-ahead markers, expected-request lineage, and pre-execution acceptance consumed by Section 7.4; caller-selected identity, ordinal, status, replay, duplicate reservation, or missing write-ahead evidence must HOLD; no terminal ledger, favorable-retry decision, SUT implementation, model execution, live GCP, deployment, or qualification",
+      "risk": "high"
+    }
+  },
+  "trusted_context": {
+    "path": "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/trusted-context.json",
+    "sha256": "22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df",
+    "purpose": "READINESS_TEST_ORACLE_ONLY_NOT_RUNTIME_CRYPTOGRAPHY"
+  },
+  "canonicalization_vectors": {
+    "path": "docs/contracts/canonical-inference-gcp-preexecution-ledger/canonicalization-vectors.json",
+    "sha256": "0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf"
+  },
+  "record_schemas": {
+    "plan_manifest": [
+      "schema_version",
+      "numerical_body_hash",
+      "model_hash",
+      "execution_plan_hash",
+      "model_plan_sha256",
+      "runtime_profile_hash",
+      "plan_manifest_hash"
+    ],
+    "allocation_manifest": [
+      "schema_version",
+      "runtime_profile_hash",
+      "allocation_incarnation",
+      "zone_commitment",
+      "instance_commitment",
+      "plan_manifest_hash",
+      "allocation_manifest_hash"
+    ],
+    "lineage_input": [
+      "schema_version",
+      "lineage_kind",
+      "authenticated_lineage_token_hash",
+      "initial_token_hash",
+      "opaque_retry_authorization_hash",
+      "token_authentication_verification_hash",
+      "token_freshness_verification_hash",
+      "token_single_use_claim"
+    ],
+    "parent_attempt_envelope": [
+      "schema_version",
+      "numerical_body_hash",
+      "plan_manifest_hash",
+      "allocation_manifest_hash",
+      "authenticated_lineage_token_hash",
+      "admission_lineage_hash",
+      "attempt_ordinal",
+      "retry_ordinal",
+      "keyed_tenant_commitment",
+      "runtime_profile_hash",
+      "single_use_attempt_claim",
+      "parent_producer_policy_hash",
+      "parent_record_authentication_verification_hash",
+      "parent_attempt_envelope_hash"
+    ],
+    "current_attempt_family_head": [
+      "schema_version",
+      "attempt_family_key",
+      "lineage_state",
+      "attempt_ordinal",
+      "retry_ordinal",
+      "last_reservation_key",
+      "last_write_ahead_marker_hash",
+      "last_expected_request_lineage_hash",
+      "head_version",
+      "head_authentication_verification_hash",
+      "attempt_family_head_hash"
+    ],
+    "expected_request_lineage": [
+      "schema_version",
+      "expected_request_context_record_hash",
+      "pre_ledger_request_context_hash",
+      "parent_attempt_envelope_hash",
+      "plan_manifest_hash",
+      "allocation_manifest_hash",
+      "derived_attempt_ordinal",
+      "derived_retry_ordinal",
+      "single_use_attempt_claim",
+      "expected_request_lineage_hash"
+    ],
+    "reservation": [
+      "schema_version",
+      "reservation_key",
+      "keyed_tenant_commitment",
+      "runtime_profile_hash",
+      "allocation_incarnation",
+      "numerical_body_hash",
+      "plan_manifest_hash",
+      "allocation_manifest_hash",
+      "lineage_input_hash",
+      "derived_attempt_ordinal",
+      "derived_retry_ordinal",
+      "parent_attempt_envelope_hash",
+      "expected_request_lineage_hash",
+      "single_use_attempt_claim",
+      "reserved_at",
+      "reservation_status"
+    ],
+    "token_consumption_marker": [
+      "schema_version",
+      "authenticated_lineage_token_hash",
+      "token_single_use_claim",
+      "reservation_key",
+      "derived_attempt_ordinal",
+      "derived_retry_ordinal",
+      "consumed_at",
+      "token_consumption_marker_hash"
+    ],
+    "write_ahead_marker": [
+      "schema_version",
+      "reservation_key",
+      "token_consumption_marker_hash",
+      "expected_request_lineage_hash",
+      "previous_attempt_family_head_hash",
+      "derived_attempt_ordinal",
+      "derived_retry_ordinal",
+      "write_order",
+      "marker_created_at",
+      "write_ahead_marker_hash"
+    ],
+    "new_attempt_family_head": [
+      "schema_version",
+      "attempt_family_key",
+      "lineage_state",
+      "attempt_ordinal",
+      "retry_ordinal",
+      "last_reservation_key",
+      "last_write_ahead_marker_hash",
+      "last_expected_request_lineage_hash",
+      "head_version",
+      "head_authentication_verification_hash",
+      "attempt_family_head_hash"
+    ],
+    "pre_execution_record": [
+      "schema_version",
+      "opaque_section_7_6_pre_execution_record_hash",
+      "record_bound_pre_ledger_request_context_hash",
+      "record_bound_parent_attempt_envelope_hash",
+      "record_bound_single_use_attempt_claim",
+      "section_7_6_record_authentication_verification_hash",
+      "section_7_6_record_freshness_hash",
+      "opaque_pre_execution_record_single_use_verification_hash",
+      "approved_section_7_6_contract_hash",
+      "record_created_at",
+      "record_expires_at",
+      "record_status",
+      "authority_effect"
+    ]
+  },
+  "transition_schema": [
+    "schema_version",
+    "authenticated_inputs_hash",
+    "authenticated_current_head_hash",
+    "reservation_absence_proof_hash",
+    "token_absence_proof_hash",
+    "atomic_write_set_hash",
+    "commit_disposition",
+    "unknown_commit_recovery",
+    "readback_bundle_hash",
+    "readback_disposition",
+    "exposure_disposition"
+  ],
+  "fixed_write_order": [
+    "RESERVATION",
+    "TOKEN_CONSUMPTION_MARKER",
+    "WRITE_AHEAD_MARKER",
+    "NEW_ATTEMPT_FAMILY_HEAD",
+    "EXPECTED_REQUEST_LINEAGE_LINK"
+  ],
+  "reservation_key_bindings": [
+    "keyed_tenant_commitment",
+    "runtime_profile_hash",
+    "allocation_incarnation",
+    "numerical_body_hash",
+    "plan_manifest_hash",
+    "allocation_manifest_hash",
+    "lineage_input_hash",
+    "derived_attempt_ordinal",
+    "derived_retry_ordinal",
+    "parent_attempt_envelope_hash",
+    "expected_request_lineage_hash",
+    "single_use_attempt_claim"
+  ],
+  "public_projection_fields": [
+    "opaque_section_7_6_pre_execution_record_hash",
+    "record_bound_pre_ledger_request_context_hash",
+    "record_bound_parent_attempt_envelope_hash",
+    "record_bound_single_use_attempt_claim",
+    "section_7_6_record_authentication_verification_hash",
+    "section_7_6_record_freshness_hash",
+    "opaque_pre_execution_record_single_use_verification_hash",
+    "approved_section_7_6_contract_hash",
+    "record_created_at",
+    "record_expires_at",
+    "record_status",
+    "authority_effect"
+  ],
+  "ownership_exclusions": [
+    "retry_eligibility",
+    "favorable_retry_decision",
+    "retry_token_issuance",
+    "crash_classification",
+    "terminal_classification",
+    "terminal_proof",
+    "authority_mutation"
+  ],
+  "section_7_4_consumer_contract": {
+    "consumer": "SECTION_7_4_ONLY",
+    "required_inputs": [
+      "pre_ledger_request_context_hash",
+      "parent_attempt_envelope_hash",
+      "opaque_section_7_6_pre_execution_record_hash",
+      "record_bound_pre_ledger_request_context_hash",
+      "record_bound_parent_attempt_envelope_hash",
+      "single_use_attempt_claim",
+      "record_bound_single_use_attempt_claim",
+      "section_7_6_record_authentication_verification_hash",
+      "section_7_6_record_freshness_hash",
+      "opaque_pre_execution_record_single_use_verification_hash",
+      "approved_section_7_6_contract_hash"
+    ],
+    "section_7_4_owned_outputs": [
+      "pre_execution_attempt_acceptance_hash",
+      "pre_execution_request_context_exact_match",
+      "pre_execution_parent_attempt_exact_match",
+      "pre_execution_single_use_attempt_claim_exact_match",
+      "section_7_4_opaque_pre_execution_record_acceptance"
+    ]
+  },
+  "replay_semantics": {
+    "reservation_and_lineage_candidate_specific": true,
+    "unrelated_state_entries_remain_ready": true,
+    "duplicate_or_concurrent_candidate": "HOLD",
+    "commit_unknown_recovery": "SAME_RESERVATION_KEY_READBACK_ONLY",
+    "exact_readback_required_before_exposure": true
+  },
+  "environment_modes": {
+    "CLEAN_CI": "OFFLINE_VERIFY",
+    "ARCHIVE_CLOSEOUT": "HOLD_ARCHIVE_CLOSEOUT_ONLY",
+    "LIVE_RUNTIME": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED"
+  },
+  "prohibited_public_projection_fields": [
+    "user_id",
+    "tenant_id",
+    "provider_id",
+    "email",
+    "prompt",
+    "result",
+    "request_body",
+    "credential",
+    "private_key",
+    "signature",
+    "raw_model_bytes",
+    "raw_plan_bytes",
+    "terminal_state",
+    "retry_eligibility",
+    "favorable_retry_decision",
+    "retry_token_issuance",
+    "crash_classification",
+    "terminal_classification",
+    "terminal_proof",
+    "authority_mutation",
+    "pre_execution_attempt_acceptance_hash"
+  ],
+  "actual_evidence": {
+    "runtime_sut_present": false,
+    "gcp_access_performed": false,
+    "persistence_created": false,
+    "deployment_performed": false,
+    "migration_performed": false
+  }
+}

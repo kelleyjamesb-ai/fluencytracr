@@ -1,0 +1,29 @@
+{
+  "schema_version": "GCP_S761_SYNTHETIC_TRUSTED_CONTEXT_V1",
+  "purpose": "READINESS_TEST_ORACLE_ONLY_NOT_RUNTIME_CRYPTOGRAPHY",
+  "canonicalization": "RFC8785_SUBSET_SORTED_COMPACT_JSON_UTF8",
+  "authentication_algorithm": "TEST_ONLY_HMAC_SHA256",
+  "trusted_now_epoch_seconds": 1767225750,
+  "maximum_record_age_seconds": 300,
+  "maximum_clock_skew_seconds": 30,
+  "candidate_seed_namespace": "S761_CANONICAL_BASELINE_V1",
+  "roots": {
+    "plan": {"producer": "SYNTHETIC_PLAN_REGISTRY_V1", "domain": "S761_TEST_ONLY_AUTH_PLAN_V1", "key_hex": "2209d3e082a535da12995bab4e250c47753ac4ee9c0fb71da9aed5804f97a1ca"},
+    "allocation": {"producer": "SYNTHETIC_ALLOCATION_CONTROLLER_V1", "domain": "S761_TEST_ONLY_AUTH_ALLOCATION_V1", "key_hex": "542e919c8df3d58d2364b1a948e385a178c916f6d3e609cec593610245e4665b"},
+    "lineage": {"producer": "SYNTHETIC_INITIAL_OR_RETRY_AUTHORITY_V1", "domain": "S761_TEST_ONLY_AUTH_LINEAGE_V1", "key_hex": "8f38d59d16893de401aa67dd1b4291e4870ab3799e39f061de5a2398eb101b02"},
+    "parent": {"producer": "SYNTHETIC_PARENT_ENVELOPE_PRODUCER_V1", "domain": "S761_TEST_ONLY_AUTH_PARENT_V1", "key_hex": "33381c95f661106e035354bb9f3867779d928bed95c5b98eeead9f32113df23b"},
+    "head": {"producer": "SYNTHETIC_LEDGER_HEAD_STORE_V1", "domain": "S761_TEST_ONLY_AUTH_HEAD_V1", "key_hex": "418f3e8bc61f552a15a30d235ab0ced2ef5daef82b46f62700f88f6b272aa2dd"},
+    "time": {"producer": "SYNTHETIC_TRUSTED_TIME_SOURCE_V1", "domain": "S761_TEST_ONLY_AUTH_TIME_V1", "key_hex": "131753d1bb7aadd9861b9e1a7b248bdc9858d6ec9c9306164bad0454f38f71c7"},
+    "record": {"producer": "SYNTHETIC_S761_RECORD_AUTHORITY_V1", "domain": "S761_TEST_ONLY_AUTH_RECORD_V1", "key_hex": "be1e15c471a0bd945e1ac5468049177b0b7646b68c0b033b3f6bea1c117bafed"}
+  },
+  "expected_baseline_commitments": {
+    "candidate_sha256": "fc05618a60749e734078d11e2ca3350468fef546db6d27c8f5d6e8b16b50e34f",
+    "plan_manifest_hash": "f05cfc56ff4594080ba7df407c647389a110b8e09a745942abe5f5c2da735932",
+    "allocation_manifest_hash": "13ee726c549198ef71c0935d8a2c18039911b38a7660712862e16914a359cd7e",
+    "parent_attempt_envelope_hash": "d79e21e051dcfd0f0ad89b2882e92b6140962f04ca6dc15282515666fe77e222",
+    "current_attempt_family_head_hash": "4d4249b0209a32e131dd4d02362a086eddc66da67c53ade73199db416fde1bfd",
+    "reservation_key": "4f327fae7bc468e6afa6197d4b130a7ead6b0e2f2aedf47abd70a67e257cbd1c",
+    "write_ahead_marker_hash": "fac8177102f4cf713ed92b50f03c80485883994bd7fe52483565077a8bfe8a5a",
+    "opaque_pre_execution_record_hash": "719a74fd4d3820d1d9660a019cd307461e6fb336b93b46549c0a3085776ee4a5"
+  }
+}
