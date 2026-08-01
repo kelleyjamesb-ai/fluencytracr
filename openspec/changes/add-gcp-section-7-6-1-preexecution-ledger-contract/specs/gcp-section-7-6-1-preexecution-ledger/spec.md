@@ -67,6 +67,10 @@ authentication-reference fields SHALL be prohibited.
 - **WHEN** any commitment is substituted, cross-spliced, repeated, or resealed from attacker-controlled roots
 - **THEN** the candidate is held
 
+#### Scenario: Unrelated replay state does not block a fresh candidate
+- **WHEN** used-reservation or used-lineage sets contain only identities different from the candidate
+- **THEN** structural admission remains eligible, while reuse of either candidate identity holds
+
 ### Requirement: Atomic write-ahead transition and exact readback
 
 The gate SHALL authenticate inputs, read the authenticated current head, prove

@@ -2,45 +2,42 @@
 
 ## Current Session
 
-- Section 7.6.1 preimplementation replay-oracle repair is ready for one final
-  exact-tree review. The repaired packet SHA-256 is
+- Section 7.6.1 readiness reached unanimous CODE/BUG/ADVERSARIAL
+  `READINESS_GO` on exact commit
+  `73a61d3786bbe21484af86ba38a4fa2676aef631`. Its five frozen artifacts remain
+  byte-identical: readiness packet
   `e786a66b1a8da7394df895a3a464fd10a5be74afc0cea41ca19b931f794fc307`,
-  the rules fixture SHA-256 is
-  `9da8f5469ba88b6fd4489b4a299d15401a028411610141edfdd9d65776786b27`,
-  the separately byte-pinned synthetic trusted-context SHA-256 is
+  rules `9da8f5469ba88b6fd4489b4a299d15401a028411610141edfdd9d65776786b27`,
+  trusted context
   `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
-  the byte-pinned stdlib environment-worker SHA-256 is
+  environment worker
   `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
-  the readiness-test SHA-256 is
-  `e4bfad85b50f21e0b340242514b55dd94a3750075593237532c53af387389767`,
-  and the protocol SHA-256 remains
-  `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
-  Eight structural and four live-runtime metadata-only tests pass; all 84
-  runnable implementation-facing attack and clean/archive environment cases
-  construct their mutations, state, barriers, and literal expectations before
-  stopping only at deliberate `MISSING_SUT`. The repair adds independently
-  admitted test-only roots, fully linked baseline/time/full-closure vectors,
-  actual two-call replay/concurrency test structure, truthful hermetic cells,
-  exact bidirectional reconciliation, predecessor-HOLD/caller-status coverage,
-  and every Section 7.6.2-exclusive leakage probe. The latest exact review
-  found an executable state-shape-only replay detector that passed without
-  comparing candidate identities. James's bounded replay-oracle authorization
-  covers the minimal repair: reservation-only, lineage-only, and dual unrelated
-  READY controls now mirror the attack shapes; the fail-first mutation oracle
-  rejects the counterexample. The next adversarial pass found that attacks used
-  isolated roots while READY controls used the repository root, allowing path
-  identity to leak the outcome. All READY controls now build and execute from
-  isolated copied roots matching the attack environment, and all three roots,
-  candidates, states, and non-membership assertions are prepared before the
-  deliberate absent-SUT gate. Single-gate, coarse-nonempty, and state-shape
-  mutation oracles remain green. The full
-  preimplementation module is intentionally red only at
-  the 84 absent-SUT cases (`12 passed, 84 MISSING_SUT`); strict OpenSpec,
-  governance, JSON, and diff checks pass. No docs contract, verifier,
-  implementation test, runtime SUT, GCP action, credential, persistence,
-  execution, deployment, migration, qualification, terminal/retry decision,
-  or authority was added. Final immutable refreeze and CODE/BUG/ADVERSARIAL
-  review are pending.
+  and readiness test
+  `e4bfad85b50f21e0b340242514b55dd94a3750075593237532c53af387389767`.
+  The bounded implementation now adds the docs contract
+  `b6b2cbdd26b4d9941fb0681ec9049933877af16318dae45429bdd43eaf655083`,
+  synthetic vectors
+  `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
+  silent offline verifier
+  `2e207750dcd73ec91ac09d35e4c103deca80fc5ab7ef5dc35ef78c3c0fa47fcd`,
+  and focused contract test
+  `03464b6118904dfe88fa75f5c69927459c1746d1e2329b88ee0e51032ae57e76`.
+  The verifier admits only exact initial or opaque-retry synthetic candidates,
+  exact predecessor/queue/trusted-context roots, candidate-specific unused
+  reservation and lineage identities, and exact commit readback. It fails
+  closed for archive/live/unknown modes and preserves Section 7.4/7.6.2
+  ownership. The focused implementation plus frozen future-SUT profile passes
+  `102` with only the immutable preimplementation absence assertion deselected;
+  strict OpenSpec, governance, stdlib compilation, silent CLI, JSON, YAML,
+  collection, and diff checks pass. The same exact absence assertion is now
+  deselected in all three synchronized Python runners, matching the established
+  Section 7.5.5 lifecycle pattern while retaining every implementation-facing
+  test. The first full harness run otherwise passed `861` tests and found only
+  that expected lifecycle conflict; the final full suite is reserved for the
+  exact reviewed implementation SHA. No runtime SUT, GCP action, credential,
+  persistence, execution, deployment, migration, qualification,
+  terminal/retry decision, or authority was added. Exact implementation
+  commit and CODE/BUG/ADVERSARIAL review remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

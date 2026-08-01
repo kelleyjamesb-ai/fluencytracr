@@ -12,6 +12,9 @@ docs-only verifier is implemented.
 
 - Add the mandatory high-risk preimplementation readiness packet, compact rule
   fixture, and executable future-SUT attack/environment tests.
+- Add the bounded docs contract, synthetic canonicalization vectors, silent
+  offline verifier, and focused immutable-readiness ancestry tests after exact
+  CODE, BUG, and ADVERSARIAL `READINESS_GO`.
 - Define closed schemas and an atomic transition for one single-use
   pre-execution reservation, including exact readback before an opaque record
   can be exposed to Section 7.4.
@@ -25,8 +28,7 @@ docs-only verifier is implemented.
 - Affected spec: `gcp-section-7-6-1-preexecution-ledger`
 - Preimplementation paths: this OpenSpec change, one readiness fixture, and one
   readiness test module
-- Future implementation paths, only after exact-packet `READINESS_GO`: one
-  docs contract package, synthetic vectors, one silent offline verifier, and
-  focused implementation tests
+- Implementation paths: one docs contract package, synthetic vectors, one
+  silent offline verifier, and focused implementation tests
 - No runtime SUT, terminal ledger, retry decision/issuance, GCP, credentials,
   persistence deployment, model execution, qualification, or runtime authority
