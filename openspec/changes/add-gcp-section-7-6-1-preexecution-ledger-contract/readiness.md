@@ -81,6 +81,12 @@ nodes only. The parent envelope remains parent-produced; Section 7.6.1 defines
 only its accepted closed shape. The expected runtime allocation is not actual
 boot truth, which remains Section 7.4-owned.
 
+Readiness instantiates those roles in a separately byte-pinned synthetic
+trusted-context fixture. Purpose-separated test-only HMAC vectors authenticate
+the plan, allocation, lineage, parent, head, currentness, and opaque record
+outside the candidate graph. This is an executable oracle, not a runtime
+cryptographic algorithm, key-management design, credential, or authority.
+
 ### Atomic transition
 
 One serializable modeled transition SHALL:
@@ -110,7 +116,7 @@ Crash outcome and retry eligibility remain unclassified for Section 7.6.2.
 
 ## 3. Environment truth table
 
-The fixture contains the exact 12 rows, commands, controlled prerequisites,
+The fixture contains the exact 12 rows, command template, controlled prerequisites,
 inner dispositions, claims, and `authority_effect: NONE`. Each executable row
 copies only explicit sources and the queue into an isolated root, prepares the
 ABSENT/PARTIAL/CORRUPT/EXACT state, and compiles the expected result before the
@@ -158,12 +164,14 @@ diagnostics, canonical numerical fixtures, or inference outputs.
 
 ## 5. Attack-to-oracle matrix
 
-The fixture is normative for literal mutations, roots, descendants, variants,
+The fixture pair is normative for literal mutations, independent roots, descendants, variants,
 ledger rows, and test-node templates. Each future-SUT case constructs and
 proves its mutation, stateful replay plan, concurrency barrier, or atomic
-replacement before loading the absent verifier. The future verifier receives
-only prepared candidate/resources/mode/state/interleaving; it never receives
-an attack ID or expected result.
+replacement before loading the absent verifier. Once implemented, replay and
+concurrency tests make two actual verifier calls against shared state, and the
+replacement callback must be invoked during admission. The future verifier
+receives only prepared candidate/resources/mode/state/interleaving/trusted
+context; it never receives an attack ID, expected result, or winner count.
 
 A001-A019 cover unknown field, missing field, wrong type, nested extra,
 truncation, substitution, splice, forged provenance, stateful replay/reuse,

@@ -2,20 +2,28 @@
 
 ## Current Session
 
-- Section 7.6.1 preimplementation evidence is ready for an exact-packet
-  readiness panel. The packet SHA-256 is
-  `7eb6b7f3c89468f7cbe5129bf4cdb7a66eeeaa862ecbe18d9c5427879d833430`,
-  the compact fixture SHA-256 is
-  `915166ff395fa9034ac0c0507b0b68b705edf8f836be128822aeae576a72331b`,
+- Section 7.6.1 preimplementation evidence repair is ready for exact-tree
+  re-review after the first review correctly returned HOLD. The repaired
+  packet SHA-256 is
+  `a89a9de436bd213ae76a8c771d061280df581d53a6996e4c30b4d77309a8d227`,
+  the rules fixture SHA-256 is
+  `3d41c6dac3649ce2250f6a85b45b34cc60f99a8f3d185375bba89e8781d0d01a`,
+  the separately byte-pinned synthetic trusted-context SHA-256 is
+  `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
   the readiness-test SHA-256 is
-  `2f8f6222ab66ee225ec727e43966e6bf6d5918469cc2c285642c9f66e55bd4ce`,
+  `b1d56610cadbaea22a3d4b1f73ddcd71b3c4f93434d4ae116b831bf7b6439ba3`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
-  Four structural tests pass; all 76 implementation-facing attack and
-  environment cases construct their mutations, state, barriers, and literal
-  expectations before stopping only at deliberate `MISSING_SUT`. Strict
-  OpenSpec, V1 governance, queue/harness, JSON, compilation, and whitespace
-  checks pass. No docs contract, verifier, implementation test, runtime SUT,
+  Four structural and four live-runtime metadata-only tests pass; all 78
+  runnable implementation-facing attack and clean/archive environment cases
+  construct their mutations, state, barriers, and literal expectations before
+  stopping only at deliberate `MISSING_SUT`. The repair adds independently
+  admitted test-only roots, fully linked baseline/time/full-closure vectors,
+  actual two-call replay/concurrency test structure, truthful hermetic cells,
+  exact bidirectional reconciliation, predecessor-HOLD/caller-status coverage,
+  and every Section 7.6.2-exclusive leakage probe. Final strict checks and the
+  replacement exact-tree review are pending. No docs contract, verifier,
+  implementation test, runtime SUT,
   GCP action, credential, persistence implementation, execution, deployment,
   migration, qualification, terminal/retry decision, or authority was added.
   The evidence commit/tree and CODE/BUG/ADVERSARIAL verdicts remain pending.

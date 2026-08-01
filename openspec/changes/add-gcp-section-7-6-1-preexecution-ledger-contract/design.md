@@ -32,6 +32,11 @@ eligibility, or runtime authority.
   nodes, not authenticity roots. Section 7.6.1 independently derives attempt
   and retry ordinals and rejects caller-selected identity, ordinal, or status,
   including JSON Boolean values in integer positions.
+- Freeze a separately byte-pinned synthetic trusted-context fixture for
+  readiness only. Its purpose-separated HMAC roots instantiate independent
+  plan, allocation, lineage, parent, head, currentness, and record-authentication
+  oracles outside the candidate graph. They are test vectors, not runtime
+  cryptography, key-management design, credentials, or production authority.
 - For initial lineage, derive attempt ordinal `head.attempt + 1` and retry
   ordinal `0` from an authenticated empty head. For opaque retry lineage, derive
   both ordinals as the authenticated head value plus one; Section 7.6.1 does
@@ -64,8 +69,9 @@ eligibility, or runtime authority.
 - A crash after commit could tempt a caller to allocate a second ordinal. The
   frozen unknown-commit rule permits same-key exact readback only.
 - A one-process happy path could hide replay races. The test-owned stateful
-  replay session and concurrency barrier prove duplicate and interleaved cases
-  before the future verifier is loaded.
+  replay session and concurrency barrier drive two real future-verifier calls
+  against shared state; the preimplementation corpus stops at `MISSING_SUT`
+  rather than supplying an expected winner count to the absent implementation.
 
 ## Migration Plan
 

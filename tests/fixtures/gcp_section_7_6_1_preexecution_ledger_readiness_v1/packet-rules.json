@@ -16,6 +16,10 @@
     {"owner": "SECTION_7_4", "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json", "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2", "decision": null},
     {"owner": "SECTION_7_5", "path": "docs/contracts/canonical-inference-gcp-full-contract-closure/full-contract-closure-contract.json", "sha256": "a23f7afad3f32d6e6a1bc2ddc4eb3fb1c02af5b12826f3f4dd412a304858cb19", "decision": "SECTION_7_5_CONTRACT_CLOSED"}
   ],
+  "synthetic_trusted_context_root": {
+    "path": "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/trusted-context.json",
+    "sha256": "22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df"
+  },
   "section_7_4_consumer_contract": {
     "consumer": "SECTION_7_4_ONLY",
     "required_inputs": [
@@ -114,7 +118,7 @@
   ],
   "attacks": [
     {"id": "A001", "class": "UNKNOWN_FIELD", "mutation": "add unknown top-level and opaque-record fields then reseal", "root": "CLOSED_SCHEMAS", "descendants": ["opaque_record_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-OPAQUE", "L-CONSUMER"]},
-    {"id": "A002", "class": "MISSING_FIELD", "mutation": "remove result, predecessor decision, token marker, write-ahead marker, or transition field then reseal", "root": "REQUIRED_SCHEMA_FIELDS", "descendants": ["records_bundle_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-TOKEN", "L-WAL", "L-TRANSITION"]},
+    {"id": "A002", "class": "MISSING_FIELD", "mutation": "remove a required field/record or present an exact predecessor HOLD decision then reseal", "root": "REQUIRED_SCHEMA_FIELDS_AND_PREDECESSOR_DECISIONS", "descendants": ["records_bundle_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PREDECESSORS", "L-TOKEN", "L-WAL", "L-TRANSITION"]},
     {"id": "A003", "class": "WRONG_TYPE", "mutation": "inject caller identity/status or Boolean attempt/retry ordinal and reseal", "root": "LITERAL_TYPE_AND_DERIVATION_ORACLE", "descendants": ["parent_hash", "reservation_key", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PARENT", "L-HEAD-IN", "L-ORDINALS", "L-RESERVATION", "L-OPAQUE", "L-AUTHORITY"]},
     {"id": "A004", "class": "NESTED_EXTRA_FIELD", "mutation": "add raw plan bytes inside plan manifest and reseal", "root": "CLOSED_PLAN_SCHEMA", "descendants": ["plan_manifest_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-PLAN", "L-PRIVACY"]},
     {"id": "A005", "class": "TRUNCATED_OBJECT", "mutation": "truncate parent envelope or lineage object and reseal", "root": "CLOSED_PARENT_AND_LINEAGE_SCHEMAS", "descendants": ["parent_hash", "candidate_hash"], "expected": "HOLD", "ledger": ["L-LINEAGE", "L-PARENT"]},
@@ -134,8 +138,8 @@
     {"id": "A019", "class": "AUTHORITY_ESCALATION", "mutation": "inject Section 7.4 acceptance, actual boot truth, terminal/retry fields, PASS booleans, or non-NONE authority", "root": "SECTION_OWNERSHIP_AND_AUTHORITY_NONE", "descendants": ["candidate_hash"], "expected": "HOLD", "ledger": ["L-LINEAGE", "L-OPAQUE", "L-CONSUMER", "L-PRIVACY", "L-AUTHORITY"]}
   ],
   "attack_variants": {
-    "A002": ["TOP_LEVEL_RESULT", "PREDECESSOR_DECISION", "TOKEN_MARKER", "WRITE_AHEAD_MARKER", "TRANSITION_READBACK"],
-    "A003": ["CALLER_IDENTITY", "CALLER_ORDINAL", "BOOLEAN_ATTEMPT_ORDINAL", "BOOLEAN_RETRY_ORDINAL", "CALLER_STATUS"],
+    "A002": ["TOP_LEVEL_RESULT", "PREDECESSOR_DECISION", "PREDECESSOR_HOLD", "TOKEN_MARKER", "WRITE_AHEAD_MARKER", "TRANSITION_READBACK"],
+    "A003": ["CALLER_IDENTITY", "CALLER_ORDINAL", "BOOLEAN_ATTEMPT_ORDINAL", "BOOLEAN_RETRY_ORDINAL", "CALLER_STATUS", "CALLER_RECORD_STATUS"],
     "A005": ["PARENT_ENVELOPE", "LINEAGE_INPUT"],
     "A006": ["DERIVED_ORDINAL", "HEAD_LINEAGE", "RESERVATION_STATUS", "MISORDERED_WRITE_AHEAD"],
     "A007": ["PLAN_ALLOCATION", "PARENT_EXPECTED", "PREDECESSOR_SOURCE"],
@@ -146,7 +150,7 @@
     "A013": ["LIVE_RUNTIME", "ARCHIVE_ACCEPT"],
     "A017": ["CONCURRENT_DUPLICATE_RESERVATION", "ATOMIC_SOURCE_REPLACEMENT"],
     "A018": ["TOP_LEVEL", "PREDECESSOR_ROW", "QUEUE_ROW", "PLAN", "ALLOCATION", "LINEAGE", "PARENT", "HEAD_IN", "EXPECTED", "RESERVATION", "TOKEN_MARKER", "WRITE_AHEAD", "HEAD_OUT", "TRANSITION", "OPAQUE_RECORD", "PUBLIC_PROJECTION", "RESULT"],
-    "A019": ["TOP_LEVEL_AUTHORITY", "PRE_EXECUTION_ACCEPTANCE_HASH", "SECTION_7_4_PASS_BOOLEAN", "ACTUAL_BOOT_TRUTH", "TERMINAL_STATE", "RETRY_ELIGIBILITY", "RETRY_TOKEN_ISSUANCE", "AUTHORITY_MUTATION"]
+    "A019": ["TOP_LEVEL_AUTHORITY", "PRE_EXECUTION_ACCEPTANCE_HASH", "SECTION_7_4_PASS_BOOLEAN", "ACTUAL_BOOT_TRUTH", "TERMINAL_STATE", "RETRY_ELIGIBILITY", "FAVORABLE_RETRY_DECISION", "RETRY_TOKEN_ISSUANCE", "CRASH_CLASSIFICATION", "TERMINAL_CLASSIFICATION", "TERMINAL_PROOF", "AUTHORITY_MUTATION"]
   },
   "requirements": [
     {"id": "S761-R01", "requirement": "exact four-source byte admission", "oracle": "S761_SOURCE_PIN_ORACLE", "test": "test_source_queue_and_section_7_4_interface_are_exact"},
@@ -175,8 +179,17 @@
     "docs/contracts/canonical-inference-gcp-preexecution-ledger/canonicalization-vectors.json",
     "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py"
   ],
-  "environment_command": "uv run --with pytest python -m pytest -q tests/test_gcp_section_7_6_1_preexecution_ledger_readiness.py::{pytest_node}",
-  "environment_controlled_prerequisites": ["isolated_tmp_root", "explicit_source_manifest", "closed_candidate", "no_ambient_fallback", "network_disabled", "authority_effect_NONE"],
+  "environment_command": "env -i HOME={tmp_home} XDG_CACHE_HOME={tmp_cache} PYTHONPYCACHEPREFIX={tmp_pycache} PYTHONPATH={repo_root} PATH={explicit_path} TZ=UTC LC_ALL=C.UTF-8 LANG=C.UTF-8 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --with pytest python -m pytest -q {pytest_node}",
+  "environment_controlled_prerequisites": ["isolated_tmp_root", "explicit_source_manifest", "closed_candidate", "no_ambient_fallback", "network_disabled", "authority_effect_NONE", "trusted_time_fixture", "controlled_home", "controlled_caches", "controlled_pythonpath", "controlled_path", "controlled_locale", "controlled_timezone", "single_threaded_native_libraries"],
+  "environment_controls": {
+    "TZ": "UTC",
+    "LC_ALL": "C.UTF-8",
+    "LANG": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
   "environment_cells": [
     {"environment": "CLEAN_CI", "resource": "ABSENT", "command_exit": 0, "inner": "HOLD_SOURCE_SET_ABSENT", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
     {"environment": "CLEAN_CI", "resource": "PARTIAL", "command_exit": 0, "inner": "HOLD_SOURCE_SET_PARTIAL", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
