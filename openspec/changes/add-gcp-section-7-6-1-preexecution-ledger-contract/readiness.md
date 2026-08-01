@@ -197,9 +197,10 @@ misordered/missing write-ahead markers, exact-one-winner concurrency,
 predecessor HOLD, Section 7.4-owned acceptance/PASS fields, actual-boot claims,
 every Section 7.6.2-only output, independently pinned trusted-context
 substitution, and nested private data in an otherwise projected-away queue
-field. Replay variants prepare distinct internally linked second candidates
-where applicable, and the concurrency barrier exists before the absent-SUT
-gate.
+field. Replay variants independently preseed only the used reservation-key set
+or only the used lineage-token set; a mutation oracle proves that a verifier
+checking just one gate cannot satisfy the full corpus. The concurrency barrier
+exists before the absent-SUT gate.
 
 ## 6. Cost, review, and stop controls
 

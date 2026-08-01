@@ -5,18 +5,18 @@
 - Section 7.6.1 preimplementation evidence repair is ready for exact-tree
   re-review after the first review correctly returned HOLD. The repaired
   packet SHA-256 is
-  `2e107686b8b2d7fb5db25b5bd2baf2803a9e5620a36b058e24ae349b3eee968b`,
+  `6f106d5bef6f5354e3038bb90a5d37d4e3b118b30ef68eb1b6b1dae2ad8d8c29`,
   the rules fixture SHA-256 is
-  `fec601d9663c415f13ffa46fc303a5a967e0c7648984f508f866325f2e4a5331`,
+  `1324528b013dc3c1998728d473f92dc3097a0e7472d69e5877386109ff9c30e7`,
   the separately byte-pinned synthetic trusted-context SHA-256 is
   `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
   the byte-pinned stdlib environment-worker SHA-256 is
   `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
   the readiness-test SHA-256 is
-  `7cadd128dbeac30ad0397952aab8fc1a2abe6201f672eafc2238086e238ee71b`,
+  `7cea8d89310bac9e2a9bd8c4f28bb4e3dfad58d3e9a2313f6212c250e87ca037`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
-  Five structural and four live-runtime metadata-only tests pass; all 83
+  Six structural and four live-runtime metadata-only tests pass; all 83
   runnable implementation-facing attack and clean/archive environment cases
   construct their mutations, state, barriers, and literal expectations before
   stopping only at deliberate `MISSING_SUT`. The repair adds independently
@@ -38,7 +38,14 @@
   implementation test, runtime SUT,
   GCP action, credential, persistence implementation, execution, deployment,
   migration, qualification, terminal/retry decision, or authority was added.
-  The evidence commit/tree and CODE/BUG/ADVERSARIAL verdicts remain pending.
+  The replacement BUG review then proved that both reservation and token
+  replay variants reused both gates, allowing a verifier that checked only
+  one gate to pass. James explicitly authorized the narrow replay-oracle
+  redesign. A fail-first mutation test reproduced that false clear, then the
+  minimal repair independently preseeded only the used-reservation set or only
+  the used-token set while retaining the real two-call identical replay. The
+  mutation test now rejects both single-gate detectors. Final evidence
+  commit/tree and replacement CODE/BUG/ADVERSARIAL verdicts remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

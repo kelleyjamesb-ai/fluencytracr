@@ -154,14 +154,12 @@ def _build_candidate(
     source_manifest: list[dict[str, Any]] | None = None,
     queue_projection: dict[str, Any] | None = None,
     time_shift: int = 0,
-    record_time_shift: int = 0,
     lineage_kind: str = "INITIAL",
 ) -> dict[str, Any]:
     context = copy.deepcopy(signing_context or _load_trusted_context(fixture, root))
     seed = context["candidate_seed_namespace"]
     value = lambda label: _digest(f"{seed}:{label}")
     now = context["trusted_now_epoch_seconds"] + time_shift
-    record_now = now + record_time_shift
     assert lineage_kind in {"INITIAL", "OPAQUE_RETRY"}
     head_attempt = 0 if lineage_kind == "INITIAL" else 3
     head_retry = 0 if lineage_kind == "INITIAL" else 1
@@ -270,7 +268,7 @@ def _build_candidate(
         "schema_version": "GCP_S761_RESERVATION_V1",
         "reservation_key": _canonical_sha256(reservation_preimage),
         **reservation_preimage,
-        "reserved_at": record_now - 150,
+        "reserved_at": now - 150,
         "reservation_status": "RESERVED_PRE_EXECUTION",
     }
     token_marker = {
@@ -280,7 +278,7 @@ def _build_candidate(
         "reservation_key": reservation["reservation_key"],
         "derived_attempt_ordinal": derived_attempt,
         "derived_retry_ordinal": derived_retry,
-        "consumed_at": record_now - 149,
+        "consumed_at": now - 149,
         "token_consumption_marker_hash": "",
     }
     token_marker["token_consumption_marker_hash"] = _canonical_sha256(_without(token_marker, "token_consumption_marker_hash"))
@@ -293,7 +291,7 @@ def _build_candidate(
         "derived_attempt_ordinal": derived_attempt,
         "derived_retry_ordinal": derived_retry,
         "write_order": copy.deepcopy(fixture["fixed_write_order"]),
-        "marker_created_at": record_now - 148,
+        "marker_created_at": now - 148,
         "write_ahead_marker_hash": "",
     }
     wal["write_ahead_marker_hash"] = _canonical_sha256(_without(wal, "write_ahead_marker_hash"))
@@ -344,11 +342,11 @@ def _build_candidate(
         "record_bound_parent_attempt_envelope_hash": _canonical_sha256({"record": reservation["reservation_key"], "parent": parent["parent_attempt_envelope_hash"]}),
         "record_bound_single_use_attempt_claim": _canonical_sha256({"record": reservation["reservation_key"], "claim": parent["single_use_attempt_claim"]}),
         "section_7_6_record_authentication_verification_hash": "",
-        "section_7_6_record_freshness_hash": _test_mac(context, "time", "PRE_EXECUTION_FRESHNESS", {"created": record_now - 147, "expires": record_now + 150, "trusted_now": now}),
+        "section_7_6_record_freshness_hash": _test_mac(context, "time", "PRE_EXECUTION_FRESHNESS", {"created": now - 147, "expires": now + 150, "trusted_now": now}),
         "opaque_pre_execution_record_single_use_verification_hash": _canonical_sha256({"reservation": reservation["reservation_key"], "token": token_marker["token_consumption_marker_hash"], "wal": wal["write_ahead_marker_hash"]}),
         "approved_section_7_6_contract_hash": value("approved-section-7-6-contract"),
-        "record_created_at": record_now - 147,
-        "record_expires_at": record_now + 150,
+        "record_created_at": now - 147,
+        "record_expires_at": now + 150,
         "record_status": "COMMITTED_EXACT_READBACK",
         "authority_effect": "NONE",
     }
@@ -538,18 +536,25 @@ def _prepare_attack(
         else:
             candidate["predecessor_contracts"][0]["owner"] = "ATTACKER"
     elif attack_id == "A009":
-        plan["action"] = "replay"
         plan["replay_variant"] = variant
-        plan["first_candidate"] = copy.deepcopy(candidate)
-        plan["second_candidate"] = (
-            copy.deepcopy(candidate)
-            if variant == "IDENTICAL_CANDIDATE"
-            else _build_candidate(fixture, root=tmp_path, record_time_shift=1 if variant == "RESERVATION_KEY" else 2)
-        )
-        assert plan["first_candidate"]["records"]["reservation"]["reservation_key"] == plan["second_candidate"]["records"]["reservation"]["reservation_key"]
-        assert plan["first_candidate"]["records"]["lineage_input"]["authenticated_lineage_token_hash"] == plan["second_candidate"]["records"]["lineage_input"]["authenticated_lineage_token_hash"]
-        if variant != "IDENTICAL_CANDIDATE":
-            assert plan["first_candidate"]["hashes"]["candidate_sha256"] != plan["second_candidate"]["hashes"]["candidate_sha256"]
+        reservation_key = records["reservation"]["reservation_key"]
+        lineage_token = records["lineage_input"]["authenticated_lineage_token_hash"]
+        plan["state"] = {
+            "used_reservation_keys": set(),
+            "used_lineage_tokens": set(),
+        }
+        if variant == "IDENTICAL_CANDIDATE":
+            plan["action"] = "replay"
+            plan["first_candidate"] = copy.deepcopy(candidate)
+            plan["second_candidate"] = copy.deepcopy(candidate)
+        else:
+            plan["action"] = "preseeded_single_use"
+            if variant == "RESERVATION_KEY":
+                plan["state"]["used_reservation_keys"].add(reservation_key)
+            elif variant == "LINEAGE_TOKEN":
+                plan["state"]["used_lineage_tokens"].add(lineage_token)
+            else:
+                raise AssertionError(f"unknown replay variant: {variant}")
     elif attack_id == "A010":
         queue_path = tmp_path / fixture["queue_authorization_root"]["path"]
         queue = json.loads(queue_path.read_text())
@@ -831,6 +836,38 @@ def test_retry_lineage_and_nested_queue_privacy_oracles(tmp_path: Path) -> None:
         _queue_projection(fixture, root)
 
 
+def test_replay_corpus_rejects_single_gate_detectors(tmp_path: Path) -> None:
+    """A verifier checking only reservation or only token reuse must fail corpus."""
+    fixture = _load_fixture()
+    variants = fixture["attack_variants"]["A009"]
+
+    def corpus_outcomes(checked_gate: str) -> list[str]:
+        outcomes: list[str] = []
+        for index, variant in enumerate(variants):
+            root = _copy_inputs(fixture, tmp_path / str(index))
+            candidate, plan = _prepare_attack(fixture, "A009", variant, root)
+            state_key = (
+                "used_reservation_keys"
+                if checked_gate == "reservation"
+                else "used_lineage_tokens"
+            )
+            candidate_key = (
+                candidate["records"]["reservation"]["reservation_key"]
+                if checked_gate == "reservation"
+                else candidate["records"]["lineage_input"][
+                    "authenticated_lineage_token_hash"
+                ]
+            )
+            used = set(plan["state"].get(state_key, set()))
+            if plan["action"] == "replay":
+                used.add(candidate_key)
+            outcomes.append("HOLD" if candidate_key in used else "READY")
+        return outcomes
+
+    assert corpus_outcomes("reservation") != ["HOLD", "HOLD", "HOLD"]
+    assert corpus_outcomes("token") != ["HOLD", "HOLD", "HOLD"]
+
+
 def test_future_sut_unknown_commit_same_key_readback() -> None:
     fixture = _load_fixture()
     candidate = _baseline_candidate(fixture)
@@ -924,6 +961,10 @@ def test_future_sut_declared_attack(
         second = module.evaluate_candidate(root, plan["second_candidate"], **call_args)
         assert first == "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
         assert second == attack["expected"]
+        return
+    if plan["action"] == "preseeded_single_use":
+        result = module.evaluate_candidate(root, candidate, **call_args)
+        assert result == attack["expected"]
         return
     if plan["action"] == "concurrent_duplicate":
         results: list[str] = []
