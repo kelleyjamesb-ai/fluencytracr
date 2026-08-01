@@ -7,6 +7,17 @@
   "authority_effect": "NONE",
   "canonicalization_version": "FT_CANONICAL_JSON_V1",
   "classifier_contract": {
+    "applicability_evidence": {
+      "conditional_mapping_ids": [
+        "S75-M038",
+        "S75-M039",
+        "S75-M040",
+        "S75-M041"
+      ],
+      "denied_canary_mapping_id": "S75-M037",
+      "mapping_ids_domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:POLICY_DENIED_MAPPING_IDS:V1",
+      "projection_domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:APPLICABILITY_EVIDENCE:V1"
+    },
     "data_access": "ENABLED_FOR_ALL_INVENTORY_DATA_ACCESS_ROWS",
     "denied_canary": "REQUIRED_FOR_KMS_ASYMMETRIC_SIGN",
     "exclusion_method_disposition": "CREATE_UPDATE_DELETE_GET_LIST_ALL_CLASSIFIED",
@@ -79,6 +90,8 @@
         "schema_version",
         "target_binding_sha256",
         "approved_section_7_5_contract_sha256",
+        "applicability_evidence_projection",
+        "applicability_evidence_projection_sha256",
         "inventory_bytes_sha256",
         "row_keyset_sha256",
         "registry_sha256",

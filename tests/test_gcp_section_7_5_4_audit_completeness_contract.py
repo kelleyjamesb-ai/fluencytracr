@@ -13,15 +13,20 @@ from typing import Any, Callable
 import pytest
 
 from scripts.verify_gcp_section_7_5_4_audit_completeness import (
+    APPLICABILITY_EVIDENCE_DOMAIN,
+    CONDITIONAL_MAPPING_IDS,
     CONTRACT_PATH as CONTRACT_RELATIVE_PATH,
+    DENIED_CANARY_MAPPING_ID,
     EXCLUDED_P07_NODES,
     EXPECTED_DECISION,
     EXPECTED_SOURCE_CONTRACTS,
     OWNED_P07_NODES,
     OWNED_PREREQUISITES,
+    UNCONDITIONAL_POLICY_DENIED_MAPPING_IDS,
     VECTORS_PATH as VECTORS_RELATIVE_PATH,
     AuditCompletenessValidationError,
     _validate_inventory,
+    _mapping_ids_sha256,
     validate_bundle,
     validate_contract,
 )
@@ -89,6 +94,28 @@ def _mutate_record(
     return contract, bundle
 
 
+def _mutate_applicability(
+    mutate: Callable[[dict[str, Any]], None]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    contract, bundle = _fixture()
+    universe = bundle["records"][0]
+    projection = universe["applicability_evidence_projection"]
+    mutate(projection)
+    body = {key: value for key, value in projection.items() if key != "record_sha256"}
+    projection["record_sha256"] = hashlib.sha256(
+        APPLICABILITY_EVIDENCE_DOMAIN.encode("ascii")
+        + b"\x00"
+        + json.dumps(
+            body, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        ).encode()
+    ).hexdigest()
+    universe["applicability_evidence_projection_sha256"] = projection["record_sha256"]
+    _rehash(contract, universe)
+    bundle["records"][4]["audit_universe_record_sha256"] = universe["record_sha256"]
+    _rehash(contract, bundle["records"][4])
+    return contract, bundle
+
+
 def test_contract_exists_without_registry_drift() -> None:
     assert CONTRACT_PATH.is_file()
     assert hashlib.sha256(REGISTRY_PATH.read_bytes()).hexdigest() == EXPECTED_REGISTRY_SHA256
@@ -142,6 +169,70 @@ def test_required_audit_mechanisms_fail_closed(
     assert raised.value.code == expected
 
 
+def test_named_canary_and_conditional_path_evidence_are_required() -> None:
+    contract, bundle = _fixture()
+    universe = bundle["records"][0]
+    universe.pop("applicability_evidence_projection", None)
+    universe.pop("applicability_evidence_projection_sha256", None)
+    _rehash(contract, universe)
+    bundle["records"][4]["audit_universe_record_sha256"] = universe["record_sha256"]
+    _rehash(contract, bundle["records"][4])
+    with pytest.raises(AuditCompletenessValidationError):
+        validate_bundle(contract, bundle)
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda value: value["denied_canary"].update(mapping_id="S75-M036"),
+        lambda value: value["denied_canary"].update(observed_disposition="ALLOWED"),
+        lambda value: value["denied_canary"].update(evidence_kind="CLAIM_ONLY"),
+        lambda value: value["denied_canary"].update(evidence_sha256="0" * 64),
+        lambda value: value["conditional_paths"].pop(),
+        lambda value: value["conditional_paths"].reverse(),
+        lambda value: value["conditional_paths"][0].update(mapping_id="S75-M999"),
+        lambda value: value["conditional_paths"][0].update(
+            disposition="NOT_APPLICABLE"
+        ),
+        lambda value: value["conditional_paths"][0].update(
+            evidence_sha256=value["denied_canary"]["evidence_sha256"]
+        ),
+        lambda value: value.update(applicable_mapping_ids_sha256="0" * 64),
+        lambda value: value.update(
+            observed_policy_denied_mapping_ids_sha256="0" * 64
+        ),
+    ],
+)
+def test_canary_or_path_applicability_false_clear_holds(
+    mutate: Callable[[dict[str, Any]], None]
+) -> None:
+    contract, bundle = _mutate_applicability(mutate)
+    with pytest.raises(AuditCompletenessValidationError) as raised:
+        validate_bundle(contract, bundle)
+    assert raised.value.code == "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE"
+
+
+def test_substantiated_not_applicable_path_validates() -> None:
+    def mutate(projection: dict[str, Any]) -> None:
+        projection["conditional_paths"][0].update(
+            disposition="NOT_APPLICABLE",
+            evidence_kind="PATH_NOT_APPLICABLE_PROOF",
+        )
+        applicable = sorted(
+            [
+                *UNCONDITIONAL_POLICY_DENIED_MAPPING_IDS,
+                DENIED_CANARY_MAPPING_ID,
+                *CONDITIONAL_MAPPING_IDS[1:],
+            ]
+        )
+        digest = _mapping_ids_sha256(applicable)
+        projection["applicable_mapping_ids_sha256"] = digest
+        projection["observed_policy_denied_mapping_ids_sha256"] = digest
+
+    contract, bundle = _mutate_applicability(mutate)
+    assert validate_bundle(contract, bundle) == EXPECTED_DECISION
+
+
 def test_route_timeline_must_be_nonempty() -> None:
     contract, bundle = _mutate_record(
         1, lambda record: record.update(interval_end=record["interval_start"])
@@ -149,6 +240,15 @@ def test_route_timeline_must_be_nonempty() -> None:
     with pytest.raises(AuditCompletenessValidationError) as raised:
         validate_bundle(contract, bundle)
     assert raised.value.code == "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE"
+
+
+def test_impossible_calendar_timestamp_is_categorized() -> None:
+    contract, bundle = _mutate_record(
+        1, lambda record: record.update(interval_start="2026-02-30T00:00:00Z")
+    )
+    with pytest.raises(AuditCompletenessValidationError) as raised:
+        validate_bundle(contract, bundle)
+    assert raised.value.code == "REJECT_SCHEMA_CANONICALIZATION_OR_HASH"
 
 
 def test_delivery_interval_must_match_route_timeline() -> None:
@@ -324,6 +424,9 @@ def test_inventory_gaps_hold_or_reject(mutate: Callable[[dict[str, Any]], None])
         lambda value: value["runtime_evidence_registries"]["audit_mapping_records"].append("forged"),
         lambda value: value["runtime_evidence_registries"].update(unexpected=[]),
         lambda value: value["classifier_contract"].update(unknown_service_or_method="ALLOW"),
+        lambda value: value["classifier_contract"]["applicability_evidence"][
+            "conditional_mapping_ids"
+        ].pop(),
         lambda value: value["privacy_projection"]["allowed_public_keys"].append("resourceName"),
         lambda value: value["record_schemas"][0]["required_keys"].append("extra"),
     ],

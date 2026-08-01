@@ -2,6 +2,29 @@
 
 ## Current Session
 
+- PR #482 review remediation is locally complete. The existing audit-universe
+  record now binds denied canary `S75-M037`, exact conditional dispositions for
+  `S75-M038`-`S75-M041`, five distinct evidence hashes, and derived
+  applicable/observed Policy Denied keyset equality. All `16` valid conditional
+  `NOT_APPLICABLE` subsets validate only with matching proof evidence; missing,
+  unknown, reordered, duplicate, forged, or mismatched evidence holds. Invalid
+  calendar dates now return the existing silent categorized rejection. Final
+  technical-tree `CODE`, `BUG`, and `ADVERSARIAL` review returned `GO`; the
+  silent verifier, `86` focused tests, `397` synchronized tests with `6` skipped
+  and `154` unauthorized future-SUT cases deselected, strict OpenSpec, docs,
+  links, governance, JSON, compilation, and whitespace checks pass. Runtime
+  authority remains held. Final closure-tree review and immutable remediation
+  commit remain pending.
+- PR #482 current-head checks passed, but review reproduced an executable
+  S75A-P12 closure false-clear: the audit-universe record could report total
+  applicability without carrying the required `S75-M037` denied canary or the
+  `S75-M038`-`S75-M041` conditional path evidence. James authorized one final
+  PR-review remediation limited to those five bindings in the existing record.
+  The fail-first test reproduced acceptance before implementation. Replacement
+  review then treated the impossible-calendar traceback as a narrow violation
+  of the promised silent categorized verifier contract; its fail-first test
+  reproduced the raw `ValueError`, and the same remediation batch now converts
+  it to the existing canonicalization rejection without changing authority.
 - Section 7.5.4 is locally complete. Final exact-tree `CODE`, `BUG`, and
   `ADVERSARIAL` review returned `GO` after the explicitly authorized surgical
   sink-root correction. The verifier now rejects all `21` pairwise

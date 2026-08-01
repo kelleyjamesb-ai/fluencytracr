@@ -100,7 +100,8 @@ EXPECTED_DOMAINS = (
 EXPECTED_REQUIRED_KEYS = (
     (
         "schema_version", "target_binding_sha256",
-        "approved_section_7_5_contract_sha256", "inventory_bytes_sha256",
+        "approved_section_7_5_contract_sha256", "applicability_evidence_projection",
+        "applicability_evidence_projection_sha256", "inventory_bytes_sha256",
         "row_keyset_sha256", "registry_sha256", "observed_row_count",
         "observed_method_row_count", "classifier_binary_sha256",
         "all_rows_classified", "all_methods_accounted", "data_access_enabled",
@@ -160,6 +161,17 @@ EXPECTED_PUBLIC_KEYSET_SHA256 = (
     "dfaa464e72ace6f2bc8c1ff0553761b6790a0e1e03abad2f6292d3d90f8df422"
 )
 PUBLIC_PROJECTION_DOMAIN = "FLUENCYTRACR:GCP_SECTION_7_5_4:PUBLIC_PROJECTION:V1"
+APPLICABILITY_EVIDENCE_DOMAIN = (
+    "FLUENCYTRACR:GCP_SECTION_7_5_4:APPLICABILITY_EVIDENCE:V1"
+)
+POLICY_DENIED_MAPPING_IDS_DOMAIN = (
+    "FLUENCYTRACR:GCP_SECTION_7_5_4:POLICY_DENIED_MAPPING_IDS:V1"
+)
+DENIED_CANARY_MAPPING_ID = "S75-M037"
+CONDITIONAL_MAPPING_IDS = ("S75-M038", "S75-M039", "S75-M040", "S75-M041")
+UNCONDITIONAL_POLICY_DENIED_MAPPING_IDS = tuple(
+    f"S75-M{index:03d}" for index in (*range(1, 37), *range(45, 89))
+)
 HEX_64 = re.compile(r"[0-9a-f]{64}\Z")
 UTC_TIME = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\Z")
 
@@ -171,7 +183,10 @@ def _fail(code: str, detail: str) -> None:
 def _time(value: Any, label: str) -> datetime:
     if not isinstance(value, str) or UTC_TIME.fullmatch(value) is None:
         _fail("REJECT_SCHEMA_CANONICALIZATION_OR_HASH", f"{label} is not canonical")
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        _fail("REJECT_SCHEMA_CANONICALIZATION_OR_HASH", f"{label} is not canonical")
 
 
 def _validate_record(record: Any, schema: dict[str, Any]) -> None:
@@ -249,6 +264,25 @@ def _validate_inventory(inventory: dict[str, Any]) -> None:
     }
     if exclusions != {"S75-M049", "S75-M050", "S75-M051", "S75-M070", "S75-M071"}:
         _fail("HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE", "exclusion universe gap")
+    applicability = {row["mapping_id"]: row.get("applicability") for row in rows}
+    if (
+        applicability.get(DENIED_CANARY_MAPPING_ID) != "DENIED_CANARY_REQUIRED"
+        or any(
+            applicability.get(mapping_id)
+            != "SUCCESS_AND_DENIAL_IF_PATH_APPLICABLE"
+            for mapping_id in CONDITIONAL_MAPPING_IDS
+        )
+        or {
+            mapping_id
+            for mapping_id, value in applicability.items()
+            if value == "SUCCESS_AND_DENIAL"
+        }
+        != set(UNCONDITIONAL_POLICY_DENIED_MAPPING_IDS)
+    ):
+        _fail(
+            "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE",
+            "Policy Denied applicability classifier drift",
+        )
 
 
 def _validate_contract_shape(
@@ -292,6 +326,12 @@ def _validate_contract_shape(
     if contract["live_runtime"] != {"command": "NOT_AUTHORIZED", "expected_exit": "NOT_RUN"}:
         _fail("REJECT_AUTHORITY_SUBSTITUTION", "live runtime posture drift")
     if contract["classifier_contract"] != {
+        "applicability_evidence": {
+            "conditional_mapping_ids": list(CONDITIONAL_MAPPING_IDS),
+            "denied_canary_mapping_id": DENIED_CANARY_MAPPING_ID,
+            "mapping_ids_domain_separator": POLICY_DENIED_MAPPING_IDS_DOMAIN,
+            "projection_domain_separator": APPLICABILITY_EVIDENCE_DOMAIN,
+        },
         "data_access": "ENABLED_FOR_ALL_INVENTORY_DATA_ACCESS_ROWS",
         "denied_canary": "REQUIRED_FOR_KMS_ASYMMETRIC_SIGN",
         "exclusion_method_disposition": "CREATE_UPDATE_DELETE_GET_LIST_ALL_CLASSIFIED",
@@ -363,6 +403,123 @@ def _validate_contract_shape(
     _validate_inventory(sources[EXPECTED_SOURCE_CONTRACTS[1][1]])
 
 
+def _mapping_ids_sha256(mapping_ids: list[str]) -> str:
+    return _sha256(
+        POLICY_DENIED_MAPPING_IDS_DOMAIN.encode("ascii")
+        + b"\x00"
+        + _canonical_bytes(mapping_ids)
+    )
+
+
+def _validate_applicability_evidence(universe: dict[str, Any]) -> None:
+    projection = universe["applicability_evidence_projection"]
+    expected_projection_keys = {
+        "applicable_mapping_ids_sha256",
+        "conditional_paths",
+        "denied_canary",
+        "observed_policy_denied_mapping_ids_sha256",
+        "record_sha256",
+    }
+    if (
+        not isinstance(projection, dict)
+        or set(projection) != expected_projection_keys
+        or list(projection) != sorted(projection)
+    ):
+        _fail(
+            "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE",
+            "applicability evidence projection missing or open",
+        )
+
+    canary = projection["denied_canary"]
+    if (
+        not isinstance(canary, dict)
+        or set(canary)
+        != {"evidence_kind", "evidence_sha256", "mapping_id", "observed_disposition"}
+        or list(canary) != sorted(canary)
+        or canary["mapping_id"] != DENIED_CANARY_MAPPING_ID
+        or canary["observed_disposition"] != "DENIED"
+        or canary["evidence_kind"] != "POLICY_DENIED_CANARY_OBSERVATION"
+        or not isinstance(canary["evidence_sha256"], str)
+        or HEX_64.fullmatch(canary["evidence_sha256"]) is None
+        or canary["evidence_sha256"] == "0" * 64
+    ):
+        _fail(
+            "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE",
+            "denied AsymmetricSign canary evidence missing",
+        )
+
+    conditional_paths = projection["conditional_paths"]
+    if not isinstance(conditional_paths, list) or len(conditional_paths) != 4:
+        _fail(
+            "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE",
+            "conditional path applicability incomplete",
+        )
+    required_mapping_ids: list[str] = []
+    evidence_hashes = {canary["evidence_sha256"]}
+    for mapping_id, entry in zip(CONDITIONAL_MAPPING_IDS, conditional_paths, strict=True):
+        if (
+            not isinstance(entry, dict)
+            or set(entry) != {"disposition", "evidence_kind", "evidence_sha256", "mapping_id"}
+            or list(entry) != sorted(entry)
+            or entry["mapping_id"] != mapping_id
+            or entry["disposition"] not in {"REQUIRED", "NOT_APPLICABLE"}
+            or not isinstance(entry["evidence_sha256"], str)
+            or HEX_64.fullmatch(entry["evidence_sha256"]) is None
+            or entry["evidence_sha256"] == "0" * 64
+            or entry["evidence_sha256"] in evidence_hashes
+        ):
+            _fail(
+                "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE",
+                "conditional path evidence invalid",
+            )
+        expected_kind = (
+            "POLICY_DENIED_OBSERVATION"
+            if entry["disposition"] == "REQUIRED"
+            else "PATH_NOT_APPLICABLE_PROOF"
+        )
+        if entry["evidence_kind"] != expected_kind:
+            _fail(
+                "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE",
+                "conditional path disposition unsubstantiated",
+            )
+        evidence_hashes.add(entry["evidence_sha256"])
+        if entry["disposition"] == "REQUIRED":
+            required_mapping_ids.append(mapping_id)
+
+    applicable_mapping_ids = sorted(
+        [
+            *UNCONDITIONAL_POLICY_DENIED_MAPPING_IDS,
+            DENIED_CANARY_MAPPING_ID,
+            *required_mapping_ids,
+        ]
+    )
+    expected_mapping_ids_sha256 = _mapping_ids_sha256(applicable_mapping_ids)
+    if (
+        projection["applicable_mapping_ids_sha256"] != expected_mapping_ids_sha256
+        or projection["observed_policy_denied_mapping_ids_sha256"]
+        != expected_mapping_ids_sha256
+    ):
+        _fail(
+            "HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE",
+            "applicable or observed Policy Denied keyset incomplete",
+        )
+
+    body = {key: value for key, value in projection.items() if key != "record_sha256"}
+    projection_digest = _sha256(
+        APPLICABILITY_EVIDENCE_DOMAIN.encode("ascii")
+        + b"\x00"
+        + _canonical_bytes(body)
+    )
+    if (
+        projection["record_sha256"] != projection_digest
+        or universe["applicability_evidence_projection_sha256"] != projection_digest
+    ):
+        _fail(
+            "REJECT_SCHEMA_CANONICALIZATION_OR_HASH",
+            "applicability evidence projection hash mismatch",
+        )
+
+
 def validate_bundle(contract: dict[str, Any], bundle: Any) -> str:
     if not isinstance(bundle, dict) or set(bundle) != {"claimed_p07_nodes", "records"}:
         _fail("REJECT_SCHEMA_CANONICALIZATION_OR_HASH", "bundle shape drift")
@@ -397,6 +554,7 @@ def validate_bundle(contract: dict[str, Any], bundle: Any) -> str:
         ))
     ):
         _fail("HOLD_METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE", "audit universe gap")
+    _validate_applicability_evidence(universe)
     start = _time(route["interval_start"], "route interval start")
     end = _time(route["interval_end"], "route interval end")
     if start >= end or any(route[field] is not True for field in (

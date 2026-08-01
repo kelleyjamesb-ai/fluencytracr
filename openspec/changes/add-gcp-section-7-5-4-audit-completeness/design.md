@@ -18,6 +18,10 @@ research evidence, not a closed semantic classifier or live delivery proof.
 - Treat all 89 inventory rows as the closed universe. Unknown or missing rows
   hold; Policy Denied applies to every applicable method with no exclusion.
 - Require all five exclusion methods and the sink-error platform log.
+- Bind the denied canary and the four conditional credential paths through one
+  canonical projection inside the existing audit-universe record. Conditional
+  `NOT_APPLICABLE` dispositions require their own evidence and cannot silently
+  disappear from the derived Policy Denied keyset.
 - Separate route configuration, source and destination receipts, and
   independently rooted observations. Routing and delivery root sets are
   disjoint, and router buffering cannot prove delivery.

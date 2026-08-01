@@ -9,6 +9,44 @@
       {
         "all_methods_accounted": true,
         "all_rows_classified": true,
+        "applicability_evidence_projection": {
+          "applicable_mapping_ids_sha256": "bcaef8d85fc8a1e5dd224e35fe3601e9c2a871b9765d1083d748995ea38e7d13",
+          "conditional_paths": [
+            {
+              "disposition": "REQUIRED",
+              "evidence_kind": "POLICY_DENIED_OBSERVATION",
+              "evidence_sha256": "c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
+              "mapping_id": "S75-M038"
+            },
+            {
+              "disposition": "REQUIRED",
+              "evidence_kind": "POLICY_DENIED_OBSERVATION",
+              "evidence_sha256": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+              "mapping_id": "S75-M039"
+            },
+            {
+              "disposition": "REQUIRED",
+              "evidence_kind": "POLICY_DENIED_OBSERVATION",
+              "evidence_sha256": "c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4",
+              "mapping_id": "S75-M040"
+            },
+            {
+              "disposition": "REQUIRED",
+              "evidence_kind": "POLICY_DENIED_OBSERVATION",
+              "evidence_sha256": "c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5",
+              "mapping_id": "S75-M041"
+            }
+          ],
+          "denied_canary": {
+            "evidence_kind": "POLICY_DENIED_CANARY_OBSERVATION",
+            "evidence_sha256": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+            "mapping_id": "S75-M037",
+            "observed_disposition": "DENIED"
+          },
+          "observed_policy_denied_mapping_ids_sha256": "bcaef8d85fc8a1e5dd224e35fe3601e9c2a871b9765d1083d748995ea38e7d13",
+          "record_sha256": "30efdde4b26cb953182d15bd6616e0db8a04009f1af3afe708f79deab88bee4a"
+        },
+        "applicability_evidence_projection_sha256": "30efdde4b26cb953182d15bd6616e0db8a04009f1af3afe708f79deab88bee4a",
         "approved_section_7_5_contract_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "classifier_binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
         "data_access_enabled": true,
@@ -17,7 +55,7 @@
         "observed_method_row_count": 88,
         "observed_row_count": 89,
         "policy_denied_total_applicability": true,
-        "record_sha256": "cba91947c08695dc3618845da872182165e5322782b234f9bb2de782656a850f",
+        "record_sha256": "03db3ae90fc6a67358d68f45108389fb136ebe5cda8c8d02a8318e85e8b7890d",
         "registry_sha256": "3a984f6b7ffc704a89efc627529d1c250897df7a12da19e01f5c986ce90b49ef",
         "row_keyset_sha256": "ffd46355eb1e3eefa5d7ddd4d432712e151ad67292314fd8bb8a915f2a23216b",
         "schema_version": "GCP_SECTION_7_5_4_AUDIT_UNIVERSE_RECORD_V1",
@@ -93,11 +131,11 @@
         "audit_record_freshness_and_anti_replay_sha256": "bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc",
         "audit_route_timeline_record_sha256": "4b2d4cb39c7236ccfa85e6c05e52315505850e801b0dd8aeb4eaf8b08a0ce6e3",
         "audit_status": "VERIFIED",
-        "audit_universe_record_sha256": "cba91947c08695dc3618845da872182165e5322782b234f9bb2de782656a850f",
+        "audit_universe_record_sha256": "03db3ae90fc6a67358d68f45108389fb136ebe5cda8c8d02a8318e85e8b7890d",
         "bounded_audit_field_profile_sha256": "bdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbd",
         "exact_target_hash_match": true,
         "record_bound_bounded_audit_field_profile_sha256": "bdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbd",
-        "record_sha256": "3762af2ca293977c3eea03b9cd09b3deb8bb965a6db7ab92ad9d3d851a9987ad",
+        "record_sha256": "97912f80604c25a4e8644fae5c526a68b76e6f5760ebc14db3c338811d6ec5a8",
         "schema_version": "GCP_SECTION_7_5_4_AUDIT_MAPPING_RECORD_V1",
         "section_7_4_acceptance_node_id": "audit_mapping_acceptance_hash",
         "section_7_4_formula_sha256": "5c7ade7d5fae23259d6767bf6de549b69288b1810b15c32121a85acdd858854a",

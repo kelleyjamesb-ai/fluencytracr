@@ -21,6 +21,11 @@ The contract SHALL classify exactly all 89 pinned inventory rows, including 88
 method rows and the sink-error platform log. It SHALL require Data Access,
 total applicable Policy Denied coverage, the denied AsymmetricSign canary,
 explicit path applicability, and all five exclusion-method dispositions.
+The canary SHALL bind `S75-M037` to a denied observation. The conditional
+projection SHALL contain exactly `S75-M038` through `S75-M041`; each row SHALL
+be either `REQUIRED` with a Policy Denied observation or `NOT_APPLICABLE` with
+separate disposition evidence. Applicable and observed mapping-keyset digests
+SHALL be derived from the pinned inventory and exact conditional dispositions.
 
 #### Scenario: Exact classifier universe validates
 - **WHEN** every pinned row and named classifier obligation is present
@@ -28,6 +33,11 @@ explicit path applicability, and all five exclusion-method dispositions.
 
 #### Scenario: Method or classification is absent
 - **WHEN** any mapping row, mode, denied applicability, or exclusion method is missing
+- **THEN** the verifier holds
+
+#### Scenario: Canary or conditional evidence is asserted without support
+- **WHEN** the canary is not denied, a conditional row is missing or unknown,
+  a disposition lacks its required evidence kind, or an observed keyset differs
 - **THEN** the verifier holds
 
 ### Requirement: Independently rooted full-route timeline

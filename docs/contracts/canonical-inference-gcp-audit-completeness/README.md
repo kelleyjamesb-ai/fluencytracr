@@ -32,8 +32,9 @@ The five schemas require:
 - exact classification of all 89 inventory rows, including 88 method rows and
   the sink-error platform-log row;
 - Data Access enablement, total applicable Policy Denied coverage, a denied
-  AsymmetricSign canary, explicit path applicability, and complete Create,
-  Update, Delete, Get, and List exclusion-method disposition;
+  AsymmetricSign canary with record-bound evidence, exact evidence-backed
+  applicability dispositions for `S75-M038` through `S75-M041`, and complete
+  Create, Update, Delete, Get, and List exclusion-method disposition;
 - a nonempty full-route timeline with independently rooted source,
   destination, and observation evidence, no Policy Denied exclusion, and no
   substitution of router buffering for completeness;
