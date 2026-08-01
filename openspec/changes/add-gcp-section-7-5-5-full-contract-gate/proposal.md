@@ -19,7 +19,7 @@ coverage without turning documentation closure into runtime authority.
 ## Impact
 
 - Affected spec: `gcp-section-7-5-5-full-contract-closure`
-- Affected paths: this OpenSpec change, one readiness fixture/test, and later
-  the bounded docs contract, synthetic vector, offline verifier, and tests
+- Affected paths: this OpenSpec change, one readiness fixture/test, the bounded
+  docs contract, synthetic vector, offline verifier, and focused tests
 - No runtime SUT, GCP, credentials, resources, deployment, qualification,
   persistence creation, model execution, or Sections 7.6-7.8
