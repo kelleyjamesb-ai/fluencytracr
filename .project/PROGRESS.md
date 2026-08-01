@@ -2,6 +2,53 @@
 
 ## Current Session
 
+- Final readiness candidate `60d4f9d95defa2064c78d09d73c994d7693f07ab`
+  received CODE and BUG `GO` and ADVERSARIAL `HOLD` for one exact A010
+  inconsistency: the derived 7.5.1 HOLD did not match its source row. The
+  terminal design repair now mutates and rehashes the alternate registry,
+  queue row, and 7.5.1 source bytes; derives matching rows, bidirectional edges,
+  owner portion, source manifest, and predecessor decisions; reseals every
+  descendant; and asserts that complete internal agreement before the absent
+  verifier gate. Only scoped adversarial re-review of this finding remains.
+  No implementation or authority was added.
+- Replacement Section 7.5.5 readiness evidence `b8f010ffc5a51ed90274bafd3796573021ea3e74`,
+  tree `3d25250d018823596baa4acc6a29d6164862b5a0`, packet SHA-256
+  `289b7d0f87b9363a11ccb4aac53571f946a930b7448a87cbdbfd51ad18089385`
+  also received exact CODE, BUG, and ADVERSARIAL `HOLD`. The remaining
+  executable defects were one mismatched forward/reverse edge in A010, a
+  non-recursive candidate ledger, missing nested privacy/runtime-registry
+  mutations, and a concurrency plan that did not require a test-controlled
+  atomic callback. The final design repair makes A010 internally consistent,
+  recursively reconciles every baseline leaf to exactly one ledger rule,
+  expands privacy and authority cases across all admitted nested boundaries,
+  and proves then requires the atomic replacement callback. No implementation
+  path exists; final replacement readiness review is pending.
+- Initial Section 7.5.5 readiness evidence commit `5012374c5751e9e37dd0225461e1b2db52018411`,
+  tree `664099ec89f0b4bc6a37e16a05aa219f05e6bacc`, packet SHA-256
+  `d711e2c797cc0d9f2071598aeabadb2e2e156f7a048e4725cf05459205430579`
+  received exact CODE, BUG, and ADVERSARIAL `HOLD`. The reviewers showed that
+  attack tests delegated mutation and expected answers to the future verifier,
+  P17 lacked an independently admitted queue projection, and source-ledger
+  references did not reconcile. The replacement packet now constructs and
+  reseals every attack and environment state before the absent-verifier gate,
+  compiles expected outcomes independently, adds four predecessor-HOLD cases,
+  binds the immutable P17 queue fields, and closes the field/resource/hash/
+  output ledger. This is design-stage repair; no closure implementation or
+  implementation-remediation batch has begun. Replacement readiness review is
+  pending.
+- Section 7.5.5 is the sole active queue item on
+  `codex/section-7-5-5-full-contract`, based on merged current main
+  `50c3d081fed5a697cf688dbcd6b747d537a6701f`. Sections 7.5.1-7.5.4 are
+  recorded `done`; their four silent offline verifiers and V1 governance gate
+  pass from the clean branch. The immutable 20-row Section 7.5A registry is
+  byte-identical at SHA-256
+  `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`.
+  This slice is frozen to the readiness-reviewed docs-only full-contract
+  closure projection for P00-P14 and P17-P19. P15 remains Section 7.7-owned;
+  P16 remains Section 7.8-owned. Runtime SUT work, live GCP, credentials,
+  resources, persistence creation, deployment, qualification, model
+  execution, and Sections 7.6-7.8 remain excluded; authority effect is
+  `NONE`.
 - PR #482 review remediation is locally complete. The existing audit-universe
   record now binds denied canary `S75-M037`, exact conditional dispositions for
   `S75-M038`-`S75-M041`, five distinct evidence hashes, and derived

@@ -449,9 +449,9 @@
       "id": "gcp-canonical-runtime-section-7-5-full-contract-gate",
       "title": "Section 7.5.5 — full transport and persistence contract closure gate",
       "bound": "Integrate the merged Section 7.5.1-7.5.4 contracts; satisfy the machine-distinct full-Section-7.5 requirement S75A-P17; mechanically reconcile S75A-P00-P14 and P17-P19 with exact forward/reverse edges and prove that every parent-owned, mechanism-owned, retention, audit, network, local-enforcement, and anchor portion has one explicit owner; create the readiness packet and adversarial fixtures required by docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_5_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD, while leaving P15 to Section 7.7 and P16 to Section 7.8; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, persistence creation, or model execution",
-      "status": "pending",
+      "status": "in_progress",
       "risk": "high",
-      "last_note": "Human-authored full-Section-7.5 gate. Activate only after all four Section 7.5 prerequisite items are merged with their required obligations closed."
+      "last_note": "Activated 2026-07-31 from merged main 50c3d081 after Sections 7.5.1-7.5.4 were verified done and their four offline verifiers passed. Scope is frozen to the readiness-reviewed, docs-only full-contract closure projection for P00-P14 and P17-P19. P15/P16, runtime SUT, GCP, credentials, resources, deployment, qualification, persistence creation, model execution, and Sections 7.6-7.8 remain excluded. Authority effect remains NONE."
     },
     {
       "id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
