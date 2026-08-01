@@ -2,6 +2,12 @@
 
 ## Current Session
 
+- Before implementation, deterministic interface review found one conflicting
+  oracle: resource attacks A014-A017 expected generic `HOLD` while identical
+  environment inputs expected specific absent/partial/corrupt HOLD reasons.
+  The packet now uses the same closed specific disposition for identical
+  inputs, preventing test-aware behavior. The full contract/verifier remains
+  absent and the readiness identities must be re-frozen and re-reviewed.
 - Section 7.5.5 terminal preimplementation readiness is `READINESS_GO`.
   Independent CODE, BUG, and ADVERSARIAL reviews each returned `GO` against
   exact evidence commit `f8be7303da65649f369c061e6ae7bfd864a51f4d`, tree

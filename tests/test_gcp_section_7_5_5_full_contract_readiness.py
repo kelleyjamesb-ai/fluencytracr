@@ -392,7 +392,7 @@ def test_attack_and_environment_catalogs_are_closed() -> None:
     attacks = fixture["attacks"]
     assert [row["id"] for row in attacks] == [f"A{index:03d}" for index in range(1, 20)]
     assert {row["class"] for row in attacks} == EXPECTED_ATTACK_CLASSES
-    assert all(row["expected"] == "HOLD" and row["root"] for row in attacks)
+    assert all(row["expected"].startswith("HOLD") and row["root"] for row in attacks)
     assert all(row["mutation"] and row["ledger"] for row in attacks)
     assert all(set(row["ledger"]) <= set(fixture["ledger_ids"]) for row in attacks)
     full = next(row for row in attacks if row["id"] == "A010")
@@ -500,7 +500,14 @@ def test_future_sut_declared_attack(
     result = module.evaluate_candidate(root, candidate, mode="CLEAN_CI", interleaving=interleaving)
     if interleaving is not None:
         assert interleaving.invoked
-    assert result == "HOLD"
+    expected = {
+        "AMBIENT_FALLBACK": "HOLD_SOURCE_SET_ABSENT",
+        "PARTIAL_RESOURCE": "HOLD_SOURCE_SET_PARTIAL",
+        "CORRUPT_RESOURCE": "HOLD_SOURCE_SET_CORRUPT",
+        "CONCURRENCY_INTERLEAVING": "HOLD_SOURCE_SET_CORRUPT",
+    }.get(attack["class"], "HOLD")
+    assert expected == attack["expected"]
+    assert result == expected
 
 
 @pytest.mark.parametrize(

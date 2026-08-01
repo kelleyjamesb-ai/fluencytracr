@@ -181,7 +181,9 @@ alternate closure stays internally consistent. A001-A019 respectively cover:
 unknown, missing, wrong type, nested extra, truncation, substitution, splice,
 forged provenance, replay, complete reseal, global time reseal, stale/future
 time, mode confusion, ambient fallback, partial, corrupt, concurrency, privacy,
-and authority. Each expected result is `HOLD`. A010 enumerates the P17 queue
+and authority. Each expected result is in the closed `HOLD` family; A014-A017
+use the same specific absent/partial/corrupt disposition as the environment
+matrix so identical inputs cannot demand different answers. A010 enumerates the P17 queue
 projection, registry rows, both edge directions, owners, sources, predecessor
 decisions, and all five derived projection hashes. A011/A012 prove timestamps are prohibited inputs,
 not silently ignored clocks.
