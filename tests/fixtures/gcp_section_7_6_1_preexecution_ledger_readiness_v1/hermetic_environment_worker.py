@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -27,7 +28,11 @@ def main() -> int:
     fixture_path = repo / "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/packet-rules.json"
     fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
     trusted_path = root / fixture["synthetic_trusted_context_root"]["path"]
-    trusted_context = json.loads(trusted_path.read_text(encoding="utf-8"))
+    trusted_bytes = trusted_path.read_bytes()
+    if hashlib.sha256(trusted_bytes).hexdigest() != fixture["synthetic_trusted_context_root"]["sha256"]:
+        print("HOLD_TRUSTED_CONTEXT_CORRUPT")
+        return 0
+    trusted_context = json.loads(trusted_bytes)
     paths = [repo / path for path in fixture["sut_paths"]]
     if not all(path.is_file() for path in paths):
         print("MISSING_SUT")

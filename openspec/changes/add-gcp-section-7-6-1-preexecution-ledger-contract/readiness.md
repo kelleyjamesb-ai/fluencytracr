@@ -86,6 +86,9 @@ trusted-context fixture. Purpose-separated test-only HMAC vectors authenticate
 the plan, allocation, lineage, parent, head, currentness, and opaque record
 outside the candidate graph. This is an executable oracle, not a runtime
 cryptographic algorithm, key-management design, credential, or authority.
+The trusted-context bytes themselves are an attacked compile-pinned resource;
+the hermetic worker verifies their SHA-256 before parsing or passing them to a
+future verifier.
 
 ### Atomic transition
 
@@ -103,6 +106,12 @@ One serializable modeled transition SHALL:
 Unknown commit permits same-reservation-key readback only. It never allocates a
 new ordinal. Duplicate or concurrent reservations admit at most one winner.
 Crash outcome and retry eligibility remain unclassified for Section 7.6.2.
+Executable future-SUT vectors cover both mutually exclusive initial and opaque
+retry lineage. The retry vector starts from an authenticated nonempty head and
+requires both ordinals to equal the corresponding head ordinal plus one. A
+test-owned unknown-commit transaction requires commit-unknown, same-key exact
+readback, no ordinal allocation, and exposure only after readback; a mismatched
+readback must HOLD.
 
 ### Ledger-to-attack reconciliation
 
@@ -186,7 +195,11 @@ interleaving, privacy leakage, and authority escalation. Variants expand across
 all nested record boundaries, Boolean ordinals, caller status/identity,
 misordered/missing write-ahead markers, exact-one-winner concurrency,
 predecessor HOLD, Section 7.4-owned acceptance/PASS fields, actual-boot claims,
-and every Section 7.6.2-only output.
+every Section 7.6.2-only output, independently pinned trusted-context
+substitution, and nested private data in an otherwise projected-away queue
+field. Replay variants prepare distinct internally linked second candidates
+where applicable, and the concurrency barrier exists before the absent-SUT
+gate.
 
 ## 6. Cost, review, and stop controls
 

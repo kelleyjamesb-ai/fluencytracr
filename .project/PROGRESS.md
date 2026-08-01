@@ -5,18 +5,18 @@
 - Section 7.6.1 preimplementation evidence repair is ready for exact-tree
   re-review after the first review correctly returned HOLD. The repaired
   packet SHA-256 is
-  `80631693e37eee4df56ca057626ab797546093f2a62751a8da7b8c63d1821469`,
+  `2e107686b8b2d7fb5db25b5bd2baf2803a9e5620a36b058e24ae349b3eee968b`,
   the rules fixture SHA-256 is
-  `318bbe7e6024970ef4ec4eb5c90b06a5467ebd4a1de020208ccf7af31f4e9af2`,
+  `fec601d9663c415f13ffa46fc303a5a967e0c7648984f508f866325f2e4a5331`,
   the separately byte-pinned synthetic trusted-context SHA-256 is
   `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
   the byte-pinned stdlib environment-worker SHA-256 is
-  `9d40268f32f4148370e4fd224de3038cbb099239426794a39d503254fc472d54`,
+  `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
   the readiness-test SHA-256 is
-  `8e2674eca279c321f3f678fb895b319e2e15eafa553567b0fd38018f6fe994b0`,
+  `7cadd128dbeac30ad0397952aab8fc1a2abe6201f672eafc2238086e238ee71b`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
-  Four structural and four live-runtime metadata-only tests pass; all 78
+  Five structural and four live-runtime metadata-only tests pass; all 83
   runnable implementation-facing attack and clean/archive environment cases
   construct their mutations, state, barriers, and literal expectations before
   stopping only at deliberate `MISSING_SUT`. The repair adds independently
@@ -27,8 +27,14 @@
   review confirmed those four blocker families repaired but found that the
   declared `env -i` command excluded its bare `uv` executable. The final
   bounded repair replaces that package runner with a byte-pinned stdlib worker
-  launched under the exact cleared environment; final strict checks and one
-  exact-tree re-review are pending. No docs contract, verifier,
+  launched under the exact cleared environment, and its exact-tree re-review
+  returned GO. The required CODE/BUG/ADVERSARIAL panel then found
+  four executable coverage omissions: opaque retry, unknown-commit recovery,
+  trusted-context substitution, and projected-away nested queue privacy. One
+  consolidated final corpus patch adds those branches, prepares replay and
+  concurrency state before the absent-SUT gate, and changes no record or
+  authority boundary. Final strict checks, immutable refreeze, and one
+  replacement panel are pending. No docs contract, verifier,
   implementation test, runtime SUT,
   GCP action, credential, persistence implementation, execution, deployment,
   migration, qualification, terminal/retry decision, or authority was added.

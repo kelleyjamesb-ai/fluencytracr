@@ -121,12 +121,24 @@ def _without(record: dict[str, Any], *fields: str) -> dict[str, Any]:
     return {key: value for key, value in record.items() if key not in fields}
 
 
+def _contains_forbidden_key(value: Any) -> bool:
+    if isinstance(value, dict):
+        return bool(set(value) & FORBIDDEN_PUBLIC_KEYS) or any(
+            _contains_forbidden_key(item) for item in value.values()
+        )
+    if isinstance(value, list):
+        return any(_contains_forbidden_key(item) for item in value)
+    return False
+
+
 def _queue_projection(fixture: dict[str, Any], root: Path = ROOT) -> dict[str, Any]:
     queue = json.loads((root / fixture["queue_authorization_root"]["path"]).read_text())
     matches = [row for row in queue["items"] if row["id"] == fixture["queue_item_id"]]
     assert len(matches) == 1
     row = matches[0]
     assert set(row) == set(fixture["queue_authorization_root"]["exact_row_fields"])
+    assert type(row["last_note"]) is str
+    assert not _contains_forbidden_key(row)
     assert row["status"] in fixture["queue_authorization_root"]["admitted_statuses"]
     fields = fixture["queue_authorization_root"]["immutable_projection_fields"]
     projection = {field: row[field] for field in fields}
@@ -142,11 +154,19 @@ def _build_candidate(
     source_manifest: list[dict[str, Any]] | None = None,
     queue_projection: dict[str, Any] | None = None,
     time_shift: int = 0,
+    record_time_shift: int = 0,
+    lineage_kind: str = "INITIAL",
 ) -> dict[str, Any]:
     context = copy.deepcopy(signing_context or _load_trusted_context(fixture, root))
     seed = context["candidate_seed_namespace"]
     value = lambda label: _digest(f"{seed}:{label}")
     now = context["trusted_now_epoch_seconds"] + time_shift
+    record_now = now + record_time_shift
+    assert lineage_kind in {"INITIAL", "OPAQUE_RETRY"}
+    head_attempt = 0 if lineage_kind == "INITIAL" else 3
+    head_retry = 0 if lineage_kind == "INITIAL" else 1
+    derived_attempt = head_attempt + 1
+    derived_retry = 0 if lineage_kind == "INITIAL" else head_retry + 1
 
     plan = {
         "schema_version": "GCP_S761_PLAN_MANIFEST_V1",
@@ -172,12 +192,12 @@ def _build_candidate(
 
     lineage = {
         "schema_version": "GCP_S761_LINEAGE_INPUT_V1",
-        "lineage_kind": "INITIAL",
-        "authenticated_lineage_token_hash": value("initial-lineage-token"),
-        "initial_token_hash": value("initial-token"),
-        "opaque_retry_authorization_hash": "ABSENT_INITIAL_LINEAGE",
+        "lineage_kind": lineage_kind,
+        "authenticated_lineage_token_hash": value("initial-lineage-token" if lineage_kind == "INITIAL" else "opaque-retry-token"),
+        "initial_token_hash": value("initial-token") if lineage_kind == "INITIAL" else "ABSENT_RETRY_LINEAGE",
+        "opaque_retry_authorization_hash": "ABSENT_INITIAL_LINEAGE" if lineage_kind == "INITIAL" else value("opaque-retry-authorization"),
         "token_authentication_verification_hash": "",
-        "token_freshness_verification_hash": _test_mac(context, "time", "LINEAGE_FRESHNESS", {"trusted_now": now, "token": value("initial-lineage-token")}),
+        "token_freshness_verification_hash": _test_mac(context, "time", "LINEAGE_FRESHNESS", {"trusted_now": now, "token": value("initial-lineage-token" if lineage_kind == "INITIAL" else "opaque-retry-token")}),
         "token_single_use_claim": value("token-single-use"),
     }
     lineage["token_authentication_verification_hash"] = _test_mac(context, "lineage", "LINEAGE_INPUT", _without(lineage, "token_authentication_verification_hash"))
@@ -185,13 +205,13 @@ def _build_candidate(
     head_in = {
         "schema_version": "GCP_S761_CURRENT_ATTEMPT_FAMILY_HEAD_V1",
         "attempt_family_key": value("attempt-family"),
-        "lineage_state": "EMPTY_AUTHENTICATED_GENESIS",
-        "attempt_ordinal": 0,
-        "retry_ordinal": 0,
-        "last_reservation_key": value("genesis-no-reservation"),
-        "last_write_ahead_marker_hash": value("genesis-no-wal"),
-        "last_expected_request_lineage_hash": value("genesis-no-expected"),
-        "head_version": 0,
+        "lineage_state": "EMPTY_AUTHENTICATED_GENESIS" if lineage_kind == "INITIAL" else "AUTHENTICATED_TERMINAL_PARENT",
+        "attempt_ordinal": head_attempt,
+        "retry_ordinal": head_retry,
+        "last_reservation_key": value("genesis-no-reservation" if lineage_kind == "INITIAL" else "prior-reservation"),
+        "last_write_ahead_marker_hash": value("genesis-no-wal" if lineage_kind == "INITIAL" else "prior-wal"),
+        "last_expected_request_lineage_hash": value("genesis-no-expected" if lineage_kind == "INITIAL" else "prior-expected"),
+        "head_version": head_attempt,
         "head_authentication_verification_hash": "",
         "attempt_family_head_hash": "",
     }
@@ -205,8 +225,8 @@ def _build_candidate(
         "allocation_manifest_hash": allocation["allocation_manifest_hash"],
         "authenticated_lineage_token_hash": lineage["authenticated_lineage_token_hash"],
         "admission_lineage_hash": value("admission-lineage"),
-        "attempt_ordinal": 1,
-        "retry_ordinal": 0,
+        "attempt_ordinal": derived_attempt,
+        "retry_ordinal": derived_retry,
         "keyed_tenant_commitment": value("aggregate-tenant-commitment"),
         "runtime_profile_hash": plan["runtime_profile_hash"],
         "single_use_attempt_claim": value("attempt-single-use"),
@@ -224,8 +244,8 @@ def _build_candidate(
         "parent_attempt_envelope_hash": parent["parent_attempt_envelope_hash"],
         "plan_manifest_hash": plan["plan_manifest_hash"],
         "allocation_manifest_hash": allocation["allocation_manifest_hash"],
-        "derived_attempt_ordinal": 1,
-        "derived_retry_ordinal": 0,
+        "derived_attempt_ordinal": derived_attempt,
+        "derived_retry_ordinal": derived_retry,
         "single_use_attempt_claim": parent["single_use_attempt_claim"],
         "expected_request_lineage_hash": "",
     }
@@ -240,8 +260,8 @@ def _build_candidate(
         "plan_manifest_hash": plan["plan_manifest_hash"],
         "allocation_manifest_hash": allocation["allocation_manifest_hash"],
         "lineage_input_hash": lineage_hash,
-        "derived_attempt_ordinal": 1,
-        "derived_retry_ordinal": 0,
+        "derived_attempt_ordinal": derived_attempt,
+        "derived_retry_ordinal": derived_retry,
         "parent_attempt_envelope_hash": parent["parent_attempt_envelope_hash"],
         "expected_request_lineage_hash": expected["expected_request_lineage_hash"],
         "single_use_attempt_claim": parent["single_use_attempt_claim"],
@@ -250,7 +270,7 @@ def _build_candidate(
         "schema_version": "GCP_S761_RESERVATION_V1",
         "reservation_key": _canonical_sha256(reservation_preimage),
         **reservation_preimage,
-        "reserved_at": now - 150,
+        "reserved_at": record_now - 150,
         "reservation_status": "RESERVED_PRE_EXECUTION",
     }
     token_marker = {
@@ -258,9 +278,9 @@ def _build_candidate(
         "authenticated_lineage_token_hash": lineage["authenticated_lineage_token_hash"],
         "token_single_use_claim": lineage["token_single_use_claim"],
         "reservation_key": reservation["reservation_key"],
-        "derived_attempt_ordinal": 1,
-        "derived_retry_ordinal": 0,
-        "consumed_at": now - 149,
+        "derived_attempt_ordinal": derived_attempt,
+        "derived_retry_ordinal": derived_retry,
+        "consumed_at": record_now - 149,
         "token_consumption_marker_hash": "",
     }
     token_marker["token_consumption_marker_hash"] = _canonical_sha256(_without(token_marker, "token_consumption_marker_hash"))
@@ -270,10 +290,10 @@ def _build_candidate(
         "token_consumption_marker_hash": token_marker["token_consumption_marker_hash"],
         "expected_request_lineage_hash": expected["expected_request_lineage_hash"],
         "previous_attempt_family_head_hash": head_in["attempt_family_head_hash"],
-        "derived_attempt_ordinal": 1,
-        "derived_retry_ordinal": 0,
+        "derived_attempt_ordinal": derived_attempt,
+        "derived_retry_ordinal": derived_retry,
         "write_order": copy.deepcopy(fixture["fixed_write_order"]),
-        "marker_created_at": now - 148,
+        "marker_created_at": record_now - 148,
         "write_ahead_marker_hash": "",
     }
     wal["write_ahead_marker_hash"] = _canonical_sha256(_without(wal, "write_ahead_marker_hash"))
@@ -281,12 +301,12 @@ def _build_candidate(
         "schema_version": "GCP_S761_NEW_ATTEMPT_FAMILY_HEAD_V1",
         "attempt_family_key": head_in["attempt_family_key"],
         "lineage_state": "RESERVED_PRE_EXECUTION",
-        "attempt_ordinal": 1,
-        "retry_ordinal": 0,
+        "attempt_ordinal": derived_attempt,
+        "retry_ordinal": derived_retry,
         "last_reservation_key": reservation["reservation_key"],
         "last_write_ahead_marker_hash": wal["write_ahead_marker_hash"],
         "last_expected_request_lineage_hash": expected["expected_request_lineage_hash"],
-        "head_version": 1,
+        "head_version": head_in["head_version"] + 1,
         "head_authentication_verification_hash": "",
         "attempt_family_head_hash": "",
     }
@@ -324,11 +344,11 @@ def _build_candidate(
         "record_bound_parent_attempt_envelope_hash": _canonical_sha256({"record": reservation["reservation_key"], "parent": parent["parent_attempt_envelope_hash"]}),
         "record_bound_single_use_attempt_claim": _canonical_sha256({"record": reservation["reservation_key"], "claim": parent["single_use_attempt_claim"]}),
         "section_7_6_record_authentication_verification_hash": "",
-        "section_7_6_record_freshness_hash": _test_mac(context, "time", "PRE_EXECUTION_FRESHNESS", {"created": now - 147, "expires": now + 150, "trusted_now": now}),
+        "section_7_6_record_freshness_hash": _test_mac(context, "time", "PRE_EXECUTION_FRESHNESS", {"created": record_now - 147, "expires": record_now + 150, "trusted_now": now}),
         "opaque_pre_execution_record_single_use_verification_hash": _canonical_sha256({"reservation": reservation["reservation_key"], "token": token_marker["token_consumption_marker_hash"], "wal": wal["write_ahead_marker_hash"]}),
         "approved_section_7_6_contract_hash": value("approved-section-7-6-contract"),
-        "record_created_at": now - 147,
-        "record_expires_at": now + 150,
+        "record_created_at": record_now - 147,
+        "record_expires_at": record_now + 150,
         "record_status": "COMMITTED_EXACT_READBACK",
         "authority_effect": "NONE",
     }
@@ -420,6 +440,35 @@ class _AtomicReplacement:
         self.invoked = True
 
 
+class _UnknownCommitTransaction:
+    """Test-owned transaction fault surface; it contains no expected verdict."""
+
+    def __init__(self, candidate: dict[str, Any], *, mismatch: bool) -> None:
+        self.reservation_key = candidate["records"]["reservation"]["reservation_key"]
+        self.readback_bundle = copy.deepcopy(candidate["records"])
+        if mismatch:
+            self.readback_bundle["reservation"]["reservation_status"] = "MISMATCHED_READBACK"
+        self.events: list[str] = []
+        self.ordinal_allocation_attempted = False
+
+    def commit(self, _write_set: dict[str, Any]) -> str:
+        self.events.append("COMMIT_UNKNOWN")
+        return "UNKNOWN_AFTER_WRITE"
+
+    def readback(self, reservation_key: str) -> dict[str, Any]:
+        assert reservation_key == self.reservation_key
+        self.events.append("READBACK_SAME_RESERVATION_KEY")
+        return copy.deepcopy(self.readback_bundle)
+
+    def allocate_ordinal(self) -> int:
+        self.ordinal_allocation_attempted = True
+        raise AssertionError("unknown commit must not allocate another ordinal")
+
+    def expose(self, _opaque_record: dict[str, Any]) -> None:
+        assert self.events == ["COMMIT_UNKNOWN", "READBACK_SAME_RESERVATION_KEY"]
+        self.events.append("EXPOSE_AFTER_EXACT_READBACK")
+
+
 def _variant_cases(fixture: dict[str, Any]) -> list[tuple[str, str | None]]:
     cases: list[tuple[str, str | None]] = []
     for attack in fixture["attacks"]:
@@ -479,13 +528,28 @@ def _prepare_attack(
             "PARENT_AUTH": ("parent_attempt_envelope", "parent_record_authentication_verification_hash"),
             "HEAD_AUTH": ("current_attempt_family_head", "head_authentication_verification_hash"),
         }.get(variant)
-        if target:
+        if variant == "TRUSTED_CONTEXT_ROOT":
+            trusted_path = tmp_path / fixture["synthetic_trusted_context_root"]["path"]
+            trusted_value = json.loads(trusted_path.read_text(encoding="utf-8"))
+            trusted_value["roots"]["parent"]["key_hex"] = _digest("forged-parent-root")
+            trusted_path.write_text(json.dumps(trusted_value, sort_keys=True), encoding="utf-8")
+        elif target:
             records[target[0]][target[1]] = _digest("attacker-key")
         else:
             candidate["predecessor_contracts"][0]["owner"] = "ATTACKER"
     elif attack_id == "A009":
         plan["action"] = "replay"
         plan["replay_variant"] = variant
+        plan["first_candidate"] = copy.deepcopy(candidate)
+        plan["second_candidate"] = (
+            copy.deepcopy(candidate)
+            if variant == "IDENTICAL_CANDIDATE"
+            else _build_candidate(fixture, root=tmp_path, record_time_shift=1 if variant == "RESERVATION_KEY" else 2)
+        )
+        assert plan["first_candidate"]["records"]["reservation"]["reservation_key"] == plan["second_candidate"]["records"]["reservation"]["reservation_key"]
+        assert plan["first_candidate"]["records"]["lineage_input"]["authenticated_lineage_token_hash"] == plan["second_candidate"]["records"]["lineage_input"]["authenticated_lineage_token_hash"]
+        if variant != "IDENTICAL_CANDIDATE":
+            assert plan["first_candidate"]["hashes"]["candidate_sha256"] != plan["second_candidate"]["hashes"]["candidate_sha256"]
     elif attack_id == "A010":
         queue_path = tmp_path / fixture["queue_authorization_root"]["path"]
         queue = json.loads(queue_path.read_text())
@@ -553,6 +617,7 @@ def _prepare_attack(
     elif attack_id == "A017":
         if variant == "CONCURRENT_DUPLICATE_RESERVATION":
             plan["action"] = "concurrent_duplicate"
+            plan["barrier"] = threading.Barrier(2)
         else:
             source = tmp_path / fixture["source_manifest"][3]["path"]
             original = source.read_bytes()
@@ -562,6 +627,12 @@ def _prepare_attack(
         if variant == "TOP_LEVEL": candidate[key] = "forbidden"
         elif variant == "PREDECESSOR_ROW": candidate["predecessor_contracts"][0][key] = "forbidden"
         elif variant == "QUEUE_ROW": candidate["queue_authorization_projection"][key] = "forbidden"
+        elif variant == "QUEUE_LAST_NOTE_NESTED":
+            queue_path = tmp_path / fixture["queue_authorization_root"]["path"]
+            queue_value = json.loads(queue_path.read_text(encoding="utf-8"))
+            queue_row = next(item for item in queue_value["items"] if item["id"] == fixture["queue_item_id"])
+            queue_row["last_note"] = {"user_id": "forbidden"}
+            queue_path.write_text(json.dumps(queue_value, sort_keys=True), encoding="utf-8")
         elif variant == "PUBLIC_PROJECTION": candidate["public_projection"]["prompt"] = "forbidden"
         elif variant == "RESULT": candidate["result"]["email"] = "forbidden"
         else:
@@ -592,7 +663,11 @@ def _prepare_attack(
         raise AssertionError(f"unprepared attack: {attack_id}")
 
     candidate = _reseal(candidate)
-    resource_only = attack_id in {"A009", "A014", "A015", "A016", "A017"}
+    resource_only = (
+        attack_id in {"A009", "A014", "A015", "A016", "A017"}
+        or (attack_id == "A008" and variant == "TRUSTED_CONTEXT_ROOT")
+        or (attack_id == "A018" and variant == "QUEUE_LAST_NOTE_NESTED")
+    )
     if not resource_only:
         assert candidate["hashes"]["candidate_sha256"] != original_hash
     return candidate, plan
@@ -732,6 +807,92 @@ def test_scope_allowlist_and_noninterference() -> None:
     assert hashlib.sha256(protocol.read_bytes()).hexdigest() == EXPECTED_PROTOCOL_SHA256
 
 
+def test_retry_lineage_and_nested_queue_privacy_oracles(tmp_path: Path) -> None:
+    fixture = _load_fixture()
+    root = _copy_inputs(fixture, tmp_path)
+    retry = _build_candidate(fixture, root=root, lineage_kind="OPAQUE_RETRY")
+    lineage = retry["records"]["lineage_input"]
+    head_in = retry["records"]["current_attempt_family_head"]
+    parent = retry["records"]["parent_attempt_envelope"]
+    reservation = retry["records"]["reservation"]
+    assert lineage["lineage_kind"] == "OPAQUE_RETRY"
+    assert lineage["initial_token_hash"] == "ABSENT_RETRY_LINEAGE"
+    assert lineage["opaque_retry_authorization_hash"] != "ABSENT_INITIAL_LINEAGE"
+    assert parent["attempt_ordinal"] == head_in["attempt_ordinal"] + 1
+    assert parent["retry_ordinal"] == head_in["retry_ordinal"] + 1
+    assert reservation["derived_attempt_ordinal"] == parent["attempt_ordinal"]
+    assert reservation["derived_retry_ordinal"] == parent["retry_ordinal"]
+    queue_path = root / fixture["queue_authorization_root"]["path"]
+    queue = json.loads(queue_path.read_text(encoding="utf-8"))
+    row = next(item for item in queue["items"] if item["id"] == fixture["queue_item_id"])
+    row["last_note"] = {"user_id": "forbidden"}
+    queue_path.write_text(json.dumps(queue, sort_keys=True), encoding="utf-8")
+    with pytest.raises(AssertionError):
+        _queue_projection(fixture, root)
+
+
+def test_future_sut_unknown_commit_same_key_readback() -> None:
+    fixture = _load_fixture()
+    candidate = _baseline_candidate(fixture)
+    transaction = _UnknownCommitTransaction(candidate, mismatch=False)
+    assert transaction.events == [] and not transaction.ordinal_allocation_attempted
+    module = _load_future_verifier(fixture)
+    result = module.evaluate_candidate(
+        ROOT,
+        candidate,
+        mode="CLEAN_CI",
+        state={},
+        interleaving=None,
+        trusted_context=_load_trusted_context(fixture),
+        transaction=transaction,
+    )
+    assert result == "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+    assert transaction.events == [
+        "COMMIT_UNKNOWN",
+        "READBACK_SAME_RESERVATION_KEY",
+        "EXPOSE_AFTER_EXACT_READBACK",
+    ]
+    assert not transaction.ordinal_allocation_attempted
+
+
+def test_future_sut_opaque_retry_lineage_ready() -> None:
+    fixture = _load_fixture()
+    candidate = _build_candidate(fixture, lineage_kind="OPAQUE_RETRY")
+    head = candidate["records"]["current_attempt_family_head"]
+    parent = candidate["records"]["parent_attempt_envelope"]
+    assert parent["attempt_ordinal"] == head["attempt_ordinal"] + 1
+    assert parent["retry_ordinal"] == head["retry_ordinal"] + 1
+    module = _load_future_verifier(fixture)
+    result = module.evaluate_candidate(
+        ROOT,
+        candidate,
+        mode="CLEAN_CI",
+        state={},
+        interleaving=None,
+        trusted_context=_load_trusted_context(fixture),
+    )
+    assert result == "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+
+
+def test_future_sut_unknown_commit_mismatched_readback_holds() -> None:
+    fixture = _load_fixture()
+    candidate = _baseline_candidate(fixture)
+    transaction = _UnknownCommitTransaction(candidate, mismatch=True)
+    module = _load_future_verifier(fixture)
+    result = module.evaluate_candidate(
+        ROOT,
+        candidate,
+        mode="CLEAN_CI",
+        state={},
+        interleaving=None,
+        trusted_context=_load_trusted_context(fixture),
+        transaction=transaction,
+    )
+    assert result == "HOLD"
+    assert transaction.events == ["COMMIT_UNKNOWN", "READBACK_SAME_RESERVATION_KEY"]
+    assert not transaction.ordinal_allocation_attempted
+
+
 ATTACK_CASES = _variant_cases(_load_fixture())
 
 
@@ -748,8 +909,10 @@ def test_future_sut_declared_attack(
     candidate, plan = _prepare_attack(fixture, attack_id, variant, root)
     attack = next(row for row in fixture["attacks"] if row["id"] == attack_id)
     assert attack["expected"].startswith("HOLD")
+    context = _load_trusted_context(fixture)
+    barrier = plan.get("barrier")
+    assert plan["action"] != "concurrent_duplicate" or isinstance(barrier, threading.Barrier)
     module = _load_future_verifier(fixture)
-    context = _load_trusted_context(fixture, root)
     call_args = {
         "mode": "CLEAN_CI",
         "state": plan["state"],
@@ -757,13 +920,12 @@ def test_future_sut_declared_attack(
         "trusted_context": context,
     }
     if plan["action"] == "replay":
-        first = module.evaluate_candidate(root, candidate, **call_args)
-        second = module.evaluate_candidate(root, candidate, **call_args)
+        first = module.evaluate_candidate(root, plan["first_candidate"], **call_args)
+        second = module.evaluate_candidate(root, plan["second_candidate"], **call_args)
         assert first == "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
         assert second == attack["expected"]
         return
     if plan["action"] == "concurrent_duplicate":
-        barrier = threading.Barrier(2)
         results: list[str] = []
         errors: list[BaseException] = []
 
