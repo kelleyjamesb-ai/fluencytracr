@@ -2,6 +2,67 @@
 
 ## Current Session
 
+- PR #482 review remediation is locally complete. The existing audit-universe
+  record now binds denied canary `S75-M037`, exact conditional dispositions for
+  `S75-M038`-`S75-M041`, five distinct evidence hashes, and derived
+  applicable/observed Policy Denied keyset equality. All `16` valid conditional
+  `NOT_APPLICABLE` subsets validate only with matching proof evidence; missing,
+  unknown, reordered, duplicate, forged, or mismatched evidence holds. Invalid
+  calendar dates now return the existing silent categorized rejection. Final
+  technical-tree `CODE`, `BUG`, and `ADVERSARIAL` review returned `GO`; the
+  silent verifier, `86` focused tests, `397` synchronized tests with `6` skipped
+  and `154` unauthorized future-SUT cases deselected, strict OpenSpec, docs,
+  links, governance, JSON, compilation, and whitespace checks pass. Runtime
+  authority remains held. Final closure-tree review and immutable remediation
+  commit remain pending.
+- PR #482 current-head checks passed, but review reproduced an executable
+  S75A-P12 closure false-clear: the audit-universe record could report total
+  applicability without carrying the required `S75-M037` denied canary or the
+  `S75-M038`-`S75-M041` conditional path evidence. James authorized one final
+  PR-review remediation limited to those five bindings in the existing record.
+  The fail-first test reproduced acceptance before implementation. Replacement
+  review then treated the impossible-calendar traceback as a narrow violation
+  of the promised silent categorized verifier contract; its fail-first test
+  reproduced the raw `ValueError`, and the same remediation batch now converts
+  it to the existing canonicalization rejection without changing authority.
+- Section 7.5.4 is locally complete. Final exact-tree `CODE`, `BUG`, and
+  `ADVERSARIAL` review returned `GO` after the explicitly authorized surgical
+  sink-root correction. The verifier now rejects all `21` pairwise
+  delivery-family and route/delivery root-reuse probes and verifies the exact
+  six-field public projection preimage and digest. The silent verifier and
+  `71` focused tests pass; synchronized parent/security checks pass `383` with
+  `6` skipped and `154` unauthorized future-SUT cases deselected. Strict
+  OpenSpec, docs sweep, linkcheck, V1 governance, JSON, compilation, and
+  whitespace checks pass. Runtime authority remains held. No SUT, Section 7.7
+  decision, deployment, migration, live GCP/logging, credential, resource,
+  qualification, or model execution occurred. Commit, push, PR, and merge
+  remain pending until the final closure tree is frozen and reviewed.
+- James explicitly resumed Section 7.5.4 for one surgical exception to the
+  remediation limit: `sink_error_observation_sha256` must be distinct from
+  every delivery receipt and observation root. The verifier now requires four
+  distinct delivery-family roots, and the exact reproduced regression test
+  passes. The silent verifier, `71` focused tests, strict OpenSpec, and
+  whitespace check pass. No other scope or authority changed; exact-tree
+  replacement review remains pending.
+- Section 7.5.4 is `HOLD` after its single permitted remediation batch.
+  Replacement `CODE` and `BUG` review returned `GO` on staged tree
+  `76f1f669101af87e45e9bf66efb0d1a32c60cdbb`: the public projection is now
+  verified from its exact six-field preimage, and route/delivery root families
+  are disjoint. Replacement `ADVERSARIAL` review reproduced the same remaining
+  independently-rooted observation failure: `sink_error_observation_sha256`
+  can reuse a delivery receipt root and still clear. The stop rule therefore
+  prevents a second remediation cycle. The item remains `in_progress`; no
+  commit, push, PR, merge, deployment, migration, GCP action, or Section 7.5.5
+  activation occurred.
+- Section 7.5.4 is the sole active queue item on branch
+  `codex/section-7-5-4-audit-completeness`, based on current `origin/main`
+  `4c2380a4c58602c24a913c581c6112e03b6ff1d7`. Sections 7.5.1-7.5.3 are
+  merged predecessors. This slice closes only P12, the audit-mapping P07 node,
+  and the Section 7.5 mechanism portion of P13. Section 7.7 decisions, runtime
+  SUT work, live GCP/logging, credentials, resources, deployment,
+  qualification, and model execution remain excluded. One coherent
+  remediation batch is permitted after review; no new architecture or
+  governance layer may be added.
 - Section 7.5.3 is locally complete on
   `codex/section-7-5-3-persistence-anchor`, based on current `origin/main`
   `8b06c5e5d8e37feb3e75e078bb538cebd1b8d379`. The docs-only contract closes
