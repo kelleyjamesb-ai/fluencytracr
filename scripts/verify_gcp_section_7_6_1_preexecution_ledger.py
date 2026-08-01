@@ -32,7 +32,7 @@ EXPECTED_VECTORS_SHA256 = (
 READY = "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
 QUEUE_ROW_FIELDS = frozenset({"id", "title", "bound", "status", "risk", "last_note"})
 _STATE_LOCK = threading.RLock()
-_IN_FLIGHT: Set[Tuple[int, str, str]] = set()
+_IN_FLIGHT_STATES: Set[int] = set()
 
 
 def _sha256(raw: bytes) -> str:
@@ -333,7 +333,7 @@ def evaluate_candidate(
         lineage_token = candidate_snapshot["records"]["lineage_input"][
             "authenticated_lineage_token_hash"
         ]
-        flight = (id(state), reservation_key, lineage_token)
+        state_identity = id(state)
         with _STATE_LOCK:
             used_reservations = state.setdefault("used_reservation_keys", set())
             used_tokens = state.setdefault("used_lineage_tokens", set())
@@ -345,7 +345,7 @@ def evaluate_candidate(
             ):
                 return "HOLD"
             if (
-                flight in _IN_FLIGHT
+                state_identity in _IN_FLIGHT_STATES
                 or reservation_key in used_reservations
                 or lineage_token in used_tokens
             ):
@@ -355,7 +355,7 @@ def evaluate_candidate(
                 prior_reservations = set(used_reservations)
                 prior_tokens = set(used_tokens)
                 readback_confirmed = False
-                _IN_FLIGHT.add(flight)
+                _IN_FLIGHT_STATES.add(state_identity)
                 try:
                     disposition = transaction.commit(
                         copy.deepcopy(_write_set(candidate_snapshot))
@@ -366,6 +366,10 @@ def evaluate_candidate(
                     if _canonical_bytes(readback) != expected_records:
                         return "HOLD"
                     readback_confirmed = True
+                    state["used_reservation_keys"] = prior_reservations | {
+                        reservation_key
+                    }
+                    state["used_lineage_tokens"] = prior_tokens | {lineage_token}
                     transaction.expose(
                         copy.deepcopy(
                             candidate_snapshot["records"]["pre_execution_record"]
@@ -378,7 +382,7 @@ def evaluate_candidate(
                     state["used_lineage_tokens"] = prior_tokens | (
                         {lineage_token} if readback_confirmed else set()
                     )
-                    _IN_FLIGHT.discard(flight)
+                    _IN_FLIGHT_STATES.discard(state_identity)
             else:
                 used_reservations.add(reservation_key)
                 used_tokens.add(lineage_token)

@@ -342,6 +342,89 @@ def test_transaction_callbacks_cannot_clear_consumed_state(tmp_path: Path) -> No
         assert second == "HOLD", stage
 
 
+def test_exact_readback_consumes_state_before_exposure(tmp_path: Path) -> None:
+    root = _isolated_root(tmp_path)
+    candidate = _candidate(root)
+    state: dict = {}
+    reservation = candidate["records"]["reservation"]["reservation_key"]
+    token = candidate["records"]["lineage_input"][
+        "authenticated_lineage_token_hash"
+    ]
+
+    class OrderingTransaction:
+        def commit(self, _write_set: dict) -> str:
+            return "UNKNOWN_AFTER_WRITE"
+
+        def readback(self, _reservation_key: str) -> dict:
+            return copy.deepcopy(candidate["records"])
+
+        def expose(self, _opaque_record: dict) -> None:
+            assert reservation in state["used_reservation_keys"]
+            assert token in state["used_lineage_tokens"]
+
+    assert verifier.evaluate_candidate(
+        root,
+        candidate,
+        "CLEAN_CI",
+        state,
+        None,
+        _context(),
+        transaction=OrderingTransaction(),
+    ) == verifier.READY
+
+
+def test_transaction_blocks_other_candidate_on_same_state(tmp_path: Path) -> None:
+    for stage in ("commit", "readback", "expose"):
+        root = _isolated_root(tmp_path / stage)
+        fixture = readiness._load_fixture()
+        initial = readiness._baseline_candidate(fixture, root)
+        retry = readiness._build_candidate(
+            fixture, root=root, lineage_kind="OPAQUE_RETRY"
+        )
+        state: dict = {}
+
+        class CrossCandidateTransaction:
+            def __init__(self) -> None:
+                self.nested_result = "NOT_CALLED"
+
+            def reenter(self) -> None:
+                self.nested_result = verifier.evaluate_candidate(
+                    root, retry, "CLEAN_CI", state, None, _context()
+                )
+
+            def commit(self, _write_set: dict) -> str:
+                if stage == "commit":
+                    self.reenter()
+                return "UNKNOWN_AFTER_WRITE"
+
+            def readback(self, _reservation_key: str) -> dict:
+                if stage == "readback":
+                    self.reenter()
+                return copy.deepcopy(initial["records"])
+
+            def expose(self, _opaque_record: dict) -> None:
+                if stage == "expose":
+                    self.reenter()
+
+        transaction = CrossCandidateTransaction()
+        assert verifier.evaluate_candidate(
+            root,
+            initial,
+            "CLEAN_CI",
+            state,
+            None,
+            _context(),
+            transaction=transaction,
+        ) == verifier.READY
+        assert transaction.nested_result == "HOLD", stage
+        assert verifier.evaluate_candidate(
+            root, retry, "CLEAN_CI", state, None, _context()
+        ) == verifier.READY
+        assert verifier.evaluate_candidate(
+            root, retry, "CLEAN_CI", state, None, _context()
+        ) == "HOLD"
+
+
 def test_command_line_verifier_is_silent() -> None:
     completed = subprocess.run(
         ["/usr/bin/python3", str(ROOT / "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py")],

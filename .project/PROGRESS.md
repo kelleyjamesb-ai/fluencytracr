@@ -19,9 +19,9 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `68b78f1a6a3f27c8cbec930d4734614b3b772737aeaabc2a1cbd46c610854f3b`,
+  `fd3e1fe78c9bd3169aaa87afa0fd0845292ee4a3542817399e46e702e9390919`,
   and focused contract test
-  `a7e8136108543452e159ecf806acffe90f6ed4f586cd5113bb85904bd6d8ebbb`.
+  `3e61be400f6eb36e219e906b1a387fbce8831378a0e2219ae22c287aba7c18db`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
@@ -58,7 +58,13 @@
   commit, readback, and exposure rebinding. The verifier snapshots the prior
   replay sets and atomically restores fresh authoritative bindings in `finally`;
   candidate identities are added only after exact readback and remain consumed
-  even if exposure fails. Replacement exact implementation commit and
+  even if exposure fails. The next review identified two ordering consequences:
+  exposure must observe the consumed state, and a different accepted candidate
+  must not enter on the same state during any transaction callback. Two
+  fail-first regressions now cover both. Exact readback binds consumed state
+  before exposure, the private in-flight guard serializes the entire state
+  rather than one candidate identity, and `finally` still restores the exact
+  prior-plus-consumed sets. Replacement exact implementation commit and
   CODE/BUG/ADVERSARIAL review remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
