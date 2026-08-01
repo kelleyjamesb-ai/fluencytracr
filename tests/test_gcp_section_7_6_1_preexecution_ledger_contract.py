@@ -213,6 +213,93 @@ def test_interleaving_candidate_mutation_holds_before_state_effects(
     assert not state
 
 
+def test_transaction_write_set_cannot_mutate_readback_authority(
+    tmp_path: Path,
+) -> None:
+    root = _isolated_root(tmp_path)
+    candidate = _candidate(root)
+    state: dict = {}
+
+    class MutatingTransaction:
+        def __init__(self) -> None:
+            self.write_set: dict = {}
+            self.exposed = False
+
+        def commit(self, write_set: dict) -> str:
+            self.write_set = write_set
+            write_set["reservation"]["credential"] = "FORBIDDEN"
+            return "UNKNOWN_AFTER_WRITE"
+
+        def readback(self, _reservation_key: str) -> dict:
+            records = copy.deepcopy(candidate["records"])
+            records["reservation"] = copy.deepcopy(self.write_set["reservation"])
+            return records
+
+        def expose(self, _opaque_record: dict) -> None:
+            self.exposed = True
+
+    transaction = MutatingTransaction()
+    assert verifier.evaluate_candidate(
+        root,
+        candidate,
+        "CLEAN_CI",
+        state,
+        None,
+        _context(),
+        transaction=transaction,
+    ) == "HOLD"
+    assert state == {
+        "used_reservation_keys": set(),
+        "used_lineage_tokens": set(),
+    }
+    assert not transaction.exposed
+    assert "credential" not in candidate["records"]["reservation"]
+
+
+def test_transaction_commit_and_readback_reentry_have_one_ready(
+    tmp_path: Path,
+) -> None:
+    for stage in ("commit", "readback"):
+        root = _isolated_root(tmp_path / stage)
+        candidate = _candidate(root)
+        state: dict = {}
+
+        class ReentrantTransaction:
+            def __init__(self) -> None:
+                self.reentrant_result = "NOT_CALLED"
+
+            def reenter(self) -> None:
+                self.reentrant_result = verifier.evaluate_candidate(
+                    root, candidate, "CLEAN_CI", state, None, _context()
+                )
+
+            def commit(self, _write_set: dict) -> str:
+                if stage == "commit":
+                    self.reenter()
+                return "UNKNOWN_AFTER_WRITE"
+
+            def readback(self, _reservation_key: str) -> dict:
+                if stage == "readback":
+                    self.reenter()
+                return copy.deepcopy(candidate["records"])
+
+            def expose(self, _opaque_record: dict) -> None:
+                return None
+
+        transaction = ReentrantTransaction()
+        outer = verifier.evaluate_candidate(
+            root,
+            candidate,
+            "CLEAN_CI",
+            state,
+            None,
+            _context(),
+            transaction=transaction,
+        )
+        assert outer == verifier.READY
+        assert transaction.reentrant_result == "HOLD", stage
+
+
 def test_command_line_verifier_is_silent() -> None:
     completed = subprocess.run(
         ["/usr/bin/python3", str(ROOT / "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py")],

@@ -11,7 +11,7 @@ from pathlib import Path
 import stat
 import sys
 import threading
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +32,7 @@ EXPECTED_VECTORS_SHA256 = (
 READY = "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
 QUEUE_ROW_FIELDS = frozenset({"id", "title", "bound", "status", "risk", "last_note"})
 _STATE_LOCK = threading.RLock()
+_IN_FLIGHT: Set[Tuple[int, str, str]] = set()
 
 
 def _sha256(raw: bytes) -> str:
@@ -332,6 +333,7 @@ def evaluate_candidate(
         lineage_token = candidate_snapshot["records"]["lineage_input"][
             "authenticated_lineage_token_hash"
         ]
+        flight = (id(state), reservation_key, lineage_token)
         with _STATE_LOCK:
             used_reservations = state.setdefault("used_reservation_keys", set())
             used_tokens = state.setdefault("used_lineage_tokens", set())
@@ -342,22 +344,35 @@ def evaluate_candidate(
                 for value in used_reservations | used_tokens
             ):
                 return "HOLD"
-            if reservation_key in used_reservations or lineage_token in used_tokens:
+            if (
+                flight in _IN_FLIGHT
+                or reservation_key in used_reservations
+                or lineage_token in used_tokens
+            ):
                 return "HOLD"
             if transaction is not None:
-                disposition = transaction.commit(_write_set(candidate_snapshot))
-                if disposition != "UNKNOWN_AFTER_WRITE":
-                    return "HOLD"
-                readback = transaction.readback(reservation_key)
-                if _canonical_bytes(readback) != _canonical_bytes(
-                    candidate_snapshot["records"]
-                ):
-                    return "HOLD"
-                used_reservations.add(reservation_key)
-                used_tokens.add(lineage_token)
-                transaction.expose(
-                    candidate_snapshot["records"]["pre_execution_record"]
-                )
+                expected_records = _canonical_bytes(candidate_snapshot["records"])
+                _IN_FLIGHT.add(flight)
+                try:
+                    disposition = transaction.commit(
+                        copy.deepcopy(_write_set(candidate_snapshot))
+                    )
+                    if disposition != "UNKNOWN_AFTER_WRITE":
+                        return "HOLD"
+                    readback = transaction.readback(reservation_key)
+                    if _canonical_bytes(readback) != expected_records:
+                        return "HOLD"
+                    used_reservations.add(reservation_key)
+                    used_tokens.add(lineage_token)
+                    transaction.expose(
+                        copy.deepcopy(
+                            candidate_snapshot["records"]["pre_execution_record"]
+                        )
+                    )
+                    used_reservations.add(reservation_key)
+                    used_tokens.add(lineage_token)
+                finally:
+                    _IN_FLIGHT.discard(flight)
             else:
                 used_reservations.add(reservation_key)
                 used_tokens.add(lineage_token)

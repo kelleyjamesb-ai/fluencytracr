@@ -19,9 +19,9 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `666c35fec927f411970220e30ef82ac1b2497224dd157ea88ac7dd8c6d5a54a4`,
+  `07c5a62e6f5a25961dcd50ffa8faa5bc7f47d707ba89e232eb4a51ce374e43f5`,
   and focused contract test
-  `cd17b380e72a961f23d4b3cc34ab09d1aafdcaf81a16f6e68863b34f498e0e47`.
+  `201ba4cc098241284e32f6f89852c8a53c9153985215a1a450194114c61c216e`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
@@ -46,8 +46,15 @@
   its initial validation. A second fail-first regression reproduced the READY
   false clear. Evaluation now uses a deep-copied canonical candidate snapshot,
   rechecks that the caller object did not change across the callback, and uses
-  only the snapshot for state, transaction, readback, and exposure. Replacement
-  exact implementation commit and CODE/BUG/ADVERSARIAL review remain pending.
+  only the snapshot for state, transaction, readback, and exposure. CODE and
+  BUG then independently found that the transaction received nested snapshot
+  objects by reference and could mutate its own readback authority. Two
+  fail-first regressions cover write-set mutation plus commit/readback reentry.
+  Transaction callbacks now receive deep copies, readback compares against
+  pre-callback canonical bytes, a private in-flight guard rejects callback
+  reentry, and exact-readback identities remain consumed through exposure.
+  Replacement exact implementation commit and CODE/BUG/ADVERSARIAL review
+  remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5
