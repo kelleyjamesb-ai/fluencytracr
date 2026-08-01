@@ -1,0 +1,18 @@
+{
+  "schema_version": "GCP_SECTION_7_5_5_FULL_CONTRACT_CLOSURE_VECTORS_V1",
+  "authority_effect": "NONE",
+  "contract_sha256": "a23f7afad3f32d6e6a1bc2ddc4eb3fb1c02af5b12826f3f4dd412a304858cb19",
+  "clean_ci": {
+    "exact": "SECTION_7_5_CONTRACT_CLOSED",
+    "absent": "HOLD_SOURCE_SET_ABSENT",
+    "partial": "HOLD_SOURCE_SET_PARTIAL",
+    "corrupt": "HOLD_SOURCE_SET_CORRUPT"
+  },
+  "archive_closeout": {
+    "exact": "HOLD_ARCHIVE_CLOSEOUT_ONLY",
+    "absent": "HOLD_ARCHIVE_SOURCE_SET_ABSENT",
+    "partial": "HOLD_ARCHIVE_SOURCE_SET_PARTIAL",
+    "corrupt": "HOLD_ARCHIVE_SOURCE_SET_CORRUPT"
+  },
+  "live_runtime": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED"
+}

@@ -33,6 +33,9 @@ jobs:
 
     - name: Run Tests
       run: |
-        # Section 7.5.1 future-SUT cases are an explicit intentional-red audit
-        # until the separately authorized evaluator exists.
-        pytest tests/ -k "not test_future_sut_attack_case and not test_future_sut_environment_cell"
+        # Future-SUT cases and the frozen Section 7.5.5 preimplementation
+        # absence assertion remain explicit lifecycle audits.
+        pytest tests/ \
+          --deselect=tests/test_gcp_section_7_5_parent_contract_authority_closure_readiness_v4.py::test_future_sut_attack_case \
+          --deselect=tests/test_gcp_section_7_5_parent_contract_authority_closure_readiness_v4.py::test_future_sut_environment_cell \
+          --deselect=tests/test_gcp_section_7_5_5_full_contract_readiness.py::test_packet_sources_are_exact_and_preimplementation_sut_is_absent

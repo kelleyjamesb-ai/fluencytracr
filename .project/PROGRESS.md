@@ -2,6 +2,175 @@
 
 ## Current Session
 
+- Replacement review of `98a349ed` confirmed the two PR P1 findings fixed,
+  then reproduced one remaining nested privacy false-clear inside the allowed
+  `last_note` queue key. The bounded repair now requires `last_note` to be an
+  exact string and adds object, Boolean, and list regressions carrying private
+  fields. No other field, behavior, record, or authority changed; replacement
+  exact-tree review remains pending.
+- PR #483 review exposed two additional executable P1 false-clears within the
+  existing verifier boundary. First, an in-process caller could mutate the
+  exported contract object and thereby mutate the comparison authority.
+  Second, a privacy-bearing extra field on the matching P17 queue row could be
+  discarded by projection. Fail-first regressions reproduced both. The
+  verifier now compares candidates, sources, and queue projections against
+  private immutable byte/tuple snapshots captured from the pinned contract,
+  while retaining a separate public candidate copy, and requires the matching
+  queue row to use the exact six-field safe shape. The focused authorized
+  profile passes `53` with only the immutable preimplementation absence
+  assertion deselected; the direct verifier, compilation, and whitespace
+  checks pass. No contract, queue, registry, runtime, GCP, deployment, or
+  authority scope changed. Exact replacement review and current-head GitHub
+  checks remain pending.
+- PR #483 current-head Python and agent checks each reproduced one identical
+  lifecycle-only failure: the frozen preimplementation readiness assertion
+  correctly requires the Section 7.5.5 SUT paths to be absent, while the
+  reviewed implementation now intentionally provides those paths. All `770`
+  implementation-applicable tests passed in the GitHub runs. The minimal CI
+  remediation synchronizes both Python workflows and the canonical harness
+  wrapper to deselect only that immutable preimplementation assertion, while
+  retaining the existing future-SUT deselections. No test, contract, verifier,
+  queue, registry, runtime, or authority behavior changed. Current-head checks
+  must rerun before merge.
+- BUG review of the first selector repair found a name collision: the legacy
+  `test_future_sut_environment_cell` predicate also deselected all 12 now-
+  authorized Section 7.5.5 environment cells. The replacement uses exact
+  path-scoped `--deselect` nodes for only the two Section 7.5.1 future-SUT
+  parameterizations and the one immutable Section 7.5.5 preimplementation
+  absence assertion. All 29 Section 7.5.5 attacks, all 12 environment cells,
+  and all six focused closure tests remain selected. Replacement review and
+  current-head GitHub checks remain pending.
+- The one final required suite ran on exact reviewed closure commit
+  `db2930218f3e01d29c7cb96bc0b7c6ff5a06b2dc`. The authorized Python profile
+  passed `715` with `10` skipped and `196` deliberately unauthorized
+  future-SUT/preimplementation cases deselected in `275.08s`. All five direct
+  Section 7.5 verifiers passed; all five strict Section 7.5 OpenSpec changes,
+  V1 governance, docs contract sweep, docs linkcheck, JSON validation, Python
+  compilation, and whitespace checks passed. The generic harness wrapper was
+  not treated as a second gate: its first invocation stopped before tests
+  because macOS protected the system Python, and its virtualenv invocation was
+  canceled after `162` passing and `5` skipped when it began redundantly
+  rerunning the same tree without the required future-SUT deselections. The
+  tracked worktree is clean. No implementation changed after the reviewed
+  SHA; this final evidence record is metadata only.
+- Section 7.5.5 technical closure review is `GO` on exact remediation commit
+  `b96b59525ee00aee3c9f643d2d287136865ef445`, tree
+  `bbb992a06dae7b4e70fd473ec8ea9d06b49ce6a8`. Replacement CODE, BUG, and
+  ADVERSARIAL review each returned `GO`; the canonical unique P17 queue row
+  closes, while duplicate, forged-first, forged-only, and absent matches all
+  HOLD. The frozen readiness blobs and immutable registry remain unchanged.
+  The queue item and OpenSpec tasks are now marked `done`; this is closure
+  metadata only. Final closure-tree review and the one full required suite on
+  that exact reviewed SHA remain before push and PR.
+- Final implementation review on exact commit `67252454` returned CODE `GO`,
+  ADVERSARIAL `GO`, and BUG `HOLD` for one executable P17 false-clear: the
+  queue verifier selected the first matching human-authored item without
+  requiring its ID to be unique. The single permitted remediation batch adds
+  the reproduced duplicate-authority regression and requires exactly one
+  matching queue row. Focused implementation-phase tests now pass `51` with
+  the immutable preimplementation absence assertion deliberately deselected;
+  the direct verifier, strict OpenSpec, V1 governance, and whitespace checks
+  pass. Replacement exact-tree review is pending; no other scope changed.
+- Section 7.5.5 bounded implementation is locally complete and ready for
+  exact-tree review. The new docs-only projection integrates the five pinned
+  predecessor sources, all 20 immutable registry rows and 91+91 exact edges,
+  explicit P00-P14/P17-P19 owner portions, the human-authored P17 queue root,
+  and opaque later ownership for P15/P16. The offline verifier returns only
+  the frozen closure/HOLD dispositions and grants no runtime authority.
+  Focused implementation-phase tests pass `50` with the single immutable
+  preimplementation absence assertion intentionally deselected; all `41`
+  former `MISSING_SUT` cases now pass. The direct verifier, strict OpenSpec,
+  V1 governance, docs sweep, linkcheck, JSON, compilation, and whitespace
+  checks pass. The three frozen readiness blobs still match evidence commit
+  `085c45b2`, which is an ancestor of this tree; the Section 7.5A registry
+  remains byte-identical at SHA-256
+  `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`.
+  Queue state remains `in_progress` pending exact-tree CODE, BUG, and
+  ADVERSARIAL review. No runtime SUT, GCP, credential, resource, deployment,
+  migration, qualification, model execution, or Sections 7.6-7.8 action
+  occurred.
+- Section 7.5.5 deterministic preimplementation readiness is `READINESS_GO`.
+  Independent CODE, BUG, and ADVERSARIAL reviews each returned `GO` against
+  exact evidence commit `085c45b2d6886c2a9ba7726a8de6ad25b3c3ae0e`, tree
+  `10a4b4291085ee1b07af2e567b27ed11da1c25ea`, base
+  `50c3d081fed5a697cf688dbcd6b747d537a6701f`, packet SHA-256
+  `378fa27f3111e3fba435c1fdf1b9c1637c00044c1c4f68da822a7e2360c8f86f`,
+  fixture SHA-256
+  `ec423448cd060b66c244e318490f5471f497fae72ebd20f07e82c8825be37af3`,
+  and protocol SHA-256
+  `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
+  Structural readiness passed `5`; all `41` implementation-facing cases
+  prepared successfully and stopped only at deliberate `MISSING_SUT`.
+  Absent, partial, corrupt, and post-admission atomic replacement inputs now
+  have one deterministic disposition per identical input. Authority effect is
+  `NONE`; this GO authorizes only the bounded docs-contract and offline
+  verifier implementation.
+- Before implementation, deterministic interface review found one conflicting
+  oracle: resource attacks A014-A017 expected generic `HOLD` while identical
+  environment inputs expected specific absent/partial/corrupt HOLD reasons.
+  The packet now uses the same closed specific disposition for identical
+  inputs, preventing test-aware behavior. The full contract/verifier remains
+  absent and the readiness identities must be re-frozen and re-reviewed.
+- Section 7.5.5 terminal preimplementation readiness is `READINESS_GO`.
+  Independent CODE, BUG, and ADVERSARIAL reviews each returned `GO` against
+  exact evidence commit `f8be7303da65649f369c061e6ae7bfd864a51f4d`, tree
+  `0ceac9e7d8d25bed049f66feaa2429a922c7db7b`, base
+  `50c3d081fed5a697cf688dbcd6b747d537a6701f`, packet SHA-256
+  `a8a92bf49e61645c1eb82e2d96d768a0b309d5ab18fa13cdacd38d6534593cae`,
+  fixture SHA-256
+  `364d77dcd19565c817d1dd1006de2bd7d9735e98e9ab62a44e4edeec03261aea`,
+  and protocol SHA-256
+  `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
+  Structural readiness passed `5`; all `41` prepared implementation-facing
+  cases stopped only at deliberate `MISSING_SUT`. This GO has authority effect
+  `NONE` and authorizes only the bounded docs-contract closure implementation.
+- Final readiness candidate `60d4f9d95defa2064c78d09d73c994d7693f07ab`
+  received CODE and BUG `GO` and ADVERSARIAL `HOLD` for one exact A010
+  inconsistency: the derived 7.5.1 HOLD did not match its source row. The
+  terminal design repair now mutates and rehashes the alternate registry,
+  queue row, and 7.5.1 source bytes; derives matching rows, bidirectional edges,
+  owner portion, source manifest, and predecessor decisions; reseals every
+  descendant; and asserts that complete internal agreement before the absent
+  verifier gate. Only scoped adversarial re-review of this finding remains.
+  No implementation or authority was added.
+- Replacement Section 7.5.5 readiness evidence `b8f010ffc5a51ed90274bafd3796573021ea3e74`,
+  tree `3d25250d018823596baa4acc6a29d6164862b5a0`, packet SHA-256
+  `289b7d0f87b9363a11ccb4aac53571f946a930b7448a87cbdbfd51ad18089385`
+  also received exact CODE, BUG, and ADVERSARIAL `HOLD`. The remaining
+  executable defects were one mismatched forward/reverse edge in A010, a
+  non-recursive candidate ledger, missing nested privacy/runtime-registry
+  mutations, and a concurrency plan that did not require a test-controlled
+  atomic callback. The final design repair makes A010 internally consistent,
+  recursively reconciles every baseline leaf to exactly one ledger rule,
+  expands privacy and authority cases across all admitted nested boundaries,
+  and proves then requires the atomic replacement callback. No implementation
+  path exists; final replacement readiness review is pending.
+- Initial Section 7.5.5 readiness evidence commit `5012374c5751e9e37dd0225461e1b2db52018411`,
+  tree `664099ec89f0b4bc6a37e16a05aa219f05e6bacc`, packet SHA-256
+  `d711e2c797cc0d9f2071598aeabadb2e2e156f7a048e4725cf05459205430579`
+  received exact CODE, BUG, and ADVERSARIAL `HOLD`. The reviewers showed that
+  attack tests delegated mutation and expected answers to the future verifier,
+  P17 lacked an independently admitted queue projection, and source-ledger
+  references did not reconcile. The replacement packet now constructs and
+  reseals every attack and environment state before the absent-verifier gate,
+  compiles expected outcomes independently, adds four predecessor-HOLD cases,
+  binds the immutable P17 queue fields, and closes the field/resource/hash/
+  output ledger. This is design-stage repair; no closure implementation or
+  implementation-remediation batch has begun. Replacement readiness review is
+  pending.
+- Section 7.5.5 is the sole active queue item on
+  `codex/section-7-5-5-full-contract`, based on merged current main
+  `50c3d081fed5a697cf688dbcd6b747d537a6701f`. Sections 7.5.1-7.5.4 are
+  recorded `done`; their four silent offline verifiers and V1 governance gate
+  pass from the clean branch. The immutable 20-row Section 7.5A registry is
+  byte-identical at SHA-256
+  `2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0`.
+  This slice is frozen to the readiness-reviewed docs-only full-contract
+  closure projection for P00-P14 and P17-P19. P15 remains Section 7.7-owned;
+  P16 remains Section 7.8-owned. Runtime SUT work, live GCP, credentials,
+  resources, persistence creation, deployment, qualification, model
+  execution, and Sections 7.6-7.8 remain excluded; authority effect is
+  `NONE`.
 - PR #482 review remediation is locally complete. The existing audit-universe
   record now binds denied canary `S75-M037`, exact conditional dispositions for
   `S75-M038`-`S75-M041`, five distinct evidence hashes, and derived

@@ -1,0 +1,663 @@
+{
+  "actual_evidence": {
+    "approvals_present": false,
+    "live_evidence_present": false,
+    "runtime_records_present": false
+  },
+  "authority_effect": "NONE",
+  "decision": "SECTION_7_5_CONTRACT_CLOSED",
+  "edge_projection": {
+    "forward_edges": {
+      "S75A-C-AUDIT": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P12",
+        "S75A-P13",
+        "S75A-P15",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-C-AUTHORITY": [
+        "S75A-P00",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P07",
+        "S75A-P14",
+        "S75A-P15",
+        "S75A-P16",
+        "S75A-P17"
+      ],
+      "S75A-C-GCS": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P04",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P10",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-C-LOCAL": [
+        "S75A-P00",
+        "S75A-P01",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P09",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-C-NETWORK": [
+        "S75A-P00",
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P07",
+        "S75A-P08",
+        "S75A-P14",
+        "S75A-P17",
+        "S75A-P18",
+        "S75A-P19"
+      ],
+      "S75A-C-PRIVACY": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P03",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P12",
+        "S75A-P13",
+        "S75A-P15",
+        "S75A-P17"
+      ],
+      "S75A-C-SPANNER": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P08",
+        "S75A-P11",
+        "S75A-P17",
+        "S75A-P19"
+      ],
+      "S75A-I-S72-POLICY": [
+        "S75A-P00",
+        "S75A-P07",
+        "S75A-P09",
+        "S75A-P18"
+      ],
+      "S75A-I-S73-AUDIT-AUTHORITY": [
+        "S75A-P01",
+        "S75A-P02",
+        "S75A-P05",
+        "S75A-P06",
+        "S75A-P12",
+        "S75A-P13"
+      ],
+      "S75A-I-S74-NINE-ACCEPTANCE": [
+        "S75A-P03",
+        "S75A-P04",
+        "S75A-P05",
+        "S75A-P07",
+        "S75A-P08",
+        "S75A-P10",
+        "S75A-P11",
+        "S75A-P13",
+        "S75A-P14",
+        "S75A-P18",
+        "S75A-P19"
+      ],
+      "S75A-I-S74-TOKEN-FRESHNESS": [
+        "S75A-P03",
+        "S75A-P07",
+        "S75A-P14",
+        "S75A-P18",
+        "S75A-P19"
+      ]
+    },
+    "orphan_constraints_allowed": false,
+    "orphan_prerequisites_allowed": false,
+    "reverse_edges": {
+      "S75A-P00": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY"
+      ],
+      "S75A-P01": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P02": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P03": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P04": [
+        "S75A-C-GCS",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P05": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P06": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P07": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P08": [
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P09": [
+        "S75A-C-LOCAL",
+        "S75A-I-S72-POLICY"
+      ],
+      "S75A-P10": [
+        "S75A-C-GCS",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P11": [
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P12": [
+        "S75A-C-AUDIT",
+        "S75A-C-PRIVACY",
+        "S75A-I-S73-AUDIT-AUTHORITY"
+      ],
+      "S75A-P13": [
+        "S75A-C-AUDIT",
+        "S75A-C-PRIVACY",
+        "S75A-I-S73-AUDIT-AUTHORITY",
+        "S75A-I-S74-NINE-ACCEPTANCE"
+      ],
+      "S75A-P14": [
+        "S75A-C-AUTHORITY",
+        "S75A-C-NETWORK",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P15": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-PRIVACY"
+      ],
+      "S75A-P16": [
+        "S75A-C-AUTHORITY"
+      ],
+      "S75A-P17": [
+        "S75A-C-AUDIT",
+        "S75A-C-AUTHORITY",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-PRIVACY",
+        "S75A-C-SPANNER"
+      ],
+      "S75A-P18": [
+        "S75A-C-NETWORK",
+        "S75A-I-S72-POLICY",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ],
+      "S75A-P19": [
+        "S75A-C-AUDIT",
+        "S75A-C-GCS",
+        "S75A-C-LOCAL",
+        "S75A-C-NETWORK",
+        "S75A-C-SPANNER",
+        "S75A-I-S74-NINE-ACCEPTANCE",
+        "S75A-I-S74-TOKEN-FRESHNESS"
+      ]
+    }
+  },
+  "hashes": {
+    "closure_projection_sha256": "a371ecf9885b5860a15290db2c8ae085dcfc7c9a125c8b82145dfbecad1f6ba3",
+    "edge_projection_sha256": "491dc426ee7630fe4678c114dbce55ed3c11330220fd89b2ecece2edaa22d03e",
+    "ownership_projection_sha256": "f61888cf26f0eb8b79710d75e2b3e389607afa56dbe80e73d3394c84aed9c89e",
+    "queue_projection_sha256": "b867cbc8ce2dafeb459778ac85785b393ca7210b7e622a4fdd4868523a260d9c",
+    "source_manifest_sha256": "4db1dc429ee6f3be88041aad131b4c31de2d47c4a41201d306da09b2cb845972"
+  },
+  "live_runtime": {
+    "command": "NOT_AUTHORIZED",
+    "expected_exit": "NOT_RUN"
+  },
+  "opaque_later_prerequisites": [
+    {
+      "owner": "SECTION_7_7",
+      "prerequisite_id": "S75A-P15",
+      "state": "OPAQUE_LATER_SECTION"
+    },
+    {
+      "owner": "SECTION_7_8",
+      "prerequisite_id": "S75A-P16",
+      "state": "OPAQUE_LATER_SECTION"
+    }
+  ],
+  "owner_portions": [
+    {
+      "id": "P00_PARENT_RUNTIME_PROFILE",
+      "owner": "SECTION_7_2",
+      "p": "S75A-P00",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P01_PARENT_CAPABILITY_ADMISSION",
+      "owner": "SECTION_7_3",
+      "p": "S75A-P01",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P02_PARENT_FULL_CONTRACT_TARGET",
+      "owner": "SECTION_7_3",
+      "p": "S75A-P02",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P03_PARENT_APPROVAL_LINEAGE",
+      "owner": "SECTION_7_4",
+      "p": "S75A-P03",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P04_CHECKPOINT_PERSISTENCE",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P04",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P05_PARENT_AUTHORITY_SEPARATION",
+      "owner": "SECTION_7_3",
+      "p": "S75A-P05",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P05_PARENT_VERIFIER_SEPARATION",
+      "owner": "SECTION_7_4",
+      "p": "S75A-P05",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P05_NETWORK_LOCAL_WRITER_SEPARATION",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P05",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P05_RETENTION_CMEK_STORAGE_SEPARATION",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P05",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P05_AUDIT_DELIVERY_SEPARATION",
+      "owner": "SECTION_7_5_4",
+      "p": "S75A-P05",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P06_PARENT_ALIAS_PROVIDER_BINDING",
+      "owner": "SECTION_7_3",
+      "p": "S75A-P06",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P07_PARENT_TRUST_TIME",
+      "owner": "SECTION_7_4",
+      "p": "S75A-P07",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P07_TRUST_DISTRIBUTION",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_CHANNEL_ENFORCEMENT",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_PRE_QUOTE_TRANSPORT",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_TERMINAL_QUOTE_TRANSPORT",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_KMS_SIGN_TRANSPORT",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_INITIAL_REPLAY_RETENTION",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_CURRENT_REPLAY_RETENTION",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_FINAL_REPLAY_RETENTION",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P07_AUDIT_MAPPING",
+      "owner": "SECTION_7_5_4",
+      "p": "S75A-P07",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P08_PARENT_AUTHENTICATION_AUTHORITY",
+      "owner": "SECTION_7_3",
+      "p": "S75A-P08",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P08_NETWORK_LOCAL_RECORD_AUTHENTICATION",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P08",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P08_PERSISTENCE_RECORD_AUTHENTICATION",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P08",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P08_AUDIT_RECORD_AUTHENTICATION",
+      "owner": "SECTION_7_5_4",
+      "p": "S75A-P08",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P09_LOCAL_EPHEMERAL_ENFORCEMENT",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P09",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P10_GCS_RETENTION",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P10",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P11_SPANNER_TRANSACTION",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P11",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P12_AUDIT_UNIVERSE",
+      "owner": "SECTION_7_5_4",
+      "p": "S75A-P12",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P13_AUDIT_DELIVERY_MECHANISM",
+      "owner": "SECTION_7_5_4",
+      "p": "S75A-P13",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P13_SECTION_7_7_DECISION",
+      "owner": "SECTION_7_7",
+      "p": "S75A-P13",
+      "state": "DEFERRED_BLOCKING_LATER_SECTION"
+    },
+    {
+      "id": "P14_PARENT_TLS_APPROVAL",
+      "owner": "SECTION_7_4",
+      "p": "S75A-P14",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P17_HUMAN_QUEUE_ACTIVATION",
+      "owner": "HUMAN",
+      "p": "S75A-P17",
+      "state": "MACHINE_DISTINCT_QUEUE_SATISFIED"
+    },
+    {
+      "id": "P18_PARENT_NETWORK_AUTHORITY",
+      "owner": "SECTION_7_3",
+      "p": "S75A-P18",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P18_NETWORK_CHANNEL_MECHANISM",
+      "owner": "SECTION_7_5_2",
+      "p": "S75A-P18",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    },
+    {
+      "id": "P19_PARENT_ANCHOR_AUTHORITY",
+      "owner": "SECTION_7_3",
+      "p": "S75A-P19",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P19_PARENT_ANCHOR_APPROVAL",
+      "owner": "SECTION_7_4",
+      "p": "S75A-P19",
+      "state": "DOCUMENTATION_INTERFACE_CLOSED"
+    },
+    {
+      "id": "P19_INDEPENDENT_ANCHOR_MECHANISM",
+      "owner": "SECTION_7_5_3",
+      "p": "S75A-P19",
+      "state": "MECHANISM_CONTRACT_CLOSED"
+    }
+  ],
+  "predecessor_decisions": {
+    "SECTION_7_5_1": "SECTION_7_5_1_PARENT_INTERFACES_CLOSED_FULL_SECTION_7_5_CONTRACT_OPEN_BLOCKING",
+    "SECTION_7_5_2": "GCP_SECTION_7_5_2_NETWORK_LOCAL_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+    "SECTION_7_5_3": "GCP_SECTION_7_5_3_PERSISTENCE_ANCHOR_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+    "SECTION_7_5_4": "GCP_SECTION_7_5_4_AUDIT_COMPLETENESS_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD"
+  },
+  "queue_authorization_projection": {
+    "bound": "Integrate the merged Section 7.5.1-7.5.4 contracts; satisfy the machine-distinct full-Section-7.5 requirement S75A-P17; mechanically reconcile S75A-P00-P14 and P17-P19 with exact forward/reverse edges and prove that every parent-owned, mechanism-owned, retention, audit, network, local-enforcement, and anchor portion has one explicit owner; create the readiness packet and adversarial fixtures required by docs/agent/CANONICAL_RUNTIME_PHASE_READINESS.md; freeze exact evidence and run CODE, BUG, and ADVERSARIAL review; emit explicit SECTION_7_5_CONTRACT_CLOSED or HOLD, with any predecessor HOLD deterministically producing HOLD, while leaving P15 to Section 7.7 and P16 to Section 7.8; no SUT implementation, live GCP, credentials, provisioning, deployment, qualification, persistence creation, or model execution",
+    "id": "gcp-canonical-runtime-section-7-5-full-contract-gate",
+    "risk": "high",
+    "title": "Section 7.5.5 \u2014 full transport and persistence contract closure gate"
+  },
+  "registry_rows": [
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_2",
+      "prerequisite_id": "S75A-P00"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_3",
+      "prerequisite_id": "S75A-P01"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_3",
+      "prerequisite_id": "S75A-P02"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_4",
+      "prerequisite_id": "S75A-P03"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P04"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_3_SECTION_7_4_FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P05"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_3",
+      "prerequisite_id": "S75A-P06"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "FUTURE_FULL_SECTION_7_5_SECTION_7_4",
+      "prerequisite_id": "S75A-P07"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_3_FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P08"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P09"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P10"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P11"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P12"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "FUTURE_FULL_SECTION_7_5_SECTION_7_7",
+      "prerequisite_id": "S75A-P13"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_4",
+      "prerequisite_id": "S75A-P14"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_7",
+      "prerequisite_id": "S75A-P15"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_8",
+      "prerequisite_id": "S75A-P16"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "HUMAN",
+      "prerequisite_id": "S75A-P17"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_3_FUTURE_FULL_SECTION_7_5",
+      "prerequisite_id": "S75A-P18"
+    },
+    {
+      "current_state": "OPEN_BLOCKING",
+      "owner": "SECTION_7_3_FUTURE_FULL_SECTION_7_5_SECTION_7_4",
+      "prerequisite_id": "S75A-P19"
+    }
+  ],
+  "runtime_evidence_registries": {},
+  "schema_version": "GCP_SECTION_7_5_5_FULL_CONTRACT_CLOSURE_V1",
+  "scope_kind": "DOCS_CONTRACT",
+  "source_contracts": [
+    {
+      "decision": null,
+      "owner": "SECTION_7_5A",
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/constraints-open-obligations-contract.json",
+      "sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0"
+    },
+    {
+      "decision": "SECTION_7_5_1_PARENT_INTERFACES_CLOSED_FULL_SECTION_7_5_CONTRACT_OPEN_BLOCKING",
+      "owner": "SECTION_7_5_1",
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/section-7-5-1-parent-interface-closure-projection.json",
+      "sha256": "275dbfabae763830047950ccddf5557fc2d6b5f4fb80cda62e45971be9051414"
+    },
+    {
+      "decision": "GCP_SECTION_7_5_2_NETWORK_LOCAL_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+      "owner": "SECTION_7_5_2",
+      "path": "docs/contracts/canonical-inference-gcp-network-local-enforcement/network-local-enforcement-contract.json",
+      "sha256": "17d33abb3ef88f04e6f08f875166204400de59721a37eaa6c12faafc1477b4c0"
+    },
+    {
+      "decision": "GCP_SECTION_7_5_3_PERSISTENCE_ANCHOR_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+      "owner": "SECTION_7_5_3",
+      "path": "docs/contracts/canonical-inference-gcp-persistence-anchor/persistence-anchor-contract.json",
+      "sha256": "cbc187987a3e4b36fe6e419cea96007a7a6456d77cd0aef982875e6993454ff9"
+    },
+    {
+      "decision": "GCP_SECTION_7_5_4_AUDIT_COMPLETENESS_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+      "owner": "SECTION_7_5_4",
+      "path": "docs/contracts/canonical-inference-gcp-audit-completeness/audit-completeness-contract.json",
+      "sha256": "e8a12c3548ad1fc536f516a2b9e7769a8bce57adfc903a2433495c703b1b47b1"
+    }
+  ]
+}
