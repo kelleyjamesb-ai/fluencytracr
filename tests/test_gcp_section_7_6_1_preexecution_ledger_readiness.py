@@ -977,7 +977,7 @@ def test_future_sut_opaque_retry_lineage_ready() -> None:
 
 def test_future_sut_unrelated_replay_state_ready(tmp_path: Path) -> None:
     fixture = _load_fixture()
-    module = _load_future_verifier(fixture)
+    prepared: list[tuple[Path, dict[str, Any], dict[str, set[str]], dict[str, Any]]] = []
     for index, control in enumerate(fixture["replay_ready_controls"]):
         root = _copy_inputs(fixture, tmp_path / f"control-{index}")
         candidate = _baseline_candidate(fixture, root)
@@ -991,6 +991,9 @@ def test_future_sut_unrelated_replay_state_ready(tmp_path: Path) -> None:
         assert candidate["records"]["lineage_input"][
             "authenticated_lineage_token_hash"
         ] not in state["used_lineage_tokens"]
+        prepared.append((root, candidate, state, control))
+    module = _load_future_verifier(fixture)
+    for root, candidate, state, control in prepared:
         result = module.evaluate_candidate(
             root,
             candidate,

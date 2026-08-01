@@ -12,7 +12,7 @@
   the byte-pinned stdlib environment-worker SHA-256 is
   `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
   the readiness-test SHA-256 is
-  `5974b6c2c233115122ff049d346a6faec9b2760de731d688b948445c215c23b5`,
+  `e4bfad85b50f21e0b340242514b55dd94a3750075593237532c53af387389767`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
   Eight structural and four live-runtime metadata-only tests pass; all 84
@@ -30,8 +30,10 @@
   rejects the counterexample. The next adversarial pass found that attacks used
   isolated roots while READY controls used the repository root, allowing path
   identity to leak the outcome. All READY controls now build and execute from
-  isolated copied roots matching the attack environment. Single-gate,
-  coarse-nonempty, and state-shape mutation oracles remain green. The full
+  isolated copied roots matching the attack environment, and all three roots,
+  candidates, states, and non-membership assertions are prepared before the
+  deliberate absent-SUT gate. Single-gate, coarse-nonempty, and state-shape
+  mutation oracles remain green. The full
   preimplementation module is intentionally red only at
   the 84 absent-SUT cases (`12 passed, 84 MISSING_SUT`); strict OpenSpec,
   governance, JSON, and diff checks pass. No docs contract, verifier,
