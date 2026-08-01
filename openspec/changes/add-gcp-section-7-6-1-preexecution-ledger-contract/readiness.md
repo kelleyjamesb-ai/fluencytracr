@@ -116,7 +116,8 @@ Crash outcome and retry eligibility remain unclassified for Section 7.6.2.
 
 ## 3. Environment truth table
 
-The fixture contains the exact 12 rows, command template, controlled prerequisites,
+The fixture contains the exact 12 rows, per-row command identity, admitted
+stdlib-only worker, exact command template, controlled prerequisites,
 inner dispositions, claims, and `authority_effect: NONE`. Each executable row
 copies only explicit sources and the queue into an isolated root, prepares the
 ABSENT/PARTIAL/CORRUPT/EXACT state, and compiles the expected result before the
@@ -134,7 +135,11 @@ future verifier is loaded.
 
 Hermetic controls are an isolated task root, explicit source locators, no
 ambient fallback, controlled Python/PATH/PYTHONPATH/locale/timezone/thread
-settings, disabled network, and no external or privileged action.
+settings, disabled network, and no external or privileged action. Each of the
+eight runnable rows launches the byte-pinned stdlib worker in a child process
+with an exact environment dictionary, which is equivalent to the documented
+`env -i` command and has no package-runner or dependency-install step. The four
+live rows return `NOT_AUTHORIZED` before any worker or SUT load.
 
 ## 4. Requirements and oracle inventory
 

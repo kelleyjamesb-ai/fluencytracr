@@ -20,6 +20,10 @@
     "path": "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/trusted-context.json",
     "sha256": "22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df"
   },
+  "environment_worker_root": {
+    "path": "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/hermetic_environment_worker.py",
+    "sha256": "9d40268f32f4148370e4fd224de3038cbb099239426794a39d503254fc472d54"
+  },
   "section_7_4_consumer_contract": {
     "consumer": "SECTION_7_4_ONLY",
     "required_inputs": [
@@ -179,7 +183,7 @@
     "docs/contracts/canonical-inference-gcp-preexecution-ledger/canonicalization-vectors.json",
     "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py"
   ],
-  "environment_command": "env -i HOME={tmp_home} XDG_CACHE_HOME={tmp_cache} PYTHONPYCACHEPREFIX={tmp_pycache} PYTHONPATH={repo_root} PATH={explicit_path} TZ=UTC LC_ALL=C.UTF-8 LANG=C.UTF-8 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 uv run --with pytest python -m pytest -q {pytest_node}",
+  "environment_command_template": "env -i HOME={tmp_home} XDG_CACHE_HOME={tmp_cache} PYTHONPYCACHEPREFIX={tmp_pycache} PYTHONPATH={repo_root} GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL={empty_gitconfig} PYTHONHASHSEED=0 PATH=/usr/bin:/bin TZ=UTC LC_ALL=C.UTF-8 LANG=C.UTF-8 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 /usr/bin/python3 {worker_path} --repo {repo_root} --root {isolated_root} --candidate {candidate_json} --mode {environment}",
   "environment_controlled_prerequisites": ["isolated_tmp_root", "explicit_source_manifest", "closed_candidate", "no_ambient_fallback", "network_disabled", "authority_effect_NONE", "trusted_time_fixture", "controlled_home", "controlled_caches", "controlled_pythonpath", "controlled_path", "controlled_locale", "controlled_timezone", "single_threaded_native_libraries"],
   "environment_controls": {
     "TZ": "UTC",
@@ -191,17 +195,17 @@
     "OPENBLAS_NUM_THREADS": "1"
   },
   "environment_cells": [
-    {"environment": "CLEAN_CI", "resource": "ABSENT", "command_exit": 0, "inner": "HOLD_SOURCE_SET_ABSENT", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
-    {"environment": "CLEAN_CI", "resource": "PARTIAL", "command_exit": 0, "inner": "HOLD_SOURCE_SET_PARTIAL", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
-    {"environment": "CLEAN_CI", "resource": "CORRUPT", "command_exit": 0, "inner": "HOLD_SOURCE_SET_CORRUPT", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
-    {"environment": "CLEAN_CI", "resource": "EXACT", "command_exit": 0, "inner": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
-    {"environment": "ARCHIVE_CLOSEOUT", "resource": "ABSENT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_ABSENT", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
-    {"environment": "ARCHIVE_CLOSEOUT", "resource": "PARTIAL", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_PARTIAL", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
-    {"environment": "ARCHIVE_CLOSEOUT", "resource": "CORRUPT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_CORRUPT", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
-    {"environment": "ARCHIVE_CLOSEOUT", "resource": "EXACT", "command_exit": 0, "inner": "HOLD_ARCHIVE_CLOSEOUT_ONLY", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
-    {"environment": "LIVE_RUNTIME", "resource": "ABSENT", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
-    {"environment": "LIVE_RUNTIME", "resource": "PARTIAL", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
-    {"environment": "LIVE_RUNTIME", "resource": "CORRUPT", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
-    {"environment": "LIVE_RUNTIME", "resource": "EXACT", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"}
+    {"environment": "CLEAN_CI", "resource": "ABSENT", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "HOLD_SOURCE_SET_ABSENT", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "CLEAN_CI", "resource": "PARTIAL", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "HOLD_SOURCE_SET_PARTIAL", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "CLEAN_CI", "resource": "CORRUPT", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "HOLD_SOURCE_SET_CORRUPT", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "CLEAN_CI", "resource": "EXACT", "command": "HERMETIC_WORKER:CLEAN_CI", "command_exit": 0, "inner": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION", "claim": "STRUCTURAL_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "ABSENT", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_ABSENT", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "PARTIAL", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_PARTIAL", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "CORRUPT", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_SOURCE_SET_CORRUPT", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "ARCHIVE_CLOSEOUT", "resource": "EXACT", "command": "HERMETIC_WORKER:ARCHIVE_CLOSEOUT", "command_exit": 0, "inner": "HOLD_ARCHIVE_CLOSEOUT_ONLY", "claim": "ARCHIVE_CLOSEOUT_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "ABSENT", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "PARTIAL", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "CORRUPT", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"},
+    {"environment": "LIVE_RUNTIME", "resource": "EXACT", "command": "NOT_AUTHORIZED", "command_exit": "NOT_RUN", "inner": "HOLD_LIVE_RUNTIME_NOT_AUTHORIZED", "claim": "DESIGN_ONLY", "authority_effect": "NONE"}
   ]
 }

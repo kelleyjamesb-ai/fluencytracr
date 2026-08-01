@@ -5,13 +5,15 @@
 - Section 7.6.1 preimplementation evidence repair is ready for exact-tree
   re-review after the first review correctly returned HOLD. The repaired
   packet SHA-256 is
-  `a89a9de436bd213ae76a8c771d061280df581d53a6996e4c30b4d77309a8d227`,
+  `80631693e37eee4df56ca057626ab797546093f2a62751a8da7b8c63d1821469`,
   the rules fixture SHA-256 is
-  `3d41c6dac3649ce2250f6a85b45b34cc60f99a8f3d185375bba89e8781d0d01a`,
+  `318bbe7e6024970ef4ec4eb5c90b06a5467ebd4a1de020208ccf7af31f4e9af2`,
   the separately byte-pinned synthetic trusted-context SHA-256 is
   `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
+  the byte-pinned stdlib environment-worker SHA-256 is
+  `9d40268f32f4148370e4fd224de3038cbb099239426794a39d503254fc472d54`,
   the readiness-test SHA-256 is
-  `b1d56610cadbaea22a3d4b1f73ddcd71b3c4f93434d4ae116b831bf7b6439ba3`,
+  `8e2674eca279c321f3f678fb895b319e2e15eafa553567b0fd38018f6fe994b0`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
   Four structural and four live-runtime metadata-only tests pass; all 78
@@ -21,8 +23,12 @@
   admitted test-only roots, fully linked baseline/time/full-closure vectors,
   actual two-call replay/concurrency test structure, truthful hermetic cells,
   exact bidirectional reconciliation, predecessor-HOLD/caller-status coverage,
-  and every Section 7.6.2-exclusive leakage probe. Final strict checks and the
-  replacement exact-tree review are pending. No docs contract, verifier,
+  and every Section 7.6.2-exclusive leakage probe. The first replacement
+  review confirmed those four blocker families repaired but found that the
+  declared `env -i` command excluded its bare `uv` executable. The final
+  bounded repair replaces that package runner with a byte-pinned stdlib worker
+  launched under the exact cleared environment; final strict checks and one
+  exact-tree re-review are pending. No docs contract, verifier,
   implementation test, runtime SUT,
   GCP action, credential, persistence implementation, execution, deployment,
   migration, qualification, terminal/retry decision, or authority was added.

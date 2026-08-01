@@ -10,7 +10,7 @@ import json
 import os
 from pathlib import Path
 import shutil
-import socket
+import subprocess
 import threading
 from typing import Any
 
@@ -25,6 +25,10 @@ FIXTURE = ROOT / (
 READINESS = ROOT / (
     "openspec/changes/add-gcp-section-7-6-1-preexecution-ledger-contract/"
     "readiness.md"
+)
+ENVIRONMENT_WORKER = ROOT / (
+    "tests/fixtures/gcp_section_7_6_1_preexecution_ledger_readiness_v1/"
+    "hermetic_environment_worker.py"
 )
 EXPECTED_PROTOCOL_SHA256 = (
     "f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d"
@@ -632,6 +636,10 @@ def test_source_queue_and_section_7_4_interface_are_exact() -> None:
     assert set(context["roots"]) == {"plan", "allocation", "lineage", "parent", "head", "time", "record"}
     assert len({row["key_hex"] for row in context["roots"].values()}) == len(context["roots"])
     assert all(len(row["key_hex"]) == 64 and row["producer"] for row in context["roots"].values())
+    worker_root = fixture["environment_worker_root"]
+    worker_bytes = (ROOT / worker_root["path"]).read_bytes()
+    assert hashlib.sha256(worker_bytes).hexdigest() == worker_root["sha256"]
+    assert ROOT / worker_root["path"] == ENVIRONMENT_WORKER
     consumer = fixture["section_7_4_consumer_contract"]
     assert consumer["consumer"] == "SECTION_7_4_ONLY"
     assert set(consumer["required_inputs"]).isdisjoint(consumer["section_7_4_owned_outputs"])
@@ -795,7 +803,7 @@ ENVIRONMENT_CELLS = [
     ids=[f"{environment.lower()}-{resource.lower()}" for environment, resource in ENVIRONMENT_CELLS],
 )
 def test_future_sut_environment_cell(
-    environment: str, resource: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    environment: str, resource: str, tmp_path: Path
 ) -> None:
     fixture = _load_fixture()
     root = _copy_inputs(fixture, tmp_path)
@@ -815,6 +823,7 @@ def test_future_sut_environment_cell(
     )
     assert row["inner"] == expected and row["authority_effect"] == "NONE"
     if environment == "LIVE_RUNTIME":
+        assert row["command"] == "NOT_AUTHORIZED"
         assert row["command_exit"] == "NOT_RUN"
         assert row["claim"] == "DESIGN_ONLY"
         return
@@ -833,20 +842,50 @@ def test_future_sut_environment_cell(
         "GIT_CONFIG_GLOBAL": str(tmp_path / "empty-gitconfig"),
         "PYTHONHASHSEED": "0",
     }
-    for key, value in controlled.items():
-        monkeypatch.setenv(key, value)
-    assert all(os.environ[key] == value for key, value in controlled.items())
-    def network_forbidden(*_args: Any, **_kwargs: Any) -> Any:
-        raise AssertionError("network access is forbidden in readiness environments")
-
-    monkeypatch.setattr(socket, "socket", network_forbidden)
-    module = _load_future_verifier(fixture)
-    result = module.evaluate_candidate(
-        root,
-        candidate,
-        mode=environment,
-        state={},
-        interleaving=None,
-        trusted_context=_load_trusted_context(fixture, root),
+    python_path = shutil.which("python3", path=controlled["PATH"])
+    assert python_path is not None and Path(python_path).is_absolute()
+    candidate_path = tmp_path / "candidate.json"
+    candidate_path.write_text(
+        json.dumps(candidate, sort_keys=True, separators=(",", ":")),
+        encoding="utf-8",
     )
+    expected_command = fixture["environment_command_template"].format(
+        tmp_home=home,
+        tmp_cache=cache,
+        tmp_pycache=pycache,
+        repo_root=ROOT,
+        empty_gitconfig=controlled["GIT_CONFIG_GLOBAL"],
+        worker_path=ENVIRONMENT_WORKER,
+        isolated_root=root,
+        candidate_json=candidate_path,
+        environment=environment,
+    )
+    assert row["command"] == f"HERMETIC_WORKER:{environment}"
+    assert expected_command.startswith("env -i ")
+    assert " uv " not in expected_command
+    assert "/usr/bin/python3 " in expected_command
+    completed = subprocess.run(
+        [
+            python_path,
+            str(ENVIRONMENT_WORKER),
+            "--repo",
+            str(ROOT),
+            "--root",
+            str(root),
+            "--candidate",
+            str(candidate_path),
+            "--mode",
+            environment,
+        ],
+        cwd=ROOT,
+        env=controlled,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    if completed.returncode == 86 and completed.stdout.strip() == "MISSING_SUT":
+        pytest.fail("MISSING_SUT")
+    assert completed.returncode == 0, completed.stderr
+    result = completed.stdout.strip()
     assert result == expected
