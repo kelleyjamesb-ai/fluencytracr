@@ -12,6 +12,14 @@
   retaining the existing future-SUT deselections. No test, contract, verifier,
   queue, registry, runtime, or authority behavior changed. Current-head checks
   must rerun before merge.
+- BUG review of the first selector repair found a name collision: the legacy
+  `test_future_sut_environment_cell` predicate also deselected all 12 now-
+  authorized Section 7.5.5 environment cells. The replacement uses exact
+  path-scoped `--deselect` nodes for only the two Section 7.5.1 future-SUT
+  parameterizations and the one immutable Section 7.5.5 preimplementation
+  absence assertion. All 29 Section 7.5.5 attacks, all 12 environment cells,
+  and all six focused closure tests remain selected. Replacement review and
+  current-head GitHub checks remain pending.
 - The one final required suite ran on exact reviewed closure commit
   `db2930218f3e01d29c7cb96bc0b7c6ff5a06b2dc`. The authorized Python profile
   passed `715` with `10` skipped and `196` deliberately unauthorized
