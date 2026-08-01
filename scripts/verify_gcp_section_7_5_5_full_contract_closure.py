@@ -157,7 +157,10 @@ def _queue_matches(root: Path) -> bool:
     try:
         queue = _load_closed_object(_read_explicit_regular_file(root, QUEUE_PATH))
         rows = queue["items"]
-        row = next(item for item in rows if item["id"] == QUEUE_ITEM_ID)
+        matches = [item for item in rows if item["id"] == QUEUE_ITEM_ID]
+        if len(matches) != 1:
+            return False
+        row = matches[0]
         projection = {field: row[field] for field in QUEUE_FIELDS}
         return (
             row["status"] in {"in_progress", "done"}

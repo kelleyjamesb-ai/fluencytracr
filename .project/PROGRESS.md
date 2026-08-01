@@ -2,6 +2,15 @@
 
 ## Current Session
 
+- Final implementation review on exact commit `67252454` returned CODE `GO`,
+  ADVERSARIAL `GO`, and BUG `HOLD` for one executable P17 false-clear: the
+  queue verifier selected the first matching human-authored item without
+  requiring its ID to be unique. The single permitted remediation batch adds
+  the reproduced duplicate-authority regression and requires exactly one
+  matching queue row. Focused implementation-phase tests now pass `51` with
+  the immutable preimplementation absence assertion deliberately deselected;
+  the direct verifier, strict OpenSpec, V1 governance, and whitespace checks
+  pass. Replacement exact-tree review is pending; no other scope changed.
 - Section 7.5.5 bounded implementation is locally complete and ready for
   exact-tree review. The new docs-only projection integrates the five pinned
   predecessor sources, all 20 immutable registry rows and 91+91 exact edges,

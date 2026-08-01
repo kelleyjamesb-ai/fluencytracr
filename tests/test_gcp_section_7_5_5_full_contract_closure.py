@@ -43,6 +43,20 @@ def test_queue_projection_drift_holds(tmp_path: Path) -> None:
     assert verifier.evaluate_candidate(root, verifier.AUTHORITATIVE_CONTRACT) == "HOLD"
 
 
+def test_duplicate_queue_authority_holds(tmp_path: Path) -> None:
+    root = _isolated_root(tmp_path)
+    queue_path = root / verifier.QUEUE_PATH
+    queue = json.loads(queue_path.read_text())
+    authorized = next(
+        item for item in queue["items"] if item["id"] == verifier.QUEUE_ITEM_ID
+    )
+    forged = dict(authorized)
+    forged.update(title="FORGED DUPLICATE", bound="unauthorized", risk="low")
+    queue["items"].append(forged)
+    queue_path.write_text(json.dumps(queue), encoding="utf-8")
+    assert verifier.evaluate_candidate(root, verifier.AUTHORITATIVE_CONTRACT) == "HOLD"
+
+
 def test_unknown_mode_and_live_runtime_fail_closed(tmp_path: Path) -> None:
     root = _isolated_root(tmp_path)
     candidate = verifier.AUTHORITATIVE_CONTRACT
