@@ -33,6 +33,6 @@ jobs:
 
     - name: Run Tests
       run: |
-        # Section 7.5.1 future-SUT cases are an explicit intentional-red audit
-        # until the separately authorized evaluator exists.
-        pytest tests/ -k "not test_future_sut_attack_case and not test_future_sut_environment_cell"
+        # Future-SUT cases and the frozen Section 7.5.5 preimplementation
+        # absence assertion remain explicit lifecycle audits.
+        pytest tests/ -k "not test_future_sut_attack_case and not test_future_sut_environment_cell and not test_packet_sources_are_exact_and_preimplementation_sut_is_absent"

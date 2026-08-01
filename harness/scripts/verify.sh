@@ -11,5 +11,6 @@ echo "== Harness verify: install Python deps (requirements.txt) =="
 python3 -m pip install -q -r "$ROOT/requirements.txt"
 
 echo "== Harness verify: pytest tests/ (see docs/agent/EVALUATION.md) =="
-python3 -m pytest "$ROOT/tests" -q
+python3 -m pytest "$ROOT/tests" -q \
+  -k "not test_future_sut_attack_case and not test_future_sut_environment_cell and not test_packet_sources_are_exact_and_preimplementation_sut_is_absent"
 echo "== Harness verify: OK =="

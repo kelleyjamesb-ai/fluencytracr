@@ -2,6 +2,16 @@
 
 ## Current Session
 
+- PR #483 current-head Python and agent checks each reproduced one identical
+  lifecycle-only failure: the frozen preimplementation readiness assertion
+  correctly requires the Section 7.5.5 SUT paths to be absent, while the
+  reviewed implementation now intentionally provides those paths. All `770`
+  implementation-applicable tests passed in the GitHub runs. The minimal CI
+  remediation synchronizes both Python workflows and the canonical harness
+  wrapper to deselect only that immutable preimplementation assertion, while
+  retaining the existing future-SUT deselections. No test, contract, verifier,
+  queue, registry, runtime, or authority behavior changed. Current-head checks
+  must rerun before merge.
 - The one final required suite ran on exact reviewed closure commit
   `db2930218f3e01d29c7cb96bc0b7c6ff5a06b2dc`. The authorized Python profile
   passed `715` with `10` skipped and `196` deliberately unauthorized
