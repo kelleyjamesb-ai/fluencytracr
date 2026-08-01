@@ -2,55 +2,39 @@
 
 ## Current Session
 
-- Section 7.6.1 preimplementation evidence repair is ready for exact-tree
-  re-review after the first review correctly returned HOLD. The repaired
-  packet SHA-256 is
-  `71e24c0dc2c2d734a33ad5aabe5d8e441eba6056d167189c2ecd7ba569b286f2`,
+- Section 7.6.1 preimplementation replay-oracle repair is ready for one final
+  exact-tree review. The repaired packet SHA-256 is
+  `b95b40e5fb1b10947c106b5ba8ae46a1169c7e8898c507e2382967e45133aacf`,
   the rules fixture SHA-256 is
-  `6fad64f1abd8b2d42e4346495aaf2f84293da3e9497d082c65cd6d8f455de31a`,
+  `9da8f5469ba88b6fd4489b4a299d15401a028411610141edfdd9d65776786b27`,
   the separately byte-pinned synthetic trusted-context SHA-256 is
   `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
   the byte-pinned stdlib environment-worker SHA-256 is
   `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
   the readiness-test SHA-256 is
-  `ef7ca7baa1e733d707dee547bf85e5717a51682ea61e63aefcb2a7f2b3877bfe`,
+  `fc2f6d19c9baec783e091de63a79d744b741c7fabb7614369cdfa28cd1755dd8`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
-  Seven structural and four live-runtime metadata-only tests pass; all 84
+  Eight structural and four live-runtime metadata-only tests pass; all 84
   runnable implementation-facing attack and clean/archive environment cases
   construct their mutations, state, barriers, and literal expectations before
   stopping only at deliberate `MISSING_SUT`. The repair adds independently
   admitted test-only roots, fully linked baseline/time/full-closure vectors,
   actual two-call replay/concurrency test structure, truthful hermetic cells,
   exact bidirectional reconciliation, predecessor-HOLD/caller-status coverage,
-  and every Section 7.6.2-exclusive leakage probe. The first replacement
-  review confirmed those four blocker families repaired but found that the
-  declared `env -i` command excluded its bare `uv` executable. The final
-  bounded repair replaces that package runner with a byte-pinned stdlib worker
-  launched under the exact cleared environment, and its exact-tree re-review
-  returned GO. The required CODE/BUG/ADVERSARIAL panel then found
-  four executable coverage omissions: opaque retry, unknown-commit recovery,
-  trusted-context substitution, and projected-away nested queue privacy. One
-  consolidated final corpus patch adds those branches, prepares replay and
-  concurrency state before the absent-SUT gate, and changes no record or
-  authority boundary. Final strict checks, immutable refreeze, and one
-  replacement panel are pending. No docs contract, verifier,
-  implementation test, runtime SUT,
-  GCP action, credential, persistence implementation, execution, deployment,
-  migration, qualification, terminal/retry decision, or authority was added.
-  The replacement BUG review then proved that both reservation and token
-  replay variants reused both gates, allowing a verifier that checked only
-  one gate to pass. James explicitly authorized the narrow replay-oracle
-  redesign. A fail-first mutation test reproduced that false clear, then the
-  minimal repair independently preseeded only the used-reservation set or only
-  the used-token set while retaining the real two-call identical replay. The
-  mutation test now rejects both single-gate detectors. CODE and BUG review
-  returned GO, while ADVERSARIAL proved a coarse any-nonempty-state detector
-  could still pass without comparing candidate identities. The authorized
-  narrow redesign therefore adds an unrelated reservation-and-token READY
-  control plus a second fail-first mutation oracle. The corpus now rejects
-  single-gate and coarse nonidentity detectors. Final evidence commit/tree and
-  exact CODE/BUG/ADVERSARIAL verdicts remain pending.
+  and every Section 7.6.2-exclusive leakage probe. The latest exact review
+  found an executable state-shape-only replay detector that passed without
+  comparing candidate identities. James's bounded replay-oracle authorization
+  covers the minimal repair: reservation-only, lineage-only, and dual unrelated
+  READY controls now mirror the attack shapes; the fail-first mutation oracle
+  rejects the counterexample. Single-gate and coarse-nonempty mutation oracles
+  remain green. The full preimplementation module is intentionally red only at
+  the 84 absent-SUT cases (`12 passed, 84 MISSING_SUT`); strict OpenSpec,
+  governance, JSON, and diff checks pass. No docs contract, verifier,
+  implementation test, runtime SUT, GCP action, credential, persistence,
+  execution, deployment, migration, qualification, terminal/retry decision,
+  or authority was added. Final immutable refreeze and CODE/BUG/ADVERSARIAL
+  review are pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

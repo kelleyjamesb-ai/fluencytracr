@@ -198,9 +198,11 @@ predecessor HOLD, Section 7.4-owned acceptance/PASS fields, actual-boot claims,
 every Section 7.6.2-only output, independently pinned trusted-context
 substitution, and nested private data in an otherwise projected-away queue
 field. Replay variants independently preseed only the used reservation-key set
-or only the used lineage-token set; an unrelated-reservation-and-token READY
-control proves matching is candidate-specific. Mutation oracles prove that a
-verifier checking just one gate or rejecting generic nonempty state cannot
+or only the used lineage-token set. Symmetric unrelated reservation-only,
+lineage-only, and reservation-and-lineage READY controls give the same state
+shapes opposite outcomes and therefore force candidate-specific matching.
+Mutation oracles prove that a verifier checking just one gate, rejecting
+generic nonempty state, or classifying only by populated-set shape cannot
 satisfy the full corpus. The concurrency barrier exists before the absent-SUT
 gate.
 

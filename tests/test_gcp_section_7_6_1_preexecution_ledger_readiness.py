@@ -891,13 +891,45 @@ def test_replay_corpus_rejects_coarse_nonempty_state_detector(
                 else "READY"
             )
     for control in fixture.get("replay_ready_controls", []):
-        expected.append(control["expected"])
+        expected.append(
+            "READY"
+            if control["expected"].startswith("PRE_EXECUTION_RECORD_READY")
+            else control["expected"]
+        )
         coarse.append(
             "HOLD"
             if control["used_reservation_keys"] or control["used_lineage_tokens"]
             else "READY"
         )
     assert coarse != expected
+
+
+def test_replay_corpus_rejects_state_shape_detector(tmp_path: Path) -> None:
+    """Replay outcomes cannot be inferred from populated-set shape alone."""
+    fixture = _load_fixture()
+    expected: list[str] = []
+    shape_only: list[str] = []
+    for index, variant in enumerate(fixture["attack_variants"]["A009"][1:]):
+        root = _copy_inputs(fixture, tmp_path / f"attack-{index}")
+        _candidate, plan = _prepare_attack(fixture, "A009", variant, root)
+        expected.append("HOLD")
+        populated = sum(
+            bool(plan["state"].get(key))
+            for key in ("used_reservation_keys", "used_lineage_tokens")
+        )
+        shape_only.append("HOLD" if populated == 1 else "READY")
+    for control in fixture.get("replay_ready_controls", []):
+        expected.append(
+            "READY"
+            if control["expected"].startswith("PRE_EXECUTION_RECORD_READY")
+            else control["expected"]
+        )
+        populated = sum(
+            bool(control[key])
+            for key in ("used_reservation_keys", "used_lineage_tokens")
+        )
+        shape_only.append("HOLD" if populated == 1 else "READY")
+    assert shape_only != expected
 
 
 def test_future_sut_unknown_commit_same_key_readback() -> None:
@@ -946,27 +978,27 @@ def test_future_sut_opaque_retry_lineage_ready() -> None:
 def test_future_sut_unrelated_replay_state_ready() -> None:
     fixture = _load_fixture()
     candidate = _baseline_candidate(fixture)
-    control = fixture["replay_ready_controls"][0]
-    state = {
-        "used_reservation_keys": set(control["used_reservation_keys"]),
-        "used_lineage_tokens": set(control["used_lineage_tokens"]),
-    }
-    assert candidate["records"]["reservation"]["reservation_key"] not in state[
-        "used_reservation_keys"
-    ]
-    assert candidate["records"]["lineage_input"][
-        "authenticated_lineage_token_hash"
-    ] not in state["used_lineage_tokens"]
     module = _load_future_verifier(fixture)
-    result = module.evaluate_candidate(
-        ROOT,
-        candidate,
-        mode="CLEAN_CI",
-        state=state,
-        interleaving=None,
-        trusted_context=_load_trusted_context(fixture),
-    )
-    assert result == control["expected"]
+    for control in fixture["replay_ready_controls"]:
+        state = {
+            "used_reservation_keys": set(control["used_reservation_keys"]),
+            "used_lineage_tokens": set(control["used_lineage_tokens"]),
+        }
+        assert candidate["records"]["reservation"]["reservation_key"] not in state[
+            "used_reservation_keys"
+        ]
+        assert candidate["records"]["lineage_input"][
+            "authenticated_lineage_token_hash"
+        ] not in state["used_lineage_tokens"]
+        result = module.evaluate_candidate(
+            ROOT,
+            candidate,
+            mode="CLEAN_CI",
+            state=state,
+            interleaving=None,
+            trusted_context=_load_trusted_context(fixture),
+        )
+        assert result == control["expected"], control["id"]
 
 
 def test_future_sut_unknown_commit_mismatched_readback_holds() -> None:
