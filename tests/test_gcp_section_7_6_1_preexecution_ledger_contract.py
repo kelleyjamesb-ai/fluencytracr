@@ -157,6 +157,40 @@ def test_malformed_replay_state_fails_closed(tmp_path: Path) -> None:
         ) == "HOLD"
 
 
+def test_transaction_exposure_reentry_has_exactly_one_ready(tmp_path: Path) -> None:
+    root = _isolated_root(tmp_path)
+    candidate = _candidate(root)
+    state: dict = {}
+
+    class ReentrantTransaction:
+        def __init__(self) -> None:
+            self.reentrant_result = "NOT_CALLED"
+
+        def commit(self, _write_set: dict) -> str:
+            return "UNKNOWN_AFTER_WRITE"
+
+        def readback(self, _reservation_key: str) -> dict:
+            return copy.deepcopy(candidate["records"])
+
+        def expose(self, _opaque_record: dict) -> None:
+            self.reentrant_result = verifier.evaluate_candidate(
+                root, candidate, "CLEAN_CI", state, None, _context()
+            )
+
+    transaction = ReentrantTransaction()
+    outer = verifier.evaluate_candidate(
+        root,
+        candidate,
+        "CLEAN_CI",
+        state,
+        None,
+        _context(),
+        transaction=transaction,
+    )
+    assert outer == verifier.READY
+    assert transaction.reentrant_result == "HOLD"
+
+
 def test_command_line_verifier_is_silent() -> None:
     completed = subprocess.run(
         ["/usr/bin/python3", str(ROOT / "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py")],

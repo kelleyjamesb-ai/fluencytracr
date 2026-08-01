@@ -341,9 +341,12 @@ def evaluate_candidate(
                 readback = transaction.readback(reservation_key)
                 if _canonical_bytes(readback) != _canonical_bytes(candidate["records"]):
                     return "HOLD"
+                used_reservations.add(reservation_key)
+                used_tokens.add(lineage_token)
                 transaction.expose(candidate["records"]["pre_execution_record"])
-            used_reservations.add(reservation_key)
-            used_tokens.add(lineage_token)
+            else:
+                used_reservations.add(reservation_key)
+                used_tokens.add(lineage_token)
         return READY
     except Exception:
         return "HOLD"

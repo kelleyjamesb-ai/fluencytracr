@@ -19,9 +19,9 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `2e207750dcd73ec91ac09d35e4c103deca80fc5ab7ef5dc35ef78c3c0fa47fcd`,
+  `a6ad2016683509815c4ce3e7742878ab6c2e064ed3f54105147c5c5a0a8befeb`,
   and focused contract test
-  `03464b6118904dfe88fa75f5c69927459c1746d1e2329b88ee0e51032ae57e76`.
+  `2cbe33b3d6469d1c01c67de392ae9d7c7216ff5f69177cedfb7f20a7a63d2f3a`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
@@ -36,8 +36,13 @@
   that expected lifecycle conflict; the final full suite is reserved for the
   exact reviewed implementation SHA. No runtime SUT, GCP action, credential,
   persistence, execution, deployment, migration, qualification,
-  terminal/retry decision, or authority was added. Exact implementation
-  commit and CODE/BUG/ADVERSARIAL review remain pending.
+  terminal/retry decision, or authority was added. The first exact
+  implementation review found a transaction-exposure reentrancy that could
+  return READY twice before replay identities were recorded. A fail-first
+  regression reproduced it; exact readback now consumes both identities before
+  the caller-controlled exposure callback, so reentry holds and exposure
+  failure remains fail-closed. Replacement exact implementation commit and
+  CODE/BUG/ADVERSARIAL review remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5
