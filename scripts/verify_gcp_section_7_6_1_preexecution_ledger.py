@@ -376,7 +376,10 @@ def evaluate_candidate(
                     disposition = transaction.commit(
                         copy.deepcopy(_write_set(candidate_snapshot))
                     )
-                    if disposition not in {"COMMITTED", "UNKNOWN_AFTER_WRITE"}:
+                    if (
+                        type(disposition) is not str
+                        or disposition not in {"COMMITTED", "UNKNOWN_AFTER_WRITE"}
+                    ):
                         return "HOLD"
                     commit_admitted = True
                     state["used_reservation_keys"] = prior_reservations | {

@@ -359,6 +359,53 @@ def test_admitted_commit_failed_readback_is_single_use(tmp_path: Path) -> None:
             assert not transaction.exposed
 
 
+def test_value_equal_wrong_type_disposition_holds(tmp_path: Path) -> None:
+    root = _isolated_root(tmp_path)
+    candidate = _candidate(root)
+
+    class EqualitySpoof:
+        def __hash__(self) -> int:
+            return hash("COMMITTED")
+
+        def __eq__(self, other: object) -> bool:
+            return other == "COMMITTED"
+
+    class StringSubclass(str):
+        pass
+
+    for disposition in (EqualitySpoof(), StringSubclass("COMMITTED")):
+        state: dict = {}
+
+        class SpoofedDispositionTransaction:
+            def __init__(self) -> None:
+                self.readback_called = False
+                self.exposed = False
+
+            def commit(self, _write_set: dict):
+                return disposition
+
+            def readback(self, _reservation_key: str) -> dict:
+                self.readback_called = True
+                return {}
+
+            def expose(self, _opaque_record: dict) -> None:
+                self.exposed = True
+
+        transaction = SpoofedDispositionTransaction()
+        assert verifier.evaluate_candidate(
+            root,
+            candidate,
+            "CLEAN_CI",
+            state,
+            None,
+            _context(),
+            transaction=transaction,
+        ) == "HOLD"
+        assert not transaction.readback_called
+        assert not transaction.exposed
+        assert id(state) not in verifier._IN_FLIGHT_STATES
+
+
 def test_transaction_commit_and_readback_reentry_have_one_ready(
     tmp_path: Path,
 ) -> None:

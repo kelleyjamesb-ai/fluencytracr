@@ -19,15 +19,15 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `48d6f91b3edd9161c276fd3378fe9386bb43ec1c858dfca49bb6e94e5c3af066`,
+  `ced2324bcf4ea0ad16a2a6644c53919de10ed8fda5f6752ee795eee904fe73fb`,
   and focused contract test
-  `ed3e7e69772534b0e60cb09233a43b5febe62279a1af6dee494ac80328c208f9`.
+  `9898d500a815a2a631bfd258fa4c96465fb910d2300c80a3396cfe5ee37e7041`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
   closed for archive/live/unknown modes and preserves Section 7.4/7.6.2
   ownership. The focused implementation plus frozen future-SUT profile passes
-  `112` with only the immutable preimplementation absence assertion deselected;
+  `113` with only the immutable preimplementation absence assertion deselected;
   strict OpenSpec, governance, stdlib compilation, silent CLI, JSON, YAML,
   collection, and diff checks pass. The same exact absence assertion is now
   deselected in all three synchronized Python runners, matching the established
@@ -78,9 +78,13 @@
   review then proved that admitted commits with failed readback left replay
   identities reusable. A fail-first mismatch/exception regression now requires
   both identities to remain consumed immediately after an admitted disposition,
-  so readback failure HOLDs without exposure or a second attempt. Section 7.6.1
-  remains bounded to docs, OpenSpec, offline verifier, and tests; PR #484 needs
-  replacement exact-tree review and current-head checks before normal merge.
+  so readback failure HOLDs without exposure or a second attempt. Replacement
+  BUG review then found that value-equal caller objects could impersonate an
+  admitted disposition. The disposition gate now requires an exact built-in
+  string before literal comparison; spoof objects and string subclasses HOLD
+  before readback or exposure. Section 7.6.1 remains bounded to docs, OpenSpec,
+  offline verifier, and tests; PR #484 needs replacement exact-tree review and
+  current-head checks before normal merge.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5
