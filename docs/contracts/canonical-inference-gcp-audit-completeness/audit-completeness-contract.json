@@ -1,0 +1,249 @@
+{
+  "actual_evidence": {
+    "approvals_present": false,
+    "live_delivery_evidence_present": false,
+    "runtime_records_present": false
+  },
+  "authority_effect": "NONE",
+  "canonicalization_version": "FT_CANONICAL_JSON_V1",
+  "classifier_contract": {
+    "data_access": "ENABLED_FOR_ALL_INVENTORY_DATA_ACCESS_ROWS",
+    "denied_canary": "REQUIRED_FOR_KMS_ASYMMETRIC_SIGN",
+    "exclusion_method_disposition": "CREATE_UPDATE_DELETE_GET_LIST_ALL_CLASSIFIED",
+    "missing_inventory_row": "HOLD",
+    "path_applicability": "EXPLICIT_REQUIRED_OR_NOT_APPLICABLE_WITH_EVIDENCE",
+    "policy_denied": "TOTAL_FOR_ALL_APPLICABLE_METHOD_ROWS_NO_EXCLUSION",
+    "recognized_modes": [
+      "MULTI_LABEL_SORTED_OPERATION_IDS",
+      "SINGLE_LABEL",
+      "SINGLE_PLATFORM_LOG_LABEL"
+    ],
+    "unknown_service_or_method": "HOLD"
+  },
+  "decision": "GCP_SECTION_7_5_4_AUDIT_COMPLETENESS_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+  "decision_precedence": [
+    "PRIVACY_OR_BOUNDARY_REJECT",
+    "PARENT_TARGET_SOURCE_OR_OWNERSHIP_REJECT",
+    "SCHEMA_CANONICALIZATION_OR_HASH_REJECT",
+    "AUTHENTICATION_FRESHNESS_OR_TIMELINE_REJECT",
+    "METHOD_ROUTE_DELIVERY_OR_DENIED_COVERAGE_HOLD",
+    "APPROVAL_OR_EVIDENCE_ABSENT_HOLD",
+    "CONTRACT_CLOSED_RUNTIME_AUTHORITY_HELD"
+  ],
+  "inventory_contract": {
+    "authority_effect": "NONE",
+    "expected_exclusion_method_ids": [
+      "S75-M049",
+      "S75-M050",
+      "S75-M051",
+      "S75-M070",
+      "S75-M071"
+    ],
+    "method_row_count": 88,
+    "registry_sha256": "3a984f6b7ffc704a89efc627529d1c250897df7a12da19e01f5c986ce90b49ef",
+    "row_count": 89,
+    "row_keyset_sha256": "ffd46355eb1e3eefa5d7ddd4d432712e151ad67292314fd8bb8a915f2a23216b",
+    "schema_version": "SECTION_7_5A_AUDIT_METHOD_RESEARCH_INVENTORY_V3",
+    "source_manifest_sha256": "5f98896e8bd11e0232b14eca46670f6273bb65cbb61f94629095949aa859fd50"
+  },
+  "live_runtime": {
+    "command": "NOT_AUTHORIZED",
+    "expected_exit": "NOT_RUN"
+  },
+  "privacy_projection": {
+    "allowed_public_keys": [
+      "aggregate_count",
+      "coverage_status",
+      "interval_end",
+      "interval_start",
+      "record_sha256",
+      "service_method_keyset_sha256"
+    ],
+    "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:PUBLIC_PROJECTION:V1",
+    "forbidden_raw_fields": [
+      "authenticationInfo",
+      "authorizationInfo",
+      "metadata",
+      "principalSubject",
+      "request",
+      "resourceName",
+      "response"
+    ],
+    "raw_evidence": "RESTRICTED_ONLY",
+    "unknown_public_fields": "REJECT"
+  },
+  "record_schemas": [
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:AUDIT_UNIVERSE:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "inventory_bytes_sha256",
+        "row_keyset_sha256",
+        "registry_sha256",
+        "observed_row_count",
+        "observed_method_row_count",
+        "classifier_binary_sha256",
+        "all_rows_classified",
+        "all_methods_accounted",
+        "data_access_enabled",
+        "policy_denied_total_applicability",
+        "exclusion_methods_fully_classified",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_4_AUDIT_UNIVERSE_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:AUDIT_ROUTE_TIMELINE:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "interval_start",
+        "interval_end",
+        "route_universe_sha256",
+        "source_project_roots_sha256",
+        "destination_roots_sha256",
+        "independent_observation_root_sha256",
+        "routing_configuration_sha256",
+        "exclusion_configuration_sha256",
+        "data_access_configuration_sha256",
+        "full_route_timeline_complete",
+        "policy_denied_no_exclusion",
+        "all_exclusion_methods_observed",
+        "router_buffer_not_used_as_completeness",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_4_AUDIT_ROUTE_TIMELINE_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:AUDIT_DELIVERY_COMPLETENESS:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "interval_start",
+        "interval_end",
+        "expected_service_method_keyset_sha256",
+        "observed_service_method_keyset_sha256",
+        "expected_row_count",
+        "observed_row_count",
+        "source_delivery_receipts_sha256",
+        "destination_delivery_receipts_sha256",
+        "independent_delivery_observation_sha256",
+        "sink_error_observation_sha256",
+        "all_services_supported",
+        "all_routes_observed",
+        "sink_errors_checked",
+        "missing_method_count",
+        "missing_route_count",
+        "missing_policy_denied_count",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_4_AUDIT_DELIVERY_COMPLETENESS_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:AUDIT_PRIVACY_PROJECTION:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "raw_evidence_restricted",
+        "public_projection",
+        "public_projection_sha256",
+        "public_projection_keyset_sha256",
+        "identifier_fields_excluded",
+        "request_response_metadata_excluded",
+        "resource_name_excluded",
+        "principal_subject_excluded",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_4_AUDIT_PRIVACY_PROJECTION_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_4:AUDIT_MAPPING:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "section_7_4_acceptance_node_id",
+        "section_7_4_formula_sha256",
+        "bounded_audit_field_profile_sha256",
+        "record_bound_bounded_audit_field_profile_sha256",
+        "audit_record_authentication_verification_sha256",
+        "audit_record_freshness_and_anti_replay_sha256",
+        "audit_universe_record_sha256",
+        "audit_route_timeline_record_sha256",
+        "audit_delivery_completeness_record_sha256",
+        "audit_privacy_projection_record_sha256",
+        "exact_target_hash_match",
+        "audit_status",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_4_AUDIT_MAPPING_RECORD_V1",
+      "unknown_fields": "REJECT"
+    }
+  ],
+  "runtime_evidence_registries": {
+    "audit_delivery_records": [],
+    "audit_mapping_records": [],
+    "audit_privacy_records": [],
+    "audit_route_records": [],
+    "audit_universe_records": [],
+    "approval_records": []
+  },
+  "schema_version": "GCP_SECTION_7_5_4_AUDIT_COMPLETENESS_CONTRACT_V1",
+  "scope": {
+    "excluded_p07_nodes": [
+      "trust_distribution_acceptance_hash",
+      "channel_enforcement_acceptance_hash",
+      "pre_quote_transport_acceptance_hash",
+      "terminal_quote_transport_acceptance_hash",
+      "kms_sign_transport_acceptance_hash",
+      "initial_section_7_4_replay_retention_acceptance_hash",
+      "current_section_7_4_replay_retention_acceptance_hash",
+      "final_consumer_replay_retention_acceptance_hash"
+    ],
+    "owned_p07_nodes": [
+      "audit_mapping_acceptance_hash"
+    ],
+    "owned_prerequisite_ids": [
+      "S75A-P12"
+    ],
+    "p13_owned_portion": "SECTION_7_5_MECHANISM_ONLY",
+    "registry_rows_owners_states_edges_unchanged": true,
+    "section_7_7_decision_excluded": true
+  },
+  "source_contracts": [
+    {
+      "owner": "SECTION_7_5A",
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/constraints-open-obligations-contract.json",
+      "sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0"
+    },
+    {
+      "owner": "SECTION_7_5A_AUDIT_INVENTORY",
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/audit-method-inventory.json",
+      "sha256": "e13cf9889947115859d684f7377fd38caa6e5207969eda073f534bc94af87bbf"
+    },
+    {
+      "owner": "SECTION_7_3",
+      "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json",
+      "sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a"
+    },
+    {
+      "owner": "SECTION_7_4",
+      "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json",
+      "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2"
+    },
+    {
+      "owner": "SECTION_7_5_3",
+      "path": "docs/contracts/canonical-inference-gcp-persistence-anchor/persistence-anchor-contract.json",
+      "sha256": "cbc187987a3e4b36fe6e419cea96007a7a6456d77cd0aef982875e6993454ff9"
+    }
+  ]
+}

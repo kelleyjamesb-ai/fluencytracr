@@ -1,0 +1,108 @@
+{
+  "canonicalization_version": "FT_CANONICAL_JSON_V1",
+  "schema_version": "GCP_SECTION_7_5_4_CANONICALIZATION_VECTORS_V1",
+  "valid_bundle": {
+    "claimed_p07_nodes": [
+      "audit_mapping_acceptance_hash"
+    ],
+    "records": [
+      {
+        "all_methods_accounted": true,
+        "all_rows_classified": true,
+        "approved_section_7_5_contract_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "classifier_binary_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "data_access_enabled": true,
+        "exclusion_methods_fully_classified": true,
+        "inventory_bytes_sha256": "e13cf9889947115859d684f7377fd38caa6e5207969eda073f534bc94af87bbf",
+        "observed_method_row_count": 88,
+        "observed_row_count": 89,
+        "policy_denied_total_applicability": true,
+        "record_sha256": "cba91947c08695dc3618845da872182165e5322782b234f9bb2de782656a850f",
+        "registry_sha256": "3a984f6b7ffc704a89efc627529d1c250897df7a12da19e01f5c986ce90b49ef",
+        "row_keyset_sha256": "ffd46355eb1e3eefa5d7ddd4d432712e151ad67292314fd8bb8a915f2a23216b",
+        "schema_version": "GCP_SECTION_7_5_4_AUDIT_UNIVERSE_RECORD_V1",
+        "target_binding_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "all_exclusion_methods_observed": true,
+        "approved_section_7_5_contract_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "data_access_configuration_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "destination_roots_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "exclusion_configuration_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "full_route_timeline_complete": true,
+        "independent_observation_root_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "interval_end": "2026-01-02T00:00:00Z",
+        "interval_start": "2026-01-01T00:00:00Z",
+        "policy_denied_no_exclusion": true,
+        "record_sha256": "4b2d4cb39c7236ccfa85e6c05e52315505850e801b0dd8aeb4eaf8b08a0ce6e3",
+        "route_universe_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "router_buffer_not_used_as_completeness": true,
+        "routing_configuration_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "schema_version": "GCP_SECTION_7_5_4_AUDIT_ROUTE_TIMELINE_RECORD_V1",
+        "source_project_roots_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "target_binding_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "all_routes_observed": true,
+        "all_services_supported": true,
+        "approved_section_7_5_contract_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "destination_delivery_receipts_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "expected_row_count": 89,
+        "expected_service_method_keyset_sha256": "ffd46355eb1e3eefa5d7ddd4d432712e151ad67292314fd8bb8a915f2a23216b",
+        "independent_delivery_observation_sha256": "abababababababababababababababababababababababababababababababab",
+        "interval_end": "2026-01-02T00:00:00Z",
+        "interval_start": "2026-01-01T00:00:00Z",
+        "missing_method_count": 0,
+        "missing_policy_denied_count": 0,
+        "missing_route_count": 0,
+        "observed_row_count": 89,
+        "observed_service_method_keyset_sha256": "ffd46355eb1e3eefa5d7ddd4d432712e151ad67292314fd8bb8a915f2a23216b",
+        "record_sha256": "c50fa27ae10bb0fb8ad974a665b62c612e892f09073abf59ca472deddbd17977",
+        "schema_version": "GCP_SECTION_7_5_4_AUDIT_DELIVERY_COMPLETENESS_RECORD_V1",
+        "sink_error_observation_sha256": "acacacacacacacacacacacacacacacacacacacacacacacacacacacacacacacac",
+        "sink_errors_checked": true,
+        "source_delivery_receipts_sha256": "adadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadad",
+        "target_binding_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "approved_section_7_5_contract_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "identifier_fields_excluded": true,
+        "principal_subject_excluded": true,
+        "public_projection": {
+          "aggregate_count": 89,
+          "coverage_status": "COMPLETE",
+          "interval_end": "2026-01-02T00:00:00Z",
+          "interval_start": "2026-01-01T00:00:00Z",
+          "record_sha256": "6452b53bef1bb4b1121f63154987df658a246080666cb667ec6f9e758b34ed4a",
+          "service_method_keyset_sha256": "ffd46355eb1e3eefa5d7ddd4d432712e151ad67292314fd8bb8a915f2a23216b"
+        },
+        "public_projection_keyset_sha256": "dfaa464e72ace6f2bc8c1ff0553761b6790a0e1e03abad2f6292d3d90f8df422",
+        "public_projection_sha256": "6452b53bef1bb4b1121f63154987df658a246080666cb667ec6f9e758b34ed4a",
+        "raw_evidence_restricted": true,
+        "record_sha256": "2d31960109346b8f2892227ea6b9941935bd5114671d316259bf4897e348d866",
+        "request_response_metadata_excluded": true,
+        "resource_name_excluded": true,
+        "schema_version": "GCP_SECTION_7_5_4_AUDIT_PRIVACY_PROJECTION_RECORD_V1",
+        "target_binding_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "approved_section_7_5_contract_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "audit_delivery_completeness_record_sha256": "c50fa27ae10bb0fb8ad974a665b62c612e892f09073abf59ca472deddbd17977",
+        "audit_privacy_projection_record_sha256": "2d31960109346b8f2892227ea6b9941935bd5114671d316259bf4897e348d866",
+        "audit_record_authentication_verification_sha256": "afafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafaf",
+        "audit_record_freshness_and_anti_replay_sha256": "bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc",
+        "audit_route_timeline_record_sha256": "4b2d4cb39c7236ccfa85e6c05e52315505850e801b0dd8aeb4eaf8b08a0ce6e3",
+        "audit_status": "VERIFIED",
+        "audit_universe_record_sha256": "cba91947c08695dc3618845da872182165e5322782b234f9bb2de782656a850f",
+        "bounded_audit_field_profile_sha256": "bdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbd",
+        "exact_target_hash_match": true,
+        "record_bound_bounded_audit_field_profile_sha256": "bdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbd",
+        "record_sha256": "3762af2ca293977c3eea03b9cd09b3deb8bb965a6db7ab92ad9d3d851a9987ad",
+        "schema_version": "GCP_SECTION_7_5_4_AUDIT_MAPPING_RECORD_V1",
+        "section_7_4_acceptance_node_id": "audit_mapping_acceptance_hash",
+        "section_7_4_formula_sha256": "5c7ade7d5fae23259d6767bf6de549b69288b1810b15c32121a85acdd858854a",
+        "target_binding_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  }
+}

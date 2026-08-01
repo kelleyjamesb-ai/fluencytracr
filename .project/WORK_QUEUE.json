@@ -441,9 +441,9 @@
       "id": "gcp-canonical-runtime-section-7-5-audit-completeness",
       "title": "Section 7.5.4 — audit universe, delivery completeness, and privacy contract",
       "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P12, the audit-mapping portion of P07, and the Section 7.5 portion of P13 by defining the audit-mapping record and closing the complete service/method audit universe and classifier, total Policy Denied applicability, exclusion-method disposition, independently rooted routing and delivery evidence, route-timeline completeness, and privacy-safe projections; missing methods, routes, independently rooted observations, audit mapping, or denied-event coverage must HOLD; no SUT implementation, live GCP, logging resources, credentials, deployment, qualification, model execution, or Section 7.7 decision",
-      "status": "pending",
+      "status": "done",
       "risk": "high",
-      "last_note": "Human-authored bounded item. Activate only after the persistence contract is merged with its required obligations closed; predecessor HOLD propagates HOLD."
+      "last_note": "Docs-only Section 7.5.4 closure completed locally on 2026-07-31 after explicit human authorization for the sink-root-only exception. Final CODE, BUG, and ADVERSARIAL review returned GO: the exact six-field privacy projection preimage is verified, all four delivery-family roots are distinct, and the three route roots are disjoint from all four delivery roots. The silent verifier, 71 focused tests, 383 synchronized parent/security tests with 6 skipped and 154 unauthorized future-SUT cases deselected, strict OpenSpec, docs, links, governance, JSON, compilation, and whitespace checks pass. Runtime authority remains held; no SUT, Section 7.7 decision, deployment, migration, live GCP/logging, credentials, resources, qualification, or model execution occurred."
     },
     {
       "id": "gcp-canonical-runtime-section-7-5-full-contract-gate",
