@@ -1,0 +1,307 @@
+{
+  "actual_evidence": {
+    "approvals_present": false,
+    "live_evidence_present": false,
+    "runtime_records_present": false
+  },
+  "authority_effect": "NONE",
+  "canonicalization_version": "FT_CANONICAL_JSON_V1",
+  "checkpoint_mechanics": {
+    "concurrency": "SERIALIZABLE_SINGLE_SUCCESSOR",
+    "currentness": "AUTHENTICATED_CURRENT_HEAD_REQUIRED",
+    "fork": "REJECT",
+    "predecessor": "EXACT_PREVIOUS_HEAD_AND_SEQUENCE_PLUS_ONE",
+    "restore": "WHOLE_STATE_RESTORE_DETECT_AND_HOLD",
+    "shared_check_and_use": "LINEARIZABLE",
+    "stale_reader": "REJECT"
+  },
+  "decision": "GCP_SECTION_7_5_3_PERSISTENCE_ANCHOR_CONTRACT_CLOSED_EVIDENCE_ABSENT_RUNTIME_AUTHORITY_HELD",
+  "decision_precedence": [
+    "PRIVACY_OR_BOUNDARY_REJECT",
+    "PARENT_TARGET_SOURCE_OR_OWNERSHIP_REJECT",
+    "SCHEMA_CANONICALIZATION_OR_HASH_REJECT",
+    "AUTHENTICATION_FRESHNESS_OR_CURRENTNESS_REJECT",
+    "FORK_REPLACEMENT_OR_RETRY_REJECT",
+    "RETENTION_TRANSACTION_OR_ANCHOR_MECHANISM_HOLD",
+    "APPROVAL_OR_EVIDENCE_ABSENT_HOLD",
+    "CONTRACT_CLOSED_RUNTIME_AUTHORITY_HELD"
+  ],
+  "forbidden_section_7_6_semantics": [
+    "ATTEMPT_RESERVATION",
+    "ATTEMPT_CONSUMPTION",
+    "ATTEMPT_CRASH_STATE",
+    "RETRY_ELIGIBILITY",
+    "RETRY_TOKEN",
+    "TERMINAL_STATE",
+    "TERMINAL_PRECEDENCE"
+  ],
+  "gcs_mechanics": {
+    "history_scope": "ACTIVE_NONCURRENT_SOFT_DELETED_DECLARED",
+    "no_replacement": true,
+    "required_controls": [
+      "BUCKET_LOCK",
+      "RETENTION_POLICY",
+      "UNIFORM_BUCKET_LEVEL_ACCESS",
+      "PUBLIC_ACCESS_PREVENTION_ENFORCED",
+      "EXACT_REGION",
+      "CMEK",
+      "BUCKET_INCARNATION",
+      "IF_GENERATION_MATCH_ZERO",
+      "EXACT_GENERATION_METAGENERATION_BYTES_HASH_LENGTH"
+    ]
+  },
+  "live_runtime": {
+    "command": "NOT_AUTHORIZED",
+    "expected_exit": "NOT_RUN"
+  },
+  "record_schemas": [
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_3:CHECKPOINT:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "checkpoint_identity_sha256",
+        "predecessor_checkpoint_sha256",
+        "predecessor_sequence_number",
+        "sequence_number",
+        "state_sha256",
+        "gcs_object_record_sha256",
+        "spanner_transaction_record_sha256",
+        "anchor_record_sha256",
+        "created_at",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_3_CHECKPOINT_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_3:GCS_IMMUTABLE_OBJECT:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "bucket_policy_sha256",
+        "bucket_incarnation_sha256",
+        "object_identity_sha256",
+        "generation",
+        "metageneration",
+        "content_sha256",
+        "byte_length",
+        "retention_guaranteed_until",
+        "bucket_lock_enabled",
+        "ubla_enabled",
+        "pap_enforced",
+        "region_policy_sha256",
+        "cmek_policy_sha256",
+        "if_generation_match",
+        "no_replacement",
+        "history_scope",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_3_GCS_IMMUTABLE_OBJECT_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_3:SPANNER_TRANSACTION:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "transaction_identity_sha256",
+        "idempotency_key_sha256",
+        "previously_begun_transaction",
+        "serializable_read_write",
+        "transport_retry_prohibited",
+        "commit_outcome",
+        "provider_commit_timestamp",
+        "unknown_commit_resolution",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_3_SPANNER_TRANSACTION_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_3:INDEPENDENT_ANCHOR:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "checkpoint_state_sha256",
+        "current_head_sha256",
+        "predecessor_head_sha256",
+        "authentication_verification_sha256",
+        "freshness_anti_replay_sha256",
+        "observed_at",
+        "nonrollbackable",
+        "linearizable_check_and_use",
+        "stale_reader_rejected",
+        "whole_state_restore_detected",
+        "before_commit_recovery_verified",
+        "after_commit_recovery_verified",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_3_INDEPENDENT_ANCHOR_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_3:INITIAL_REPLAY_RETENTION:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "section_7_4_acceptance_node_id",
+        "section_7_4_formula_sha256",
+        "replay_manifest_sha256",
+        "record_bound_replay_manifest_sha256",
+        "challenge_sha256",
+        "record_bound_challenge_sha256",
+        "challenge_issued_at",
+        "challenge_expires_at",
+        "authentication_verification_sha256",
+        "anti_replay_consumption_sha256",
+        "retrieval_transcript_sha256",
+        "durable_retention_policy_verification_sha256",
+        "retrieval_and_completeness_verification_sha256",
+        "verified_at",
+        "gcs_object_record_sha256",
+        "all_required_bytes_retrieved",
+        "exact_target_and_challenge_match",
+        "retention_guaranteed_until",
+        "immutable_append_only_storage_policy_sha256",
+        "retention_status",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_3_INITIAL_REPLAY_RETENTION_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_3:CURRENT_REPLAY_RETENTION:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "section_7_4_acceptance_node_id",
+        "section_7_4_formula_sha256",
+        "replay_manifest_sha256",
+        "record_bound_replay_manifest_sha256",
+        "challenge_sha256",
+        "record_bound_challenge_sha256",
+        "challenge_issued_at",
+        "challenge_expires_at",
+        "authentication_verification_sha256",
+        "anti_replay_consumption_sha256",
+        "retrieval_transcript_sha256",
+        "durable_retention_policy_verification_sha256",
+        "retrieval_and_completeness_verification_sha256",
+        "verified_at",
+        "gcs_object_record_sha256",
+        "all_manifest_bytes_retrieved_now",
+        "all_nested_attestation_evidence_bytes_retrieved_now",
+        "all_historical_record_bundles_retrieved_now",
+        "exact_target_and_challenge_match",
+        "retention_guaranteed_until",
+        "immutable_append_only_storage_policy_sha256",
+        "retention_status",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_3_CURRENT_REPLAY_RETENTION_RECORD_V1",
+      "unknown_fields": "REJECT"
+    },
+    {
+      "domain_separator": "FLUENCYTRACR:GCP_SECTION_7_5_3:FINAL_REPLAY_RETENTION:V1",
+      "required_keys": [
+        "schema_version",
+        "target_binding_sha256",
+        "approved_section_7_5_contract_sha256",
+        "section_7_4_acceptance_node_id",
+        "section_7_4_formula_sha256",
+        "replay_manifest_sha256",
+        "record_bound_replay_manifest_sha256",
+        "challenge_sha256",
+        "record_bound_challenge_sha256",
+        "challenge_issued_at",
+        "challenge_expires_at",
+        "authentication_verification_sha256",
+        "anti_replay_consumption_sha256",
+        "retrieval_transcript_sha256",
+        "transitive_section_7_4_member_retrieval_transcript_sha256",
+        "durable_retention_policy_verification_sha256",
+        "retrieval_and_completeness_verification_sha256",
+        "verified_at",
+        "gcs_object_record_sha256",
+        "all_manifest_bytes_retrieved_now",
+        "all_nested_section_7_4_evidence_bytes_retrieved_now",
+        "section_7_6_terminal_proof_bundle_retrieved_now",
+        "current_replay_policy_bundle_retrieved_now",
+        "exact_target_and_challenge_match",
+        "retention_guaranteed_until",
+        "immutable_append_only_storage_policy_sha256",
+        "retention_status",
+        "record_sha256"
+      ],
+      "schema_version": "GCP_SECTION_7_5_3_FINAL_REPLAY_RETENTION_RECORD_V1",
+      "unknown_fields": "REJECT"
+    }
+  ],
+  "runtime_evidence_registries": {
+    "anchor_records": [],
+    "approval_records": [],
+    "checkpoint_records": [],
+    "gcs_records": [],
+    "replay_retention_records": [],
+    "spanner_records": []
+  },
+  "schema_version": "GCP_SECTION_7_5_3_PERSISTENCE_ANCHOR_CONTRACT_V1",
+  "scope": {
+    "excluded_p07_nodes": [
+      "trust_distribution_acceptance_hash",
+      "channel_enforcement_acceptance_hash",
+      "pre_quote_transport_acceptance_hash",
+      "terminal_quote_transport_acceptance_hash",
+      "kms_sign_transport_acceptance_hash",
+      "audit_mapping_acceptance_hash"
+    ],
+    "owned_p07_nodes": [
+      "initial_section_7_4_replay_retention_acceptance_hash",
+      "current_section_7_4_replay_retention_acceptance_hash",
+      "final_consumer_replay_retention_acceptance_hash"
+    ],
+    "owned_prerequisite_ids": [
+      "S75A-P04",
+      "S75A-P10",
+      "S75A-P11"
+    ],
+    "p19_owned_portion": "SECTION_7_5_MECHANISM_ONLY",
+    "registry_rows_owners_states_edges_unchanged": true
+  },
+  "source_contracts": [
+    {
+      "owner": "SECTION_7_5A",
+      "path": "docs/contracts/canonical-inference-gcp-transport-persistence-constraints/constraints-open-obligations-contract.json",
+      "sha256": "2ff8621366dca45aade8a54029ee0fa818b366ae689e4466d536f93a9dd6b9d0"
+    },
+    {
+      "owner": "SECTION_7_3",
+      "path": "docs/contracts/canonical-inference-gcp-security-authority/security-authority-contract.json",
+      "sha256": "96ae43764b78189735c65e0b257971faa31a9f98a31a2c58fb00ef75f805716a"
+    },
+    {
+      "owner": "SECTION_7_4",
+      "path": "docs/contracts/canonical-inference-gcp-attestation-receipt/attestation-receipt-contract.json",
+      "sha256": "a9cddaf665f72d8cbb415fa15c6004663e7a33125fc589ced55a186e27e7cbf2"
+    },
+    {
+      "owner": "SECTION_7_5_2",
+      "path": "docs/contracts/canonical-inference-gcp-network-local-enforcement/network-local-enforcement-contract.json",
+      "sha256": "17d33abb3ef88f04e6f08f875166204400de59721a37eaa6c12faafc1477b4c0"
+    }
+  ],
+  "spanner_mechanics": {
+    "commit_timestamp": "PROVIDER_ASSIGNED_NOT_UNIQUENESS_KEY",
+    "idempotence": "EXACT_IDEMPOTENCY_KEY_REREAD",
+    "transaction": "PREVIOUSLY_BEGUN_SERIALIZABLE_READ_WRITE",
+    "transport_retry": "PROHIBITED",
+    "unknown_commit": "REREAD_BY_IDEMPOTENCY_KEY_NO_BLIND_RETRY"
+  }
+}

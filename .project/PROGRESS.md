@@ -2,6 +2,29 @@
 
 ## Current Session
 
+- Section 7.5.3 is locally complete on
+  `codex/section-7-5-3-persistence-anchor`, based on current `origin/main`
+  `8b06c5e5d8e37feb3e75e078bb538cebd1b8d379`. The docs-only contract closes
+  only P04, P10, P11, three phase-distinct parent-bound replay-retention P07
+  records, and the Section 7.5 mechanism portion of P19. The immutable 20-row
+  registry remains byte-identical. The silent verifier and 62 focused
+  adversarial tests pass; strict OpenSpec, the 233-test authorized parent
+  suite, 79 provider/security/attestation tests with 6 skipped, docs sweep,
+  linkcheck, V1 governance, JSON, compilation, and whitespace checks pass.
+- Integrated exact-tree CODE, BUG, and ADVERSARIAL review found one genuine
+  first-draft closure gap: the three parent replay-retention interfaces had
+  been represented by one generic schema. The single permitted remediation
+  batch replaced it with three exact phase-specific schemas, parent node and
+  formula bindings, phase-specific completeness checks, challenge uniqueness,
+  strict sequence/currentness, Boolean-alias rejection, and sanitized malformed
+  record handling. Replacement review is GO with no executable authorization,
+  privacy, invariant, ownership, or closure-projection failure. The only broad
+  red run remains exactly 154 intentional `MISSING_SUT` future-runtime cases;
+  the SUT is not authorized by this slice.
+- Section 7.6 attempt reservation, consumption, crash state, retry eligibility
+  or tokens, and terminal state or precedence remain excluded. Audit mapping,
+  live GCP, credentials, provisioning, persistent resources, deployment,
+  qualification, customer/live data, and model execution did not occur.
 - Section 7.5.2 is locally complete on
   `codex/section-7-5-2-network-local`. The bounded contract defines exactly six
   closed record schemas and projects only P09, P18, and the five owned
