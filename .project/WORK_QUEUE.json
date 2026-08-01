@@ -433,9 +433,9 @@
       "id": "gcp-canonical-runtime-section-7-5-persistence-anchor",
       "title": "Section 7.5.3 — checkpoint, GCS, Spanner, retention, and independent-anchor contract",
       "bound": "Docs/OpenSpec/offline verifiers/tests only: resolve S75A-P04, P10, P11, the replay-retention portions of P07, and the Section 7.5 mechanism portion of P19 by defining the three replay-retention records, checkpoint schema, predecessor/fork/currentness/concurrency and restore rules, immutable GCS retention and no-replacement mechanics, Spanner transaction/idempotence/unknown-Commit handling, and independent nonrollbackable anchor currentness/check-and-use/recovery; Section 7.6 exclusively owns attempt reservation, terminal state, and retry; no SUT implementation, live GCP, credentials, provisioning, persistent resources, deployment, qualification, or model execution",
-      "status": "pending",
+      "status": "done",
       "risk": "high",
-      "last_note": "Human-authored bounded item. Activate only after the parent-authority and network/local contracts are merged with their required obligations closed; predecessor HOLD propagates HOLD."
+      "last_note": "Completed docs-only on 2026-07-31 from main 8b06c5e5. Closed only P04, P10, P11, three phase-distinct parent-bound replay-retention P07 records, and the Section 7.5 mechanism portion of P19. Focused verifier/tests, strict OpenSpec, parent/security synchronization, docs, governance, and exact-tree CODE/BUG/ADVERSARIAL review passed after the single permitted remediation batch. Attempt reservation, retry eligibility/tokens, terminal state/precedence, audit mapping, SUT, live GCP, credentials, resources, deployment, qualification, and model execution remain excluded; runtime authority is NONE."
     },
     {
       "id": "gcp-canonical-runtime-section-7-5-audit-completeness",
