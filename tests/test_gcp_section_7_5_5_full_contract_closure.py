@@ -57,6 +57,32 @@ def test_duplicate_queue_authority_holds(tmp_path: Path) -> None:
     assert verifier.evaluate_candidate(root, verifier.AUTHORITATIVE_CONTRACT) == "HOLD"
 
 
+def test_private_queue_field_holds(tmp_path: Path) -> None:
+    root = _isolated_root(tmp_path)
+    queue_path = root / verifier.QUEUE_PATH
+    queue = json.loads(queue_path.read_text())
+    row = next(item for item in queue["items"] if item["id"] == verifier.QUEUE_ITEM_ID)
+    row["user_id"] = "forbidden"
+    queue_path.write_text(json.dumps(queue), encoding="utf-8")
+    assert verifier.evaluate_candidate(root, verifier.AUTHORITATIVE_CONTRACT) == "HOLD"
+
+
+def test_exported_contract_mutation_cannot_mutate_verifier_authority(
+    tmp_path: Path,
+) -> None:
+    root = _isolated_root(tmp_path)
+    original = copy.deepcopy(verifier.AUTHORITATIVE_CONTRACT)
+    try:
+        verifier.AUTHORITATIVE_CONTRACT["authority_effect"] = "RUNTIME"
+        verifier.AUTHORITATIVE_CONTRACT["runtime_evidence_registries"] = {
+            "forbidden": [{"authority": "RUNTIME"}]
+        }
+        assert verifier.evaluate_candidate(root, verifier.AUTHORITATIVE_CONTRACT) == "HOLD"
+    finally:
+        verifier.AUTHORITATIVE_CONTRACT.clear()
+        verifier.AUTHORITATIVE_CONTRACT.update(original)
+
+
 def test_unknown_mode_and_live_runtime_fail_closed(tmp_path: Path) -> None:
     root = _isolated_root(tmp_path)
     candidate = verifier.AUTHORITATIVE_CONTRACT

@@ -2,6 +2,20 @@
 
 ## Current Session
 
+- PR #483 review exposed two additional executable P1 false-clears within the
+  existing verifier boundary. First, an in-process caller could mutate the
+  exported contract object and thereby mutate the comparison authority.
+  Second, a privacy-bearing extra field on the matching P17 queue row could be
+  discarded by projection. Fail-first regressions reproduced both. The
+  verifier now compares candidates, sources, and queue projections against
+  private immutable byte/tuple snapshots captured from the pinned contract,
+  while retaining a separate public candidate copy, and requires the matching
+  queue row to use the exact six-field safe shape. The focused authorized
+  profile passes `53` with only the immutable preimplementation absence
+  assertion deselected; the direct verifier, compilation, and whitespace
+  checks pass. No contract, queue, registry, runtime, GCP, deployment, or
+  authority scope changed. Exact replacement review and current-head GitHub
+  checks remain pending.
 - PR #483 current-head Python and agent checks each reproduced one identical
   lifecycle-only failure: the frozen preimplementation readiness assertion
   correctly requires the Section 7.5.5 SUT paths to be absent, while the

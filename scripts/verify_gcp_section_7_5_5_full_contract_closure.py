@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
@@ -23,6 +24,9 @@ EXPECTED_CONTRACT_SHA256 = (
 QUEUE_PATH = ".project/WORK_QUEUE.json"
 QUEUE_ITEM_ID = "gcp-canonical-runtime-section-7-5-full-contract-gate"
 QUEUE_FIELDS = ("id", "title", "bound", "risk")
+QUEUE_ROW_FIELDS = frozenset({*QUEUE_FIELDS, "status", "last_note"})
+
+
 def _sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
@@ -101,25 +105,41 @@ def _load_authoritative_contract() -> dict[str, Any]:
     return _load_closed_object(raw)
 
 
-def _load_authoritative_source_bytes() -> dict[str, bytes]:
+def _load_authoritative_source_bytes(
+    contract: dict[str, Any],
+) -> tuple[tuple[str, bytes], ...]:
     """Load and verify the exact predecessor bytes compiled into this gate."""
 
-    values: dict[str, bytes] = {}
-    for row in AUTHORITATIVE_CONTRACT["source_contracts"]:
+    values: list[tuple[str, bytes]] = []
+    for row in contract["source_contracts"]:
         raw = _read_explicit_regular_file(REPOSITORY_ROOT, row["path"])
         if _sha256(raw) != row["sha256"]:
             raise ValueError("source pin mismatch")
-        values[row["path"]] = raw
-    return values
+        values.append((row["path"], raw))
+    return tuple(values)
 
 
 try:
-    AUTHORITATIVE_CONTRACT = _load_authoritative_contract()
-    AUTHORITATIVE_SOURCE_BYTES = _load_authoritative_source_bytes()
+    loaded_contract = _load_authoritative_contract()
+    _AUTHORITATIVE_CONTRACT_BYTES = _canonical_bytes(loaded_contract)
+    _SOURCE_ROWS = tuple(
+        (row["path"], row["sha256"])
+        for row in loaded_contract["source_contracts"]
+    )
+    _AUTHORITATIVE_SOURCE_BYTES = _load_authoritative_source_bytes(loaded_contract)
+    _QUEUE_PROJECTION_BYTES = _canonical_bytes(
+        loaded_contract["queue_authorization_projection"]
+    )
+    _QUEUE_PROJECTION_SHA256 = loaded_contract["hashes"]["queue_projection_sha256"]
+    AUTHORITATIVE_CONTRACT = copy.deepcopy(loaded_contract)
     BOOTSTRAP_VALID = True
 except (OSError, TypeError, ValueError):
+    _AUTHORITATIVE_CONTRACT_BYTES = b""
+    _SOURCE_ROWS = ()
+    _AUTHORITATIVE_SOURCE_BYTES = ()
+    _QUEUE_PROJECTION_BYTES = b""
+    _QUEUE_PROJECTION_SHA256 = ""
     AUTHORITATIVE_CONTRACT = {}
-    AUTHORITATIVE_SOURCE_BYTES = {}
     BOOTSTRAP_VALID = False
 
 
@@ -127,8 +147,8 @@ def _resource_state(root: Path, interleaving: Callable[[], None] | None) -> str:
     """Classify only explicit resources admitted by the authoritative contract."""
 
     first_reads: dict[str, bytes] = {}
-    for row in AUTHORITATIVE_CONTRACT["source_contracts"]:
-        path = row["path"]
+    expected_bytes = dict(_AUTHORITATIVE_SOURCE_BYTES)
+    for path, _expected_sha256 in _SOURCE_ROWS:
         try:
             first_reads[path] = _read_explicit_regular_file(root, path)
         except (FileNotFoundError, NotADirectoryError):
@@ -139,16 +159,19 @@ def _resource_state(root: Path, interleaving: Callable[[], None] | None) -> str:
     if interleaving is not None:
         interleaving()
 
-    for row in AUTHORITATIVE_CONTRACT["source_contracts"]:
-        path = row["path"]
+    for path, expected_sha256 in _SOURCE_ROWS:
         try:
             current = _read_explicit_regular_file(root, path)
         except (FileNotFoundError, NotADirectoryError):
             return "ABSENT"
         except OSError:
             return "CORRUPT"
-        expected = AUTHORITATIVE_SOURCE_BYTES[path]
-        if current != first_reads[path] or current != expected:
+        expected = expected_bytes[path]
+        if (
+            current != first_reads[path]
+            or _sha256(current) != expected_sha256
+            or current != expected
+        ):
             return "PARTIAL" if expected.startswith(current) else "CORRUPT"
     return "EXACT"
 
@@ -161,12 +184,13 @@ def _queue_matches(root: Path) -> bool:
         if len(matches) != 1:
             return False
         row = matches[0]
+        if type(row) is not dict or set(row) != QUEUE_ROW_FIELDS:
+            return False
         projection = {field: row[field] for field in QUEUE_FIELDS}
         return (
             row["status"] in {"in_progress", "done"}
-            and projection == AUTHORITATIVE_CONTRACT["queue_authorization_projection"]
-            and _canonical_sha256(projection)
-            == AUTHORITATIVE_CONTRACT["hashes"]["queue_projection_sha256"]
+            and _canonical_bytes(projection) == _QUEUE_PROJECTION_BYTES
+            and _canonical_sha256(projection) == _QUEUE_PROJECTION_SHA256
         )
     except (KeyError, StopIteration, TypeError, ValueError, OSError):
         return False
@@ -188,7 +212,7 @@ def evaluate_candidate(
         candidate_matches = (
             BOOTSTRAP_VALID
             and type(candidate) is dict
-            and _canonical_bytes(candidate) == _canonical_bytes(AUTHORITATIVE_CONTRACT)
+            and _canonical_bytes(candidate) == _AUTHORITATIVE_CONTRACT_BYTES
         )
     except (TypeError, ValueError):
         candidate_matches = False
