@@ -200,7 +200,8 @@ substitution, and nested private data in an otherwise projected-away queue
 field. Replay variants independently preseed only the used reservation-key set
 or only the used lineage-token set. Symmetric unrelated reservation-only,
 lineage-only, and reservation-and-lineage READY controls give the same state
-shapes opposite outcomes and therefore force candidate-specific matching.
+shapes and isolated-root environment class opposite outcomes and therefore
+force candidate-specific matching without a path-identity answer channel.
 Mutation oracles prove that a verifier checking just one gate, rejecting
 generic nonempty state, or classifying only by populated-set shape cannot
 satisfy the full corpus. The concurrency barrier exists before the absent-SUT

@@ -4,7 +4,7 @@
 
 - Section 7.6.1 preimplementation replay-oracle repair is ready for one final
   exact-tree review. The repaired packet SHA-256 is
-  `b95b40e5fb1b10947c106b5ba8ae46a1169c7e8898c507e2382967e45133aacf`,
+  `e786a66b1a8da7394df895a3a464fd10a5be74afc0cea41ca19b931f794fc307`,
   the rules fixture SHA-256 is
   `9da8f5469ba88b6fd4489b4a299d15401a028411610141edfdd9d65776786b27`,
   the separately byte-pinned synthetic trusted-context SHA-256 is
@@ -12,7 +12,7 @@
   the byte-pinned stdlib environment-worker SHA-256 is
   `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
   the readiness-test SHA-256 is
-  `fc2f6d19c9baec783e091de63a79d744b741c7fabb7614369cdfa28cd1755dd8`,
+  `5974b6c2c233115122ff049d346a6faec9b2760de731d688b948445c215c23b5`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
   Eight structural and four live-runtime metadata-only tests pass; all 84
@@ -27,8 +27,12 @@
   comparing candidate identities. James's bounded replay-oracle authorization
   covers the minimal repair: reservation-only, lineage-only, and dual unrelated
   READY controls now mirror the attack shapes; the fail-first mutation oracle
-  rejects the counterexample. Single-gate and coarse-nonempty mutation oracles
-  remain green. The full preimplementation module is intentionally red only at
+  rejects the counterexample. The next adversarial pass found that attacks used
+  isolated roots while READY controls used the repository root, allowing path
+  identity to leak the outcome. All READY controls now build and execute from
+  isolated copied roots matching the attack environment. Single-gate,
+  coarse-nonempty, and state-shape mutation oracles remain green. The full
+  preimplementation module is intentionally red only at
   the 84 absent-SUT cases (`12 passed, 84 MISSING_SUT`); strict OpenSpec,
   governance, JSON, and diff checks pass. No docs contract, verifier,
   implementation test, runtime SUT, GCP action, credential, persistence,

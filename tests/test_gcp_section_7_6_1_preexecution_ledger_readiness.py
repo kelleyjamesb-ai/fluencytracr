@@ -975,11 +975,12 @@ def test_future_sut_opaque_retry_lineage_ready() -> None:
     assert result == "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
 
 
-def test_future_sut_unrelated_replay_state_ready() -> None:
+def test_future_sut_unrelated_replay_state_ready(tmp_path: Path) -> None:
     fixture = _load_fixture()
-    candidate = _baseline_candidate(fixture)
     module = _load_future_verifier(fixture)
-    for control in fixture["replay_ready_controls"]:
+    for index, control in enumerate(fixture["replay_ready_controls"]):
+        root = _copy_inputs(fixture, tmp_path / f"control-{index}")
+        candidate = _baseline_candidate(fixture, root)
         state = {
             "used_reservation_keys": set(control["used_reservation_keys"]),
             "used_lineage_tokens": set(control["used_lineage_tokens"]),
@@ -991,7 +992,7 @@ def test_future_sut_unrelated_replay_state_ready() -> None:
             "authenticated_lineage_token_hash"
         ] not in state["used_lineage_tokens"]
         result = module.evaluate_candidate(
-            ROOT,
+            root,
             candidate,
             mode="CLEAN_CI",
             state=state,
