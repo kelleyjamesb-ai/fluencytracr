@@ -19,15 +19,15 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `fd3e1fe78c9bd3169aaa87afa0fd0845292ee4a3542817399e46e702e9390919`,
+  `ff53b73d32d691208a8eeb3bd27d57358e6cfe7418ea2551812eac0e3c4faf75`,
   and focused contract test
-  `3e61be400f6eb36e219e906b1a387fbce8831378a0e2219ae22c287aba7c18db`.
+  `42d36f1fd2f124751b57e383aae6fdab1b75638faa2938927f4aba76d01ed144`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
   closed for archive/live/unknown modes and preserves Section 7.4/7.6.2
   ownership. The focused implementation plus frozen future-SUT profile passes
-  `109` with only the immutable preimplementation absence assertion deselected;
+  `111` with only the immutable preimplementation absence assertion deselected;
   strict OpenSpec, governance, stdlib compilation, silent CLI, JSON, YAML,
   collection, and diff checks pass. The same exact absence assertion is now
   deselected in all three synchronized Python runners, matching the established
@@ -67,8 +67,16 @@
   prior-plus-consumed sets. Final CODE, BUG, and independent callback review
   returned GO on exact implementation commit
   `44e654f81b1a27dc999961967ae8e14d838d37ea` / tree
-  `196775e09e393915b96e49c0290d9258ceb4a132`. Section 7.6.1 is locally
-  complete; only the durable status commit, push, PR checks, and merge remain.
+  `196775e09e393915b96e49c0290d9258ceb4a132`. PR #484 review subsequently
+  found three executable closure failures: the normal `COMMITTED` disposition
+  held before readback, unknown-commit readback compared the fixed five-record
+  write set with the entire candidate bundle, and the standalone CLI did not
+  recheck mutable queue authority. Fail-first regressions reproduce all three.
+  Both admitted commit dispositions now require exact fixed-write-set readback,
+  full-bundle compatibility is allowed only for a byte-exact candidate bundle,
+  and every CLI invocation revalidates unique queue authority. Section 7.6.1
+  remains bounded to docs, OpenSpec, offline verifier, and tests; PR #484 needs
+  replacement exact-tree review and current-head checks before normal merge.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

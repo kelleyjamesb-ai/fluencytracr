@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -256,6 +257,51 @@ def test_transaction_write_set_cannot_mutate_readback_authority(
     assert "credential" not in candidate["records"]["reservation"]
 
 
+def test_committed_and_unknown_transactions_read_back_exact_write_set(
+    tmp_path: Path,
+) -> None:
+    results: dict[str, str] = {}
+    for disposition in ("COMMITTED", "UNKNOWN_AFTER_WRITE"):
+        root = _isolated_root(tmp_path / disposition)
+        candidate = _candidate(root)
+        state: dict = {}
+
+        class ExactWriteSetTransaction:
+            def __init__(self) -> None:
+                self.write_set: dict = {}
+                self.readback_called = False
+                self.exposed = False
+
+            def commit(self, write_set: dict) -> str:
+                self.write_set = copy.deepcopy(write_set)
+                return disposition
+
+            def readback(self, _reservation_key: str) -> dict:
+                self.readback_called = True
+                return copy.deepcopy(self.write_set)
+
+            def expose(self, _opaque_record: dict) -> None:
+                self.exposed = True
+
+        transaction = ExactWriteSetTransaction()
+        results[disposition] = verifier.evaluate_candidate(
+            root,
+            candidate,
+            "CLEAN_CI",
+            state,
+            None,
+            _context(),
+            transaction=transaction,
+        )
+        assert transaction.readback_called, disposition
+        assert transaction.exposed, disposition
+
+    assert results == {
+        "COMMITTED": verifier.READY,
+        "UNKNOWN_AFTER_WRITE": verifier.READY,
+    }
+
+
 def test_transaction_commit_and_readback_reentry_have_one_ready(
     tmp_path: Path,
 ) -> None:
@@ -436,3 +482,30 @@ def test_command_line_verifier_is_silent() -> None:
     assert completed.returncode == 0
     assert completed.stdout == ""
     assert completed.stderr == ""
+
+
+def test_standalone_verifier_checks_mutable_queue_authority(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    for variant in ("missing", "malformed", "duplicate", "drift"):
+        root = _isolated_root(tmp_path / variant)
+        monkeypatch.setattr(verifier, "REPOSITORY_ROOT", root)
+        assert verifier.main() == 0, variant
+        queue_path = root / verifier._QUEUE["path"]
+        queue = json.loads(queue_path.read_text(encoding="utf-8"))
+        matches = [
+            row
+            for row in queue["items"]
+            if row["id"] == verifier._QUEUE["item_id"]
+        ]
+        if variant == "missing":
+            queue_path.unlink()
+        elif variant == "malformed":
+            queue_path.write_text("{", encoding="utf-8")
+        elif variant == "duplicate":
+            queue["items"].append(copy.deepcopy(matches[0]))
+            queue_path.write_text(json.dumps(queue), encoding="utf-8")
+        else:
+            matches[0]["title"] += " drift"
+            queue_path.write_text(json.dumps(queue), encoding="utf-8")
+        assert verifier.main() == 1, variant

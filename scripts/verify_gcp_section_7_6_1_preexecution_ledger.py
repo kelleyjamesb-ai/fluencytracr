@@ -280,6 +280,23 @@ def _write_set(candidate: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _readback_matches_fixed_write_set(
+    candidate: Dict[str, Any], readback: Any
+) -> bool:
+    if type(readback) is not dict:
+        return False
+    expected = _write_set(candidate)
+    if set(readback) == set(expected):
+        observed = readback
+    elif set(readback) == set(candidate["records"]):
+        if _canonical_bytes(readback) != _canonical_bytes(candidate["records"]):
+            return False
+        observed = {key: readback[key] for key in expected}
+    else:
+        return False
+    return _canonical_bytes(observed) == _canonical_bytes(expected)
+
+
 def evaluate_candidate(
     root: Path,
     candidate: Dict[str, Any],
@@ -351,7 +368,6 @@ def evaluate_candidate(
             ):
                 return "HOLD"
             if transaction is not None:
-                expected_records = _canonical_bytes(candidate_snapshot["records"])
                 prior_reservations = set(used_reservations)
                 prior_tokens = set(used_tokens)
                 readback_confirmed = False
@@ -360,10 +376,12 @@ def evaluate_candidate(
                     disposition = transaction.commit(
                         copy.deepcopy(_write_set(candidate_snapshot))
                     )
-                    if disposition != "UNKNOWN_AFTER_WRITE":
+                    if disposition not in {"COMMITTED", "UNKNOWN_AFTER_WRITE"}:
                         return "HOLD"
                     readback = transaction.readback(reservation_key)
-                    if _canonical_bytes(readback) != expected_records:
+                    if not _readback_matches_fixed_write_set(
+                        candidate_snapshot, readback
+                    ):
                         return "HOLD"
                     readback_confirmed = True
                     state["used_reservation_keys"] = prior_reservations | {
@@ -394,7 +412,7 @@ def evaluate_candidate(
 def main() -> int:
     """Run silently; exit status is the only command-line output contract."""
 
-    return 0 if BOOTSTRAP_VALID else 1
+    return 0 if BOOTSTRAP_VALID and _queue_matches(REPOSITORY_ROOT) else 1
 
 
 if __name__ == "__main__":
