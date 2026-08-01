@@ -27,14 +27,14 @@
   reservation and lineage identities, and exact commit readback. It fails
   closed for archive/live/unknown modes and preserves Section 7.4/7.6.2
   ownership. The focused implementation plus frozen future-SUT profile passes
-  `102` with only the immutable preimplementation absence assertion deselected;
+  `109` with only the immutable preimplementation absence assertion deselected;
   strict OpenSpec, governance, stdlib compilation, silent CLI, JSON, YAML,
   collection, and diff checks pass. The same exact absence assertion is now
   deselected in all three synchronized Python runners, matching the established
   Section 7.5.5 lifecycle pattern while retaining every implementation-facing
-  test. The first full harness run otherwise passed `861` tests and found only
-  that expected lifecycle conflict; the final full suite is reserved for the
-  exact reviewed implementation SHA. No runtime SUT, GCP action, credential,
+  test. The final full harness on the reviewed implementation SHA passed `868`
+  tests with `10` skipped and `156` intentional lifecycle deselections. No
+  runtime SUT, GCP action, credential,
   persistence, execution, deployment, migration, qualification,
   terminal/retry decision, or authority was added. The first exact
   implementation review found a transaction-exposure reentrancy that could
@@ -64,8 +64,11 @@
   fail-first regressions now cover both. Exact readback binds consumed state
   before exposure, the private in-flight guard serializes the entire state
   rather than one candidate identity, and `finally` still restores the exact
-  prior-plus-consumed sets. Replacement exact implementation commit and
-  CODE/BUG/ADVERSARIAL review remain pending.
+  prior-plus-consumed sets. Final CODE, BUG, and independent callback review
+  returned GO on exact implementation commit
+  `44e654f81b1a27dc999961967ae8e14d838d37ea` / tree
+  `196775e09e393915b96e49c0290d9258ceb4a132`. Section 7.6.1 is locally
+  complete; only the durable status commit, push, PR checks, and merge remain.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

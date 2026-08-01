@@ -9,5 +9,5 @@
 
 - [x] 2.1 Add the Section 7.6.1 docs contract, synthetic vectors, and silent offline verifier without changing frozen readiness blobs.
 - [x] 2.2 Add focused implementation tests and prove exact evidence ancestry/blob identity.
-- [ ] 2.3 Run focused, strict OpenSpec, governance, and final exact-tree review gates.
-- [ ] 2.4 Mark the queue item done only after exact closure review passes.
+- [x] 2.3 Run focused, strict OpenSpec, governance, and final exact-tree review gates.
+- [x] 2.4 Mark the queue item done only after exact closure review passes.
