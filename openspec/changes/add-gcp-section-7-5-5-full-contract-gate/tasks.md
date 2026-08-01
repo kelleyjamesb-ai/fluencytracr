@@ -9,5 +9,5 @@
 - [x] 2.1 Add the full-contract closure projection and synthetic vectors.
 - [x] 2.2 Add the silent offline verifier and focused adversarial tests.
 - [x] 2.3 Prove packet/test/fixture blob identity and evidence ancestry.
-- [ ] 2.4 Run focused, strict OpenSpec, governance, and final exact-tree review gates.
-- [ ] 2.5 Mark the bounded queue item done only after exact closure review passes.
+- [x] 2.4 Run focused, strict OpenSpec, governance, and final exact-tree review gates.
+- [x] 2.5 Mark the bounded queue item done only after exact closure review passes.

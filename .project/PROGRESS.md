@@ -2,6 +2,15 @@
 
 ## Current Session
 
+- Section 7.5.5 technical closure review is `GO` on exact remediation commit
+  `b96b59525ee00aee3c9f643d2d287136865ef445`, tree
+  `bbb992a06dae7b4e70fd473ec8ea9d06b49ce6a8`. Replacement CODE, BUG, and
+  ADVERSARIAL review each returned `GO`; the canonical unique P17 queue row
+  closes, while duplicate, forged-first, forged-only, and absent matches all
+  HOLD. The frozen readiness blobs and immutable registry remain unchanged.
+  The queue item and OpenSpec tasks are now marked `done`; this is closure
+  metadata only. Final closure-tree review and the one full required suite on
+  that exact reviewed SHA remain before push and PR.
 - Final implementation review on exact commit `67252454` returned CODE `GO`,
   ADVERSARIAL `GO`, and BUG `HOLD` for one executable P17 false-clear: the
   queue verifier selected the first matching human-authored item without
