@@ -788,7 +788,7 @@ def test_ledger_attack_and_requirement_reconciliation() -> None:
         reverse = {row["id"] for row in fixture["ledger"] if attack["id"] in row["attacks"]}
         assert set(attack["ledger"]) == reverse, attack["id"]
     requirements = fixture["requirements"]
-    assert [row["id"] for row in requirements] == [f"S761-R{index:02d}" for index in range(1, 17)]
+    assert [row["id"] for row in requirements] == [f"S761-R{index:02d}" for index in range(1, 18)]
     assert all(row["oracle"] and row["test"] for row in requirements)
     assert all(callable(globals().get(row["test"])) for row in requirements)
     later_fields = {field.upper() for field in fixture["section_7_6_2_exclusive_ownership"]}
@@ -868,6 +868,38 @@ def test_replay_corpus_rejects_single_gate_detectors(tmp_path: Path) -> None:
     assert corpus_outcomes("token") != ["HOLD", "HOLD", "HOLD"]
 
 
+def test_replay_corpus_rejects_coarse_nonempty_state_detector(
+    tmp_path: Path,
+) -> None:
+    """Generic nonempty-state HOLD cannot satisfy candidate-specific corpus."""
+    fixture = _load_fixture()
+    expected: list[str] = []
+    coarse: list[str] = []
+    for index, variant in enumerate(fixture["attack_variants"]["A009"]):
+        root = _copy_inputs(fixture, tmp_path / f"attack-{index}")
+        _candidate, plan = _prepare_attack(fixture, "A009", variant, root)
+        expected.append("HOLD")
+        if plan["action"] == "replay":
+            coarse.append("HOLD")
+        else:
+            coarse.append(
+                "HOLD"
+                if any(plan["state"].get(key) for key in (
+                    "used_reservation_keys",
+                    "used_lineage_tokens",
+                ))
+                else "READY"
+            )
+    for control in fixture.get("replay_ready_controls", []):
+        expected.append(control["expected"])
+        coarse.append(
+            "HOLD"
+            if control["used_reservation_keys"] or control["used_lineage_tokens"]
+            else "READY"
+        )
+    assert coarse != expected
+
+
 def test_future_sut_unknown_commit_same_key_readback() -> None:
     fixture = _load_fixture()
     candidate = _baseline_candidate(fixture)
@@ -909,6 +941,32 @@ def test_future_sut_opaque_retry_lineage_ready() -> None:
         trusted_context=_load_trusted_context(fixture),
     )
     assert result == "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+
+
+def test_future_sut_unrelated_replay_state_ready() -> None:
+    fixture = _load_fixture()
+    candidate = _baseline_candidate(fixture)
+    control = fixture["replay_ready_controls"][0]
+    state = {
+        "used_reservation_keys": set(control["used_reservation_keys"]),
+        "used_lineage_tokens": set(control["used_lineage_tokens"]),
+    }
+    assert candidate["records"]["reservation"]["reservation_key"] not in state[
+        "used_reservation_keys"
+    ]
+    assert candidate["records"]["lineage_input"][
+        "authenticated_lineage_token_hash"
+    ] not in state["used_lineage_tokens"]
+    module = _load_future_verifier(fixture)
+    result = module.evaluate_candidate(
+        ROOT,
+        candidate,
+        mode="CLEAN_CI",
+        state=state,
+        interleaving=None,
+        trusted_context=_load_trusted_context(fixture),
+    )
+    assert result == control["expected"]
 
 
 def test_future_sut_unknown_commit_mismatched_readback_holds() -> None:

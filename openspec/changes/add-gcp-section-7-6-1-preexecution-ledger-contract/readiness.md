@@ -152,7 +152,7 @@ live rows return `NOT_AUTHORIZED` before any worker or SUT load.
 
 ## 4. Requirements and oracle inventory
 
-The fixture contains 16 stable requirements. Each has a named independent
+The fixture contains 17 stable requirements. Each has a named independent
 oracle and exact test function. Coverage includes source/queue admission,
 closed schemas, producer/authenticator/consumer separation, literal integer
 ordinals, reservation preimage, fixed write order, exact readback,
@@ -198,9 +198,11 @@ predecessor HOLD, Section 7.4-owned acceptance/PASS fields, actual-boot claims,
 every Section 7.6.2-only output, independently pinned trusted-context
 substitution, and nested private data in an otherwise projected-away queue
 field. Replay variants independently preseed only the used reservation-key set
-or only the used lineage-token set; a mutation oracle proves that a verifier
-checking just one gate cannot satisfy the full corpus. The concurrency barrier
-exists before the absent-SUT gate.
+or only the used lineage-token set; an unrelated-reservation-and-token READY
+control proves matching is candidate-specific. Mutation oracles prove that a
+verifier checking just one gate or rejecting generic nonempty state cannot
+satisfy the full corpus. The concurrency barrier exists before the absent-SUT
+gate.
 
 ## 6. Cost, review, and stop controls
 

@@ -5,18 +5,18 @@
 - Section 7.6.1 preimplementation evidence repair is ready for exact-tree
   re-review after the first review correctly returned HOLD. The repaired
   packet SHA-256 is
-  `6f106d5bef6f5354e3038bb90a5d37d4e3b118b30ef68eb1b6b1dae2ad8d8c29`,
+  `71e24c0dc2c2d734a33ad5aabe5d8e441eba6056d167189c2ecd7ba569b286f2`,
   the rules fixture SHA-256 is
-  `1324528b013dc3c1998728d473f92dc3097a0e7472d69e5877386109ff9c30e7`,
+  `6fad64f1abd8b2d42e4346495aaf2f84293da3e9497d082c65cd6d8f455de31a`,
   the separately byte-pinned synthetic trusted-context SHA-256 is
   `22a35259c758205869319fc53fac8dfdb6075c887bcd137614bae14d8fdfe2df`,
   the byte-pinned stdlib environment-worker SHA-256 is
   `1ac84be627eee2641e55736862c334adad113465ef7adf81ec6db63014b499ac`,
   the readiness-test SHA-256 is
-  `7cea8d89310bac9e2a9bd8c4f28bb4e3dfad58d3e9a2313f6212c250e87ca037`,
+  `ef7ca7baa1e733d707dee547bf85e5717a51682ea61e63aefcb2a7f2b3877bfe`,
   and the protocol SHA-256 remains
   `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
-  Six structural and four live-runtime metadata-only tests pass; all 83
+  Seven structural and four live-runtime metadata-only tests pass; all 84
   runnable implementation-facing attack and clean/archive environment cases
   construct their mutations, state, barriers, and literal expectations before
   stopping only at deliberate `MISSING_SUT`. The repair adds independently
@@ -44,8 +44,13 @@
   redesign. A fail-first mutation test reproduced that false clear, then the
   minimal repair independently preseeded only the used-reservation set or only
   the used-token set while retaining the real two-call identical replay. The
-  mutation test now rejects both single-gate detectors. Final evidence
-  commit/tree and replacement CODE/BUG/ADVERSARIAL verdicts remain pending.
+  mutation test now rejects both single-gate detectors. CODE and BUG review
+  returned GO, while ADVERSARIAL proved a coarse any-nonempty-state detector
+  could still pass without comparing candidate identities. The authorized
+  narrow redesign therefore adds an unrelated reservation-and-token READY
+  control plus a second fail-first mutation oracle. The corpus now rejects
+  single-gate and coarse nonidentity detectors. Final evidence commit/tree and
+  exact CODE/BUG/ADVERSARIAL verdicts remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

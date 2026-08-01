@@ -157,6 +157,14 @@
     "A018": ["TOP_LEVEL", "PREDECESSOR_ROW", "QUEUE_ROW", "QUEUE_LAST_NOTE_NESTED", "PLAN", "ALLOCATION", "LINEAGE", "PARENT", "HEAD_IN", "EXPECTED", "RESERVATION", "TOKEN_MARKER", "WRITE_AHEAD", "HEAD_OUT", "TRANSITION", "OPAQUE_RECORD", "PUBLIC_PROJECTION", "RESULT"],
     "A019": ["TOP_LEVEL_AUTHORITY", "PRE_EXECUTION_ACCEPTANCE_HASH", "SECTION_7_4_PASS_BOOLEAN", "ACTUAL_BOOT_TRUTH", "TERMINAL_STATE", "RETRY_ELIGIBILITY", "FAVORABLE_RETRY_DECISION", "RETRY_TOKEN_ISSUANCE", "CRASH_CLASSIFICATION", "TERMINAL_CLASSIFICATION", "TERMINAL_PROOF", "AUTHORITY_MUTATION"]
   },
+  "replay_ready_controls": [
+    {
+      "id": "UNRELATED_RESERVATION_AND_LINEAGE_STATE",
+      "used_reservation_keys": ["a3f2f570a3ed323f2553643b159a393ec65bfa1a5dfd8b605e313f2a12e28b6f"],
+      "used_lineage_tokens": ["8f8d287b5233b2b9771fd5317b2d12548e78f24d9b2378c416710c09cfa230f8"],
+      "expected": "PRE_EXECUTION_RECORD_READY_FOR_SECTION_7_4_CONSUMPTION"
+    }
+  ],
   "requirements": [
     {"id": "S761-R01", "requirement": "exact four-source byte admission", "oracle": "S761_SOURCE_PIN_ORACLE", "test": "test_source_queue_and_section_7_4_interface_are_exact"},
     {"id": "S761-R02", "requirement": "unique immutable human queue projection", "oracle": "S761_QUEUE_PROJECTION_ORACLE", "test": "test_source_queue_and_section_7_4_interface_are_exact"},
@@ -173,7 +181,8 @@
     {"id": "S761-R13", "requirement": "expected allocation only not actual boot truth", "oracle": "S761_EXPECTED_NOT_ACTUAL_RUNTIME_ORACLE", "test": "test_closed_schemas_hash_dag_and_public_projection"},
     {"id": "S761-R14", "requirement": "recursive privacy and authority ceiling", "oracle": "S761_PRIVACY_AUTHORITY_ORACLE", "test": "test_future_sut_declared_attack"},
     {"id": "S761-R15", "requirement": "twelve hermetic environment cells", "oracle": "S761_ENVIRONMENT_LITERAL_ORACLE", "test": "test_future_sut_environment_cell"},
-    {"id": "S761-R16", "requirement": "no numerical or statistical semantic change", "oracle": "S761_NONINTERFERENCE_ORACLE", "test": "test_scope_allowlist_and_noninterference"}
+    {"id": "S761-R16", "requirement": "no numerical or statistical semantic change", "oracle": "S761_NONINTERFERENCE_ORACLE", "test": "test_scope_allowlist_and_noninterference"},
+    {"id": "S761-R17", "requirement": "unrelated used reservation and lineage identities remain READY", "oracle": "S761_CANDIDATE_SPECIFIC_SINGLE_USE_ORACLE", "test": "test_future_sut_unrelated_replay_state_ready"}
   ],
   "attack_oracle_id": "S761_INDEPENDENT_LITERAL_ATTACK_ORACLE_V1",
   "attack_pytest_node_template": "tests/test_gcp_section_7_6_1_preexecution_ledger_readiness.py::test_future_sut_declared_attack[{case_id}]",
