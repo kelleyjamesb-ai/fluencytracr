@@ -184,7 +184,11 @@ def _queue_matches(root: Path) -> bool:
         if len(matches) != 1:
             return False
         row = matches[0]
-        if type(row) is not dict or set(row) != QUEUE_ROW_FIELDS:
+        if (
+            type(row) is not dict
+            or set(row) != QUEUE_ROW_FIELDS
+            or type(row["last_note"]) is not str
+        ):
             return False
         projection = {field: row[field] for field in QUEUE_FIELDS}
         return (

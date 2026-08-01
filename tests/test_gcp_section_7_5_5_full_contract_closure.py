@@ -67,6 +67,21 @@ def test_private_queue_field_holds(tmp_path: Path) -> None:
     assert verifier.evaluate_candidate(root, verifier.AUTHORITATIVE_CONTRACT) == "HOLD"
 
 
+def test_private_or_wrong_type_queue_note_holds(tmp_path: Path) -> None:
+    root = _isolated_root(tmp_path)
+    queue_path = root / verifier.QUEUE_PATH
+    queue = json.loads(queue_path.read_text())
+    row = next(item for item in queue["items"] if item["id"] == verifier.QUEUE_ITEM_ID)
+    for forbidden in (
+        {"user_id": "forbidden", "credential": "secret", "raw_prompt": "private"},
+        False,
+        [{"user_id": "forbidden"}],
+    ):
+        row["last_note"] = forbidden
+        queue_path.write_text(json.dumps(queue), encoding="utf-8")
+        assert verifier.evaluate_candidate(root, verifier.AUTHORITATIVE_CONTRACT) == "HOLD"
+
+
 def test_exported_contract_mutation_cannot_mutate_verifier_authority(
     tmp_path: Path,
 ) -> None:

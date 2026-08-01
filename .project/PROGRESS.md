@@ -2,6 +2,12 @@
 
 ## Current Session
 
+- Replacement review of `98a349ed` confirmed the two PR P1 findings fixed,
+  then reproduced one remaining nested privacy false-clear inside the allowed
+  `last_note` queue key. The bounded repair now requires `last_note` to be an
+  exact string and adds object, Boolean, and list regressions carrying private
+  fields. No other field, behavior, record, or authority changed; replacement
+  exact-tree review remains pending.
 - PR #483 review exposed two additional executable P1 false-clears within the
   existing verifier boundary. First, an in-process caller could mutate the
   exported contract object and thereby mutate the comparison authority.
