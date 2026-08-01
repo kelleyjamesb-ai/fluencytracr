@@ -300,6 +300,48 @@ def test_transaction_commit_and_readback_reentry_have_one_ready(
         assert transaction.reentrant_result == "HOLD", stage
 
 
+def test_transaction_callbacks_cannot_clear_consumed_state(tmp_path: Path) -> None:
+    for stage in ("commit", "readback", "expose"):
+        root = _isolated_root(tmp_path / stage)
+        candidate = _candidate(root)
+        state: dict = {}
+
+        class ClearingTransaction:
+            def clear_state(self) -> None:
+                state["used_reservation_keys"] = set()
+                state["used_lineage_tokens"] = set()
+
+            def commit(self, _write_set: dict) -> str:
+                if stage == "commit":
+                    self.clear_state()
+                return "UNKNOWN_AFTER_WRITE"
+
+            def readback(self, _reservation_key: str) -> dict:
+                if stage == "readback":
+                    self.clear_state()
+                return copy.deepcopy(candidate["records"])
+
+            def expose(self, _opaque_record: dict) -> None:
+                if stage == "expose":
+                    self.clear_state()
+
+        transaction = ClearingTransaction()
+        first = verifier.evaluate_candidate(
+            root,
+            candidate,
+            "CLEAN_CI",
+            state,
+            None,
+            _context(),
+            transaction=transaction,
+        )
+        second = verifier.evaluate_candidate(
+            root, candidate, "CLEAN_CI", state, None, _context()
+        )
+        assert first == verifier.READY, stage
+        assert second == "HOLD", stage
+
+
 def test_command_line_verifier_is_silent() -> None:
     completed = subprocess.run(
         ["/usr/bin/python3", str(ROOT / "scripts/verify_gcp_section_7_6_1_preexecution_ledger.py")],

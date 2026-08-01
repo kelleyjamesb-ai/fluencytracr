@@ -19,9 +19,9 @@
   synthetic vectors
   `0893c275863c87acbfda903bb4a7ecf91c3637b2a522bd19e50a854f43d994bf`,
   silent offline verifier
-  `07c5a62e6f5a25961dcd50ffa8faa5bc7f47d707ba89e232eb4a51ce374e43f5`,
+  `68b78f1a6a3f27c8cbec930d4734614b3b772737aeaabc2a1cbd46c610854f3b`,
   and focused contract test
-  `201ba4cc098241284e32f6f89852c8a53c9153985215a1a450194114c61c216e`.
+  `a7e8136108543452e159ecf806acffe90f6ed4f586cd5113bb85904bd6d8ebbb`.
   The verifier admits only exact initial or opaque-retry synthetic candidates,
   exact predecessor/queue/trusted-context roots, candidate-specific unused
   reservation and lineage identities, and exact commit readback. It fails
@@ -52,9 +52,14 @@
   fail-first regressions cover write-set mutation plus commit/readback reentry.
   Transaction callbacks now receive deep copies, readback compares against
   pre-callback canonical bytes, a private in-flight guard rejects callback
-  reentry, and exact-readback identities remain consumed through exposure.
-  Replacement exact implementation commit and CODE/BUG/ADVERSARIAL review
-  remain pending.
+  reentry, and exact-readback identities remain consumed through exposure. The
+  next exact review proved callbacks could rebind the caller state dictionary
+  away from the consumed set objects. A fail-first regression now covers
+  commit, readback, and exposure rebinding. The verifier snapshots the prior
+  replay sets and atomically restores fresh authoritative bindings in `finally`;
+  candidate identities are added only after exact readback and remain consumed
+  even if exposure fails. Replacement exact implementation commit and
+  CODE/BUG/ADVERSARIAL review remain pending.
 - Section 7.6.1 is the sole active queue item on
   `codex/section-7-6-1-preexecution-ledger`, based on merged current main
   `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5

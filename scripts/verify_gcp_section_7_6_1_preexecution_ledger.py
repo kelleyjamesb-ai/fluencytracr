@@ -352,6 +352,9 @@ def evaluate_candidate(
                 return "HOLD"
             if transaction is not None:
                 expected_records = _canonical_bytes(candidate_snapshot["records"])
+                prior_reservations = set(used_reservations)
+                prior_tokens = set(used_tokens)
+                readback_confirmed = False
                 _IN_FLIGHT.add(flight)
                 try:
                     disposition = transaction.commit(
@@ -362,16 +365,19 @@ def evaluate_candidate(
                     readback = transaction.readback(reservation_key)
                     if _canonical_bytes(readback) != expected_records:
                         return "HOLD"
-                    used_reservations.add(reservation_key)
-                    used_tokens.add(lineage_token)
+                    readback_confirmed = True
                     transaction.expose(
                         copy.deepcopy(
                             candidate_snapshot["records"]["pre_execution_record"]
                         )
                     )
-                    used_reservations.add(reservation_key)
-                    used_tokens.add(lineage_token)
                 finally:
+                    state["used_reservation_keys"] = prior_reservations | (
+                        {reservation_key} if readback_confirmed else set()
+                    )
+                    state["used_lineage_tokens"] = prior_tokens | (
+                        {lineage_token} if readback_confirmed else set()
+                    )
                     _IN_FLIGHT.discard(flight)
             else:
                 used_reservations.add(reservation_key)
