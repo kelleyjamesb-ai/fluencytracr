@@ -2,6 +2,37 @@
 
 ## Current Session
 
+- Section 7.6.1 preimplementation evidence is ready for an exact-packet
+  readiness panel. The packet SHA-256 is
+  `7eb6b7f3c89468f7cbe5129bf4cdb7a66eeeaa862ecbe18d9c5427879d833430`,
+  the compact fixture SHA-256 is
+  `915166ff395fa9034ac0c0507b0b68b705edf8f836be128822aeae576a72331b`,
+  the readiness-test SHA-256 is
+  `2f8f6222ab66ee225ec727e43966e6bf6d5918469cc2c285642c9f66e55bd4ce`,
+  and the protocol SHA-256 remains
+  `f1e66d7323d5ca383de1bfd22d343928c2332cfe84795d01da60a705fd13a77d`.
+  Four structural tests pass; all 76 implementation-facing attack and
+  environment cases construct their mutations, state, barriers, and literal
+  expectations before stopping only at deliberate `MISSING_SUT`. Strict
+  OpenSpec, V1 governance, queue/harness, JSON, compilation, and whitespace
+  checks pass. No docs contract, verifier, implementation test, runtime SUT,
+  GCP action, credential, persistence implementation, execution, deployment,
+  migration, qualification, terminal/retry decision, or authority was added.
+  The evidence commit/tree and CODE/BUG/ADVERSARIAL verdicts remain pending.
+- Section 7.6.1 is the sole active queue item on
+  `codex/section-7-6-1-preexecution-ledger`, based on merged current main
+  `66fc4d89f4e2084ec4a4fc07d392d04692d18239`. The merged Section 7.5.5
+  projection records exactly `SECTION_7_5_CONTRACT_CLOSED`, satisfying the
+  human-authored activation dependency. This slice is limited to the
+  pre-execution plan/allocation manifests, parent attempt envelope, signed
+  admission/retry lineage, monotonic ordinals, authenticated tenant/runtime
+  binding, single-use reservation, anti-replay write-ahead markers,
+  expected-request lineage, and Section 7.4 consumption contract. The
+  readiness-first packet and executable adversarial evidence precede any
+  docs-contract/offline-verifier implementation. Section 7.6.2 terminal
+  semantics, runtime SUT, model execution, live GCP, credentials, deployment,
+  migration, qualification, and evidence production remain excluded;
+  authority effect is `NONE`.
 - Replacement review of `98a349ed` confirmed the two PR P1 findings fixed,
   then reproduced one remaining nested privacy false-clear inside the allowed
   `last_note` queue key. The bounded repair now requires `last_note` to be an

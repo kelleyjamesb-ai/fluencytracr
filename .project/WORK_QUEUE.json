@@ -457,9 +457,9 @@
       "id": "gcp-canonical-runtime-section-7-6-preexecution-ledger",
       "title": "Section 7.6.1 — pre-execution reservation and single-use attempt contract",
       "bound": "Docs/OpenSpec/offline verifiers/tests only: define plan and allocation manifests, parent attempt envelope, signed admission/retry lineage, monotonic attempt and retry ordinals, authenticated tenant/runtime binding, single-use reservation, anti-replay write-ahead markers, expected-request lineage, and pre-execution acceptance consumed by Section 7.4; caller-selected identity, ordinal, status, replay, duplicate reservation, or missing write-ahead evidence must HOLD; no terminal ledger, favorable-retry decision, SUT implementation, model execution, live GCP, deployment, or qualification",
-      "status": "pending",
+      "status": "in_progress",
       "risk": "high",
-      "last_note": "Human-authored bounded Section 7.6 item. Activate only after the full Section 7.5 contract gate is merged with result exactly SECTION_7_5_CONTRACT_CLOSED; any HOLD blocks activation."
+      "last_note": "Activated 2026-08-01 from fresh origin/main 66fc4d89 after verifying the merged Section 7.5.5 result SECTION_7_5_CONTRACT_CLOSED. Scope remains docs/OpenSpec/offline readiness evidence, verifier, and tests only; no terminal ledger, runtime SUT, execution, live GCP, credentials, deployment, migration, qualification, or model evidence."
     },
     {
       "id": "gcp-canonical-runtime-section-7-6-terminal-ledger",
