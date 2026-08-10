@@ -259,6 +259,9 @@
     "@typescript-eslint/parser": "7.18.0",
     "eslint-config-prettier": "9.1.0",
     "prettier": "3.3.3",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "vite": "8.1.5"
   }
 }

@@ -23,6 +23,8 @@ import type { SelectedOutcomeMetricSelection } from "../lib/aiValueMetricSelecti
 import type { RequestBoundLiveReport } from "../lib/aiValueLiveReport";
 import type { AiFluencyImportFixture } from "../lib/aiFluencyImportFixture";
 import { checksumAiFluencyPayload } from "../lib/aiFluencyImportIntegrity";
+import { parseDocumentText } from "../lib/policyDocumentParser";
+import { deriveAggregateHypothesisFromBlueprint } from "../lib/blueprintHypothesisParser";
 import {
   CORE_BEHAVIORAL_MIN_COHORT,
   CUSTOMER_VISIBLE_SERIES_MIN_COHORT,
@@ -115,12 +117,14 @@ type ValueSetupDraft = {
   hypothesis: string;
   workflowId: string;
   metricIds: string[];
+  source: "manual" | "blueprint";
 };
 
 const emptyValueSetupDraft: ValueSetupDraft = {
   hypothesis: "",
   workflowId: "",
-  metricIds: []
+  metricIds: [],
+  source: "manual"
 };
 
 const VALUE_SETUP_DRAFT_KEY = "aiValue.guidedSetupDraft.v1";
@@ -145,7 +149,8 @@ const readValueSetupDraft = (): ValueSetupDraft => {
       workflowId: typeof parsed.workflowId === "string" ? parsed.workflowId : "",
       metricIds: Array.isArray(parsed.metricIds)
         ? parsed.metricIds.filter((id): id is string => typeof id === "string").slice(0, 10)
-        : []
+        : [],
+      source: parsed.source === "blueprint" ? "blueprint" : "manual"
     };
   } catch {
     return emptyValueSetupDraft;
@@ -1443,11 +1448,23 @@ const reportSidebarGroups: Array<{
   }
 ];
 
-const reportBoundaryLabels = [
-  "Claim boundaries",
-  "Reviewer approvals",
-  "Not audit-ready"
-];
+const reportBoundaryLinks = [
+  {
+    label: "Claim boundaries",
+    path: "/ai-value-workspace/case",
+    title: "Open the Evidence Checkpoint and claim-language boundaries"
+  },
+  {
+    label: "Reviewer approvals",
+    path: "/ai-value-workspace/decisions",
+    title: "Open the held decision and reviewer approval requirements"
+  },
+  {
+    label: "Audit-ready notes",
+    path: "/ai-value-workspace/sources",
+    title: "Open source status, caveats, and audit-ready evidence notes"
+  }
+] as const;
 
 const WorkspaceReportSidebar = ({ activePageSlug }: { activePageSlug: WorkspacePageSlug }) => (
   <aside className="ai-value-workspace-report-sidebar" aria-label="AI value report navigation">
@@ -1475,8 +1492,10 @@ const WorkspaceReportSidebar = ({ activePageSlug }: { activePageSlug: WorkspaceP
     <section className="ai-value-workspace-report-boundaries" aria-label="Governance boundaries">
       <p>Governance</p>
       <ul>
-        {reportBoundaryLabels.map((item) => (
-          <li key={item}>{item}</li>
+        {reportBoundaryLinks.map((item) => (
+          <li key={item.label}>
+            <Link to={item.path} title={item.title}>{item.label}</Link>
+          </li>
         ))}
       </ul>
     </section>
@@ -2124,6 +2143,11 @@ const ValueSetupGate = ({
   </section>
 );
 
+const MAX_BLUEPRINT_FILE_SIZE_MB = 15;
+const MAX_BLUEPRINT_FILE_SIZE_BYTES = MAX_BLUEPRINT_FILE_SIZE_MB * 1024 * 1024;
+
+type BlueprintParseState = "idle" | "parsing" | "ready" | "error";
+
 const ValueCaseDefinitionPage = ({
   draft,
   onChange
@@ -2133,9 +2157,77 @@ const ValueCaseDefinitionPage = ({
 }) => {
   const navigate = useNavigate();
   const [hypothesis, setHypothesis] = useState(draft.hypothesis);
+  const [blueprintParseState, setBlueprintParseState] = useState<BlueprintParseState>(
+    draft.source === "blueprint" ? "ready" : "idle"
+  );
+  const [blueprintParseMessage, setBlueprintParseMessage] = useState(
+    draft.source === "blueprint"
+      ? "Imported hypothesis restored. Confirm it before continuing."
+      : ""
+  );
+  const [blueprintNeedsConfirmation, setBlueprintNeedsConfirmation] = useState(
+    draft.source === "blueprint"
+  );
+  const [isBlueprintDraft, setIsBlueprintDraft] = useState(draft.source === "blueprint");
+  const [blueprintHasMaterialEdits, setBlueprintHasMaterialEdits] = useState(false);
+  const parseAttemptRef = useRef(0);
+  const importedHypothesisRef = useRef(
+    draft.source === "blueprint" ? draft.hypothesis.trim() : ""
+  );
   const result = useMemo(() => matchHypothesisToGleanWorkflows(hypothesis), [hypothesis]);
   const containsDirectIdentifier = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b|\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/.test(hypothesis);
-  const canContinue = result.candidates.length > 0 && !containsDirectIdentifier;
+  const hasValidHypothesis = result.candidates.length > 0 && !containsDirectIdentifier;
+  const canContinue = hasValidHypothesis && !blueprintNeedsConfirmation;
+
+  useEffect(() => () => {
+    parseAttemptRef.current += 1;
+  }, []);
+
+  const parseBlueprint = async (file: File) => {
+    const parseAttempt = parseAttemptRef.current + 1;
+    parseAttemptRef.current = parseAttempt;
+    setHypothesis("");
+    onChange(emptyValueSetupDraft);
+    setIsBlueprintDraft(true);
+    setBlueprintHasMaterialEdits(false);
+    setBlueprintNeedsConfirmation(false);
+    setBlueprintParseState("parsing");
+    setBlueprintParseMessage("Reading the Blueprint document locally…");
+
+    if (file.size > MAX_BLUEPRINT_FILE_SIZE_BYTES) {
+      setBlueprintParseState("error");
+      setBlueprintParseMessage(`The Blueprint is larger than ${MAX_BLUEPRINT_FILE_SIZE_MB}MB. Choose a smaller PDF or DOCX.`);
+      return;
+    }
+
+    try {
+      const { text } = await parseDocumentText(file);
+      if (parseAttemptRef.current !== parseAttempt) return;
+      const canonicalHypothesis = deriveAggregateHypothesisFromBlueprint(text);
+      if (!canonicalHypothesis) {
+        setBlueprintParseState("error");
+        setBlueprintParseMessage(
+          "We could not find one supported function, business object, and expected change or metric. Enter the hypothesis manually."
+        );
+        return;
+      }
+      importedHypothesisRef.current = canonicalHypothesis.trim();
+      setHypothesis(canonicalHypothesis);
+      setIsBlueprintDraft(true);
+      setBlueprintHasMaterialEdits(false);
+      setBlueprintNeedsConfirmation(true);
+      setBlueprintParseState("ready");
+      setBlueprintParseMessage(
+        "Blueprint parsed into an aggregate hypothesis. Review the summary before continuing."
+      );
+    } catch {
+      if (parseAttemptRef.current !== parseAttempt) return;
+      setBlueprintParseState("error");
+      setBlueprintParseMessage(
+        "The Blueprint could not be parsed as a supported PDF or DOCX. Enter the hypothesis manually."
+      );
+    }
+  };
 
   return (
     <section className="ai-value-case-definition" aria-label="Value case definition">
@@ -2157,19 +2249,127 @@ const ValueCaseDefinitionPage = ({
         onSubmit={(event) => {
           event.preventDefault();
           if (!canContinue) return;
-          onChange({ hypothesis: canonicalizeSetupHypothesis(hypothesis), workflowId: "", metricIds: [] });
+          onChange({
+            hypothesis: canonicalizeSetupHypothesis(hypothesis),
+            workflowId: "",
+            metricIds: [],
+            source: isBlueprintDraft ? "blueprint" : "manual"
+          });
           navigate("/ai-value-workspace/workflow");
         }}
       >
-        <label className="ai-value-case-hypothesis-field">
-          <span>Customer hypothesis</span>
-          <textarea
-            value={hypothesis}
-            placeholder="Example: Faster verified knowledge retrieval for IT incidents will reduce mean time to resolution."
-            rows={4}
-            onChange={(event) => setHypothesis(event.target.value)}
-          />
-        </label>
+        <div className="ai-value-case-hypothesis-pathways">
+          <label className="ai-value-case-hypothesis-field">
+            <span>Customer hypothesis</span>
+            <textarea
+              value={hypothesis}
+              placeholder="Example: Faster verified knowledge retrieval for IT incidents will reduce mean time to resolution."
+              rows={4}
+              onChange={(event) => {
+                parseAttemptRef.current += 1;
+                const nextHypothesis = event.target.value;
+                const remainsImported =
+                  Boolean(importedHypothesisRef.current) &&
+                  nextHypothesis.trim().normalize("NFKC") ===
+                    importedHypothesisRef.current.normalize("NFKC");
+                setHypothesis(nextHypothesis);
+                if (remainsImported) {
+                  setIsBlueprintDraft(true);
+                  setBlueprintHasMaterialEdits(false);
+                  setBlueprintNeedsConfirmation(true);
+                  setBlueprintParseState("ready");
+                  setBlueprintParseMessage(
+                    "Imported draft edited. Confirm the revised hypothesis before continuing."
+                  );
+                } else if (importedHypothesisRef.current) {
+                  setIsBlueprintDraft(true);
+                  setBlueprintHasMaterialEdits(true);
+                  setBlueprintNeedsConfirmation(true);
+                  setBlueprintParseState("ready");
+                  setBlueprintParseMessage(
+                    "Imported draft materially changed. Switch to manual entry before continuing."
+                  );
+                } else {
+                  setIsBlueprintDraft(false);
+                  setBlueprintHasMaterialEdits(false);
+                  setBlueprintNeedsConfirmation(false);
+                  setBlueprintParseState("idle");
+                  setBlueprintParseMessage("");
+                }
+              }}
+            />
+          </label>
+
+          <div className="ai-value-case-pathway-divider" aria-hidden="true"><span>or</span></div>
+
+          <section className="ai-value-blueprint-import" aria-label="Blueprint document import">
+            <div>
+              <strong>Import a Blueprint document</strong>
+              <p>
+                Choose a PDF or DOCX from existing Sales Blueprinting work. This wireframe
+                requires Blueprint status: Approved or Current, then reads exact Customer hypothesis,
+                Value hypothesis, Future state, Target outcome, or Function sections with supported
+                IT or Customer Success workflow language.
+              </p>
+            </div>
+            <label className="ai-value-blueprint-file-action">
+              <span>{blueprintParseState === "parsing" ? "Parsing Blueprint…" : "Choose Blueprint file"}</span>
+              <input
+                type="file"
+                accept=".pdf,.docx"
+                aria-describedby="blueprint-import-privacy"
+                disabled={blueprintParseState === "parsing"}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.currentTarget.value = "";
+                  if (file) void parseBlueprint(file);
+                }}
+              />
+            </label>
+            <p id="blueprint-import-privacy" className="ai-value-blueprint-import-privacy">
+              Parsed in this browser. Raw document text and the filename are not saved; only the aggregate summary is retained after you continue.
+            </p>
+            {blueprintParseMessage && (
+              <p
+                className={`ai-value-blueprint-import-status ${blueprintParseState}`}
+                role={blueprintParseState === "error" ? "alert" : "status"}
+                aria-live="polite"
+              >
+                {blueprintParseMessage}
+              </p>
+            )}
+            {blueprintParseState === "ready" && blueprintNeedsConfirmation && !blueprintHasMaterialEdits && (
+              <button
+                className="ai-value-blueprint-confirm-action"
+                type="button"
+                onClick={() => {
+                  importedHypothesisRef.current = hypothesis.trim();
+                  setBlueprintHasMaterialEdits(false);
+                  setBlueprintNeedsConfirmation(false);
+                  setBlueprintParseMessage("Parsed hypothesis confirmed for workflow matching.");
+                }}
+              >
+                Confirm parsed hypothesis
+              </button>
+            )}
+            {blueprintParseState === "ready" && blueprintHasMaterialEdits && (
+              <button
+                className="ai-value-blueprint-manual-action"
+                type="button"
+                onClick={() => {
+                  importedHypothesisRef.current = "";
+                  setIsBlueprintDraft(false);
+                  setBlueprintHasMaterialEdits(false);
+                  setBlueprintNeedsConfirmation(false);
+                  setBlueprintParseState("idle");
+                  setBlueprintParseMessage("");
+                }}
+              >
+                Use as manual hypothesis
+              </button>
+            )}
+          </section>
+        </div>
 
         {containsDirectIdentifier ? (
           <section className="ai-value-case-no-match" role="alert">
@@ -2177,7 +2377,7 @@ const ValueCaseDefinitionPage = ({
             <h3>Keep the hypothesis aggregate</h3>
             <p>Use a function, workflow, and customer-owned outcome without names or contact information.</p>
           </section>
-        ) : canContinue ? (
+        ) : hasValidHypothesis ? (
           <section className="ai-value-case-elements" aria-label="Hypothesis elements">
             <div><span>Function</span><strong>{result.elements.function}</strong></div>
             <div><span>Business object</span><strong>{result.elements.businessObject}</strong></div>
