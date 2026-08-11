@@ -216,6 +216,56 @@ def test_claim_and_disposition_are_append_only_and_hash_bound(runtime_manifest):
         )
 
 
+def test_claim_requires_the_exact_frozen_two_hour_deadline(runtime_manifest):
+    plan = vbd_joint_replicated_validation_plan()
+    slot = plan.preflight_slots[0]
+
+    for deadline in (
+        "2026-08-11T01:59:59+00:00",
+        "2026-08-11T02:00:01+00:00",
+        "2026-08-12T00:00:00+00:00",
+    ):
+        with pytest.raises(VBDJointReplicatedRunnerError, match="two-hour"):
+            make_claim_for_slot(
+                slot,
+                plan_hash=plan.plan_hash,
+                runtime_manifest=runtime_manifest,
+                started_at=STARTED_AT,
+                deadline_at=deadline,
+            )
+
+    valid = make_claim_for_slot(
+        slot,
+        plan_hash=plan.plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=STARTED_AT,
+        deadline_at=DEADLINE_AT,
+    )
+    forged_body = {
+        **valid.body_without_hash(),
+        "deadline_at": "2026-08-12T00:00:00+00:00",
+    }
+    forged = replace(
+        valid,
+        deadline_at=forged_body["deadline_at"],
+        claim_hash=sha256_json(forged_body),
+    )
+    with pytest.raises(VBDJointReplicatedRunnerError, match="two-hour"):
+        VBDJointReplicatedAttemptLedger().append_claim(
+            forged,
+            slot,
+            plan.plan_hash,
+            runtime_manifest=runtime_manifest,
+        )
+    with pytest.raises(VBDJointReplicatedRunnerError, match="two-hour"):
+        combine_namespace(
+            VBDJointReplicatedAttemptLedger(claims=(forged,)),
+            plan=plan,
+            namespace=slot.namespace,
+            runtime_manifest=runtime_manifest,
+        )
+
+
 def _append_complete(ledger, slot, plan, runtime_manifest):
     claim = make_claim_for_slot(
         slot,

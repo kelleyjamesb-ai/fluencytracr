@@ -23,6 +23,23 @@ describe("deriveAggregateHypothesisFromBlueprint", () => {
     expect(result).toContain("metric intent: qbr preparation time");
   });
 
+  it("allows draft as an ordinary workflow verb in approved hypothesis prose", () => {
+    const result = deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`
+      Customer hypothesis: Customer Success will draft quarterly business reviews faster and reduce QBR preparation time.
+    `));
+
+    expect(result).toContain("Customer Success:");
+    expect(result).toContain("metric intent: qbr preparation time");
+  });
+
+  it("rejects draft provenance appended to supported hypothesis prose", () => {
+    expect(
+      deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`
+        Customer hypothesis: Customer Success will prepare QBRs faster and reduce QBR preparation time. Draft version.
+      `))
+    ).toBe("");
+  });
+
   it("rejects status metadata appended to the hypothesis line", () => {
     expect(
       deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`

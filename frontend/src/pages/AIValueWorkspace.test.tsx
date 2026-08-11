@@ -606,6 +606,31 @@ describe("AIValueWorkspace executive spine", () => {
     expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toMatch(/Jane Smith/i);
   });
 
+  it("holds free text that includes an employee identifier before canonicalization", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: {
+        value: "Customer Success will prepare QBRs faster for employee E12345."
+      }
+    });
+    expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toMatch(/E12345/i);
+  });
+
+  it("allows registered title-cased business phrases", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: {
+        value: "Customer Success will prepare Quarterly Business Review faster and reduce QBR preparation time."
+      }
+    });
+    expect(within(valueCase).queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeEnabled();
+  });
+
   it("canonicalizes identifier-bearing restored drafts before downstream use", async () => {
     sessionStorage.setItem(guidedSetupStorageKey(), JSON.stringify({
       ...guidedSetupFixture,

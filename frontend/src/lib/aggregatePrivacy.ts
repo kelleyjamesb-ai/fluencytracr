@@ -5,7 +5,14 @@ const AGGREGATE_TERMS = [
   "it support",
   "employee support",
   "account team",
-  "customer outcomes"
+  "customer outcomes",
+  "quarterly business review",
+  "quarterly business reviews",
+  "service level agreement",
+  "service level agreements",
+  "account health score",
+  "account health scores",
+  "incident resolution time"
 ] as const;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -22,6 +29,8 @@ const lowercaseNameContextPattern =
   /\b(?:by|for|from|owner|manager|lead|contact|prepared)\s*[:\-]?\s+[a-z]{2,}\s+[a-z]{2,}\b/i;
 const lowercaseNameBeforeActionPattern =
   /(?:^|[.!?;,:]\s*)[a-z]{2,}\s+[a-z]{2,}\s+(?:in|from|at|will|has|is)\b/i;
+const organizationIdentifierPattern =
+  /\b(?:employee|worker|staff|user|account)\s+(?:(?:id|identifier|number|no)\s*[:#-]?\s*|#\s*:?[ \t]*)?(?=[a-z0-9_-]*\d)[a-z0-9][a-z0-9_-]{3,}\b/i;
 
 /**
  * Conservative intake gate for person-level details in aggregate hypotheses.
@@ -37,3 +46,7 @@ export const containsPotentialPersonName = (value: string) => {
     lowercaseNameBeforeActionPattern.test(maskedAggregateTerms)
   );
 };
+
+/** Hold organization-scoped identifiers that can still identify a person. */
+export const containsPotentialOrganizationIdentifier = (value: string) =>
+  organizationIdentifierPattern.test(value.normalize("NFKC"));

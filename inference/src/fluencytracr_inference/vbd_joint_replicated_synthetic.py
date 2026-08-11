@@ -125,6 +125,12 @@ def _logistic(value: float) -> float:
     return 1.0 / (1.0 + math.exp(-value))
 
 
+def _draw_member_window_uniforms(generator: np.random.Generator) -> np.ndarray:
+    """Freeze one draw per canonical member and window, independent of state."""
+
+    return generator.random((VBD_JOINT_WINDOW_COUNT, VBD_JOINT_ELIGIBLE_FAMILIES))
+
+
 def _hash_records(records: Iterable[object]) -> str:
     return sha256_json([record.to_hash_body() for record in records])
 
@@ -394,13 +400,23 @@ def _build_case_records(
                 )
         omitted_by_panel.append(omitted_common_cause)
 
-        embedded = {
+        members = tuple(
             f"synthetic-private-{panel}-{index}"
-            for index, draw in enumerate(
-                rng["initial_embedding"].random(VBD_JOINT_ELIGIBLE_FAMILIES)
+            for index in range(VBD_JOINT_ELIGIBLE_FAMILIES)
+        )
+        embedded = {
+            member
+            for member, draw in zip(
+                members,
+                rng["initial_embedding"].random(VBD_JOINT_ELIGIBLE_FAMILIES),
             )
             if draw < 0.18
         }
+        retention_draws = _draw_member_window_uniforms(rng["retention"])
+        new_embedding_draws = _draw_member_window_uniforms(rng["new_embedding"])
+        active_nonembedded_draws = _draw_member_window_uniforms(
+            rng["active_nonembedded"]
+        )
         previous_embedded = set(embedded)
         expected_embedded: list[float] = []
         expected_active: list[float] = []
@@ -428,36 +444,21 @@ def _build_case_records(
                     + (0.30 if t >= VBD_JOINT_PRE_WINDOWS else 0.0)
                     + 0.50 * confounder
                 )
-                ordered_previous = sorted(previous_embedded)
                 retained = {
                     member
-                    for member, draw in zip(
-                        ordered_previous,
-                        rng["retention"].random(len(ordered_previous)),
-                    )
-                    if draw < retention_probability
+                    for member_index, member in enumerate(members)
+                    if member in previous_embedded
+                    and retention_draws[t, member_index] < retention_probability
                 }
                 lapsed = previous_embedded - retained
-                previously_nonembedded = sorted(
-                    set(
-                        f"synthetic-private-{panel}-{index}"
-                        for index in range(VBD_JOINT_ELIGIBLE_FAMILIES)
-                    )
-                    - previous_embedded
-                )
                 newly = {
                     member
-                    for member, draw in zip(
-                        previously_nonembedded,
-                        rng["new_embedding"].random(len(previously_nonembedded)),
-                    )
-                    if draw < embedding_probability
+                    for member_index, member in enumerate(members)
+                    if member not in previous_embedded
+                    and new_embedding_draws[t, member_index] < embedding_probability
                 }
                 embedded = retained | newly
-            nonembedded = set(
-                f"synthetic-private-{panel}-{index}"
-                for index in range(VBD_JOINT_ELIGIBLE_FAMILIES)
-            ) - embedded
+            nonembedded = set(members) - embedded
             lagged_capability = float(capability_latent[max(0, t - 1)])
             active_probability = _logistic(
                 -0.55
@@ -465,14 +466,11 @@ def _build_case_records(
                 + 0.035 * t
                 + 0.50 * float(omitted_common_cause[t])
             )
-            ordered_nonembedded = sorted(nonembedded)
             active = {
                 member
-                for member, draw in zip(
-                    ordered_nonembedded,
-                    rng["active_nonembedded"].random(len(ordered_nonembedded)),
-                )
-                if draw < active_probability
+                for member_index, member in enumerate(members)
+                if member in nonembedded
+                and active_nonembedded_draws[t, member_index] < active_probability
             }
             expected_embedded.append(
                 len(embedded) / VBD_JOINT_ELIGIBLE_FAMILIES

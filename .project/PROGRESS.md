@@ -5891,3 +5891,38 @@
   governance gates, queue JSON validation, and `git diff --check` passed. No
   customer data, deployment, merge, thread resolution, or V4 execution
   occurred.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 exact-head re-review repair)
+
+- Addressed the five findings returned by the exact-head Codex re-review plus
+  the concrete adversarial variants discovered during repair. VBD claims now
+  require the frozen 7,200-second deadline at creation, ledger append, and
+  namespace combination; artifact emission and validation inherit the same
+  recomputation boundary, so a resealed long-deadline claim cannot enter a
+  valid summary.
+- Replaced state-dependent retention, new-embedding, and active-nonembedded
+  stream consumption with fixed component-keyed `[window, canonical member]`
+  matrices for every panel. Same-replicate cells now receive identical raw
+  member-state draws even when earlier cell states diverge; the omitted common
+  cause remains isolated in its own keyed stream.
+- Expanded aggregate intake privacy checks to hold labeled employee, worker,
+  staff, user, and account identifiers, including `ID`, `identifier`, `number`,
+  `no`, and `#` forms. Registered business phrases such as Quarterly Business
+  Review, Service Level Agreement, Account Health Score, and Incident
+  Resolution Time no longer look like person names.
+- Scoped plain `draft` handling so an approved hypothesis may use it as a
+  workflow verb, while standalone/metadata draft markers and appended markers
+  such as `Draft version` remain fail-closed. Extended the Blueprint Assurance
+  fixture with an employee-identifier HOLD case.
+- Final local evidence: focused frontend `84/84`; complete frontend `282/282`;
+  replicated runner/synthetic `28/28`; exact `vbd-engine` shard `831/831` in
+  `773.29s`; LMSYS Assurance self-test, frontend production build and lint,
+  shard-manifest validation, strict
+  `implement-vbd-human-behavior-outcome-synthetic-proof` OpenSpec validation,
+  V1 governance gates, JSON validation, and `git diff --check` passed.
+  Independent provenance, V4/CRN, and adversarial reviews returned `GO` on the
+  final technical tree.
+- No sampler, V4 preflight/canary/study, customer or real data, external
+  execution, deployment, merge, or production mutation occurred. GitHub
+  thread replies and fresh CI/re-review remain post-push evidence, not local
+  completion proof.

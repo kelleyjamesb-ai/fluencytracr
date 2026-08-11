@@ -36,7 +36,10 @@ import type { AiFluencyImportFixture } from "../lib/aiFluencyImportFixture";
 import { checksumAiFluencyPayload } from "../lib/aiFluencyImportIntegrity";
 import { parseDocumentText } from "../lib/policyDocumentParser";
 import { deriveAggregateHypothesisFromBlueprint } from "../lib/blueprintHypothesisParser";
-import { containsPotentialPersonName } from "../lib/aggregatePrivacy";
+import {
+  containsPotentialOrganizationIdentifier,
+  containsPotentialPersonName
+} from "../lib/aggregatePrivacy";
 import {
   CORE_BEHAVIORAL_MIN_COHORT,
   CUSTOMER_VISIBLE_SERIES_MIN_COHORT,
@@ -2229,7 +2232,9 @@ const ValueCaseDefinitionPage = ({
     draft.source === "blueprint" ? draft.hypothesis.trim() : ""
   );
   const result = useMemo(() => matchHypothesisToGleanWorkflows(hypothesis), [hypothesis]);
-  const containsDirectIdentifier = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b|\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/.test(hypothesis);
+  const containsDirectIdentifier =
+    /\b[^\s@]+@[^\s@]+\.[^\s@]+\b|\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/.test(hypothesis) ||
+    containsPotentialOrganizationIdentifier(hypothesis);
   const containsPersonLevelDetail = containsPotentialPersonName(hypothesis);
   const hasInvalidAggregateDetail = containsDirectIdentifier || containsPersonLevelDetail;
   const hasValidHypothesis = result.candidates.length > 0 && !hasInvalidAggregateDetail;

@@ -157,6 +157,7 @@ assert.deepEqual(
   [
     "ambiguous_blueprint",
     "approved_aggregate_hypothesis",
+    "employee_identifier_in_hypothesis",
     "person_name_in_hypothesis",
     "unapproved_blueprint"
   ]
@@ -170,7 +171,12 @@ assert.deepEqual(
     .filter((entry) => entry.id !== "approved_aggregate_hypothesis")
     .map((entry) => entry.expected_state)
     .sort(),
-  ["HOLD_AMBIGUOUS_SOURCE", "HOLD_PERSON_LEVEL_DETAIL", "HOLD_UNAPPROVED_SOURCE"]
+  [
+    "HOLD_AMBIGUOUS_SOURCE",
+    "HOLD_PERSON_LEVEL_DETAIL",
+    "HOLD_PERSON_LEVEL_DETAIL",
+    "HOLD_UNAPPROVED_SOURCE"
+  ]
 );
 const dogfoodBqCases = cases.filter((entry) => entry.dogfood_bq_manifest);
 assert.deepEqual(dogfoodBqCases.map((entry) => entry.id).sort(), [

@@ -29,6 +29,7 @@ from .vbd_joint_replicated_validation_plan import (
     VBD_JOINT_REPLICATED_ARTIFACT_SCHEMA,
     VBD_JOINT_REPLICATED_FAILURE_CODES,
     VBD_JOINT_REPLICATED_NAMESPACES,
+    VBD_JOINT_REPLICATED_PER_FIT_TIMEOUT_SECONDS,
     VBD_JOINT_REPLICATED_STATES,
     VBDJointReplicatedPlanError,
     VBDJointReplicatedValidationClaim,
@@ -113,6 +114,18 @@ def _timestamp(name: str, value: object) -> datetime:
     if parsed.tzinfo is None:
         raise VBDJointReplicatedRunnerError(f"{name} must include a timezone")
     return parsed
+
+
+def _require_frozen_claim_deadline(
+    claim: VBDJointReplicatedValidationClaim,
+) -> None:
+    deadline_delta = _timestamp("deadline_at", claim.deadline_at) - _timestamp(
+        "started_at", claim.started_at
+    )
+    if deadline_delta.total_seconds() != VBD_JOINT_REPLICATED_PER_FIT_TIMEOUT_SECONDS:
+        raise VBDJointReplicatedRunnerError(
+            "claim deadline must equal the frozen two-hour per-fit timeout"
+        )
 
 
 def _closed(name: str, value: object, allowed: tuple[str, ...]) -> str:
@@ -521,6 +534,7 @@ class VBDJointReplicatedAttemptLedger:
     ) -> "VBDJointReplicatedAttemptLedger":
         _require_observed_runtime_manifest(runtime_manifest)
         validate_claim_for_slot(claim, slot, plan_hash)
+        _require_frozen_claim_deadline(claim)
         _require_claim_runtime_provenance(claim, runtime_manifest)
         if claim.slot_id in {item.slot_id for item in self.claims}:
             raise VBDJointReplicatedRunnerError("claim already exists for slot")
@@ -603,8 +617,6 @@ def make_claim_for_slot(
     if type(slot) is not VBDJointReplicatedValidationSlot:
         raise VBDJointReplicatedRunnerError("slot must use the exact frozen slot type")
     _require_observed_runtime_manifest(runtime_manifest)
-    if _timestamp("deadline_at", deadline_at) <= _timestamp("started_at", started_at):
-        raise VBDJointReplicatedRunnerError("claim deadline must follow start time")
     body = {
         "namespace": slot.namespace,
         "slot_id": slot.slot_id,
@@ -619,10 +631,12 @@ def make_claim_for_slot(
         "started_at": started_at,
         "deadline_at": deadline_at,
     }
-    return VBDJointReplicatedValidationClaim(
+    claim = VBDJointReplicatedValidationClaim(
         **body,
         claim_hash=sha256_json(body),
     )
+    _require_frozen_claim_deadline(claim)
+    return claim
 
 
 def make_checkpoint_for_disposition(
@@ -766,6 +780,7 @@ def combine_namespace(
             failure_codes.add("INTERRUPTED_OR_AMBIGUOUS")
             continue
         validate_claim_for_slot(claim, slot, plan.plan_hash)
+        _require_frozen_claim_deadline(claim)
         _require_claim_runtime_provenance(claim, runtime_manifest)
         if claim.slot_hash != expected_hashes[slot.slot_id]:
             raise VBDJointReplicatedRunnerError("claim slot hash does not match manifest")

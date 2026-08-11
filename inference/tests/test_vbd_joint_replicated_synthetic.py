@@ -1,5 +1,7 @@
 import pytest
 
+import fluencytracr_inference.vbd_joint_replicated_synthetic as replicated_synthetic
+
 from fluencytracr_inference.vbd_joint_replicated_synthetic import (
     VBD_JOINT_REPLICATED_HIGH_ERROR_CAPABILITY_STANDARD_ERROR,
     VBDJointReplicatedSyntheticError,
@@ -94,6 +96,38 @@ def test_component_commitment_is_seed_keyed_not_call_order_keyed():
         cell_id="behavior_pathway_null", replicate_index=0
     )
     assert first.component_commitment == null.component_commitment
+
+
+def test_member_state_streams_draw_a_fixed_member_by_window_matrix(monkeypatch):
+    observed_draws = []
+    original = replicated_synthetic._draw_member_window_uniforms
+
+    def recording_draws(generator):
+        draws = original(generator)
+        observed_draws.append((draws.shape, draws.tobytes()))
+        return draws
+
+    monkeypatch.setattr(
+        replicated_synthetic,
+        "_draw_member_window_uniforms",
+        recording_draws,
+    )
+
+    generate_vbd_joint_replicated_dataset(cell_id="primary", replicate_index=0)
+    primary_draws = tuple(observed_draws)
+    observed_draws.clear()
+    generate_vbd_joint_replicated_dataset(
+        cell_id="behavior_pathway_null", replicate_index=0
+    )
+
+    expected_shape = (
+        replicated_synthetic.VBD_JOINT_WINDOW_COUNT,
+        replicated_synthetic.VBD_JOINT_ELIGIBLE_FAMILIES,
+    )
+    assert tuple(shape for shape, _draws in primary_draws) == (expected_shape,) * (
+        replicated_synthetic.VBD_JOINT_PANEL_COUNT * 3
+    )
+    assert tuple(observed_draws) == primary_draws
 
 
 def test_slot_generation_binds_the_frozen_plan_identity():

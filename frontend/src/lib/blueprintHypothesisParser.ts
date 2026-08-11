@@ -27,7 +27,9 @@ const CONFLICTING_STATUS_METADATA_LABELS = new Set([
 ]);
 const METADATA_VALUE_DELIMITER = /[:=]|\s+[\p{Pd}]\s+/gu;
 const UNSAFE_SOURCE_PROVENANCE =
-  /\b(?:archived|cancelled|declined|deprecated|do not use|draft|expired|for reference only|historical|illustrative example|lapsed|never approved|not approved|obsolete|pending|previous version|rejected|rescinded|revoked|superseded|template|unapproved|void|withdrawn)\b/i;
+  /\b(?:archived|cancelled|declined|deprecated|do not use|expired|for reference only|historical|illustrative example|lapsed|never approved|not approved|obsolete|pending|previous version|rejected|rescinded|revoked|superseded|template|unapproved|void|withdrawn)\b/i;
+const DRAFT_METADATA_VALUE = /[:=]|\s+[\p{Pd}]\s+/u;
+const DRAFT_SOURCE_MARKER = /\bdraft\s+(?:copy|only|status|version)\b/i;
 const NESTED_SECTION_LABEL =
   /^(?:(?:customer|value)[ \t]+hypothesis|future[ \t]+state|target[ \t]+outcome|function)[ \t]*:[ \t]*[^:\r\n]+:/im;
 const UNAPPROVED_CONSTRUCTION = /\bnot(?:\s+\w+){0,3}\s+approved\b/i;
@@ -40,7 +42,7 @@ const COMPACT_NEGATIVE_EXPECTATION =
 const EXPLICIT_INVALIDATION =
   /\b(?:hypothesis|future\s+state|target\s+outcome)\s+(?:is|was)\s+(?:disputed|false|incorrect|invalid|unconfirmed|untrue)\b/i;
 const COMPACT_UNSAFE_PROVENANCE =
-  /(?:archived|cancelled|declined|deprecated|donotuse|draft|expired|forreferenceonly|hasnt(?:been)?approved|historical|illustrativeexample|isntapproved|lapsed|neverapproved|not(?:been|the)?approved(?:version)?|obsolete|olddraft|pending|previousversion|rejected|rescinded|revoked|superseded|template|unapproved|void|wasntapproved|withdrawn)/i;
+  /(?:archived|cancelled|declined|deprecated|donotuse|draft(?:copy|only|status|version)|expired|forreferenceonly|hasnt(?:been)?approved|historical|illustrativeexample|isntapproved|lapsed|neverapproved|not(?:been|the)?approved(?:version)?|obsolete|olddraft|pending|previousversion|rejected|rescinded|revoked|superseded|template|unapproved|void|wasntapproved|withdrawn)/i;
 const COMPACT_INVALIDATION =
   /(?:hypothesis|futurestate|targetoutcome)(?:is|was)(?:disputed|false|incorrect|invalid|unconfirmed|untrue)/i;
 
@@ -113,6 +115,24 @@ const containsConflictingStatusMetadata = (documents: string[]) =>
     return false;
   });
 
+const containsDraftSourceProvenance = (documents: string[]) => {
+  const lines = documents.flatMap(documentLines);
+  const compactLines = lines.map((line) => line.replace(/[^\p{L}\p{N}]+/gu, "").toLowerCase());
+  if (compactLines.some((line) => line === "draft")) return true;
+  if (compactLines.some((line, index) => `${line}${compactLines[index + 1] ?? ""}` === "draft")) {
+    return true;
+  }
+  return lines.some((line) => {
+    const delimiter = DRAFT_METADATA_VALUE.exec(line);
+    if (!delimiter) return false;
+    const value = line
+      .slice(delimiter.index + delimiter[0].length)
+      .replace(/[^\p{L}\p{N}]+/gu, "")
+      .toLowerCase();
+    return value === "draft";
+  });
+};
+
 const containsContradictorySupportedExpectation = (sections: string[]) =>
   sections.some((section) => {
     const compactSection = section.replace(/[^\p{L}\p{N}]+/gu, "");
@@ -170,10 +190,12 @@ export const deriveAggregateHypothesisFromBlueprint = (rawText: string) => {
     provenanceVariants.some(
       (value) =>
         UNSAFE_SOURCE_PROVENANCE.test(value) ||
+        DRAFT_SOURCE_MARKER.test(value) ||
         UNAPPROVED_CONSTRUCTION.test(value) ||
         UNAPPROVED_CONTRACTION.test(value)
     ) ||
     compactProvenanceVariants.some((value) => COMPACT_UNSAFE_PROVENANCE.test(value)) ||
+    containsDraftSourceProvenance([canonicalText, dehyphenatedProvenance]) ||
     NESTED_SECTION_LABEL.test(canonicalText) ||
     provenanceVariants.some((value) => EXPLICIT_INVALIDATION.test(value)) ||
     compactProvenanceVariants.some((value) => COMPACT_INVALIDATION.test(value))

@@ -20,6 +20,17 @@
       "output_fields": []
     },
     {
+      "id": "employee_identifier_in_hypothesis",
+      "expected_state": "HOLD_PERSON_LEVEL_DETAIL",
+      "required_sections": [
+        "Blueprint status",
+        "Customer hypothesis"
+      ],
+      "required_status": "Approved",
+      "blocked_input": "employee_identifier",
+      "output_fields": []
+    },
+    {
       "id": "unapproved_blueprint",
       "expected_state": "HOLD_UNAPPROVED_SOURCE",
       "required_sections": ["Blueprint status", "Customer hypothesis"],
