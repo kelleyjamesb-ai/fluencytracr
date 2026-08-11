@@ -484,6 +484,14 @@
       "status": "pending",
       "risk": "high",
       "last_note": "Human-authored final Section 7.1-7.7 architecture gate. Activate only after the full Section 7.6 contract gate is merged with result exactly SECTION_7_6_CONTRACT_CLOSED; any HOLD blocks activation and propagates HOLD."
+    },
+    {
+      "id": "vbd-human-behavior-outcome-synthetic-proof",
+      "title": "VBD human-behavior and outcome synthetic proof",
+      "bound": "Synthetic-only inference/ plus required OpenSpec/docs/status: implement strict aggregate family-state, capability, outcome, alignment, and freeze types; deterministic preparation and single-slice synthetic fixtures; a joint Bayesian family-state and continuous-normal outcome model; sanitized internal summaries; bounded recovery, calibration, sensitivity, negative-control, and full-versus-restricted predictive validation; then record a docs-only integration decision. No real/customer/live data, cross-slice derived output, public schema, route, service, UI, persistence, connector, export, deployment, customer output, confidence/probability output, causal impact, productivity, ROI, ranking, new canonical event, new suppression reason, tunable product threshold, Depth likelihood use, or legacy VBD relabeling.",
+      "status": "in_progress",
+      "risk": "high",
+      "last_note": "V4 plan, component-keyed generator, claims/checkpoint ledger, exact namespace combiner, and sanitized HOLD artifact scaffolding implemented 2026-08-11. 47 focused joint tests pass and OpenSpec strict validation passes. Runtime matches the frozen manifest exactly. Root harness stopped before tests on PEP 668 protection; no override used. No sampler or external execution has run; exact implementation commit is still required before review."
     }
   ]
 }
