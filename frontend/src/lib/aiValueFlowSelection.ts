@@ -47,10 +47,16 @@ const firstForWorkflow = (
 export const selectBestBaselineForWorkflow = (
   baselines: AiValueObjectSummary[] = [],
   workflowFamily: string | null | undefined
-) =>
-  validObjects(baselines)
-    .filter((baseline) => Boolean(workflowFamily) && baseline.workflow_family === workflowFamily)
-    .sort((a, b) => a.object_id.localeCompare(b.object_id))[0] ?? null;
+) => {
+  const valid = validObjects(baselines).sort((a, b) =>
+    a.object_id.localeCompare(b.object_id)
+  );
+  const exact = workflowFamily
+    ? valid.find((baseline) => baseline.workflow_family === workflowFamily)
+    : undefined;
+
+  return exact ?? valid.find((baseline) => baseline.workflow_family === null) ?? null;
+};
 
 const preferredEngagement = (
   engagements: AiValueObjectSummary[] = [],

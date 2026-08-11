@@ -101,17 +101,29 @@ describe("useAiValueWorkspace", () => {
 });
 
 describe("selectAiValueWorkspaceChain", () => {
-  it("requires exact workflow identity before attaching a baseline", () => {
-    expect(
-      selectBestBaselineForWorkflow(
-        [
-          summary("fluency_baseline", "fluency_baseline_sales_case_kickoff", null),
-          summary("fluency_baseline", "fluency_baseline_customer_support_ticket_triage", null),
-          summary("fluency_baseline", "baseline_wrong_family", "sales_case_resolution")
-        ],
-        "customer_support_case_resolution"
-      )
-    ).toBeNull();
+  it("falls back to a valid canonical unscoped baseline when no exact match exists", () => {
+    const selected = selectBestBaselineForWorkflow(
+      [
+        summary("fluency_baseline", "fluency_baseline_sales_case_kickoff", null),
+        summary("fluency_baseline", "fluency_baseline_customer_support_ticket_triage", null),
+        summary("fluency_baseline", "baseline_wrong_family", "sales_case_resolution")
+      ],
+      "customer_support_case_resolution"
+    );
+
+    expect(selected?.object_id).toBe("fluency_baseline_customer_support_ticket_triage");
+  });
+
+  it("prefers an exact workflow baseline over an unscoped canonical baseline", () => {
+    const selected = selectBestBaselineForWorkflow(
+      [
+        summary("fluency_baseline", "fluency_baseline_canonical", null),
+        summary("fluency_baseline", "fluency_baseline_sales_case_kickoff", "sales_case_resolution")
+      ],
+      "sales_case_resolution"
+    );
+
+    expect(selected?.object_id).toBe("fluency_baseline_sales_case_kickoff");
   });
 
   it("prefers the complete Northstar evidence-case-backed chain over older generic objects", () => {
