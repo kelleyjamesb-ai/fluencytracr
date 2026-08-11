@@ -41,6 +41,7 @@
     "vbd-engine": [
       "test_vbd_joint_model.py",
       "test_vbd_joint_preparation.py",
+      "test_vbd_joint_replicated_bridge.py",
       "test_vbd_joint_replicated_runner.py",
       "test_vbd_joint_replicated_synthetic.py",
       "test_vbd_joint_replicated_validation_plan.py",

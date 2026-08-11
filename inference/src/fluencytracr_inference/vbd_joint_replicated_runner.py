@@ -12,8 +12,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import datetime
+import hashlib
+import importlib.metadata
 import math
+from pathlib import Path
+import platform
 import re
+import subprocess
 
 from .hashing import sha256_json
 from .vbd_joint_replicated_synthetic import (
@@ -166,16 +171,121 @@ class VBDJointReplicatedRuntimeManifest:
         return {**self.body_without_hash(), "manifest_hash": self.manifest_hash}
 
 
-def make_frozen_runtime_manifest(source_commit: str) -> VBDJointReplicatedRuntimeManifest:
-    """Build a manifest from the protocol's exact values without probing runtime."""
+def _sha256_file(path: Path) -> str:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime lockfile is unavailable"
+        ) from exc
 
+
+def _observed_source_commit() -> str:
+    repo_root = Path(__file__).resolve().parents[3]
+    try:
+        completed = subprocess.run(
+            ("git", "rev-parse", "HEAD"),
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        status = subprocess.run(
+            ("git", "status", "--porcelain", "--untracked-files=all"),
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime source commit is unavailable"
+        ) from exc
+    if status.stdout:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime source tree is not clean"
+        )
+    return _commit("observed source_commit", completed.stdout.strip())
+
+
+def _locked_package_versions(lockfile_path: Path) -> dict[str, str]:
+    try:
+        lines = lockfile_path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime lockfile is unavailable"
+        ) from exc
+    versions: dict[str, str] = {}
+    for line in lines:
+        if not line or line.startswith("#"):
+            continue
+        name, separator, version = line.partition("==")
+        if (
+            separator != "=="
+            or not name
+            or not version
+            or name in versions
+            or any(character.isspace() for character in line)
+        ):
+            raise VBDJointReplicatedRunnerError(
+                "observed runtime lockfile is not an exact package manifest"
+            )
+        versions[name] = version
+    if not versions:
+        raise VBDJointReplicatedRunnerError("observed runtime lockfile is empty")
+    return versions
+
+
+def observe_runtime_manifest() -> VBDJointReplicatedRuntimeManifest:
+    """Observe the process, lockfile, installed packages, platform, and Git HEAD."""
+
+    lockfile_path = Path(__file__).resolve().parents[2] / "requirements.lock"
+    python_version = platform.python_version()
+    observed_platform = f"{platform.system()} {platform.machine()}"
+    if platform.system() == "Darwin":
+        observed_platform = f"macOS {platform.machine()}"
+    lockfile_hash = _sha256_file(lockfile_path)
+    locked_versions = _locked_package_versions(lockfile_path)
+    try:
+        installed_versions = {
+            name: importlib.metadata.version(name) for name in sorted(locked_versions)
+        }
+    except importlib.metadata.PackageNotFoundError as exc:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime is missing a frozen package"
+        ) from exc
+    if installed_versions != {
+        name: locked_versions[name] for name in sorted(locked_versions)
+    }:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime packages differ from requirements.lock"
+        )
+    observed_packages = {
+        name: installed_versions[name]
+        for name in VBD_JOINT_REPLICATED_RUNTIME_PACKAGES
+    }
+    if python_version != VBD_JOINT_REPLICATED_RUNTIME_PYTHON:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime Python does not match the frozen protocol"
+        )
+    if observed_platform != VBD_JOINT_REPLICATED_RUNTIME_PLATFORM:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime platform does not match the frozen protocol"
+        )
+    if lockfile_hash != VBD_JOINT_REPLICATED_RUNTIME_LOCKFILE_HASH:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime lockfile does not match the frozen protocol"
+        )
+    if observed_packages != VBD_JOINT_REPLICATED_RUNTIME_PACKAGES:
+        raise VBDJointReplicatedRunnerError(
+            "observed runtime package versions do not match the frozen protocol"
+        )
+    source_commit = _observed_source_commit()
     body = {
-        "python_version": VBD_JOINT_REPLICATED_RUNTIME_PYTHON,
-        "platform": VBD_JOINT_REPLICATED_RUNTIME_PLATFORM,
-        "lockfile_hash": VBD_JOINT_REPLICATED_RUNTIME_LOCKFILE_HASH,
-        "package_versions": [
-            list(item) for item in sorted(VBD_JOINT_REPLICATED_RUNTIME_PACKAGES.items())
-        ],
+        "python_version": python_version,
+        "platform": observed_platform,
+        "lockfile_hash": lockfile_hash,
+        "package_versions": [list(item) for item in sorted(observed_packages.items())],
         "source_commit": source_commit,
     }
     return VBDJointReplicatedRuntimeManifest(
@@ -186,6 +296,33 @@ def make_frozen_runtime_manifest(source_commit: str) -> VBDJointReplicatedRuntim
         source_commit=body["source_commit"],
         manifest_hash=sha256_json(body),
     )
+
+
+def _require_observed_runtime_manifest(
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+) -> None:
+    if type(runtime_manifest) is not VBDJointReplicatedRuntimeManifest:
+        raise VBDJointReplicatedRunnerError(
+            "runtime manifest must use the exact frozen type"
+        )
+    observed = observe_runtime_manifest()
+    if runtime_manifest != observed:
+        raise VBDJointReplicatedRunnerError(
+            "runtime manifest does not match the observed runtime"
+        )
+
+
+def _require_claim_runtime_provenance(
+    claim: VBDJointReplicatedValidationClaim,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+) -> None:
+    if (
+        claim.source_commit != runtime_manifest.source_commit
+        or claim.runtime_manifest_hash != runtime_manifest.manifest_hash
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "claim runtime provenance does not match the expected manifest"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -257,8 +394,7 @@ def build_sampler_free_execution_packet(
 
     if type(slot) is not VBDJointReplicatedValidationSlot:
         raise VBDJointReplicatedRunnerError("slot must use the exact frozen slot type")
-    if type(runtime_manifest) is not VBDJointReplicatedRuntimeManifest:
-        raise VBDJointReplicatedRunnerError("runtime manifest must use the exact frozen type")
+    _require_observed_runtime_manifest(runtime_manifest)
     plan = vbd_joint_replicated_validation_plan() if plan is None else plan
     if type(plan) is not VBDJointReplicatedValidationPlan:
         raise VBDJointReplicatedRunnerError("plan must use the exact frozen plan type")
@@ -380,8 +516,12 @@ class VBDJointReplicatedAttemptLedger:
         claim: VBDJointReplicatedValidationClaim,
         slot: VBDJointReplicatedValidationSlot,
         plan_hash: str,
+        *,
+        runtime_manifest: VBDJointReplicatedRuntimeManifest,
     ) -> "VBDJointReplicatedAttemptLedger":
+        _require_observed_runtime_manifest(runtime_manifest)
         validate_claim_for_slot(claim, slot, plan_hash)
+        _require_claim_runtime_provenance(claim, runtime_manifest)
         if claim.slot_id in {item.slot_id for item in self.claims}:
             raise VBDJointReplicatedRunnerError("claim already exists for slot")
         return replace(self, claims=self.claims + (claim,))
@@ -462,8 +602,7 @@ def make_claim_for_slot(
 
     if type(slot) is not VBDJointReplicatedValidationSlot:
         raise VBDJointReplicatedRunnerError("slot must use the exact frozen slot type")
-    if type(runtime_manifest) is not VBDJointReplicatedRuntimeManifest:
-        raise VBDJointReplicatedRunnerError("runtime manifest must use the exact frozen type")
+    _require_observed_runtime_manifest(runtime_manifest)
     if _timestamp("deadline_at", deadline_at) <= _timestamp("started_at", started_at):
         raise VBDJointReplicatedRunnerError("claim deadline must follow start time")
     body = {
@@ -583,11 +722,13 @@ def combine_namespace(
     *,
     namespace: str,
     plan: VBDJointReplicatedValidationPlan | None = None,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
 ) -> VBDJointReplicatedNamespaceSummary:
     """Combine exactly one namespace without admitting another namespace's rows."""
 
     if type(ledger) is not VBDJointReplicatedAttemptLedger:
         raise VBDJointReplicatedRunnerError("ledger must use the exact immutable type")
+    _require_observed_runtime_manifest(runtime_manifest)
     plan = vbd_joint_replicated_validation_plan() if plan is None else plan
     slots = _slots_for_namespace(plan, namespace)
     expected_ids = tuple(item.slot_id for item in slots)
@@ -597,24 +738,35 @@ def combine_namespace(
     namespace_dispositions = [
         item for item in ledger.dispositions if item.namespace == namespace
     ]
+    namespace_checkpoints = [
+        item for item in ledger.checkpoints if item.namespace == namespace
+    ]
     extra_claims = {item.slot_id for item in namespace_claims} - set(expected_ids)
     extra_dispositions = {item.slot_id for item in namespace_dispositions} - set(expected_ids)
-    if extra_claims or extra_dispositions:
+    extra_checkpoints = {item.slot_id for item in namespace_checkpoints} - set(expected_ids)
+    if extra_claims or extra_dispositions or extra_checkpoints:
         raise VBDJointReplicatedRunnerError("namespace contains off-manifest rows")
     claim_by_slot = {item.slot_id: item for item in namespace_claims}
     disposition_by_slot = {item.slot_id: item for item in namespace_dispositions}
-    if len(claim_by_slot) != len(namespace_claims) or len(disposition_by_slot) != len(namespace_dispositions):
+    checkpoint_by_slot = {item.slot_id: item for item in namespace_checkpoints}
+    if (
+        len(claim_by_slot) != len(namespace_claims)
+        or len(disposition_by_slot) != len(namespace_dispositions)
+        or len(checkpoint_by_slot) != len(namespace_checkpoints)
+    ):
         raise VBDJointReplicatedRunnerError("namespace contains duplicate identities")
     failure_codes = set()
     complete_count = 0
     hold_count = 0
     dataset_bindings = set()
+    expected_case_hashes: dict[tuple[str, int], str] = {}
     for slot in slots:
         claim = claim_by_slot.get(slot.slot_id)
         if claim is None:
             failure_codes.add("INTERRUPTED_OR_AMBIGUOUS")
             continue
         validate_claim_for_slot(claim, slot, plan.plan_hash)
+        _require_claim_runtime_provenance(claim, runtime_manifest)
         if claim.slot_hash != expected_hashes[slot.slot_id]:
             raise VBDJointReplicatedRunnerError("claim slot hash does not match manifest")
         # Full and restricted fits share one dataset. The cell and replicate
@@ -625,6 +777,30 @@ def combine_namespace(
             failure_codes.add("INTERRUPTED_OR_AMBIGUOUS")
             continue
         validate_disposition_for_claim(disposition, claim)
+        checkpoint = checkpoint_by_slot.get(slot.slot_id)
+        if checkpoint is None:
+            failure_codes.add("INTERRUPTED_OR_AMBIGUOUS")
+            continue
+        if (
+            checkpoint.claim_hash != disposition.claim_hash
+            or checkpoint.state != disposition.state
+            or checkpoint.failure_code != disposition.failure_code
+            or checkpoint.result_hash != disposition.result_hash
+        ):
+            raise VBDJointReplicatedRunnerError(
+                "checkpoint does not bind the namespace disposition"
+            )
+        dataset_identity = (claim.scenario_id, claim.dataset_seed)
+        expected_case_hash = expected_case_hashes.get(dataset_identity)
+        if expected_case_hash is None:
+            expected_case_hash = generate_vbd_joint_replicated_case_for_slot(
+                slot
+            ).content_hash()
+            expected_case_hashes[dataset_identity] = expected_case_hash
+        if checkpoint.case_hash != expected_case_hash:
+            raise VBDJointReplicatedRunnerError(
+                "checkpoint case provenance does not match deterministic regeneration"
+            )
         if disposition.state == "COMPLETE":
             complete_count += 1
         else:
@@ -636,6 +812,7 @@ def combine_namespace(
     state = "COMPLETE" if (
         len(namespace_claims) == len(slots)
         and len(namespace_dispositions) == len(slots)
+        and len(namespace_checkpoints) == len(slots)
         and complete_count == len(slots)
         and not failure_codes
         and len(dataset_bindings) == expected_dataset_count
@@ -801,12 +978,16 @@ def emit_sanitized_ensemble_artifact(
 ) -> dict:
     """Emit a sanitized V4 ensemble state, HOLDing until study gates exist."""
 
-    if type(runtime_manifest) is not VBDJointReplicatedRuntimeManifest:
-        raise VBDJointReplicatedRunnerError("runtime manifest must use the exact frozen type")
+    _require_observed_runtime_manifest(runtime_manifest)
     plan = vbd_joint_replicated_validation_plan() if plan is None else plan
     validate_seed_manifest()
     summaries = {
-        namespace: combine_namespace(ledger, namespace=namespace, plan=plan)
+        namespace: combine_namespace(
+            ledger,
+            namespace=namespace,
+            plan=plan,
+            runtime_manifest=runtime_manifest,
+        )
         for namespace in VBD_JOINT_REPLICATED_NAMESPACES
     }
     failure_codes = sorted(
@@ -869,13 +1050,28 @@ def emit_sanitized_ensemble_artifact(
         "artifact_hash": sha256_json(body),
     }
     artifact = VBDJointReplicatedEnsembleArtifact(**artifact_kwargs).to_dict()
-    validate_sanitized_ensemble_artifact(artifact)
+    validate_sanitized_ensemble_artifact(
+        artifact,
+        ledger=ledger,
+        runtime_manifest=runtime_manifest,
+        plan=plan,
+    )
     return artifact
 
 
-def validate_sanitized_ensemble_artifact(artifact: dict) -> None:
-    """Validate exact sanitized shape, closed values, and false authority."""
+def validate_sanitized_ensemble_artifact(
+    artifact: dict,
+    *,
+    ledger: VBDJointReplicatedAttemptLedger,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+    plan: VBDJointReplicatedValidationPlan | None = None,
+) -> None:
+    """Validate sanitized shape and recompute its complete ledger semantics."""
 
+    _require_observed_runtime_manifest(runtime_manifest)
+    if type(ledger) is not VBDJointReplicatedAttemptLedger:
+        raise VBDJointReplicatedRunnerError("ledger must use the exact immutable type")
+    plan = vbd_joint_replicated_validation_plan() if plan is None else plan
     if type(artifact) is not dict:
         raise VBDJointReplicatedRunnerError("artifact must be a dictionary")
     expected_keys = {
@@ -923,6 +1119,10 @@ def validate_sanitized_ensemble_artifact(artifact: dict) -> None:
             "artifact_hash",
         }:
             _sha(name, artifact[name])
+    if artifact["runtime_manifest_hash"] != runtime_manifest.manifest_hash:
+        raise VBDJointReplicatedRunnerError(
+            "artifact runtime provenance does not match the expected manifest"
+        )
     if artifact["schema_version"] != VBD_JOINT_REPLICATED_ARTIFACT_SCHEMA:
         raise VBDJointReplicatedRunnerError("artifact schema is invalid")
     if artifact["protocol_id"] != "FT_VBD_JOINT_REPLICATED_VALIDATION_V4":
@@ -972,6 +1172,47 @@ def validate_sanitized_ensemble_artifact(artifact: dict) -> None:
         {key: value for key, value in artifact.items() if key != "artifact_hash"}
     ):
         raise VBDJointReplicatedRunnerError("artifact self-hash is invalid")
+
+    summaries = {
+        namespace: combine_namespace(
+            ledger,
+            namespace=namespace,
+            plan=plan,
+            runtime_manifest=runtime_manifest,
+        )
+        for namespace in VBD_JOINT_REPLICATED_NAMESPACES
+    }
+    expected_failure_codes = sorted(
+        {
+            code
+            for summary in summaries.values()
+            for code in summary.failure_codes
+        }
+    ) or ["INTERRUPTED_OR_AMBIGUOUS"]
+    expected_semantics = {
+        "plan_hash": plan.plan_hash,
+        "preflight_summary_hash": summaries["preflight"].summary_hash,
+        "canary_summary_hash": summaries["runtime_canary"].summary_hash,
+        "qualifying_summary_hash": summaries["qualifying"].summary_hash,
+        "complete_attempt_root": ledger.attempt_root,
+        "state": "HOLD",
+        "expected_dataset_count": 400,
+        "observed_dataset_count": summaries["qualifying"].observed_dataset_count,
+        "expected_fit_count": 600,
+        "observed_fit_count": summaries["qualifying"].complete_count,
+        "namespace_states": [
+            [namespace, summaries[namespace].state]
+            for namespace in VBD_JOINT_REPLICATED_NAMESPACES
+        ],
+        "gate_states": [
+            [name, "HOLD"] for name in VBD_JOINT_REPLICATED_STUDY_GATE_NAMES
+        ],
+        "failure_codes": expected_failure_codes,
+    }
+    if any(artifact[name] != value for name, value in expected_semantics.items()):
+        raise VBDJointReplicatedRunnerError(
+            "artifact summary semantics do not match the immutable ledger"
+        )
     if artifact["state"] != "HOLD":
         raise VBDJointReplicatedRunnerError("sampler-free artifact cannot PASS")
     if type(artifact["authorization_flags"]) is not list or any(
@@ -1011,7 +1252,7 @@ __all__ = [
     "VBDJointReplicatedNamespaceSummary",
     "VBDJointReplicatedEnsembleArtifact",
     "VBDJointReplicatedRunnerError",
-    "make_frozen_runtime_manifest",
+    "observe_runtime_manifest",
     "build_sampler_free_execution_packet",
     "make_claim_for_slot",
     "make_checkpoint_for_disposition",

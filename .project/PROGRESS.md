@@ -5824,3 +5824,46 @@
   activation/methodology/task lineage; task `2.6`, sampler execution, canary
   admission, concordance, and evidence remain blocked. Full Sections 7.5
   through 7.7 remain a separate larger program.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 blocking-findings repair candidate)
+
+- Based the local work on open PR #485 branch
+  `codex/blueprint-hypothesis-import` at unchanged remote head
+  `0cde0c3b54303a60def42044674c019fa545f1ee`. The local tree is modified but
+  remains uncommitted and unpushed; the GitHub PR head and checks were not
+  changed.
+- Replaced the declared-only runtime manifest with observation of exact Python
+  `3.13.14`, `macOS arm64`, the complete `requirements.lock`, installed package
+  versions, a clean Git source commit, and a hash over that observed identity.
+  Claims, namespace combination, artifact emission, and artifact validation
+  now reconcile one manifest. The actual observer correctly returns `HOLD` on
+  this uncommitted dirty tree; the task-local exact lock environment otherwise
+  matches the frozen protocol.
+- Added an exact V4-only preparation bridge from replicated envelopes into the
+  unchanged V3 likelihood projection. Prepared provenance retains generator,
+  case, cell, replicate, and scenario identity and regenerates the exact V4
+  case during validation. Full and restricted slots share one prepared dataset
+  while their sampler-free fit specifications bind the exact variant, ordered
+  chain seeds, and frozen settings.
+- Kept V4 execution unauthorized. No public V4 sampler entry exists. Both the
+  public and final private V3 sampler boundaries reject V4 prepared data, and
+  the private V3 boundary independently enforces its exact scenario seed,
+  frozen mode settings, derived ordered chain seeds, and summary seed.
+- Sanitized artifacts now require their immutable ledger and recompute frozen
+  counts, namespace states, summary hashes, roots, failure codes, and false
+  authority. Namespace completion requires one exact checkpoint per
+  disposition and deterministically regenerates each V4 case before accepting
+  its case hash. Coordinated artifact reseals, missing checkpoints, and
+  fabricated case provenance fail closed.
+- Final local evidence: 72 focused joint/replicated tests passed; the exact
+  `vbd-engine` shard passed `829/829` in `818.08s`; shard manifest validation,
+  strict OpenSpec validation, compileall, V1 governance gates, and
+  `git diff --check` passed. Independent CODE, BUG, and ADVERSARIAL reviews all
+  returned `GO` on the final uncommitted tree, including replay of the sampler
+  bypass, artifact reseal, and fabricated-case attacks.
+- No V4 replicated study, runtime canary, external execution, customer or real
+  data use, service/UI/deployment change, commit, push, PR mutation, merge, or
+  live proof occurred. Remaining work still includes the later reviewed
+  execution/evidence tasks in the active OpenSpec; a clean committed source is
+  required before the observed runtime can produce a manifest and before any
+  separately authorized execution review can begin.

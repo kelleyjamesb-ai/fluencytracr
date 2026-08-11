@@ -661,6 +661,12 @@ def fit_vbd_joint_model(
 ) -> VBDJointFit:
     """Fit one frozen variant and retain posterior state only in memory."""
 
+    if type(prepared) is not PreparedVBDJointData:
+        raise VBDJointStructureError("prepared data must use the exact frozen type")
+    if prepared.source_profile != "v3":
+        raise VBDJointStructureError(
+            "V4 prepared data cannot use the V3 sampler path"
+        )
     if type(seed) is not int or seed <= 0:
         raise VBDJointStructureError("fit seed must be a positive exact integer")
     expected_seed = (
@@ -671,6 +677,50 @@ def fit_vbd_joint_model(
     if seed != expected_seed:
         raise VBDJointStructureError("fit seed does not bind the prepared scenario")
     settings = vbd_joint_sampler_settings(mode)
+    return _fit_vbd_joint_model_with_settings(
+        prepared,
+        variant=variant,
+        settings=settings,
+        chain_seeds=tuple(seed + chain for chain in range(settings.chains)),
+        summary_seed=seed,
+    )
+
+
+def _fit_vbd_joint_model_with_settings(
+    prepared: PreparedVBDJointData,
+    *,
+    variant: VBDJointModelVariant,
+    settings: VBDJointSamplerSettings,
+    chain_seeds: tuple[int, ...],
+    summary_seed: int,
+) -> VBDJointFit:
+    """V3 sampler path after the public entry point's exact seed binding."""
+
+    if type(prepared) is not PreparedVBDJointData:
+        raise VBDJointStructureError("prepared data must use the exact frozen type")
+    if prepared.source_profile != "v3":
+        raise VBDJointStructureError(
+            "V4 prepared data cannot use the V3 sampler path"
+        )
+    if type(settings) is not VBDJointSamplerSettings:
+        raise VBDJointStructureError("settings do not match the frozen V3 sampler binding")
+    expected_seed = (
+        VBD_JOINT_PRIMARY_SEED
+        if prepared.synthetic_scenario == "primary"
+        else VBD_JOINT_NULL_SEED
+    )
+    expected_settings = vbd_joint_sampler_settings(settings.mode)
+    expected_chain_seeds = tuple(
+        expected_seed + chain for chain in range(expected_settings.chains)
+    )
+    if (
+        settings != expected_settings
+        or summary_seed != expected_seed
+        or chain_seeds != expected_chain_seeds
+    ):
+        raise VBDJointStructureError(
+            "settings and seeds do not match the frozen V3 sampler binding"
+        )
     model = build_vbd_joint_model(prepared, variant=variant)
     started = time.perf_counter()
     with model:
@@ -679,7 +729,7 @@ def fit_vbd_joint_model(
             tune=settings.tune,
             chains=settings.chains,
             cores=1,
-            random_seed=[seed + chain for chain in range(settings.chains)],
+            random_seed=list(chain_seeds),
             target_accept=settings.target_accept,
             max_treedepth=settings.max_treedepth,
             nuts_sampler="pymc",
@@ -699,7 +749,7 @@ def fit_vbd_joint_model(
         prepared=prepared,
         variant=variant,
         settings=settings,
-        seed=seed,
+        seed=summary_seed,
         coefficient_summaries=summaries,
         diagnostics=diagnostics,
         bayesian_r_squared_mean=r_squared,

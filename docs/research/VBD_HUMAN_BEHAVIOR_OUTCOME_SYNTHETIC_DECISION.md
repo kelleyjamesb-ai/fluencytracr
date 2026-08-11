@@ -217,6 +217,14 @@ and sanitized-artifact scaffolding now exist. No protocol sampler or external
 execution has run. The protocol and implementation scaffolding have authority
 effect `NONE` and do not clear the current HOLD.
 
+The current local repair candidate adds observed runtime provenance,
+one-manifest claim/combiner/artifact reconciliation, exact V4 preparation,
+high-error uncertainty admission, and slot-bound ordered chain seeds. These are
+model-path repairs only. They do not change the likelihood, do not qualify the
+model, and do not clear `HOLD_FOR_MODEL_REPAIR` until the exact committed
+candidate passes fresh technical, adversarial, and statistical pre-execution
+review.
+
 ## What Must Happen Next
 
 The pre-sampler review, structural checks, bounded V3 smoke, post-smoke review,

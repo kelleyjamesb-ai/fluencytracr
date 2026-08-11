@@ -183,6 +183,16 @@ permanently nonqualifying and excluded from study denominators. No sampler may
 run until the exact implementation commit and runtime manifest receive fresh
 statistical, technical, and fail-closed pre-execution review.
 
+The V4 execution boundary observes the actual clean Git source, Python
+micro-version, macOS arm64 platform, lockfile bytes, and installed lockfile
+distributions. One observed manifest binds every claim, ledger append,
+namespace combination, and ensemble artifact. V4 preparation remains a
+separate exact-envelope admission path that retains cell, replicate, and case
+provenance while reusing the unchanged V3 projection and likelihood. Full and
+restricted fits share that prepared input; a separate fit specification binds
+the slot, variant, ordered chain seeds, and sampler settings. High capability
+error is admitted only through exact V4 regeneration.
+
 ## Frozen V3 Repair Revision
 
 Fresh technical, adversarial, and statistical review of V2 returned `HOLD`.

@@ -127,6 +127,11 @@ class PreparedVBDJointData:
     dataset_hash: str
     synthetic_scenario: str
     seed: int
+    source_profile: str
+    generator_version: str
+    replicated_cell_id: str | None
+    replicate_index: int | None
+    scenario_id: str
     plan_hash: str
     alignment_receipt_hash: str
     freeze_receipt_hash: str
@@ -287,7 +292,11 @@ def _validate_checkpoint(checkpoint: VBDJointCheckpoint) -> None:
     _exact_bool("imputed", checkpoint.imputed, False)
 
 
-def _validate_observation_types(dataset: VBDJointSyntheticDataset) -> None:
+def _validate_observation_types(
+    dataset: VBDJointSyntheticDataset,
+    *,
+    expected_capability_standard_error: float,
+) -> None:
     for item in dataset.capability_observations:
         if type(item) is not VBDJointCapabilityObservation:
             raise VBDJointStructureError("invalid capability observation type")
@@ -302,7 +311,7 @@ def _validate_observation_types(dataset: VBDJointSyntheticDataset) -> None:
         standard_error = require_finite(
             "capability standard_error", item.standard_error, positive=True
         )
-        if standard_error != VBD_JOINT_CAPABILITY_STANDARD_ERROR:
+        if standard_error != expected_capability_standard_error:
             raise VBDJointStructureError("capability uncertainty is off the frozen profile")
         _exact_bool("capability finalized", item.finalized, True)
         _exact_bool("capability suppressed", item.suppressed, False)
@@ -349,6 +358,42 @@ def prepare_vbd_joint_dataset(dataset: VBDJointSyntheticDataset) -> PreparedVBDJ
 
     if type(dataset) is not VBDJointSyntheticDataset:
         raise VBDJointStructureError("dataset must use the exact joint dataset type")
+    if dataset.synthetic_scenario not in ("primary", "behavior_pathway_null"):
+        raise VBDJointStructureError("synthetic scenario is off the frozen profile")
+    expected_seed = (
+        VBD_JOINT_PRIMARY_SEED
+        if dataset.synthetic_scenario == "primary"
+        else VBD_JOINT_NULL_SEED
+    )
+    return _prepare_vbd_joint_dataset(
+        dataset,
+        source_profile="v3",
+        generator_version=VBD_JOINT_GENERATOR_VERSION,
+        expected_seed=expected_seed,
+        expected_capability_standard_error=VBD_JOINT_CAPABILITY_STANDARD_ERROR,
+        dataset_hash=dataset.content_hash(),
+        replicated_cell_id=None,
+        replicate_index=None,
+        scenario_id=dataset.synthetic_scenario,
+    )
+
+
+def _prepare_vbd_joint_dataset(
+    dataset: VBDJointSyntheticDataset,
+    *,
+    source_profile: str,
+    generator_version: str,
+    expected_seed: int,
+    expected_capability_standard_error: float,
+    dataset_hash: str,
+    replicated_cell_id: str | None,
+    replicate_index: int | None,
+    scenario_id: str,
+) -> PreparedVBDJointData:
+    """Shared deterministic projection after profile-specific admission."""
+
+    if type(dataset) is not VBDJointSyntheticDataset:
+        raise VBDJointStructureError("dataset must use the exact joint dataset type")
     _exact_bool("dataset synthetic_only", dataset.synthetic_only, True)
     for name in (
         "real_data_present",
@@ -361,16 +406,11 @@ def prepare_vbd_joint_dataset(dataset: VBDJointSyntheticDataset) -> PreparedVBDJ
     require_safe_id("generator_version", dataset.generator_version)
     if dataset.generator_id != VBD_JOINT_GENERATOR_ID:
         raise VBDJointStructureError("generator identity is off the frozen profile")
-    if dataset.generator_version != VBD_JOINT_GENERATOR_VERSION:
+    if dataset.generator_version != generator_version:
         raise VBDJointStructureError("generator version is off the frozen profile")
     require_exact_int("seed", dataset.seed, minimum=1)
     if dataset.synthetic_scenario not in ("primary", "behavior_pathway_null"):
         raise VBDJointStructureError("synthetic scenario is off the frozen profile")
-    expected_seed = (
-        VBD_JOINT_PRIMARY_SEED
-        if dataset.synthetic_scenario == "primary"
-        else VBD_JOINT_NULL_SEED
-    )
     if dataset.seed != expected_seed:
         raise VBDJointStructureError("seed does not bind the synthetic scenario")
     _validate_plan(dataset.plan)
@@ -434,7 +474,10 @@ def prepare_vbd_joint_dataset(dataset: VBDJointSyntheticDataset) -> PreparedVBDJ
 
     for checkpoint in checkpoints:
         _validate_checkpoint(checkpoint)
-    _validate_observation_types(dataset)
+    _validate_observation_types(
+        dataset,
+        expected_capability_standard_error=expected_capability_standard_error,
+    )
 
     checkpoint_by_key = {(item.panel_index, item.checkpoint_index): item for item in checkpoints}
     capability_by_key = {(item.panel_index, item.checkpoint_index): item for item in capabilities}
@@ -637,11 +680,24 @@ def prepare_vbd_joint_dataset(dataset: VBDJointSyntheticDataset) -> PreparedVBDJ
         receipt.outcome_accessed_before_freeze,
         False,
     )
-    from .vbd_joint_synthetic import generate_vbd_joint_synthetic_dataset
+    if source_profile == "v3":
+        from .vbd_joint_synthetic import generate_vbd_joint_synthetic_dataset
 
-    expected_dataset = generate_vbd_joint_synthetic_dataset(
-        scenario=dataset.synthetic_scenario
-    )
+        expected_dataset = generate_vbd_joint_synthetic_dataset(
+            scenario=dataset.synthetic_scenario
+        )
+    elif source_profile == "replicated_v4":
+        from .vbd_joint_replicated_synthetic import (
+            generate_vbd_joint_replicated_dataset,
+        )
+
+        expected_dataset = generate_vbd_joint_replicated_dataset(
+            cell_id=replicated_cell_id,
+            replicate_index=replicate_index,
+            dataset_seed=expected_seed,
+        ).dataset
+    else:
+        raise VBDJointStructureError("source profile is off the frozen projection")
     if dataset.content_hash() != expected_dataset.content_hash():
         raise VBDJointStructureError(
             "dataset does not match the frozen deterministic generator"
@@ -764,9 +820,8 @@ def prepare_vbd_joint_dataset(dataset: VBDJointSyntheticDataset) -> PreparedVBDJ
         if name not in {"post", "checkpoint_index"}
     }
     model_input_hash = sha256_json(model_input_body)
-    context_binding_hash = sha256_json(
-        {
-            "dataset_hash": dataset.content_hash(),
+    context_binding_body = {
+            "dataset_hash": dataset_hash,
             "synthetic_scenario": dataset.synthetic_scenario,
             "seed": dataset.seed,
             "plan_hash": dataset.plan.plan_hash,
@@ -775,8 +830,15 @@ def prepare_vbd_joint_dataset(dataset: VBDJointSyntheticDataset) -> PreparedVBDJ
             "post": arrays["post"].tolist(),
             "checkpoint_index": arrays["checkpoint_index"].tolist(),
             "control_names": list(VBD_JOINT_CONTROL_NAMES),
+    }
+    if source_profile == "replicated_v4":
+        context_binding_body["replicated_v4"] = {
+            "generator_version": generator_version,
+            "cell_id": replicated_cell_id,
+            "replicate_index": replicate_index,
+            "scenario_id": scenario_id,
         }
-    )
+    context_binding_hash = sha256_json(context_binding_body)
     prepared_input_hash = sha256_json(
         {
             "model_input_hash": model_input_hash,
@@ -784,9 +846,14 @@ def prepare_vbd_joint_dataset(dataset: VBDJointSyntheticDataset) -> PreparedVBDJ
         }
     )
     return PreparedVBDJointData(
-        dataset_hash=dataset.content_hash(),
+        dataset_hash=dataset_hash,
         synthetic_scenario=dataset.synthetic_scenario,
         seed=dataset.seed,
+        source_profile=source_profile,
+        generator_version=generator_version,
+        replicated_cell_id=replicated_cell_id,
+        replicate_index=replicate_index,
+        scenario_id=scenario_id,
         plan_hash=dataset.plan.plan_hash,
         alignment_receipt_hash=receipt.receipt_hash,
         freeze_receipt_hash=dataset.freeze_receipt.receipt_hash,
@@ -805,26 +872,63 @@ def validate_prepared_vbd_joint_data(prepared: PreparedVBDJointData) -> None:
         raise VBDJointStructureError("model requires exact prepared joint data")
     if prepared.synthetic_scenario not in ("primary", "behavior_pathway_null"):
         raise VBDJointStructureError("prepared scenario is off the frozen profile")
-    expected_seed = (
-        VBD_JOINT_PRIMARY_SEED
-        if prepared.synthetic_scenario == "primary"
-        else VBD_JOINT_NULL_SEED
-    )
-    if type(prepared.seed) is not int or prepared.seed != expected_seed:
-        raise VBDJointStructureError("prepared seed is off the frozen profile")
-
-    from .vbd_joint_synthetic import generate_vbd_joint_synthetic_dataset
-
-    expected = prepare_vbd_joint_dataset(
-        generate_vbd_joint_synthetic_dataset(
-            scenario=prepared.synthetic_scenario,
-            seed=prepared.seed,
+    if prepared.source_profile == "v3":
+        expected_seed = (
+            VBD_JOINT_PRIMARY_SEED
+            if prepared.synthetic_scenario == "primary"
+            else VBD_JOINT_NULL_SEED
         )
-    )
+        if type(prepared.seed) is not int or prepared.seed != expected_seed:
+            raise VBDJointStructureError("prepared seed is off the frozen profile")
+        from .vbd_joint_synthetic import generate_vbd_joint_synthetic_dataset
+
+        expected = prepare_vbd_joint_dataset(
+            generate_vbd_joint_synthetic_dataset(
+                scenario=prepared.synthetic_scenario,
+                seed=prepared.seed,
+            )
+        )
+    elif prepared.source_profile == "replicated_v4":
+        from .vbd_joint_replicated_bridge import prepare_vbd_joint_replicated_dataset
+        from .vbd_joint_replicated_synthetic import (
+            generate_vbd_joint_replicated_dataset,
+        )
+        from .vbd_joint_replicated_validation_plan import (
+            vbd_joint_replicated_validation_plan,
+        )
+
+        plan = vbd_joint_replicated_validation_plan()
+        slot = next(
+            (
+                candidate
+                for candidate in (
+                    plan.qualifying_slots + plan.preflight_slots + plan.canary_slots
+                )
+                if candidate.cell_id == prepared.replicated_cell_id
+                and candidate.replicate_index == prepared.replicate_index
+                and candidate.scenario_id == prepared.scenario_id
+            ),
+            None,
+        )
+        if slot is None:
+            raise VBDJointStructureError("prepared replicated slot is off plan")
+        case = generate_vbd_joint_replicated_dataset(
+            cell_id=prepared.replicated_cell_id,
+            replicate_index=prepared.replicate_index,
+            dataset_seed=prepared.seed,
+        )
+        expected = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    else:
+        raise VBDJointStructureError("prepared source profile is off plan")
     for name in (
         "dataset_hash",
         "synthetic_scenario",
         "seed",
+        "source_profile",
+        "generator_version",
+        "replicated_cell_id",
+        "replicate_index",
+        "scenario_id",
         "plan_hash",
         "alignment_receipt_hash",
         "freeze_receipt_hash",

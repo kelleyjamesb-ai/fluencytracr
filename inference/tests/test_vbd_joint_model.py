@@ -11,6 +11,8 @@ from fluencytracr_inference.vbd_joint_artifact import (
 from fluencytracr_inference.vbd_joint_model import (
     VBDJointCoefficientSummary,
     VBDJointFit,
+    VBDJointSamplerSettings,
+    _fit_vbd_joint_model_with_settings,
     _predictive_summaries,
     build_vbd_joint_model,
     fit_vbd_joint_model,
@@ -62,6 +64,33 @@ def test_full_and_restricted_models_share_inputs_but_only_full_has_outcome_behav
         assert name not in restricted.named_vars
     assert "outcome_mean" in full.named_vars
     assert "outcome_mean" in restricted.named_vars
+
+
+def test_last_mile_v3_sampler_rejects_substituted_settings_and_seeds(prepared, monkeypatch):
+    def sampler_reached(**_kwargs):
+        raise AssertionError("sampler initialized")
+
+    monkeypatch.setattr("fluencytracr_inference.vbd_joint_model.pm.sample", sampler_reached)
+    with pytest.raises(VBDJointStructureError, match="frozen V3 sampler binding"):
+        _fit_vbd_joint_model_with_settings(
+            prepared,
+            variant="full",
+            settings=VBDJointSamplerSettings(
+                mode="smoke",
+                chains=2,
+                draws=1,
+                tune=1,
+                target_accept=0.5,
+                max_treedepth=1,
+            ),
+            chain_seeds=(7, 8),
+            summary_seed=7,
+        )
+
+
+def test_v3_fit_wrong_type_fails_with_closed_structure_error():
+    with pytest.raises(VBDJointStructureError, match="prepared data"):
+        fit_vbd_joint_model(object(), variant="full", seed=VBD_JOINT_PRIMARY_SEED)
 
 
 def test_evaluation_windows_are_absent_from_every_fitted_likelihood(prepared):

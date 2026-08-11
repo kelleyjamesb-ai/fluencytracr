@@ -130,6 +130,29 @@ duplication, and future-window predictive cases.
 A failed run SHALL remain HOLD. Model or threshold repair SHALL require a new
 frozen revision and SHALL NOT silently rerun the failed evidence universe.
 
+The replicated runner SHALL derive one runtime manifest from the actual clean
+Git source, interpreter, platform, lockfile bytes, and installed lockfile
+distributions. Every claim, ledger append, namespace combination, and ensemble
+artifact SHALL bind that same observed manifest and source commit.
+
+V4 cases SHALL enter the unchanged V3 likelihood only through an exact
+outer-envelope and validation-slot bridge. Prepared provenance SHALL retain the
+cell, replicate, canonical scenario, generator, and case while full and
+restricted fits share that prepared input. A separate fit specification SHALL
+bind the exact slot, variant, ordered chain seeds, and sampler settings. The
+high-error capability standard error SHALL be admitted only by exact
+high-error-case regeneration. V4 fitting SHALL NOT use V3 seed derivation.
+
+#### Scenario: Runtime provenance or V4 slot binding is mixed
+
+- **GIVEN** a self-consistent claim, artifact, prepared case, or fit request
+  from another runtime manifest, source commit, cell, replicate, slot, variant,
+  or chain-seed order
+- **WHEN** the replicated boundary validates or combines it
+- **THEN** the unit SHALL HOLD before sampler initialization
+- **AND** no manifest, prepared model, or ensemble artifact SHALL be emitted as
+  qualifying evidence.
+
 #### Scenario: Frozen synthetic validation passes
 
 - **GIVEN** every planned case and recomputation completes under the frozen

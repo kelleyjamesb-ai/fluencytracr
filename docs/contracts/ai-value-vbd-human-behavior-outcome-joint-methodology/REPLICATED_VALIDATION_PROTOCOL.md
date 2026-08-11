@@ -196,6 +196,15 @@ Execution requires one exact reviewed commit and a machine-readable runtime
 manifest. A commit, lockfile, platform, Python, or package mismatch stops before
 sampling.
 
+The manifest must be built from observations of the executing process and
+repository, not from copied protocol constants. The observer hashes the actual
+lockfile bytes, verifies every installed distribution in that exact lockfile,
+reads the interpreter and platform from the running process, reads Git `HEAD`,
+and requires a clean source tree. Claim creation, ledger append, namespace
+combination, artifact emission, and artifact validation all reconcile against
+the same observed manifest and source commit. A self-consistent claim or
+artifact from another manifest remains invalid.
+
 The qualifying plan has 100 canonical chunks, one replicate index per chunk.
 Each chunk contains the six fits in the table order above. At most four workers
 may run concurrently, and every worker must have disjoint PyTensor, Numba, and
@@ -205,6 +214,20 @@ The per-fit timeout is 2 hours. The complete study wall-time limit is 14 days.
 A timeout becomes a durable runner-error result and HOLDS the study. There are
 no automatic or manual retries. Interrupted or ambiguous claims also become
 durable HOLD results.
+
+Each V4 case enters preparation through an exact outer-envelope and slot
+bridge. Prepared provenance retains the V4 cell, replicate, canonical scenario,
+dataset seed, generator version, and case hash, and regenerates that exact V4
+case before model construction. Full and restricted fits therefore share the
+same prepared input. A separate fit specification binds its exact slot hash,
+model variant, ordered chain seeds, and sampler settings. The `0.30` capability
+standard error is admissible only for the exact high-capability-error cell. The
+V3 preparation contract remains unchanged.
+
+The fitting bridge passes the slot's ordered chain-seed tuple and exact sampler
+settings verbatim. It must not derive V4 seeds from the dataset seed or fall
+back to V3 seed rules. This bridge preserves the frozen V3 likelihood and
+priors; it creates no execution authority.
 
 ## Immutable Claims And Attempt Ledger
 

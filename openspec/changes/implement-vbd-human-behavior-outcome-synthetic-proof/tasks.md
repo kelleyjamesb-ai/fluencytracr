@@ -33,8 +33,9 @@
   nonqualifying preflights, runtime limits, output boundary, and review gates.
 - [x] 3.1 Implement the V4 replicated validation plan, generator cases,
   immutable create-once claims, append-only attempt ledger, separate preflight,
-  canary, and qualifying manifests, external checkpoint runner, exact combiner,
-  closed failure codes, and sanitized ensemble artifact.
+  canary, and qualifying manifests, observed runtime provenance, exact V4
+  preparation and slot-seed fitting bridge, external checkpoint runner, exact
+  combiner, closed failure codes, and sanitized ensemble artifact.
 - [ ] 3.2 Run lag, confounding, capability-error, source-drift,
   cohort-alignment, algebraic-duplication, availability-state, and binding
   controls.
