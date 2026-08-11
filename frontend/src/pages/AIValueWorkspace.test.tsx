@@ -598,25 +598,33 @@ describe("AIValueWorkspace executive spine", () => {
   it("holds free text that includes a name before canonicalization", async () => {
     renderWorkspace("/ai-value-workspace/value-case");
     const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
-    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
-      target: { value: "Jane Smith in Customer Success will assemble account context faster to reduce QBR preparation time." }
-    });
-    expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
-    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
-    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toMatch(/Jane Smith/i);
+    const hypothesis = within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i });
+    for (const personReference of ["Jane Smith", "José Smith", "J. Smith", "Jane Q Smith"]) {
+      fireEvent.change(hypothesis, {
+        target: {
+          value: `Customer Success will assemble account context faster for ${personReference} to reduce QBR preparation time.`
+        }
+      });
+      expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
+      expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+      expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toContain(personReference);
+    }
   });
 
   it("holds free text that includes an employee identifier before canonicalization", async () => {
     renderWorkspace("/ai-value-workspace/value-case");
     const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
-    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
-      target: {
-        value: "Customer Success will prepare QBRs faster for employee E12345."
-      }
-    });
-    expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
-    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
-    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toMatch(/E12345/i);
+    const hypothesis = within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i });
+    for (const identifier of ["employee E12345", "employee ID 123", "employee #42"]) {
+      fireEvent.change(hypothesis, {
+        target: {
+          value: `Customer Success will prepare QBRs faster for ${identifier}.`
+        }
+      });
+      expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
+      expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+      expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toContain(identifier);
+    }
   });
 
   it("allows registered title-cased business phrases", async () => {
@@ -684,7 +692,7 @@ describe("AIValueWorkspace executive spine", () => {
       await screen.findByRole("button", { name: /Import AI Fluency results/i })
     );
     expect(
-      await screen.findByRole("region", { name: /AI Fluency Evidence/i })
+      await screen.findByRole("region", { name: /Aggregate instrument evidence/i })
     ).toBeInTheDocument();
     expect(
       sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-token")
@@ -737,7 +745,7 @@ describe("AIValueWorkspace executive spine", () => {
       await screen.findByRole("button", { name: /Import AI Fluency results/i })
     );
     expect(
-      await screen.findByRole("region", { name: /AI Fluency Evidence/i })
+      await screen.findByRole("region", { name: /Aggregate instrument evidence/i })
     ).toBeInTheDocument();
 
     applyAuthToken(authTokenForOrganization("org-token-b"));
@@ -746,7 +754,7 @@ describe("AIValueWorkspace executive spine", () => {
       await screen.findByRole("status", { name: /AI Fluency results not imported/i })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("region", { name: /AI Fluency Evidence/i })
+      screen.queryByRole("region", { name: /Aggregate instrument evidence/i })
     ).not.toBeInTheDocument();
     expect(
       sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-token-b")
@@ -993,16 +1001,23 @@ describe("AIValueWorkspace executive spine", () => {
     const importButton = within(importPanel).getByRole("button", { name: /Import AI Fluency results/i });
     expect(importButton).toBeEnabled();
     expect(screen.getByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /Northstar Automotive case study/i })).not.toBeInTheDocument();
     expect(workspaceSource).not.toMatch(/Northstar Automotive|Aggregate result: 75%/i);
 
     fireEvent.click(importButton);
     expect(await within(importPanel).findByRole("button", { name: /Illustrative results loaded/i })).toBeDisabled();
     expect(within(importPanel).getByRole("status")).toHaveTextContent(/No backend import occurred/i);
-    const evidence = await screen.findByRole("region", { name: /AI Fluency Evidence/i });
+    const evidence = await screen.findByRole("region", { name: /Aggregate instrument evidence/i });
     expect(evidence).toHaveFocus();
-    expect(within(evidence).getByRole("heading", { name: /AI Fluency Evidence/i })).toBeInTheDocument();
+    expect(
+      within(evidence).getByRole("heading", {
+        name: /Illustrative instrument-derived readiness context/i
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(evidence).queryByRole("heading", { name: /AI Fluency Evidence/i })
+    ).not.toBeInTheDocument();
     expect(within(evidence).getByText(/Instrument-derived evidence/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/AIOM-facilitated capture/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/Value Realization uses the readout/i)).toBeInTheDocument();
@@ -1123,7 +1138,7 @@ describe("AIValueWorkspace executive spine", () => {
     fireEvent.click(within(workspaceNav).getByRole("link", { name: /5\. Evidence/i }));
     expect(await screen.findByRole("region", { name: /Evidence binding status/i })).toBeInTheDocument();
     fireEvent.click(within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", { name: /4\. AI Readiness/i }));
-    expect(await screen.findByRole("region", { name: /AI Fluency Evidence/i })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /Aggregate instrument evidence/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Illustrative results loaded/i })).toBeDisabled();
 
     // Practitioner clutter stays off the executive page.
@@ -1277,21 +1292,21 @@ describe("AIValueWorkspace executive spine", () => {
     renderWorkspace("/ai-value-workspace/readiness");
     expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Import AI Fluency results/i })).toBeEnabled();
-    expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
   });
 
   it("rejects tampered payload receipts and receipts from a different value-case draft", async () => {
     const receiptKey = "aiValue.aiFluencyImportReceipt.v1:org-1";
     const first = renderWorkspace("/ai-value-workspace/readiness");
     fireEvent.click(await screen.findByRole("button", { name: /Import AI Fluency results/i }));
-    expect(await screen.findByRole("region", { name: /AI Fluency Evidence/i })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /Aggregate instrument evidence/i })).toBeInTheDocument();
     const tamperedReceipt = JSON.parse(sessionStorage.getItem(receiptKey) ?? "{}");
     sessionStorage.setItem(receiptKey, JSON.stringify({ ...tamperedReceipt, payloadChecksum: "fnv1a32:00000000" }));
     first.unmount();
 
     const tampered = renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
     expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
     tampered.unmount();
 
     sessionStorage.setItem(guidedSetupStorageKey(), JSON.stringify({
@@ -1302,14 +1317,14 @@ describe("AIValueWorkspace executive spine", () => {
     sessionStorage.setItem(receiptKey, JSON.stringify(tamperedReceipt));
     renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
     expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
   });
 
   it("does not restore imported AI Fluency results across organization sessions", async () => {
     localStorage.setItem("orgId", "org-a");
     const orgA = renderWorkspace("/ai-value-workspace/readiness");
     fireEvent.click(await screen.findByRole("button", { name: /Import AI Fluency results/i }));
-    expect(await screen.findByRole("region", { name: /AI Fluency Evidence/i })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /Aggregate instrument evidence/i })).toBeInTheDocument();
     expect(JSON.parse(sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-a") ?? "{}")).toMatchObject({
       organizationId: "org-a",
       sourceId: "illustrative-organizational-report",
@@ -1326,7 +1341,7 @@ describe("AIValueWorkspace executive spine", () => {
     expect(
       screen.queryByRole("region", { name: /Connected value setup/i })
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
     orgA.unmount();
 
     sessionStorage.setItem(
@@ -1335,7 +1350,7 @@ describe("AIValueWorkspace executive spine", () => {
     );
     renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
     expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
   });
 
   it("allows AI Fluency import only after external collection is complete", () => {

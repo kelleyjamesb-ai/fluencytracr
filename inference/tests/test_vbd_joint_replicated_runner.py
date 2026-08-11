@@ -20,6 +20,8 @@ from fluencytracr_inference.vbd_joint_replicated_runner import (
     validate_sanitized_ensemble_artifact,
 )
 from fluencytracr_inference.vbd_joint_replicated_validation_plan import (
+    VBD_JOINT_REPLICATED_STUDY_TIMEOUT_SECONDS,
+    VBDJointReplicatedValidationClaim,
     VBDJointReplicatedValidationDisposition,
     vbd_joint_replicated_validation_plan,
 )
@@ -28,6 +30,7 @@ from fluencytracr_inference.vbd_joint_replicated_validation_plan import (
 SOURCE_COMMIT = "a" * 40
 STARTED_AT = "2026-08-11T00:00:00+00:00"
 DEADLINE_AT = "2026-08-11T02:00:00+00:00"
+COMPLETED_AT = "2026-08-11T01:00:00+00:00"
 
 
 def _manifest(source_commit=SOURCE_COMMIT):
@@ -179,6 +182,67 @@ def test_sampler_free_packet_binds_slot_and_dataset_without_sampling(runtime_man
     assert packet.packet_hash == sha256_json(packet.body_without_hash())
 
 
+def test_sampler_free_packet_rejects_a_self_consistent_replacement_plan(runtime_manifest):
+    plan = vbd_joint_replicated_validation_plan()
+    changed_slot = replace(plan.preflight_slots[0], draws=999)
+    changed_preflight = (changed_slot, *plan.preflight_slots[1:])
+    changed_body = {
+        **plan.body_without_hash(),
+        "preflight_slots": [slot.to_dict() for slot in changed_preflight],
+    }
+    changed_plan = replace(
+        plan,
+        preflight_slots=changed_preflight,
+        plan_hash=sha256_json(changed_body),
+    )
+
+    with pytest.raises(VBDJointReplicatedRunnerError, match="canonical frozen plan"):
+        build_sampler_free_execution_packet(
+            changed_slot,
+            plan=changed_plan,
+            runtime_manifest=runtime_manifest,
+        )
+
+
+def test_claim_creation_and_append_reject_a_substituted_slot(runtime_manifest):
+    plan = vbd_joint_replicated_validation_plan()
+    changed_slot = replace(plan.preflight_slots[0], draws=301)
+    with pytest.raises(VBDJointReplicatedRunnerError, match="canonical frozen plan"):
+        make_claim_for_slot(
+            changed_slot,
+            plan_hash=plan.plan_hash,
+            runtime_manifest=runtime_manifest,
+            started_at=STARTED_AT,
+            deadline_at=DEADLINE_AT,
+        )
+
+    forged_body = {
+        "namespace": changed_slot.namespace,
+        "slot_id": changed_slot.slot_id,
+        "scenario_id": changed_slot.scenario_id,
+        "variant": changed_slot.variant,
+        "dataset_seed": changed_slot.dataset_seed,
+        "chain_seeds": tuple(changed_slot.chain_seeds),
+        "slot_hash": changed_slot.slot_hash,
+        "plan_hash": plan.plan_hash,
+        "source_commit": runtime_manifest.source_commit,
+        "runtime_manifest_hash": runtime_manifest.manifest_hash,
+        "started_at": STARTED_AT,
+        "deadline_at": DEADLINE_AT,
+    }
+    forged = VBDJointReplicatedValidationClaim(
+        **forged_body,
+        claim_hash=sha256_json(forged_body),
+    )
+    with pytest.raises(VBDJointReplicatedRunnerError, match="canonical frozen plan"):
+        VBDJointReplicatedAttemptLedger().append_claim(
+            forged,
+            changed_slot,
+            plan.plan_hash,
+            runtime_manifest=runtime_manifest,
+        )
+
+
 def test_claim_and_disposition_are_append_only_and_hash_bound(runtime_manifest):
     plan = vbd_joint_replicated_validation_plan()
     slot = plan.preflight_slots[0]
@@ -206,7 +270,9 @@ def test_claim_and_disposition_are_append_only_and_hash_bound(runtime_manifest):
         disposition_hash=sha256_json(body),
     )
     checkpoint = make_checkpoint_for_disposition(
-        disposition, case_hash=sha256_json({"case": slot.slot_id})
+        disposition,
+        case_hash=sha256_json({"case": slot.slot_id}),
+        completed_at=COMPLETED_AT,
     )
     completed = ledger.append_disposition(disposition, checkpoint)
     assert completed.attempt_root != ledger.attempt_root
@@ -266,6 +332,43 @@ def test_claim_requires_the_exact_frozen_two_hour_deadline(runtime_manifest):
         )
 
 
+def test_checkpoint_completion_must_be_inside_the_claimed_execution_window(
+    runtime_manifest,
+):
+    plan = vbd_joint_replicated_validation_plan()
+    slot = plan.preflight_slots[0]
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=plan.plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=STARTED_AT,
+        deadline_at=DEADLINE_AT,
+    )
+    ledger = VBDJointReplicatedAttemptLedger().append_claim(
+        claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
+    )
+    disposition_body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "COMPLETE",
+        "failure_code": "NONE",
+        "result_hash": sha256_json({"result": slot.slot_id}),
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **disposition_body,
+        disposition_hash=sha256_json(disposition_body),
+    )
+    checkpoint = make_checkpoint_for_disposition(
+        disposition,
+        case_hash=sha256_json({"case": slot.slot_id}),
+        completed_at="2026-08-11T03:00:00+00:00",
+    )
+
+    with pytest.raises(VBDJointReplicatedRunnerError, match="execution window"):
+        ledger.append_disposition(disposition, checkpoint)
+
+
 def _append_complete(ledger, slot, plan, runtime_manifest):
     claim = make_claim_for_slot(
         slot,
@@ -297,6 +400,7 @@ def _append_complete(ledger, slot, plan, runtime_manifest):
             case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
                 slot
             ).content_hash(),
+            completed_at=COMPLETED_AT,
         ),
     )
 
@@ -316,6 +420,90 @@ def test_qualifying_combiner_requires_the_exact_complete_manifest(runtime_manife
     assert summary.expected_slot_count == 600
     assert summary.observed_disposition_count == 600
     assert summary.observed_dataset_count == 400
+
+
+def test_attempt_roots_are_canonical_across_parallel_completion_order(runtime_manifest):
+    plan = vbd_joint_replicated_validation_plan()
+    slots = plan.preflight_slots[:2]
+    forward = VBDJointReplicatedAttemptLedger()
+    reverse = VBDJointReplicatedAttemptLedger()
+    for slot in slots:
+        forward = _append_complete(forward, slot, plan, runtime_manifest)
+    for slot in reversed(slots):
+        reverse = _append_complete(reverse, slot, plan, runtime_manifest)
+
+    assert forward.namespace_root("preflight") == reverse.namespace_root("preflight")
+    assert forward.attempt_root == reverse.attempt_root
+
+
+def test_combiner_holds_attempts_beyond_the_frozen_fourteen_day_limit(runtime_manifest):
+    plan = vbd_joint_replicated_validation_plan()
+    ledgers = []
+    for index, slot in enumerate(plan.preflight_slots):
+        started_at = STARTED_AT if index == 0 else "2026-08-25T00:00:01+00:00"
+        deadline_at = DEADLINE_AT if index == 0 else "2026-08-25T02:00:01+00:00"
+        claim = make_claim_for_slot(
+            slot,
+            plan_hash=plan.plan_hash,
+            runtime_manifest=runtime_manifest,
+            started_at=started_at,
+            deadline_at=deadline_at,
+        )
+        slot_ledger = VBDJointReplicatedAttemptLedger().append_claim(
+            claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
+        )
+        result_hash = sha256_json({"result": slot.slot_id})
+        disposition_body = {
+            "namespace": slot.namespace,
+            "slot_id": slot.slot_id,
+            "claim_hash": claim.claim_hash,
+            "state": "COMPLETE",
+            "failure_code": "NONE",
+            "result_hash": result_hash,
+        }
+        disposition = VBDJointReplicatedValidationDisposition(
+            **disposition_body,
+            disposition_hash=sha256_json(disposition_body),
+        )
+        slot_ledger = slot_ledger.append_disposition(
+            disposition,
+            make_checkpoint_for_disposition(
+                disposition,
+                case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
+                    slot
+                ).content_hash(),
+                completed_at=(
+                    COMPLETED_AT
+                    if index == 0
+                    else "2026-08-25T01:00:01+00:00"
+                ),
+            ),
+        )
+        ledgers.append(slot_ledger)
+
+    with pytest.raises(VBDJointReplicatedRunnerError, match="fourteen-day"):
+        ledgers[0].append_claim(
+            ledgers[1].claims[0],
+            plan.preflight_slots[1],
+            plan.plan_hash,
+            runtime_manifest=runtime_manifest,
+        )
+
+    ledger = VBDJointReplicatedAttemptLedger(
+        claims=tuple(item.claims[0] for item in ledgers),
+        dispositions=tuple(item.dispositions[0] for item in ledgers),
+        checkpoints=tuple(item.checkpoints[0] for item in ledgers),
+    )
+
+    assert VBD_JOINT_REPLICATED_STUDY_TIMEOUT_SECONDS == 14 * 24 * 60 * 60
+    summary = combine_namespace(
+        ledger,
+        namespace="preflight",
+        plan=plan,
+        runtime_manifest=runtime_manifest,
+    )
+    assert summary.state == "HOLD"
+    assert "INTERRUPTED_OR_AMBIGUOUS" in summary.failure_codes
 
 
 def test_combiner_cannot_clear_complete_dispositions_without_checkpoints(runtime_manifest):
@@ -372,6 +560,30 @@ def test_incomplete_namespaces_hold_and_sanitized_artifact_is_nonauthorizing(run
     assert artifact["state"] == "HOLD"
     assert artifact["authorization_flags"][-1] == ["runtime_integration_authorized", False]
     assert artifact["failure_codes"] == ["INTERRUPTED_OR_AMBIGUOUS"]
+
+
+def test_completed_ledgers_do_not_report_an_execution_interruption(
+    runtime_manifest, monkeypatch
+):
+    plan = vbd_joint_replicated_validation_plan()
+    case = SimpleNamespace(content_hash=lambda: "c" * 64)
+    monkeypatch.setattr(
+        replicated_runner,
+        "generate_vbd_joint_replicated_case_for_slot",
+        lambda _slot: case,
+    )
+    ledger = VBDJointReplicatedAttemptLedger()
+    for slot in plan.qualifying_slots + plan.preflight_slots + plan.canary_slots:
+        ledger = _append_complete(ledger, slot, plan, runtime_manifest)
+
+    artifact = emit_sanitized_ensemble_artifact(
+        ledger,
+        runtime_manifest=runtime_manifest,
+        plan=plan,
+    )
+
+    assert artifact["state"] == "HOLD"
+    assert artifact["failure_codes"] == []
 
 
 def test_artifact_rejects_unsafe_fields_and_tampering(runtime_manifest):

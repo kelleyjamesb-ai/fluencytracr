@@ -15,6 +15,7 @@ from .vbd_joint_types import (
     VBD_JOINT_FULL_RHAT_MAX,
     VBD_JOINT_MODEL_FAMILY,
     VBD_JOINT_MODEL_VERSION,
+    VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
     VBD_JOINT_NULL_SEED,
     VBD_JOINT_PRIMARY_SEED,
     VBD_JOINT_TRUTH,
@@ -98,6 +99,7 @@ _DIAGNOSTIC_FAILURES = {
     "tail_ess",
     "divergences",
     "max_treedepth",
+    "summary_nonfinite",
 }
 _PREDICTIVE_KEYS = {
     "bayesian_r_squared_difference_full_minus_restricted",
@@ -137,12 +139,23 @@ def _validate_diagnostics(diagnostics: object, sampler_settings: dict) -> None:
     expected_failures = []
     if sampler_settings["qualifying_settings"] is not True:
         expected_failures.append("smoke_settings_nonqualifying")
-    if diagnostics["max_r_hat"] > VBD_JOINT_FULL_RHAT_MAX:
-        expected_failures.append("r_hat")
-    if diagnostics["min_bulk_ess"] < VBD_JOINT_FULL_ESS_MIN:
-        expected_failures.append("bulk_ess")
-    if diagnostics["min_tail_ess"] < VBD_JOINT_FULL_ESS_MIN:
-        expected_failures.append("tail_ess")
+    diagnostic_values = tuple(
+        diagnostics[name] for name in ("max_r_hat", "min_bulk_ess", "min_tail_ess")
+    )
+    sentinel_count = diagnostic_values.count(VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL)
+    if sentinel_count:
+        if sentinel_count != len(diagnostic_values):
+            raise VBDJointStructureError("artifact nonfinite diagnostic sentinel is inconsistent")
+        expected_failures.append("summary_nonfinite")
+    else:
+        if any(value < 0.0 for value in diagnostic_values):
+            raise VBDJointStructureError("artifact diagnostic summary is invalid")
+        if diagnostics["max_r_hat"] > VBD_JOINT_FULL_RHAT_MAX:
+            expected_failures.append("r_hat")
+        if diagnostics["min_bulk_ess"] < VBD_JOINT_FULL_ESS_MIN:
+            expected_failures.append("bulk_ess")
+        if diagnostics["min_tail_ess"] < VBD_JOINT_FULL_ESS_MIN:
+            expected_failures.append("tail_ess")
     if diagnostics["divergence_count"]:
         expected_failures.append("divergences")
     if diagnostics["max_treedepth_count"]:

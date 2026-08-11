@@ -30,6 +30,7 @@ from .vbd_joint_replicated_validation_plan import (
     VBD_JOINT_REPLICATED_FAILURE_CODES,
     VBD_JOINT_REPLICATED_NAMESPACES,
     VBD_JOINT_REPLICATED_PER_FIT_TIMEOUT_SECONDS,
+    VBD_JOINT_REPLICATED_STUDY_TIMEOUT_SECONDS,
     VBD_JOINT_REPLICATED_STATES,
     VBDJointReplicatedPlanError,
     VBDJointReplicatedValidationClaim,
@@ -88,6 +89,36 @@ _FORBIDDEN_ARTIFACT_TOKENS = (
 
 class VBDJointReplicatedRunnerError(VBDJointReplicatedPlanError):
     """Raised when a runner identity or sanitized artifact fails closed."""
+
+
+def _require_canonical_plan(
+    plan: VBDJointReplicatedValidationPlan,
+) -> VBDJointReplicatedValidationPlan:
+    if type(plan) is not VBDJointReplicatedValidationPlan:
+        raise VBDJointReplicatedRunnerError("plan must use the exact frozen plan type")
+    canonical = vbd_joint_replicated_validation_plan()
+    if plan != canonical:
+        raise VBDJointReplicatedRunnerError("plan does not match the canonical frozen plan")
+    return canonical
+
+
+def _require_canonical_slot(
+    slot: VBDJointReplicatedValidationSlot,
+) -> VBDJointReplicatedValidationSlot:
+    if type(slot) is not VBDJointReplicatedValidationSlot:
+        raise VBDJointReplicatedRunnerError("slot must use the exact frozen slot type")
+    plan = vbd_joint_replicated_validation_plan()
+    expected = next(
+        (
+            candidate
+            for candidate in plan.qualifying_slots + plan.preflight_slots + plan.canary_slots
+            if candidate.slot_id == slot.slot_id
+        ),
+        None,
+    )
+    if expected is None or slot != expected:
+        raise VBDJointReplicatedRunnerError("slot does not match the canonical frozen plan")
+    return expected
 
 
 def _sha(name: str, value: object) -> str:
@@ -405,12 +436,11 @@ def build_sampler_free_execution_packet(
 ) -> VBDJointReplicatedExecutionPacket:
     """Bind a slot and deterministic dataset without initializing a sampler."""
 
-    if type(slot) is not VBDJointReplicatedValidationSlot:
-        raise VBDJointReplicatedRunnerError("slot must use the exact frozen slot type")
+    slot = _require_canonical_slot(slot)
     _require_observed_runtime_manifest(runtime_manifest)
-    plan = vbd_joint_replicated_validation_plan() if plan is None else plan
-    if type(plan) is not VBDJointReplicatedValidationPlan:
-        raise VBDJointReplicatedRunnerError("plan must use the exact frozen plan type")
+    plan = _require_canonical_plan(
+        vbd_joint_replicated_validation_plan() if plan is None else plan
+    )
     expected_slot = next(
         (
             candidate
@@ -453,6 +483,7 @@ class VBDJointReplicatedAttemptCheckpoint:
     claim_hash: str
     state: str
     failure_code: str
+    completed_at: str
     case_hash: str
     result_hash: str
     checkpoint_hash: str
@@ -474,6 +505,7 @@ class VBDJointReplicatedAttemptCheckpoint:
             raise VBDJointReplicatedRunnerError("held checkpoint lacks a failure")
         if type(self.slot_id) is not str or not self.slot_id:
             raise VBDJointReplicatedRunnerError("checkpoint slot ID is invalid")
+        _timestamp("completed_at", self.completed_at)
         if self.checkpoint_hash != sha256_json(self.body_without_hash()):
             raise VBDJointReplicatedRunnerError("checkpoint hash is invalid")
 
@@ -484,6 +516,7 @@ class VBDJointReplicatedAttemptCheckpoint:
             "claim_hash": self.claim_hash,
             "state": self.state,
             "failure_code": self.failure_code,
+            "completed_at": self.completed_at,
             "case_hash": self.case_hash,
             "result_hash": self.result_hash,
         }
@@ -533,12 +566,20 @@ class VBDJointReplicatedAttemptLedger:
         runtime_manifest: VBDJointReplicatedRuntimeManifest,
     ) -> "VBDJointReplicatedAttemptLedger":
         _require_observed_runtime_manifest(runtime_manifest)
+        slot = _require_canonical_slot(slot)
+        if plan_hash != vbd_joint_replicated_validation_plan().plan_hash:
+            raise VBDJointReplicatedRunnerError("claim plan hash is not canonical")
         validate_claim_for_slot(claim, slot, plan_hash)
         _require_frozen_claim_deadline(claim)
         _require_claim_runtime_provenance(claim, runtime_manifest)
         if claim.slot_id in {item.slot_id for item in self.claims}:
             raise VBDJointReplicatedRunnerError("claim already exists for slot")
-        return replace(self, claims=self.claims + (claim,))
+        prospective = replace(self, claims=self.claims + (claim,))
+        if not _attempt_within_frozen_study_timeout(prospective):
+            raise VBDJointReplicatedRunnerError(
+                "claim exceeds the frozen fourteen-day study timeout"
+            )
+        return prospective
 
     def append_disposition(
         self,
@@ -560,6 +601,15 @@ class VBDJointReplicatedAttemptLedger:
             raise VBDJointReplicatedRunnerError("checkpoint state does not bind disposition")
         if checkpoint.result_hash != disposition.result_hash:
             raise VBDJointReplicatedRunnerError("checkpoint result does not bind disposition")
+        completed_at = _timestamp("completed_at", checkpoint.completed_at)
+        if not (
+            _timestamp("started_at", claim.started_at)
+            <= completed_at
+            <= _timestamp("deadline_at", claim.deadline_at)
+        ):
+            raise VBDJointReplicatedRunnerError(
+                "checkpoint completion is outside the claimed execution window"
+            )
         if disposition.slot_id in {item.slot_id for item in self.dispositions}:
             raise VBDJointReplicatedRunnerError("disposition already exists for slot")
         if checkpoint.slot_id in {item.slot_id for item in self.checkpoints}:
@@ -577,18 +627,25 @@ class VBDJointReplicatedAttemptLedger:
                 "namespace": namespace,
                 "claims": [
                     item.body_without_hash()
-                    for item in self.claims
-                    if item.namespace == namespace
+                    for item in _canonical_ledger_rows(
+                        item for item in self.claims if item.namespace == namespace
+                    )
                 ],
                 "dispositions": [
                     item.body_without_hash()
-                    for item in self.dispositions
-                    if item.namespace == namespace
+                    for item in _canonical_ledger_rows(
+                        item
+                        for item in self.dispositions
+                        if item.namespace == namespace
+                    )
                 ],
                 "checkpoints": [
                     item.body_without_hash()
-                    for item in self.checkpoints
-                    if item.namespace == namespace
+                    for item in _canonical_ledger_rows(
+                        item
+                        for item in self.checkpoints
+                        if item.namespace == namespace
+                    )
                 ],
             }
         )
@@ -597,11 +654,52 @@ class VBDJointReplicatedAttemptLedger:
     def attempt_root(self) -> str:
         return sha256_json(
             {
-                "claims": [item.body_without_hash() for item in self.claims],
-                "dispositions": [item.body_without_hash() for item in self.dispositions],
-                "checkpoints": [item.body_without_hash() for item in self.checkpoints],
+                "claims": [
+                    item.body_without_hash()
+                    for item in _canonical_ledger_rows(self.claims)
+                ],
+                "dispositions": [
+                    item.body_without_hash()
+                    for item in _canonical_ledger_rows(self.dispositions)
+                ],
+                "checkpoints": [
+                    item.body_without_hash()
+                    for item in _canonical_ledger_rows(self.checkpoints)
+                ],
             }
         )
+
+
+def _canonical_ledger_rows(rows):
+    plan = vbd_joint_replicated_validation_plan()
+    ordered_slots = plan.qualifying_slots + plan.preflight_slots + plan.canary_slots
+    rank = {slot.slot_id: index for index, slot in enumerate(ordered_slots)}
+    materialized = tuple(rows)
+    if any(item.slot_id not in rank for item in materialized):
+        raise VBDJointReplicatedRunnerError("ledger contains an off-plan slot identity")
+    return tuple(sorted(materialized, key=lambda item: rank[item.slot_id]))
+
+
+def _attempt_within_frozen_study_timeout(
+    ledger: VBDJointReplicatedAttemptLedger,
+) -> bool:
+    if not ledger.claims:
+        return True
+    attempt_start = min(_timestamp("started_at", claim.started_at) for claim in ledger.claims)
+    completed_by_slot = {
+        checkpoint.slot_id: _timestamp("completed_at", checkpoint.completed_at)
+        for checkpoint in ledger.checkpoints
+    }
+    attempt_end = max(
+        completed_by_slot.get(
+            claim.slot_id,
+            _timestamp("deadline_at", claim.deadline_at),
+        )
+        for claim in ledger.claims
+    )
+    return (
+        attempt_end - attempt_start
+    ).total_seconds() <= VBD_JOINT_REPLICATED_STUDY_TIMEOUT_SECONDS
 
 
 def make_claim_for_slot(
@@ -614,8 +712,9 @@ def make_claim_for_slot(
     ) -> VBDJointReplicatedValidationClaim:
     """Create one immutable claim without sampling or persistence."""
 
-    if type(slot) is not VBDJointReplicatedValidationSlot:
-        raise VBDJointReplicatedRunnerError("slot must use the exact frozen slot type")
+    slot = _require_canonical_slot(slot)
+    if plan_hash != vbd_joint_replicated_validation_plan().plan_hash:
+        raise VBDJointReplicatedRunnerError("claim plan hash is not canonical")
     _require_observed_runtime_manifest(runtime_manifest)
     body = {
         "namespace": slot.namespace,
@@ -643,6 +742,7 @@ def make_checkpoint_for_disposition(
     disposition: VBDJointReplicatedValidationDisposition,
     *,
     case_hash: str,
+    completed_at: str,
 ) -> VBDJointReplicatedAttemptCheckpoint:
     body = {
         "namespace": disposition.namespace,
@@ -650,6 +750,7 @@ def make_checkpoint_for_disposition(
         "claim_hash": disposition.claim_hash,
         "state": disposition.state,
         "failure_code": disposition.failure_code,
+        "completed_at": _timestamp("completed_at", completed_at).isoformat(),
         "case_hash": _sha("case_hash", case_hash),
         "result_hash": disposition.result_hash,
     }
@@ -743,7 +844,9 @@ def combine_namespace(
     if type(ledger) is not VBDJointReplicatedAttemptLedger:
         raise VBDJointReplicatedRunnerError("ledger must use the exact immutable type")
     _require_observed_runtime_manifest(runtime_manifest)
-    plan = vbd_joint_replicated_validation_plan() if plan is None else plan
+    plan = _require_canonical_plan(
+        vbd_joint_replicated_validation_plan() if plan is None else plan
+    )
     slots = _slots_for_namespace(plan, namespace)
     expected_ids = tuple(item.slot_id for item in slots)
     validate_replicated_slot_manifest(namespace, expected_ids)
@@ -770,6 +873,8 @@ def combine_namespace(
     ):
         raise VBDJointReplicatedRunnerError("namespace contains duplicate identities")
     failure_codes = set()
+    if not _attempt_within_frozen_study_timeout(ledger):
+        failure_codes.add("INTERRUPTED_OR_AMBIGUOUS")
     complete_count = 0
     hold_count = 0
     dataset_bindings = set()
@@ -804,6 +909,15 @@ def combine_namespace(
         ):
             raise VBDJointReplicatedRunnerError(
                 "checkpoint does not bind the namespace disposition"
+            )
+        completed_at = _timestamp("completed_at", checkpoint.completed_at)
+        if not (
+            _timestamp("started_at", claim.started_at)
+            <= completed_at
+            <= _timestamp("deadline_at", claim.deadline_at)
+        ):
+            raise VBDJointReplicatedRunnerError(
+                "checkpoint completion is outside the claimed execution window"
             )
         dataset_identity = (claim.scenario_id, claim.dataset_seed)
         expected_case_hash = expected_case_hashes.get(dataset_identity)
@@ -994,7 +1108,9 @@ def emit_sanitized_ensemble_artifact(
     """Emit a sanitized V4 ensemble state, HOLDing until study gates exist."""
 
     _require_observed_runtime_manifest(runtime_manifest)
-    plan = vbd_joint_replicated_validation_plan() if plan is None else plan
+    plan = _require_canonical_plan(
+        vbd_joint_replicated_validation_plan() if plan is None else plan
+    )
     validate_seed_manifest()
     summaries = {
         namespace: combine_namespace(
@@ -1042,7 +1158,7 @@ def emit_sanitized_ensemble_artifact(
         "observed_fit_count": observed_fit_count,
         "namespace_states": [list(item) for item in namespace_states],
         "gate_states": [list(item) for item in gate_states],
-        "failure_codes": failure_codes or ["INTERRUPTED_OR_AMBIGUOUS"],
+        "failure_codes": failure_codes,
         "authorization_flags": [
             ["customer_output_authorized", False],
             ["probability_output_authorized", False],
@@ -1086,7 +1202,9 @@ def validate_sanitized_ensemble_artifact(
     _require_observed_runtime_manifest(runtime_manifest)
     if type(ledger) is not VBDJointReplicatedAttemptLedger:
         raise VBDJointReplicatedRunnerError("ledger must use the exact immutable type")
-    plan = vbd_joint_replicated_validation_plan() if plan is None else plan
+    plan = _require_canonical_plan(
+        vbd_joint_replicated_validation_plan() if plan is None else plan
+    )
     if type(artifact) is not dict:
         raise VBDJointReplicatedRunnerError("artifact must be a dictionary")
     expected_keys = {
@@ -1203,7 +1321,7 @@ def validate_sanitized_ensemble_artifact(
             for summary in summaries.values()
             for code in summary.failure_codes
         }
-    ) or ["INTERRUPTED_OR_AMBIGUOUS"]
+    )
     expected_semantics = {
         "plan_hash": plan.plan_hash,
         "preflight_summary_hash": summaries["preflight"].summary_hash,

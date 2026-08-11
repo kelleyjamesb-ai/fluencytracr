@@ -40,6 +40,28 @@ describe("deriveAggregateHypothesisFromBlueprint", () => {
     ).toBe("");
   });
 
+  it("rejects draft provenance anywhere in source metadata values", () => {
+    for (const metadata of [
+      "Version: First Draft",
+      "Document state: working draft",
+      "Working Draft",
+      "First Draft",
+      "Version First Draft",
+      "Working Draft v1",
+      "First Draft v2",
+      "Working-Draft",
+      "Draft v1"
+    ]) {
+      expect(
+        deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`
+          ${metadata}
+          Customer hypothesis: Customer Success will prepare QBRs faster and reduce QBR preparation time.
+        `)),
+        metadata
+      ).toBe("");
+    }
+  });
+
   it("rejects status metadata appended to the hypothesis line", () => {
     expect(
       deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`

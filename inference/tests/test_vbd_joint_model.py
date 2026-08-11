@@ -4,6 +4,8 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+import fluencytracr_inference.vbd_joint_model as joint_model
+
 from fluencytracr_inference.vbd_joint_artifact import (
     emit_vbd_joint_artifact,
     validate_vbd_joint_artifact,
@@ -12,6 +14,7 @@ from fluencytracr_inference.vbd_joint_model import (
     VBDJointCoefficientSummary,
     VBDJointFit,
     VBDJointSamplerSettings,
+    _sampler_diagnostics,
     _fit_vbd_joint_model_with_settings,
     _predictive_summaries,
     build_vbd_joint_model,
@@ -23,6 +26,7 @@ from fluencytracr_inference.vbd_joint_preparation import prepare_vbd_joint_datas
 from fluencytracr_inference.vbd_joint_synthetic import generate_vbd_joint_synthetic_dataset
 from fluencytracr_inference.vbd_joint_types import (
     VBD_JOINT_BLOCKED_OUTPUTS,
+    VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
     VBD_JOINT_PANEL_COUNT,
     VBD_JOINT_PRIMARY_SEED,
     VBD_JOINT_WINDOW_COUNT,
@@ -86,6 +90,98 @@ def test_last_mile_v3_sampler_rejects_substituted_settings_and_seeds(prepared, m
             chain_seeds=(7, 8),
             summary_seed=7,
         )
+
+
+@pytest.mark.parametrize(
+    "invalid_source",
+    (
+        "rhat",
+        "bulk_ess",
+        "tail_ess",
+        "diverging",
+        "tree_depth",
+        "reached_max_treedepth",
+        "empty_rhat",
+        "rhat_with_divergence",
+        "rhat_with_max_treedepth",
+    ),
+)
+def test_sampler_diagnostics_hold_nonfinite_or_empty_summaries(
+    monkeypatch, invalid_source
+):
+    class DiagnosticTree:
+        data_vars = ("metric",)
+
+        def __init__(self, values):
+            self.values = np.asarray(values, dtype=float)
+
+        def __getitem__(self, _name):
+            return self.values
+
+    sample_stats = {
+        "diverging": np.asarray(
+            [[
+                float("nan")
+                if invalid_source == "diverging"
+                else 1.0 if invalid_source == "rhat_with_divergence" else 0.0
+            ]]
+        ),
+        "tree_depth": np.asarray(
+            [[
+                float("nan")
+                if invalid_source == "tree_depth"
+                else 99.0 if invalid_source == "rhat_with_max_treedepth" else 1.0
+            ]]
+        ),
+    }
+    if invalid_source == "reached_max_treedepth":
+        sample_stats["reached_max_treedepth"] = np.asarray([[float("nan")]])
+    idata = SimpleNamespace(
+        posterior={"outcome_embedded": np.asarray([1.0])},
+        sample_stats=sample_stats,
+    )
+    monkeypatch.setattr(
+        joint_model.az,
+        "rhat",
+        lambda *_args, **_kwargs: DiagnosticTree(
+            []
+            if invalid_source == "empty_rhat"
+            else [
+                float("nan")
+                if invalid_source in {
+                    "rhat",
+                    "rhat_with_divergence",
+                    "rhat_with_max_treedepth",
+                }
+                else 1.0
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        joint_model.az,
+        "ess",
+        lambda *_args, **kwargs: DiagnosticTree(
+            [
+                float("nan")
+                if invalid_source
+                == ("bulk_ess" if kwargs["method"] == "bulk" else "tail_ess")
+                else 1000.0
+            ]
+        ),
+    )
+
+    diagnostics = _sampler_diagnostics(idata, vbd_joint_sampler_settings("full"))
+
+    assert diagnostics["state"] == "HOLD"
+    assert "summary_nonfinite" in diagnostics["failing_diagnostics"]
+    if invalid_source == "rhat_with_divergence":
+        assert "divergences" in diagnostics["failing_diagnostics"]
+    if invalid_source == "rhat_with_max_treedepth":
+        assert "max_treedepth" in diagnostics["failing_diagnostics"]
+    assert all(
+        np.isfinite(diagnostics[name])
+        for name in ("max_r_hat", "min_bulk_ess", "min_tail_ess")
+    )
 
 
 def test_v3_fit_wrong_type_fails_with_closed_structure_error():
@@ -227,6 +323,28 @@ def _fake_fit(prepared, variant):
         future_window_log_score=-0.2 if variant == "full" else -0.4,
         wall_time_seconds=1.0,
     )
+
+
+def test_nonfinite_diagnostic_hold_is_durable_in_the_sanitized_artifact(prepared):
+    full_fit = _fake_fit(prepared, "full")
+    full_fit.diagnostics = {
+        **full_fit.diagnostics,
+        "failing_diagnostics": ["smoke_settings_nonqualifying", "summary_nonfinite"],
+        "max_r_hat": VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
+        "min_bulk_ess": VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
+        "min_tail_ess": VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
+    }
+
+    artifact = emit_vbd_joint_artifact(
+        full_fit=full_fit,
+        restricted_fit=_fake_fit(prepared, "restricted"),
+        synthetic_case="primary",
+    )
+
+    assert artifact["internal_state"] == "HOLD_SMOKE_NONQUALIFYING"
+    assert "summary_nonfinite" in artifact["fit_states"]["full"]["diagnostics"][
+        "failing_diagnostics"
+    ]
 
 
 def test_artifact_is_summary_only_and_smoke_holds(prepared):

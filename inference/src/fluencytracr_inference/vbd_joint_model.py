@@ -34,6 +34,7 @@ from .vbd_joint_types import (
     VBD_JOINT_INTERVAL_LOWER,
     VBD_JOINT_INTERVAL_UPPER,
     VBD_JOINT_NULL_SEED,
+    VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
     VBD_JOINT_PANEL_COUNT,
     VBD_JOINT_PRIMARY_SEED,
     VBD_JOINT_RESIDUAL_SCALE_PRIOR_SD,
@@ -526,32 +527,85 @@ def _sampler_diagnostics(idata, settings: VBDJointSamplerSettings) -> dict:
     rhat = _dataset_values(az.rhat(idata, var_names=parameter_names))
     bulk_ess = _dataset_values(az.ess(idata, var_names=parameter_names, method="bulk"))
     tail_ess = _dataset_values(az.ess(idata, var_names=parameter_names, method="tail"))
-    divergences = int(np.asarray(idata.sample_stats["diverging"], dtype=int).sum())
+    sample_stats_valid = True
+    try:
+        diverging_values = np.asarray(
+            idata.sample_stats["diverging"], dtype=float
+        )
+        sample_stats_valid = (
+            diverging_values.size > 0
+            and np.isfinite(diverging_values).all()
+            and np.isin(diverging_values, (0.0, 1.0)).all()
+        )
+    except (KeyError, TypeError, ValueError):
+        diverging_values = np.asarray([], dtype=float)
+        sample_stats_valid = False
+    divergences = int(diverging_values.sum()) if sample_stats_valid else 0
     reached_max = 0
     if "reached_max_treedepth" in idata.sample_stats:
-        reached_max = int(
-            np.asarray(idata.sample_stats["reached_max_treedepth"], dtype=int).sum()
-        )
+        try:
+            reached_values = np.asarray(
+                idata.sample_stats["reached_max_treedepth"], dtype=float
+            )
+            reached_valid = (
+                reached_values.size > 0
+                and np.isfinite(reached_values).all()
+                and np.isin(reached_values, (0.0, 1.0)).all()
+            )
+        except (TypeError, ValueError):
+            reached_values = np.asarray([], dtype=float)
+            reached_valid = False
+        sample_stats_valid = sample_stats_valid and reached_valid
+        reached_max = int(reached_values.sum()) if reached_valid else 0
     elif "tree_depth" in idata.sample_stats:
+        try:
+            tree_depth_values = np.asarray(
+                idata.sample_stats["tree_depth"], dtype=float
+            )
+            tree_depth_valid = (
+                tree_depth_values.size > 0
+                and np.isfinite(tree_depth_values).all()
+                and (tree_depth_values >= 0.0).all()
+                and np.equal(tree_depth_values, np.floor(tree_depth_values)).all()
+            )
+        except (TypeError, ValueError):
+            tree_depth_values = np.asarray([], dtype=float)
+            tree_depth_valid = False
+        sample_stats_valid = sample_stats_valid and tree_depth_valid
         reached_max = int(
-            (
-                np.asarray(idata.sample_stats["tree_depth"], dtype=int)
-                >= settings.max_treedepth
-            ).sum()
-        )
+            (tree_depth_values >= settings.max_treedepth).sum()
+        ) if tree_depth_valid else 0
+    else:
+        sample_stats_valid = False
     failures = []
     if not settings.qualifying_settings:
         failures.append("smoke_settings_nonqualifying")
+    if divergences:
+        failures.append("divergences")
+    if reached_max:
+        failures.append("max_treedepth")
+    diagnostic_arrays = (rhat, bulk_ess, tail_ess)
+    if (
+        not sample_stats_valid
+        or any(values.size == 0 or not np.isfinite(values).all() for values in diagnostic_arrays)
+    ):
+        failures.append("summary_nonfinite")
+        return {
+            "state": "HOLD",
+            "failing_diagnostics": sorted(set(failures)),
+            "max_r_hat": VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
+            "min_bulk_ess": VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
+            "min_tail_ess": VBD_JOINT_NONFINITE_DIAGNOSTIC_SENTINEL,
+            "divergence_count": divergences,
+            "max_treedepth_count": reached_max,
+            "full_run_required_for_qualification": True,
+        }
     if float(np.max(rhat)) > VBD_JOINT_FULL_RHAT_MAX:
         failures.append("r_hat")
     if float(np.min(bulk_ess)) < VBD_JOINT_FULL_ESS_MIN:
         failures.append("bulk_ess")
     if float(np.min(tail_ess)) < VBD_JOINT_FULL_ESS_MIN:
         failures.append("tail_ess")
-    if divergences:
-        failures.append("divergences")
-    if reached_max:
-        failures.append("max_treedepth")
     return {
         "state": "PASS" if not failures else "HOLD",
         "failing_diagnostics": sorted(set(failures)),

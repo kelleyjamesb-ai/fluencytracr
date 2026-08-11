@@ -30,6 +30,16 @@ const UNSAFE_SOURCE_PROVENANCE =
   /\b(?:archived|cancelled|declined|deprecated|do not use|expired|for reference only|historical|illustrative example|lapsed|never approved|not approved|obsolete|pending|previous version|rejected|rescinded|revoked|superseded|template|unapproved|void|withdrawn)\b/i;
 const DRAFT_METADATA_VALUE = /[:=]|\s+[\p{Pd}]\s+/u;
 const DRAFT_SOURCE_MARKER = /\bdraft\s+(?:copy|only|status|version)\b/i;
+const STANDALONE_DRAFT_BANNER =
+  /^(?:(?:first|final|initial|internal|old|review|rough|working)[\s\p{Pd}]+)?draft(?:[\s\p{Pd}]+v(?:ersion)?\s*\d+)?[.!]?$/iu;
+const DELIMITERLESS_DRAFT_METADATA =
+  /^(?:version|document\s+(?:state|status|version)|draft\s+status)\s+(?:\w+\s+){0,3}draft\b/i;
+const DRAFT_PROVENANCE_METADATA_LABELS = new Set([
+  "documentstate",
+  "documentstatus",
+  "draftstatus",
+  "version"
+]);
 const NESTED_SECTION_LABEL =
   /^(?:(?:customer|value)[ \t]+hypothesis|future[ \t]+state|target[ \t]+outcome|function)[ \t]*:[ \t]*[^:\r\n]+:/im;
 const UNAPPROVED_CONSTRUCTION = /\bnot(?:\s+\w+){0,3}\s+approved\b/i;
@@ -122,14 +132,27 @@ const containsDraftSourceProvenance = (documents: string[]) => {
   if (compactLines.some((line, index) => `${line}${compactLines[index + 1] ?? ""}` === "draft")) {
     return true;
   }
+  if (
+    lines.some(
+      (line) =>
+        STANDALONE_DRAFT_BANNER.test(line) || DELIMITERLESS_DRAFT_METADATA.test(line)
+    )
+  ) {
+    return true;
+  }
   return lines.some((line) => {
     const delimiter = DRAFT_METADATA_VALUE.exec(line);
     if (!delimiter) return false;
-    const value = line
-      .slice(delimiter.index + delimiter[0].length)
+    const label = line
+      .slice(0, delimiter.index)
       .replace(/[^\p{L}\p{N}]+/gu, "")
       .toLowerCase();
-    return value === "draft";
+    if (!DRAFT_PROVENANCE_METADATA_LABELS.has(label)) return false;
+    const value = line
+      .slice(delimiter.index + delimiter[0].length)
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .toLowerCase();
+    return /(?:^|\s)draft(?:\s|$)/.test(value);
   });
 };
 

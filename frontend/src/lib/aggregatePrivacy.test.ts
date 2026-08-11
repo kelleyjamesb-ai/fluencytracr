@@ -10,6 +10,14 @@ describe("aggregate hypothesis privacy gate", () => {
     expect(containsPotentialPersonName("Jane Smith in Customer Success will prepare QBRs faster.")).toBe(true);
     expect(containsPotentialPersonName("jane smith in Customer Success will prepare QBRs faster.")).toBe(true);
     expect(containsPotentialPersonName("Customer Success owner: jane smith will prepare QBRs faster.")).toBe(true);
+    for (const personReference of ["José Smith", "J. Smith", "Jane Q Smith"]) {
+      expect(
+        containsPotentialPersonName(
+          `Customer Success will prepare QBRs faster for ${personReference}.`
+        ),
+        personReference
+      ).toBe(true);
+    }
   });
 
   it("allows known aggregate function labels", () => {
@@ -46,7 +54,16 @@ describe("aggregate hypothesis privacy gate", () => {
     for (const identifier of [
       "employee #: E12345",
       "employee identifier E12345",
-      "account # ACCT-90210"
+      "account # ACCT-90210",
+      "employee ID 123",
+      "employee #42",
+      "user ID 7",
+      "employee no. 42",
+      "account#42",
+      "employee ID ABC",
+      "account#ABC",
+      "account\u200b#42",
+      "employee no . 42"
     ]) {
       expect(
         containsPotentialOrganizationIdentifier(

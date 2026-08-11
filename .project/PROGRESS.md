@@ -5926,3 +5926,38 @@
   execution, deployment, merge, or production mutation occurred. GitHub
   thread replies and fresh CI/re-review remain post-push evidence, not local
   completion proof.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 final exact-head closure)
+
+- Closed the nine additional exact-head review findings and their bounded
+  adversarial variants. Replicated execution material now requires the exact
+  canonical frozen plan and slot at packet, claim creation, claim append,
+  combination, emission, and validation boundaries. Ledger roots canonicalize
+  parallel arrival order without allowing a replacement plan.
+- Added hash-bound checkpoint completion time, enforced it inside each claimed
+  execution window, rejected prospective claims beyond the frozen fourteen-day
+  limit, and rechecked direct/resealed ledgers during combination and artifact
+  validation. Complete ledgers remain overall `HOLD` for pending study gates
+  without falsely reporting an execution interruption.
+- Nonfinite, empty, or malformed R-hat, ESS, divergence, and tree-depth inputs
+  now emit a finite `summary_nonfinite` diagnostic HOLD. Simultaneous finite
+  divergence or max-depth failures remain preserved; sanitized artifact
+  validation rejects inconsistent sentinels or failure lists.
+- Expanded aggregate intake privacy handling for accented and initialed names,
+  short and alphabetic labeled identifiers, punctuation, Unicode format
+  separators, and `no.` variants. Blueprint parsing rejects delimited,
+  standalone, dash-separated, and version-suffixed draft provenance while
+  preserving ordinary workflow use of `draft` and registered aggregate
+  business phrases. The visible and accessible headings now frame the imported
+  instrument as aggregate readiness context.
+- Final local evidence: frontend `283/283`; focused runner/model `50/50`; exact
+  `vbd-engine` shard `847/847` in `821.96s`; root harness `872 passed`, `10
+  skipped`, `156` intentional deselections; frontend production build/lint,
+  LMSYS Assurance self-test, V1 governance, strict OpenSpec, shard validation,
+  compileall, JSON parsing, and `git diff --check` passed. Independent
+  provenance, V4/diagnostic, and adversarial reviews returned `GO`.
+- No sampler, V4 preflight/canary/study, customer or real data, external
+  execution, thread resolution, merge, deployment, or production proof
+  occurred. Namespace `COMPLETE` remains structural checkpoint completeness,
+  not statistical qualification or execution authorization; all ensemble study
+  gates and authorization flags remain `HOLD`/false.

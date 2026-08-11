@@ -3572,13 +3572,13 @@ const ReadinessPage = ({
         ref={resultsRef}
         tabIndex={-1}
         className="ai-value-panel ai-fluency-evidence-panel"
-        aria-label="AI Fluency Evidence"
+        aria-label="Aggregate instrument evidence"
         aria-live="polite"
       >
         <div className="ai-value-section-head">
           <div>
             <p className="eyebrow">Instrument-derived evidence</p>
-            <h3>Illustrative AI Fluency Evidence</h3>
+            <h3>Illustrative instrument-derived readiness context</h3>
             <p>
               Keep capture, profile, translation, and report interpretation in one
               place because each read comes from the same AI Fluency instrument.
