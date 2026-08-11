@@ -14,6 +14,23 @@ describe("deriveAggregateHypothesisFromBlueprint", () => {
     expect(result).toContain("metric intent: qbr preparation time");
   });
 
+  it("allows status words inside an approved aggregate hypothesis", () => {
+    const result = deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`
+      Customer hypothesis: Customer Success will prepare quarterly business reviews faster and reduce QBR preparation time.
+    `));
+
+    expect(result).toContain("Customer Success:");
+    expect(result).toContain("metric intent: qbr preparation time");
+  });
+
+  it("rejects status metadata appended to the hypothesis line", () => {
+    expect(
+      deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`
+        Customer hypothesis: Customer Success will prepare quarterly business reviews faster and reduce QBR preparation time. Review status: OK
+      `))
+    ).toBe("");
+  });
+
   it("does not carry names, email addresses, or unrelated document text into the result", () => {
     const result = deriveAggregateHypothesisFromBlueprint(approvedBlueprint(`
       Prepared by Jane Smith, jane.smith@example.com.
@@ -94,7 +111,8 @@ describe("deriveAggregateHypothesisFromBlueprint", () => {
       expect(
         deriveAggregateHypothesisFromBlueprint(
           `Blueprint status: Approved\n${conflictingContext}\n${hypothesis}`
-        )
+        ),
+        conflictingContext
       ).toBe("");
     }
   });

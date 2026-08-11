@@ -5867,3 +5867,27 @@
   execution/evidence tasks in the active OpenSpec; a clean committed source is
   required before the observed runtime can produce a manifest and before any
   separately authorized execution review can begin.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 active review follow-up)
+
+- Verified the three current, non-outdated review threads against PR head
+  `06ad2754dae664870b35cec0e2730d7b652bf38b`. Two required code changes;
+  the requested Blueprint Assurance Harness fixture already existed from
+  `b2a8f2dd` and was wired into the seed self-test.
+- Added fail-first parser coverage proving that the supported phrase
+  `quarterly business reviews` inside an approved Customer hypothesis is not
+  status metadata. The parser now checks conflicting status labels only when
+  they are metadata-field prefixes with a value delimiter, while preserving
+  the existing fail-closed cases for obfuscated `Review status`, `Approval`,
+  `Lifecycle`, and related metadata.
+- Changed the active-case Home action to the existing source-bound case route
+  `/ai-value-workspace/case`. Returning users and new tabs no longer enter the
+  local value-case setup editor with an empty session draft when an active
+  backend case is already selected.
+- Focused frontend parser/workspace tests passed `77/77`. `npm run test:seed`
+  rebuilt the shared package and passed the LMSYS Assurance Harness self-test,
+  including the Blueprint admitted and held fixture states. The complete
+  frontend suite passed `277/277`; the frontend production build, V1
+  governance gates, queue JSON validation, and `git diff --check` passed. No
+  customer data, deployment, merge, thread resolution, or V4 execution
+  occurred.

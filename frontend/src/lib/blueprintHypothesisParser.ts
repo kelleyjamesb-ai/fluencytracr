@@ -12,15 +12,20 @@ const SUPPORTED_STORY_TOKEN =
 const COMPACT_STORY_TOKEN =
   /(?:customerhypothesis|valuehypothesis|futurestate|targetoutcome|function):/gi;
 const APPROVED_BLUEPRINT_STATUS = /^blueprint[ \t]+status[ \t]*:[ \t]*(?:approved|current)[ \t]*$/i;
-const CONFLICTING_STATUS_TOKEN =
-  /\b(?:approval|approval\s+status|cancellation|expiry|lifecycle|review|review\s+status|revocation|status|withdrawal)\s*:/i;
-const CONFLICTING_STATUS_LABEL =
-  /\b(?:approval|approval\s+status|cancellation|expiry|lifecycle|review|review\s+status|revocation|status|withdrawal)\b/i;
 const COMPACT_BLUEPRINT_STATUS_TOKEN = /blueprintstatus:/gi;
-const COMPACT_CONFLICTING_STATUS_TOKEN =
-  /(?:approval|approvalstatus|cancellation|expiry|lifecycle|review|reviewstatus|revocation|status|withdrawal):/i;
-const COMPACT_CONFLICTING_STATUS_LABEL =
-  /(?:approval|approvalstatus|cancellation|expiry|lifecycle|review|reviewstatus|revocation|status|withdrawal)/i;
+const CONFLICTING_STATUS_METADATA_LABELS = new Set([
+  "approval",
+  "approvalstatus",
+  "cancellation",
+  "expiry",
+  "lifecycle",
+  "review",
+  "reviewstatus",
+  "revocation",
+  "status",
+  "withdrawal"
+]);
+const METADATA_VALUE_DELIMITER = /[:=]|\s+[\p{Pd}]\s+/gu;
 const UNSAFE_SOURCE_PROVENANCE =
   /\b(?:archived|cancelled|declined|deprecated|do not use|draft|expired|for reference only|historical|illustrative example|lapsed|never approved|not approved|obsolete|pending|previous version|rejected|rescinded|revoked|superseded|template|unapproved|void|withdrawn)\b/i;
 const NESTED_SECTION_LABEL =
@@ -70,18 +75,43 @@ const analyzeSegment = (value: string): SegmentAnalysis => {
   };
 };
 
-const documentSections = (rawText: string) =>
+const documentLines = (rawText: string) =>
   rawText
     .replace(/\0/g, " ")
     .split(/[\r\n\u2028\u2029]+/)
     .map((part) => part.replace(/\s+/g, " ").trim())
-    .filter((part) => part.length >= MIN_SEGMENT_LENGTH);
+    .filter(Boolean);
+
+const documentSections = (rawText: string) =>
+  documentLines(rawText).filter((part) => part.length >= MIN_SEGMENT_LENGTH);
 
 const candidateSegments = (sections: string[]) =>
   sections.filter((section) => SUPPORTED_SECTION_HEADING.test(section));
 
 const occurrenceCount = (value: string, pattern: RegExp) =>
   Array.from(value.matchAll(pattern)).length;
+
+const containsConflictingStatusMetadata = (documents: string[]) =>
+  documents.flatMap(documentLines).some((section) => {
+    for (const delimiter of section.matchAll(METADATA_VALUE_DELIMITER)) {
+      const labelTokens = section
+        .slice(0, delimiter.index)
+        .replace(/[^\p{L}\p{N}\s]+/gu, "")
+        .toLowerCase()
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      if (labelTokens.join("") === "blueprintstatus") continue;
+      if ([1, 2, 3].some((tokenCount) =>
+        CONFLICTING_STATUS_METADATA_LABELS.has(
+          labelTokens.slice(-tokenCount).join("")
+        )
+      )) {
+        return true;
+      }
+    }
+    return false;
+  });
 
 const containsContradictorySupportedExpectation = (sections: string[]) =>
   sections.some((section) => {
@@ -153,7 +183,6 @@ export const deriveAggregateHypothesisFromBlueprint = (rawText: string) => {
 
   const sections = documentSections(canonicalText);
   const statusSections = sections.filter((section) => BLUEPRINT_STATUS_HEADING.test(section));
-  const textWithoutBlueprintStatus = canonicalText.replace(BLUEPRINT_STATUS_TOKEN, "");
   if (
     occurrenceCount(canonicalText, BLUEPRINT_STATUS_TOKEN) !== 1 ||
     metadataVariants.some((value) => occurrenceCount(value, BLUEPRINT_STATUS_TOKEN) !== 1) ||
@@ -164,23 +193,7 @@ export const deriveAggregateHypothesisFromBlueprint = (rawText: string) => {
     metadataVariants.some((value) => occurrenceCount(value, SUPPORTED_STORY_TOKEN) !== 1) ||
     compactMetadataVariants.some((value) => occurrenceCount(value, COMPACT_STORY_TOKEN) !== 1) ||
     statusSections.length !== 1 ||
-    (CONFLICTING_STATUS_TOKEN.test(textWithoutBlueprintStatus) ||
-      metadataVariants.some((value) => {
-        const withoutBlueprintStatus = value.replace(BLUEPRINT_STATUS_TOKEN, "");
-        return (
-          CONFLICTING_STATUS_TOKEN.test(withoutBlueprintStatus) ||
-          CONFLICTING_STATUS_LABEL.test(withoutBlueprintStatus) ||
-          COMPACT_CONFLICTING_STATUS_TOKEN.test(withoutBlueprintStatus)
-        );
-      }) ||
-      compactMetadataVariants.some((value) =>
-        COMPACT_CONFLICTING_STATUS_TOKEN.test(
-          value.replace(COMPACT_BLUEPRINT_STATUS_TOKEN, "")
-        ) ||
-        COMPACT_CONFLICTING_STATUS_LABEL.test(
-          value.replace(COMPACT_BLUEPRINT_STATUS_TOKEN, "")
-        )
-      )) ||
+    containsConflictingStatusMetadata([canonicalText, dehyphenatedProvenance]) ||
     !APPROVED_BLUEPRINT_STATUS.test(statusSections[0]) ||
     sections.some((section) => section.length > MAX_SEGMENT_LENGTH) ||
     containsContradictorySupportedExpectation(sections)

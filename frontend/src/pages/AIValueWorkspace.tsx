@@ -1927,7 +1927,7 @@ const HomePage = ({
           <p className="eyebrow">Next action</p>
           <h3>Review the current value case</h3>
           <p>Resolve open assumptions and check what evidence is ready for the next decision.</p>
-          <Link className="ai-value-home-primary-action" to="/ai-value-workspace/value-case">
+          <Link className="ai-value-home-primary-action" to="/ai-value-workspace/case">
             Review value case
           </Link>
         </div>

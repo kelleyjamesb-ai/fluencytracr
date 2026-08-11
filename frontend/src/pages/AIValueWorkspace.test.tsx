@@ -1992,7 +1992,7 @@ describe("AIValueWorkspace journey continuity", () => {
     ).toBeInTheDocument();
     expect(within(activeCase).getByRole("link", { name: /Review value case/i })).toHaveAttribute(
       "href",
-      "/ai-value-workspace/value-case"
+      "/ai-value-workspace/case"
     );
     expect(activeCase).not.toHaveTextContent(/customer support while maintaining service quality/i);
     expectNoUnsafeUiLanguage(container.textContent);
