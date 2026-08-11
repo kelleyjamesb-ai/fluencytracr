@@ -2,12 +2,22 @@
 
 ## Status
 
-`PROPOSED_REPLACEMENT_CONCEPT_NOT_RUNTIME`
+`SYNTHETIC_V4_REPLICATED_VALIDATION_PROTOCOL_FROZEN`
 
-This document proposes a candidate product direction for replacing
+Current decision: `HOLD_FOR_MODEL_REPAIR`
+
+James Kelley approved steps 1 through 4 of this methodology direction on
+2026-08-11: direction approval, governance reconciliation, an aggregate data
+contract, and a joint Bayesian design. The approved direction replaces
 FluencyTracr's illustrative weighted VBD posture with a governed work-pattern
-adoption trajectory. It is a documentation-stage proposal awaiting explicit
-methodology approval.
+adoption trajectory and treats that trajectory as the observed human-behavior
+pathway in a future joint outcome analysis.
+
+James Kelley separately approved synthetic-only steps 5 through 8 on
+2026-08-11. The isolated aggregate joint model and bounded smoke matrix now
+exist, and the replicated validation protocol is frozen, but the current
+decision remains `HOLD_FOR_MODEL_REPAIR`. The protocol has not run. This does
+not approve real data, runtime integration, or product output.
 
 It does **not** authorize:
 
@@ -24,7 +34,8 @@ of this concept.
 
 ## Proposed direction summary
 
-If approved, FluencyTracr would distinguish three independent evidence lanes:
+Under this approved docs-only direction, FluencyTracr distinguishes three
+independent evidence lanes:
 
 1. **AI Fluency:** aggregate human-capability and perception evidence.
 2. **VBD Coverage Trajectory:** aggregate evidence that AI-supported work is
@@ -35,19 +46,25 @@ If approved, FluencyTracr would distinguish three independent evidence lanes:
 The lanes may be interpreted together by the evidence-qualification layer, but
 they must not be averaged, weighted, or collapsed into an overall score.
 
-The proposed VBD trajectory is deterministic at its product boundary.
-Longitudinal Bayesian modeling belongs primarily in the targeted-metric lane,
-where a future admitted implementation may estimate change and uncertainty
-under an explicitly governed study design. An optional future Bayesian VBD
-component would need a separate family-state observation model; it cannot reuse
-the existing frequency/engagement/Breadth likelihood by relabeling its inputs.
+The VBD trajectory remains deterministic at its product boundary. A future
+joint Bayesian research model may connect the three lanes without collapsing
+them. It must contain a separate aggregate family-state transition component
+for VBD, a measurement component for stated capability, and an outcome
+component for the customer-owned metric. Uncertainty must pass between those
+components. The model cannot reuse the existing frequency, engagement, and
+Breadth likelihood by relabeling its inputs.
+
+The joint model is intended to answer whether observed AI-enabled work adds
+explanatory and predictive information about outcome movement, and whether
+stated capability qualifies that relationship. Under the default claim cap,
+that relationship is associative, not causal.
 
 ### Current repository state versus proposed destination
 
 | Lane | Current repository state | Proposed destination |
 | --- | --- | --- |
 | AI Fluency | Synthetic calibration accepted; real-data admission and product output remain blocked. | Aggregate human-capability context admitted under its own future contract. |
-| VBD | Weighted frontend is illustrative; frequency/engagement/Breadth Bayesian research is held and has a different estimand. | Deterministic family-count Coverage Trajectory after methodology, registry, suppression, and producer approval. |
+| VBD | Weighted frontend is illustrative; frequency/engagement/Breadth Bayesian research is held and has a different estimand. | Deterministic family-count Coverage Trajectory plus a separately designed, aggregate family-state Bayesian component after implementation approval. |
 | Targeted metric | Longitudinal admission is contract-stage and limited to a narrow synthetic continuous-normal proof; model output is not authorized. | Governed longitudinal change estimation for explicitly supported metric families and study designs. |
 | Evidence qualification | Multiple internal contract and projection layers exist; broader customer model output remains gated. | Alignment, claim ceiling, caveats, and next evidence action without a combined score. |
 
@@ -74,11 +91,13 @@ Governed aggregate evidence packages
               |               |                |
               v               v                v
         AI Fluency       VBD Coverage      Targeted Metric
-       capability lane  adoption trajectory outcome trajectory
+       capability lane  behavior pathway   outcome trajectory
               |               |                |
-              |               |          longitudinal Bayesian
-              |               |           change estimation
               +---------------+----------------+
+                              |
+                   future joint Bayesian model
+                 separate measurement components
+                  with uncertainty propagation
                               |
                               v
 FluencyTracr evidence qualification
@@ -387,18 +406,59 @@ reason or authorize cross-slice joins that could re-identify people.
 
 ## Longitudinal Bayesian role
 
-### Future candidate model outputs
+The docs-only joint methodology is defined in
+[`docs/contracts/ai-value-vbd-human-behavior-outcome-joint-methodology/README.md`](../contracts/ai-value-vbd-human-behavior-outcome-joint-methodology/README.md).
 
-A future admitted longitudinal Bayesian component may evaluate a predeclared
-targeted metric under a governed study design. It may estimate only quantities
-authorized by its metric-family and study-design contract, such as:
+### Human-behavior pathway
+
+The future joint model must represent observed behavior from the admitted
+family-state counts, not from an overall VBD score. Its behavioral measurement
+component uses:
+
+- the fixed Eligible universe;
+- Active and Embedded counts at each checkpoint; and
+- retained, newly embedded, and lapsed counts between checkpoints.
+
+Those counts identify a transition process between embedded and nonembedded
+family states and an active-nonembedded state. Retention and new-embedding
+rates inform the latent Embedded Coverage trajectory. They are not additional
+outcome predictors when they are algebraically represented by the same state
+transition.
+
+The outcome component may use the uncertain lagged embedded state and, when
+predeclared, the active-nonembedded state. It may also use one predeclared
+aggregate stated-capability factor with admitted measurement uncertainty and a
+predeclared capability-by-behavior interaction. It must not treat Adoption
+Reach, Persistence, Coverage, Net Coverage Velocity, and their component counts
+as independent predictors in the same equation.
+
+When a capability snapshot temporally precedes a behavior transition, the
+family-state component may also estimate the predeclared association between
+stated capability and later retention, new embedding, or active-nonembedded
+behavior. This is the modeled capability-to-behavior link. It remains
+associative unless a later identification design authorizes a stronger claim.
+
+### Candidate internal estimands
+
+A future admitted joint component may evaluate a predeclared targeted metric
+under a governed study design. It may estimate only quantities authorized by
+its metric-family and study-design contract, such as:
 
 - direction and magnitude of metric movement;
-- posterior uncertainty and credible intervals;
-- stability across checkpoints;
-- sensitivity to preapproved specifications;
+- the lagged association between the modeled behavior state and the outcome;
+- the association between stated capability and later behavior transitions;
+- whether a predeclared stated-capability factor moderates that association;
+- posterior uncertainty and credible intervals for internal review;
+- the incremental predictive contribution of the behavior pathway under a
+  frozen full-versus-restricted model comparison;
 - modeled difference between observed and counterfactual trajectories when a
   credible comparator design exists.
+
+Incremental predictive contribution may be summarized internally through a
+predeclared change in Bayesian R-squared and future-window predictive fit. It
+is not a unique share of variance caused by AI, a percentage of business
+impact, or evidence about why the metric changed. Shared causes, measurement
+error, interactions, and collinearity prevent that interpretation.
 
 A customer-declared `minimum_worthwhile_change` or similar planning field must
 not set a posterior threshold, decision statistic, surfacing rule, or other
@@ -422,14 +482,17 @@ router support. Staggered rollout and other unsupported designs continue to
 HOLD, and the current accepted proof remains limited to its documented narrow
 synthetic continuous-normal specification.
 
-The model must not turn posterior probability into customer-facing attribution
-confidence, ROI, productivity scoring, or a claim that AI caused an outcome
-unless a later governed contract explicitly authorizes that exact claim.
+The model must not turn posterior probability, a coefficient, a modeled
+contrast, Bayesian R-squared, or predictive-fit improvement into any of the
+following prohibited outputs: customer-facing attribution confidence, ROI,
+productivity scoring, a percent impact statement, or a claim that AI caused an
+outcome. A later governed contract would need to authorize the exact claim.
 
 ## Interpreting the three lanes
 
-The evidence-qualification layer may describe alignment without combining the
-lanes mathematically.
+The evidence-qualification layer may describe alignment without averaging or
+scoring the lanes. A future internal joint model may connect them only as
+separately measured, predeclared terms under the contract above.
 
 ### Cross-lane alignment receipt
 
@@ -501,33 +564,24 @@ presented as the runtime implementation of this replacement concept.
 
 ## Implementation sequence
 
-The smallest safe migration is:
+| Step | Scope | State |
+| --- | --- | --- |
+| 1 | Approve the methodology direction that VBD is the observed human-behavior pathway between stated capability and customer-owned outcomes. | `COMPLETE_DOCS_ONLY` |
+| 2 | Reconcile vocabulary, the nine invariants, independent slice suppression, function-join HOLDs, legacy VBD versioning, evidence roles, and the noncausal default. | `COMPLETE_DOCS_ONLY` |
+| 3 | Specify the aggregate checkpoint, transition, alignment, capability, outcome, and control data contract. | `COMPLETE_DOCS_ONLY` |
+| 4 | Specify the joint Bayesian family-state measurement and outcome methodology, uncertainty propagation, estimands, model comparison, and claim ceiling. | `COMPLETE_DOCS_ONLY` |
+| 5 | Implement internal aggregate types, deterministic preparation, and synthetic family-state fixtures under the separately proposed OpenSpec scope. | `COMPLETE_SYNTHETIC_ONLY` |
+| 6 | Implement the synthetic joint family-state, stated-capability, and continuous-normal outcome model with internal-only summaries. | `COMPLETE_SYNTHETIC_ONLY` |
+| 7 | Validate the synthetic joint model through recovery, calibration, sensitivity, negative-control, and full-versus-restricted predictive checks. | `BOUNDED_SMOKE_COMPLETE_FULL_VALIDATION_PENDING` |
+| 8 | Record a governed integration decision for any future runtime, real aggregate data, API, persistence, or readout scope. | `HOLD_FOR_MODEL_REPAIR` |
 
-1. **Concept decision:** review and explicitly approve, reject, or revise this
-   replacement direction.
-2. **Vocabulary and invariant reconciliation:** preserve Adoption Reach and
-   Persistence as non-canonical supporting ratios, resolve canonical event
-   compatibility, independent slice suppression, function-join HOLDs, and
-   legacy-contract versioning.
-3. **Producer contract:** define qualifying activity, immutable family identity,
-   root allocation, eligibility and observable-source universe bindings,
-   source-coverage comparability, recurrence and transition intersections,
-   cadence, finality, compatible semantic-policy versions, checkpoint evidence
-   revision chains and correction invalidation, privacy lifecycle, alignment
-   receipts, and source receipts.
-4. **Synthetic evaluator:** after those contracts are fixed, implement the
-   deterministic family-count evaluator using serialized aggregate-only fixtures.
-5. **Synthetic organization UI:** render organization-first Coverage x Net
-   Coverage Velocity with Adoption Reach, Persistence, retained, newly embedded,
-   and lapsed counts plus explicit availability states. Function drilldowns
-   remain held until their aggregate join and suppression proof are approved.
-6. **Targeted-metric Bayesian separation:** retain or adapt longitudinal model
-   infrastructure only for currently supported synthetic specifications, then
-   promote additional metric families or study designs through separate gates.
-7. **Synthetic concordance:** prove formulas, trajectory breaks, recurrence
-   bounds, suppression propagation, and UI projection against frozen fixtures.
-8. **Private-data decision:** only then consider an approved aggregate producer
-   or real-source pilot.
+Completing steps 1 through 4 did not satisfy or bypass any gate in steps 5
+through 8. James Kelley approved planning and execution of steps 5 through 8
+on 2026-08-11, bounded to synthetic aggregate work and an integration decision.
+The bounded smoke result is recorded in
+[`docs/research/VBD_HUMAN_BEHAVIOR_OUTCOME_SYNTHETIC_DECISION.md`](../research/VBD_HUMAN_BEHAVIOR_OUTCOME_SYNTHETIC_DECISION.md).
+Smoke fits are permanently nonqualifying, and the current decision creates no
+real-data or product authority.
 
 No implementation step should silently copy exploratory dogfood denominators,
 source names, query identifiers, job metadata, or observed values into universal
@@ -535,7 +589,7 @@ FluencyTracr contracts or fixtures.
 
 ## Current implementation truth
 
-As of this proposal:
+As of this docs-only decision:
 
 - a separate local-first prototype is reported to implement and test related
   formulas and governance rules, but that evidence is not contained in or
@@ -570,10 +624,11 @@ A collaborator reviewing this direction should focus on:
    comparability across checkpoints?
 5. What aggregate recurrence or transition evidence is needed for valid
    uncertainty estimation?
-6. Which targeted customer metrics and counterfactual designs are credible for
-   longitudinal Bayesian impact analysis?
+6. Is the embedded-state plus active-nonembedded basis sufficient to represent
+   observed behavior without creating an overall VBD score?
 7. Which cross-lane bindings are required before capability, adoption, and
    outcome movement may be interpreted together?
-8. Which upstream aggregate measurements should be consumed rather than rebuilt?
-9. What evidence is required before descriptive movement can support a stronger
-   contribution or causal claim?
+8. Which targeted customer metrics and counterfactual designs are credible for
+   longitudinal Bayesian analysis?
+9. What evidence would be required before an associative modeled contrast could
+   support a stronger contribution or causal claim?

@@ -9,17 +9,20 @@ It exists because the current time-saved pipeline can show acceleration while
 leaving a critical question unanswered: roughly 64% of chat runs have no
 quality signal today.
 
-> **Proposed VBD direction for collaborator review:**
+> **VBD joint methodology, synthetic validation hold:**
 > [VBD Coverage Trajectory](docs/concepts/VBD_COVERAGE_TRAJECTORY.md) describes a
-> candidate organization-first replacement for the illustrative weighted VBD
+> governed organization-first replacement for the illustrative weighted VBD
 > posture: `Eligible -> Active -> Embedded`, with Embedded Adoption Coverage on
 > X and Net Coverage Velocity on Y. Adoption Reach and Persistence are
 > supporting ratios, and retained, newly embedded, and lapsed counts expose
-> churn. It separates deterministic VBD adoption from
-> longitudinal Bayesian analysis focused primarily on predeclared targeted
-> metrics. Status: `PROPOSED_REPLACEMENT_CONCEPT_NOT_RUNTIME`; it is not yet an
-> approved methodology decision, and the existing UI and held Bayesian VBD
-> research have not been migrated.
+> churn. VBD is the observed human-behavior pathway in a docs-only joint
+> Bayesian design that keeps stated capability, actual work behavior, and the
+> customer-owned outcome separately measured while propagating uncertainty.
+> Status: `SYNTHETIC_V4_REPLICATED_VALIDATION_PROTOCOL_FROZEN`; decision:
+> `HOLD_FOR_MODEL_REPAIR`. The isolated synthetic model has run bounded,
+> permanently nonqualifying smoke matrices;
+> full validation, real data, runtime integration, UI migration, and customer
+> output remain unauthorized.
 
 FluencyTracr sits on top of that pipeline as bounded evidence services and
 documented value-realization layers:
@@ -79,11 +82,14 @@ documented value-realization layers:
   normalized to 30 days. Stable observable source coverage is required for
   comparison; retained, newly embedded, and lapsed counts expose churn; and an
   exact alignment receipt is required before capability, adoption, and outcome
-  movement may be interpreted together. It prohibits weighted Integration and
-  overall VBD scores, holds function drilldowns pending an approved aggregate
-  join, and focuses longitudinal Bayesian analysis primarily on predeclared
-  targeted metrics. Current state is
-  `PROPOSED_REPLACEMENT_CONCEPT_NOT_RUNTIME`; see
+  movement may be interpreted together. A docs-only joint methodology now
+  treats the aggregate family-state trajectory as the observed human-behavior
+  pathway, carries its uncertainty into a predeclared outcome model, and keeps
+  stated capability as a separate measured term. It prohibits weighted
+  Integration and overall VBD scores, holds function drilldowns pending an
+  approved aggregate join, and defaults to noncausal interpretation. Current
+  state is `SYNTHETIC_V4_REPLICATED_VALIDATION_PROTOCOL_FROZEN` with decision
+  `HOLD_FOR_MODEL_REPAIR`; see
   [VBD Coverage Trajectory](docs/concepts/VBD_COVERAGE_TRAJECTORY.md).
 - **Legacy VBD trajectory-model calibration contract:** defines the earlier
   non-overlapping aggregate frequency, engagement, and Breadth trajectories,
