@@ -1,8 +1,19 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties
+} from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { aiValueWorkspace } from "../constants/aiValueWorkspace";
-import { getFrontendSessionContext, getStoredOrganizationId } from "../auth";
+import {
+  getAuthSessionSnapshot,
+  getFrontendSessionContext,
+  subscribeToAuthSession
+} from "../auth";
 import { useAiValueWorkspace } from "../hooks/useAiValueWorkspace";
 import { useAiValueJourney } from "../hooks/useAiValueJourney";
 import {
@@ -128,7 +139,13 @@ const emptyValueSetupDraft: ValueSetupDraft = {
 };
 
 const VALUE_SETUP_DRAFT_KEY = "aiValue.guidedSetupDraft.v1";
-const valueSetupStorageKey = () => `${VALUE_SETUP_DRAFT_KEY}:${getStoredOrganizationId()}`;
+const currentOrganizationId = () => getFrontendSessionContext().orgId.trim();
+const organizationScopedSessionKey = (
+  prefix: string,
+  organizationId = currentOrganizationId()
+) => organizationId ? `${prefix}:${organizationId}` : null;
+const valueSetupStorageKey = (organizationId = currentOrganizationId()) =>
+  organizationScopedSessionKey(VALUE_SETUP_DRAFT_KEY, organizationId);
 
 const canonicalizeSetupHypothesis = (hypothesis: string) => {
   const result = matchHypothesisToGleanWorkflows(hypothesis);
@@ -136,9 +153,13 @@ const canonicalizeSetupHypothesis = (hypothesis: string) => {
   return `${result.elements.function}: ${result.elements.expectedChange} ${result.elements.businessObject}; metric intent: ${result.elements.metricIntent}.`;
 };
 
-const readValueSetupDraft = (): ValueSetupDraft => {
+const readValueSetupDraft = (
+  organizationId = currentOrganizationId()
+): ValueSetupDraft => {
   try {
-    const parsed = JSON.parse(sessionStorage.getItem(valueSetupStorageKey()) ?? "null") as Partial<ValueSetupDraft> | null;
+    const storageKey = valueSetupStorageKey(organizationId);
+    if (!storageKey) return emptyValueSetupDraft;
+    const parsed = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as Partial<ValueSetupDraft> | null;
     if (!parsed || typeof parsed.hypothesis !== "string" || parsed.hypothesis.length > 1000) {
       return emptyValueSetupDraft;
     }
@@ -1054,9 +1075,8 @@ const externalAiFluencyMeasurement = {
   reportVersion: "wireframe-v1"
 } as const;
 
-const currentOrganizationId = getStoredOrganizationId;
 const aiFluencyImportReceiptKey = (organizationId = currentOrganizationId()) =>
-  `aiValue.aiFluencyImportReceipt.v1:${organizationId}`;
+  organizationScopedSessionKey("aiValue.aiFluencyImportReceipt.v1", organizationId);
 const aiFluencyValueCaseBinding = (draft: ValueSetupDraft) =>
   checksumAiFluencyPayload({
     hypothesis: draft.hypothesis,
@@ -1503,13 +1523,28 @@ const WorkspaceReportSidebar = ({ activePageSlug }: { activePageSlug: WorkspaceP
 );
 
 export const AIValueWorkspace = () => {
+  useSyncExternalStore(
+    subscribeToAuthSession,
+    getAuthSessionSnapshot,
+    getAuthSessionSnapshot
+  );
   const location = useLocation();
   const redirectPath = canonicalWorkspaceRedirect(location.pathname);
   const activePageSlug = currentPageFromPath(location.pathname);
   const { mode, live, liveReport, errorMessage, connectLiveEvidence } =
     useAiValueWorkspace();
   const journey = useAiValueJourney();
-  const [setupDraft, setSetupDraft] = useState<ValueSetupDraft>(readValueSetupDraft);
+  const organizationId = currentOrganizationId();
+  const [setupDraftState, setSetupDraftState] = useState(() => ({
+    organizationId,
+    draft: readValueSetupDraft(organizationId)
+  }));
+  const setupDraft = setupDraftState.organizationId === organizationId
+    ? setupDraftState.draft
+    : readValueSetupDraft(organizationId);
+  const setSetupDraft = (draft: ValueSetupDraft) => {
+    setSetupDraftState({ organizationId, draft });
+  };
   const setupWorkflow = valueSetupMatch(setupDraft).candidates.find(
     (candidate) => candidate.id === setupDraft.workflowId
   );
@@ -1521,12 +1556,24 @@ export const AIValueWorkspace = () => {
   );
 
   useEffect(() => {
+    if (setupDraftState.organizationId !== organizationId) {
+      setSetupDraftState({
+        organizationId,
+        draft: readValueSetupDraft(organizationId)
+      });
+    }
+  }, [organizationId, setupDraftState.organizationId]);
+
+  useEffect(() => {
+    if (setupDraftState.organizationId !== organizationId) return;
     try {
-      sessionStorage.setItem(valueSetupStorageKey(), JSON.stringify(setupDraft));
+      const storageKey = valueSetupStorageKey(organizationId);
+      if (!storageKey) return;
+      sessionStorage.setItem(storageKey, JSON.stringify(setupDraftState.draft));
     } catch {
       return;
     }
-  }, [setupDraft]);
+  }, [organizationId, setupDraftState]);
 
   const workflowName =
     setupWorkflow?.name ??
@@ -1671,7 +1718,13 @@ export const AIValueWorkspace = () => {
                   aria-label="Value journey console"
                 >
                   <section className="ai-value-active-workspace" aria-label="Active value journey step">
-                    {activePageSlug === "readiness" && <ReadinessPage draft={setupDraft} />}
+                    {activePageSlug === "readiness" && (
+                      <ReadinessPage
+                        key={organizationId || "unavailable"}
+                        draft={setupDraft}
+                        organizationId={organizationId}
+                      />
+                    )}
 
                     {activePageSlug === "sources" && (
                       <GuidedEvidencePage draft={setupDraft} journey={journey} />
@@ -3355,7 +3408,13 @@ const GuidedDecisionPage = ({
   </section>
 );
 
-const ReadinessPage = ({ draft }: { draft: ValueSetupDraft }) => {
+const ReadinessPage = ({
+  draft,
+  organizationId
+}: {
+  draft: ValueSetupDraft;
+  organizationId: string;
+}) => {
   const [activeView, setActiveView] = useState<AiFluencyEvidenceViewKey>("capture");
   const [importState, setImportState] = useState<"idle" | "loading" | "loaded" | "error">("idle");
   const [importedData, setImportedData] = useState<AiFluencyImportFixture | null>(null);
@@ -3368,8 +3427,12 @@ const ReadinessPage = ({ draft }: { draft: ValueSetupDraft }) => {
 
   const loadIllustrativeImport = async (restore = false) => {
     if (!importReady || importState === "loading") return;
-    const organizationId = currentOrganizationId();
     const receiptKey = aiFluencyImportReceiptKey(organizationId);
+    if (!organizationId || !receiptKey) {
+      setImportedData(null);
+      setImportState("idle");
+      return;
+    }
     const valueCaseBinding = aiFluencyValueCaseBinding(draft);
     const storedReceipt = sessionStorage.getItem(receiptKey);
     setImportState("loading");
@@ -3415,11 +3478,13 @@ const ReadinessPage = ({ draft }: { draft: ValueSetupDraft }) => {
   }, []);
 
   useEffect(() => {
-    const organizationId = currentOrganizationId();
-    if (sessionStorage.getItem(aiFluencyImportReceiptKey(organizationId))) {
+    setImportedData(null);
+    setImportState("idle");
+    const receiptKey = aiFluencyImportReceiptKey(organizationId);
+    if (receiptKey && sessionStorage.getItem(receiptKey)) {
       void loadIllustrativeImport(true);
     }
-  }, []);
+  }, [organizationId]);
 
   useEffect(() => {
     if (importState === "loaded") resultsRef.current?.focus();

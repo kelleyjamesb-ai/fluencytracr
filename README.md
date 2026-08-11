@@ -9,6 +9,18 @@ It exists because the current time-saved pipeline can show acceleration while
 leaving a critical question unanswered: roughly 64% of chat runs have no
 quality signal today.
 
+> **Proposed VBD direction for collaborator review:**
+> [VBD Coverage Trajectory](docs/concepts/VBD_COVERAGE_TRAJECTORY.md) describes a
+> candidate organization-first replacement for the illustrative weighted VBD
+> posture: `Eligible -> Active -> Embedded`, with Embedded Adoption Coverage on
+> X and Net Coverage Velocity on Y. Adoption Reach and Persistence are
+> supporting ratios, and retained, newly embedded, and lapsed counts expose
+> churn. It separates deterministic VBD adoption from
+> longitudinal Bayesian analysis focused primarily on predeclared targeted
+> metrics. Status: `PROPOSED_REPLACEMENT_CONCEPT_NOT_RUNTIME`; it is not yet an
+> approved methodology decision, and the existing UI and held Bayesian VBD
+> research have not been migrated.
+
 FluencyTracr sits on top of that pipeline as bounded evidence services and
 documented value-realization layers:
 
@@ -60,17 +72,29 @@ documented value-realization layers:
   alone remain insufficient and real-data admission, output, persistence,
   routes, UI, connectors, ROI, causality, productivity, finance, HR, ranking,
   and economic use remain blocked.
-- **VBD trajectory-model calibration contract:** defines non-overlapping
-  aggregate frequency, engagement, and Breadth trajectories, with Depth kept
-  as source-bound context outside the likelihood. Current state is
-  `SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR`: tasks `2.2`
-  through `2.5` are implemented, while task `2.6`, precision canaries,
-  concordance, evidence, and parent task `5.6` remain incomplete. PR #434's
-  collapsed-target algebra is retained only as a held, non-evidentiary
-  diagnostic oracle under `REPAIR_DIAGNOSTIC_LINEAGE_ONLY`; it does not replace
-  the centered reference or authorize execution. The bounded path from this
-  held research state to a qualified internal product readout is defined in the
-  [VBD Live Product Roadmap](docs/superpowers/plans/2026-07-31-vbd-live-product-roadmap.md).
+- **VBD Coverage Trajectory replacement concept:** defines the proposed
+  organization-first work-pattern-family adoption model: Adoption Reach is
+  `Active / Eligible`, Persistence is `Embedded / Active`, Coverage is
+  `Embedded / Eligible`, and Net Coverage Velocity is adjacent Coverage change
+  normalized to 30 days. Stable observable source coverage is required for
+  comparison; retained, newly embedded, and lapsed counts expose churn; and an
+  exact alignment receipt is required before capability, adoption, and outcome
+  movement may be interpreted together. It prohibits weighted Integration and
+  overall VBD scores, holds function drilldowns pending an approved aggregate
+  join, and focuses longitudinal Bayesian analysis primarily on predeclared
+  targeted metrics. Current state is
+  `PROPOSED_REPLACEMENT_CONCEPT_NOT_RUNTIME`; see
+  [VBD Coverage Trajectory](docs/concepts/VBD_COVERAGE_TRAJECTORY.md).
+- **Legacy VBD trajectory-model calibration contract:** defines the earlier
+  non-overlapping aggregate frequency, engagement, and Breadth trajectories,
+  with Depth kept as source-bound context outside the likelihood. Current state
+  remains `SYNTHETIC_IMPLEMENTATION_HELD_FOR_NUMERICAL_PRECISION_REPAIR`.
+  It has a different estimand from the proposed Coverage Trajectory and is not
+  its runtime implementation. PR #434's collapsed-target algebra remains a
+  held, non-evidentiary diagnostic oracle under
+  `REPAIR_DIAGNOSTIC_LINEAGE_ONLY`; it does not authorize execution. Its prior
+  bounded roadmap remains available as historical implementation context in
+  the [VBD Live Product Roadmap](docs/superpowers/plans/2026-07-31-vbd-live-product-roadmap.md).
 - **Hypothesis and metric longitudinal admission:** allows companies to define
   different aggregate metric catalogs without an arbitrary count cap while
   binding each longitudinal analysis unit to one approved hypothesis and one

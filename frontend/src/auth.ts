@@ -55,10 +55,12 @@ export const applyLocalExampleSession = ({
   orgId: string;
   role: string;
 }) => {
-  clearAuthSession();
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem("isAuthenticated");
   localStorage.setItem("userEmail", email.trim());
   localStorage.setItem("orgId", orgId.trim());
   localStorage.setItem("role", role.trim());
+  notifyAuthChanged();
 };
 
 export const subscribeToAuthSession = (listener: () => void) => {
@@ -74,6 +76,8 @@ if (typeof window !== "undefined") {
     if (
       event.key === AUTH_TOKEN_STORAGE_KEY ||
       event.key === "isAuthenticated" ||
+      event.key === "orgId" ||
+      event.key === "role" ||
       event.key === null
     ) {
       notifyAuthChanged();

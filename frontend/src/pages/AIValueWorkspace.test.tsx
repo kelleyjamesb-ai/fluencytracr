@@ -7,6 +7,7 @@ import {
   ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
   ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY
 } from "../lib/aiValueApi";
+import { applyAuthToken, getFrontendSessionContext } from "../auth";
 
 const { parseDocumentTextMock } = vi.hoisted(() => ({
   parseDocumentTextMock: vi.fn()
@@ -20,7 +21,13 @@ const uiTerm = (...parts: string[]) => parts.join("");
 const SELECTED_OUTCOME_METRICS_KEY = "aiValue.selectedOutcomeMetrics";
 const SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY = "aiValue.selectedOutcomeMetricWatchPlan";
 const GUIDED_SETUP_DRAFT_KEY = "aiValue.guidedSetupDraft.v1";
-const guidedSetupStorageKey = () => `${GUIDED_SETUP_DRAFT_KEY}:${(localStorage.getItem("orgId") ?? "org-1").trim() || "org-1"}`;
+const guidedSetupStorageKey = () =>
+  `${GUIDED_SETUP_DRAFT_KEY}:${getFrontendSessionContext().orgId || "unavailable"}`;
+const authTokenForOrganization = (organizationId: string) => {
+  const payload = btoa(JSON.stringify({ org_id: organizationId, role: "ADMIN" }))
+    .replace(/=+$/g, "");
+  return `header.${payload}.signature`;
+};
 const guidedSetupFixture = {
   hypothesis: "Customer Success will assemble account context faster to reduce QBR preparation time and improve follow-up.",
   workflowId: "cs-qbr-preparation",
@@ -203,6 +210,7 @@ describe("AIValueWorkspace executive spine", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     localStorage.clear();
     sessionStorage.clear();
@@ -622,6 +630,104 @@ describe("AIValueWorkspace executive spine", () => {
     renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
     expect(await screen.findByRole("region", { name: /Guided setup required/i })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /Connected value setup/i })).not.toBeInTheDocument();
+  });
+
+  it("uses the authenticated organization for production drafts and receipts", async () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    localStorage.setItem("orgId", "org-local-attacker");
+    applyAuthToken(authTokenForOrganization("org-token"));
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-local-attacker`,
+      JSON.stringify(guidedSetupFixture)
+    );
+
+    const localOnly = renderWorkspace("/ai-value-workspace/readiness", {
+      seedSetup: false
+    });
+    expect(
+      await screen.findByRole("region", { name: /Guided setup required/i })
+    ).toBeInTheDocument();
+    localOnly.unmount();
+
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(
+      await screen.findByRole("region", { name: /Connected value setup/i })
+    ).toBeInTheDocument();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Import AI Fluency results/i })
+    );
+    expect(
+      await screen.findByRole("region", { name: /AI Fluency Evidence/i })
+    ).toBeInTheDocument();
+    expect(
+      sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-token")
+    ).not.toBeNull();
+    expect(
+      sessionStorage.getItem(
+        "aiValue.aiFluencyImportReceipt.v1:org-local-attacker"
+      )
+    ).toBeNull();
+  });
+
+  it("does not carry a production draft across authenticated organizations", async () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    applyAuthToken(authTokenForOrganization("org-token-a"));
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token-a`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(
+      await screen.findByRole("region", { name: /Connected value setup/i })
+    ).toBeInTheDocument();
+
+    applyAuthToken(authTokenForOrganization("org-token-b"));
+
+    expect(
+      await screen.findByRole("region", { name: /Guided setup required/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: /Connected value setup/i })
+    ).not.toBeInTheDocument();
+    expect(
+      sessionStorage.getItem(`${GUIDED_SETUP_DRAFT_KEY}:org-token-b`) ?? ""
+    ).not.toContain(guidedSetupFixture.hypothesis);
+  });
+
+  it("does not carry a production AI Fluency receipt between organizations with valid drafts", async () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    applyAuthToken(authTokenForOrganization("org-token-a"));
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token-a`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token-b`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Import AI Fluency results/i })
+    );
+    expect(
+      await screen.findByRole("region", { name: /AI Fluency Evidence/i })
+    ).toBeInTheDocument();
+
+    applyAuthToken(authTokenForOrganization("org-token-b"));
+
+    expect(
+      await screen.findByRole("status", { name: /AI Fluency results not imported/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: /AI Fluency Evidence/i })
+    ).not.toBeInTheDocument();
+    expect(
+      sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-token-b")
+    ).toBeNull();
   });
 
   it("keeps all non-Home workspace content hidden while session access is unresolved", () => {
@@ -1191,11 +1297,20 @@ describe("AIValueWorkspace executive spine", () => {
     });
     localStorage.setItem("orgId", "org-b");
     window.dispatchEvent(new StorageEvent("storage", { key: "orgId" }));
-    expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("region", { name: /Guided setup required/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: /Connected value setup/i })
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
     orgA.unmount();
 
-    renderWorkspace("/ai-value-workspace/readiness");
+    sessionStorage.setItem(
+      guidedSetupStorageKey(),
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
     expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /AI Fluency Evidence/i })).not.toBeInTheDocument();
   });
@@ -1853,6 +1968,7 @@ describe("AIValueWorkspace journey continuity", () => {
   };
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     localStorage.clear();
     sessionStorage.clear();

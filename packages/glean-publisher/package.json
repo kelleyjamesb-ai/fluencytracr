@@ -13,12 +13,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "vite": "8.1.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
     "typescript": "^5.4.5",
-    "vitest": "^4.1.10"
+    "vitest": "^2.1.8"
   }
 }
