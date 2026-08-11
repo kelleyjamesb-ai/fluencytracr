@@ -39,6 +39,11 @@
       "test_longitudinal_validation_synthetic.py"
     ],
     "vbd-engine": [
+      "test_vbd_joint_model.py",
+      "test_vbd_joint_preparation.py",
+      "test_vbd_joint_replicated_runner.py",
+      "test_vbd_joint_replicated_synthetic.py",
+      "test_vbd_joint_replicated_validation_plan.py",
       "test_vbd_trajectory_artifact.py",
       "test_vbd_trajectory_bootstrap_conformance.py",
       "test_vbd_trajectory_clean_implementation_boundary.py",

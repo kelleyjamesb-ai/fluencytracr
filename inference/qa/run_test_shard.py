@@ -23,7 +23,7 @@ SHARD_NAMES = (
 EXPECTED_TEST_COUNTS = {
     "foundation-measurement": 339,
     "longitudinal": 253,
-    "vbd-engine": 757,
+    "vbd-engine": 804,
 }
 _TOP_LEVEL_KEYS = frozenset({"schema_version", "shards"})
 _TEST_FILENAME = re.compile(r"(?:test_[a-z0-9_]+|[a-z0-9_]+_test)\.py\Z")
@@ -71,7 +71,7 @@ def _validate_test_path(value: Any) -> str:
 
 
 def _expected_shard(relative_path: str) -> str:
-    if relative_path.startswith("test_vbd_trajectory_"):
+    if relative_path.startswith(("test_vbd_joint_", "test_vbd_trajectory_")):
         return "vbd-engine"
     if relative_path.startswith("test_longitudinal_"):
         return "longitudinal"
