@@ -36,6 +36,7 @@ import type { AiFluencyImportFixture } from "../lib/aiFluencyImportFixture";
 import { checksumAiFluencyPayload } from "../lib/aiFluencyImportIntegrity";
 import { parseDocumentText } from "../lib/policyDocumentParser";
 import { deriveAggregateHypothesisFromBlueprint } from "../lib/blueprintHypothesisParser";
+import { containsPotentialPersonName } from "../lib/aggregatePrivacy";
 import {
   CORE_BEHAVIORAL_MIN_COHORT,
   CUSTOMER_VISIBLE_SERIES_MIN_COHORT,
@@ -74,14 +75,14 @@ const workspacePages = [
     navLabel: "Metric",
     path: "/ai-value-workspace/metrics",
     detail: "Choose the customer-owned outcome that will test the hypothesis.",
-    feedsNext: "Add readiness context from AI Fluency."
+    feedsNext: "Add aggregate AI readiness context."
   },
   {
     slug: "readiness",
-    label: "AI Fluency Measurement",
-    navLabel: "AI Fluency",
+    label: "Aggregate AI Readiness",
+    navLabel: "AI Readiness",
     path: "/ai-value-workspace/readiness",
-    detail: "Import completed aggregate results from the external AI Fluency experience.",
+    detail: "Import completed aggregate readiness context from the external measurement experience.",
     feedsNext: "Connect approved evidence sources after the measurement is imported."
   },
   {
@@ -1457,7 +1458,7 @@ const reportSidebarGroups: Array<{
   {
     label: "Measure",
     items: [
-      { label: "4. AI Fluency", path: "/ai-value-workspace/readiness", slug: "readiness" },
+      { label: "4. AI Readiness", path: "/ai-value-workspace/readiness", slug: "readiness" },
       { label: "5. Evidence", path: "/ai-value-workspace/sources", slug: "sources" },
       { label: "6. Progress", path: "/ai-value-workspace/progress", slug: "progress" }
     ]
@@ -2229,7 +2230,9 @@ const ValueCaseDefinitionPage = ({
   );
   const result = useMemo(() => matchHypothesisToGleanWorkflows(hypothesis), [hypothesis]);
   const containsDirectIdentifier = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b|\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/.test(hypothesis);
-  const hasValidHypothesis = result.candidates.length > 0 && !containsDirectIdentifier;
+  const containsPersonLevelDetail = containsPotentialPersonName(hypothesis);
+  const hasInvalidAggregateDetail = containsDirectIdentifier || containsPersonLevelDetail;
+  const hasValidHypothesis = result.candidates.length > 0 && !hasInvalidAggregateDetail;
   const canContinue = hasValidHypothesis && !blueprintNeedsConfirmation;
 
   useEffect(() => () => {
@@ -2424,7 +2427,7 @@ const ValueCaseDefinitionPage = ({
           </section>
         </div>
 
-        {containsDirectIdentifier ? (
+        {hasInvalidAggregateDetail ? (
           <section className="ai-value-case-no-match" role="alert">
             <p className="eyebrow">Remove person-level details</p>
             <h3>Keep the hypothesis aggregate</h3>
@@ -2623,7 +2626,7 @@ const MetricSetupPage = ({
           type="submit"
           disabled={metricIds.length === 0}
         >
-          Continue to AI Fluency
+          Continue to AI readiness
         </button>
       </form>
 

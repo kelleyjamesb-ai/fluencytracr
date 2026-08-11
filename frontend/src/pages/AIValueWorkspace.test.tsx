@@ -309,7 +309,7 @@ describe("AIValueWorkspace executive spine", () => {
       "1. Value case",
       "2. Workflow",
       "3. Metric",
-      "4. AI Fluency",
+      "4. AI Readiness",
       "5. Evidence",
       "6. Progress",
       "7. Decision"
@@ -401,12 +401,12 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(metricForm).getAllByText(/Owner to confirm: Customer Success operations owner/i).length).toBeGreaterThan(0);
 
     fireEvent.click(qbrMetric);
-    expect(within(metric).getByRole("button", { name: /Continue to AI Fluency/i })).toBeDisabled();
+    expect(within(metric).getByRole("button", { name: /Continue to AI readiness/i })).toBeDisabled();
     fireEvent.submit(metricForm);
     expect(screen.getByRole("region", { name: /^Guided metric setup$/i })).toBeInTheDocument();
 
     fireEvent.click(qbrMetric);
-    fireEvent.click(within(metric).getByRole("button", { name: /Continue to AI Fluency/i }));
+    fireEvent.click(within(metric).getByRole("button", { name: /Continue to AI readiness/i }));
 
     const connected = await screen.findByRole("region", { name: /Connected value setup/i });
     expect(connected).toHaveTextContent(canonicalHypothesis);
@@ -559,7 +559,7 @@ describe("AIValueWorkspace executive spine", () => {
   it("holds later steps at the earliest unmet setup prerequisite", async () => {
     renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
     const gate = await screen.findByRole("region", { name: /Guided setup required/i });
-    expect(gate).toHaveTextContent(/Connect the value case before opening AI Fluency/i);
+    expect(gate).toHaveTextContent(/Connect the value case before opening AI Readiness/i);
     expect(screen.queryByRole("region", { name: /Northstar Automotive case study/i })).not.toBeInTheDocument();
     expect(within(gate).getByRole("link", { name: /Start with Value Case/i })).toHaveAttribute(
       "href",
@@ -595,17 +595,15 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
   });
 
-  it("retains only a canonical aggregate summary when free text includes a name", async () => {
+  it("holds free text that includes a name before canonicalization", async () => {
     renderWorkspace("/ai-value-workspace/value-case");
     const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
     fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
       target: { value: "Jane Smith in Customer Success will assemble account context faster to reduce QBR preparation time." }
     });
-    fireEvent.click(within(valueCase).getByRole("button", { name: /Continue to workflow/i }));
-    const workflow = await screen.findByRole("region", { name: /Workflow setup/i });
-    expect(workflow).not.toHaveTextContent(/Jane Smith/i);
-    expect(workflow).toHaveTextContent(/Customer Success: faster qbr/i);
-    expect(sessionStorage.getItem(guidedSetupStorageKey())).not.toMatch(/Jane Smith/i);
+    expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toMatch(/Jane Smith/i);
   });
 
   it("canonicalizes identifier-bearing restored drafts before downstream use", async () => {
@@ -1099,7 +1097,7 @@ describe("AIValueWorkspace executive spine", () => {
     const workspaceNav = screen.getByRole("navigation", { name: "Workspace" });
     fireEvent.click(within(workspaceNav).getByRole("link", { name: /5\. Evidence/i }));
     expect(await screen.findByRole("region", { name: /Evidence binding status/i })).toBeInTheDocument();
-    fireEvent.click(within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", { name: /4\. AI Fluency/i }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", { name: /4\. AI Readiness/i }));
     expect(await screen.findByRole("region", { name: /AI Fluency Evidence/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Illustrative results loaded/i })).toBeDisabled();
 
@@ -1325,7 +1323,7 @@ describe("AIValueWorkspace executive spine", () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 
     const nav = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(nav).getByRole("link", { name: /AI Fluency/i })).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: /AI Readiness/i })).toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: /Fluency Profile/i })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: /Fluency Translation/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: /Value journey steps/i })).not.toBeInTheDocument();

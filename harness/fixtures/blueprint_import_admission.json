@@ -1,0 +1,38 @@
+{
+  "schema_version": "FT_ASSURANCE_BLUEPRINT_IMPORT_2026_08_V1",
+  "source_contract": "frontend/src/lib/blueprintHypothesisParser.ts",
+  "raw_document_text_emitted": false,
+  "person_level_fields_emitted": false,
+  "cases": [
+    {
+      "id": "approved_aggregate_hypothesis",
+      "expected_state": "ADMIT_AGGREGATE_HYPOTHESIS",
+      "required_sections": ["Blueprint status", "Customer hypothesis"],
+      "required_status": "Approved",
+      "output_fields": ["function", "business_object", "expected_change", "metric_intent"]
+    },
+    {
+      "id": "person_name_in_hypothesis",
+      "expected_state": "HOLD_PERSON_LEVEL_DETAIL",
+      "required_sections": ["Blueprint status", "Customer hypothesis"],
+      "required_status": "Approved",
+      "blocked_input": "person_name",
+      "output_fields": []
+    },
+    {
+      "id": "unapproved_blueprint",
+      "expected_state": "HOLD_UNAPPROVED_SOURCE",
+      "required_sections": ["Blueprint status", "Customer hypothesis"],
+      "required_status": "Draft",
+      "output_fields": []
+    },
+    {
+      "id": "ambiguous_blueprint",
+      "expected_state": "HOLD_AMBIGUOUS_SOURCE",
+      "required_sections": ["Blueprint status", "Customer hypothesis"],
+      "required_status": "Approved",
+      "blocked_input": "multiple_supported_hypotheses",
+      "output_fields": []
+    }
+  ]
+}

@@ -20,8 +20,33 @@ export const getStoredAuthToken = () => {
   return token?.trim() ?? "";
 };
 
-export const getStoredOrganizationId = () =>
-  (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
+const ORGANIZATION_SCOPED_SESSION_PREFIXES = [
+  "aiValue.guidedSetupDraft.v1:",
+  "aiValue.aiFluencyImportReceipt.v1:"
+] as const;
+
+const clearOrganizationScopedSessionState = (organizationId: string) => {
+  const normalizedOrganizationId = organizationId.trim();
+  if (!normalizedOrganizationId || typeof sessionStorage === "undefined") return;
+  for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+    const key = sessionStorage.key(index);
+    if (
+      key &&
+      ORGANIZATION_SCOPED_SESSION_PREFIXES.some(
+        (prefix) => key === `${prefix}${normalizedOrganizationId}`
+      )
+    ) {
+      sessionStorage.removeItem(key);
+    }
+  }
+};
+
+export const getStoredOrganizationId = () => {
+  if (isFrontendAuthRequired()) {
+    return decodeStoredTokenContext()?.orgId ?? "";
+  }
+  return (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
+};
 
 const notifyAuthChanged = () => {
   authSessionRevision += 1;
@@ -35,14 +60,22 @@ export const applyAuthToken = (value: string) => {
     clearAuthSession();
     return;
   }
+  clearOrganizationScopedSessionState(getFrontendSessionContext().orgId);
   localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
   localStorage.setItem("isAuthenticated", "true");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("orgId");
+  localStorage.removeItem("role");
   notifyAuthChanged();
 };
 
 export const clearAuthSession = () => {
+  clearOrganizationScopedSessionState(getFrontendSessionContext().orgId);
   localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   localStorage.removeItem("isAuthenticated");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("orgId");
+  localStorage.removeItem("role");
   notifyAuthChanged();
 };
 

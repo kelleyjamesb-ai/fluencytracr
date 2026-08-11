@@ -4,6 +4,7 @@ import {
   applyAuthToken,
   authFetch,
   clearAuthSession,
+  getStoredOrganizationId,
   getFrontendSessionContext,
   isFrontendAuthRequired,
   withAuth
@@ -21,6 +22,7 @@ const deferredResponse = () => {
 describe("auth", () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -84,6 +86,25 @@ describe("auth", () => {
       orgId: "org-token",
       role: "ADMIN"
     });
+    expect(getStoredOrganizationId()).toBe("org-token");
+  });
+
+  it("clears organization-scoped browser state when the authenticated session changes", () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    const oldPayload = btoa(JSON.stringify({ org_id: "org-old", role: "ADMIN" }))
+      .replace(/=+$/g, "");
+    applyAuthToken(`header.${oldPayload}.signature`);
+    sessionStorage.setItem("aiValue.guidedSetupDraft.v1:org-old", "old-draft");
+    sessionStorage.setItem("aiValue.aiFluencyImportReceipt.v1:org-old", "old-receipt");
+    sessionStorage.setItem("unrelated-key", "keep");
+
+    applyAuthToken("new-token");
+
+    expect(sessionStorage.getItem("aiValue.guidedSetupDraft.v1:org-old")).toBeNull();
+    expect(sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-old")).toBeNull();
+    expect(sessionStorage.getItem("unrelated-key")).toBe("keep");
+    expect(localStorage.getItem("orgId")).toBeNull();
+    expect(localStorage.getItem("role")).toBeNull();
   });
 
   it("makes one request, never mints or retries, and clears only the owning token on 401", async () => {
