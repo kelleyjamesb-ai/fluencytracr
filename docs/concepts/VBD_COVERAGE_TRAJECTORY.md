@@ -13,12 +13,6 @@ FluencyTracr's illustrative weighted VBD posture with a governed work-pattern
 adoption trajectory and treats that trajectory as the observed human-behavior
 pathway in a future joint outcome analysis.
 
-The required six-criterion review for Adoption Reach, Persistence, and Embedded
-Adoption Coverage is recorded in the
-[VBD Coverage Trajectory Signal Promotion Decision](../research/VBD_COVERAGE_TRAJECTORY_SIGNAL_PROMOTION_DECISION.md).
-That decision promotes docs-only aggregate methodology terms and grants no
-runtime or product authority.
-
 James Kelley separately approved synthetic-only steps 5 through 8 on
 2026-08-11. The isolated aggregate joint model and bounded smoke matrix now
 exist, and the replicated validation protocol is frozen, but the current

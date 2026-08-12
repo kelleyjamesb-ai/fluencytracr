@@ -90,8 +90,7 @@ documented value-realization layers:
   approved aggregate join, and defaults to noncausal interpretation. Current
   state is `SYNTHETIC_V4_REPLICATED_VALIDATION_PROTOCOL_FROZEN` with decision
   `HOLD_FOR_MODEL_REPAIR`; see
-  [VBD Coverage Trajectory](docs/concepts/VBD_COVERAGE_TRAJECTORY.md) and its
-  [six-criterion signal promotion decision](docs/research/VBD_COVERAGE_TRAJECTORY_SIGNAL_PROMOTION_DECISION.md).
+  [VBD Coverage Trajectory](docs/concepts/VBD_COVERAGE_TRAJECTORY.md).
 - **Legacy VBD trajectory-model calibration contract:** defines the earlier
   non-overlapping aggregate frequency, engagement, and Breadth trajectories,
   with Depth kept as source-bound context outside the likelihood. Current state

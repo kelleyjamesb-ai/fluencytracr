@@ -17,7 +17,7 @@
       "id": "phase-01-schemas-ingest",
       "title": "Phase 1 — Schemas + ingestion (append-only POST /api/events)",
       "bound": "shared/schemas + ingest path; DB canonical_events; strict validation, unknown fields rejected; blueprint §2 (services/ingest layout), §4 Event Schema, §14 API, §17 phase 1",
-      "status": "done",
+      "status": "pending",
       "risk": "medium",
       "last_note": "POST /api/events + /api/ingest: Zod strict + persistFluencyEventRecord → Prisma canonical_events when DATABASE_URL set (org from JWT/x-org-id). Readers merge DB + memory via loadFluencyEventRecords."
     },
@@ -491,7 +491,7 @@
       "bound": "Synthetic-only inference/ plus required OpenSpec/docs/status: implement strict aggregate family-state, capability, outcome, alignment, and freeze types; deterministic preparation and single-slice synthetic fixtures; a joint Bayesian family-state and continuous-normal outcome model; sanitized internal summaries; bounded recovery, calibration, sensitivity, negative-control, and full-versus-restricted predictive validation; then record a docs-only integration decision. No real/customer/live data, cross-slice derived output, public schema, route, service, UI, persistence, connector, export, deployment, customer output, confidence/probability output, causal impact, productivity, ROI, ranking, new canonical event, new suppression reason, tunable product threshold, Depth likelihood use, or legacy VBD relabeling.",
       "status": "done",
       "risk": "high",
-      "last_note": "Done 2026-08-12: PR #485 head c3734c7f6192918088b9fe2184620ff7b6620966 passed exact-head CI and merged as a6924e3e371428d955fe255ddee79e736228a9a4. Reusable deliverable: exact V4 envelope preparation retains cell/replicate/scenario/generator provenance, deterministic slot seeds and settings reach the unchanged joint likelihood, V3 and V4 paths remain distinct, and nonfinite or failed diagnostics HOLD. Temporary/removable scaffolding: the replicated runner, review admission, claims, receipts, leases/caches, timeout supervision, ledger recovery, namespace combination, and sanitized study artifact are not a sustained execution platform. No real sampler, V4 preflight/canary/study, customer/real data, deployment, or production execution ran; all study gates and output authorizations remain HOLD/false."
+      "last_note": "PR #485 head c3734c7f6192918088b9fe2184620ff7b6620966 passed exact-head CI and merged as a6924e3e371428d955fe255ddee79e736228a9a4, completing the reusable V4 preparation/full-model bridge with deterministic seeds, runtime provenance, distinct V3/V4 paths, and fail-closed diagnostics. The broader queue scope remains pending because no V4 preflight, canary, replicated study, or evidence-acceptance run was authorized or performed. The replicated runner, review admission, claims, receipts, leases/caches, timeout supervision, ledger recovery, namespace combination, and sanitized study artifact are temporary/removable validation scaffolding, not a sustained execution platform. All study gates and output authorizations remain HOLD/false."
     }
   ]
 }

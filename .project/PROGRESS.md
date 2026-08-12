@@ -6147,10 +6147,11 @@
   validation scaffolding; no sampler or replicated study ran.
 - Closed PR #486 as superseded rather than rebasing its older docs-only snapshot
   over the merged model path.
-- Reconciled the remaining docs-only gaps: the six-criterion signal promotion
-  record, positive Eligible denominator, exact percentage-point velocity
-  conversion, legacy pending-roadmap wording, and a direct source disclosure
-  for the reported unavailable local prototype.
+- Reconciled the bounded docs-only gaps: positive Eligible denominator, exact
+  percentage-point velocity conversion, legacy pending-roadmap wording, and a
+  direct source disclosure for the reported unavailable local prototype. The
+  signal-promotion gate remains open because synthetic fixtures are not
+  empirical distribution or cross-window stability evidence.
 - Local verification: strict OpenSpec validation passes for both the joint
   methodology and synthetic-proof changes; queue JSON parsing and
   `git diff --check` pass. No model, runner, privacy, sampler, deployment, or
