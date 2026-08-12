@@ -23,7 +23,7 @@ SHARD_NAMES = (
 EXPECTED_TEST_COUNTS = {
     "foundation-measurement": 339,
     "longitudinal": 253,
-    "vbd-engine": 862,
+    "vbd-engine": 867,
 }
 _TOP_LEVEL_KEYS = frozenset({"schema_version", "shards"})
 _TEST_FILENAME = re.compile(r"(?:test_[a-z0-9_]+|[a-z0-9_]+_test)\.py\Z")

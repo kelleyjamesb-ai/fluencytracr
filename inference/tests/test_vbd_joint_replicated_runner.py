@@ -11,6 +11,7 @@ from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.vbd_joint_replicated_runner import (
     VBDJointReplicatedAttemptLedger,
     VBDJointReplicatedFitReceipt,
+    VBDJointReplicatedLaunchReceipt,
     VBDJointReplicatedRuntimeManifest,
     VBDJointReplicatedRunnerError,
     build_sampler_free_execution_packet,
@@ -60,11 +61,23 @@ def _manifest(source_commit=SOURCE_COMMIT):
     )
 
 
-def _fit_receipt(slot, claim, case_hash):
+def _fit_receipt(slot, claim, case_hash, execution_root=None):
+    launch_body = {
+        "slot_id": slot.slot_id,
+        "packet_hash": "0" * 64,
+        "claim_hash": claim.claim_hash,
+        "authorization_hash": "5" * 64,
+        "review_receipt_hash": "6" * 64,
+        "consumed_at": STARTED_AT,
+    }
+    launch = VBDJointReplicatedLaunchReceipt(
+        **launch_body,
+        launch_receipt_hash=sha256_json(launch_body),
+    )
     body = {
         "slot_id": slot.slot_id,
         "claim_hash": claim.claim_hash,
-        "launch_receipt_hash": "1" * 64,
+        "launch_receipt_hash": launch.launch_receipt_hash,
         "prepared_input_hash": "2" * 64,
         "dataset_hash": case_hash,
         "variant": slot.variant,
@@ -77,10 +90,32 @@ def _fit_receipt(slot, claim, case_hash):
         "max_treedepth_count": 0,
         "wall_time_seconds": 1.0,
     }
-    return VBDJointReplicatedFitReceipt(
+    receipt = VBDJointReplicatedFitReceipt(
         **body,
         receipt_hash=sha256_json(body),
     )
+    if execution_root is not None:
+        launches = execution_root / "launches"
+        fits = execution_root / "fits"
+        launches.mkdir(mode=0o700, exist_ok=True)
+        fits.mkdir(mode=0o700, exist_ok=True)
+        (launches / f"{claim.claim_hash}.json").write_text(
+            json.dumps(launch.to_dict(), sort_keys=True, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+        (fits / f"{claim.claim_hash}.json").write_text(
+            json.dumps(
+                {
+                    "fit_receipt": receipt.to_dict(),
+                    "launch_receipt": launch.to_dict(),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    return receipt
 
 
 @pytest.fixture
@@ -118,15 +153,25 @@ def test_github_review_observer_requires_approval_for_the_exact_pr_head(monkeypa
             SimpleNamespace(stdout=json.dumps(pull)),
         )
     )
+    calls = []
+
+    def mocked_run(*args, **_kwargs):
+        calls.append(args[0])
+        return next(responses)
+
     monkeypatch.setattr(
         replicated_runner.subprocess,
         "run",
-        lambda *_args, **_kwargs: next(responses),
+        mocked_run,
     )
 
     receipt = observe_github_review_receipt(pull_number=485, review_id=12345)
     assert receipt.reviewed_commit == SOURCE_COMMIT
     assert receipt.state == "APPROVED"
+    assert receipt.independent_review is True
+    assert "reviewer_login" not in receipt.body_without_hash()
+    assert "author_login" not in receipt.body_without_hash()
+    assert all(call[:4] == ("gh", "api", "--hostname", "github.com") for call in calls)
 
     stale_pull = {**pull, "head": {"sha": "b" * 40}}
     responses = iter(
@@ -312,7 +357,7 @@ def test_claim_creation_and_append_reject_a_substituted_slot(runtime_manifest):
         )
 
 
-def test_claim_and_disposition_are_append_only_and_hash_bound(runtime_manifest):
+def test_claim_and_disposition_are_append_only_and_hash_bound(runtime_manifest, tmp_path):
     plan = vbd_joint_replicated_validation_plan()
     slot = plan.preflight_slots[0]
     claim = make_claim_for_slot(
@@ -322,11 +367,11 @@ def test_claim_and_disposition_are_append_only_and_hash_bound(runtime_manifest):
         started_at=STARTED_AT,
         deadline_at=DEADLINE_AT,
     )
-    ledger = VBDJointReplicatedAttemptLedger().append_claim(
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path).append_claim(
         claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
     )
     case_hash = sha256_json({"case": slot.slot_id})
-    fit_receipt = _fit_receipt(slot, claim, case_hash)
+    fit_receipt = _fit_receipt(slot, claim, case_hash, tmp_path)
     body = {
         "namespace": slot.namespace,
         "slot_id": slot.slot_id,
@@ -390,6 +435,93 @@ def test_complete_disposition_rejects_an_arbitrary_result_hash(runtime_manifest)
                 completed_at=COMPLETED_AT,
             ),
         )
+
+
+def test_self_issued_fit_receipt_cannot_enter_complete_ledger(
+    runtime_manifest, tmp_path
+):
+    plan = vbd_joint_replicated_validation_plan()
+    slot = plan.preflight_slots[0]
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=plan.plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=STARTED_AT,
+        deadline_at=DEADLINE_AT,
+    )
+    ledger = VBDJointReplicatedAttemptLedger(
+        execution_root=tmp_path
+    ).append_claim(
+        claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
+    )
+    case_hash = replicated_runner.generate_vbd_joint_replicated_case_for_slot(
+        slot
+    ).content_hash()
+    fabricated = _fit_receipt(slot, claim, case_hash)
+    body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "COMPLETE",
+        "failure_code": "NONE",
+        "result_hash": fabricated.receipt_hash,
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **body,
+        disposition_hash=sha256_json(body),
+    )
+
+    with pytest.raises(VBDJointReplicatedRunnerError, match="persisted fit receipt"):
+        ledger.append_disposition(
+            disposition,
+            make_checkpoint_for_disposition(
+                disposition,
+                case_hash=case_hash,
+                completed_at=COMPLETED_AT,
+                fit_receipt=fabricated,
+            ),
+        )
+
+
+def test_self_issued_worker_hold_cannot_poison_consumed_claim(
+    runtime_manifest, tmp_path
+):
+    plan = vbd_joint_replicated_validation_plan()
+    slot = plan.preflight_slots[0]
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=plan.plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=STARTED_AT,
+        deadline_at=DEADLINE_AT,
+    )
+    ledger = VBDJointReplicatedAttemptLedger(
+        execution_root=tmp_path
+    ).append_claim(
+        claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
+    )
+    body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "HOLD",
+        "failure_code": "DIAGNOSTIC_HOLD",
+        "result_hash": sha256_json({"self_issued": True}),
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **body,
+        disposition_hash=sha256_json(body),
+    )
+    checkpoint = make_checkpoint_for_disposition(
+        disposition,
+        case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
+            slot
+        ).content_hash(),
+        completed_at=COMPLETED_AT,
+    )
+
+    with pytest.raises(VBDJointReplicatedRunnerError, match="worker HOLD receipt"):
+        ledger.append_disposition(disposition, checkpoint)
 
 
 def test_complete_fit_receipt_rejects_failed_diagnostics():
@@ -466,6 +598,7 @@ def test_claim_requires_the_exact_frozen_two_hour_deadline(runtime_manifest):
 
 def test_checkpoint_completion_must_be_inside_the_claimed_execution_window(
     runtime_manifest,
+    tmp_path,
 ):
     plan = vbd_joint_replicated_validation_plan()
     slot = plan.preflight_slots[0]
@@ -476,11 +609,11 @@ def test_checkpoint_completion_must_be_inside_the_claimed_execution_window(
         started_at=STARTED_AT,
         deadline_at=DEADLINE_AT,
     )
-    ledger = VBDJointReplicatedAttemptLedger().append_claim(
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path).append_claim(
         claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
     )
     case_hash = sha256_json({"case": slot.slot_id})
-    fit_receipt = _fit_receipt(slot, claim, case_hash)
+    fit_receipt = _fit_receipt(slot, claim, case_hash, tmp_path)
     disposition_body = {
         "namespace": slot.namespace,
         "slot_id": slot.slot_id,
@@ -604,7 +737,7 @@ def _append_complete(ledger, slot, plan, runtime_manifest):
     case_hash = replicated_runner.generate_vbd_joint_replicated_case_for_slot(
         slot
     ).content_hash()
-    fit_receipt = _fit_receipt(slot, claim, case_hash)
+    fit_receipt = _fit_receipt(slot, claim, case_hash, ledger.execution_root)
     body = {
         "namespace": slot.namespace,
         "slot_id": slot.slot_id,
@@ -628,9 +761,9 @@ def _append_complete(ledger, slot, plan, runtime_manifest):
     )
 
 
-def test_qualifying_combiner_requires_the_exact_complete_manifest(runtime_manifest):
+def test_qualifying_combiner_requires_the_exact_complete_manifest(runtime_manifest, tmp_path):
     plan = vbd_joint_replicated_validation_plan()
-    ledger = VBDJointReplicatedAttemptLedger()
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path)
     for slot in plan.qualifying_slots:
         ledger = _append_complete(ledger, slot, plan, runtime_manifest)
     summary = combine_namespace(
@@ -645,11 +778,13 @@ def test_qualifying_combiner_requires_the_exact_complete_manifest(runtime_manife
     assert summary.observed_dataset_count == 400
 
 
-def test_attempt_roots_are_canonical_across_parallel_completion_order(runtime_manifest):
+def test_attempt_roots_are_canonical_across_parallel_completion_order(runtime_manifest, tmp_path):
     plan = vbd_joint_replicated_validation_plan()
     slots = plan.preflight_slots[:2]
-    forward = VBDJointReplicatedAttemptLedger()
-    reverse = VBDJointReplicatedAttemptLedger()
+    (tmp_path / "forward").mkdir()
+    (tmp_path / "reverse").mkdir()
+    forward = VBDJointReplicatedAttemptLedger(execution_root=tmp_path / "forward")
+    reverse = VBDJointReplicatedAttemptLedger(execution_root=tmp_path / "reverse")
     for slot in slots:
         forward = _append_complete(forward, slot, plan, runtime_manifest)
     for slot in reversed(slots):
@@ -659,7 +794,9 @@ def test_attempt_roots_are_canonical_across_parallel_completion_order(runtime_ma
     assert forward.attempt_root == reverse.attempt_root
 
 
-def test_combiner_holds_attempts_beyond_the_frozen_fourteen_day_limit(runtime_manifest):
+def test_combiner_holds_attempts_beyond_the_frozen_fourteen_day_limit(
+    runtime_manifest, tmp_path
+):
     plan = vbd_joint_replicated_validation_plan()
     ledgers = []
     for index, slot in enumerate(plan.preflight_slots):
@@ -672,13 +809,15 @@ def test_combiner_holds_attempts_beyond_the_frozen_fourteen_day_limit(runtime_ma
             started_at=started_at,
             deadline_at=deadline_at,
         )
-        slot_ledger = VBDJointReplicatedAttemptLedger().append_claim(
+        slot_ledger = VBDJointReplicatedAttemptLedger(
+            execution_root=tmp_path
+        ).append_claim(
             claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
         )
         case_hash = replicated_runner.generate_vbd_joint_replicated_case_for_slot(
             slot
         ).content_hash()
-        fit_receipt = _fit_receipt(slot, claim, case_hash)
+        fit_receipt = _fit_receipt(slot, claim, case_hash, tmp_path)
         disposition_body = {
             "namespace": slot.namespace,
             "slot_id": slot.slot_id,
@@ -718,6 +857,7 @@ def test_combiner_holds_attempts_beyond_the_frozen_fourteen_day_limit(runtime_ma
         claims=tuple(item.claims[0] for item in ledgers),
         dispositions=tuple(item.dispositions[0] for item in ledgers),
         checkpoints=tuple(item.checkpoints[0] for item in ledgers),
+        execution_root=tmp_path,
     )
 
     assert VBD_JOINT_REPLICATED_STUDY_TIMEOUT_SECONDS == 14 * 24 * 60 * 60
@@ -731,9 +871,11 @@ def test_combiner_holds_attempts_beyond_the_frozen_fourteen_day_limit(runtime_ma
     assert "INTERRUPTED_OR_AMBIGUOUS" in summary.failure_codes
 
 
-def test_combiner_cannot_clear_complete_dispositions_without_checkpoints(runtime_manifest):
+def test_combiner_cannot_clear_complete_dispositions_without_checkpoints(
+    runtime_manifest, tmp_path
+):
     plan = vbd_joint_replicated_validation_plan()
-    ledger = VBDJointReplicatedAttemptLedger()
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path)
     for slot in plan.preflight_slots:
         ledger = _append_complete(ledger, slot, plan, runtime_manifest)
     checkpointless = replace(ledger, checkpoints=())
@@ -749,10 +891,12 @@ def test_combiner_cannot_clear_complete_dispositions_without_checkpoints(runtime
     assert "INTERRUPTED_OR_AMBIGUOUS" in summary.failure_codes
 
 
-def test_combiner_rejects_checkpoint_with_fabricated_case_hash(runtime_manifest):
+def test_combiner_rejects_checkpoint_with_fabricated_case_hash(
+    runtime_manifest, tmp_path
+):
     plan = vbd_joint_replicated_validation_plan()
     ledger = _append_complete(
-        VBDJointReplicatedAttemptLedger(),
+        VBDJointReplicatedAttemptLedger(execution_root=tmp_path),
         plan.preflight_slots[0],
         plan,
         runtime_manifest,
@@ -888,7 +1032,7 @@ def test_artifact_counts_durable_hold_dispositions_as_observed_fits(
 
 
 def test_completed_ledgers_do_not_report_an_execution_interruption(
-    runtime_manifest, monkeypatch
+    runtime_manifest, monkeypatch, tmp_path
 ):
     plan = vbd_joint_replicated_validation_plan()
     case = SimpleNamespace(content_hash=lambda: "c" * 64)
@@ -897,7 +1041,7 @@ def test_completed_ledgers_do_not_report_an_execution_interruption(
         "generate_vbd_joint_replicated_case_for_slot",
         lambda _slot: case,
     )
-    ledger = VBDJointReplicatedAttemptLedger()
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path)
     for slot in plan.qualifying_slots + plan.preflight_slots + plan.canary_slots:
         ledger = _append_complete(ledger, slot, plan, runtime_manifest)
 

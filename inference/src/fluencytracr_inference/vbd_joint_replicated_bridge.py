@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import math
+import multiprocessing
 from pathlib import Path
 
 from .hashing import sha256_json
@@ -32,9 +34,11 @@ from .vbd_joint_replicated_runner import (
     VBDJointReplicatedRuntimeManifest,
     VBDJointReplicatedReviewReceipt,
     VBDJointReplicatedRunnerError,
+    _VBDJointReplicatedWorkerHoldReceipt,
+    _persist_worker_execution_hold,
     consume_execution_claim,
-    persist_execution_hold,
     persist_sampler_timeout_hold,
+    persist_validated_fit_receipt,
 )
 from .vbd_joint_types import VBDJointStructureError
 from .vbd_joint_replicated_validation_plan import (
@@ -54,6 +58,174 @@ class _VBDJointReplicatedFitHold(VBDJointReplicatedBridgeError):
     def __init__(self, failure_code: str, message: str) -> None:
         super().__init__(message)
         self.failure_code = failure_code
+
+
+def _worker_hold_receipt(
+    *,
+    slot: VBDJointReplicatedValidationSlot,
+    claim: VBDJointReplicatedValidationClaim,
+    launch_receipt: VBDJointReplicatedLaunchReceipt,
+    failure_code: str,
+    evidence_hash: str,
+    worker_process_id: int,
+) -> _VBDJointReplicatedWorkerHoldReceipt:
+    body = {
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "launch_receipt_hash": launch_receipt.launch_receipt_hash,
+        "failure_code": failure_code,
+        "evidence_hash": evidence_hash,
+        "worker_process_id": worker_process_id,
+    }
+    return _VBDJointReplicatedWorkerHoldReceipt(
+        **body,
+        receipt_hash=sha256_json(body),
+    )
+
+
+class _VBDJointReplicatedWorkerError(RuntimeError):
+    """Sanitized signal that the isolated sampler worker failed."""
+
+
+def _replicated_fit_worker_entry(connection, arguments: dict) -> None:
+    """Run the full fit in a killable process and return no raw error text."""
+
+    phase = "SAMPLER_ERROR"
+    try:
+        model_arguments = arguments["model_arguments"]
+        fit = _fit_vbd_joint_model_with_settings(**model_arguments)
+        phase = "DIAGNOSTIC_HOLD"
+        receipt = _validated_fit_receipt(
+            fit,
+            slot=arguments["slot"],
+            claim=arguments["claim"],
+            launch_receipt=arguments["launch_receipt"],
+        )
+        connection.send(("FIT_RECEIPT", receipt))
+    except _VBDJointReplicatedFitHold as exc:
+        connection.send(
+            (
+                "FIT_HOLD",
+                (
+                    exc.failure_code,
+                    sha256_json(
+                        {
+                            "fit_summary_hash": fit.fit_summary_hash(),
+                            "failure_code": exc.failure_code,
+                        }
+                    ),
+                ),
+            )
+        )
+    except VBDJointReplicatedSamplerTimeout:
+        connection.send(("TIMEOUT", None))
+    except BaseException as exc:
+        connection.send(
+            (
+                "ERROR",
+                (
+                    phase,
+                    sha256_json(
+                        {
+                            "receipt_schema": "VBD_JOINT_REPLICATED_WORKER_ERROR_V1",
+                            "phase": phase,
+                            "exception_type": type(exc).__name__,
+                        }
+                    ),
+                ),
+            )
+        )
+    finally:
+        connection.close()
+
+
+def _run_replicated_fit_worker(
+    arguments: dict,
+    *,
+    claim: VBDJointReplicatedValidationClaim,
+) -> VBDJointReplicatedFitReceipt:
+    """Wait only until the immutable deadline, then terminate the worker."""
+
+    deadline = datetime.fromisoformat(claim.deadline_at.replace("Z", "+00:00"))
+    remaining = (deadline - datetime.now(timezone.utc)).total_seconds()
+    if remaining <= 0.0:
+        raise VBDJointReplicatedSamplerTimeout(
+            "frozen two-hour sampler deadline elapsed"
+        )
+    context = multiprocessing.get_context("spawn")
+    receive_connection, send_connection = context.Pipe(duplex=False)
+    process = context.Process(
+        target=_replicated_fit_worker_entry,
+        args=(send_connection, arguments),
+        daemon=False,
+    )
+    process.start()
+    send_connection.close()
+    try:
+        if not receive_connection.poll(remaining):
+            process.terminate()
+            process.join(timeout=5.0)
+            if process.is_alive():
+                process.kill()
+                process.join(timeout=5.0)
+            raise VBDJointReplicatedSamplerTimeout(
+                "frozen two-hour sampler deadline elapsed"
+            )
+        try:
+            state, payload = receive_connection.recv()
+        except EOFError as exc:
+            raise _VBDJointReplicatedWorkerError(
+                "isolated full-model worker exited without a result"
+            ) from exc
+    finally:
+        receive_connection.close()
+        process.join(timeout=5.0)
+        if process.is_alive():
+            process.terminate()
+            process.join(timeout=5.0)
+        if process.is_alive():
+            process.kill()
+            process.join(timeout=5.0)
+    if process.exitcode != 0:
+        error = _VBDJointReplicatedWorkerError(
+            "isolated full-model worker exited unsuccessfully"
+        )
+        error.failure_code = "SAMPLER_ERROR"
+        error.evidence_hash = sha256_json(
+            {
+                "receipt_schema": "VBD_JOINT_REPLICATED_WORKER_EXIT_V1",
+                "exit_code": process.exitcode,
+            }
+        )
+        error.worker_process_id = process.pid
+        raise error
+    if state == "TIMEOUT":
+        raise VBDJointReplicatedSamplerTimeout(
+            "frozen two-hour sampler deadline elapsed"
+        )
+    if state == "FIT_HOLD":
+        failure_code, evidence_hash = payload
+        error = _VBDJointReplicatedFitHold(
+            failure_code,
+            "full-model fit requires a durable HOLD disposition",
+        )
+        error.evidence_hash = evidence_hash
+        error.worker_process_id = process.pid
+        raise error
+    if state == "ERROR":
+        failure_code, evidence_hash = payload
+        error = _VBDJointReplicatedWorkerError(
+            "isolated full-model worker failed"
+        )
+        error.failure_code = failure_code
+        error.evidence_hash = evidence_hash
+        error.worker_process_id = process.pid
+        raise error
+    if state != "FIT_RECEIPT" or type(payload) is not VBDJointReplicatedFitReceipt:
+        raise _VBDJointReplicatedWorkerError(
+            "isolated full-model worker failed"
+        )
+    return payload
 
 
 def _require_exact_slot(slot: VBDJointReplicatedValidationSlot) -> None:
@@ -133,7 +305,6 @@ class VBDJointReplicatedFitSpec:
 
 @dataclass(frozen=True, slots=True)
 class VBDJointReplicatedFitExecution:
-    fit: VBDJointFit
     launch_receipt: VBDJointReplicatedLaunchReceipt
     fit_receipt: VBDJointReplicatedFitReceipt
 
@@ -169,20 +340,6 @@ def _validated_fit_receipt(
         if type(diagnostics) is dict
         else set()
     )
-    if (
-        type(diagnostics) is not dict
-        or observed_failures != allowed_failures
-        or diagnostics.get("state")
-        != ("HOLD" if allowed_failures else "PASS")
-    ):
-        raise _VBDJointReplicatedFitHold(
-            (
-                "SUMMARY_NONFINITE"
-                if "summary_nonfinite" in observed_failures
-                else "DIAGNOSTIC_HOLD"
-            ),
-            "full-model diagnostics require a durable HOLD disposition"
-        )
     numeric_summary_values = (
         fit.bayesian_r_squared_mean,
         fit.future_window_rmse,
@@ -203,6 +360,20 @@ def _validated_fit_receipt(
         raise _VBDJointReplicatedFitHold(
             "SUMMARY_NONFINITE",
             "full-model summaries require a durable SUMMARY_NONFINITE HOLD"
+        )
+    if (
+        type(diagnostics) is not dict
+        or observed_failures != allowed_failures
+        or diagnostics.get("state")
+        != ("HOLD" if allowed_failures else "PASS")
+    ):
+        raise _VBDJointReplicatedFitHold(
+            (
+                "SUMMARY_NONFINITE"
+                if "summary_nonfinite" in observed_failures
+                else "DIAGNOSTIC_HOLD"
+            ),
+            "full-model diagnostics require a durable HOLD disposition"
         )
     body = {
         "slot_id": slot.slot_id,
@@ -306,20 +477,28 @@ def fit_vbd_joint_replicated_model(
     except VBDJointReplicatedRunnerError as exc:
         raise VBDJointReplicatedBridgeError(str(exc)) from exc
     try:
-        fit = _fit_vbd_joint_model_with_settings(
-            prepared,
-            variant=spec.variant,
-            settings=settings,
-            chain_seeds=spec.chain_seeds,
-            summary_seed=slot.sampler_seed_base,
-            replicated_slot=slot,
-            replicated_packet=packet,
-            replicated_claim=claim,
-            replicated_authorization=authorization,
-            replicated_runtime_manifest=runtime_manifest,
-            replicated_review_receipt=review_receipt,
-            replicated_launch_receipt=launch_receipt,
-            replicated_execution_root=execution_root,
+        fit_receipt = _run_replicated_fit_worker(
+            {
+                "model_arguments": {
+                    "prepared": prepared,
+                    "variant": spec.variant,
+                    "settings": settings,
+                    "chain_seeds": spec.chain_seeds,
+                    "summary_seed": slot.sampler_seed_base,
+                    "replicated_slot": slot,
+                    "replicated_packet": packet,
+                    "replicated_claim": claim,
+                    "replicated_authorization": authorization,
+                    "replicated_runtime_manifest": runtime_manifest,
+                    "replicated_review_receipt": review_receipt,
+                    "replicated_launch_receipt": launch_receipt,
+                    "replicated_execution_root": execution_root,
+                },
+                "slot": slot,
+                "claim": claim,
+                "launch_receipt": launch_receipt,
+            },
+            claim=claim,
         )
     except VBDJointReplicatedSamplerTimeout as exc:
         try:
@@ -333,77 +512,83 @@ def fit_vbd_joint_replicated_model(
         except VBDJointReplicatedRunnerError as persist_exc:
             raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
         raise VBDJointReplicatedBridgeError(str(exc)) from exc
-    except Exception as exc:
-        try:
-            persist_execution_hold(
-                execution_root,
-                slot,
-                claim=claim,
-                launch_receipt=launch_receipt,
-                case_hash=packet.dataset_hash,
-                failure_code="SAMPLER_ERROR",
-                evidence_hash=sha256_json(
-                    {
-                        "receipt_schema": "VBD_JOINT_REPLICATED_SAMPLER_ERROR_V1",
-                        "exception_type": type(exc).__name__,
-                    }
-                ),
-            )
-        except VBDJointReplicatedRunnerError as persist_exc:
-            raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
-        raise VBDJointReplicatedBridgeError(
-            "full-model sampler failed; durable SAMPLER_ERROR HOLD persisted"
-        ) from exc
-
-    try:
-        fit_receipt = _validated_fit_receipt(
-            fit,
-            slot=slot,
-            claim=claim,
-            launch_receipt=launch_receipt,
-        )
     except _VBDJointReplicatedFitHold as exc:
         try:
-            persist_execution_hold(
+            _persist_worker_execution_hold(
                 execution_root,
                 slot,
                 claim=claim,
                 launch_receipt=launch_receipt,
                 case_hash=packet.dataset_hash,
-                failure_code=exc.failure_code,
-                evidence_hash=sha256_json(
-                    {
-                        "fit_summary_hash": fit.fit_summary_hash(),
-                        "failure_code": exc.failure_code,
-                    }
+                worker_receipt=_worker_hold_receipt(
+                    slot=slot,
+                    claim=claim,
+                    launch_receipt=launch_receipt,
+                    failure_code=exc.failure_code,
+                    evidence_hash=exc.evidence_hash,
+                    worker_process_id=exc.worker_process_id,
                 ),
             )
         except VBDJointReplicatedRunnerError as persist_exc:
             raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
         raise VBDJointReplicatedBridgeError(str(exc)) from exc
     except Exception as exc:
+        failure_code = getattr(exc, "failure_code", "SAMPLER_ERROR")
+        evidence_hash = getattr(
+            exc,
+            "evidence_hash",
+            sha256_json(
+                {
+                    "receipt_schema": "VBD_JOINT_REPLICATED_PARENT_ERROR_V1",
+                    "exception_type": type(exc).__name__,
+                }
+            ),
+        )
         try:
-            persist_execution_hold(
+            _persist_worker_execution_hold(
                 execution_root,
                 slot,
                 claim=claim,
                 launch_receipt=launch_receipt,
                 case_hash=packet.dataset_hash,
-                failure_code="DIAGNOSTIC_HOLD",
-                evidence_hash=sha256_json(
-                    {
-                        "receipt_schema": "VBD_JOINT_REPLICATED_FIT_VALIDATION_ERROR_V1",
-                        "exception_type": type(exc).__name__,
-                    }
+                worker_receipt=_worker_hold_receipt(
+                    slot=slot,
+                    claim=claim,
+                    launch_receipt=launch_receipt,
+                    failure_code=failure_code,
+                    evidence_hash=evidence_hash,
+                    worker_process_id=getattr(exc, "worker_process_id", 0),
                 ),
             )
         except VBDJointReplicatedRunnerError as persist_exc:
             raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
         raise VBDJointReplicatedBridgeError(
-            "full-model fit validation failed; durable DIAGNOSTIC_HOLD persisted"
+            f"full-model worker failed; durable {failure_code} HOLD persisted"
         ) from exc
+    try:
+        persist_validated_fit_receipt(
+            execution_root,
+            fit_receipt,
+            launch_receipt=launch_receipt,
+        )
+    except VBDJointReplicatedRunnerError as exc:
+        raise VBDJointReplicatedBridgeError(str(exc)) from exc
+    deadline = datetime.fromisoformat(claim.deadline_at.replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) >= deadline:
+        try:
+            persist_sampler_timeout_hold(
+                execution_root,
+                slot,
+                claim=claim,
+                launch_receipt=launch_receipt,
+                case_hash=packet.dataset_hash,
+            )
+        except VBDJointReplicatedRunnerError as exc:
+            raise VBDJointReplicatedBridgeError(str(exc)) from exc
+        raise VBDJointReplicatedBridgeError(
+            "frozen two-hour sampler deadline elapsed before receipt durability"
+        )
     return VBDJointReplicatedFitExecution(
-        fit=fit,
         launch_receipt=launch_receipt,
         fit_receipt=fit_receipt,
     )

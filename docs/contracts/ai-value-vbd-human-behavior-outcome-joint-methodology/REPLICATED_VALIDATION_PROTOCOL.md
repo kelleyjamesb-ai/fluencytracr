@@ -234,7 +234,9 @@ manifest, deterministic execution packet, immutable claim, and an independently
 authenticated GitHub approval receipt for the exact source commit. A
 caller-provided hash or self-issued `GO` value is not review authority. Those
 bindings must agree with the prepared case and frozen slot before sampler
-initialization.
+initialization. The adapter pins both review reads to `github.com`, performs the
+reviewer-versus-author comparison internally, and emits only a non-identifying
+independence result; GitHub account logins do not enter the execution contract.
 
 ## Immutable Claims And Attempt Ledger
 
@@ -276,15 +278,28 @@ Disposition state is one of `COMPLETE` or `HOLD`. Failure code is one of:
 
 Checkpoints and artifacts may contain only those codes. Raw exception text,
 tracebacks, paths, arbitrary strings, and substituted codes are prohibited.
-The sampler runs inside the claim deadline. Deadline expiry persists one
-append-only `SAMPLER_TIMEOUT` HOLD checkpoint. A sampler exception, finite
-diagnostic failure, or nonfinite fit summary likewise persists exactly one sanitized
+The sampler runs in a spawn-isolated worker process. The parent terminates that
+worker at the immutable claim deadline even when native sampler code does not
+return to Python. A timeout receipt may be created only after the observed
+deadline has elapsed and persists one append-only `SAMPLER_TIMEOUT` HOLD
+checkpoint. The launch, timeout, fit, and terminal-HOLD files and their
+containing directory entries are fsynced before success is reported. A sampler
+exception, finite diagnostic failure, or nonfinite fit summary likewise
+persists exactly one sanitized
 `SAMPLER_ERROR`, `DIAGNOSTIC_HOLD`, or `SUMMARY_NONFINITE` checkpoint before
 the consumed attempt returns an error; raw exception text is never persisted.
+Those non-timeout outcomes are derived inside the isolated worker, returned as
+a claim-and-launch-bound worker receipt, persisted create-once, and rechecked
+by ledger append and namespace combination. A caller-selected failure code or
+evidence hash without that persisted worker receipt is inadmissible.
 A `COMPLETE` checkpoint must carry a sanitized fit receipt binding the claim,
 launch, prepared input, dataset, variant, fit summary, diagnostic summary,
 finite passing diagnostic values, and sub-deadline wall time; a bare or
-caller-selected result hash is not admissible.
+caller-selected result hash is not admissible. The ledger and combiner reconcile
+that receipt against its create-once fit file and the exact persisted launch;
+self-issued in-memory receipts cannot count toward `COMPLETE`. The worker sends
+only the closed fit receipt to the parent; raw posterior draws and latent paths
+do not cross the worker boundary or enter the receipt store.
 
 The qualifying combiner admits only the exact ordered `qualifying` manifest and
 its root. It must reject every preflight or canary slot, hash, claim, or

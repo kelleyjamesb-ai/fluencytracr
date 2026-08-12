@@ -1,0 +1,45 @@
+{
+  "schema_version": "FT_ASSURANCE_VBD_V4_EXECUTION_2026_08_V1",
+  "source_contract": "docs/contracts/ai-value-vbd-human-behavior-outcome-joint-methodology/REPLICATED_VALIDATION_PROTOCOL.md",
+  "synthetic_only": true,
+  "raw_posterior_draws_emitted": false,
+  "raw_exception_text_emitted": false,
+  "cases": [
+    {
+      "id": "exact_reviewed_claim_enters_killable_full_model_worker",
+      "expected_state": "ADMIT_ISOLATED_WORKER",
+      "required_bindings": [
+        "exact_runtime_manifest",
+        "exact_execution_packet",
+        "immutable_claim",
+        "authenticated_exact_head_review",
+        "create_once_launch"
+      ]
+    },
+    {
+      "id": "self_issued_complete_receipt",
+      "expected_state": "HOLD_UNAUTHENTICATED_FIT_RECEIPT"
+    },
+    {
+      "id": "reused_claim",
+      "expected_state": "HOLD_CLAIM_ALREADY_CONSUMED"
+    },
+    {
+      "id": "native_worker_exceeds_deadline",
+      "expected_state": "HOLD_SAMPLER_TIMEOUT",
+      "required_action": "TERMINATE_WORKER"
+    },
+    {
+      "id": "sampler_error",
+      "expected_state": "HOLD_SAMPLER_ERROR"
+    },
+    {
+      "id": "finite_diagnostic_failure",
+      "expected_state": "HOLD_DIAGNOSTIC"
+    },
+    {
+      "id": "nonfinite_fit_summary",
+      "expected_state": "HOLD_SUMMARY_NONFINITE"
+    }
+  ]
+}

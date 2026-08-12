@@ -6069,3 +6069,36 @@
 - No real sampler, V4 preflight/canary/qualifying study, customer or real data,
   external execution, merge, deployment, or production proof occurred. Exact
   source approval and the frozen runtime remain future execution prerequisites.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 isolated V4 execution boundary)
+
+- Closed the exact-head execution review. V4 now launches the unchanged full
+  model only inside a spawn-isolated process. The parent owns the immutable
+  deadline, terminates or kills a non-returning native worker, and records
+  `SAMPLER_TIMEOUT` only after the observed deadline has elapsed. Post-fit
+  summary and diagnostic work remains inside that same deadline.
+- The child retains the raw `VBDJointFit`, posterior draws, and latent paths.
+  It returns only a closed sanitized fit receipt. The parent persists that
+  receipt create-once, and ledger append plus namespace combination reconcile
+  it against the exact persisted launch. Self-issued in-memory receipts do not
+  count toward `COMPLETE`.
+- Non-timeout terminal failures are derived in the worker and returned as a
+  claim/launch/process-bound worker receipt. `SAMPLER_ERROR`,
+  `DIAGNOSTIC_HOLD`, and `SUMMARY_NONFINITE` checkpoints must reconcile with
+  their create-once persisted worker receipt; a chosen code or evidence hash
+  cannot poison a consumed claim. Nonfinite summaries take precedence when a
+  fit also has a finite diagnostic failure.
+- Launch, fit, timeout, and worker-HOLD files plus their containing directory
+  entries are fsynced. GitHub review reads are pinned to `github.com`; reviewer
+  independence is checked inside the adapter and account logins are excluded
+  from the execution receipt.
+- Added the LMSYS Assurance fixture
+  `harness/fixtures/vbd_v4_execution_admission.json`. Evidence: focused VBD
+  model/preparation/bridge/runner `92/92`; final runner/bridge `57/57`; exact
+  compiled `vbd-engine` `867/867` in `366.57s`; Assurance self-test,
+  compileall, strict OpenSpec, shard validation, queue/fixture JSON parsing,
+  and `git diff --check` pass.
+- No real sampler, V4 preflight/canary/qualifying study, customer or real data,
+  external execution, merge, deployment, or production proof occurred. The
+  exact new source still requires independent approval and a clean frozen
+  runtime before any sampler authorization can exist.

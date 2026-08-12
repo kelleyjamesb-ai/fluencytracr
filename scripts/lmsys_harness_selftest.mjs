@@ -19,6 +19,9 @@ const { FluencyEventSchema } = require("../shared/dist/fluencyTracrSchemas.js");
 const blueprintImportFixture = JSON.parse(
   readFileSync(resolve(process.cwd(), "harness/fixtures/blueprint_import_admission.json"), "utf8")
 );
+const vbdV4ExecutionFixture = JSON.parse(
+  readFileSync(resolve(process.cwd(), "harness/fixtures/vbd_v4_execution_admission.json"), "utf8")
+);
 
 function assertFluencyEvent(event) {
   const parsed = FluencyEventSchema.safeParse(event);
@@ -176,6 +179,22 @@ assert.deepEqual(
     "HOLD_PERSON_LEVEL_DETAIL",
     "HOLD_PERSON_LEVEL_DETAIL",
     "HOLD_UNAPPROVED_SOURCE"
+  ]
+);
+assert.equal(vbdV4ExecutionFixture.schema_version, "FT_ASSURANCE_VBD_V4_EXECUTION_2026_08_V1");
+assert.equal(vbdV4ExecutionFixture.synthetic_only, true);
+assert.equal(vbdV4ExecutionFixture.raw_posterior_draws_emitted, false);
+assert.equal(vbdV4ExecutionFixture.raw_exception_text_emitted, false);
+assert.deepEqual(
+  vbdV4ExecutionFixture.cases.map((entry) => [entry.id, entry.expected_state]),
+  [
+    ["exact_reviewed_claim_enters_killable_full_model_worker", "ADMIT_ISOLATED_WORKER"],
+    ["self_issued_complete_receipt", "HOLD_UNAUTHENTICATED_FIT_RECEIPT"],
+    ["reused_claim", "HOLD_CLAIM_ALREADY_CONSUMED"],
+    ["native_worker_exceeds_deadline", "HOLD_SAMPLER_TIMEOUT"],
+    ["sampler_error", "HOLD_SAMPLER_ERROR"],
+    ["finite_diagnostic_failure", "HOLD_DIAGNOSTIC"],
+    ["nonfinite_fit_summary", "HOLD_SUMMARY_NONFINITE"]
   ]
 );
 const dogfoodBqCases = cases.filter((entry) => entry.dogfood_bq_manifest);

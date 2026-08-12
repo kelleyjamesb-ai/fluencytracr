@@ -482,8 +482,7 @@ class VBDJointReplicatedReviewReceipt:
     repository: str
     pull_number: int
     review_id: int
-    reviewer_login: str
-    author_login: str
+    independent_review: bool
     author_association: str
     reviewed_commit: str
     state: str
@@ -497,13 +496,7 @@ class VBDJointReplicatedReviewReceipt:
             raise VBDJointReplicatedRunnerError("authenticated review pull number is invalid")
         if type(self.review_id) is not int or self.review_id <= 0:
             raise VBDJointReplicatedRunnerError("authenticated review ID is invalid")
-        if (
-            type(self.reviewer_login) is not str
-            or not self.reviewer_login
-            or type(self.author_login) is not str
-            or not self.author_login
-            or self.reviewer_login == self.author_login
-        ):
+        if self.independent_review is not True:
             raise VBDJointReplicatedRunnerError("authenticated review must be independent")
         if self.author_association not in _TRUSTED_REVIEW_ASSOCIATIONS:
             raise VBDJointReplicatedRunnerError("authenticated reviewer is not trusted")
@@ -520,8 +513,7 @@ class VBDJointReplicatedReviewReceipt:
             "repository": self.repository,
             "pull_number": self.pull_number,
             "review_id": self.review_id,
-            "reviewer_login": self.reviewer_login,
-            "author_login": self.author_login,
+            "independent_review": self.independent_review,
             "author_association": self.author_association,
             "reviewed_commit": self.reviewed_commit,
             "state": self.state,
@@ -537,7 +529,7 @@ def observe_github_review_receipt(
     try:
         review_result = subprocess.run(
             (
-                "gh", "api",
+                "gh", "api", "--hostname", "github.com",
                 f"repos/{_REVIEW_REPOSITORY}/pulls/{pull_number}/reviews/{review_id}",
             ),
             check=True,
@@ -545,7 +537,10 @@ def observe_github_review_receipt(
             text=True,
         )
         pull_result = subprocess.run(
-            ("gh", "api", f"repos/{_REVIEW_REPOSITORY}/pulls/{pull_number}"),
+            (
+                "gh", "api", "--hostname", "github.com",
+                f"repos/{_REVIEW_REPOSITORY}/pulls/{pull_number}",
+            ),
             check=True,
             capture_output=True,
             text=True,
@@ -566,12 +561,23 @@ def observe_github_review_receipt(
         raise VBDJointReplicatedRunnerError(
             "authenticated review does not match the exact pull request head"
         )
+    reviewer_login = review.get("user", {}).get("login")
+    author_login = pull.get("user", {}).get("login")
+    if (
+        type(reviewer_login) is not str
+        or not reviewer_login
+        or type(author_login) is not str
+        or not author_login
+        or reviewer_login == author_login
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "authenticated review must be independent"
+        )
     body = {
         "repository": _REVIEW_REPOSITORY,
         "pull_number": pull_number,
         "review_id": review_id,
-        "reviewer_login": review.get("user", {}).get("login"),
-        "author_login": pull.get("user", {}).get("login"),
+        "independent_review": True,
         "author_association": review.get("author_association"),
         "reviewed_commit": review.get("commit_id"),
         "state": review.get("state"),
@@ -634,10 +640,24 @@ def _launch_receipt_path(execution_root: Path, claim_hash: str) -> Path:
     if not resolved_root.is_dir():
         raise VBDJointReplicatedRunnerError("execution root is not a directory")
     launches = resolved_root / "launches"
+    launches_existed = launches.exists()
     launches.mkdir(mode=0o700, exist_ok=True)
     if launches.is_symlink():
         raise VBDJointReplicatedRunnerError("execution launch directory is unsafe")
+    if not launches_existed:
+        _fsync_directory(resolved_root)
     return launches / f"{_sha('claim_hash', claim_hash)}.json"
+
+
+def _fsync_directory(directory: Path) -> None:
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    descriptor = os.open(directory, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def consume_execution_claim(
@@ -695,6 +715,7 @@ def consume_execution_claim(
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+    _fsync_directory(path.parent)
     return receipt
 
 
@@ -790,6 +811,118 @@ class VBDJointReplicatedFitReceipt:
 
     def to_dict(self) -> dict:
         return {**self.body_without_hash(), "receipt_hash": self.receipt_hash}
+
+
+def _fit_receipt_path(execution_root: Path, claim_hash: str) -> Path:
+    if not isinstance(execution_root, Path):
+        raise VBDJointReplicatedRunnerError(
+            "execution root must use the exact path type"
+        )
+    try:
+        resolved_root = execution_root.resolve(strict=True)
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError("execution root is unavailable") from exc
+    if not resolved_root.is_dir():
+        raise VBDJointReplicatedRunnerError("execution root is not a directory")
+    fits = resolved_root / "fits"
+    fits_existed = fits.exists()
+    fits.mkdir(mode=0o700, exist_ok=True)
+    if fits.is_symlink():
+        raise VBDJointReplicatedRunnerError("execution fit directory is unsafe")
+    if not fits_existed:
+        _fsync_directory(resolved_root)
+    return fits / f"{_sha('claim_hash', claim_hash)}.json"
+
+
+def persist_validated_fit_receipt(
+    execution_root: Path,
+    receipt: VBDJointReplicatedFitReceipt,
+    *,
+    launch_receipt: VBDJointReplicatedLaunchReceipt,
+) -> None:
+    """Persist the bridge-issued COMPLETE evidence with its consumed launch."""
+
+    if type(receipt) is not VBDJointReplicatedFitReceipt:
+        raise VBDJointReplicatedRunnerError("fit receipt must use the exact type")
+    if (
+        type(launch_receipt) is not VBDJointReplicatedLaunchReceipt
+        or receipt.slot_id != launch_receipt.slot_id
+        or receipt.claim_hash != launch_receipt.claim_hash
+        or receipt.launch_receipt_hash != launch_receipt.launch_receipt_hash
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "fit receipt does not bind the consumed launch"
+        )
+    validate_consumed_execution_claim(execution_root, launch_receipt)
+    path = _fit_receipt_path(execution_root, receipt.claim_hash)
+    payload = {
+        "fit_receipt": receipt.to_dict(),
+        "launch_receipt": launch_receipt.to_dict(),
+    }
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except FileExistsError as exc:
+        raise VBDJointReplicatedRunnerError("fit receipt already exists") from exc
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError("fit receipt could not persist") from exc
+    try:
+        serialized = (
+            json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n"
+        ).encode()
+        os.write(descriptor, serialized)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    _fsync_directory(path.parent)
+
+
+def validate_persisted_fit_receipt(
+    execution_root: Path,
+    receipt: VBDJointReplicatedFitReceipt,
+) -> None:
+    """Reconcile COMPLETE evidence with the create-once worker receipt store."""
+
+    if type(receipt) is not VBDJointReplicatedFitReceipt:
+        raise VBDJointReplicatedRunnerError("fit receipt must use the exact type")
+    resolved_root = execution_root.resolve(strict=True)
+    if (
+        resolved_root / "timeouts" / f"{receipt.claim_hash}.json"
+    ).exists() or (
+        resolved_root / "holds" / f"{receipt.claim_hash}.json"
+    ).exists():
+        raise VBDJointReplicatedRunnerError(
+            "persisted fit receipt conflicts with terminal HOLD evidence"
+        )
+    path = _fit_receipt_path(execution_root, receipt.claim_hash)
+    try:
+        stored = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted fit receipt is unavailable"
+        ) from exc
+    if type(stored) is not dict or set(stored) != {
+        "fit_receipt",
+        "launch_receipt",
+    }:
+        raise VBDJointReplicatedRunnerError("persisted fit receipt is malformed")
+    try:
+        launch = VBDJointReplicatedLaunchReceipt(**stored["launch_receipt"])
+    except (TypeError, VBDJointReplicatedRunnerError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted fit launch receipt is invalid"
+        ) from exc
+    if stored["fit_receipt"] != receipt.to_dict() or (
+        launch.slot_id != receipt.slot_id
+        or launch.claim_hash != receipt.claim_hash
+        or launch.launch_receipt_hash != receipt.launch_receipt_hash
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "persisted fit receipt does not match COMPLETE evidence"
+        )
+    validate_consumed_execution_claim(execution_root, launch)
 
 
 def build_sampler_free_execution_packet(
@@ -1034,12 +1167,28 @@ class VBDJointReplicatedAttemptLedger:
     claims: tuple[VBDJointReplicatedValidationClaim, ...] = ()
     dispositions: tuple[VBDJointReplicatedValidationDisposition, ...] = ()
     checkpoints: tuple[VBDJointReplicatedAttemptCheckpoint, ...] = ()
+    execution_root: Path | None = None
 
     def __post_init__(self) -> None:
         if type(self.claims) is not tuple or type(self.dispositions) is not tuple:
             raise VBDJointReplicatedRunnerError("ledger collections must be immutable")
         if type(self.checkpoints) is not tuple:
             raise VBDJointReplicatedRunnerError("ledger checkpoints must be immutable")
+        if self.execution_root is not None:
+            if not isinstance(self.execution_root, Path):
+                raise VBDJointReplicatedRunnerError(
+                    "ledger execution root must use the exact path type"
+                )
+            try:
+                resolved_root = self.execution_root.resolve(strict=True)
+            except OSError as exc:
+                raise VBDJointReplicatedRunnerError(
+                    "ledger execution root is unavailable"
+                ) from exc
+            if not resolved_root.is_dir() or self.execution_root.is_symlink():
+                raise VBDJointReplicatedRunnerError(
+                    "ledger execution root is unsafe"
+                )
         if any(type(item) is not VBDJointReplicatedValidationClaim for item in self.claims):
             raise VBDJointReplicatedRunnerError("ledger contains an invalid claim")
         if any(
@@ -1106,6 +1255,29 @@ class VBDJointReplicatedAttemptLedger:
             raise VBDJointReplicatedRunnerError("checkpoint state does not bind disposition")
         if checkpoint.result_hash != disposition.result_hash:
             raise VBDJointReplicatedRunnerError("checkpoint result does not bind disposition")
+        if checkpoint.state == "COMPLETE":
+            if self.execution_root is None:
+                raise VBDJointReplicatedRunnerError(
+                    "complete disposition lacks an authenticated fit receipt store"
+                )
+            validate_persisted_fit_receipt(
+                self.execution_root,
+                checkpoint.fit_receipt,
+            )
+        elif checkpoint.failure_code in {
+            "SAMPLER_ERROR",
+            "DIAGNOSTIC_HOLD",
+            "SUMMARY_NONFINITE",
+        }:
+            if self.execution_root is None:
+                raise VBDJointReplicatedRunnerError(
+                    "worker HOLD lacks an authenticated receipt store"
+                )
+            _validate_persisted_worker_execution_hold(
+                self.execution_root,
+                disposition,
+                checkpoint,
+            )
         completed_at = _timestamp("completed_at", checkpoint.completed_at)
         if not _checkpoint_completion_matches_claim(disposition, claim, completed_at):
             raise VBDJointReplicatedRunnerError(
@@ -1358,10 +1530,12 @@ def persist_sampler_timeout_hold(
         **disposition_body,
         disposition_hash=sha256_json(disposition_body),
     )
-    completed_at = max(
-        datetime.now(timezone.utc),
-        _timestamp("deadline_at", claim.deadline_at),
-    ).isoformat()
+    observed_completion = datetime.now(timezone.utc)
+    if observed_completion < _timestamp("deadline_at", claim.deadline_at):
+        raise VBDJointReplicatedRunnerError(
+            "sampler timeout was observed before the immutable deadline"
+        )
+    completed_at = observed_completion.isoformat()
     checkpoint = make_checkpoint_for_disposition(
         disposition,
         case_hash=case_hash,
@@ -1369,9 +1543,12 @@ def persist_sampler_timeout_hold(
     )
     resolved_root = execution_root.resolve(strict=True)
     timeouts = resolved_root / "timeouts"
+    timeouts_existed = timeouts.exists()
     timeouts.mkdir(mode=0o700, exist_ok=True)
     if timeouts.is_symlink():
         raise VBDJointReplicatedRunnerError("execution timeout directory is unsafe")
+    if not timeouts_existed:
+        _fsync_directory(resolved_root)
     path = timeouts / f"{claim.claim_hash}.json"
     payload = {
         "disposition": {
@@ -1399,31 +1576,74 @@ def persist_sampler_timeout_hold(
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+    _fsync_directory(path.parent)
     return disposition, checkpoint
 
 
-def persist_execution_hold(
+@dataclass(frozen=True, slots=True)
+class _VBDJointReplicatedWorkerHoldReceipt:
+    slot_id: str
+    claim_hash: str
+    launch_receipt_hash: str
+    failure_code: str
+    evidence_hash: str
+    worker_process_id: int
+    receipt_hash: str
+
+    def __post_init__(self) -> None:
+        if type(self.slot_id) is not str or not self.slot_id:
+            raise VBDJointReplicatedRunnerError("worker HOLD slot ID is invalid")
+        for name, value in (
+            ("claim_hash", self.claim_hash),
+            ("launch_receipt_hash", self.launch_receipt_hash),
+            ("evidence_hash", self.evidence_hash),
+            ("receipt_hash", self.receipt_hash),
+        ):
+            _sha(name, value)
+        if self.failure_code not in {
+            "SAMPLER_ERROR",
+            "DIAGNOSTIC_HOLD",
+            "SUMMARY_NONFINITE",
+        }:
+            raise VBDJointReplicatedRunnerError(
+                "worker HOLD failure code is invalid"
+            )
+        if type(self.worker_process_id) is not int or self.worker_process_id < 0:
+            raise VBDJointReplicatedRunnerError("worker HOLD process ID is invalid")
+        if self.receipt_hash != sha256_json(self.body_without_hash()):
+            raise VBDJointReplicatedRunnerError("worker HOLD receipt hash is invalid")
+
+    def body_without_hash(self) -> dict:
+        return {
+            "slot_id": self.slot_id,
+            "claim_hash": self.claim_hash,
+            "launch_receipt_hash": self.launch_receipt_hash,
+            "failure_code": self.failure_code,
+            "evidence_hash": self.evidence_hash,
+            "worker_process_id": self.worker_process_id,
+        }
+
+    def to_dict(self) -> dict:
+        return {**self.body_without_hash(), "receipt_hash": self.receipt_hash}
+
+
+def _persist_worker_execution_hold(
     execution_root: Path,
     slot: VBDJointReplicatedValidationSlot,
     *,
     claim: VBDJointReplicatedValidationClaim,
     launch_receipt: VBDJointReplicatedLaunchReceipt,
     case_hash: str,
-    failure_code: str,
-    evidence_hash: str,
+    worker_receipt: _VBDJointReplicatedWorkerHoldReceipt,
 ) -> tuple[
     VBDJointReplicatedValidationDisposition,
     VBDJointReplicatedAttemptCheckpoint,
 ]:
     """Persist one sanitized terminal HOLD for a consumed non-timeout attempt."""
 
-    if failure_code not in {
-        "SAMPLER_ERROR",
-        "DIAGNOSTIC_HOLD",
-        "SUMMARY_NONFINITE",
-    }:
+    if type(worker_receipt) is not _VBDJointReplicatedWorkerHoldReceipt:
         raise VBDJointReplicatedRunnerError(
-            "execution HOLD failure code is not a persisted fit outcome"
+            "execution HOLD requires an exact worker receipt"
         )
     slot = _require_canonical_slot(slot)
     validate_claim_for_slot(
@@ -1432,6 +1652,10 @@ def persist_execution_hold(
     if (
         launch_receipt.slot_id != slot.slot_id
         or launch_receipt.claim_hash != claim.claim_hash
+        or worker_receipt.slot_id != slot.slot_id
+        or worker_receipt.claim_hash != claim.claim_hash
+        or worker_receipt.launch_receipt_hash
+        != launch_receipt.launch_receipt_hash
     ):
         raise VBDJointReplicatedRunnerError("execution HOLD launch does not bind claim")
     validate_consumed_execution_claim(execution_root, launch_receipt)
@@ -1450,8 +1674,8 @@ def persist_execution_hold(
             "slot_id": slot.slot_id,
             "claim_hash": claim.claim_hash,
             "launch_receipt_hash": launch_receipt.launch_receipt_hash,
-            "failure_code": failure_code,
-            "evidence_hash": _sha("evidence_hash", evidence_hash),
+            "failure_code": worker_receipt.failure_code,
+            "worker_receipt_hash": worker_receipt.receipt_hash,
         }
     )
     disposition_body = {
@@ -1459,7 +1683,7 @@ def persist_execution_hold(
         "slot_id": slot.slot_id,
         "claim_hash": claim.claim_hash,
         "state": "HOLD",
-        "failure_code": failure_code,
+        "failure_code": worker_receipt.failure_code,
         "result_hash": result_hash,
     }
     disposition = VBDJointReplicatedValidationDisposition(
@@ -1473,9 +1697,12 @@ def persist_execution_hold(
     )
     resolved_root = execution_root.resolve(strict=True)
     holds = resolved_root / "holds"
+    holds_existed = holds.exists()
     holds.mkdir(mode=0o700, exist_ok=True)
     if holds.is_symlink():
         raise VBDJointReplicatedRunnerError("execution HOLD directory is unsafe")
+    if not holds_existed:
+        _fsync_directory(resolved_root)
     path = holds / f"{claim.claim_hash}.json"
     payload = {
         "disposition": {
@@ -1487,7 +1714,7 @@ def persist_execution_hold(
             "checkpoint_hash": checkpoint.checkpoint_hash,
         },
         "launch_receipt_hash": launch_receipt.launch_receipt_hash,
-        "evidence_hash": evidence_hash,
+        "worker_receipt": worker_receipt.to_dict(),
     }
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     if hasattr(os, "O_NOFOLLOW"):
@@ -1506,7 +1733,84 @@ def persist_execution_hold(
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+    _fsync_directory(path.parent)
     return disposition, checkpoint
+
+
+def _validate_persisted_worker_execution_hold(
+    execution_root: Path,
+    disposition: VBDJointReplicatedValidationDisposition,
+    checkpoint: VBDJointReplicatedAttemptCheckpoint,
+) -> None:
+    path = execution_root.resolve(strict=True) / "holds" / f"{disposition.claim_hash}.json"
+    try:
+        stored = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted worker HOLD receipt is unavailable"
+        ) from exc
+    if type(stored) is not dict or set(stored) != {
+        "disposition",
+        "checkpoint",
+        "launch_receipt_hash",
+        "worker_receipt",
+    }:
+        raise VBDJointReplicatedRunnerError(
+            "persisted worker HOLD receipt is malformed"
+        )
+    try:
+        worker_receipt = _VBDJointReplicatedWorkerHoldReceipt(
+            **stored["worker_receipt"]
+        )
+    except (TypeError, VBDJointReplicatedRunnerError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted worker HOLD evidence is invalid"
+        ) from exc
+    expected_result_hash = sha256_json(
+        {
+            "receipt_schema": "VBD_JOINT_REPLICATED_EXECUTION_HOLD_V1",
+            "slot_id": disposition.slot_id,
+            "claim_hash": disposition.claim_hash,
+            "launch_receipt_hash": worker_receipt.launch_receipt_hash,
+            "failure_code": worker_receipt.failure_code,
+            "worker_receipt_hash": worker_receipt.receipt_hash,
+        }
+    )
+    if (
+        stored["disposition"]
+        != {
+            **disposition.body_without_hash(),
+            "disposition_hash": disposition.disposition_hash,
+        }
+        or stored["checkpoint"]
+        != {
+            **checkpoint.body_without_hash(),
+            "checkpoint_hash": checkpoint.checkpoint_hash,
+        }
+        or stored["launch_receipt_hash"]
+        != worker_receipt.launch_receipt_hash
+        or worker_receipt.slot_id != disposition.slot_id
+        or worker_receipt.claim_hash != disposition.claim_hash
+        or worker_receipt.failure_code != disposition.failure_code
+        or disposition.result_hash != expected_result_hash
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "persisted worker HOLD does not bind the ledger evidence"
+        )
+    launch_path = _launch_receipt_path(execution_root, disposition.claim_hash)
+    try:
+        launch = VBDJointReplicatedLaunchReceipt(
+            **json.loads(launch_path.read_text(encoding="utf-8"))
+        )
+    except (OSError, json.JSONDecodeError, TypeError, VBDJointReplicatedRunnerError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted worker HOLD launch is invalid"
+        ) from exc
+    if launch.launch_receipt_hash != worker_receipt.launch_receipt_hash:
+        raise VBDJointReplicatedRunnerError(
+            "persisted worker HOLD launch does not match"
+        )
+    validate_consumed_execution_claim(execution_root, launch)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1658,6 +1962,29 @@ def combine_namespace(
         ):
             raise VBDJointReplicatedRunnerError(
                 "checkpoint does not bind the namespace disposition"
+            )
+        if checkpoint.state == "COMPLETE":
+            if ledger.execution_root is None:
+                raise VBDJointReplicatedRunnerError(
+                    "complete namespace lacks an authenticated fit receipt store"
+                )
+            validate_persisted_fit_receipt(
+                ledger.execution_root,
+                checkpoint.fit_receipt,
+            )
+        elif checkpoint.failure_code in {
+            "SAMPLER_ERROR",
+            "DIAGNOSTIC_HOLD",
+            "SUMMARY_NONFINITE",
+        }:
+            if ledger.execution_root is None:
+                raise VBDJointReplicatedRunnerError(
+                    "worker HOLD namespace lacks an authenticated receipt store"
+                )
+            _validate_persisted_worker_execution_hold(
+                ledger.execution_root,
+                disposition,
+                checkpoint,
             )
         completed_at = _timestamp("completed_at", checkpoint.completed_at)
         if not _checkpoint_completion_matches_claim(disposition, claim, completed_at):
