@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import {
   stableHash,
@@ -14,6 +16,12 @@ import {
 
 const require = createRequire(import.meta.url);
 const { FluencyEventSchema } = require("../shared/dist/fluencyTracrSchemas.js");
+const blueprintImportFixture = JSON.parse(
+  readFileSync(resolve(process.cwd(), "harness/fixtures/blueprint_import_admission.json"), "utf8")
+);
+const vbdV4ExecutionFixture = JSON.parse(
+  readFileSync(resolve(process.cwd(), "harness/fixtures/vbd_v4_execution_admission.json"), "utf8")
+);
 
 function assertFluencyEvent(event) {
   const parsed = FluencyEventSchema.safeParse(event);
@@ -143,6 +151,52 @@ assert.ok(cases.every((entry) =>
   entry.operator_evidence_package_manifest ||
   entry.operator_workflow_manifest
 ));
+
+assert.equal(blueprintImportFixture.schema_version, "FT_ASSURANCE_BLUEPRINT_IMPORT_2026_08_V1");
+assert.equal(blueprintImportFixture.raw_document_text_emitted, false);
+assert.equal(blueprintImportFixture.person_level_fields_emitted, false);
+assert.deepEqual(
+  blueprintImportFixture.cases.map((entry) => entry.id).sort(),
+  [
+    "ambiguous_blueprint",
+    "approved_aggregate_hypothesis",
+    "employee_identifier_in_hypothesis",
+    "person_name_in_hypothesis",
+    "unapproved_blueprint"
+  ]
+);
+assert.equal(
+  blueprintImportFixture.cases.find((entry) => entry.id === "approved_aggregate_hypothesis")?.expected_state,
+  "ADMIT_AGGREGATE_HYPOTHESIS"
+);
+assert.deepEqual(
+  blueprintImportFixture.cases
+    .filter((entry) => entry.id !== "approved_aggregate_hypothesis")
+    .map((entry) => entry.expected_state)
+    .sort(),
+  [
+    "HOLD_AMBIGUOUS_SOURCE",
+    "HOLD_PERSON_LEVEL_DETAIL",
+    "HOLD_PERSON_LEVEL_DETAIL",
+    "HOLD_UNAPPROVED_SOURCE"
+  ]
+);
+assert.equal(vbdV4ExecutionFixture.schema_version, "FT_ASSURANCE_VBD_V4_EXECUTION_2026_08_V1");
+assert.equal(vbdV4ExecutionFixture.synthetic_only, true);
+assert.equal(vbdV4ExecutionFixture.raw_posterior_draws_emitted, false);
+assert.equal(vbdV4ExecutionFixture.raw_exception_text_emitted, false);
+assert.deepEqual(
+  vbdV4ExecutionFixture.cases.map((entry) => [entry.id, entry.expected_state]),
+  [
+    ["exact_reviewed_claim_enters_killable_full_model_worker", "ADMIT_ISOLATED_WORKER"],
+    ["self_issued_complete_receipt", "HOLD_UNAUTHENTICATED_FIT_RECEIPT"],
+    ["reused_claim", "HOLD_CLAIM_ALREADY_CONSUMED"],
+    ["native_worker_exceeds_deadline", "HOLD_SAMPLER_TIMEOUT"],
+    ["sampler_error", "HOLD_SAMPLER_ERROR"],
+    ["finite_diagnostic_failure", "HOLD_DIAGNOSTIC"],
+    ["nonfinite_fit_summary", "HOLD_SUMMARY_NONFINITE"]
+  ]
+);
 const dogfoodBqCases = cases.filter((entry) => entry.dogfood_bq_manifest);
 assert.deepEqual(dogfoodBqCases.map((entry) => entry.id).sort(), [
   "dogfood_bq_refused_query_no_partition",

@@ -2,15 +2,37 @@ import { readFileSync } from "node:fs";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AIValueWorkspace } from "./AIValueWorkspace";
+import { AIValueWorkspace, canImportAiFluencyMeasurement } from "./AIValueWorkspace";
 import {
   ACTIVE_AI_VALUE_BLUEPRINT_ID_KEY,
   ACTIVE_AI_VALUE_ENGAGEMENT_ID_KEY
 } from "../lib/aiValueApi";
+import { applyAuthToken, getFrontendSessionContext } from "../auth";
+
+const { parseDocumentTextMock } = vi.hoisted(() => ({
+  parseDocumentTextMock: vi.fn()
+}));
+
+vi.mock("../lib/policyDocumentParser", () => ({
+  parseDocumentText: parseDocumentTextMock
+}));
 
 const uiTerm = (...parts: string[]) => parts.join("");
 const SELECTED_OUTCOME_METRICS_KEY = "aiValue.selectedOutcomeMetrics";
 const SELECTED_OUTCOME_METRIC_WATCH_PLAN_KEY = "aiValue.selectedOutcomeMetricWatchPlan";
+const GUIDED_SETUP_DRAFT_KEY = "aiValue.guidedSetupDraft.v1";
+const guidedSetupStorageKey = () =>
+  `${GUIDED_SETUP_DRAFT_KEY}:${getFrontendSessionContext().orgId || "unavailable"}`;
+const authTokenForOrganization = (organizationId: string) => {
+  const payload = btoa(JSON.stringify({ org_id: organizationId, role: "ADMIN" }))
+    .replace(/=+$/g, "");
+  return `header.${payload}.signature`;
+};
+const guidedSetupFixture = {
+  hypothesis: "Customer Success will assemble account context faster to reduce QBR preparation time and improve follow-up.",
+  workflowId: "cs-qbr-preparation",
+  metricIds: ["cs-qbr-preparation-time"]
+};
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const workspaceCss = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
 const workspaceSource = readFileSync(`${process.cwd()}/src/pages/AIValueWorkspace.tsx`, "utf8");
@@ -153,16 +175,34 @@ const customerProjectionResponse = {
   ]
 };
 
-const renderWorkspace = (path = "/ai-value-workspace") =>
-  render(
+const renderWorkspace = (path = "/ai-value-workspace", { seedSetup = true } = {}) => {
+  const setupRequiredPaths = [
+    "/ai-value-workspace/metrics",
+    "/ai-value-workspace/readiness",
+    "/ai-value-workspace/sources",
+    "/ai-value-workspace/progress",
+    "/ai-value-workspace/vbd",
+    "/ai-value-workspace/decisions",
+    "/ai-value-workspace/readout",
+    "/ai-value-workspace/case",
+    "/ai-value-workspace/roi",
+    "/ai-value-workspace/evidence",
+    "/ai-value-workspace/scenario"
+  ];
+  if (seedSetup && setupRequiredPaths.includes(path) && !sessionStorage.getItem(guidedSetupStorageKey())) {
+    sessionStorage.setItem(guidedSetupStorageKey(), JSON.stringify(guidedSetupFixture));
+  }
+  return render(
     <MemoryRouter initialEntries={[path]}>
       <AIValueWorkspace />
     </MemoryRouter>
   );
+};
 
 
 describe("AIValueWorkspace executive spine", () => {
   beforeEach(() => {
+    parseDocumentTextMock.mockReset();
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => jsonResponse({ objects: [] }))
@@ -170,55 +210,34 @@ describe("AIValueWorkspace executive spine", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
-  it("renders a meaty executive value evidence report with fail-closed export controls", () => {
+  it("holds the guided decision and isolates the illustrative readout", async () => {
     const { container } = renderWorkspace("/ai-value-workspace/decisions");
 
-    const report = screen.getByRole("region", { name: /Value Evidence Report/i });
-    expect(within(report).getByText(/Illustrative example, not live evidence/i)).toBeInTheDocument();
-    expect(within(report).getByRole("heading", { name: /Is enterprise AI becoming valuable work/i })).toBeInTheDocument();
-    expect(within(report).getByText(/For Customer Support case resolution/i)).toBeInTheDocument();
-    expect(within(report).getByText(/Hypothesis status/i)).toBeInTheDocument();
-    expect(within(report).getByText(/Evidence posture/i)).toBeInTheDocument();
-    expect(within(report).getByText(/Spend posture/i)).toBeInTheDocument();
-    expect(within(report).getByText(/Caveated report actions only/i)).toBeInTheDocument();
-    const reportActions = within(report).getByRole("group", { name: /Report actions/i });
-    expect(within(reportActions).getByRole("button", { name: /Open internal preview/i })).toBeInTheDocument();
-    expect(within(reportActions).getByRole("button", { name: /Export not authorized/i })).toBeDisabled();
-    expect(within(reportActions).getByRole("button", { name: /Share not authorized/i })).toBeDisabled();
-    expect(within(report).getByText(/Preview only. Export not authorized/i)).toBeInTheDocument();
-    expect(within(report).queryByRole("button", { name: /Download/i })).not.toBeInTheDocument();
-    expect(within(report).queryByRole("button", { name: /Share caveated package/i })).not.toBeInTheDocument();
-
-    for (const section of [
-      "Approved Hypothesis",
-      "Human Readiness",
-      "Behavior Evidence / VBD",
-      "Business Metric Linkage",
-      "Spend & Scale Judgment",
-      "Executive Recommendations",
-      "Governance Notes"
-    ]) {
-      expect(within(report).getByRole("heading", { name: section })).toBeInTheDocument();
-    }
-
-    expect(within(report).getByText(/Run a targeted enablement sprint/i)).toBeInTheDocument();
-    expect(within(report).getByText(/Review high-token, low-depth workflows/i)).toBeInTheDocument();
-    expect(within(report).getByText(/The strongest current conclusion/i)).toBeInTheDocument();
+    const decisionStatus = await screen.findByRole("region", { name: /Decision status/i });
+    expect(decisionStatus).toHaveTextContent(/Decision held until evidence is reviewed/i);
+    expect(decisionStatus).toHaveTextContent(
+      /source approval, VBD movement, and customer metric movement are still missing/i
+    );
     expect(
-      within(report).getAllByText(/does not claim ROI, causality, productivity lift, financial impact/i).length
-    ).toBeGreaterThan(0);
+      within(decisionStatus).getByRole("link", { name: /Open illustrative readout/i })
+    ).toHaveAttribute("href", "/ai-value-readout");
+    expect(screen.queryByRole("region", { name: /Value Evidence Report/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Customer-approved/i)).not.toBeInTheDocument();
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
   it("shows no illustrative report while a live request is loading", async () => {
+    renderWorkspace("/ai-value-workspace/decisions");
+    await screen.findByRole("region", { name: /Decision status/i });
     vi.mocked(fetch).mockImplementation(
       () => new Promise<Response>(() => undefined)
     );
-    renderWorkspace("/ai-value-workspace/decisions");
 
     fireEvent.click(
       screen.getByRole("button", { name: /Review aggregate evidence status/i })
@@ -228,14 +247,15 @@ describe("AIValueWorkspace executive spine", () => {
       expect(screen.getByText(/Live report request is loading/i)).toBeInTheDocument()
     );
     expect(
-      screen.queryByRole("region", { name: /Current client value thread/i })
-    ).not.toBeInTheDocument();
+      screen.getByRole("region", { name: /Current client value thread/i })
+    ).toHaveTextContent(/Setup draft — not reviewed/i);
     expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
   });
 
   it("holds with no illustrative fallback when no workshop objects exist", async () => {
     renderWorkspace("/ai-value-workspace/decisions");
+    await screen.findByRole("region", { name: /Decision status/i });
 
     fireEvent.click(
       screen.getByRole("button", { name: /Review aggregate evidence status/i })
@@ -245,8 +265,8 @@ describe("AIValueWorkspace executive spine", () => {
       expect(screen.getAllByText(/Live report is held/i).length).toBeGreaterThan(0)
     );
     expect(
-      screen.queryByRole("region", { name: /Current client value thread/i })
-    ).not.toBeInTheDocument();
+      screen.getByRole("region", { name: /Current client value thread/i })
+    ).toHaveTextContent(/Setup draft — not reviewed/i);
     expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
     expect(
@@ -255,8 +275,9 @@ describe("AIValueWorkspace executive spine", () => {
   });
 
   it("shows no illustrative fallback after a live request error", async () => {
-    vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
     renderWorkspace("/ai-value-workspace/decisions");
+    await screen.findByRole("region", { name: /Decision status/i });
+    vi.mocked(fetch).mockRejectedValue(new Error("network unavailable"));
 
     fireEvent.click(
       screen.getByRole("button", { name: /Review aggregate evidence status/i })
@@ -266,61 +287,560 @@ describe("AIValueWorkspace executive spine", () => {
       expect(screen.getAllByText(/Live report could not be loaded/i).length).toBeGreaterThan(0)
     );
     expect(
-      screen.queryByRole("region", { name: /Current client value thread/i })
-    ).not.toBeInTheDocument();
+      screen.getByRole("region", { name: /Current client value thread/i })
+    ).toHaveTextContent(/Setup draft — not reviewed/i);
     expect(screen.queryByText(/Hypothesis status/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/For Customer Support case resolution/i)).not.toBeInTheDocument();
   });
 
-  it("uses the sidebar and toolbar instead of a duplicate step-card row", () => {
+  it("gives Home a truthful empty state and one primary action", async () => {
     const { container } = renderWorkspace();
 
     expect(
       screen.getByRole("region", { name: /AI value workspace report frame/i })
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /Value Case: AI Assistant Value Assessment/i })
-    ).toBeInTheDocument();
-    const reportHeader = screen
-      .getByRole("heading", { name: /Value Case: AI Assistant Value Assessment/i })
-      .closest("header") as HTMLElement;
-    expect(within(reportHeader).getByLabelText(/Step 1 of 7: Blueprint/i)).toHaveTextContent(
-      "Step 1 of 7"
-    );
-    expect(
-      screen.queryByRole("heading", { name: /Value Evidence Console/i })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("navigation", { name: /Value journey steps/i })
-    ).not.toBeInTheDocument();
+    const homeHeader = screen.getByRole("banner", { name: /AI value workspace header/i });
+    expect(within(homeHeader).getByRole("heading", { name: "AI Value Workspace" })).toBeInTheDocument();
+    expect(within(homeHeader).getByText(/One clear path from customer hypothesis/i)).toBeInTheDocument();
+
     const workspaceNav = screen.getByRole("navigation", { name: "Workspace" });
     for (const link of [
       "Home",
-      "Value cases",
-      "AI Fluency",
-      "Evidence",
-      "Metrics",
-      "Workflows",
-      "Decisions"
+      "1. Value case",
+      "2. Workflow",
+      "3. Metric",
+      "4. AI Readiness",
+      "5. Evidence",
+      "6. Progress",
+      "7. Decision"
     ]) {
       expect(within(workspaceNav).getByRole("link", { name: link })).toBeInTheDocument();
     }
-    const modeNav = screen.getByRole("navigation", { name: /Value case modes/i });
-    expect(within(modeNav).getByRole("link", { name: /Cockpit/i })).toBeInTheDocument();
-    expect(within(modeNav).getByRole("link", { name: /Report/i })).toBeInTheDocument();
-    expect(
-      within(workspaceNav).getAllByRole("link", { current: "page" })
-    ).toHaveLength(1);
-    expect(screen.getByRole("region", { name: /Current guided action/i })).toHaveTextContent("Blueprint Hypothesis");
-    expect(screen.getByRole("region", { name: /Blueprint hypothesis summary/i })).toBeInTheDocument();
-    const journeyPreview = screen.getByRole("region", { name: /Value journey preview/i });
-    expect(within(journeyPreview).getByRole("heading", { name: /Evidence Sources/i })).toBeInTheDocument();
-    expect(within(journeyPreview).getByRole("heading", { name: /Behavior Evidence/i })).toBeInTheDocument();
-    expect(within(journeyPreview).getByRole("heading", { name: /Evidence Checkpoint/i })).toBeInTheDocument();
-    expect(within(journeyPreview).getByRole("heading", { name: /Executive Report/i })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: /Velocity Breadth Depth map/i })).not.toBeInTheDocument();
+    expect(within(workspaceNav).getAllByRole("link", { current: "page" })).toHaveLength(1);
+
+    const home = screen.getByRole("region", { name: /Value case home/i });
+    expect(await within(home).findByRole("heading", { name: /Create a value case/i })).toBeInTheDocument();
+    expect(within(home).getByRole("region", { name: /No active value case/i })).toBeInTheDocument();
+    expect(within(home).getByRole("heading", { name: /Define what the customer wants to test/i })).toBeInTheDocument();
+    expect(within(home).getByRole("link", { name: /Start a value case/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/value-case"
+    );
+    expect(within(home).queryByText(/AI Assistant Value Assessment/i)).not.toBeInTheDocument();
+    expect(within(home).queryByRole("region", { name: /^Active value case$/i })).not.toBeInTheDocument();
+    expect(within(home).queryByRole("region", { name: /Value case journey/i })).not.toBeInTheDocument();
+
+    expect(screen.queryByRole("navigation", { name: /Value case modes/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Current guided action/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Source Review Queue/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Customer evidence projection/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Evidence assistant/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Value journey preview/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Export not authorized/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Share not authorized/i })).not.toBeInTheDocument();
 
     expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("withholds Home actions while case status is loading", () => {
+    vi.mocked(fetch).mockImplementation(() => new Promise<Response>(() => undefined));
+    renderWorkspace();
+    const home = screen.getByRole("region", { name: /Value case home/i });
+
+    expect(within(home).getByRole("heading", { name: /Checking value cases/i })).toBeInTheDocument();
+    expect(within(home).getByRole("status", { name: /Checking value cases/i })).toBeInTheDocument();
+    expect(within(home).queryByRole("link", { name: /Start|Sign in|Review/i })).not.toBeInTheDocument();
+  });
+
+  it("gives signed-out Home a truthful session path", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" }
+    }));
+    const { container } = renderWorkspace();
+    const home = screen.getByRole("region", { name: /Value case home/i });
+
+    expect(await within(home).findByRole("heading", { name: /Sign in to continue/i })).toBeInTheDocument();
+    expect(within(home).getByRole("region", { name: /Organization session required/i })).toBeInTheDocument();
+    expect(within(home).getByRole("link", { name: /^Sign in$/i })).toHaveAttribute("href", "/login");
+    expect(within(home).queryByRole("region", { name: /^Active value case$/i })).not.toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it("walks the user from hypothesis to workflow to metric to connected AI Fluency", async () => {
+    const view = renderWorkspace("/ai-value-workspace/value-case");
+    const { container } = view;
+
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    expect(within(valueCase).getByRole("heading", { name: /What does the customer expect to change/i })).toBeInTheDocument();
+    expect(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i })).toHaveValue("");
+    expect(within(valueCase).queryByRole("radio")).not.toBeInTheDocument();
+
+    const hypothesis = "Customer Success will assemble account context faster to reduce QBR preparation time and improve follow-up.";
+    const canonicalHypothesis = "Customer Success: faster qbr; metric intent: qbr preparation time.";
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: { value: hypothesis }
+    });
+    expect(within(valueCase).getByRole("region", { name: /Hypothesis elements/i })).toHaveTextContent(/Customer Success/i);
+    fireEvent.click(within(valueCase).getByRole("button", { name: /Continue to workflow/i }));
+
+    const workflow = await screen.findByRole("region", { name: /Workflow setup/i });
+    expect(screen.queryByRole("region", { name: /Current guided action/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Current client value thread/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: /Evidence Assistant/i })).not.toBeInTheDocument();
+    expect(workflow).toHaveTextContent(canonicalHypothesis);
+    expect(workflow).not.toHaveTextContent(hypothesis);
+    expect(within(workflow).getByRole("radio", { name: /Customer QBR preparation/i })).toBeChecked();
+    expect(within(workflow).queryByRole("checkbox")).not.toBeInTheDocument();
+    fireEvent.click(within(workflow).getByRole("button", { name: /Continue to metric/i }));
+
+    const metric = await screen.findByRole("region", { name: /^Guided metric setup$/i });
+    const metricForm = within(metric).getByRole("form", { name: /Metric confirmation/i });
+    const qbrMetric = within(metricForm).getByRole("checkbox", { name: /QBR preparation time/i });
+    expect(qbrMetric).toBeChecked();
+    expect(within(metricForm).getAllByText(/Owner to confirm: Customer Success operations owner/i).length).toBeGreaterThan(0);
+
+    fireEvent.click(qbrMetric);
+    expect(within(metric).getByRole("button", { name: /Continue to AI readiness/i })).toBeDisabled();
+    fireEvent.submit(metricForm);
+    expect(screen.getByRole("region", { name: /^Guided metric setup$/i })).toBeInTheDocument();
+
+    fireEvent.click(qbrMetric);
+    fireEvent.click(within(metric).getByRole("button", { name: /Continue to AI readiness/i }));
+
+    const connected = await screen.findByRole("region", { name: /Connected value setup/i });
+    expect(connected).toHaveTextContent(canonicalHypothesis);
+    expect(connected).toHaveTextContent("Customer QBR preparation");
+    expect(connected).toHaveTextContent("QBR preparation time");
+    expect(screen.queryByRole("region", { name: /Northstar Automotive case study/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Import AI Fluency results/i }));
+    expect(await screen.findByRole("region", { name: /Northstar Automotive case study/i })).toBeInTheDocument();
+    expectNoUnsafeUiLanguage(container.textContent);
+
+    view.unmount();
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(await screen.findByRole("region", { name: /Connected value setup/i })).toHaveTextContent("Draft thread connected");
+    expect(screen.getByText(canonicalHypothesis)).toBeInTheDocument();
+  });
+
+  it("parses a Sales Blueprint into an editable aggregate hypothesis without retaining raw text", async () => {
+    parseDocumentTextMock.mockResolvedValue({
+      text: "Blueprint status: Approved\nCustomer hypothesis: Customer Success will prepare QBRs faster and reduce QBR preparation time.",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    });
+    const importedView = renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    const file = new File(["private document bytes"], "northstar-blueprint.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    });
+
+    fireEvent.change(within(valueCase).getByLabelText(/Choose Blueprint file/i), {
+      target: { files: [file] }
+    });
+
+    expect(
+      await within(valueCase).findByText(/parsed into an aggregate hypothesis/i)
+    ).toBeInTheDocument();
+    const hypothesis = within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i });
+    expect(hypothesis).toHaveValue("Customer Success: faster qbr; metric intent: qbr preparation time.");
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    fireEvent.change(hypothesis, {
+      target: { value: "Customer Success: faster qbr; metric intent: qbr preparation time. " }
+    });
+    expect(within(valueCase).getByRole("button", { name: /Confirm parsed hypothesis/i })).toBeInTheDocument();
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    fireEvent.click(within(valueCase).getByRole("button", { name: /Confirm parsed hypothesis/i }));
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeEnabled();
+    fireEvent.change(hypothesis, {
+      target: { value: "Customer Success: faster qbr; metric intent: qbr preparation time.  " }
+    });
+    expect(within(valueCase).getByRole("button", { name: /Confirm parsed hypothesis/i })).toBeInTheDocument();
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    fireEvent.click(within(valueCase).getByRole("button", { name: /Confirm parsed hypothesis/i }));
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeEnabled();
+    expect((hypothesis as HTMLTextAreaElement).value).not.toMatch(/Jane Smith|jane\.smith@example\.com/i);
+    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toMatch(
+      /Jane Smith|jane\.smith@example\.com|northstar-blueprint\.docx|private document bytes/i
+    );
+
+    fireEvent.click(within(valueCase).getByRole("button", { name: /Continue to workflow/i }));
+    const retainedDraft = sessionStorage.getItem(guidedSetupStorageKey()) ?? "";
+    expect(retainedDraft).toContain("Customer Success: faster qbr; metric intent: qbr preparation time.");
+    expect(retainedDraft).toContain('"source":"blueprint"');
+    expect(retainedDraft).not.toMatch(/Jane Smith|jane\.smith@example\.com|northstar-blueprint\.docx|private document bytes/i);
+
+    importedView.unmount();
+    renderWorkspace("/ai-value-workspace/value-case", { seedSetup: false });
+    const restoredValueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    const restoredHypothesis = within(restoredValueCase).getByRole("textbox", { name: /Customer hypothesis/i });
+    expect(within(restoredValueCase).getByRole("button", { name: /Confirm parsed hypothesis/i })).toBeInTheDocument();
+    expect(within(restoredValueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    fireEvent.change(restoredHypothesis, {
+      target: { value: "Customer Success: faster qbr； metric intent: qbr preparation time." }
+    });
+    expect(within(restoredValueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    expect(within(restoredValueCase).getByRole("button", { name: /Confirm parsed hypothesis/i })).toBeInTheDocument();
+    fireEvent.change(restoredHypothesis, {
+      target: {
+        value: "Information Technology will resolve incidents faster and reduce mean time to resolution."
+      }
+    });
+    expect(within(restoredValueCase).queryByRole("button", { name: /Confirm parsed hypothesis/i })).not.toBeInTheDocument();
+    expect(within(restoredValueCase).getByRole("button", { name: /Use as manual hypothesis/i })).toBeInTheDocument();
+    expect(within(restoredValueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    fireEvent.click(within(restoredValueCase).getByRole("button", { name: /Use as manual hypothesis/i }));
+    expect(within(restoredValueCase).queryByRole("button", { name: /Confirm parsed hypothesis/i })).not.toBeInTheDocument();
+    expect(within(restoredValueCase).getByRole("button", { name: /Continue to workflow/i })).toBeEnabled();
+    fireEvent.click(within(restoredValueCase).getByRole("button", { name: /Continue to workflow/i }));
+    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").toContain('"source":"manual"');
+  });
+
+  it.each([
+    "Prepared by Jane Smith.",
+    "Contact: jane@example.com.",
+    "Owner reference: employee ID 123."
+  ])("rejects identifier-bearing Blueprint source text before canonicalization: %s", async (detail) => {
+    parseDocumentTextMock.mockResolvedValue({
+      text: `Blueprint status: Approved\n${detail}\nCustomer hypothesis: Customer Success will assemble account context faster for QBR preparation and reduce QBR preparation time.`,
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    });
+    const valueCaseView = renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+
+    fireEvent.change(within(valueCase).getByLabelText(/Choose Blueprint file/i), {
+      target: {
+        files: [
+          new File(["private document bytes"], "identifier-bearing-blueprint.docx", {
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          })
+        ]
+      }
+    });
+
+    expect(
+      await within(valueCase).findByText(
+        /contains possible person-level or direct identifier detail/i
+      )
+    ).toBeInTheDocument();
+    expect(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i })).toHaveValue("");
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toContain(detail);
+    valueCaseView.unmount();
+  });
+
+  it("fails closed when a Blueprint does not contain a supported aggregate hypothesis", async () => {
+    parseDocumentTextMock.mockResolvedValue({
+      text: "Use AI everywhere to transform the company.",
+      contentType: "application/pdf"
+    });
+    const failedImportView = renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: {
+        value: "Customer Success will assemble account context faster and reduce QBR preparation time."
+      }
+    });
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeEnabled();
+
+    fireEvent.change(within(valueCase).getByLabelText(/Choose Blueprint file/i), {
+      target: { files: [new File(["bytes"], "blueprint.pdf", { type: "application/pdf" })] }
+    });
+
+    expect(await within(valueCase).findByRole("alert")).toHaveTextContent(/could not find one supported function/i);
+    expect(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i })).toHaveValue("");
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    failedImportView.unmount();
+    renderWorkspace("/ai-value-workspace/value-case", { seedSetup: false });
+    expect(await screen.findByRole("textbox", { name: /Customer hypothesis/i })).toHaveValue("");
+  });
+
+  it("sanitizes parser failures and clears an earlier valid hypothesis", async () => {
+    parseDocumentTextMock.mockRejectedValue(
+      new Error("Failed while reading secret-client-blueprint.docx near jane.smith@example.com")
+    );
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: {
+        value: "Information Technology will resolve incidents faster and reduce mean time to resolution."
+      }
+    });
+
+    fireEvent.change(within(valueCase).getByLabelText(/Choose Blueprint file/i), {
+      target: { files: [new File(["bytes"], "secret-client-blueprint.docx")] }
+    });
+
+    const alert = await within(valueCase).findByRole("alert");
+    expect(alert).toHaveTextContent(/could not be parsed as a supported PDF or DOCX/i);
+    expect(alert).not.toHaveTextContent(/secret-client|jane\.smith@example\.com/i);
+    expect(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i })).toHaveValue("");
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+  });
+
+  it("rejects oversized Blueprints before document parsing", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    const oversized = new File(["bytes"], "oversized.pdf", { type: "application/pdf" });
+    Object.defineProperty(oversized, "size", { value: 15 * 1024 * 1024 + 1 });
+
+    fireEvent.change(within(valueCase).getByLabelText(/Choose Blueprint file/i), {
+      target: { files: [oversized] }
+    });
+
+    expect(await within(valueCase).findByRole("alert")).toHaveTextContent(/larger than 15MB/i);
+    expect(parseDocumentTextMock).not.toHaveBeenCalled();
+  });
+
+  it("holds later steps at the earliest unmet setup prerequisite", async () => {
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    const gate = await screen.findByRole("region", { name: /Guided setup required/i });
+    expect(gate).toHaveTextContent(/Connect the value case before opening AI Readiness/i);
+    expect(screen.queryByRole("region", { name: /Northstar Automotive case study/i })).not.toBeInTheDocument();
+    expect(within(gate).getByRole("link", { name: /Start with Value Case/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/value-case"
+    );
+  });
+
+  it("keeps advanced metric controls hidden until workflow setup is complete", async () => {
+    renderWorkspace("/ai-value-workspace/metrics", { seedSetup: false });
+    expect(await screen.findByRole("region", { name: /^Guided metric setup$/i })).toHaveTextContent(/Confirm the workflow first/i);
+    expect(screen.queryByText(/Advanced metric review/i)).not.toBeInTheDocument();
+  });
+
+  it("fails closed instead of inferring a workflow from a generic AI goal", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: { value: "Improve our business case with AI." }
+    });
+
+    expect(within(valueCase).getByRole("status")).toHaveTextContent(/More detail needed/i);
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+  });
+
+  it("rejects direct identifiers from the guided hypothesis draft", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: { value: "Customer Success for person@example.com will assemble account context faster to reduce QBR preparation time." }
+    });
+    expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+  });
+
+  it("holds free text that includes a name before canonicalization", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    const hypothesis = within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i });
+    for (const personReference of ["Jane Smith", "José Smith", "J. Smith", "Jane Q Smith"]) {
+      fireEvent.change(hypothesis, {
+        target: {
+          value: `Customer Success will assemble account context faster for ${personReference} to reduce QBR preparation time.`
+        }
+      });
+      expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
+      expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+      expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toContain(personReference);
+    }
+  });
+
+  it("holds free text that includes a direct identifier before canonicalization", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    const hypothesis = within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i });
+    for (const identifier of [
+      "employee E12345",
+      "employee ID 123",
+      "employee #42",
+      "SSN 123-45-6789",
+      "social security number 123-45-6789",
+      "passport 123456789",
+      "IP 192.168.1.1",
+      "IP 2001:db8::1"
+    ]) {
+      fireEvent.change(hypothesis, {
+        target: {
+          value: `Customer Success will prepare QBRs faster for ${identifier}.`
+        }
+      });
+      expect(within(valueCase).getByRole("alert")).toHaveTextContent(/Keep the hypothesis aggregate/i);
+      expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+      expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toContain(identifier);
+    }
+  });
+
+  it("allows registered title-cased business phrases", async () => {
+    renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+    fireEvent.change(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i }), {
+      target: {
+        value: "Customer Success will prepare Quarterly Business Review faster and reduce QBR preparation time."
+      }
+    });
+    expect(within(valueCase).queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeEnabled();
+  });
+
+  it("canonicalizes identifier-bearing restored drafts before downstream use", async () => {
+    sessionStorage.setItem(guidedSetupStorageKey(), JSON.stringify({
+      ...guidedSetupFixture,
+      hypothesis: "person@example.com in Customer Success will assemble account context faster to reduce QBR preparation time."
+    }));
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    const connected = await screen.findByRole("region", { name: /Connected value setup/i });
+    expect(connected).not.toHaveTextContent(/person@example.com/i);
+    expect(sessionStorage.getItem(guidedSetupStorageKey())).not.toMatch(/person@example.com/i);
+  });
+
+  it("does not carry a guided draft across organization sessions", async () => {
+    localStorage.setItem("orgId", "org-a");
+    sessionStorage.setItem(guidedSetupStorageKey(), JSON.stringify(guidedSetupFixture));
+    const orgA = renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(await screen.findByRole("region", { name: /Connected value setup/i })).toBeInTheDocument();
+    orgA.unmount();
+
+    localStorage.setItem("orgId", "org-b");
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(await screen.findByRole("region", { name: /Guided setup required/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Connected value setup/i })).not.toBeInTheDocument();
+  });
+
+  it("uses the authenticated organization for production drafts and receipts", async () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    localStorage.setItem("orgId", "org-local-attacker");
+    applyAuthToken(authTokenForOrganization("org-token"));
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-local-attacker`,
+      JSON.stringify(guidedSetupFixture)
+    );
+
+    const localOnly = renderWorkspace("/ai-value-workspace/readiness", {
+      seedSetup: false
+    });
+    expect(
+      await screen.findByRole("region", { name: /Guided setup required/i })
+    ).toBeInTheDocument();
+    localOnly.unmount();
+
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(
+      await screen.findByRole("region", { name: /Connected value setup/i })
+    ).toBeInTheDocument();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Import AI Fluency results/i })
+    );
+    expect(
+      await screen.findByRole("region", { name: /Aggregate instrument evidence/i })
+    ).toBeInTheDocument();
+    expect(
+      sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-token")
+    ).not.toBeNull();
+    expect(
+      sessionStorage.getItem(
+        "aiValue.aiFluencyImportReceipt.v1:org-local-attacker"
+      )
+    ).toBeNull();
+  });
+
+  it("does not carry a production draft across authenticated organizations", async () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    applyAuthToken(authTokenForOrganization("org-token-a"));
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token-a`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(
+      await screen.findByRole("region", { name: /Connected value setup/i })
+    ).toBeInTheDocument();
+
+    applyAuthToken(authTokenForOrganization("org-token-b"));
+
+    expect(
+      await screen.findByRole("region", { name: /Guided setup required/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: /Connected value setup/i })
+    ).not.toBeInTheDocument();
+    expect(
+      sessionStorage.getItem(`${GUIDED_SETUP_DRAFT_KEY}:org-token-b`) ?? ""
+    ).not.toContain(guidedSetupFixture.hypothesis);
+  });
+
+  it("does not carry a production AI Fluency receipt between organizations with valid drafts", async () => {
+    vi.stubEnv("VITE_REQUIRE_AUTH", "true");
+    applyAuthToken(authTokenForOrganization("org-token-a"));
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token-a`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    sessionStorage.setItem(
+      `${GUIDED_SETUP_DRAFT_KEY}:org-token-b`,
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Import AI Fluency results/i })
+    );
+    expect(
+      await screen.findByRole("region", { name: /Aggregate instrument evidence/i })
+    ).toBeInTheDocument();
+
+    applyAuthToken(authTokenForOrganization("org-token-b"));
+
+    expect(
+      await screen.findByRole("status", { name: /AI Fluency results not imported/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: /Aggregate instrument evidence/i })
+    ).not.toBeInTheDocument();
+    expect(
+      sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-token-b")
+    ).toBeNull();
+  });
+
+  it("keeps all non-Home workspace content hidden while session access is unresolved", () => {
+    vi.mocked(fetch).mockImplementation(() => new Promise<Response>(() => undefined));
+    const valueCase = renderWorkspace("/ai-value-workspace/value-case");
+
+    expect(screen.getByRole("status", { name: /Checking workspace access/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Value case definition/i })).not.toBeInTheDocument();
+    valueCase.unmount();
+
+    renderWorkspace("/ai-value-workspace/decisions");
+    expect(screen.getByRole("status", { name: /Checking workspace access/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Value Evidence Report/i })).not.toBeInTheDocument();
+  });
+
+  it.each([403, 500])("fails closed when workspace verification returns %s", async (status) => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: "Unavailable" }), {
+      status,
+      headers: { "content-type": "application/json" }
+    }));
+    renderWorkspace("/ai-value-workspace/readiness");
+
+    expect(await screen.findByRole("alert", { name: /Workspace access unavailable/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Northstar Automotive case study/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Retry workspace check/i })).toBeInTheDocument();
+  });
+
+  it("hides non-Home case evidence when the organization session is unavailable", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" }
+    }));
+    renderWorkspace("/ai-value-workspace/sources");
+
+    const sessionGate = await screen.findByRole("region", { name: /Organization session required/i });
+    expect(within(sessionGate).getByRole("link", { name: /^Sign in$/i })).toHaveAttribute("href", "/login");
+    expect(screen.queryByRole("region", { name: /Source Review Queue/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Customer evidence projection/i })).not.toBeInTheDocument();
   });
 
   it("renders the Evidence Sources step inside the executive report-frame toolbar", () => {
@@ -338,8 +858,8 @@ describe("AIValueWorkspace executive spine", () => {
     expect(reportHeader).toHaveAttribute("aria-label", "AI value report header");
     expect(within(reportHeader).getByText(/AI Value Platform/i)).toBeInTheDocument();
     expect(within(reportHeader).getByText(/^Evidence Sources$/i)).toBeInTheDocument();
-    expect(within(reportHeader).getByLabelText(/Step 3 of 7: Sources/i)).toHaveTextContent(
-      "Step 3 of 7"
+    expect(within(reportHeader).getByLabelText(/Step 5 of 7: Evidence/i)).toHaveTextContent(
+      "Step 5 of 7"
     );
     expect(
       within(reportHeader).getByText(/Caveated review only: aggregate source readiness supports planning/i)
@@ -390,85 +910,19 @@ describe("AIValueWorkspace executive spine", () => {
     ]);
   });
 
-  it("shows the governed source package review queue on the Evidence Sources step", () => {
+  it("holds Evidence until existing organization sources are bound to the guided draft", async () => {
     const { container } = renderWorkspace("/ai-value-workspace/sources");
 
-    const queue = screen.getByRole("region", { name: /Source Review Queue/i });
-    expect(queue).toBeInTheDocument();
-    expect(within(queue).getByRole("heading", { name: /Source Review Queue/i })).toBeInTheDocument();
-    expect(within(queue).getByText(/Evidence intake queue/i)).toBeInTheDocument();
-    expect(
-      within(queue).getByText(/Data Spine gate before Evidence Checkpoint assembly/i)
-    ).toBeInTheDocument();
-    expect(
-      within(queue).getByText(/Review aggregate source lanes before the Data Spine gate tests them/i)
-    ).toBeInTheDocument();
+    const binding = await screen.findByRole("region", { name: /Evidence binding status/i });
+    expect(binding).toHaveTextContent(/not yet bound to this guided draft/i);
+    expect(binding).toHaveTextContent(/Binding required/i);
+    expect(screen.queryByRole("region", { name: /Source Review Queue/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/View existing organization source review — not bound to this draft/i)).toBeInTheDocument();
 
-    const lanes = within(queue).getAllByRole("article");
-    expect(lanes).toHaveLength(6);
-    expect(within(queue).getByText("Blueprint")).toBeInTheDocument();
-    expect(within(queue).getByText("AI Fluency")).toBeInTheDocument();
-    expect(within(queue).getByText("VBD / Token")).toBeInTheDocument();
-    expect(within(queue).getByText("Customer metric")).toBeInTheDocument();
-    expect(within(queue).getByText("Value assumption context")).toBeInTheDocument();
-    expect(within(queue).getByText("Governance")).toBeInTheDocument();
-    expect(within(queue).getByText("Aggregate instrument review")).toBeInTheDocument();
-    expect(within(queue).getByText("Scrubbed aggregate telemetry review")).toBeInTheDocument();
-    expect(within(queue).queryByText(uiTerm("ai", "_", "fluency", "_", "dashboard", "_", "export"))).not.toBeInTheDocument();
-    expect(within(queue).queryByText(uiTerm("scrubbed", "_", "glean", "_", "bigquery", "_", "export"))).not.toBeInTheDocument();
-    expect(within(queue).queryByText(uiTerm("customer", "_", "metric", "_", "aggregate", "_", "export"))).not.toBeInTheDocument();
-
-    for (const status of ["parsed", "approved", "aligned", "held", "uploaded", "suppressed", "missing"]) {
-      expect(within(queue).getAllByText(status).length).toBeGreaterThan(0);
-    }
-    expect(within(queue).getByText("3 of 6 lanes clear for Data Spine review")).toBeInTheDocument();
-    expect(
-      within(queue).getByText(/Held or suppressed lanes stay out of executive review readiness/i)
-    ).toBeInTheDocument();
-    expect(within(queue).getAllByText(/Action needed/i).length).toBeGreaterThan(0);
-    expect(within(queue).getByText(/Map parsed value routes to workflow_family/i)).toBeInTheDocument();
-    expect(within(queue).getByText(/Resolve metric owner approval/i)).toBeInTheDocument();
-    expect(within(queue).getByText(/Regenerate at aggregate threshold/i)).toBeInTheDocument();
-
-    expect(within(queue).getByText("Data Spine alignment keys")).toBeInTheDocument();
-    expect(within(queue).getByText("Approved organization boundary")).toBeInTheDocument();
-    expect(within(queue).getByText("Approved client boundary")).toBeInTheDocument();
-    expect(within(queue).getByText("Workflow family")).toBeInTheDocument();
-    expect(within(queue).getByText("Function area")).toBeInTheDocument();
-    expect(within(queue).getByText("Aggregate cohort")).toBeInTheDocument();
-    expect(within(queue).getByText("Baseline window")).toBeInTheDocument();
-    expect(within(queue).getByText("Comparison window")).toBeInTheDocument();
-    expect(within(queue).getByText("Review queue labels")).toBeInTheDocument();
-    expect(within(queue).getByText("Metric owner review")).toBeInTheDocument();
-    expect(within(queue).getByText("Source package review")).toBeInTheDocument();
-    expect(within(queue).getByText("Reviewer role")).toBeInTheDocument();
-    expect(within(queue).getByText("Review decision")).toBeInTheDocument();
-    expect(within(queue).getAllByText("Review packet")).toHaveLength(6);
-    expect(within(queue).getByText("Blueprint extraction packet")).toBeInTheDocument();
-    expect(within(queue).queryByText("Source reference")).not.toBeInTheDocument();
-    expect(within(queue).queryByText("org_id")).not.toBeInTheDocument();
-    expect(within(queue).queryByText("client_id")).not.toBeInTheDocument();
-    expect(within(queue).queryByText("metric_id")).not.toBeInTheDocument();
-    expect(within(queue).queryByText("source_ref")).not.toBeInTheDocument();
-    expect(within(queue).getAllByText("Clear for review")).toHaveLength(3);
-    expect(within(queue).getAllByText("Hold before review")).toHaveLength(3);
-    expect(within(queue).getByText(/aggregate evidence status only/i)).toBeInTheDocument();
-    expect(
-      within(queue).getByText(/Evidence Checkpoint, model-review, or report-output readiness/i)
-    ).toBeInTheDocument();
-    expect(within(queue).queryByText(/prepare_finance_context_investigation_packet/i)).not.toBeInTheDocument();
-
-    expect(queue.textContent).not.toMatch(/confidence\s*%|probability|financial attribution|causal proof/i);
-    expect(queue.textContent).not.toMatch(/individual|person-level|manager ranking|team ranking/i);
-    expectNoUnsafeUiLanguage(container.textContent, [
-      "org_id",
-      "client_id",
-      "metric_id",
-      "source_ref",
-      "ROI proof",
-      "productivity proof",
-      "customer-facing financial output"
-    ]);
+    const readiness = screen.getByRole("region", { name: /Evidence source readiness/i });
+    expect(within(readiness).getByText("What is missing")).toBeInTheDocument();
+    expect(within(readiness).getAllByText("Not connected")).toHaveLength(4);
+    expectNoUnsafeUiLanguage(container.textContent);
   });
 
   it("renders source-bound customer data model projections from the route contract", async () => {
@@ -480,7 +934,7 @@ describe("AIValueWorkspace executive spine", () => {
       return jsonResponse({ objects: [] });
     });
 
-    const { container } = renderWorkspace();
+    const { container } = renderWorkspace("/ai-value-workspace/sources");
 
     const panel = await screen.findByRole("region", {
       name: /Customer evidence projection/i
@@ -528,7 +982,7 @@ describe("AIValueWorkspace executive spine", () => {
       return jsonResponse({ objects: [] });
     });
 
-    renderWorkspace();
+    renderWorkspace("/ai-value-workspace/sources");
 
     await waitFor(() =>
       expect(
@@ -562,7 +1016,7 @@ describe("AIValueWorkspace executive spine", () => {
       return jsonResponse({ objects: [] });
     });
 
-    const { container } = renderWorkspace();
+    const { container } = renderWorkspace("/ai-value-workspace/sources");
     const panel = await screen.findByRole("region", {
       name: /Customer evidence projection/i
     });
@@ -579,19 +1033,55 @@ describe("AIValueWorkspace executive spine", () => {
     ]);
   });
 
-  it("keeps AI Fluency capture, profile, translation, and report interpretation on one evidence screen", () => {
+  it("imports completed external AI Fluency results before showing the evidence views", async () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 
-    const evidence = screen.getByRole("region", { name: /AI Fluency Evidence/i });
-    expect(within(evidence).getByRole("heading", { name: /AI Fluency Evidence/i })).toBeInTheDocument();
+    const importPanel = await screen.findByRole("region", { name: /AI Fluency import/i });
+    expect(importPanel).toHaveTextContent(/Illustrative external AI Fluency fixture/i);
+    expect(importPanel).toHaveTextContent(/does not query an external system/i);
+    expect(importPanel).toHaveTextContent(/Simulation only/i);
+    expect(importPanel).toHaveTextContent(/Collection complete/i);
+    expect(importPanel).toHaveTextContent(/Illustrative published aggregate report/i);
+    const importButton = within(importPanel).getByRole("button", { name: /Import AI Fluency results/i });
+    expect(importButton).toBeEnabled();
+    expect(screen.getByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Northstar Automotive case study/i })).not.toBeInTheDocument();
+    expect(workspaceSource).not.toMatch(/Northstar Automotive|Aggregate result: 75%/i);
+
+    fireEvent.click(importButton);
+    expect(await within(importPanel).findByRole("button", { name: /Illustrative results loaded/i })).toBeDisabled();
+    expect(within(importPanel).getByRole("status")).toHaveTextContent(/No backend import occurred/i);
+    const evidence = await screen.findByRole("region", { name: /Aggregate instrument evidence/i });
+    expect(evidence).toHaveFocus();
+    expect(
+      within(evidence).getByRole("heading", {
+        name: /Illustrative instrument-derived readiness context/i
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(evidence).queryByRole("heading", { name: /AI Fluency Evidence/i })
+    ).not.toBeInTheDocument();
     expect(within(evidence).getByText(/Instrument-derived evidence/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/AIOM-facilitated capture/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/Value Realization uses the readout/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Sample scenario data/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/illustrative instrument outputs/i)).toBeInTheDocument();
+    const caseStudy = within(evidence).getByRole("region", { name: /Northstar Automotive case study/i });
+    expect(within(caseStudy).getByRole("heading", { name: /Northstar Automotive illustrative AI Fluency profile/i })).toBeInTheDocument();
+    expect(within(caseStudy).getByText("72%")).toBeInTheDocument();
+    expect(within(caseStudy).getByText("58%")).toBeInTheDocument();
+    expect(within(caseStudy).getByText("5,000")).toBeInTheDocument();
+    expect(within(caseStudy).getByText("91%")).toBeInTheDocument();
+    expect(within(evidence).getByText(/Illustrative case-study data/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/internal organizational AI fluency example renamed Northstar Automotive/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/approved aggregate customer results/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/internal reviewed report draft/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/not FluencyTracr scores/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/not respondent shares/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/FluencyTracr scores/i)).toBeInTheDocument();
+    expect(within(caseStudy).getByText(/descriptive and noncausal/i)).toBeInTheDocument();
+    expect(within(caseStudy).getByText(/not evidence of intervention impact/i)).toBeInTheDocument();
+    expect(within(caseStudy).getByText(/does not supply its denominator/i)).toBeInTheDocument();
+    expect(evidence).not.toHaveTextContent(/Northstar Enterprise|national insurance/i);
+    expect(workspaceSource).not.toMatch(/Northstar Enterprise|national insurance company scenario/i);
 
     const views = within(evidence).getByRole("group", { name: /AI Fluency evidence views/i });
     for (const view of ["Capture", "Profile", "Translation", "Report Read"]) {
@@ -601,35 +1091,64 @@ describe("AIValueWorkspace executive spine", () => {
     }
     expect(within(views).getByRole("button", { name: "Capture" })).toHaveAttribute("aria-pressed", "true");
     expect(within(evidence).getByRole("region", { name: /Fluency capture view/i })).toBeInTheDocument();
-    expect(within(evidence).getByText(/Target cohort/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Participation/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Coverage review open/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Segment coverage/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Most planned segments represented/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Legal review remains held/i)).toBeInTheDocument();
+    expect(within(evidence).getAllByText(/Organization/i).length).toBeGreaterThan(0);
+    expect(within(evidence).getAllByText(/Northstar Automotive/i).length).toBeGreaterThan(0);
+    expect(within(evidence).getAllByText(/Example cohort size/i).length).toBeGreaterThan(0);
+    expect(within(evidence).getAllByText(/Completion rate/i).length).toBeGreaterThan(0);
+    expect(within(evidence).getByText(/Example context ready/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/AIOM handoff/i)).toBeInTheDocument();
 
     fireEvent.click(within(views).getByRole("button", { name: "Profile" }));
     expect(within(views).getByRole("button", { name: "Profile" })).toHaveAttribute("aria-pressed", "true");
     expect(within(evidence).getByRole("region", { name: /Five-factor profile view/i })).toBeInTheDocument();
+    expect(
+      within(evidence).getByRole("heading", {
+        name: /Five-factor instrument-derived readiness context/i
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(evidence).queryByRole("heading", { name: /Five-factor fluency profile/i })
+    ).not.toBeInTheDocument();
     expect(within(evidence).getByText("Confidence")).toBeInTheDocument();
-    expect(within(evidence).getByText(/Read: developing strength/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/Aggregate result: 75%/i)).toBeInTheDocument();
     expect(within(evidence).getByText("Usage Quality")).toBeInTheDocument();
     expect(within(evidence).getByText("Behavior Change")).toBeInTheDocument();
     expect(within(evidence).getByText("Leadership Reinforcement")).toBeInTheDocument();
     expect(within(evidence).getByText("Capability Growth")).toBeInTheDocument();
+    for (const [label, result] of [
+      ["Confidence", "75%"],
+      ["Usage Quality", "74%"],
+      ["Behavior Change", "69%"],
+      ["Leadership Reinforcement", "64%"],
+      ["Capability Growth", "72%"]
+    ]) {
+      const factorCard = within(evidence).getByText(label).closest("article") as HTMLElement;
+      expect(within(factorCard).getByText(new RegExp(`Aggregate result: ${result}`))).toBeInTheDocument();
+    }
+    expect(within(evidence).getAllByText(/Practice next:/i)).toHaveLength(5);
+    expect(within(evidence).getByText(/Make good AI-assisted work visible/i)).toBeInTheDocument();
 
     fireEvent.click(within(views).getByRole("button", { name: "Translation" }));
     expect(within(evidence).getByRole("region", { name: /Fluency translation view/i })).toBeInTheDocument();
     expect(within(evidence).getByText(/AI Attitude/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/Read: favorable/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/Aggregate result: 72%/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/Behavioral Intent/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/Perceived AI Impact/i)).toBeInTheDocument();
-    expect(within(evidence).getByText(/capability is becoming belief, willingness, and perceived work value/i)).toBeInTheDocument();
+    for (const [label, result] of [
+      ["AI Attitude", "72%"],
+      ["Behavioral Intent", "69%"],
+      ["Perceived AI Impact", "64%"]
+    ]) {
+      const signalCard = within(evidence).getByText(label).closest("article") as HTMLElement;
+      expect(within(signalCard).getByText(new RegExp(`Aggregate result: ${result}`))).toBeInTheDocument();
+    }
+    expect(within(evidence).getByText(/does not establish a transition or causal linkage/i)).toBeInTheDocument();
 
     fireEvent.click(within(views).getByRole("button", { name: "Report Read" }));
     expect(within(evidence).getByRole("region", { name: /AI Fluency report read view/i })).toBeInTheDocument();
-    expect(within(evidence).getByText(/Reported fluency is an instrument signal/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/Northstar Automotive · 72% aggregate instrument result/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/prior aggregate example result is 58%/i)).toBeInTheDocument();
+    expect(within(evidence).getByText(/Confidence leads; leadership reinforcement is the growth edge/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/Observed behavior is reviewed later in Behavior \/ VBD/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/Value Realization owns the final value narrative/i)).toBeInTheDocument();
     expect(within(evidence).getByText(/AIOM supports capture and context/i)).toBeInTheDocument();
@@ -649,10 +1168,13 @@ describe("AIValueWorkspace executive spine", () => {
     );
     for (const view of ["Capture", "Profile", "Translation", "Report Read"]) {
       fireEvent.click(within(views).getByRole("button", { name: view }));
-      expect(within(evidence).getByText(/Sample scenario data/i)).toBeInTheDocument();
+      expect(within(evidence).getByText(/Illustrative case-study data/i)).toBeInTheDocument();
       expect(within(evidence).getByText(/approved aggregate customer results/i)).toBeInTheDocument();
       expect(evidence.textContent).not.toMatch(/\d+\/100|Index\s+\d+|\d+%\s*complete/i);
       expect(evidence.textContent).not.toMatch(unsafePeoplePattern);
+      for (const roleCut of ["Individual contributor", "Manager", "Director", "VP+"]) {
+        expect(within(evidence).queryByText(new RegExp(`^${escapeRegExp(roleCut)}$`, "i"))).not.toBeInTheDocument();
+      }
       expect(evidence.textContent).not.toMatch(
         /ROI proof|causal proof|productivity measurement|probability|confidence\s*(score|%)/i
       );
@@ -661,6 +1183,15 @@ describe("AIValueWorkspace executive spine", () => {
     expect(workspaceSource).not.toMatch(
       /live usage actuals|live telemetry|connector authorization|live connector authorization|export authorized|share authorized|financial output authorized|pricing, volume, revenue|loaded-cost assumptions/i
     );
+    expect(workspaceSource).not.toMatch(/support managers report higher confidence|frontline reps need/i);
+    expect(workspaceSource).not.toMatch(/recurring automotive workflow/i);
+
+    const workspaceNav = screen.getByRole("navigation", { name: "Workspace" });
+    fireEvent.click(within(workspaceNav).getByRole("link", { name: /5\. Evidence/i }));
+    expect(await screen.findByRole("region", { name: /Evidence binding status/i })).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", { name: /4\. AI Readiness/i }));
+    expect(await screen.findByRole("region", { name: /Aggregate instrument evidence/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Illustrative results loaded/i })).toBeDisabled();
 
     // Practitioner clutter stays off the executive page.
     expect(screen.queryByRole("region", { name: /Velocity Breadth Depth map/i })).not.toBeInTheDocument();
@@ -670,13 +1201,38 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("uses the report-frame toolbar on every workspace page", async () => {
+  it("routes every governance shortcut to its canonical review surface", async () => {
+    renderWorkspace("/ai-value-workspace/progress");
+    const governance = screen.getByRole("region", { name: /Governance boundaries/i });
+    const claimBoundaries = within(governance).getByRole("link", { name: /Claim boundaries/i });
+    const reviewerApprovals = within(governance).getByRole("link", { name: /Reviewer approvals/i });
+    const auditNotes = within(governance).getByRole("link", { name: /Audit-ready notes/i });
+
+    expect(claimBoundaries).toHaveAttribute("href", "/ai-value-workspace/case");
+    expect(reviewerApprovals).toHaveAttribute("href", "/ai-value-workspace/decisions");
+    expect(auditNotes).toHaveAttribute("href", "/ai-value-workspace/sources");
+
+    fireEvent.click(claimBoundaries);
+    expect(await screen.findByRole("heading", { name: /^Evidence Checkpoint$/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: /Reviewer approvals/i }));
+    expect(await screen.findByRole("region", { name: /Decision status/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: /Audit-ready notes/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("banner", { name: /AI value report header/i })).toHaveTextContent(
+        "Evidence Sources"
+      );
+    });
+  });
+
+  it("uses the report-frame shell and a page-appropriate header on every workspace page", async () => {
     for (const path of [
       "/ai-value-workspace",
       "/ai-value-workspace/readiness",
       "/ai-value-workspace/sources",
       "/ai-value-workspace/vbd",
       "/ai-value-workspace/metrics",
+      "/ai-value-workspace/workflow",
+      "/ai-value-workspace/value-case",
       "/ai-value-workspace/case",
       "/ai-value-workspace/roi",
       "/ai-value-workspace/decisions"
@@ -692,11 +1248,26 @@ describe("AIValueWorkspace executive spine", () => {
       const frame = screen.getByRole("region", {
         name: /AI value workspace report frame/i
       });
-      expect(
-        within(frame).getByRole("heading", {
-          name: /Value Case: AI Assistant Value Assessment/i
-        })
-      ).toBeInTheDocument();
+      if (path === "/ai-value-workspace") {
+        expect(
+          within(frame).getByRole("heading", { name: "AI Value Workspace" })
+        ).toBeInTheDocument();
+      } else if (path === "/ai-value-workspace/value-case") {
+        expect(within(frame).getByRole("heading", { name: /Define the customer hypothesis/i })).toBeInTheDocument();
+      } else if (path === "/ai-value-workspace/workflow") {
+        expect(within(frame).getByRole("heading", { name: /Confirm the workflow/i })).toBeInTheDocument();
+      } else if (path === "/ai-value-workspace/metrics") {
+        expect(within(frame).getByRole("heading", { name: /Choose the metric/i })).toBeInTheDocument();
+      } else if (["/ai-value-workspace/case", "/ai-value-workspace/roi"].includes(path)) {
+        const checkpointHeader = within(frame).getByRole("banner", { name: /Evidence checkpoint header/i });
+        expect(within(checkpointHeader).getByRole("heading", { name: /Evidence Checkpoint/i })).toBeInTheDocument();
+      } else {
+        expect(
+          within(frame).getByRole("heading", {
+            name: /Value Case: AI Assistant Value Assessment/i
+          })
+        ).toBeInTheDocument();
+      }
       expect(
         within(frame).queryByRole("navigation", { name: /Value journey steps/i })
       ).not.toBeInTheDocument();
@@ -768,11 +1339,83 @@ describe("AIValueWorkspace executive spine", () => {
     ).toBe(true);
   });
 
+  it("does not restore an AI Fluency import from a stale report receipt", async () => {
+    sessionStorage.setItem("aiValue.aiFluencyImportReceipt.v1:org-1", "old-source:old-version");
+    renderWorkspace("/ai-value-workspace/readiness");
+    expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Import AI Fluency results/i })).toBeEnabled();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
+  });
+
+  it("rejects tampered payload receipts and receipts from a different value-case draft", async () => {
+    const receiptKey = "aiValue.aiFluencyImportReceipt.v1:org-1";
+    const first = renderWorkspace("/ai-value-workspace/readiness");
+    fireEvent.click(await screen.findByRole("button", { name: /Import AI Fluency results/i }));
+    expect(await screen.findByRole("region", { name: /Aggregate instrument evidence/i })).toBeInTheDocument();
+    const tamperedReceipt = JSON.parse(sessionStorage.getItem(receiptKey) ?? "{}");
+    sessionStorage.setItem(receiptKey, JSON.stringify({ ...tamperedReceipt, payloadChecksum: "fnv1a32:00000000" }));
+    first.unmount();
+
+    const tampered = renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
+    tampered.unmount();
+
+    sessionStorage.setItem(guidedSetupStorageKey(), JSON.stringify({
+      hypothesis: "Information Technology: faster incidents; metric intent: mean time to resolution.",
+      workflowId: "it-incident-resolution",
+      metricIds: ["it-mttr"]
+    }));
+    sessionStorage.setItem(receiptKey, JSON.stringify(tamperedReceipt));
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
+  });
+
+  it("does not restore imported AI Fluency results across organization sessions", async () => {
+    localStorage.setItem("orgId", "org-a");
+    const orgA = renderWorkspace("/ai-value-workspace/readiness");
+    fireEvent.click(await screen.findByRole("button", { name: /Import AI Fluency results/i }));
+    expect(await screen.findByRole("region", { name: /Aggregate instrument evidence/i })).toBeInTheDocument();
+    expect(JSON.parse(sessionStorage.getItem("aiValue.aiFluencyImportReceipt.v1:org-a") ?? "{}")).toMatchObject({
+      organizationId: "org-a",
+      sourceId: "illustrative-organizational-report",
+      reportVersion: "wireframe-v1",
+      collectionStatus: "complete",
+      collectionClosed: true,
+      aggregateOnly: true
+    });
+    localStorage.setItem("orgId", "org-b");
+    window.dispatchEvent(new StorageEvent("storage", { key: "orgId" }));
+    expect(
+      await screen.findByRole("region", { name: /Guided setup required/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: /Connected value setup/i })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
+    orgA.unmount();
+
+    sessionStorage.setItem(
+      guidedSetupStorageKey(),
+      JSON.stringify(guidedSetupFixture)
+    );
+    renderWorkspace("/ai-value-workspace/readiness", { seedSetup: false });
+    expect(await screen.findByRole("status", { name: /AI Fluency results not imported/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Aggregate instrument evidence/i })).not.toBeInTheDocument();
+  });
+
+  it("allows AI Fluency import only after external collection is complete", () => {
+    expect(canImportAiFluencyMeasurement("collecting")).toBe(false);
+    expect(canImportAiFluencyMeasurement("held")).toBe(false);
+    expect(canImportAiFluencyMeasurement("complete")).toBe(true);
+  });
+
   it("does not split instrument-derived fluency reads into separate workspace steps", () => {
     const { container } = renderWorkspace("/ai-value-workspace/readiness");
 
     const nav = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(nav).getByRole("link", { name: /AI Fluency/i })).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: /AI Readiness/i })).toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: /Fluency Profile/i })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: /Fluency Translation/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: /Value journey steps/i })).not.toBeInTheDocument();
@@ -787,8 +1430,12 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("maps Behavior / VBD content to Workflows and keeps the old blueprint route on Home", () => {
+  it("maps VBD evidence to Progress and keeps old routes canonical", async () => {
     const vbd = renderWorkspace("/ai-value-workspace/vbd");
+    const progressStatus = await screen.findByRole("region", { name: /Progress evidence status/i });
+    expect(progressStatus).toHaveTextContent(/Held for approved windows/i);
+    expect(progressStatus).toHaveTextContent(/Held for baseline and comparison/i);
+    expect(screen.getByText(/Illustrative simulation only/i)).toBeInTheDocument();
     const vbdMap = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
     expect(vbdMap).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /Organizational AI Fluency framework/i })).not.toBeInTheDocument();
@@ -797,11 +1444,12 @@ describe("AIValueWorkspace executive spine", () => {
       within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", {
         current: "page"
       })
-    ).toHaveTextContent("Workflows");
+    ).toHaveTextContent("6. Progress");
     vbd.unmount();
 
     renderWorkspace("/ai-value-workspace/blueprint");
-    expect(screen.getByRole("region", { name: /Blueprint hypothesis summary/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Value case home/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Create a value case/i })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /Velocity Breadth Depth map/i })).not.toBeInTheDocument();
     const activeLink = within(screen.getByRole("navigation", { name: "Workspace" })).getByRole(
       "link",
@@ -810,10 +1458,10 @@ describe("AIValueWorkspace executive spine", () => {
     expect(activeLink).toHaveTextContent("Home");
   });
 
-  it("plots org functions from the AI Fluency results on the VBD map", () => {
+  it("plots org functions from the AI Fluency results on the VBD map", async () => {
     const { container } = renderWorkspace("/ai-value-workspace/vbd");
 
-    const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
+    const map = await screen.findByRole("region", { name: /Velocity Breadth Depth map/i });
     expect(within(map).getByText(/Function behavior map/i)).toBeInTheDocument();
     const postureModel = within(map).getByRole("region", { name: /Aggregate VBD posture model/i });
     expect(within(postureModel).getByText(/Overall VBD posture/i)).toBeInTheDocument();
@@ -916,10 +1564,10 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("shows aggregate token controls with dynamic VBD month-window movement", () => {
+  it("shows aggregate token controls with dynamic VBD month-window movement", async () => {
     const { container } = renderWorkspace("/ai-value-workspace/vbd");
 
-    const map = screen.getByRole("region", { name: /Velocity Breadth Depth map/i });
+    const map = await screen.findByRole("region", { name: /Velocity Breadth Depth map/i });
     expect(within(map).queryByRole("button", { name: /Token usage overlay/i })).not.toBeInTheDocument();
     expect(container.querySelectorAll(".ai-value-vbd-function-bubble")).toHaveLength(17);
 
@@ -1039,48 +1687,50 @@ describe("AIValueWorkspace executive spine", () => {
     expectNoUnsafeUiLanguage(container.textContent);
   });
 
-  it("redirects demoted evidence, scenario, and readout pages to spine steps", () => {
+  it("redirects demoted evidence, scenario, and readout pages to spine steps", async () => {
     const evidence = renderWorkspace("/ai-value-workspace/evidence");
-    expect(screen.getByRole("region", { name: /Evidence Checkpoint workspace/i })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /Evidence Checkpoint workspace/i })).toBeInTheDocument();
     expect(
-      within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", {
+      within(screen.getByRole("navigation", { name: "Workspace" })).queryByRole("link", {
         current: "page"
       })
-    ).toHaveTextContent("Value cases");
+    ).not.toBeInTheDocument();
     evidence.unmount();
 
     const scenario = renderWorkspace("/ai-value-workspace/scenario");
-    expect(screen.getByRole("region", { name: /Evidence Checkpoint workspace/i })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /Evidence Checkpoint workspace/i })).toBeInTheDocument();
     expect(
-      within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", {
+      within(screen.getByRole("navigation", { name: "Workspace" })).queryByRole("link", {
         current: "page"
       })
-    ).toHaveTextContent("Value cases");
+    ).not.toBeInTheDocument();
     scenario.unmount();
 
     renderWorkspace("/ai-value-workspace/readout");
+    await screen.findByRole("region", { name: /Decision status/i });
     const activeLink = within(screen.getByRole("navigation", { name: "Workspace" })).getByRole(
       "link",
       { current: "page" }
     );
-    expect(activeLink).toHaveTextContent("Decisions");
+    expect(activeLink).toHaveTextContent("7. Decision");
   });
 
-  it("closes the loop from the Executive Report back to AI Fluency Evidence", () => {
+  it("redirects an unknown workspace slug to canonical Home", async () => {
+    renderWorkspace("/ai-value-workspace/not-a-page");
+    expect(await screen.findByRole("region", { name: /Value case home/i })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("navigation", { name: "Workspace" })).getByRole("link", {
+        current: "page"
+      })
+    ).toHaveTextContent("Home");
+  });
+
+  it("keeps checkpoint and illustrative readout outside the guided Decision", async () => {
     renderWorkspace("/ai-value-workspace/decisions");
-    const checkpointAccess = screen.getByRole("region", { name: /Evidence Checkpoint access/i });
-    expect(checkpointAccess).toBeInTheDocument();
-    expect(within(checkpointAccess).getByText(/selected outcome metric/i)).toBeInTheDocument();
-    expect(within(checkpointAccess).queryByText(/No outcome metric selected/i)).not.toBeInTheDocument();
-    expect(within(checkpointAccess).queryByText(/No workflow selected yet/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Open Evidence Checkpoint/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/case"
-    );
-    expect(screen.getByRole("link", { name: /Remeasure from AI Fluency/i })).toHaveAttribute(
-      "href",
-      "/ai-value-workspace/readiness"
-    );
+    const decision = await screen.findByRole("region", { name: /Decision status/i });
+    expect(decision).toHaveTextContent(/Decision held/i);
+    expect(screen.queryByRole("region", { name: /Evidence Checkpoint access/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Value Evidence Report/i })).not.toBeInTheDocument();
   });
 });
 
@@ -1408,10 +2058,54 @@ describe("AIValueWorkspace journey continuity", () => {
   };
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
+  it("renders an active Home case from the selected source-bound workflow", async () => {
+    stubJourneyFetch(journeyObjects, {
+      ...journeyDetails,
+      "blueprint/bp_support": {
+        workflow_family: "customer_support_case_resolution",
+        workflow_name: "Contract review",
+        value_routes: { primary: "RISK_REDUCTION" }
+      }
+    });
+
+    const { container } = renderWorkspace();
+    const activeCase = await screen.findByRole("region", { name: /Active value case/i });
+
+    expect(within(activeCase).getByRole("heading", { name: "Contract review" })).toBeInTheDocument();
+    expect(within(activeCase).getByText("Risk reduction")).toBeInTheDocument();
+    expect(
+      within(activeCase).getByText(/Does the approved AI workflow create the expected value/i)
+    ).toBeInTheDocument();
+    expect(within(activeCase).getByRole("link", { name: /Review value case/i })).toHaveAttribute(
+      "href",
+      "/ai-value-workspace/case"
+    );
+    expect(activeCase).not.toHaveTextContent(/customer support while maintaining service quality/i);
+    expectNoUnsafeUiLanguage(container.textContent);
+  });
+
+  it.each([
+    "blueprint/bp_support",
+    "metrics_library/metrics_support"
+  ])("holds Home when a listed value case cannot load %s", async (missingDetail) => {
+    const incompleteDetails = { ...journeyDetails };
+    delete incompleteDetails[missingDetail];
+    stubJourneyFetch(journeyObjects, incompleteDetails);
+
+    renderWorkspace();
+    const home = screen.getByRole("region", { name: /Value case home/i });
+
+    expect(await within(home).findByRole("heading", { name: /Value case unavailable/i })).toBeInTheDocument();
+    expect(within(home).getByRole("region", { name: /Value case unavailable/i })).toBeInTheDocument();
+    expect(within(home).getByRole("button", { name: /Refresh workspace/i })).toBeInTheDocument();
+    expect(within(home).queryByRole("link", { name: /Start a value case/i })).not.toBeInTheDocument();
+  });
 
   it("keeps ROI Bot scenario packaging blocked by the promoted report-output contract", async () => {
     expect(workspaceSource).toMatch(/promoted report-output contract/i);
@@ -1901,34 +2595,30 @@ describe("AIValueWorkspace journey continuity", () => {
   });
 
   it.each(["ACCEPTED", "SUBMITTED", "REJECTED", "MISSING"] as const)(
-    "does not use an independently selected %s journey packet as the workspace report",
+    "keeps the guided Decision held and does not open an unrelated %s journey packet",
     async (state) => {
-    const fixture = withOutcomeReviewState(state);
-    stubJourneyFetch(fixture.objects, fixture.details);
-    const open = vi.spyOn(window, "open").mockImplementation(() => null);
-    const { container } = renderWorkspace("/ai-value-workspace/decisions");
+      const fixture = withOutcomeReviewState(state);
+      stubJourneyFetch(fixture.objects, fixture.details);
+      const open = vi.spyOn(window, "open").mockImplementation(() => null);
+      const { container } = renderWorkspace("/ai-value-workspace/decisions");
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Illustrative example, not live evidence/i)
-      ).toBeInTheDocument();
-    });
+      const decision = await screen.findByRole("region", { name: /Decision status/i });
+      expect(decision).toHaveTextContent(/Decision held until evidence is reviewed/i);
+      expect(screen.queryByRole("region", { name: /Executive report preview/i })).not.toBeInTheDocument();
+      expect(open).not.toHaveBeenCalled();
+      expect(container.textContent).not.toMatch(/Customer-approved|accepted aggregate Median resolution time/i);
+      expectNoUnsafeUiLanguage(container.textContent, [
+        uiTerm("workflow", "_", "family"),
+        uiTerm("metric", "_", "id"),
+        uiTerm("schema", "_", "version"),
+        uiTerm("outcome", "_", "evidence", "_", "export"),
+        uiTerm("executive", "_", "packet"),
+        "export_v1"
+      ]);
+    }
+  );
 
-    expect(
-      screen.queryByRole("region", { name: /Executive report preview/i })
-    ).not.toBeInTheDocument();
-    expect(open).not.toHaveBeenCalled();
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("executive", "_", "packet"),
-      "export_v1"
-    ]);
-  });
-
-  it("redirects the old ROI route into Evidence Checkpoint without exposing ROI modeling UI", async () => {
+  it("redirects the old ROI route into the restored Evidence Checkpoint without exposing ROI modeling UI", async () => {
     stubJourneyFetch(journeyObjects);
     const { container } = renderWorkspace("/ai-value-workspace/roi");
 
@@ -1936,11 +2626,6 @@ describe("AIValueWorkspace journey continuity", () => {
       expect(screen.getByRole("region", { name: /Evidence Checkpoint workspace/i })).toBeInTheDocument();
     });
 
-    const activeLink = within(screen.getByRole("navigation", { name: "Workspace" })).getByRole(
-      "link",
-      { current: "page" }
-    );
-    expect(activeLink).toHaveTextContent("Value cases");
     const checkpoint = screen.getByRole("region", { name: /Evidence Checkpoint status/i });
     expect(within(checkpoint).getByRole("heading", { name: /Evidence Checkpoint/i })).toBeInTheDocument();
     expect(within(checkpoint).getByText(/Hypothesis binding/i)).toBeInTheDocument();
@@ -1952,11 +2637,11 @@ describe("AIValueWorkspace journey continuity", () => {
     expect(container.textContent).not.toMatch(
       /ROI Bot modeling context|Value and ROI readiness|pricing|revenue|EBITDA|loaded-cost|Scenario bands/i
     );
-    expect(screen.getByRole("link", { name: /Back to Metrics/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Back to Progress/i })).toHaveAttribute(
       "href",
-      "/ai-value-workspace/metrics"
+      "/ai-value-workspace/progress"
     );
-    expect(screen.getByRole("link", { name: /Continue to Report/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Continue to Decision/i })).toHaveAttribute(
       "href",
       "/ai-value-workspace/decisions"
     );
@@ -1968,67 +2653,15 @@ describe("AIValueWorkspace journey continuity", () => {
     ]);
   });
 
-  it("updates the workspace decision handoff preview locally when a different move is selected", async () => {
-    const fixture = withOutcomeReviewState("ACCEPTED");
-    stubJourneyFetch(fixture.objects, fixture.details);
-    const { container } = renderWorkspace("/ai-value-workspace/decisions");
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Sponsor decision loop/i })).toBeInTheDocument();
-    });
-
-    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
-    let preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
-    await waitFor(() => {
-      expect(within(preview).getAllByText(/Expand workflow/i).length).toBeGreaterThan(0);
-    });
-
-    fireEvent.click(within(decision).getByRole("button", { name: /Select Hold value language/i }));
-
-    preview = within(decision).getByRole("region", { name: /Decision handoff preview/i });
-    expect(within(preview).getAllByText(/Hold value language/i).length).toBeGreaterThan(0);
-    expect(within(preview).getByText(/Value report owner/i)).toBeInTheDocument();
-    expect(within(preview).getByText(/Holding value language prevents unsupported ROI, causality, or productivity claims/i)).toBeInTheDocument();
-
-    expectNoUnsafeUiLanguage(container.textContent, [
-      uiTerm("workflow", "_", "family"),
-      uiTerm("metric", "_", "id"),
-      uiTerm("schema", "_", "version"),
-      uiTerm("outcome", "_", "evidence", "_", "export"),
-      uiTerm("agent", "_", "run"),
-      "export_v1"
-    ]);
-    expect(container.textContent).not.toMatch(/\bMISSING\b|\bSUBMITTED\b|\bACCEPTED\b|\bREJECTED\b/);
-  });
-
-  it("copies the workspace selected decision handoff as a governed local draft", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: { writeText }
-    });
+  it("keeps inline decision controls out of the held guided step", async () => {
     const fixture = withOutcomeReviewState("ACCEPTED");
     stubJourneyFetch(fixture.objects, fixture.details);
     renderWorkspace("/ai-value-workspace/decisions");
 
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: /Sponsor decision loop/i })).toBeInTheDocument();
-    });
-
-    const decision = screen.getByRole("region", { name: /Sponsor decision loop/i });
-    fireEvent.click(within(decision).getByRole("button", { name: /Select Hold value language/i }));
-
-    const bundle = within(decision).getByRole("region", { name: /Copy-ready decision handoff/i });
-    expect(within(bundle).getByText(/Selected move: Hold value language/i)).toBeInTheDocument();
-
-    fireEvent.click(within(bundle).getByRole("button", { name: /Copy handoff draft/i }));
-
-    await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith(
-        expect.stringContaining("Selected move: Hold value language")
-      );
-    });
-    expect(within(bundle).getByText(/Handoff draft copied/i)).toBeInTheDocument();
+    const decision = await screen.findByRole("region", { name: /Decision status/i });
+    expect(decision).toHaveTextContent(/Hold/i);
+    expect(screen.queryByRole("region", { name: /Sponsor decision loop/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Copy-ready decision handoff/i })).not.toBeInTheDocument();
   });
 
   it("keeps practitioner working surfaces off every executive spine page", async () => {
@@ -2038,6 +2671,8 @@ describe("AIValueWorkspace journey continuity", () => {
       "/ai-value-workspace/sources",
       "/ai-value-workspace/vbd",
       "/ai-value-workspace/metrics",
+      "/ai-value-workspace/workflow",
+      "/ai-value-workspace/value-case",
       "/ai-value-workspace/case",
       "/ai-value-workspace/roi",
       "/ai-value-workspace/decisions"

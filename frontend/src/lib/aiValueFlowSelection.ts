@@ -31,25 +31,13 @@ export interface AiValueJourneyObjectSelection {
 const validObjects = (objects: AiValueObjectSummary[] = []) =>
   objects.filter((object) => object.valid !== false);
 
-const workflowTokens = (workflowFamily: string | null | undefined): string[] =>
-  String(workflowFamily ?? "")
-    .split("_")
-    .map((token) => token.trim())
-    .filter((token) => token.length > 1);
-
-const workflowOverlapScore = (
-  object: AiValueObjectSummary | null | undefined,
-  workflowFamily: string | null | undefined
-) => {
-  if (!object || !workflowFamily) return 0;
-  const objectId = object.object_id.toLowerCase();
-  return workflowTokens(workflowFamily).filter((token) => objectId.includes(token)).length;
-};
-
 const matchingWorkflow = (
   objects: AiValueObjectSummary[] = [],
   workflowFamily: string | null | undefined
-) => validObjects(objects).filter((object) => object.workflow_family === workflowFamily);
+) =>
+  workflowFamily
+    ? validObjects(objects).filter((object) => object.workflow_family === workflowFamily)
+    : [];
 
 const firstForWorkflow = (
   objects: AiValueObjectSummary[] = [],
@@ -59,17 +47,16 @@ const firstForWorkflow = (
 export const selectBestBaselineForWorkflow = (
   baselines: AiValueObjectSummary[] = [],
   workflowFamily: string | null | undefined
-) =>
-  validObjects(baselines)
-    .map((baseline) => ({
-      baseline,
-      score: workflowOverlapScore(baseline, workflowFamily)
-    }))
-    .sort(
-      (a, b) =>
-        b.score - a.score ||
-        a.baseline.object_id.localeCompare(b.baseline.object_id)
-    )[0]?.baseline ?? null;
+) => {
+  const valid = validObjects(baselines).sort((a, b) =>
+    a.object_id.localeCompare(b.object_id)
+  );
+  const exact = workflowFamily
+    ? valid.find((baseline) => baseline.workflow_family === workflowFamily)
+    : undefined;
+
+  return exact ?? valid.find((baseline) => baseline.workflow_family === null) ?? null;
+};
 
 const preferredEngagement = (
   engagements: AiValueObjectSummary[] = [],
@@ -100,14 +87,14 @@ export const selectAiValueWorkspaceChain = ({
   const candidates = (preferredBlueprint ? [preferredBlueprint] : validBlueprints)
     .map((blueprint) => {
       const workflowFamily = blueprint.workflow_family;
-      const library = firstForWorkflow(libraries, workflowFamily) ?? validObjects(libraries)[0] ?? null;
+      const library = firstForWorkflow(libraries, workflowFamily);
       const baseline = selectBestBaselineForWorkflow(baselines, workflowFamily);
       const hasEvidenceCase = matchingWorkflow(evidenceCases, workflowFamily).length > 0;
       const score =
         (preferredBlueprint ? 100 : 0) +
         (hasEvidenceCase ? 20 : 0) +
         (library?.workflow_family === workflowFamily ? 10 : 0) +
-        (baseline ? workflowOverlapScore(baseline, workflowFamily) : 0);
+        (baseline ? 1 : 0);
       return { blueprint, library, baseline, score };
     })
     .filter((candidate) => candidate.library);
@@ -129,9 +116,16 @@ export const selectAiValueWorkspaceChain = ({
 };
 
 export const selectAiValueJourneyObjects = (
-  byType: Record<string, AiValueObjectSummary[]>
+  byType: Record<string, AiValueObjectSummary[]>,
+  preferences: {
+    preferredBlueprintId?: string | null;
+    preferredEngagementId?: string | null;
+  } = {}
 ): AiValueJourneyObjectSelection => {
   const evidenceCases = validObjects(byType.value_evidence_case);
+  const preferredBlueprint = validObjects(byType.blueprint).find(
+    (object) => object.object_id === preferences.preferredBlueprintId
+  );
   const evidenceCaseWorkflow =
     evidenceCases.find((object) => object.workflow_family)?.workflow_family ?? null;
   const selected =
@@ -141,9 +135,22 @@ export const selectAiValueJourneyObjects = (
       engagements: byType.engagement ?? [],
       baselines: byType.fluency_baseline ?? [],
       evidenceCases,
-      preferredBlueprintId: null,
-      preferredEngagementId: null
+      preferredBlueprintId: preferences.preferredBlueprintId ?? null,
+      preferredEngagementId: preferences.preferredEngagementId ?? null
     }) ?? null;
+
+  if (preferredBlueprint && !selected) {
+    return {
+      workflowFamily: preferredBlueprint.workflow_family,
+      engagement: null,
+      blueprint: null,
+      metricsLibrary: null,
+      readiness: null,
+      scenario: null,
+      roiScenario: null
+    };
+  }
+
   const workflowFamily = selected?.workflowFamily ?? evidenceCaseWorkflow;
 
   return {

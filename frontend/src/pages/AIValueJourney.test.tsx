@@ -480,6 +480,19 @@ describe("AIValueJourney", () => {
     vi.unstubAllGlobals();
   });
 
+  it("hides journey evidence when the organization session is unavailable", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" }
+    }));
+    renderPage();
+
+    const sessionGate = await screen.findByRole("region", { name: /Organization session required/i });
+    expect(within(sessionGate).getByRole("link", { name: /^Sign in$/i })).toHaveAttribute("href", "/login");
+    expect(screen.queryByRole("region", { name: /Executive report preview/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Customer evidence review/i })).not.toBeInTheDocument();
+  });
+
   it("shows the whole-system journey with value hypothesis mapping", async () => {
     const { container } = renderPage();
 
@@ -1666,5 +1679,20 @@ describe("AIValueJourney", () => {
       );
       expect(calls.some((url) => url.includes("/export_v1/review"))).toBe(true);
     });
+  });
+
+  it("hides stale journey evidence when a review action returns 401", async () => {
+    renderPage();
+    const accept = await screen.findByRole("button", { name: /^Accept$/ });
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "content-type": "application/json" }
+    }));
+
+    fireEvent.click(accept);
+
+    expect(await screen.findByRole("region", { name: /Organization session required/i })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Customer evidence review/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /Executive report preview/i })).not.toBeInTheDocument();
   });
 });

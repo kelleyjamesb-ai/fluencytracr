@@ -1,0 +1,998 @@
+from contextlib import ExitStack
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
+import json
+from pathlib import Path
+import time
+from types import SimpleNamespace
+
+import numpy as np
+import pytest
+
+from fluencytracr_inference.vbd_joint_model import (
+    VBDJointFit,
+    VBDJointSamplerSettings,
+    _fit_vbd_joint_model_with_settings,
+    build_vbd_joint_model,
+    fit_vbd_joint_model,
+)
+from fluencytracr_inference.vbd_joint_replicated_bridge import (
+    VBDJointReplicatedBridgeError,
+    build_vbd_joint_replicated_fit_spec,
+    fit_vbd_joint_replicated_model,
+    prepare_vbd_joint_replicated_dataset,
+    _validated_fit_receipt,
+)
+from fluencytracr_inference.vbd_joint_replicated_synthetic import (
+    generate_vbd_joint_replicated_case_for_slot,
+)
+import fluencytracr_inference.vbd_joint_replicated_runner as replicated_runner
+import fluencytracr_inference.vbd_joint_replicated_bridge as replicated_bridge
+from fluencytracr_inference.hashing import sha256_json
+from fluencytracr_inference.vbd_joint_replicated_runner import (
+    VBDJointReplicatedAttemptLedger,
+    VBDJointReplicatedAttemptCheckpoint,
+    VBDJointReplicatedReviewReceipt,
+    VBDJointReplicatedRuntimeManifest,
+    authorize_reviewed_execution,
+    build_sampler_free_execution_packet,
+    make_checkpoint_for_disposition,
+    make_claim_for_slot,
+    recover_attempt_ledger,
+)
+from fluencytracr_inference.vbd_joint_replicated_validation_plan import (
+    VBDJointReplicatedValidationDisposition,
+    vbd_joint_replicated_validation_plan,
+)
+from fluencytracr_inference.vbd_joint_types import (
+    VBD_JOINT_PRIMARY_SEED,
+    VBDJointStructureError,
+)
+
+
+def _slot(cell_id, *, namespace="qualifying", variant="full"):
+    plan = vbd_joint_replicated_validation_plan()
+    slots = {
+        "qualifying": plan.qualifying_slots,
+        "preflight": plan.preflight_slots,
+        "runtime_canary": plan.canary_slots,
+    }[namespace]
+    return next(
+        slot
+        for slot in slots
+        if slot.cell_id == cell_id and slot.variant == variant
+    )
+
+
+def _runtime_manifest():
+    body = {
+        "python_version": replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_PYTHON,
+        "platform": replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_PLATFORM,
+        "lockfile_hash": replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_LOCKFILE_HASH,
+        "package_versions": [
+            list(item)
+            for item in sorted(
+                replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_PACKAGES.items()
+            )
+        ],
+        "source_commit": "a" * 40,
+    }
+    return VBDJointReplicatedRuntimeManifest(
+        python_version=body["python_version"],
+        platform=body["platform"],
+        lockfile_hash=body["lockfile_hash"],
+        package_versions=tuple(tuple(item) for item in body["package_versions"]),
+        source_commit=body["source_commit"],
+        manifest_hash=sha256_json(body),
+    )
+
+
+def _review_receipt(source_commit: str) -> VBDJointReplicatedReviewReceipt:
+    body = {
+        "repository": "kelleyjamesb-ai/fluencytracr",
+        "pull_number": 485,
+        "review_id": 12345,
+        "independent_review": True,
+        "author_association": "COLLABORATOR",
+        "reviewed_commit": source_commit,
+        "state": "APPROVED",
+        "submitted_at": "2026-08-11T00:00:00+00:00",
+    }
+    return VBDJointReplicatedReviewReceipt(
+        **body,
+        receipt_hash=sha256_json(body),
+    )
+
+
+@pytest.mark.parametrize(
+    ("cell_id", "namespace"),
+    (
+        ("primary", "qualifying"),
+        ("behavior_pathway_null", "qualifying"),
+        ("omitted_confounder_stress", "qualifying"),
+        ("high_capability_error", "qualifying"),
+        ("runtime_canary", "runtime_canary"),
+    ),
+)
+def test_every_v4_cell_prepares_and_builds_the_unchanged_model(cell_id, namespace):
+    slot = _slot(cell_id, namespace=namespace)
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+
+    assert prepared.source_profile == "replicated_v4"
+    assert prepared.generator_version == "v0_4_0"
+    assert prepared.dataset_hash == case.content_hash()
+    assert prepared.replicated_cell_id == case.cell_id
+    assert prepared.replicate_index == case.replicate_index
+    assert prepared.scenario_id == case.scenario_id
+    assert prepared.capability_standard_error.flags.writeable is False
+    model = build_vbd_joint_model(prepared, variant=slot.variant)
+    assert "capability_observed" in model.named_vars
+
+
+def test_high_error_standard_error_is_admitted_only_for_the_exact_v4_cell():
+    high_slot = _slot("high_capability_error")
+    high_case = generate_vbd_joint_replicated_case_for_slot(high_slot)
+    prepared = prepare_vbd_joint_replicated_dataset(high_case, slot=high_slot)
+    assert set(np.unique(prepared.capability_standard_error)) == {0.30}
+
+    primary_slot = _slot("primary")
+    primary_case = generate_vbd_joint_replicated_case_for_slot(primary_slot)
+    forged_inner = replace(
+        primary_case.dataset,
+        capability_observations=tuple(
+            replace(item, standard_error=0.30)
+            for item in primary_case.dataset.capability_observations
+        ),
+    )
+    forged = replace(primary_case, dataset=forged_inner)
+    with pytest.raises(VBDJointReplicatedBridgeError):
+        prepare_vbd_joint_replicated_dataset(forged, slot=primary_slot)
+
+
+def test_v4_preparation_rejects_a_case_and_slot_from_different_cells():
+    primary_slot = _slot("primary")
+    null_slot = _slot("behavior_pathway_null")
+    case = generate_vbd_joint_replicated_case_for_slot(primary_slot)
+
+    with pytest.raises(VBDJointReplicatedBridgeError, match="slot"):
+        prepare_vbd_joint_replicated_dataset(case, slot=null_slot)
+
+
+def test_v4_fit_spec_binds_exact_ordered_chain_seeds_and_sampler_settings():
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+
+    spec = build_vbd_joint_replicated_fit_spec(prepared, slot=slot)
+
+    assert spec.slot_hash == slot.slot_hash
+    assert spec.prepared_input_hash == prepared.prepared_input_hash
+    assert spec.variant == slot.variant
+    assert spec.chain_seeds == slot.chain_seeds
+    assert spec.chains == slot.chains
+    assert spec.draws == slot.draws
+    assert spec.tune == slot.tune
+    assert spec.target_accept == slot.target_accept
+    assert spec.max_treedepth == slot.max_treedepth
+
+
+def test_v4_preparation_is_shared_by_full_and_restricted_fit_slots():
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    restricted = _slot("primary", variant="restricted")
+    restricted_spec = build_vbd_joint_replicated_fit_spec(
+        prepared, slot=restricted
+    )
+    assert restricted_spec.prepared_input_hash == prepared.prepared_input_hash
+    assert restricted_spec.chain_seeds == restricted.chain_seeds
+
+
+def test_v4_fit_spec_rejects_substituted_chain_seed_slot_before_sampling():
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    forged_slot = replace(slot, sampler_seed_base=slot.sampler_seed_base + 1)
+
+    with pytest.raises(VBDJointReplicatedBridgeError, match="slot"):
+        build_vbd_joint_replicated_fit_spec(prepared, slot=forged_slot)
+
+
+def test_v4_fit_spec_wrong_type_fails_with_closed_bridge_error():
+    with pytest.raises(VBDJointReplicatedBridgeError, match="prepared input"):
+        build_vbd_joint_replicated_fit_spec(object(), slot=_slot("primary"))
+
+
+def test_exact_v4_slot_reaches_the_full_joint_model_sampler_boundary(monkeypatch, tmp_path):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    runtime_manifest = _runtime_manifest()
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    deadline_at = started_at + timedelta(hours=2)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=deadline_at.isoformat(),
+    )
+    review_receipt = _review_receipt(runtime_manifest.source_commit)
+    monkeypatch.setattr(
+        replicated_runner,
+        "observe_github_review_receipt",
+        lambda **_kwargs: review_receipt,
+    )
+    authorization = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state="GO",
+        review_receipt_hash=review_receipt.receipt_hash,
+        review_receipt=review_receipt,
+    )
+    captured = {}
+
+    class SamplerBoundaryReached(Exception):
+        pass
+
+    def capture_worker(arguments, *, claim):
+        model_arguments = arguments["model_arguments"]
+        settings = model_arguments["settings"]
+        captured.update(
+            draws=settings.draws,
+            tune=settings.tune,
+            chains=settings.chains,
+            random_seed=list(model_arguments["chain_seeds"]),
+            target_accept=settings.target_accept,
+            max_treedepth=settings.max_treedepth,
+        )
+        raise SamplerBoundaryReached
+
+    monkeypatch.setattr(replicated_bridge, "_run_replicated_fit_worker", capture_worker)
+
+    with pytest.raises(VBDJointReplicatedBridgeError, match="SAMPLER_ERROR"):
+        fit_vbd_joint_replicated_model(
+            prepared,
+            slot=slot,
+            packet=packet,
+            claim=claim,
+            authorization=authorization,
+            runtime_manifest=runtime_manifest,
+            review_receipt=review_receipt,
+            execution_root=tmp_path,
+        )
+
+    assert captured["draws"] == slot.draws
+    assert captured["tune"] == slot.tune
+    assert captured["chains"] == slot.chains
+    assert captured["random_seed"] == list(slot.chain_seeds)
+    assert captured["target_accept"] == slot.target_accept
+    assert captured["max_treedepth"] == slot.max_treedepth
+
+
+def test_arbitrary_review_hash_cannot_authorize_v4_sampling(monkeypatch):
+    slot = _slot("primary")
+    runtime_manifest = _runtime_manifest()
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=(started_at + timedelta(hours=2)).isoformat(),
+    )
+
+    with pytest.raises(ValueError, match="authenticated review"):
+        authorize_reviewed_execution(
+            slot,
+            packet=packet,
+            claim=claim,
+            runtime_manifest=runtime_manifest,
+            review_state="GO",
+            review_receipt_hash=sha256_json({}),
+        )
+
+
+def test_supplied_review_receipt_must_match_authenticated_github_evidence(monkeypatch):
+    slot = _slot("primary")
+    runtime_manifest = _runtime_manifest()
+    supplied = _review_receipt(runtime_manifest.source_commit)
+    observed_body = {**supplied.body_without_hash(), "review_id": 54321}
+    observed = replicated_runner.VBDJointReplicatedReviewReceipt(
+        **observed_body,
+        receipt_hash=sha256_json(observed_body),
+    )
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    monkeypatch.setattr(
+        replicated_runner,
+        "observe_github_review_receipt",
+        lambda **_kwargs: observed,
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=(started_at + timedelta(hours=2)).isoformat(),
+    )
+
+    with pytest.raises(ValueError, match="does not match GitHub"):
+        authorize_reviewed_execution(
+            slot,
+            packet=packet,
+            claim=claim,
+            runtime_manifest=runtime_manifest,
+            review_state="GO",
+            review_receipt_hash=supplied.receipt_hash,
+            review_receipt=supplied,
+        )
+
+
+def test_v4_claim_is_consumed_before_the_sampler_and_cannot_relaunch(
+    monkeypatch, tmp_path
+):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    runtime_manifest = _runtime_manifest()
+    review_receipt = _review_receipt(runtime_manifest.source_commit)
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    monkeypatch.setattr(
+        replicated_runner,
+        "observe_github_review_receipt",
+        lambda **_kwargs: review_receipt,
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=(started_at + timedelta(hours=2)).isoformat(),
+    )
+    authorization = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state="GO",
+        review_receipt_hash=review_receipt.receipt_hash,
+        review_receipt=review_receipt,
+    )
+    sampler_calls = 0
+
+    class SamplerBoundaryReached(Exception):
+        pass
+
+    def capture_worker(_arguments, *, claim):
+        nonlocal sampler_calls
+        sampler_calls += 1
+        raise SamplerBoundaryReached
+
+    monkeypatch.setattr(replicated_bridge, "_run_replicated_fit_worker", capture_worker)
+
+    with pytest.raises(VBDJointReplicatedBridgeError, match="SAMPLER_ERROR"):
+        fit_vbd_joint_replicated_model(
+            prepared,
+            slot=slot,
+            packet=packet,
+            claim=claim,
+            authorization=authorization,
+            runtime_manifest=runtime_manifest,
+            review_receipt=review_receipt,
+            execution_root=tmp_path,
+        )
+    with pytest.raises(VBDJointReplicatedBridgeError, match="already consumed"):
+        fit_vbd_joint_replicated_model(
+            prepared,
+            slot=slot,
+            packet=packet,
+            claim=claim,
+            authorization=authorization,
+            runtime_manifest=runtime_manifest,
+            review_receipt=review_receipt,
+            execution_root=tmp_path,
+        )
+    assert sampler_calls == 1
+
+
+def test_v4_sampler_deadline_persists_a_durable_timeout_hold(monkeypatch, tmp_path):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    runtime_manifest = _runtime_manifest()
+    review_receipt = _review_receipt(runtime_manifest.source_commit)
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    monkeypatch.setattr(
+        replicated_runner,
+        "observe_github_review_receipt",
+        lambda **_kwargs: review_receipt,
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    deadline_at = datetime.now(timezone.utc) + timedelta(seconds=5.0)
+    started_at = deadline_at - timedelta(hours=2)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=deadline_at.isoformat(),
+    )
+    authorization = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state="GO",
+        review_receipt_hash=review_receipt.receipt_hash,
+        review_receipt=review_receipt,
+    )
+    def timeout_worker(_arguments, *, claim):
+        worker_deadline = datetime.fromisoformat(
+            claim.deadline_at.replace("Z", "+00:00")
+        )
+        remaining = (worker_deadline - datetime.now(timezone.utc)).total_seconds()
+        time.sleep(max(remaining, 0.0) + 0.05)
+        raise replicated_bridge.VBDJointReplicatedSamplerTimeout(
+            "frozen two-hour sampler deadline elapsed"
+        )
+
+    monkeypatch.setattr(replicated_bridge, "_run_replicated_fit_worker", timeout_worker)
+
+    with pytest.raises(VBDJointReplicatedBridgeError, match="two-hour sampler deadline"):
+        fit_vbd_joint_replicated_model(
+            prepared,
+            slot=slot,
+            packet=packet,
+            claim=claim,
+            authorization=authorization,
+            runtime_manifest=runtime_manifest,
+            review_receipt=review_receipt,
+            execution_root=tmp_path,
+        )
+
+    timeout_path = tmp_path / "timeouts" / f"{claim.claim_hash}.json"
+    persisted = json.loads(timeout_path.read_text(encoding="utf-8"))
+    assert persisted["disposition"]["state"] == "HOLD"
+    assert persisted["disposition"]["failure_code"] == "SAMPLER_TIMEOUT"
+    assert persisted["checkpoint"]["claim_hash"] == claim.claim_hash
+    assert persisted["checkpoint"]["case_hash"] == case.content_hash()
+    disposition = VBDJointReplicatedValidationDisposition(
+        **persisted["disposition"]
+    )
+    checkpoint = VBDJointReplicatedAttemptCheckpoint(
+        **persisted["checkpoint"]
+    )
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path).append_claim(
+        claim,
+        slot,
+        vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+    )
+    ledger.append_disposition(disposition, checkpoint)
+    recovered = recover_attempt_ledger(
+        tmp_path, runtime_manifest=runtime_manifest
+    )
+    assert recovered.claims == (claim,)
+    assert recovered.dispositions == (disposition,)
+    assert recovered.checkpoints == (checkpoint,)
+
+
+def test_v4_worker_is_terminated_when_native_fit_does_not_return(monkeypatch, tmp_path):
+    events = []
+
+    class ReceiveConnection:
+        def poll(self, _timeout):
+            return False
+
+        def close(self):
+            events.append("receive_closed")
+
+    class SendConnection:
+        def close(self):
+            events.append("send_closed")
+
+    class Process:
+        alive = True
+
+        def start(self):
+            events.append("started")
+            events.append(
+                (
+                    "worker_environment",
+                    replicated_bridge.os.environ["PYTENSOR_FLAGS"],
+                    replicated_bridge.os.environ["NUMBA_CACHE_DIR"],
+                    replicated_bridge.os.environ["TMPDIR"],
+                )
+            )
+
+        def terminate(self):
+            events.append("terminated")
+            self.alive = False
+
+        def kill(self):
+            events.append("killed")
+            self.alive = False
+
+        def join(self, timeout):
+            events.append(("joined", timeout))
+
+        def is_alive(self):
+            return self.alive
+
+    class Context:
+        def Pipe(self, *, duplex):
+            assert duplex is False
+            return ReceiveConnection(), SendConnection()
+
+        def Process(self, **kwargs):
+            assert kwargs["target"] is replicated_bridge._replicated_fit_worker_entry
+            assert kwargs["daemon"] is False
+            return Process()
+
+    monkeypatch.setattr(
+        replicated_bridge.multiprocessing,
+        "get_context",
+        lambda method: Context() if method == "spawn" else None,
+    )
+    claim = SimpleNamespace(
+        deadline_at=(datetime.now(timezone.utc) + timedelta(seconds=10)).isoformat()
+    )
+
+    with pytest.raises(
+        replicated_bridge.VBDJointReplicatedSamplerTimeout,
+        match="two-hour sampler deadline",
+    ):
+        replicated_bridge._run_replicated_fit_worker(
+            {
+                "execution_root": tmp_path,
+                "slot": SimpleNamespace(slot_id="qualifying/primary/0/full"),
+            },
+            claim=claim,
+        )
+
+    assert events.count("started") == 1
+    assert events.count("terminated") == 1
+    assert "killed" not in events
+    environment = next(
+        item
+        for item in events
+        if isinstance(item, tuple) and item[0] == "worker_environment"
+    )
+    assert all("worker-cache" in value for value in environment[1:])
+
+
+def test_v4_execution_root_and_four_worker_limit_fail_closed(tmp_path):
+    repository_root = Path(__file__).resolve().parents[2]
+    with pytest.raises(
+        replicated_runner.VBDJointReplicatedRunnerError,
+        match="outside the repository",
+    ):
+        replicated_runner._resolved_execution_root(repository_root)
+
+    with ExitStack() as leases:
+        for _ in range(4):
+            leases.enter_context(replicated_bridge._worker_lease(tmp_path))
+        with pytest.raises(VBDJointReplicatedBridgeError, match="four-worker"):
+            with replicated_bridge._worker_lease(tmp_path):
+                pass
+
+
+@pytest.mark.parametrize(
+    ("failure_kind", "expected_code"),
+    (
+        ("sampler_error", "SAMPLER_ERROR"),
+        ("diagnostic_hold", "DIAGNOSTIC_HOLD"),
+        ("summary_nonfinite", "SUMMARY_NONFINITE"),
+        ("summary_and_diagnostic_nonfinite", "SUMMARY_NONFINITE"),
+    ),
+)
+def test_v4_full_model_failures_persist_a_durable_hold(
+    monkeypatch, tmp_path, failure_kind, expected_code
+):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    runtime_manifest = _runtime_manifest()
+    review_receipt = _review_receipt(runtime_manifest.source_commit)
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    monkeypatch.setattr(
+        replicated_runner,
+        "observe_github_review_receipt",
+        lambda **_kwargs: review_receipt,
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=(started_at + timedelta(hours=2)).isoformat(),
+    )
+    authorization = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state="GO",
+        review_receipt_hash=review_receipt.receipt_hash,
+        review_receipt=review_receipt,
+    )
+
+    if failure_kind == "sampler_error":
+        def fail_fit(*_args, **_kwargs):
+            raise RuntimeError("synthetic sampler failure")
+
+        monkeypatch.setattr(replicated_bridge, "_run_replicated_fit_worker", fail_fit)
+    else:
+        diagnostics = {
+            "state": "PASS",
+            "failing_diagnostics": [],
+            "max_r_hat": 1.0,
+            "min_bulk_ess": 500.0,
+            "min_tail_ess": 500.0,
+            "divergence_count": 0,
+            "max_treedepth_count": 0,
+            "full_run_required_for_qualification": True,
+        }
+        if failure_kind in {"diagnostic_hold", "summary_and_diagnostic_nonfinite"}:
+            diagnostics.update(
+                state="HOLD",
+                failing_diagnostics=["r_hat"],
+                max_r_hat=1.02,
+            )
+        fit = VBDJointFit(
+            idata=object(),
+            prepared=prepared,
+            variant=slot.variant,
+            settings=VBDJointSamplerSettings(
+                mode="full",
+                chains=slot.chains,
+                draws=slot.draws,
+                tune=slot.tune,
+                target_accept=slot.target_accept,
+                max_treedepth=slot.max_treedepth,
+            ),
+            seed=slot.sampler_seed_base,
+            coefficient_summaries=(),
+            diagnostics=diagnostics,
+            bayesian_r_squared_mean=(
+                float("nan") if failure_kind.startswith("summary") else 0.5
+            ),
+            future_window_rmse=1.0,
+            future_window_log_score=-1.0,
+            wall_time_seconds=1.0,
+        )
+        def held_worker(_arguments, *, claim):
+            code = (
+                "SUMMARY_NONFINITE"
+                if failure_kind.startswith("summary")
+                else "DIAGNOSTIC_HOLD"
+            )
+            error = replicated_bridge._VBDJointReplicatedFitHold(
+                code,
+                "full-model fit requires a durable HOLD disposition",
+            )
+            error.evidence_hash = sha256_json(
+                {"fit_summary_hash": fit.fit_summary_hash(), "failure_code": code}
+            )
+            error.worker_process_id = 12345
+            raise error
+
+        monkeypatch.setattr(
+            replicated_bridge,
+            "_run_replicated_fit_worker",
+            held_worker,
+        )
+
+    with pytest.raises(VBDJointReplicatedBridgeError):
+        fit_vbd_joint_replicated_model(
+            prepared,
+            slot=slot,
+            packet=packet,
+            claim=claim,
+            authorization=authorization,
+            runtime_manifest=runtime_manifest,
+            review_receipt=review_receipt,
+            execution_root=tmp_path,
+        )
+
+    hold_path = tmp_path / "holds" / f"{claim.claim_hash}.json"
+    persisted = json.loads(hold_path.read_text(encoding="utf-8"))
+    assert persisted["disposition"]["state"] == "HOLD"
+    assert persisted["disposition"]["failure_code"] == expected_code
+    assert persisted["checkpoint"]["claim_hash"] == claim.claim_hash
+    assert persisted["checkpoint"]["case_hash"] == case.content_hash()
+
+
+def test_v4_success_persists_authenticated_complete_receipt(monkeypatch, tmp_path):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    runtime_manifest = _runtime_manifest()
+    review_receipt = _review_receipt(runtime_manifest.source_commit)
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    monkeypatch.setattr(
+        replicated_runner,
+        "observe_github_review_receipt",
+        lambda **_kwargs: review_receipt,
+    )
+    packet = build_sampler_free_execution_packet(slot, runtime_manifest=runtime_manifest)
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=(started_at + timedelta(hours=2)).isoformat(),
+    )
+    authorization = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state="GO",
+        review_receipt_hash=review_receipt.receipt_hash,
+        review_receipt=review_receipt,
+    )
+    fit = VBDJointFit(
+        idata=object(),
+        prepared=prepared,
+        variant=slot.variant,
+        settings=VBDJointSamplerSettings(
+            mode="full",
+            chains=slot.chains,
+            draws=slot.draws,
+            tune=slot.tune,
+            target_accept=slot.target_accept,
+            max_treedepth=slot.max_treedepth,
+        ),
+        seed=slot.sampler_seed_base,
+        coefficient_summaries=(),
+        diagnostics={
+            "state": "PASS",
+            "failing_diagnostics": [],
+            "max_r_hat": 1.0,
+            "min_bulk_ess": 500.0,
+            "min_tail_ess": 500.0,
+            "divergence_count": 0,
+            "max_treedepth_count": 0,
+            "full_run_required_for_qualification": True,
+        },
+        bayesian_r_squared_mean=0.5,
+        future_window_rmse=1.0,
+        future_window_log_score=-1.0,
+        wall_time_seconds=1.0,
+    )
+    def successful_worker(arguments, *, claim):
+        return _validated_fit_receipt(
+            fit,
+            slot=arguments["slot"],
+            claim=claim,
+            launch_receipt=arguments["launch_receipt"],
+        )
+
+    monkeypatch.setattr(
+        replicated_bridge,
+        "_run_replicated_fit_worker",
+        successful_worker,
+    )
+
+    execution = fit_vbd_joint_replicated_model(
+        prepared,
+        slot=slot,
+        packet=packet,
+        claim=claim,
+        authorization=authorization,
+        runtime_manifest=runtime_manifest,
+        review_receipt=review_receipt,
+        execution_root=tmp_path,
+    )
+    disposition_body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "COMPLETE",
+        "failure_code": "NONE",
+        "result_hash": execution.fit_receipt.receipt_hash,
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **disposition_body,
+        disposition_hash=sha256_json(disposition_body),
+    )
+    checkpoint = make_checkpoint_for_disposition(
+        disposition,
+        case_hash=case.content_hash(),
+        completed_at=execution.fit_receipt.completed_at,
+        fit_receipt=execution.fit_receipt,
+    )
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path).append_claim(
+        claim,
+        slot,
+        vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+    )
+    ledger.append_disposition(disposition, checkpoint)
+    recovered = recover_attempt_ledger(
+        tmp_path, runtime_manifest=runtime_manifest
+    )
+    assert recovered.claims == (claim,)
+    assert recovered.dispositions == (disposition,)
+    assert recovered.checkpoints == (checkpoint,)
+    assert execution.aggregate_summary == execution.fit_receipt.aggregate_summary
+
+    fit_path = tmp_path / "fits" / f"{claim.claim_hash}.json"
+    persisted = json.loads(fit_path.read_text(encoding="utf-8"))
+    assert persisted["fit_receipt"] == execution.fit_receipt.to_dict()
+    assert persisted["launch_receipt"]["claim_hash"] == claim.claim_hash
+    with pytest.raises(
+        replicated_runner.VBDJointReplicatedRunnerError,
+        match="before the immutable deadline",
+    ):
+        replicated_runner.persist_sampler_timeout_hold(
+            tmp_path,
+            slot,
+            claim=claim,
+            launch_receipt=execution.launch_receipt,
+            case_hash=case.content_hash(),
+        )
+    timeouts = tmp_path / "timeouts"
+    timeouts.mkdir()
+    (timeouts / f"{claim.claim_hash}.json").write_text("{}\n", encoding="utf-8")
+    with pytest.raises(
+        replicated_runner.VBDJointReplicatedRunnerError,
+        match="conflicts",
+    ):
+        ledger.append_disposition(disposition, checkpoint)
+
+
+def test_fit_receipt_rejects_full_model_diagnostic_failure():
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    claim = SimpleNamespace(claim_hash="a" * 64)
+    launch_body = {
+        "slot_id": slot.slot_id,
+        "packet_hash": "1" * 64,
+        "claim_hash": claim.claim_hash,
+        "authorization_hash": "2" * 64,
+        "review_receipt_hash": "3" * 64,
+        "consumed_at": "2026-08-11T00:00:00+00:00",
+    }
+    launch = replicated_runner.VBDJointReplicatedLaunchReceipt(
+        **launch_body,
+        launch_receipt_hash=sha256_json(launch_body),
+    )
+    fit = VBDJointFit(
+        idata=object(),
+        prepared=prepared,
+        variant=slot.variant,
+        settings=VBDJointSamplerSettings(
+            mode="full",
+            chains=slot.chains,
+            draws=slot.draws,
+            tune=slot.tune,
+            target_accept=slot.target_accept,
+            max_treedepth=slot.max_treedepth,
+        ),
+        seed=slot.sampler_seed_base,
+        coefficient_summaries=(),
+        diagnostics={
+            "state": "HOLD",
+            "failing_diagnostics": ["r_hat"],
+            "max_r_hat": 1.02,
+            "min_bulk_ess": 500.0,
+            "min_tail_ess": 500.0,
+            "divergence_count": 0,
+            "max_treedepth_count": 0,
+            "full_run_required_for_qualification": True,
+        },
+        bayesian_r_squared_mean=0.5,
+        future_window_rmse=1.0,
+        future_window_log_score=-1.0,
+        wall_time_seconds=1.0,
+    )
+
+    with pytest.raises(VBDJointReplicatedBridgeError, match="durable HOLD"):
+        _validated_fit_receipt(
+            fit,
+            slot=slot,
+            claim=claim,
+            launch_receipt=launch,
+        )
+    with pytest.raises(replicated_bridge._VBDJointReplicatedFitHold) as held:
+        _validated_fit_receipt(
+            replace(fit, bayesian_r_squared_mean=float("nan")),
+            slot=slot,
+            claim=claim,
+            launch_receipt=launch,
+        )
+    assert held.value.failure_code == "SUMMARY_NONFINITE"
+
+
+def test_v4_prepared_data_cannot_reach_existing_sampler_entry_points(monkeypatch):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+
+    def sampler_reached(**_kwargs):
+        raise AssertionError("sampler initialized")
+
+    monkeypatch.setattr("fluencytracr_inference.vbd_joint_model.pm.sample", sampler_reached)
+    with pytest.raises(VBDJointStructureError, match="V3 sampler path"):
+        fit_vbd_joint_model(
+            prepared,
+            variant="full",
+            seed=VBD_JOINT_PRIMARY_SEED,
+            mode="smoke",
+        )
+    with pytest.raises(VBDJointStructureError, match="exact replicated sampler binding"):
+        _fit_vbd_joint_model_with_settings(
+            prepared,
+            variant="full",
+            settings=VBDJointSamplerSettings(
+                mode="smoke",
+                chains=2,
+                draws=1,
+                tune=1,
+                target_accept=0.5,
+                max_treedepth=1,
+            ),
+            chain_seeds=(7, 8),
+            summary_seed=7,
+        )
+
+    with pytest.raises(VBDJointStructureError, match="execution packet"):
+        _fit_vbd_joint_model_with_settings(
+            prepared,
+            variant=slot.variant,
+            settings=VBDJointSamplerSettings(
+                mode="full",
+                chains=slot.chains,
+                draws=1,
+                tune=1,
+                target_accept=0.5,
+                max_treedepth=1,
+            ),
+            chain_seeds=slot.chain_seeds,
+            summary_seed=slot.sampler_seed_base,
+            replicated_slot=slot,
+        )

@@ -52,6 +52,28 @@ export const AIValueJourney = () => {
   );
   const completeCount = journey.stages.filter((stage) => stage.state === "done").length;
   const progress = Math.round((completeCount / journey.stages.length) * 100);
+  const requiresSession = Boolean(journey.errorMessage?.toLowerCase().includes("sign in"));
+
+  if (requiresSession) {
+    return (
+      <AIValueReportLayout
+        activeNav="Workflows"
+        mode="cockpit"
+        title="Value Case: AI Assistant Value Assessment"
+      >
+        <main className="ai-value-shell ai-value-journey ai-value-report-surface">
+          <section className="ai-value-home-empty" role="region" aria-label="Organization session required">
+            <div>
+              <p className="eyebrow">Organization session required</p>
+              <h1>Sign in to view the value journey</h1>
+              <p>Journey evidence and readouts are hidden until the organization session is restored.</p>
+            </div>
+            <Link className="ai-value-home-primary-action" to="/login">Sign in</Link>
+          </section>
+        </main>
+      </AIValueReportLayout>
+    );
+  }
 
   return (
     <AIValueReportLayout

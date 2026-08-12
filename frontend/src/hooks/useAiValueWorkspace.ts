@@ -157,6 +157,10 @@ export const useAiValueWorkspace = (): AiValueWorkspaceState => {
       setLive(null);
       setLiveReport(null);
       setMode("error");
+      if (error instanceof AiValueApiError && error.status === 401) {
+        setErrorMessage("Sign in with an organization session to continue.");
+        return;
+      }
       if (error instanceof AiValueApiError && error.status === 403) {
         setErrorMessage(
           "Live report could not be loaded because the verified session lacks permission."

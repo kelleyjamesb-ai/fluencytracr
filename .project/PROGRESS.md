@@ -5824,3 +5824,316 @@
   activation/methodology/task lineage; task `2.6`, sampler execution, canary
   admission, concordance, and evidence remain blocked. Full Sections 7.5
   through 7.7 remain a separate larger program.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 blocking-findings repair candidate)
+
+- Based the local work on open PR #485 branch
+  `codex/blueprint-hypothesis-import` at unchanged remote head
+  `0cde0c3b54303a60def42044674c019fa545f1ee`. The local tree is modified but
+  remains uncommitted and unpushed; the GitHub PR head and checks were not
+  changed.
+- Replaced the declared-only runtime manifest with observation of exact Python
+  `3.13.14`, `macOS arm64`, the complete `requirements.lock`, installed package
+  versions, a clean Git source commit, and a hash over that observed identity.
+  Claims, namespace combination, artifact emission, and artifact validation
+  now reconcile one manifest. The actual observer correctly returns `HOLD` on
+  this uncommitted dirty tree; the task-local exact lock environment otherwise
+  matches the frozen protocol.
+- Added an exact V4-only preparation bridge from replicated envelopes into the
+  unchanged V3 likelihood projection. Prepared provenance retains generator,
+  case, cell, replicate, and scenario identity and regenerates the exact V4
+  case during validation. Full and restricted slots share one prepared dataset
+  while their sampler-free fit specifications bind the exact variant, ordered
+  chain seeds, and frozen settings.
+- Kept V4 execution unauthorized. No public V4 sampler entry exists. Both the
+  public and final private V3 sampler boundaries reject V4 prepared data, and
+  the private V3 boundary independently enforces its exact scenario seed,
+  frozen mode settings, derived ordered chain seeds, and summary seed.
+- Sanitized artifacts now require their immutable ledger and recompute frozen
+  counts, namespace states, summary hashes, roots, failure codes, and false
+  authority. Namespace completion requires one exact checkpoint per
+  disposition and deterministically regenerates each V4 case before accepting
+  its case hash. Coordinated artifact reseals, missing checkpoints, and
+  fabricated case provenance fail closed.
+- Final local evidence: 72 focused joint/replicated tests passed; the exact
+  `vbd-engine` shard passed `829/829` in `818.08s`; shard manifest validation,
+  strict OpenSpec validation, compileall, V1 governance gates, and
+  `git diff --check` passed. Independent CODE, BUG, and ADVERSARIAL reviews all
+  returned `GO` on the final uncommitted tree, including replay of the sampler
+  bypass, artifact reseal, and fabricated-case attacks.
+- No V4 replicated study, runtime canary, external execution, customer or real
+  data use, service/UI/deployment change, commit, push, PR mutation, merge, or
+  live proof occurred. Remaining work still includes the later reviewed
+  execution/evidence tasks in the active OpenSpec; a clean committed source is
+  required before the observed runtime can produce a manifest and before any
+  separately authorized execution review can begin.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 active review follow-up)
+
+- Verified the three current, non-outdated review threads against PR head
+  `06ad2754dae664870b35cec0e2730d7b652bf38b`. Two required code changes;
+  the requested Blueprint Assurance Harness fixture already existed from
+  `b2a8f2dd` and was wired into the seed self-test.
+- Added fail-first parser coverage proving that the supported phrase
+  `quarterly business reviews` inside an approved Customer hypothesis is not
+  status metadata. The parser now checks conflicting status labels only when
+  they are metadata-field prefixes with a value delimiter, while preserving
+  the existing fail-closed cases for obfuscated `Review status`, `Approval`,
+  `Lifecycle`, and related metadata.
+- Changed the active-case Home action to the existing source-bound case route
+  `/ai-value-workspace/case`. Returning users and new tabs no longer enter the
+  local value-case setup editor with an empty session draft when an active
+  backend case is already selected.
+- Focused frontend parser/workspace tests passed `77/77`. `npm run test:seed`
+  rebuilt the shared package and passed the LMSYS Assurance Harness self-test,
+  including the Blueprint admitted and held fixture states. The complete
+  frontend suite passed `277/277`; the frontend production build, V1
+  governance gates, queue JSON validation, and `git diff --check` passed. No
+  customer data, deployment, merge, thread resolution, or V4 execution
+  occurred.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 exact-head re-review repair)
+
+- Addressed the five findings returned by the exact-head Codex re-review plus
+  the concrete adversarial variants discovered during repair. VBD claims now
+  require the frozen 7,200-second deadline at creation, ledger append, and
+  namespace combination; artifact emission and validation inherit the same
+  recomputation boundary, so a resealed long-deadline claim cannot enter a
+  valid summary.
+- Replaced state-dependent retention, new-embedding, and active-nonembedded
+  stream consumption with fixed component-keyed `[window, canonical member]`
+  matrices for every panel. Same-replicate cells now receive identical raw
+  member-state draws even when earlier cell states diverge; the omitted common
+  cause remains isolated in its own keyed stream.
+- Expanded aggregate intake privacy checks to hold labeled employee, worker,
+  staff, user, and account identifiers, including `ID`, `identifier`, `number`,
+  `no`, and `#` forms. Registered business phrases such as Quarterly Business
+  Review, Service Level Agreement, Account Health Score, and Incident
+  Resolution Time no longer look like person names.
+- Scoped plain `draft` handling so an approved hypothesis may use it as a
+  workflow verb, while standalone/metadata draft markers and appended markers
+  such as `Draft version` remain fail-closed. Extended the Blueprint Assurance
+  fixture with an employee-identifier HOLD case.
+- Final local evidence: focused frontend `84/84`; complete frontend `282/282`;
+  replicated runner/synthetic `28/28`; exact `vbd-engine` shard `831/831` in
+  `773.29s`; LMSYS Assurance self-test, frontend production build and lint,
+  shard-manifest validation, strict
+  `implement-vbd-human-behavior-outcome-synthetic-proof` OpenSpec validation,
+  V1 governance gates, JSON validation, and `git diff --check` passed.
+  Independent provenance, V4/CRN, and adversarial reviews returned `GO` on the
+  final technical tree.
+- No sampler, V4 preflight/canary/study, customer or real data, external
+  execution, deployment, merge, or production mutation occurred. GitHub
+  thread replies and fresh CI/re-review remain post-push evidence, not local
+  completion proof.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 final exact-head closure)
+
+- Closed the nine additional exact-head review findings and their bounded
+  adversarial variants. Replicated execution material now requires the exact
+  canonical frozen plan and slot at packet, claim creation, claim append,
+  combination, emission, and validation boundaries. Ledger roots canonicalize
+  parallel arrival order without allowing a replacement plan.
+- Added hash-bound checkpoint completion time, enforced it inside each claimed
+  execution window, rejected prospective claims beyond the frozen fourteen-day
+  limit, and rechecked direct/resealed ledgers during combination and artifact
+  validation. Complete ledgers remain overall `HOLD` for pending study gates
+  without falsely reporting an execution interruption.
+- Nonfinite, empty, or malformed R-hat, ESS, divergence, and tree-depth inputs
+  now emit a finite `summary_nonfinite` diagnostic HOLD. Simultaneous finite
+  divergence or max-depth failures remain preserved; sanitized artifact
+  validation rejects inconsistent sentinels or failure lists.
+- Expanded aggregate intake privacy handling for accented and initialed names,
+  short and alphabetic labeled identifiers, punctuation, Unicode format
+  separators, and `no.` variants. Blueprint parsing rejects delimited,
+  standalone, dash-separated, and version-suffixed draft provenance while
+  preserving ordinary workflow use of `draft` and registered aggregate
+  business phrases. The visible and accessible headings now frame the imported
+  instrument as aggregate readiness context.
+- Final local evidence: frontend `283/283`; focused runner/model `50/50`; exact
+  `vbd-engine` shard `847/847` in `821.96s`; root harness `872 passed`, `10
+  skipped`, `156` intentional deselections; frontend production build/lint,
+  LMSYS Assurance self-test, V1 governance, strict OpenSpec, shard validation,
+  compileall, JSON parsing, and `git diff --check` passed. Independent
+  provenance, V4/diagnostic, and adversarial reviews returned `GO`.
+- No sampler, V4 preflight/canary/study, customer or real data, external
+  execution, thread resolution, merge, deployment, or production proof
+  occurred. Namespace `COMPLETE` remains structural checkpoint completeness,
+  not statistical qualification or execution authorization; all ensemble study
+  gates and authorization flags remain `HOLD`/false.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 final review follow-up)
+
+- Closed the three findings returned by the fresh review of pushed commit
+  `83c09fab`. Aggregate hypothesis intake now holds Social Security, passport,
+  IPv4, and labeled IPv6 identifiers while allowing ordinary aggregate phrases
+  and dotted software version, release, and build numbers.
+- Made the frozen two-hour fit boundary deterministic: a non-timeout result
+  must complete strictly before the deadline, while `SAMPLER_TIMEOUT` is a
+  durable `HOLD` at or after the deadline. A timeout observed after the
+  fourteen-day study window remains append-only evidence and causes the study
+  combiner to add `INTERRUPTED_OR_AMBIGUOUS`; it is not dropped or replaced.
+- Sanitized ensemble emission and validation now count every checkpoint-backed
+  qualifying disposition in `observed_fit_count`, including diagnostic,
+  sampler-error, and timeout HOLDs, so the frozen 600-fit denominator cannot
+  silently shrink.
+- Exact local evidence: frontend `284/284`; exact `vbd-engine` shard `849/849`
+  in `1311.94s`; frontend production build and lint, V1 governance, strict
+  `implement-vbd-human-behavior-outcome-synthetic-proof` OpenSpec validation,
+  shard-manifest validation, compileall, queue JSON parsing, and
+  `git diff --check` passed. Independent adversarial review returned `GO` on
+  the final behavior.
+- No sampler, V4 preflight/canary/study, customer or real data, external
+  execution, thread resolution, merge, deployment, or production proof
+  occurred. The runner and ensemble artifact remain sampler-free and
+  nonauthorizing; all study gates and authorization flags remain `HOLD`/false.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 positioning follow-up)
+
+- Closed the fresh exact-head wording finding in the imported instrument's
+  Profile lens. Its visible heading and navigation description now frame the
+  five-factor readout as instrument-derived readiness context rather than an
+  AI-fluency profiling surface.
+- Added an exact rendered-heading regression and proved the focused workspace
+  suite at `66/66`. This wording-only follow-up changes no measurement,
+  privacy, inference, schema, or execution behavior.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 V4 full-model bridge)
+
+- Connected exact V4 replicated preparation to the unchanged full joint PyMC
+  model. The bridge passes the slot's exact model variant, ordered chain seeds,
+  draws, tune, chains, target acceptance, and maximum tree depth into the same
+  likelihood used by V3.
+- Kept the sampler boundary fail closed: V4 sampling additionally requires the
+  exact observed runtime manifest, deterministic execution packet, immutable
+  claim, and a hash-bound external pre-execution review receipt with state
+  `GO`. Missing, substituted, off-plan, or cross-profile inputs stop before
+  `pm.sample`; the V3 seed/settings path remains independently exact.
+- Preserved failed dataset generation as a deterministic claim-bound receipt,
+  allowing `DATASET_REGENERATION_FAILURE` to survive combination and sanitized
+  artifact emission as durable `HOLD` evidence without retrying regeneration.
+- Current local evidence: full frontend `287/287`; VBD
+  model/preparation/bridge `50/50`; replicated runner `28/28`; frontend lint,
+  compileall, strict OpenSpec, shard validation, and `git diff --check` pass;
+  the exact VBD shard collects `851` tests matching the compiled count.
+- No real sampler, preflight, canary, qualifying study, customer or real data,
+  external execution, merge, deployment, or production proof occurred. All
+  study gates and customer/economic/output authorization flags remain
+  `HOLD`/false.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 V4 execution receipts)
+
+- Closed the exact-head execution-boundary findings after the V4 full-model
+  bridge. A caller-provided hash is no longer review authority: the runner
+  observes an independent trusted GitHub approval for the exact source commit
+  and binds that authenticated receipt into authorization.
+- Added a durable create-once launch boundary. Each immutable claim is consumed
+  atomically before model construction, the full-model helper revalidates the
+  persisted launch receipt at its last sampler boundary, and a second launch
+  with the same claim fails before `pm.sample`.
+- Enclosed V4 sampling in the frozen claim deadline. Deadline expiry interrupts
+  the sampler path and persists one append-only `SAMPLER_TIMEOUT` disposition
+  and checkpoint bound to the claim, launch, and deterministic case.
+- Replaced bare `COMPLETE` result hashes with closed sanitized fit receipts.
+  They bind the exact claim, launch, prepared input, dataset, variant, fit
+  summary, diagnostic summary, finite passing R-hat/ESS/divergence/tree-depth
+  values, and sub-deadline wall time; the checkpoint and combiner revalidate
+  those bindings.
+- Added fail-first regressions for forged review authority, repeated sampler
+  launch, deadline timeout durability, arbitrary COMPLETE hashes, and failed
+  diagnostic receipts. Exact local evidence: VBD model/preparation/bridge
+  `55/55`; runner `30/30`; final exact-head `vbd-engine` shard `859/859` in
+  `705.87s`; compileall, strict OpenSpec, shard validation, queue JSON, and
+  diff checks pass.
+- No real sampler, preflight, canary, qualifying study, customer or real data,
+  external execution, merge, or production deployment occurred. Execution
+  still requires a future exact-commit independent approval and remains
+  `HOLD` until that evidence exists.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 terminal V4 fit evidence)
+
+- Closed the remaining consumed-claim durability gap in the full-model bridge.
+  Sampler exceptions, finite diagnostic failures, and nonfinite fit summaries
+  now persist exactly one create-once sanitized `SAMPLER_ERROR`,
+  `DIAGNOSTIC_HOLD`, or `SUMMARY_NONFINITE` disposition and checkpoint bound to
+  the exact claim, launch receipt, and deterministic case. Raw exception text,
+  traces, posterior draws, and latent paths are not persisted.
+- The existing deadline path remains distinct: deadline expiry persists
+  `SAMPLER_TIMEOUT`, and no failed attempt can be replaced by a later success
+  because its claim was consumed before model construction.
+- Fail-first regressions cover all three new terminal paths. The broader VBD
+  model/preparation/bridge/runner surface passed, and the exact compiled
+  `vbd-engine` shard passed `862/862` in `403.56s` with one pre-existing fork
+  deprecation warning. Compileall, strict OpenSpec, shard validation, queue
+  JSON parsing, and `git diff --check` also pass.
+- No real sampler, V4 preflight/canary/qualifying study, customer or real data,
+  external execution, merge, deployment, or production proof occurred. Exact
+  source approval and the frozen runtime remain future execution prerequisites.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 isolated V4 execution boundary)
+
+- Closed the exact-head execution review. V4 now launches the unchanged full
+  model only inside a spawn-isolated process. The parent owns the immutable
+  deadline, terminates or kills a non-returning native worker, and records
+  `SAMPLER_TIMEOUT` only after the observed deadline has elapsed. Post-fit
+  summary and diagnostic work remains inside that same deadline.
+- The child retains the raw `VBDJointFit`, posterior draws, and latent paths.
+  It returns only a closed sanitized fit receipt. The parent persists that
+  receipt create-once, and ledger append plus namespace combination reconcile
+  it against the exact persisted launch. Self-issued in-memory receipts do not
+  count toward `COMPLETE`.
+- Non-timeout terminal failures are derived in the worker and returned as a
+  claim/launch/process-bound worker receipt. `SAMPLER_ERROR`,
+  `DIAGNOSTIC_HOLD`, and `SUMMARY_NONFINITE` checkpoints must reconcile with
+  their create-once persisted worker receipt; a chosen code or evidence hash
+  cannot poison a consumed claim. Nonfinite summaries take precedence when a
+  fit also has a finite diagnostic failure.
+- Launch, fit, timeout, and worker-HOLD files plus their containing directory
+  entries are fsynced. GitHub review reads are pinned to `github.com`; reviewer
+  independence is checked inside the adapter and account logins are excluded
+  from the execution receipt.
+- Added the LMSYS Assurance fixture
+  `harness/fixtures/vbd_v4_execution_admission.json`. Evidence: focused VBD
+  model/preparation/bridge/runner `92/92`; final runner/bridge `57/57`; exact
+  compiled `vbd-engine` `867/867` in `366.57s`; Assurance self-test,
+  compileall, strict OpenSpec, shard validation, queue/fixture JSON parsing,
+  and `git diff --check` pass.
+- No real sampler, V4 preflight/canary/qualifying study, customer or real data,
+  external execution, merge, deployment, or production proof occurred. The
+  exact new source still requires independent approval and a clean frozen
+  runtime before any sampler authorization can exist.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 bounded V4 model-path closeout)
+
+- The reusable deliverable is the V4-to-full-model path: exact replicated V4
+  envelope preparation retains cell, replicate, scenario, generator, dataset,
+  and input provenance; frozen per-slot settings and ordered chain seeds reach
+  the unchanged joint likelihood; V3 and V4 entry points remain distinct; and
+  failed or nonfinite diagnostics stop closed.
+- Successful qualifying workers retain closed aggregate-ready coefficient
+  means, standard deviations, central-80-percent intervals, Bayesian
+  R-squared, future-window RMSE, and future-window log score. Posterior draws,
+  latent paths, panel estimates, and synthetic rows remain child-local.
+  Preflight and canary receipts retain no coefficient or predictive summaries.
+- The replicated runner is explicitly temporary and removable validation
+  scaffolding, not a sustained execution platform. This includes GitHub review
+  admission, immutable claims, launch/terminal receipt stores, process timeout
+  supervision, worker leases and cache roots, ledger recovery, namespace
+  combination, and the sanitized study artifact.
+- Exact local verification: focused model/preparation/bridge/runner `95/95`;
+  compiled `vbd-engine` shard `868/868` in `458.52s`, with one pre-existing
+  multi-threaded-fork deprecation warning. No real sampler, V4 preflight,
+  canary, qualifying study, customer or real data, merge, deployment, or
+  production execution occurred. All study gates and output authorizations
+  remain `HOLD`/false.
+
+## 2026-08-12 (America/Los_Angeles) - Codex (PR #485 narrow CI timing repair)
+
+- Corrected only the timing-sensitive durable-timeout regression that failed on
+  the slower GitHub x64 runner. The test now gives admission five seconds of
+  headroom and makes its fake worker wait until the immutable claim deadline,
+  preserving the production timeout path and runner behavior unchanged.
+- Local evidence before push: the exact timeout regression passed three
+  consecutive runs and the complete replicated bridge suite passed `25/25`.
+  Exact-head CI remains the next gate. No sampler, preflight, canary, study,
+  model-path change, merge, deployment, or additional runner hardening occurred.

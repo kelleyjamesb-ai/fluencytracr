@@ -20,6 +20,34 @@ export const getStoredAuthToken = () => {
   return token?.trim() ?? "";
 };
 
+const ORGANIZATION_SCOPED_SESSION_PREFIXES = [
+  "aiValue.guidedSetupDraft.v1:",
+  "aiValue.aiFluencyImportReceipt.v1:"
+] as const;
+
+const clearOrganizationScopedSessionState = (organizationId: string) => {
+  const normalizedOrganizationId = organizationId.trim();
+  if (!normalizedOrganizationId || typeof sessionStorage === "undefined") return;
+  for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+    const key = sessionStorage.key(index);
+    if (
+      key &&
+      ORGANIZATION_SCOPED_SESSION_PREFIXES.some(
+        (prefix) => key === `${prefix}${normalizedOrganizationId}`
+      )
+    ) {
+      sessionStorage.removeItem(key);
+    }
+  }
+};
+
+export const getStoredOrganizationId = () => {
+  if (isFrontendAuthRequired()) {
+    return decodeStoredTokenContext()?.orgId ?? "";
+  }
+  return (localStorage.getItem("orgId") ?? "org-1").trim() || "org-1";
+};
+
 const notifyAuthChanged = () => {
   authSessionRevision += 1;
   authListeners.forEach((listener) => listener());
@@ -32,14 +60,22 @@ export const applyAuthToken = (value: string) => {
     clearAuthSession();
     return;
   }
+  clearOrganizationScopedSessionState(getFrontendSessionContext().orgId);
   localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
   localStorage.setItem("isAuthenticated", "true");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("orgId");
+  localStorage.removeItem("role");
   notifyAuthChanged();
 };
 
 export const clearAuthSession = () => {
+  clearOrganizationScopedSessionState(getFrontendSessionContext().orgId);
   localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   localStorage.removeItem("isAuthenticated");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("orgId");
+  localStorage.removeItem("role");
   notifyAuthChanged();
 };
 
@@ -52,10 +88,12 @@ export const applyLocalExampleSession = ({
   orgId: string;
   role: string;
 }) => {
-  clearAuthSession();
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem("isAuthenticated");
   localStorage.setItem("userEmail", email.trim());
   localStorage.setItem("orgId", orgId.trim());
   localStorage.setItem("role", role.trim());
+  notifyAuthChanged();
 };
 
 export const subscribeToAuthSession = (listener: () => void) => {
@@ -71,6 +109,8 @@ if (typeof window !== "undefined") {
     if (
       event.key === AUTH_TOKEN_STORAGE_KEY ||
       event.key === "isAuthenticated" ||
+      event.key === "orgId" ||
+      event.key === "role" ||
       event.key === null
     ) {
       notifyAuthChanged();
@@ -79,7 +119,7 @@ if (typeof window !== "undefined") {
 }
 
 const getStoredLocalExampleSession = () => {
-  const orgId = (localStorage.getItem("orgId") ?? "org-1").trim();
+  const orgId = getStoredOrganizationId();
   const role = (localStorage.getItem("role") ?? "ADMIN").trim();
   return { orgId, role };
 };
