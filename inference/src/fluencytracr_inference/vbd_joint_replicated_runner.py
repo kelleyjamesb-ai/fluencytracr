@@ -1402,6 +1402,113 @@ def persist_sampler_timeout_hold(
     return disposition, checkpoint
 
 
+def persist_execution_hold(
+    execution_root: Path,
+    slot: VBDJointReplicatedValidationSlot,
+    *,
+    claim: VBDJointReplicatedValidationClaim,
+    launch_receipt: VBDJointReplicatedLaunchReceipt,
+    case_hash: str,
+    failure_code: str,
+    evidence_hash: str,
+) -> tuple[
+    VBDJointReplicatedValidationDisposition,
+    VBDJointReplicatedAttemptCheckpoint,
+]:
+    """Persist one sanitized terminal HOLD for a consumed non-timeout attempt."""
+
+    if failure_code not in {
+        "SAMPLER_ERROR",
+        "DIAGNOSTIC_HOLD",
+        "SUMMARY_NONFINITE",
+    }:
+        raise VBDJointReplicatedRunnerError(
+            "execution HOLD failure code is not a persisted fit outcome"
+        )
+    slot = _require_canonical_slot(slot)
+    validate_claim_for_slot(
+        claim, slot, vbd_joint_replicated_validation_plan().plan_hash
+    )
+    if (
+        launch_receipt.slot_id != slot.slot_id
+        or launch_receipt.claim_hash != claim.claim_hash
+    ):
+        raise VBDJointReplicatedRunnerError("execution HOLD launch does not bind claim")
+    validate_consumed_execution_claim(execution_root, launch_receipt)
+    completed_at = datetime.now(timezone.utc)
+    if not (
+        _timestamp("started_at", claim.started_at)
+        <= completed_at
+        < _timestamp("deadline_at", claim.deadline_at)
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "non-timeout execution HOLD is outside the claimed execution window"
+        )
+    result_hash = sha256_json(
+        {
+            "receipt_schema": "VBD_JOINT_REPLICATED_EXECUTION_HOLD_V1",
+            "slot_id": slot.slot_id,
+            "claim_hash": claim.claim_hash,
+            "launch_receipt_hash": launch_receipt.launch_receipt_hash,
+            "failure_code": failure_code,
+            "evidence_hash": _sha("evidence_hash", evidence_hash),
+        }
+    )
+    disposition_body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "HOLD",
+        "failure_code": failure_code,
+        "result_hash": result_hash,
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **disposition_body,
+        disposition_hash=sha256_json(disposition_body),
+    )
+    checkpoint = make_checkpoint_for_disposition(
+        disposition,
+        case_hash=case_hash,
+        completed_at=completed_at.isoformat(),
+    )
+    resolved_root = execution_root.resolve(strict=True)
+    holds = resolved_root / "holds"
+    holds.mkdir(mode=0o700, exist_ok=True)
+    if holds.is_symlink():
+        raise VBDJointReplicatedRunnerError("execution HOLD directory is unsafe")
+    path = holds / f"{claim.claim_hash}.json"
+    payload = {
+        "disposition": {
+            **disposition.body_without_hash(),
+            "disposition_hash": disposition.disposition_hash,
+        },
+        "checkpoint": {
+            **checkpoint.body_without_hash(),
+            "checkpoint_hash": checkpoint.checkpoint_hash,
+        },
+        "launch_receipt_hash": launch_receipt.launch_receipt_hash,
+        "evidence_hash": evidence_hash,
+    }
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except FileExistsError as exc:
+        raise VBDJointReplicatedRunnerError("execution HOLD already exists") from exc
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError("execution HOLD could not persist") from exc
+    try:
+        serialized = (
+            json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n"
+        ).encode()
+        os.write(descriptor, serialized)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    return disposition, checkpoint
+
+
 @dataclass(frozen=True, slots=True)
 class VBDJointReplicatedNamespaceSummary:
     namespace: str

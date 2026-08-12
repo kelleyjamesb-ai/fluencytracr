@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import math
 from pathlib import Path
 
+from .hashing import sha256_json
 from .vbd_joint_model import (
     VBDJointFit,
     VBDJointReplicatedSamplerTimeout,
@@ -32,6 +33,7 @@ from .vbd_joint_replicated_runner import (
     VBDJointReplicatedReviewReceipt,
     VBDJointReplicatedRunnerError,
     consume_execution_claim,
+    persist_execution_hold,
     persist_sampler_timeout_hold,
 )
 from .vbd_joint_types import VBDJointStructureError
@@ -44,6 +46,14 @@ from .vbd_joint_replicated_validation_plan import (
 
 class VBDJointReplicatedBridgeError(ValueError):
     """Raised before model construction when V4 identity is not exact."""
+
+
+class _VBDJointReplicatedFitHold(VBDJointReplicatedBridgeError):
+    """Internal classification for a sampled fit that must terminate in HOLD."""
+
+    def __init__(self, failure_code: str, message: str) -> None:
+        super().__init__(message)
+        self.failure_code = failure_code
 
 
 def _require_exact_slot(slot: VBDJointReplicatedValidationSlot) -> None:
@@ -154,13 +164,23 @@ def _validated_fit_receipt(
     allowed_failures = (
         {"smoke_settings_nonqualifying"} if slot.namespace == "preflight" else set()
     )
+    observed_failures = (
+        set(diagnostics.get("failing_diagnostics", ()))
+        if type(diagnostics) is dict
+        else set()
+    )
     if (
         type(diagnostics) is not dict
-        or set(diagnostics.get("failing_diagnostics", ())) != allowed_failures
+        or observed_failures != allowed_failures
         or diagnostics.get("state")
         != ("HOLD" if allowed_failures else "PASS")
     ):
-        raise VBDJointReplicatedBridgeError(
+        raise _VBDJointReplicatedFitHold(
+            (
+                "SUMMARY_NONFINITE"
+                if "summary_nonfinite" in observed_failures
+                else "DIAGNOSTIC_HOLD"
+            ),
             "full-model diagnostics require a durable HOLD disposition"
         )
     numeric_summary_values = (
@@ -180,7 +200,8 @@ def _validated_fit_receipt(
         or not math.isfinite(float(value))
         for value in numeric_summary_values
     ):
-        raise VBDJointReplicatedBridgeError(
+        raise _VBDJointReplicatedFitHold(
+            "SUMMARY_NONFINITE",
             "full-model summaries require a durable SUMMARY_NONFINITE HOLD"
         )
     body = {
@@ -205,7 +226,10 @@ def _validated_fit_receipt(
             receipt_hash=sha256_json(body),
         )
     except VBDJointReplicatedRunnerError as exc:
-        raise VBDJointReplicatedBridgeError(str(exc)) from exc
+        raise _VBDJointReplicatedFitHold(
+            "DIAGNOSTIC_HOLD",
+            "full-model diagnostics require a durable HOLD disposition",
+        ) from exc
 
 
 def build_vbd_joint_replicated_fit_spec(
@@ -297,17 +321,6 @@ def fit_vbd_joint_replicated_model(
             replicated_launch_receipt=launch_receipt,
             replicated_execution_root=execution_root,
         )
-        fit_receipt = _validated_fit_receipt(
-            fit,
-            slot=slot,
-            claim=claim,
-            launch_receipt=launch_receipt,
-        )
-        return VBDJointReplicatedFitExecution(
-            fit=fit,
-            launch_receipt=launch_receipt,
-            fit_receipt=fit_receipt,
-        )
     except VBDJointReplicatedSamplerTimeout as exc:
         try:
             persist_sampler_timeout_hold(
@@ -320,6 +333,80 @@ def fit_vbd_joint_replicated_model(
         except VBDJointReplicatedRunnerError as persist_exc:
             raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
         raise VBDJointReplicatedBridgeError(str(exc)) from exc
+    except Exception as exc:
+        try:
+            persist_execution_hold(
+                execution_root,
+                slot,
+                claim=claim,
+                launch_receipt=launch_receipt,
+                case_hash=packet.dataset_hash,
+                failure_code="SAMPLER_ERROR",
+                evidence_hash=sha256_json(
+                    {
+                        "receipt_schema": "VBD_JOINT_REPLICATED_SAMPLER_ERROR_V1",
+                        "exception_type": type(exc).__name__,
+                    }
+                ),
+            )
+        except VBDJointReplicatedRunnerError as persist_exc:
+            raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
+        raise VBDJointReplicatedBridgeError(
+            "full-model sampler failed; durable SAMPLER_ERROR HOLD persisted"
+        ) from exc
+
+    try:
+        fit_receipt = _validated_fit_receipt(
+            fit,
+            slot=slot,
+            claim=claim,
+            launch_receipt=launch_receipt,
+        )
+    except _VBDJointReplicatedFitHold as exc:
+        try:
+            persist_execution_hold(
+                execution_root,
+                slot,
+                claim=claim,
+                launch_receipt=launch_receipt,
+                case_hash=packet.dataset_hash,
+                failure_code=exc.failure_code,
+                evidence_hash=sha256_json(
+                    {
+                        "fit_summary_hash": fit.fit_summary_hash(),
+                        "failure_code": exc.failure_code,
+                    }
+                ),
+            )
+        except VBDJointReplicatedRunnerError as persist_exc:
+            raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
+        raise VBDJointReplicatedBridgeError(str(exc)) from exc
+    except Exception as exc:
+        try:
+            persist_execution_hold(
+                execution_root,
+                slot,
+                claim=claim,
+                launch_receipt=launch_receipt,
+                case_hash=packet.dataset_hash,
+                failure_code="DIAGNOSTIC_HOLD",
+                evidence_hash=sha256_json(
+                    {
+                        "receipt_schema": "VBD_JOINT_REPLICATED_FIT_VALIDATION_ERROR_V1",
+                        "exception_type": type(exc).__name__,
+                    }
+                ),
+            )
+        except VBDJointReplicatedRunnerError as persist_exc:
+            raise VBDJointReplicatedBridgeError(str(persist_exc)) from persist_exc
+        raise VBDJointReplicatedBridgeError(
+            "full-model fit validation failed; durable DIAGNOSTIC_HOLD persisted"
+        ) from exc
+    return VBDJointReplicatedFitExecution(
+        fit=fit,
+        launch_receipt=launch_receipt,
+        fit_receipt=fit_receipt,
+    )
 
 
 __all__ = [

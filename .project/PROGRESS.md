@@ -6049,3 +6049,23 @@
   external execution, merge, or production deployment occurred. Execution
   still requires a future exact-commit independent approval and remains
   `HOLD` until that evidence exists.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 terminal V4 fit evidence)
+
+- Closed the remaining consumed-claim durability gap in the full-model bridge.
+  Sampler exceptions, finite diagnostic failures, and nonfinite fit summaries
+  now persist exactly one create-once sanitized `SAMPLER_ERROR`,
+  `DIAGNOSTIC_HOLD`, or `SUMMARY_NONFINITE` disposition and checkpoint bound to
+  the exact claim, launch receipt, and deterministic case. Raw exception text,
+  traces, posterior draws, and latent paths are not persisted.
+- The existing deadline path remains distinct: deadline expiry persists
+  `SAMPLER_TIMEOUT`, and no failed attempt can be replaced by a later success
+  because its claim was consumed before model construction.
+- Fail-first regressions cover all three new terminal paths. The broader VBD
+  model/preparation/bridge/runner surface passed, and the exact compiled
+  `vbd-engine` shard passed `862/862` in `403.56s` with one pre-existing fork
+  deprecation warning. Compileall, strict OpenSpec, shard validation, queue
+  JSON parsing, and `git diff --check` also pass.
+- No real sampler, V4 preflight/canary/qualifying study, customer or real data,
+  external execution, merge, deployment, or production proof occurred. Exact
+  source approval and the frozen runtime remain future execution prerequisites.

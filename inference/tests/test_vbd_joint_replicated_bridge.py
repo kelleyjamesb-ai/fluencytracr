@@ -25,6 +25,7 @@ from fluencytracr_inference.vbd_joint_replicated_synthetic import (
     generate_vbd_joint_replicated_case_for_slot,
 )
 import fluencytracr_inference.vbd_joint_replicated_runner as replicated_runner
+import fluencytracr_inference.vbd_joint_replicated_bridge as replicated_bridge
 from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.vbd_joint_replicated_runner import (
     VBDJointReplicatedReviewReceipt,
@@ -244,7 +245,7 @@ def test_exact_v4_slot_reaches_the_full_joint_model_sampler_boundary(monkeypatch
 
     monkeypatch.setattr("fluencytracr_inference.vbd_joint_model.pm.sample", capture_sampler)
 
-    with pytest.raises(SamplerBoundaryReached):
+    with pytest.raises(VBDJointReplicatedBridgeError, match="SAMPLER_ERROR"):
         fit_vbd_joint_replicated_model(
             prepared,
             slot=slot,
@@ -385,7 +386,7 @@ def test_v4_claim_is_consumed_before_the_sampler_and_cannot_relaunch(
 
     monkeypatch.setattr("fluencytracr_inference.vbd_joint_model.pm.sample", capture_sampler)
 
-    with pytest.raises(SamplerBoundaryReached):
+    with pytest.raises(VBDJointReplicatedBridgeError, match="SAMPLER_ERROR"):
         fit_vbd_joint_replicated_model(
             prepared,
             slot=slot,
@@ -470,6 +471,123 @@ def test_v4_sampler_deadline_persists_a_durable_timeout_hold(monkeypatch, tmp_pa
     persisted = json.loads(timeout_path.read_text(encoding="utf-8"))
     assert persisted["disposition"]["state"] == "HOLD"
     assert persisted["disposition"]["failure_code"] == "SAMPLER_TIMEOUT"
+    assert persisted["checkpoint"]["claim_hash"] == claim.claim_hash
+    assert persisted["checkpoint"]["case_hash"] == case.content_hash()
+
+
+@pytest.mark.parametrize(
+    ("failure_kind", "expected_code"),
+    (
+        ("sampler_error", "SAMPLER_ERROR"),
+        ("diagnostic_hold", "DIAGNOSTIC_HOLD"),
+        ("summary_nonfinite", "SUMMARY_NONFINITE"),
+    ),
+)
+def test_v4_full_model_failures_persist_a_durable_hold(
+    monkeypatch, tmp_path, failure_kind, expected_code
+):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    runtime_manifest = _runtime_manifest()
+    review_receipt = _review_receipt(runtime_manifest.source_commit)
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    monkeypatch.setattr(
+        replicated_runner,
+        "observe_github_review_receipt",
+        lambda **_kwargs: review_receipt,
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=(started_at + timedelta(hours=2)).isoformat(),
+    )
+    authorization = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state="GO",
+        review_receipt_hash=review_receipt.receipt_hash,
+        review_receipt=review_receipt,
+    )
+
+    if failure_kind == "sampler_error":
+        def fail_fit(*_args, **_kwargs):
+            raise RuntimeError("synthetic sampler failure")
+
+        monkeypatch.setattr(
+            replicated_bridge, "_fit_vbd_joint_model_with_settings", fail_fit
+        )
+    else:
+        diagnostics = {
+            "state": "PASS",
+            "failing_diagnostics": [],
+            "max_r_hat": 1.0,
+            "min_bulk_ess": 500.0,
+            "min_tail_ess": 500.0,
+            "divergence_count": 0,
+            "max_treedepth_count": 0,
+            "full_run_required_for_qualification": True,
+        }
+        if failure_kind == "diagnostic_hold":
+            diagnostics.update(
+                state="HOLD",
+                failing_diagnostics=["r_hat"],
+                max_r_hat=1.02,
+            )
+        fit = VBDJointFit(
+            idata=object(),
+            prepared=prepared,
+            variant=slot.variant,
+            settings=VBDJointSamplerSettings(
+                mode="full",
+                chains=slot.chains,
+                draws=slot.draws,
+                tune=slot.tune,
+                target_accept=slot.target_accept,
+                max_treedepth=slot.max_treedepth,
+            ),
+            seed=slot.sampler_seed_base,
+            coefficient_summaries=(),
+            diagnostics=diagnostics,
+            bayesian_r_squared_mean=(
+                float("nan") if failure_kind == "summary_nonfinite" else 0.5
+            ),
+            future_window_rmse=1.0,
+            future_window_log_score=-1.0,
+            wall_time_seconds=1.0,
+        )
+        monkeypatch.setattr(
+            replicated_bridge,
+            "_fit_vbd_joint_model_with_settings",
+            lambda *_args, **_kwargs: fit,
+        )
+
+    with pytest.raises(VBDJointReplicatedBridgeError):
+        fit_vbd_joint_replicated_model(
+            prepared,
+            slot=slot,
+            packet=packet,
+            claim=claim,
+            authorization=authorization,
+            runtime_manifest=runtime_manifest,
+            review_receipt=review_receipt,
+            execution_root=tmp_path,
+        )
+
+    hold_path = tmp_path / "holds" / f"{claim.claim_hash}.json"
+    persisted = json.loads(hold_path.read_text(encoding="utf-8"))
+    assert persisted["disposition"]["state"] == "HOLD"
+    assert persisted["disposition"]["failure_code"] == expected_code
     assert persisted["checkpoint"]["claim_hash"] == claim.claim_hash
     assert persisted["checkpoint"]["case_hash"] == case.content_hash()
 

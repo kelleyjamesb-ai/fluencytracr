@@ -277,11 +277,14 @@ Disposition state is one of `COMPLETE` or `HOLD`. Failure code is one of:
 Checkpoints and artifacts may contain only those codes. Raw exception text,
 tracebacks, paths, arbitrary strings, and substituted codes are prohibited.
 The sampler runs inside the claim deadline. Deadline expiry persists one
-append-only `SAMPLER_TIMEOUT` HOLD checkpoint. A `COMPLETE` checkpoint must
-carry a sanitized fit receipt binding the claim, launch, prepared input,
-dataset, variant, fit summary, diagnostic summary, finite passing diagnostic
-values, and sub-deadline wall time; a bare or caller-selected result hash is
-not admissible.
+append-only `SAMPLER_TIMEOUT` HOLD checkpoint. A sampler exception, finite
+diagnostic failure, or nonfinite fit summary likewise persists exactly one sanitized
+`SAMPLER_ERROR`, `DIAGNOSTIC_HOLD`, or `SUMMARY_NONFINITE` checkpoint before
+the consumed attempt returns an error; raw exception text is never persisted.
+A `COMPLETE` checkpoint must carry a sanitized fit receipt binding the claim,
+launch, prepared input, dataset, variant, fit summary, diagnostic summary,
+finite passing diagnostic values, and sub-deadline wall time; a bare or
+caller-selected result hash is not admissible.
 
 The qualifying combiner admits only the exact ordered `qualifying` manifest and
 its root. It must reject every preflight or canary slot, hash, claim, or
