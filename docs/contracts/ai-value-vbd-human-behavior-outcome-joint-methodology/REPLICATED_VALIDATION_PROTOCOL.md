@@ -255,6 +255,9 @@ ambiguous, missing, replaced, or mismatched claim stops before sampling.
 The reviewed claim is atomically consumed into a create-once launch receipt
 before model construction. A consumed, missing, replaced, or mismatched launch
 receipt stops every later sampler initialization; retries are prohibited.
+The launch record persists the complete immutable claim, not only its hash, so
+a restarted parent can reconstruct the claim ledger and reconcile any durable
+terminal record without relaunching the slot.
 
 Every claim receives exactly one append-only disposition. Claims and
 dispositions cannot be deleted, overwritten, compacted away, or replaced by a
@@ -297,9 +300,14 @@ launch, prepared input, dataset, variant, fit summary, diagnostic summary,
 finite passing diagnostic values, and sub-deadline wall time; a bare or
 caller-selected result hash is not admissible. The ledger and combiner reconcile
 that receipt against its create-once fit file and the exact persisted launch;
-self-issued in-memory receipts cannot count toward `COMPLETE`. The worker sends
-only the closed fit receipt to the parent; raw posterior draws and latent paths
-do not cross the worker boundary or enter the receipt store.
+self-issued in-memory receipts cannot count toward `COMPLETE`. For qualifying
+fits, the worker retains aggregate coefficient means, standard deviations,
+central-80-percent intervals, Bayesian R-squared, future-window RMSE, and
+future-window log score in the closed receipt so the frozen ensemble gates
+remain computable after the child exits. Raw posterior draws, latent paths,
+panel estimates, and synthetic rows do not cross the worker boundary or enter
+the receipt store. Preflight and runtime-canary receipts retain no coefficient
+or predictive summaries.
 
 The qualifying combiner admits only the exact ordered `qualifying` manifest and
 its root. It must reject every preflight or canary slot, hash, claim, or

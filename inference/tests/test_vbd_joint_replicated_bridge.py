@@ -1,6 +1,8 @@
+from contextlib import ExitStack
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
+from pathlib import Path
 import time
 from types import SimpleNamespace
 
@@ -36,6 +38,7 @@ from fluencytracr_inference.vbd_joint_replicated_runner import (
     build_sampler_free_execution_packet,
     make_checkpoint_for_disposition,
     make_claim_for_slot,
+    recover_attempt_ledger,
 )
 from fluencytracr_inference.vbd_joint_replicated_validation_plan import (
     VBDJointReplicatedValidationDisposition,
@@ -494,9 +497,15 @@ def test_v4_sampler_deadline_persists_a_durable_timeout_hold(monkeypatch, tmp_pa
         runtime_manifest=runtime_manifest,
     )
     ledger.append_disposition(disposition, checkpoint)
+    recovered = recover_attempt_ledger(
+        tmp_path, runtime_manifest=runtime_manifest
+    )
+    assert recovered.claims == (claim,)
+    assert recovered.dispositions == (disposition,)
+    assert recovered.checkpoints == (checkpoint,)
 
 
-def test_v4_worker_is_terminated_when_native_fit_does_not_return(monkeypatch):
+def test_v4_worker_is_terminated_when_native_fit_does_not_return(monkeypatch, tmp_path):
     events = []
 
     class ReceiveConnection:
@@ -515,6 +524,14 @@ def test_v4_worker_is_terminated_when_native_fit_does_not_return(monkeypatch):
 
         def start(self):
             events.append("started")
+            events.append(
+                (
+                    "worker_environment",
+                    replicated_bridge.os.environ["PYTENSOR_FLAGS"],
+                    replicated_bridge.os.environ["NUMBA_CACHE_DIR"],
+                    replicated_bridge.os.environ["TMPDIR"],
+                )
+            )
 
         def terminate(self):
             events.append("terminated")
@@ -553,11 +570,39 @@ def test_v4_worker_is_terminated_when_native_fit_does_not_return(monkeypatch):
         replicated_bridge.VBDJointReplicatedSamplerTimeout,
         match="two-hour sampler deadline",
     ):
-        replicated_bridge._run_replicated_fit_worker({}, claim=claim)
+        replicated_bridge._run_replicated_fit_worker(
+            {
+                "execution_root": tmp_path,
+                "slot": SimpleNamespace(slot_id="qualifying/primary/0/full"),
+            },
+            claim=claim,
+        )
 
     assert events.count("started") == 1
     assert events.count("terminated") == 1
     assert "killed" not in events
+    environment = next(
+        item
+        for item in events
+        if isinstance(item, tuple) and item[0] == "worker_environment"
+    )
+    assert all("worker-cache" in value for value in environment[1:])
+
+
+def test_v4_execution_root_and_four_worker_limit_fail_closed(tmp_path):
+    repository_root = Path(__file__).resolve().parents[2]
+    with pytest.raises(
+        replicated_runner.VBDJointReplicatedRunnerError,
+        match="outside the repository",
+    ):
+        replicated_runner._resolved_execution_root(repository_root)
+
+    with ExitStack() as leases:
+        for _ in range(4):
+            leases.enter_context(replicated_bridge._worker_lease(tmp_path))
+        with pytest.raises(VBDJointReplicatedBridgeError, match="four-worker"):
+            with replicated_bridge._worker_lease(tmp_path):
+                pass
 
 
 @pytest.mark.parametrize(
@@ -792,7 +837,7 @@ def test_v4_success_persists_authenticated_complete_receipt(monkeypatch, tmp_pat
     checkpoint = make_checkpoint_for_disposition(
         disposition,
         case_hash=case.content_hash(),
-        completed_at=datetime.now(timezone.utc).isoformat(),
+        completed_at=execution.fit_receipt.completed_at,
         fit_receipt=execution.fit_receipt,
     )
     ledger = VBDJointReplicatedAttemptLedger(execution_root=tmp_path).append_claim(
@@ -802,6 +847,13 @@ def test_v4_success_persists_authenticated_complete_receipt(monkeypatch, tmp_pat
         runtime_manifest=runtime_manifest,
     )
     ledger.append_disposition(disposition, checkpoint)
+    recovered = recover_attempt_ledger(
+        tmp_path, runtime_manifest=runtime_manifest
+    )
+    assert recovered.claims == (claim,)
+    assert recovered.dispositions == (disposition,)
+    assert recovered.checkpoints == (checkpoint,)
+    assert execution.aggregate_summary == execution.fit_receipt.aggregate_summary
 
     fit_path = tmp_path / "fits" / f"{claim.claim_hash}.json"
     persisted = json.loads(fit_path.read_text(encoding="utf-8"))

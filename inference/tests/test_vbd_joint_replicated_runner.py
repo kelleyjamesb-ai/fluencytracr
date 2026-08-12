@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,6 +11,8 @@ import fluencytracr_inference.vbd_joint_replicated_runner as replicated_runner
 from fluencytracr_inference.hashing import sha256_json
 from fluencytracr_inference.vbd_joint_replicated_runner import (
     VBDJointReplicatedAttemptLedger,
+    VBDJointReplicatedAggregateSummary,
+    VBDJointReplicatedCoefficientSummary,
     VBDJointReplicatedFitReceipt,
     VBDJointReplicatedLaunchReceipt,
     VBDJointReplicatedRuntimeManifest,
@@ -62,6 +65,12 @@ def _manifest(source_commit=SOURCE_COMMIT):
 
 
 def _fit_receipt(slot, claim, case_hash, execution_root=None):
+    completed_at = (
+        datetime.fromisoformat(
+            getattr(claim, "started_at", STARTED_AT).replace("Z", "+00:00")
+        )
+        + timedelta(hours=1)
+    ).isoformat()
     launch_body = {
         "slot_id": slot.slot_id,
         "packet_hash": "0" * 64,
@@ -74,14 +83,36 @@ def _fit_receipt(slot, claim, case_hash, execution_root=None):
         **launch_body,
         launch_receipt_hash=sha256_json(launch_body),
     )
+    coefficient = VBDJointReplicatedCoefficientSummary(
+        coefficient_name="behavior_effect",
+        posterior_mean=0.2,
+        posterior_sd=0.1,
+        interval_80_lower=0.05,
+        interval_80_upper=0.35,
+    )
+    aggregate_body = {
+        "coefficient_summaries": [coefficient.to_dict()],
+        "bayesian_r_squared_mean": 0.5,
+        "future_window_rmse": 1.0,
+        "future_window_log_score": -1.0,
+    }
+    aggregate = VBDJointReplicatedAggregateSummary(
+        coefficient_summaries=(coefficient,),
+        bayesian_r_squared_mean=aggregate_body["bayesian_r_squared_mean"],
+        future_window_rmse=aggregate_body["future_window_rmse"],
+        future_window_log_score=aggregate_body["future_window_log_score"],
+        summary_hash=sha256_json(aggregate_body),
+    )
     body = {
         "slot_id": slot.slot_id,
+        "namespace": slot.namespace,
         "claim_hash": claim.claim_hash,
         "launch_receipt_hash": launch.launch_receipt_hash,
         "prepared_input_hash": "2" * 64,
         "dataset_hash": case_hash,
         "variant": slot.variant,
         "fit_summary_hash": "3" * 64,
+        "aggregate_summary": aggregate if slot.namespace == "qualifying" else None,
         "diagnostics_hash": "4" * 64,
         "max_r_hat": 1.0,
         "min_bulk_ess": 500.0,
@@ -89,10 +120,21 @@ def _fit_receipt(slot, claim, case_hash, execution_root=None):
         "divergence_count": 0,
         "max_treedepth_count": 0,
         "wall_time_seconds": 1.0,
+        "completed_at": completed_at,
+        "worker_process_id": 12345,
     }
     receipt = VBDJointReplicatedFitReceipt(
         **body,
-        receipt_hash=sha256_json(body),
+        receipt_hash=sha256_json(
+            {
+                **body,
+                "aggregate_summary": (
+                    aggregate.to_dict()
+                    if slot.namespace == "qualifying"
+                    else None
+                ),
+            }
+        ),
     )
     if execution_root is not None:
         launches = execution_root / "launches"
@@ -100,14 +142,51 @@ def _fit_receipt(slot, claim, case_hash, execution_root=None):
         launches.mkdir(mode=0o700, exist_ok=True)
         fits.mkdir(mode=0o700, exist_ok=True)
         (launches / f"{claim.claim_hash}.json").write_text(
-            json.dumps(launch.to_dict(), sort_keys=True, separators=(",", ":")) + "\n",
+            json.dumps(
+                {
+                    "claim": {
+                        **claim.body_without_hash(),
+                        "claim_hash": claim.claim_hash,
+                    },
+                    "launch_receipt": launch.to_dict(),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n",
             encoding="utf-8",
+        )
+        disposition_body = {
+            "namespace": slot.namespace,
+            "slot_id": slot.slot_id,
+            "claim_hash": claim.claim_hash,
+            "state": "COMPLETE",
+            "failure_code": "NONE",
+            "result_hash": receipt.receipt_hash,
+        }
+        disposition = VBDJointReplicatedValidationDisposition(
+            **disposition_body,
+            disposition_hash=sha256_json(disposition_body),
+        )
+        checkpoint = make_checkpoint_for_disposition(
+            disposition,
+            case_hash=case_hash,
+            completed_at=completed_at,
+            fit_receipt=receipt,
         )
         (fits / f"{claim.claim_hash}.json").write_text(
             json.dumps(
                 {
                     "fit_receipt": receipt.to_dict(),
                     "launch_receipt": launch.to_dict(),
+                    "disposition": {
+                        **disposition.body_without_hash(),
+                        "disposition_hash": disposition.disposition_hash,
+                    },
+                    "checkpoint": {
+                        **checkpoint.body_without_hash(),
+                        "checkpoint_hash": checkpoint.checkpoint_hash,
+                    },
                 },
                 sort_keys=True,
                 separators=(",", ":"),
@@ -536,13 +615,19 @@ def test_complete_fit_receipt_rejects_failed_diagnostics():
     )
     forged_body = {
         **receipt.body_without_hash(),
+        "aggregate_summary": receipt.aggregate_summary,
         "max_r_hat": 1.02,
     }
 
     with pytest.raises(VBDJointReplicatedRunnerError, match="diagnostics"):
         VBDJointReplicatedFitReceipt(
             **forged_body,
-            receipt_hash=sha256_json(forged_body),
+            receipt_hash=sha256_json(
+                {
+                    **forged_body,
+                    "aggregate_summary": receipt.aggregate_summary.to_dict(),
+                }
+            ),
         )
 
 
@@ -683,44 +768,18 @@ def test_sampler_timeout_checkpoint_can_record_post_deadline_observation(
                 completed_at=COMPLETED_AT,
             ),
         )
-    completed = ledger.append_disposition(
-        disposition,
-        make_checkpoint_for_disposition(
-            disposition,
-            case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
-                slot
-            ).content_hash(),
-            completed_at=DEADLINE_AT,
-        ),
-    )
-
-    summary = combine_namespace(
-        completed,
-        namespace="preflight",
-        plan=plan,
-        runtime_manifest=runtime_manifest,
-    )
-    assert summary.hold_count == 1
-    assert "SAMPLER_TIMEOUT" in summary.failure_codes
-
-    late = ledger.append_disposition(
-        disposition,
-        make_checkpoint_for_disposition(
-            disposition,
-            case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
-                slot
-            ).content_hash(),
-            completed_at="2026-08-26T00:00:00+00:00",
-        ),
-    )
-    late_summary = combine_namespace(
-        late,
-        namespace="preflight",
-        plan=plan,
-        runtime_manifest=runtime_manifest,
-    )
-    assert "SAMPLER_TIMEOUT" in late_summary.failure_codes
-    assert "INTERRUPTED_OR_AMBIGUOUS" in late_summary.failure_codes
+    for completed_at in (DEADLINE_AT, "2026-08-26T00:00:00+00:00"):
+        with pytest.raises(VBDJointReplicatedRunnerError, match="receipt store"):
+            ledger.append_disposition(
+                disposition,
+                make_checkpoint_for_disposition(
+                    disposition,
+                    case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
+                        slot
+                    ).content_hash(),
+                    completed_at=completed_at,
+                ),
+            )
 
 
 def _append_complete(ledger, slot, plan, runtime_manifest):

@@ -6102,3 +6102,27 @@
   external execution, merge, deployment, or production proof occurred. The
   exact new source still requires independent approval and a clean frozen
   runtime before any sampler authorization can exist.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 bounded V4 model-path closeout)
+
+- The reusable deliverable is the V4-to-full-model path: exact replicated V4
+  envelope preparation retains cell, replicate, scenario, generator, dataset,
+  and input provenance; frozen per-slot settings and ordered chain seeds reach
+  the unchanged joint likelihood; V3 and V4 entry points remain distinct; and
+  failed or nonfinite diagnostics stop closed.
+- Successful qualifying workers retain closed aggregate-ready coefficient
+  means, standard deviations, central-80-percent intervals, Bayesian
+  R-squared, future-window RMSE, and future-window log score. Posterior draws,
+  latent paths, panel estimates, and synthetic rows remain child-local.
+  Preflight and canary receipts retain no coefficient or predictive summaries.
+- The replicated runner is explicitly temporary and removable validation
+  scaffolding, not a sustained execution platform. This includes GitHub review
+  admission, immutable claims, launch/terminal receipt stores, process timeout
+  supervision, worker leases and cache roots, ledger recovery, namespace
+  combination, and the sanitized study artifact.
+- Exact local verification: focused model/preparation/bridge/runner `95/95`;
+  compiled `vbd-engine` shard `868/868` in `458.52s`, with one pre-existing
+  multi-threaded-fork deprecation warning. No real sampler, V4 preflight,
+  canary, qualifying study, customer or real data, merge, deployment, or
+  production execution occurred. All study gates and output authorizations
+  remain `HOLD`/false.

@@ -631,14 +631,7 @@ class VBDJointReplicatedLaunchReceipt:
 
 
 def _launch_receipt_path(execution_root: Path, claim_hash: str) -> Path:
-    if not isinstance(execution_root, Path):
-        raise VBDJointReplicatedRunnerError("execution root must use the exact path type")
-    try:
-        resolved_root = execution_root.resolve(strict=True)
-    except OSError as exc:
-        raise VBDJointReplicatedRunnerError("execution root is unavailable") from exc
-    if not resolved_root.is_dir():
-        raise VBDJointReplicatedRunnerError("execution root is not a directory")
+    resolved_root = _resolved_execution_root(execution_root)
     launches = resolved_root / "launches"
     launches_existed = launches.exists()
     launches.mkdir(mode=0o700, exist_ok=True)
@@ -647,6 +640,70 @@ def _launch_receipt_path(execution_root: Path, claim_hash: str) -> Path:
     if not launches_existed:
         _fsync_directory(resolved_root)
     return launches / f"{_sha('claim_hash', claim_hash)}.json"
+
+
+def _resolved_execution_root(execution_root: Path) -> Path:
+    """Resolve a private receipt root that cannot dirty the frozen source tree."""
+
+    if not isinstance(execution_root, Path):
+        raise VBDJointReplicatedRunnerError(
+            "execution root must use the exact path type"
+        )
+    try:
+        resolved_root = execution_root.resolve(strict=True)
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError("execution root is unavailable") from exc
+    repository_root = Path(__file__).resolve().parents[3]
+    if (
+        not resolved_root.is_dir()
+        or execution_root.is_symlink()
+        or resolved_root == repository_root
+        or repository_root in resolved_root.parents
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "execution root must be a safe directory outside the repository"
+        )
+    return resolved_root
+
+
+def _claim_to_dict(claim: VBDJointReplicatedValidationClaim) -> dict:
+    return {**claim.body_without_hash(), "claim_hash": claim.claim_hash}
+
+
+def _claim_from_dict(value: object) -> VBDJointReplicatedValidationClaim:
+    if type(value) is not dict:
+        raise VBDJointReplicatedRunnerError("persisted execution claim is malformed")
+    body = dict(value)
+    if type(body.get("chain_seeds")) is not list:
+        raise VBDJointReplicatedRunnerError("persisted execution claim is malformed")
+    body["chain_seeds"] = tuple(body["chain_seeds"])
+    try:
+        claim = VBDJointReplicatedValidationClaim(**body)
+    except (TypeError, VBDJointReplicatedPlanError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted execution claim is invalid"
+        ) from exc
+    slot = _require_canonical_slot_by_id(claim.slot_id)
+    validate_claim_for_slot(
+        claim, slot, vbd_joint_replicated_validation_plan().plan_hash
+    )
+    _require_frozen_claim_deadline(claim)
+    return claim
+
+
+def _require_canonical_slot_by_id(slot_id: str) -> VBDJointReplicatedValidationSlot:
+    plan = vbd_joint_replicated_validation_plan()
+    slot = next(
+        (
+            item
+            for item in plan.qualifying_slots + plan.preflight_slots + plan.canary_slots
+            if item.slot_id == slot_id
+        ),
+        None,
+    )
+    if slot is None:
+        raise VBDJointReplicatedRunnerError("slot is not in the frozen plan")
+    return slot
 
 
 def _fsync_directory(directory: Path) -> None:
@@ -708,7 +765,14 @@ def consume_execution_claim(
         raise VBDJointReplicatedRunnerError("launch receipt could not be persisted") from exc
     try:
         payload = (
-            json.dumps(receipt.to_dict(), sort_keys=True, separators=(",", ":"))
+            json.dumps(
+                {
+                    "claim": _claim_to_dict(claim),
+                    "launch_receipt": receipt.to_dict(),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
             + "\n"
         ).encode()
         os.write(descriptor, payload)
@@ -730,8 +794,153 @@ def validate_consumed_execution_claim(
         stored = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise VBDJointReplicatedRunnerError("persisted launch receipt is unavailable") from exc
-    if stored != receipt.to_dict():
+    if type(stored) is not dict or set(stored) != {"claim", "launch_receipt"}:
+        raise VBDJointReplicatedRunnerError("persisted launch receipt is malformed")
+    claim = _claim_from_dict(stored["claim"])
+    if (
+        stored["launch_receipt"] != receipt.to_dict()
+        or claim.claim_hash != receipt.claim_hash
+        or claim.slot_id != receipt.slot_id
+    ):
         raise VBDJointReplicatedRunnerError("persisted launch receipt does not match")
+
+
+@dataclass(frozen=True, slots=True)
+class VBDJointReplicatedCoefficientSummary:
+    """Aggregate-only posterior summary retained after the worker exits."""
+
+    coefficient_name: str
+    posterior_mean: float
+    posterior_sd: float
+    interval_80_lower: float
+    interval_80_upper: float
+
+    def __post_init__(self) -> None:
+        if type(self.coefficient_name) is not str or not self.coefficient_name:
+            raise VBDJointReplicatedRunnerError("coefficient summary name is invalid")
+        for name in (
+            "posterior_mean",
+            "posterior_sd",
+            "interval_80_lower",
+            "interval_80_upper",
+        ):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise VBDJointReplicatedRunnerError(
+                    f"coefficient summary {name} is invalid"
+                )
+            if not math.isfinite(float(value)):
+                raise VBDJointReplicatedRunnerError(
+                    f"coefficient summary {name} is nonfinite"
+                )
+        if self.posterior_sd < 0 or self.interval_80_lower > self.interval_80_upper:
+            raise VBDJointReplicatedRunnerError("coefficient summary bounds are invalid")
+
+    def to_dict(self) -> dict:
+        return {
+            "coefficient_name": self.coefficient_name,
+            "posterior_mean": self.posterior_mean,
+            "posterior_sd": self.posterior_sd,
+            "interval_80_lower": self.interval_80_lower,
+            "interval_80_upper": self.interval_80_upper,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class VBDJointReplicatedAggregateSummary:
+    """Closed aggregate-ready evidence for the frozen ensemble gates."""
+
+    coefficient_summaries: tuple[VBDJointReplicatedCoefficientSummary, ...]
+    bayesian_r_squared_mean: float
+    future_window_rmse: float
+    future_window_log_score: float
+    summary_hash: str
+
+    def __post_init__(self) -> None:
+        if type(self.coefficient_summaries) is not tuple or any(
+            type(item) is not VBDJointReplicatedCoefficientSummary
+            for item in self.coefficient_summaries
+        ):
+            raise VBDJointReplicatedRunnerError(
+                "aggregate coefficient summaries are invalid"
+            )
+        names = [item.coefficient_name for item in self.coefficient_summaries]
+        if len(set(names)) != len(names):
+            raise VBDJointReplicatedRunnerError("aggregate coefficient names collide")
+        for name in (
+            "bayesian_r_squared_mean",
+            "future_window_rmse",
+            "future_window_log_score",
+        ):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+            ):
+                raise VBDJointReplicatedRunnerError(
+                    f"aggregate summary {name} is invalid"
+                )
+        _sha("summary_hash", self.summary_hash)
+        if self.summary_hash != sha256_json(self.body_without_hash()):
+            raise VBDJointReplicatedRunnerError("aggregate summary hash is invalid")
+
+    def body_without_hash(self) -> dict:
+        return {
+            "coefficient_summaries": [
+                item.to_dict() for item in self.coefficient_summaries
+            ],
+            "bayesian_r_squared_mean": self.bayesian_r_squared_mean,
+            "future_window_rmse": self.future_window_rmse,
+            "future_window_log_score": self.future_window_log_score,
+        }
+
+    def to_dict(self) -> dict:
+        return {**self.body_without_hash(), "summary_hash": self.summary_hash}
+
+
+def aggregate_summary_from_dict(value: object) -> VBDJointReplicatedAggregateSummary:
+    if type(value) is not dict or set(value) != {
+        "coefficient_summaries",
+        "bayesian_r_squared_mean",
+        "future_window_rmse",
+        "future_window_log_score",
+        "summary_hash",
+    }:
+        raise VBDJointReplicatedRunnerError("aggregate summary is malformed")
+    coefficient_values = value["coefficient_summaries"]
+    if type(coefficient_values) is not list:
+        raise VBDJointReplicatedRunnerError("aggregate summary is malformed")
+    try:
+        coefficients = tuple(
+            VBDJointReplicatedCoefficientSummary(**item)
+            for item in coefficient_values
+        )
+        return VBDJointReplicatedAggregateSummary(
+            coefficient_summaries=coefficients,
+            bayesian_r_squared_mean=value["bayesian_r_squared_mean"],
+            future_window_rmse=value["future_window_rmse"],
+            future_window_log_score=value["future_window_log_score"],
+            summary_hash=value["summary_hash"],
+        )
+    except (TypeError, VBDJointReplicatedRunnerError) as exc:
+        raise VBDJointReplicatedRunnerError("aggregate summary is invalid") from exc
+
+
+def _fit_receipt_from_dict(value: object) -> "VBDJointReplicatedFitReceipt":
+    if type(value) is not dict:
+        raise VBDJointReplicatedRunnerError("fit receipt is malformed")
+    body = dict(value)
+    aggregate_value = body.get("aggregate_summary")
+    body["aggregate_summary"] = (
+        None
+        if aggregate_value is None
+        else aggregate_summary_from_dict(aggregate_value)
+    )
+    try:
+        return VBDJointReplicatedFitReceipt(**body)
+    except (TypeError, VBDJointReplicatedRunnerError) as exc:
+        raise VBDJointReplicatedRunnerError("fit receipt is invalid") from exc
 
 
 @dataclass(frozen=True, slots=True)
@@ -739,12 +948,14 @@ class VBDJointReplicatedFitReceipt:
     """Closed sanitized proof that one exact launched fit completed cleanly."""
 
     slot_id: str
+    namespace: str
     claim_hash: str
     launch_receipt_hash: str
     prepared_input_hash: str
     dataset_hash: str
     variant: str
     fit_summary_hash: str
+    aggregate_summary: VBDJointReplicatedAggregateSummary | None
     diagnostics_hash: str
     max_r_hat: float
     min_bulk_ess: float
@@ -752,11 +963,14 @@ class VBDJointReplicatedFitReceipt:
     divergence_count: int
     max_treedepth_count: int
     wall_time_seconds: float
+    completed_at: str
+    worker_process_id: int
     receipt_hash: str
 
     def __post_init__(self) -> None:
         if type(self.slot_id) is not str or not self.slot_id:
             raise VBDJointReplicatedRunnerError("fit receipt slot ID is invalid")
+        _closed("fit receipt namespace", self.namespace, VBD_JOINT_REPLICATED_NAMESPACES)
         for name, value in (
             ("claim_hash", self.claim_hash),
             ("launch_receipt_hash", self.launch_receipt_hash),
@@ -769,12 +983,26 @@ class VBDJointReplicatedFitReceipt:
             _sha(name, value)
         if self.variant not in ("full", "restricted"):
             raise VBDJointReplicatedRunnerError("fit receipt variant is invalid")
+        if self.namespace == "qualifying":
+            if type(self.aggregate_summary) is not VBDJointReplicatedAggregateSummary:
+                raise VBDJointReplicatedRunnerError(
+                    "qualifying fit receipt lacks its aggregate summary"
+                )
+        elif self.aggregate_summary is not None:
+            raise VBDJointReplicatedRunnerError(
+                "nonqualifying fit receipt cannot retain aggregate summaries"
+            )
         max_r_hat = _nonnegative_finite("fit receipt max_r_hat", self.max_r_hat)
         min_bulk = _nonnegative_finite("fit receipt min_bulk_ess", self.min_bulk_ess)
         min_tail = _nonnegative_finite("fit receipt min_tail_ess", self.min_tail_ess)
         wall_time = _nonnegative_finite(
             "fit receipt wall_time_seconds", self.wall_time_seconds
         )
+        _timestamp("fit receipt completed_at", self.completed_at)
+        if type(self.worker_process_id) is not int or self.worker_process_id <= 0:
+            raise VBDJointReplicatedRunnerError(
+                "fit receipt worker process ID is invalid"
+            )
         if (
             max_r_hat > VBD_JOINT_FULL_RHAT_MAX
             or min_bulk < VBD_JOINT_FULL_ESS_MIN
@@ -794,12 +1022,18 @@ class VBDJointReplicatedFitReceipt:
     def body_without_hash(self) -> dict:
         return {
             "slot_id": self.slot_id,
+            "namespace": self.namespace,
             "claim_hash": self.claim_hash,
             "launch_receipt_hash": self.launch_receipt_hash,
             "prepared_input_hash": self.prepared_input_hash,
             "dataset_hash": self.dataset_hash,
             "variant": self.variant,
             "fit_summary_hash": self.fit_summary_hash,
+            "aggregate_summary": (
+                None
+                if self.aggregate_summary is None
+                else self.aggregate_summary.to_dict()
+            ),
             "diagnostics_hash": self.diagnostics_hash,
             "max_r_hat": self.max_r_hat,
             "min_bulk_ess": self.min_bulk_ess,
@@ -807,6 +1041,8 @@ class VBDJointReplicatedFitReceipt:
             "divergence_count": self.divergence_count,
             "max_treedepth_count": self.max_treedepth_count,
             "wall_time_seconds": self.wall_time_seconds,
+            "completed_at": self.completed_at,
+            "worker_process_id": self.worker_process_id,
         }
 
     def to_dict(self) -> dict:
@@ -834,13 +1070,18 @@ def _fit_receipt_path(execution_root: Path, claim_hash: str) -> Path:
     return fits / f"{_sha('claim_hash', claim_hash)}.json"
 
 
-def persist_validated_fit_receipt(
+def _persist_isolated_worker_fit(
     execution_root: Path,
     receipt: VBDJointReplicatedFitReceipt,
     *,
     launch_receipt: VBDJointReplicatedLaunchReceipt,
-) -> None:
-    """Persist the bridge-issued COMPLETE evidence with its consumed launch."""
+    claim: VBDJointReplicatedValidationClaim,
+    case_hash: str,
+) -> tuple[
+    VBDJointReplicatedValidationDisposition,
+    VBDJointReplicatedAttemptCheckpoint,
+]:
+    """Persist COMPLETE evidence derived at the isolated worker boundary."""
 
     if type(receipt) is not VBDJointReplicatedFitReceipt:
         raise VBDJointReplicatedRunnerError("fit receipt must use the exact type")
@@ -849,15 +1090,69 @@ def persist_validated_fit_receipt(
         or receipt.slot_id != launch_receipt.slot_id
         or receipt.claim_hash != launch_receipt.claim_hash
         or receipt.launch_receipt_hash != launch_receipt.launch_receipt_hash
+        or claim.claim_hash != receipt.claim_hash
+        or case_hash != receipt.dataset_hash
     ):
         raise VBDJointReplicatedRunnerError(
             "fit receipt does not bind the consumed launch"
         )
     validate_consumed_execution_claim(execution_root, launch_receipt)
+    completed_at = _timestamp("fit receipt completed_at", receipt.completed_at)
+    if not _checkpoint_completion_matches_claim(
+        VBDJointReplicatedValidationDisposition(
+            namespace=claim.namespace,
+            slot_id=claim.slot_id,
+            claim_hash=claim.claim_hash,
+            state="COMPLETE",
+            failure_code="NONE",
+            result_hash=receipt.receipt_hash,
+            disposition_hash=sha256_json(
+                {
+                    "namespace": claim.namespace,
+                    "slot_id": claim.slot_id,
+                    "claim_hash": claim.claim_hash,
+                    "state": "COMPLETE",
+                    "failure_code": "NONE",
+                    "result_hash": receipt.receipt_hash,
+                }
+            ),
+        ),
+        claim,
+        completed_at,
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "isolated worker fit completed outside the claimed execution window"
+        )
+    disposition_body = {
+        "namespace": claim.namespace,
+        "slot_id": claim.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "COMPLETE",
+        "failure_code": "NONE",
+        "result_hash": receipt.receipt_hash,
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **disposition_body,
+        disposition_hash=sha256_json(disposition_body),
+    )
+    checkpoint = make_checkpoint_for_disposition(
+        disposition,
+        case_hash=case_hash,
+        completed_at=receipt.completed_at,
+        fit_receipt=receipt,
+    )
     path = _fit_receipt_path(execution_root, receipt.claim_hash)
     payload = {
         "fit_receipt": receipt.to_dict(),
         "launch_receipt": launch_receipt.to_dict(),
+        "disposition": {
+            **disposition.body_without_hash(),
+            "disposition_hash": disposition.disposition_hash,
+        },
+        "checkpoint": {
+            **checkpoint.body_without_hash(),
+            "checkpoint_hash": checkpoint.checkpoint_hash,
+        },
     }
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     if hasattr(os, "O_NOFOLLOW"):
@@ -877,11 +1172,15 @@ def persist_validated_fit_receipt(
     finally:
         os.close(descriptor)
     _fsync_directory(path.parent)
+    return disposition, checkpoint
 
 
 def validate_persisted_fit_receipt(
     execution_root: Path,
     receipt: VBDJointReplicatedFitReceipt,
+    *,
+    disposition: VBDJointReplicatedValidationDisposition | None = None,
+    checkpoint: "VBDJointReplicatedAttemptCheckpoint | None" = None,
 ) -> None:
     """Reconcile COMPLETE evidence with the create-once worker receipt store."""
 
@@ -906,6 +1205,8 @@ def validate_persisted_fit_receipt(
     if type(stored) is not dict or set(stored) != {
         "fit_receipt",
         "launch_receipt",
+        "disposition",
+        "checkpoint",
     }:
         raise VBDJointReplicatedRunnerError("persisted fit receipt is malformed")
     try:
@@ -921,6 +1222,24 @@ def validate_persisted_fit_receipt(
     ):
         raise VBDJointReplicatedRunnerError(
             "persisted fit receipt does not match COMPLETE evidence"
+        )
+    if stored["checkpoint"].get("fit_receipt") != receipt.to_dict():
+        raise VBDJointReplicatedRunnerError(
+            "persisted fit checkpoint does not bind COMPLETE evidence"
+        )
+    if disposition is not None and stored["disposition"] != {
+        **disposition.body_without_hash(),
+        "disposition_hash": disposition.disposition_hash,
+    }:
+        raise VBDJointReplicatedRunnerError(
+            "persisted fit disposition does not bind COMPLETE evidence"
+        )
+    if checkpoint is not None and stored["checkpoint"] != {
+        **checkpoint.body_without_hash(),
+        "checkpoint_hash": checkpoint.checkpoint_hash,
+    }:
+        raise VBDJointReplicatedRunnerError(
+            "persisted fit checkpoint does not bind COMPLETE evidence"
         )
     validate_consumed_execution_claim(execution_root, launch)
 
@@ -1127,6 +1446,7 @@ class VBDJointReplicatedAttemptCheckpoint:
                 self.result_hash != self.fit_receipt.receipt_hash
                 or self.claim_hash != self.fit_receipt.claim_hash
                 or self.slot_id != self.fit_receipt.slot_id
+                or self.namespace != self.fit_receipt.namespace
                 or self.case_hash != self.fit_receipt.dataset_hash
             ):
                 raise VBDJointReplicatedRunnerError(
@@ -1255,6 +1575,11 @@ class VBDJointReplicatedAttemptLedger:
             raise VBDJointReplicatedRunnerError("checkpoint state does not bind disposition")
         if checkpoint.result_hash != disposition.result_hash:
             raise VBDJointReplicatedRunnerError("checkpoint result does not bind disposition")
+        completed_at = _timestamp("completed_at", checkpoint.completed_at)
+        if not _checkpoint_completion_matches_claim(disposition, claim, completed_at):
+            raise VBDJointReplicatedRunnerError(
+                "checkpoint completion is outside the claimed execution window"
+            )
         if checkpoint.state == "COMPLETE":
             if self.execution_root is None:
                 raise VBDJointReplicatedRunnerError(
@@ -1263,6 +1588,8 @@ class VBDJointReplicatedAttemptLedger:
             validate_persisted_fit_receipt(
                 self.execution_root,
                 checkpoint.fit_receipt,
+                disposition=disposition,
+                checkpoint=checkpoint,
             )
         elif checkpoint.failure_code in {
             "SAMPLER_ERROR",
@@ -1278,10 +1605,15 @@ class VBDJointReplicatedAttemptLedger:
                 disposition,
                 checkpoint,
             )
-        completed_at = _timestamp("completed_at", checkpoint.completed_at)
-        if not _checkpoint_completion_matches_claim(disposition, claim, completed_at):
-            raise VBDJointReplicatedRunnerError(
-                "checkpoint completion is outside the claimed execution window"
+        elif checkpoint.failure_code == "SAMPLER_TIMEOUT":
+            if self.execution_root is None:
+                raise VBDJointReplicatedRunnerError(
+                    "sampler timeout lacks an authenticated receipt store"
+                )
+            _validate_persisted_sampler_timeout_hold(
+                self.execution_root,
+                disposition,
+                checkpoint,
             )
         if disposition.slot_id in {item.slot_id for item in self.dispositions}:
             raise VBDJointReplicatedRunnerError("disposition already exists for slot")
@@ -1341,6 +1673,98 @@ class VBDJointReplicatedAttemptLedger:
                 ],
             }
         )
+
+
+def recover_attempt_ledger(
+    execution_root: Path,
+    *,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+) -> VBDJointReplicatedAttemptLedger:
+    """Recover all durable claims and exact terminal evidence after a restart."""
+
+    _require_observed_runtime_manifest(runtime_manifest)
+    root = _resolved_execution_root(execution_root)
+    ledger = VBDJointReplicatedAttemptLedger(execution_root=root)
+    launches = root / "launches"
+    if not launches.exists():
+        return ledger
+    for path in sorted(launches.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            claim = _claim_from_dict(payload["claim"])
+            launch = VBDJointReplicatedLaunchReceipt(**payload["launch_receipt"])
+        except (
+            OSError,
+            json.JSONDecodeError,
+            KeyError,
+            TypeError,
+            VBDJointReplicatedRunnerError,
+        ) as exc:
+            raise VBDJointReplicatedRunnerError(
+                "durable launch record cannot be recovered"
+            ) from exc
+        validate_consumed_execution_claim(root, launch)
+        if launch.claim_hash != claim.claim_hash or launch.slot_id != claim.slot_id:
+            raise VBDJointReplicatedRunnerError(
+                "durable launch record does not bind its claim"
+            )
+        slot = _require_canonical_slot_by_id(claim.slot_id)
+        ledger = ledger.append_claim(
+            claim,
+            slot,
+            vbd_joint_replicated_validation_plan().plan_hash,
+            runtime_manifest=runtime_manifest,
+        )
+        terminal_paths = tuple(
+            candidate
+            for directory in ("fits", "holds", "timeouts")
+            if (candidate := root / directory / f"{claim.claim_hash}.json").exists()
+        )
+        if len(terminal_paths) > 1:
+            raise VBDJointReplicatedRunnerError(
+                "durable claim has conflicting terminal evidence"
+            )
+        if terminal_paths:
+            disposition, checkpoint = _terminal_evidence_from_path(terminal_paths[0])
+            ledger = ledger.append_disposition(disposition, checkpoint)
+    return ledger
+
+
+def _terminal_evidence_from_path(
+    path: Path,
+) -> tuple[
+    VBDJointReplicatedValidationDisposition,
+    VBDJointReplicatedAttemptCheckpoint,
+]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if path.parent.name == "fits":
+            fit_receipt = _fit_receipt_from_dict(payload["fit_receipt"])
+            disposition = VBDJointReplicatedValidationDisposition(
+                **payload["disposition"]
+            )
+            checkpoint_payload = payload["checkpoint"]
+        else:
+            disposition_payload = dict(payload["disposition"])
+            disposition = VBDJointReplicatedValidationDisposition(
+                **disposition_payload
+            )
+            checkpoint_payload = payload["checkpoint"]
+            fit_receipt = None
+        checkpoint_body = dict(checkpoint_payload)
+        checkpoint_body["fit_receipt"] = fit_receipt
+        return disposition, VBDJointReplicatedAttemptCheckpoint(**checkpoint_body)
+    except (
+        OSError,
+        json.JSONDecodeError,
+        KeyError,
+        TypeError,
+        VBDJointReplicatedPlanError,
+        VBDJointReplicatedRunnerError,
+    ) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "durable terminal evidence cannot be recovered"
+        ) from exc
 
 
 def _canonical_ledger_rows(rows):
@@ -1580,6 +2004,61 @@ def persist_sampler_timeout_hold(
     return disposition, checkpoint
 
 
+def _validate_persisted_sampler_timeout_hold(
+    execution_root: Path,
+    disposition: VBDJointReplicatedValidationDisposition,
+    checkpoint: VBDJointReplicatedAttemptCheckpoint,
+) -> None:
+    path = (
+        _resolved_execution_root(execution_root)
+        / "timeouts"
+        / f"{disposition.claim_hash}.json"
+    )
+    try:
+        stored = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted sampler timeout receipt is unavailable"
+        ) from exc
+    expected = {
+        "disposition": {
+            **disposition.body_without_hash(),
+            "disposition_hash": disposition.disposition_hash,
+        },
+        "checkpoint": {
+            **checkpoint.body_without_hash(),
+            "checkpoint_hash": checkpoint.checkpoint_hash,
+        },
+        "launch_receipt_hash": None,
+    }
+    if type(stored) is not dict or set(stored) != set(expected):
+        raise VBDJointReplicatedRunnerError(
+            "persisted sampler timeout receipt is malformed"
+        )
+    launch_path = _launch_receipt_path(execution_root, disposition.claim_hash)
+    try:
+        launch_payload = json.loads(launch_path.read_text(encoding="utf-8"))
+        launch = VBDJointReplicatedLaunchReceipt(
+            **launch_payload["launch_receipt"]
+        )
+    except (
+        OSError,
+        json.JSONDecodeError,
+        KeyError,
+        TypeError,
+        VBDJointReplicatedRunnerError,
+    ) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "persisted sampler timeout launch is invalid"
+        ) from exc
+    expected["launch_receipt_hash"] = launch.launch_receipt_hash
+    if stored != expected:
+        raise VBDJointReplicatedRunnerError(
+            "persisted sampler timeout does not bind the ledger evidence"
+        )
+    validate_consumed_execution_claim(execution_root, launch)
+
+
 @dataclass(frozen=True, slots=True)
 class _VBDJointReplicatedWorkerHoldReceipt:
     slot_id: str
@@ -1799,10 +2278,17 @@ def _validate_persisted_worker_execution_hold(
         )
     launch_path = _launch_receipt_path(execution_root, disposition.claim_hash)
     try:
+        launch_payload = json.loads(launch_path.read_text(encoding="utf-8"))
         launch = VBDJointReplicatedLaunchReceipt(
-            **json.loads(launch_path.read_text(encoding="utf-8"))
+            **launch_payload["launch_receipt"]
         )
-    except (OSError, json.JSONDecodeError, TypeError, VBDJointReplicatedRunnerError) as exc:
+    except (
+        OSError,
+        json.JSONDecodeError,
+        KeyError,
+        TypeError,
+        VBDJointReplicatedRunnerError,
+    ) as exc:
         raise VBDJointReplicatedRunnerError(
             "persisted worker HOLD launch is invalid"
         ) from exc
@@ -1971,6 +2457,8 @@ def combine_namespace(
             validate_persisted_fit_receipt(
                 ledger.execution_root,
                 checkpoint.fit_receipt,
+                disposition=disposition,
+                checkpoint=checkpoint,
             )
         elif checkpoint.failure_code in {
             "SAMPLER_ERROR",
@@ -1982,6 +2470,16 @@ def combine_namespace(
                     "worker HOLD namespace lacks an authenticated receipt store"
                 )
             _validate_persisted_worker_execution_hold(
+                ledger.execution_root,
+                disposition,
+                checkpoint,
+            )
+        elif checkpoint.failure_code == "SAMPLER_TIMEOUT":
+            if ledger.execution_root is None:
+                raise VBDJointReplicatedRunnerError(
+                    "sampler timeout namespace lacks an authenticated receipt store"
+                )
+            _validate_persisted_sampler_timeout_hold(
                 ledger.execution_root,
                 disposition,
                 checkpoint,
@@ -2456,6 +2954,9 @@ __all__ = [
     "VBDJointReplicatedRuntimeManifest",
     "VBDJointReplicatedExecutionPacket",
     "VBDJointReplicatedExecutionAuthorization",
+    "VBDJointReplicatedCoefficientSummary",
+    "VBDJointReplicatedAggregateSummary",
+    "VBDJointReplicatedFitReceipt",
     "VBDJointReplicatedAttemptCheckpoint",
     "VBDJointReplicatedAttemptLedger",
     "VBDJointReplicatedNamespaceSummary",
@@ -2468,6 +2969,7 @@ __all__ = [
     "make_claim_for_slot",
     "dataset_regeneration_failure_case_hash",
     "make_checkpoint_for_disposition",
+    "recover_attempt_ledger",
     "combine_namespace",
     "emit_sanitized_ensemble_artifact",
     "validate_sanitized_ensemble_artifact",
