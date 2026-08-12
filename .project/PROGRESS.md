@@ -6149,8 +6149,8 @@
   over the merged model path.
 - Reconciled the remaining docs-only gaps: the six-criterion signal promotion
   record, positive Eligible denominator, exact percentage-point velocity
-  conversion, legacy pending-roadmap wording, and attribution for the reported
-  unavailable local prototype.
+  conversion, legacy pending-roadmap wording, and a direct source disclosure
+  for the reported unavailable local prototype.
 - Local verification: strict OpenSpec validation passes for both the joint
   methodology and synthetic-proof changes; queue JSON parsing and
   `git diff --check` pass. No model, runner, privacy, sampler, deployment, or

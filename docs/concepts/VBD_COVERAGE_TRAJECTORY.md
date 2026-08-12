@@ -607,9 +607,12 @@ FluencyTracr contracts or fixtures.
 As of PR #485 head `c3734c7f6192918088b9fe2184620ff7b6620966`,
 merged as `a6924e3e371428d955fe255ddee79e736228a9a4`:
 
-- a separate local-first prototype is reported to implement and test related
-  formulas and governance rules, but that evidence is not contained in or
-  independently verifiable from this repository and grants no authority here;
+- **Source disclosure:** James Kelley supplied the work-pattern-family adoption
+  funnel and coverage-trajectory framing. A separate local-first prototype is
+  reported to implement related formulas and governance rules, but its
+  repository, source bytes, and results are unavailable here. No code, data,
+  thresholds, or execution evidence were imported from it, and it grants no
+  authority in FluencyTracr;
 - the reusable V4 synthetic model path now preserves exact preparation
   provenance, deterministic slot seeds and settings, and fail-closed
   diagnostics while reaching the existing full joint likelihood;
