@@ -6020,3 +6020,32 @@
   external execution, merge, deployment, or production proof occurred. All
   study gates and customer/economic/output authorization flags remain
   `HOLD`/false.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 V4 execution receipts)
+
+- Closed the exact-head execution-boundary findings after the V4 full-model
+  bridge. A caller-provided hash is no longer review authority: the runner
+  observes an independent trusted GitHub approval for the exact source commit
+  and binds that authenticated receipt into authorization.
+- Added a durable create-once launch boundary. Each immutable claim is consumed
+  atomically before model construction, the full-model helper revalidates the
+  persisted launch receipt at its last sampler boundary, and a second launch
+  with the same claim fails before `pm.sample`.
+- Enclosed V4 sampling in the frozen claim deadline. Deadline expiry interrupts
+  the sampler path and persists one append-only `SAMPLER_TIMEOUT` disposition
+  and checkpoint bound to the claim, launch, and deterministic case.
+- Replaced bare `COMPLETE` result hashes with closed sanitized fit receipts.
+  They bind the exact claim, launch, prepared input, dataset, variant, fit
+  summary, diagnostic summary, finite passing R-hat/ESS/divergence/tree-depth
+  values, and sub-deadline wall time; the checkpoint and combiner revalidate
+  those bindings.
+- Added fail-first regressions for forged review authority, repeated sampler
+  launch, deadline timeout durability, arbitrary COMPLETE hashes, and failed
+  diagnostic receipts. Exact local evidence: VBD model/preparation/bridge
+  `55/55`; runner `30/30`; final exact-head `vbd-engine` shard `859/859` in
+  `705.87s`; compileall, strict OpenSpec, shard validation, queue JSON, and
+  diff checks pass.
+- No real sampler, preflight, canary, qualifying study, customer or real data,
+  external execution, merge, or production deployment occurred. Execution
+  still requires a future exact-commit independent approval and remains
+  `HOLD` until that evidence exists.

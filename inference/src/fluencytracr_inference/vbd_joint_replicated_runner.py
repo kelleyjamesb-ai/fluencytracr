@@ -1,11 +1,11 @@
-"""Sampler-free V4 runner, ledger, combiner, and sanitized artifact.
+"""V4 execution admission, durable receipts, ledger, and sanitized artifact.
 
 The runner boundary is intentionally narrower than model execution.  It binds
 one frozen plan slot to one runtime manifest and one create-once claim, then
-records only hashes and closed categorical states.  No function in this
-module imports PyMC, starts a worker, writes a checkpoint, or runs a sampler.
-The future execution runner can consume the immutable packets after exact
-pre-execution review.
+records only sanitized receipts, hashes, and closed categorical states. This
+module never imports PyMC or runs a sampler; it authenticates review evidence,
+atomically consumes claims, and persists launch or timeout receipts for the
+model bridge.
 """
 
 from __future__ import annotations
@@ -14,13 +14,16 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import hashlib
 import importlib.metadata
+import json
 import math
+import os
 from pathlib import Path
 import platform
 import re
 import subprocess
 
 from .hashing import sha256_json
+from .vbd_joint_types import VBD_JOINT_FULL_ESS_MIN, VBD_JOINT_FULL_RHAT_MAX
 from .vbd_joint_replicated_synthetic import (
     generate_vbd_joint_replicated_case_for_slot,
     validate_vbd_joint_replicated_dataset,
@@ -85,6 +88,8 @@ _FORBIDDEN_ARTIFACT_TOKENS = (
     "employee",
     "raw",
 )
+_REVIEW_REPOSITORY = "kelleyjamesb-ai/fluencytracr"
+_TRUSTED_REVIEW_ASSOCIATIONS = ("COLLABORATOR", "MEMBER", "OWNER")
 
 
 class VBDJointReplicatedRunnerError(VBDJointReplicatedPlanError):
@@ -470,6 +475,323 @@ class VBDJointReplicatedExecutionAuthorization:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class VBDJointReplicatedReviewReceipt:
+    """Authenticated GitHub approval for one exact source commit."""
+
+    repository: str
+    pull_number: int
+    review_id: int
+    reviewer_login: str
+    author_login: str
+    author_association: str
+    reviewed_commit: str
+    state: str
+    submitted_at: str
+    receipt_hash: str
+
+    def __post_init__(self) -> None:
+        if self.repository != _REVIEW_REPOSITORY:
+            raise VBDJointReplicatedRunnerError("authenticated review repository is invalid")
+        if type(self.pull_number) is not int or self.pull_number <= 0:
+            raise VBDJointReplicatedRunnerError("authenticated review pull number is invalid")
+        if type(self.review_id) is not int or self.review_id <= 0:
+            raise VBDJointReplicatedRunnerError("authenticated review ID is invalid")
+        if (
+            type(self.reviewer_login) is not str
+            or not self.reviewer_login
+            or type(self.author_login) is not str
+            or not self.author_login
+            or self.reviewer_login == self.author_login
+        ):
+            raise VBDJointReplicatedRunnerError("authenticated review must be independent")
+        if self.author_association not in _TRUSTED_REVIEW_ASSOCIATIONS:
+            raise VBDJointReplicatedRunnerError("authenticated reviewer is not trusted")
+        _commit("reviewed_commit", self.reviewed_commit)
+        if self.state != "APPROVED":
+            raise VBDJointReplicatedRunnerError("authenticated review did not approve execution")
+        _timestamp("submitted_at", self.submitted_at)
+        _sha("receipt_hash", self.receipt_hash)
+        if self.receipt_hash != sha256_json(self.body_without_hash()):
+            raise VBDJointReplicatedRunnerError("authenticated review receipt hash is invalid")
+
+    def body_without_hash(self) -> dict:
+        return {
+            "repository": self.repository,
+            "pull_number": self.pull_number,
+            "review_id": self.review_id,
+            "reviewer_login": self.reviewer_login,
+            "author_login": self.author_login,
+            "author_association": self.author_association,
+            "reviewed_commit": self.reviewed_commit,
+            "state": self.state,
+            "submitted_at": self.submitted_at,
+        }
+
+
+def observe_github_review_receipt(
+    *, pull_number: int, review_id: int
+) -> VBDJointReplicatedReviewReceipt:
+    """Read independently authenticated approval evidence from GitHub."""
+
+    try:
+        review_result = subprocess.run(
+            (
+                "gh", "api",
+                f"repos/{_REVIEW_REPOSITORY}/pulls/{pull_number}/reviews/{review_id}",
+            ),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        pull_result = subprocess.run(
+            ("gh", "api", f"repos/{_REVIEW_REPOSITORY}/pulls/{pull_number}"),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        review = json.loads(review_result.stdout)
+        pull = json.loads(pull_result.stdout)
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+        raise VBDJointReplicatedRunnerError(
+            "authenticated review evidence is unavailable"
+        ) from exc
+    if (
+        review.get("id") != review_id
+        or pull.get("number") != pull_number
+        or pull.get("base", {}).get("repo", {}).get("full_name")
+        != _REVIEW_REPOSITORY
+        or review.get("commit_id") != pull.get("head", {}).get("sha")
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "authenticated review does not match the exact pull request head"
+        )
+    body = {
+        "repository": _REVIEW_REPOSITORY,
+        "pull_number": pull_number,
+        "review_id": review_id,
+        "reviewer_login": review.get("user", {}).get("login"),
+        "author_login": pull.get("user", {}).get("login"),
+        "author_association": review.get("author_association"),
+        "reviewed_commit": review.get("commit_id"),
+        "state": review.get("state"),
+        "submitted_at": review.get("submitted_at"),
+    }
+    return VBDJointReplicatedReviewReceipt(
+        **body,
+        receipt_hash=sha256_json(body),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class VBDJointReplicatedLaunchReceipt:
+    """Durable create-once proof that one immutable claim was consumed."""
+
+    slot_id: str
+    packet_hash: str
+    claim_hash: str
+    authorization_hash: str
+    review_receipt_hash: str
+    consumed_at: str
+    launch_receipt_hash: str
+
+    def __post_init__(self) -> None:
+        if type(self.slot_id) is not str or not self.slot_id:
+            raise VBDJointReplicatedRunnerError("launch slot ID is invalid")
+        for name, value in (
+            ("packet_hash", self.packet_hash),
+            ("claim_hash", self.claim_hash),
+            ("authorization_hash", self.authorization_hash),
+            ("review_receipt_hash", self.review_receipt_hash),
+            ("launch_receipt_hash", self.launch_receipt_hash),
+        ):
+            _sha(name, value)
+        _timestamp("consumed_at", self.consumed_at)
+        if self.launch_receipt_hash != sha256_json(self.body_without_hash()):
+            raise VBDJointReplicatedRunnerError("launch receipt hash is invalid")
+
+    def body_without_hash(self) -> dict:
+        return {
+            "slot_id": self.slot_id,
+            "packet_hash": self.packet_hash,
+            "claim_hash": self.claim_hash,
+            "authorization_hash": self.authorization_hash,
+            "review_receipt_hash": self.review_receipt_hash,
+            "consumed_at": self.consumed_at,
+        }
+
+    def to_dict(self) -> dict:
+        return {**self.body_without_hash(), "launch_receipt_hash": self.launch_receipt_hash}
+
+
+def _launch_receipt_path(execution_root: Path, claim_hash: str) -> Path:
+    if not isinstance(execution_root, Path):
+        raise VBDJointReplicatedRunnerError("execution root must use the exact path type")
+    try:
+        resolved_root = execution_root.resolve(strict=True)
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError("execution root is unavailable") from exc
+    if not resolved_root.is_dir():
+        raise VBDJointReplicatedRunnerError("execution root is not a directory")
+    launches = resolved_root / "launches"
+    launches.mkdir(mode=0o700, exist_ok=True)
+    if launches.is_symlink():
+        raise VBDJointReplicatedRunnerError("execution launch directory is unsafe")
+    return launches / f"{_sha('claim_hash', claim_hash)}.json"
+
+
+def consume_execution_claim(
+    execution_root: Path,
+    slot: VBDJointReplicatedValidationSlot,
+    *,
+    prepared_dataset_hash: str,
+    packet: VBDJointReplicatedExecutionPacket,
+    claim: VBDJointReplicatedValidationClaim,
+    authorization: VBDJointReplicatedExecutionAuthorization,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+    review_receipt: VBDJointReplicatedReviewReceipt,
+) -> VBDJointReplicatedLaunchReceipt:
+    """Atomically consume a reviewed claim immediately before model construction."""
+
+    validate_reviewed_execution_authorization(
+        slot,
+        prepared_dataset_hash=prepared_dataset_hash,
+        packet=packet,
+        claim=claim,
+        authorization=authorization,
+        runtime_manifest=runtime_manifest,
+        review_receipt=review_receipt,
+    )
+    body = {
+        "slot_id": slot.slot_id,
+        "packet_hash": packet.packet_hash,
+        "claim_hash": claim.claim_hash,
+        "authorization_hash": authorization.authorization_hash,
+        "review_receipt_hash": review_receipt.receipt_hash,
+        "consumed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    receipt = VBDJointReplicatedLaunchReceipt(
+        **body,
+        launch_receipt_hash=sha256_json(body),
+    )
+    path = _launch_receipt_path(execution_root, claim.claim_hash)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except FileExistsError as exc:
+        raise VBDJointReplicatedRunnerError(
+            "execution claim was already consumed"
+        ) from exc
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError("launch receipt could not be persisted") from exc
+    try:
+        payload = (
+            json.dumps(receipt.to_dict(), sort_keys=True, separators=(",", ":"))
+            + "\n"
+        ).encode()
+        os.write(descriptor, payload)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    return receipt
+
+
+def validate_consumed_execution_claim(
+    execution_root: Path,
+    receipt: VBDJointReplicatedLaunchReceipt,
+) -> None:
+    if type(receipt) is not VBDJointReplicatedLaunchReceipt:
+        raise VBDJointReplicatedRunnerError("launch receipt must use the exact type")
+    path = _launch_receipt_path(execution_root, receipt.claim_hash)
+    try:
+        stored = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise VBDJointReplicatedRunnerError("persisted launch receipt is unavailable") from exc
+    if stored != receipt.to_dict():
+        raise VBDJointReplicatedRunnerError("persisted launch receipt does not match")
+
+
+@dataclass(frozen=True, slots=True)
+class VBDJointReplicatedFitReceipt:
+    """Closed sanitized proof that one exact launched fit completed cleanly."""
+
+    slot_id: str
+    claim_hash: str
+    launch_receipt_hash: str
+    prepared_input_hash: str
+    dataset_hash: str
+    variant: str
+    fit_summary_hash: str
+    diagnostics_hash: str
+    max_r_hat: float
+    min_bulk_ess: float
+    min_tail_ess: float
+    divergence_count: int
+    max_treedepth_count: int
+    wall_time_seconds: float
+    receipt_hash: str
+
+    def __post_init__(self) -> None:
+        if type(self.slot_id) is not str or not self.slot_id:
+            raise VBDJointReplicatedRunnerError("fit receipt slot ID is invalid")
+        for name, value in (
+            ("claim_hash", self.claim_hash),
+            ("launch_receipt_hash", self.launch_receipt_hash),
+            ("prepared_input_hash", self.prepared_input_hash),
+            ("dataset_hash", self.dataset_hash),
+            ("fit_summary_hash", self.fit_summary_hash),
+            ("diagnostics_hash", self.diagnostics_hash),
+            ("receipt_hash", self.receipt_hash),
+        ):
+            _sha(name, value)
+        if self.variant not in ("full", "restricted"):
+            raise VBDJointReplicatedRunnerError("fit receipt variant is invalid")
+        max_r_hat = _nonnegative_finite("fit receipt max_r_hat", self.max_r_hat)
+        min_bulk = _nonnegative_finite("fit receipt min_bulk_ess", self.min_bulk_ess)
+        min_tail = _nonnegative_finite("fit receipt min_tail_ess", self.min_tail_ess)
+        wall_time = _nonnegative_finite(
+            "fit receipt wall_time_seconds", self.wall_time_seconds
+        )
+        if (
+            max_r_hat > VBD_JOINT_FULL_RHAT_MAX
+            or min_bulk < VBD_JOINT_FULL_ESS_MIN
+            or min_tail < VBD_JOINT_FULL_ESS_MIN
+            or type(self.divergence_count) is not int
+            or self.divergence_count != 0
+            or type(self.max_treedepth_count) is not int
+            or self.max_treedepth_count != 0
+            or wall_time >= VBD_JOINT_REPLICATED_PER_FIT_TIMEOUT_SECONDS
+        ):
+            raise VBDJointReplicatedRunnerError(
+                "fit receipt diagnostics do not support COMPLETE"
+            )
+        if self.receipt_hash != sha256_json(self.body_without_hash()):
+            raise VBDJointReplicatedRunnerError("fit receipt hash is invalid")
+
+    def body_without_hash(self) -> dict:
+        return {
+            "slot_id": self.slot_id,
+            "claim_hash": self.claim_hash,
+            "launch_receipt_hash": self.launch_receipt_hash,
+            "prepared_input_hash": self.prepared_input_hash,
+            "dataset_hash": self.dataset_hash,
+            "variant": self.variant,
+            "fit_summary_hash": self.fit_summary_hash,
+            "diagnostics_hash": self.diagnostics_hash,
+            "max_r_hat": self.max_r_hat,
+            "min_bulk_ess": self.min_bulk_ess,
+            "min_tail_ess": self.min_tail_ess,
+            "divergence_count": self.divergence_count,
+            "max_treedepth_count": self.max_treedepth_count,
+            "wall_time_seconds": self.wall_time_seconds,
+        }
+
+    def to_dict(self) -> dict:
+        return {**self.body_without_hash(), "receipt_hash": self.receipt_hash}
+
+
 def build_sampler_free_execution_packet(
     slot: VBDJointReplicatedValidationSlot,
     *,
@@ -524,6 +846,7 @@ def authorize_reviewed_execution(
     runtime_manifest: VBDJointReplicatedRuntimeManifest,
     review_state: str,
     review_receipt_hash: str,
+    review_receipt: VBDJointReplicatedReviewReceipt | None = None,
 ) -> VBDJointReplicatedExecutionAuthorization:
     """Bind an external GO receipt to one exact packet and immutable claim."""
 
@@ -547,6 +870,26 @@ def authorize_reviewed_execution(
         or claim.chain_seeds != packet.chain_seeds
     ):
         raise VBDJointReplicatedRunnerError("claim does not bind the execution packet")
+    if type(review_receipt) is not VBDJointReplicatedReviewReceipt:
+        raise VBDJointReplicatedRunnerError(
+            "authenticated review receipt is required"
+        )
+    observed_review = observe_github_review_receipt(
+        pull_number=review_receipt.pull_number,
+        review_id=review_receipt.review_id,
+    )
+    if review_receipt != observed_review:
+        raise VBDJointReplicatedRunnerError(
+            "authenticated review receipt does not match GitHub"
+        )
+    if (
+        review_receipt.reviewed_commit != runtime_manifest.source_commit
+        or review_receipt.receipt_hash != review_receipt_hash
+        or review_state != "GO"
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "authenticated review does not bind the execution source"
+        )
     body = {
         "slot_id": slot.slot_id,
         "packet_hash": packet.packet_hash,
@@ -570,6 +913,7 @@ def validate_reviewed_execution_authorization(
     claim: VBDJointReplicatedValidationClaim,
     authorization: VBDJointReplicatedExecutionAuthorization,
     runtime_manifest: VBDJointReplicatedRuntimeManifest,
+    review_receipt: VBDJointReplicatedReviewReceipt,
 ) -> None:
     if type(packet) is not VBDJointReplicatedExecutionPacket:
         raise VBDJointReplicatedRunnerError(
@@ -594,6 +938,7 @@ def validate_reviewed_execution_authorization(
         runtime_manifest=runtime_manifest,
         review_state=authorization.review_state,
         review_receipt_hash=authorization.review_receipt_hash,
+        review_receipt=review_receipt,
     )
     if authorization != expected:
         raise VBDJointReplicatedRunnerError(
@@ -627,6 +972,7 @@ class VBDJointReplicatedAttemptCheckpoint:
     case_hash: str
     result_hash: str
     checkpoint_hash: str
+    fit_receipt: VBDJointReplicatedFitReceipt | None = None
 
     def __post_init__(self) -> None:
         _closed("namespace", self.namespace, VBD_JOINT_REPLICATED_NAMESPACES)
@@ -639,6 +985,24 @@ class VBDJointReplicatedAttemptCheckpoint:
             ("checkpoint_hash", self.checkpoint_hash),
         ):
             _sha(name, value)
+        if self.state == "COMPLETE":
+            if type(self.fit_receipt) is not VBDJointReplicatedFitReceipt:
+                raise VBDJointReplicatedRunnerError(
+                    "complete checkpoint lacks a validated fit receipt"
+                )
+            if (
+                self.result_hash != self.fit_receipt.receipt_hash
+                or self.claim_hash != self.fit_receipt.claim_hash
+                or self.slot_id != self.fit_receipt.slot_id
+                or self.case_hash != self.fit_receipt.dataset_hash
+            ):
+                raise VBDJointReplicatedRunnerError(
+                    "complete result does not bind the validated fit receipt"
+                )
+        elif self.fit_receipt is not None:
+            raise VBDJointReplicatedRunnerError(
+                "held checkpoint cannot carry a complete fit receipt"
+            )
         if self.state == "COMPLETE" and self.failure_code != "NONE":
             raise VBDJointReplicatedRunnerError("complete checkpoint has a failure")
         if self.state == "HOLD" and self.failure_code == "NONE":
@@ -659,6 +1023,7 @@ class VBDJointReplicatedAttemptCheckpoint:
             "completed_at": self.completed_at,
             "case_hash": self.case_hash,
             "result_hash": self.result_hash,
+            "fit_receipt": None if self.fit_receipt is None else self.fit_receipt.to_dict(),
         }
 
 
@@ -922,6 +1287,7 @@ def make_checkpoint_for_disposition(
     *,
     case_hash: str,
     completed_at: str,
+    fit_receipt: VBDJointReplicatedFitReceipt | None = None,
 ) -> VBDJointReplicatedAttemptCheckpoint:
     body = {
         "namespace": disposition.namespace,
@@ -932,11 +1298,108 @@ def make_checkpoint_for_disposition(
         "completed_at": _timestamp("completed_at", completed_at).isoformat(),
         "case_hash": _sha("case_hash", case_hash),
         "result_hash": disposition.result_hash,
+        "fit_receipt": None if fit_receipt is None else fit_receipt.to_dict(),
     }
     return VBDJointReplicatedAttemptCheckpoint(
-        **body,
+        namespace=body["namespace"],
+        slot_id=body["slot_id"],
+        claim_hash=body["claim_hash"],
+        state=body["state"],
+        failure_code=body["failure_code"],
+        completed_at=body["completed_at"],
+        case_hash=body["case_hash"],
+        result_hash=body["result_hash"],
+        fit_receipt=fit_receipt,
         checkpoint_hash=sha256_json(body),
     )
+
+
+def persist_sampler_timeout_hold(
+    execution_root: Path,
+    slot: VBDJointReplicatedValidationSlot,
+    *,
+    claim: VBDJointReplicatedValidationClaim,
+    launch_receipt: VBDJointReplicatedLaunchReceipt,
+    case_hash: str,
+) -> tuple[
+    VBDJointReplicatedValidationDisposition,
+    VBDJointReplicatedAttemptCheckpoint,
+]:
+    """Persist the required durable HOLD after the deadline interrupts sampling."""
+
+    slot = _require_canonical_slot(slot)
+    validate_claim_for_slot(
+        claim, slot, vbd_joint_replicated_validation_plan().plan_hash
+    )
+    if (
+        launch_receipt.slot_id != slot.slot_id
+        or launch_receipt.claim_hash != claim.claim_hash
+    ):
+        raise VBDJointReplicatedRunnerError("timeout launch receipt does not bind claim")
+    validate_consumed_execution_claim(execution_root, launch_receipt)
+    result_hash = sha256_json(
+        {
+            "receipt_schema": "VBD_JOINT_REPLICATED_SAMPLER_TIMEOUT_V1",
+            "slot_id": slot.slot_id,
+            "claim_hash": claim.claim_hash,
+            "launch_receipt_hash": launch_receipt.launch_receipt_hash,
+            "failure_code": "SAMPLER_TIMEOUT",
+        }
+    )
+    disposition_body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "HOLD",
+        "failure_code": "SAMPLER_TIMEOUT",
+        "result_hash": result_hash,
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **disposition_body,
+        disposition_hash=sha256_json(disposition_body),
+    )
+    completed_at = max(
+        datetime.now(timezone.utc),
+        _timestamp("deadline_at", claim.deadline_at),
+    ).isoformat()
+    checkpoint = make_checkpoint_for_disposition(
+        disposition,
+        case_hash=case_hash,
+        completed_at=completed_at,
+    )
+    resolved_root = execution_root.resolve(strict=True)
+    timeouts = resolved_root / "timeouts"
+    timeouts.mkdir(mode=0o700, exist_ok=True)
+    if timeouts.is_symlink():
+        raise VBDJointReplicatedRunnerError("execution timeout directory is unsafe")
+    path = timeouts / f"{claim.claim_hash}.json"
+    payload = {
+        "disposition": {
+            **disposition.body_without_hash(),
+            "disposition_hash": disposition.disposition_hash,
+        },
+        "checkpoint": {
+            **checkpoint.body_without_hash(),
+            "checkpoint_hash": checkpoint.checkpoint_hash,
+        },
+        "launch_receipt_hash": launch_receipt.launch_receipt_hash,
+    }
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except FileExistsError as exc:
+        raise VBDJointReplicatedRunnerError("sampler timeout HOLD already exists") from exc
+    except OSError as exc:
+        raise VBDJointReplicatedRunnerError("sampler timeout HOLD could not persist") from exc
+    try:
+        serialized = (json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n").encode()
+        os.write(descriptor, serialized)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    return disposition, checkpoint
 
 
 @dataclass(frozen=True, slots=True)

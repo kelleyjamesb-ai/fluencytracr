@@ -230,9 +230,11 @@ back to V3 seed rules. This bridge preserves the frozen V3 likelihood and
 priors; it creates no execution authority.
 
 The last sampler boundary separately requires the exact observed runtime
-manifest, deterministic execution packet, immutable claim, and a hash-bound
-external review receipt whose closed state is `GO`. Those bindings must agree
-with the prepared case and frozen slot before sampler initialization.
+manifest, deterministic execution packet, immutable claim, and an independently
+authenticated GitHub approval receipt for the exact source commit. A
+caller-provided hash or self-issued `GO` value is not review authority. Those
+bindings must agree with the prepared case and frozen slot before sampler
+initialization.
 
 ## Immutable Claims And Attempt Ledger
 
@@ -248,6 +250,9 @@ binds namespace, slot ID, scenario ID, replicate index or null, dataset seed,
 ordered chain seeds, model variant, plan hash, exact source commit, runtime
 manifest hash, start timestamp, deadline timestamp, and claim hash. An existing,
 ambiguous, missing, replaced, or mismatched claim stops before sampling.
+The reviewed claim is atomically consumed into a create-once launch receipt
+before model construction. A consumed, missing, replaced, or mismatched launch
+receipt stops every later sampler initialization; retries are prohibited.
 
 Every claim receives exactly one append-only disposition. Claims and
 dispositions cannot be deleted, overwritten, compacted away, or replaced by a
@@ -271,6 +276,12 @@ Disposition state is one of `COMPLETE` or `HOLD`. Failure code is one of:
 
 Checkpoints and artifacts may contain only those codes. Raw exception text,
 tracebacks, paths, arbitrary strings, and substituted codes are prohibited.
+The sampler runs inside the claim deadline. Deadline expiry persists one
+append-only `SAMPLER_TIMEOUT` HOLD checkpoint. A `COMPLETE` checkpoint must
+carry a sanitized fit receipt binding the claim, launch, prepared input,
+dataset, variant, fit summary, diagnostic summary, finite passing diagnostic
+values, and sub-deadline wall time; a bare or caller-selected result hash is
+not admissible.
 
 The qualifying combiner admits only the exact ordered `qualifying` manifest and
 its root. It must reject every preflight or canary slot, hash, claim, or

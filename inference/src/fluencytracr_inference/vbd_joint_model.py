@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import contextmanager
+from datetime import datetime, timezone
 import math
+from pathlib import Path
+import signal
+import threading
 import time
 from typing import Literal
 
@@ -55,13 +60,59 @@ from .vbd_joint_replicated_validation_plan import (
 from .vbd_joint_replicated_runner import (
     VBDJointReplicatedExecutionAuthorization,
     VBDJointReplicatedExecutionPacket,
+    VBDJointReplicatedReviewReceipt,
+    VBDJointReplicatedLaunchReceipt,
     VBDJointReplicatedRuntimeManifest,
     validate_reviewed_execution_authorization,
+    validate_consumed_execution_claim,
 )
 
 
 VBDJointFitMode = Literal["smoke", "full"]
 VBDJointModelVariant = Literal["full", "restricted"]
+
+
+class VBDJointReplicatedSamplerTimeout(VBDJointStructureError):
+    """Raised when the frozen V4 sampler deadline terminates execution."""
+
+
+def _remaining_replicated_sampler_seconds(
+    claim: VBDJointReplicatedValidationClaim,
+) -> float:
+    deadline = datetime.fromisoformat(claim.deadline_at.replace("Z", "+00:00"))
+    return (deadline - datetime.now(timezone.utc)).total_seconds()
+
+
+@contextmanager
+def _replicated_sampler_deadline(
+    claim: VBDJointReplicatedValidationClaim | None,
+):
+    if claim is None:
+        yield
+        return
+    if threading.current_thread() is not threading.main_thread():
+        raise VBDJointStructureError(
+            "V4 sampler deadline requires an isolated main-thread worker"
+        )
+    remaining = _remaining_replicated_sampler_seconds(claim)
+    if remaining <= 0.0:
+        raise VBDJointReplicatedSamplerTimeout(
+            "frozen two-hour sampler deadline elapsed"
+        )
+    prior_handler = signal.getsignal(signal.SIGALRM)
+
+    def deadline_reached(_signum, _frame):
+        raise VBDJointReplicatedSamplerTimeout(
+            "frozen two-hour sampler deadline elapsed"
+        )
+
+    signal.signal(signal.SIGALRM, deadline_reached)
+    signal.setitimer(signal.ITIMER_REAL, remaining)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, prior_handler)
 
 _BEHAVIOR_COEFFICIENTS = (
     "capability_retention",
@@ -763,6 +814,9 @@ def _fit_vbd_joint_model_with_settings(
     replicated_claim: VBDJointReplicatedValidationClaim | None = None,
     replicated_authorization: VBDJointReplicatedExecutionAuthorization | None = None,
     replicated_runtime_manifest: VBDJointReplicatedRuntimeManifest | None = None,
+    replicated_review_receipt: VBDJointReplicatedReviewReceipt | None = None,
+    replicated_launch_receipt: VBDJointReplicatedLaunchReceipt | None = None,
+    replicated_execution_root: Path | None = None,
 ) -> VBDJointFit:
     """Last-mile sampler path after exact V3 or V4 binding validation."""
 
@@ -779,6 +833,9 @@ def _fit_vbd_joint_model_with_settings(
                 replicated_claim,
                 replicated_authorization,
                 replicated_runtime_manifest,
+                replicated_review_receipt,
+                replicated_launch_receipt,
+                replicated_execution_root,
             )
         ):
             raise VBDJointStructureError("V3 prepared data cannot use a V4 slot binding")
@@ -818,6 +875,11 @@ def _fit_vbd_joint_model_with_settings(
                 claim=replicated_claim,
                 authorization=replicated_authorization,
                 runtime_manifest=replicated_runtime_manifest,
+                review_receipt=replicated_review_receipt,
+            )
+            validate_consumed_execution_claim(
+                replicated_execution_root,
+                replicated_launch_receipt,
             )
         except ValueError as exc:
             raise VBDJointStructureError(str(exc)) from exc
@@ -854,20 +916,21 @@ def _fit_vbd_joint_model_with_settings(
         )
     model = build_vbd_joint_model(prepared, variant=variant)
     started = time.perf_counter()
-    with model:
-        idata = pm.sample(
-            draws=settings.draws,
-            tune=settings.tune,
-            chains=settings.chains,
-            cores=1,
-            random_seed=list(chain_seeds),
-            target_accept=settings.target_accept,
-            max_treedepth=settings.max_treedepth,
-            nuts_sampler="pymc",
-            blas_cores=1,
-            progressbar=False,
-            compute_convergence_checks=True,
-        )
+    with _replicated_sampler_deadline(replicated_claim):
+        with model:
+            idata = pm.sample(
+                draws=settings.draws,
+                tune=settings.tune,
+                chains=settings.chains,
+                cores=1,
+                random_seed=list(chain_seeds),
+                target_accept=settings.target_accept,
+                max_treedepth=settings.max_treedepth,
+                nuts_sampler="pymc",
+                blas_cores=1,
+                progressbar=False,
+                compute_convergence_checks=True,
+            )
     wall_time = time.perf_counter() - started
     coefficient_names = [*_BEHAVIOR_COEFFICIENTS, *_SHARED_OUTCOME_COEFFICIENTS]
     if variant == "full":
