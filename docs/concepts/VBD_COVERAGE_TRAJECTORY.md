@@ -196,11 +196,17 @@ Embedded work-pattern families
 The required count invariant is:
 
 ```text
-Embedded <= Active <= Eligible
+0 <= Embedded <= Active <= Eligible
+Eligible > 0
 ```
 
 One stable eligibility count and universe binding must apply across the
 trajectory being compared.
+
+`Eligible > 0` is a hard availability condition for Adoption Reach and
+Coverage. A zero Eligible count makes every ratio and dependent velocity
+unavailable; it must not be coerced to zero or treated as evidence of no
+adoption.
 
 ### Observable source universe
 
@@ -306,6 +312,7 @@ Coverage answers:
 ```text
 Net Coverage Velocity =
   (Coverage_current - Coverage_previous)
+  x 100
   x (30 / actual_days_between_checkpoints)
 ```
 
@@ -559,8 +566,10 @@ The following FluencyTracr foundations remain applicable:
 
 The existing frequency/engagement/Breadth Bayesian trajectory contract remains
 held research. Its estimand and likelihood are not this VBD Coverage Trajectory.
-It may remain available as historical research evidence, but it must not be
-presented as the runtime implementation of this replacement concept.
+Its three pending queue items remain dormant behind their recorded prerequisites
+and separate human activation; the roadmap is retained as legacy planning
+context, not as completed work or the runtime implementation of this replacement
+concept.
 
 ## Implementation sequence
 
@@ -589,11 +598,21 @@ FluencyTracr contracts or fixtures.
 
 ## Current implementation truth
 
-As of this docs-only decision:
+As of PR #485 head `c3734c7f6192918088b9fe2184620ff7b6620966`,
+merged as `a6924e3e371428d955fe255ddee79e736228a9a4`:
 
-- a separate local-first prototype is reported to implement and test related
-  formulas and governance rules, but that evidence is not contained in or
-  independently verifiable from this repository and grants no authority here;
+- **Source disclosure:** James Kelley supplied the work-pattern-family adoption
+  funnel and coverage-trajectory framing. A separate local-first prototype is
+  reported to implement related formulas and governance rules, but its
+  repository, source bytes, and results are unavailable here. No code, data,
+  thresholds, or execution evidence were imported from it, and it grants no
+  authority in FluencyTracr;
+- the reusable V4 synthetic model path now preserves exact preparation
+  provenance, deterministic slot seeds and settings, and fail-closed
+  diagnostics while reaching the existing full joint likelihood;
+- the replicated runner, claims, checkpoints, namespace combination, timeout
+  supervision, and sanitized study artifact are removable validation
+  scaffolding, not a sustained execution platform;
 - the FluencyTracr runtime has **not** been migrated;
 - the existing weighted VBD UI remains illustrative;
 - the existing Bayesian VBD trajectory remains held research with a different

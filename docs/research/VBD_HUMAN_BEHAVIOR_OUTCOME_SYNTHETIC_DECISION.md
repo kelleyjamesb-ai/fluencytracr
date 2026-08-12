@@ -217,21 +217,28 @@ and sanitized-artifact scaffolding now exist. No protocol sampler or external
 execution has run. The protocol and implementation scaffolding have authority
 effect `NONE` and do not clear the current HOLD.
 
-The current local repair candidate adds observed runtime provenance,
-one-manifest claim/combiner/artifact reconciliation, exact V4 preparation,
-high-error uncertainty admission, and slot-bound ordered chain seeds. These are
-model-path repairs only. They do not change the likelihood, do not qualify the
-model, and do not clear `HOLD_FOR_MODEL_REPAIR` until the exact committed
-candidate passes fresh technical, adversarial, and statistical pre-execution
-review.
+PR #485 head `c3734c7f6192918088b9fe2184620ff7b6620966` merged the bounded
+V4-to-full-model repair as `a6924e3e371428d955fe255ddee79e736228a9a4`.
+The reusable model path now binds
+observed runtime provenance, exact V4 preparation, high-error uncertainty, and
+slot-bound ordered chain seeds before reaching the existing full joint
+likelihood. V3 and V4 preparation remain distinct, and nonfinite or failed
+diagnostics HOLD.
+
+The replicated runner, claims, checkpoints, namespace combination, timeout
+supervision, and sanitized study artifact are removable validation scaffolding.
+They are not a sustained execution platform or a prerequisite for extracting
+the reusable preparation/full-model bridge. No protocol sampler or replicated
+study ran, so the merge does not qualify the model or clear
+`HOLD_FOR_MODEL_REPAIR`.
 
 ## What Must Happen Next
 
-The pre-sampler review, structural checks, bounded V3 smoke, post-smoke review,
-docs-first replicated protocol, and sampler-free V4 implementation scaffolding
-are complete. The exact implementation commit and runtime manifest must now
-pass fresh technical, adversarial, and statistical pre-execution review before
-the nonqualifying preflights or qualifying universe may run.
+The V4 preparation/full-model bridge, deterministic seed binding, runtime
+provenance, basic fail-closed diagnostics, pre-sampler review, and sampler-free
+verification are complete. Any future replicated execution is a separate,
+explicitly authorized activity and may replace or remove the current runner
+scaffolding rather than treating it as product infrastructure.
 
 The V1 diagnostic result must remain visible and cannot be replaced by tuning
 or a V2 rerun.

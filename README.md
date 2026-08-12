@@ -99,8 +99,11 @@ documented value-realization layers:
   its runtime implementation. PR #434's collapsed-target algebra remains a
   held, non-evidentiary diagnostic oracle under
   `REPAIR_DIAGNOSTIC_LINEAGE_ONLY`; it does not authorize execution. Its prior
-  bounded roadmap remains available as historical implementation context in
-  the [VBD Live Product Roadmap](docs/superpowers/plans/2026-07-31-vbd-live-product-roadmap.md).
+  bounded roadmap remains as legacy planning context in the
+  [VBD Live Product Roadmap](docs/superpowers/plans/2026-07-31-vbd-live-product-roadmap.md).
+  Its three pending queue items are dormant behind their recorded prerequisites
+  and require separate human activation; they are not completed work or an
+  alternative implementation of the current Coverage Trajectory.
 - **Hypothesis and metric longitudinal admission:** allows companies to define
   different aggregate metric catalogs without an arbitrary count cap while
   binding each longitudinal analysis unit to one approved hypothesis and one

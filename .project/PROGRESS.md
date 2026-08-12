@@ -6137,3 +6137,22 @@
   consecutive runs and the complete replicated bridge suite passed `25/25`.
   Exact-head CI remains the next gate. No sampler, preflight, canary, study,
   model-path change, merge, deployment, or additional runner hardening occurred.
+
+## 2026-08-12 (America/Los_Angeles) - Codex (VBD documentation closeout)
+
+- PR #485 head `c3734c7f6192918088b9fe2184620ff7b6620966` passed exact-head CI and
+  merged as `a6924e3e371428d955fe255ddee79e736228a9a4`. The reusable deliverable
+  is the V4 preparation/full-model bridge with deterministic seeds, runtime
+  provenance, and fail-closed diagnostics. The runner remains removable
+  validation scaffolding; no sampler or replicated study ran.
+- Closed PR #486 as superseded rather than rebasing its older docs-only snapshot
+  over the merged model path.
+- Reconciled the bounded docs-only gaps: positive Eligible denominator, exact
+  percentage-point velocity conversion, legacy pending-roadmap wording, and a
+  direct source disclosure for the reported unavailable local prototype. The
+  signal-promotion gate remains open because synthetic fixtures are not
+  empirical distribution or cross-window stability evidence.
+- Local verification: strict OpenSpec validation passes for both the joint
+  methodology and synthetic-proof changes; queue JSON parsing and
+  `git diff --check` pass. No model, runner, privacy, sampler, deployment, or
+  production behavior changed.
