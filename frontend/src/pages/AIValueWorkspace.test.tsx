@@ -425,7 +425,7 @@ describe("AIValueWorkspace executive spine", () => {
 
   it("parses a Sales Blueprint into an editable aggregate hypothesis without retaining raw text", async () => {
     parseDocumentTextMock.mockResolvedValue({
-      text: "Blueprint status: Approved\nPrepared by Jane Smith, jane.smith@example.com.\nCustomer hypothesis: Customer Success will assemble account context faster for QBR preparation and reduce QBR preparation time.",
+      text: "Blueprint status: Approved\nCustomer hypothesis: Customer Success will prepare QBRs faster and reduce QBR preparation time.",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     });
     const importedView = renderWorkspace("/ai-value-workspace/value-case");
@@ -438,7 +438,9 @@ describe("AIValueWorkspace executive spine", () => {
       target: { files: [file] }
     });
 
-    expect(await within(valueCase).findByRole("status")).toHaveTextContent(/parsed into an aggregate hypothesis/i);
+    expect(
+      await within(valueCase).findByText(/parsed into an aggregate hypothesis/i)
+    ).toBeInTheDocument();
     const hypothesis = within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i });
     expect(hypothesis).toHaveValue("Customer Success: faster qbr; metric intent: qbr preparation time.");
     expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
@@ -491,6 +493,39 @@ describe("AIValueWorkspace executive spine", () => {
     expect(within(restoredValueCase).getByRole("button", { name: /Continue to workflow/i })).toBeEnabled();
     fireEvent.click(within(restoredValueCase).getByRole("button", { name: /Continue to workflow/i }));
     expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").toContain('"source":"manual"');
+  });
+
+  it.each([
+    "Prepared by Jane Smith.",
+    "Contact: jane@example.com.",
+    "Owner reference: employee ID 123."
+  ])("rejects identifier-bearing Blueprint source text before canonicalization: %s", async (detail) => {
+    parseDocumentTextMock.mockResolvedValue({
+      text: `Blueprint status: Approved\n${detail}\nCustomer hypothesis: Customer Success will assemble account context faster for QBR preparation and reduce QBR preparation time.`,
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    });
+    const valueCaseView = renderWorkspace("/ai-value-workspace/value-case");
+    const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
+
+    fireEvent.change(within(valueCase).getByLabelText(/Choose Blueprint file/i), {
+      target: {
+        files: [
+          new File(["private document bytes"], "identifier-bearing-blueprint.docx", {
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          })
+        ]
+      }
+    });
+
+    expect(
+      await within(valueCase).findByText(
+        /contains possible person-level or direct identifier detail/i
+      )
+    ).toBeInTheDocument();
+    expect(within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i })).toHaveValue("");
+    expect(within(valueCase).getByRole("button", { name: /Continue to workflow/i })).toBeDisabled();
+    expect(sessionStorage.getItem(guidedSetupStorageKey()) ?? "").not.toContain(detail);
+    valueCaseView.unmount();
   });
 
   it("fails closed when a Blueprint does not contain a supported aggregate hypothesis", async () => {

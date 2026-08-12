@@ -13,6 +13,7 @@ from fluencytracr_inference.vbd_joint_replicated_runner import (
     VBDJointReplicatedRunnerError,
     build_sampler_free_execution_packet,
     combine_namespace,
+    dataset_regeneration_failure_case_hash,
     emit_sanitized_ensemble_artifact,
     make_checkpoint_for_disposition,
     make_claim_for_slot,
@@ -632,6 +633,70 @@ def test_combiner_rejects_checkpoint_with_fabricated_case_hash(runtime_manifest)
             plan=plan,
             runtime_manifest=runtime_manifest,
         )
+
+
+def test_dataset_regeneration_failure_is_a_durable_sanitized_hold(
+    runtime_manifest, monkeypatch
+):
+    plan = vbd_joint_replicated_validation_plan()
+    slot = plan.preflight_slots[0]
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=plan.plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=STARTED_AT,
+        deadline_at=DEADLINE_AT,
+    )
+    ledger = VBDJointReplicatedAttemptLedger().append_claim(
+        claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
+    )
+    disposition_body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "HOLD",
+        "failure_code": "DATASET_REGENERATION_FAILURE",
+        "result_hash": sha256_json({"failure": slot.slot_id}),
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **disposition_body,
+        disposition_hash=sha256_json(disposition_body),
+    )
+    ledger = ledger.append_disposition(
+        disposition,
+        make_checkpoint_for_disposition(
+            disposition,
+            case_hash=dataset_regeneration_failure_case_hash(claim),
+            completed_at=COMPLETED_AT,
+        ),
+    )
+
+    def regeneration_must_not_run(_slot):
+        raise AssertionError("failed dataset regeneration was retried")
+
+    monkeypatch.setattr(
+        replicated_runner,
+        "generate_vbd_joint_replicated_case_for_slot",
+        regeneration_must_not_run,
+    )
+
+    summary = combine_namespace(
+        ledger,
+        namespace="preflight",
+        plan=plan,
+        runtime_manifest=runtime_manifest,
+    )
+    artifact = emit_sanitized_ensemble_artifact(
+        ledger,
+        plan=plan,
+        runtime_manifest=runtime_manifest,
+    )
+
+    assert summary.state == "HOLD"
+    assert summary.hold_count == 1
+    assert "DATASET_REGENERATION_FAILURE" in summary.failure_codes
+    assert artifact["state"] == "HOLD"
+    assert "DATASET_REGENERATION_FAILURE" in artifact["failure_codes"]
 
 
 def test_incomplete_namespaces_hold_and_sanitized_artifact_is_nonauthorizing(runtime_manifest):

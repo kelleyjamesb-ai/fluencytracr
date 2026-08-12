@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .vbd_joint_model import (
+    VBDJointFit,
+    VBDJointSamplerSettings,
+    _fit_vbd_joint_model_with_settings,
+)
 from .vbd_joint_preparation import (
     PreparedVBDJointData,
     _prepare_vbd_joint_dataset,
@@ -15,8 +20,14 @@ from .vbd_joint_replicated_synthetic import (
     generate_vbd_joint_replicated_case_for_slot,
     validate_vbd_joint_replicated_dataset,
 )
+from .vbd_joint_replicated_runner import (
+    VBDJointReplicatedExecutionAuthorization,
+    VBDJointReplicatedExecutionPacket,
+    VBDJointReplicatedRuntimeManifest,
+)
 from .vbd_joint_types import VBDJointStructureError
 from .vbd_joint_replicated_validation_plan import (
+    VBDJointReplicatedValidationClaim,
     VBDJointReplicatedValidationSlot,
     vbd_joint_replicated_validation_plan,
 )
@@ -139,9 +150,44 @@ def build_vbd_joint_replicated_fit_spec(
     )
 
 
+def fit_vbd_joint_replicated_model(
+    prepared: PreparedVBDJointData,
+    *,
+    slot: VBDJointReplicatedValidationSlot,
+    packet: VBDJointReplicatedExecutionPacket,
+    claim: VBDJointReplicatedValidationClaim,
+    authorization: VBDJointReplicatedExecutionAuthorization,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+) -> VBDJointFit:
+    """Fit one exact V4 slot through the unchanged joint-model likelihood."""
+
+    spec = build_vbd_joint_replicated_fit_spec(prepared, slot=slot)
+    settings = VBDJointSamplerSettings(
+        mode="smoke" if slot.namespace == "preflight" else "full",
+        chains=spec.chains,
+        draws=spec.draws,
+        tune=spec.tune,
+        target_accept=spec.target_accept,
+        max_treedepth=spec.max_treedepth,
+    )
+    return _fit_vbd_joint_model_with_settings(
+        prepared,
+        variant=spec.variant,
+        settings=settings,
+        chain_seeds=spec.chain_seeds,
+        summary_seed=slot.sampler_seed_base,
+        replicated_slot=slot,
+        replicated_packet=packet,
+        replicated_claim=claim,
+        replicated_authorization=authorization,
+        replicated_runtime_manifest=runtime_manifest,
+    )
+
+
 __all__ = [
     "VBDJointReplicatedBridgeError",
     "VBDJointReplicatedFitSpec",
     "build_vbd_joint_replicated_fit_spec",
+    "fit_vbd_joint_replicated_model",
     "prepare_vbd_joint_replicated_dataset",
 ]

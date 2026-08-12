@@ -5997,3 +5997,26 @@
 - Added an exact rendered-heading regression and proved the focused workspace
   suite at `66/66`. This wording-only follow-up changes no measurement,
   privacy, inference, schema, or execution behavior.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 V4 full-model bridge)
+
+- Connected exact V4 replicated preparation to the unchanged full joint PyMC
+  model. The bridge passes the slot's exact model variant, ordered chain seeds,
+  draws, tune, chains, target acceptance, and maximum tree depth into the same
+  likelihood used by V3.
+- Kept the sampler boundary fail closed: V4 sampling additionally requires the
+  exact observed runtime manifest, deterministic execution packet, immutable
+  claim, and a hash-bound external pre-execution review receipt with state
+  `GO`. Missing, substituted, off-plan, or cross-profile inputs stop before
+  `pm.sample`; the V3 seed/settings path remains independently exact.
+- Preserved failed dataset generation as a deterministic claim-bound receipt,
+  allowing `DATASET_REGENERATION_FAILURE` to survive combination and sanitized
+  artifact emission as durable `HOLD` evidence without retrying regeneration.
+- Current local evidence: full frontend `287/287`; VBD
+  model/preparation/bridge `50/50`; replicated runner `28/28`; frontend lint,
+  compileall, strict OpenSpec, shard validation, and `git diff --check` pass;
+  the exact VBD shard collects `851` tests matching the compiled count.
+- No real sampler, preflight, canary, qualifying study, customer or real data,
+  external execution, merge, deployment, or production proof occurred. All
+  study gates and customer/economic/output authorization flags remain
+  `HOLD`/false.

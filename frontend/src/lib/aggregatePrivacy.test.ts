@@ -25,6 +25,16 @@ describe("aggregate hypothesis privacy gate", () => {
     expect(containsPotentialPersonName("Information Technology will resolve incidents faster.")).toBe(false);
     expect(
       containsPotentialPersonName(
+        "Customer Success will prepare QBRs faster and reduce QBR preparation time."
+      )
+    ).toBe(false);
+    expect(
+      containsPotentialOrganizationIdentifier(
+        "Customer Success will prepare QBRs faster and reduce QBR preparation time."
+      )
+    ).toBe(false);
+    expect(
+      containsPotentialPersonName(
         "Customer Success will prepare Quarterly Business Review faster."
       )
     ).toBe(false);

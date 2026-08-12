@@ -2264,6 +2264,22 @@ const ValueCaseDefinitionPage = ({
     try {
       const { text } = await parseDocumentText(file);
       if (parseAttemptRef.current !== parseAttempt) return;
+      const privacySegments = text
+        .split(/\r?\n/)
+        .map((line) => line.includes(":") ? line.slice(line.indexOf(":") + 1) : line)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (privacySegments.some(
+        (segment) =>
+          containsPotentialOrganizationIdentifier(segment) ||
+          containsPotentialPersonName(segment)
+      )) {
+        setBlueprintParseState("error");
+        setBlueprintParseMessage(
+          "The Blueprint contains possible person-level or direct identifier detail. Remove it before importing an aggregate hypothesis."
+        );
+        return;
+      }
       const canonicalHypothesis = deriveAggregateHypothesisFromBlueprint(text);
       if (!canonicalHypothesis) {
         setBlueprintParseState("error");

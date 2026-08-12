@@ -229,6 +229,11 @@ settings verbatim. It must not derive V4 seeds from the dataset seed or fall
 back to V3 seed rules. This bridge preserves the frozen V3 likelihood and
 priors; it creates no execution authority.
 
+The last sampler boundary separately requires the exact observed runtime
+manifest, deterministic execution packet, immutable claim, and a hash-bound
+external review receipt whose closed state is `GO`. Those bindings must agree
+with the prepared case and frozen slot before sampler initialization.
+
 ## Immutable Claims And Attempt Ledger
 
 The runner uses three closed namespaces with independent ordered manifests and

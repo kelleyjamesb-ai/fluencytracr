@@ -47,6 +47,17 @@ from .vbd_joint_types import (
     VBD_JOINT_WINDOW_COUNT,
     VBDJointStructureError,
 )
+from .vbd_joint_replicated_validation_plan import (
+    VBDJointReplicatedValidationClaim,
+    VBDJointReplicatedValidationSlot,
+    vbd_joint_replicated_validation_plan,
+)
+from .vbd_joint_replicated_runner import (
+    VBDJointReplicatedExecutionAuthorization,
+    VBDJointReplicatedExecutionPacket,
+    VBDJointReplicatedRuntimeManifest,
+    validate_reviewed_execution_authorization,
+)
 
 
 VBDJointFitMode = Literal["smoke", "full"]
@@ -747,33 +758,99 @@ def _fit_vbd_joint_model_with_settings(
     settings: VBDJointSamplerSettings,
     chain_seeds: tuple[int, ...],
     summary_seed: int,
+    replicated_slot: VBDJointReplicatedValidationSlot | None = None,
+    replicated_packet: VBDJointReplicatedExecutionPacket | None = None,
+    replicated_claim: VBDJointReplicatedValidationClaim | None = None,
+    replicated_authorization: VBDJointReplicatedExecutionAuthorization | None = None,
+    replicated_runtime_manifest: VBDJointReplicatedRuntimeManifest | None = None,
 ) -> VBDJointFit:
-    """V3 sampler path after the public entry point's exact seed binding."""
+    """Last-mile sampler path after exact V3 or V4 binding validation."""
 
     if type(prepared) is not PreparedVBDJointData:
         raise VBDJointStructureError("prepared data must use the exact frozen type")
-    if prepared.source_profile != "v3":
-        raise VBDJointStructureError(
-            "V4 prepared data cannot use the V3 sampler path"
-        )
     if type(settings) is not VBDJointSamplerSettings:
-        raise VBDJointStructureError("settings do not match the frozen V3 sampler binding")
-    expected_seed = (
-        VBD_JOINT_PRIMARY_SEED
-        if prepared.synthetic_scenario == "primary"
-        else VBD_JOINT_NULL_SEED
-    )
-    expected_settings = vbd_joint_sampler_settings(settings.mode)
-    expected_chain_seeds = tuple(
-        expected_seed + chain for chain in range(expected_settings.chains)
-    )
+        raise VBDJointStructureError("settings do not match a frozen sampler binding")
+    if prepared.source_profile == "v3":
+        if any(
+            item is not None
+            for item in (
+                replicated_slot,
+                replicated_packet,
+                replicated_claim,
+                replicated_authorization,
+                replicated_runtime_manifest,
+            )
+        ):
+            raise VBDJointStructureError("V3 prepared data cannot use a V4 slot binding")
+        expected_seed = (
+            VBD_JOINT_PRIMARY_SEED
+            if prepared.synthetic_scenario == "primary"
+            else VBD_JOINT_NULL_SEED
+        )
+        expected_settings = vbd_joint_sampler_settings(settings.mode)
+        expected_chain_seeds = tuple(
+            expected_seed + chain for chain in range(expected_settings.chains)
+        )
+    elif prepared.source_profile == "replicated_v4":
+        if type(replicated_slot) is not VBDJointReplicatedValidationSlot:
+            raise VBDJointStructureError(
+                "V4 prepared data requires the exact replicated sampler binding"
+            )
+        plan = vbd_joint_replicated_validation_plan()
+        expected_slot = next(
+            (
+                slot
+                for slot in (
+                    plan.qualifying_slots + plan.preflight_slots + plan.canary_slots
+                )
+                if slot.slot_id == replicated_slot.slot_id
+            ),
+            None,
+        )
+        if expected_slot != replicated_slot:
+            raise VBDJointStructureError("replicated sampler slot is off the frozen plan")
+        validate_prepared_vbd_joint_data(prepared)
+        try:
+            validate_reviewed_execution_authorization(
+                replicated_slot,
+                prepared_dataset_hash=prepared.dataset_hash,
+                packet=replicated_packet,
+                claim=replicated_claim,
+                authorization=replicated_authorization,
+                runtime_manifest=replicated_runtime_manifest,
+            )
+        except ValueError as exc:
+            raise VBDJointStructureError(str(exc)) from exc
+        if (
+            prepared.replicated_cell_id != replicated_slot.cell_id
+            or prepared.replicate_index != replicated_slot.replicate_index
+            or prepared.scenario_id != replicated_slot.scenario_id
+            or prepared.seed != replicated_slot.dataset_seed
+            or variant != replicated_slot.variant
+        ):
+            raise VBDJointStructureError(
+                "prepared V4 data does not bind the replicated sampler slot"
+            )
+        expected_seed = replicated_slot.sampler_seed_base
+        expected_settings = VBDJointSamplerSettings(
+            mode="smoke" if replicated_slot.namespace == "preflight" else "full",
+            chains=replicated_slot.chains,
+            draws=replicated_slot.draws,
+            tune=replicated_slot.tune,
+            target_accept=replicated_slot.target_accept,
+            max_treedepth=replicated_slot.max_treedepth,
+        )
+        expected_chain_seeds = replicated_slot.chain_seeds
+    else:
+        raise VBDJointStructureError("prepared source profile is off plan")
     if (
         settings != expected_settings
         or summary_seed != expected_seed
         or chain_seeds != expected_chain_seeds
     ):
+        profile_label = "V3" if prepared.source_profile == "v3" else "V4"
         raise VBDJointStructureError(
-            "settings and seeds do not match the frozen V3 sampler binding"
+            f"settings and seeds do not match the frozen {profile_label} sampler binding"
         )
     model = build_vbd_joint_model(prepared, variant=variant)
     started = time.perf_counter()

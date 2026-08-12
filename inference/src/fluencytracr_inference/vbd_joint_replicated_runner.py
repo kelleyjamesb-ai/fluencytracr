@@ -11,7 +11,7 @@ pre-execution review.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import importlib.metadata
 import math
@@ -428,6 +428,48 @@ class VBDJointReplicatedExecutionPacket:
         return {**self.body_without_hash(), "packet_hash": self.packet_hash}
 
 
+@dataclass(frozen=True, slots=True)
+class VBDJointReplicatedExecutionAuthorization:
+    """Hash-bound receipt proving one external pre-execution review returned GO."""
+
+    slot_id: str
+    packet_hash: str
+    claim_hash: str
+    runtime_manifest_hash: str
+    source_commit: str
+    review_state: str
+    review_receipt_hash: str
+    authorization_hash: str
+
+    def __post_init__(self) -> None:
+        if type(self.slot_id) is not str or not self.slot_id:
+            raise VBDJointReplicatedRunnerError("authorization slot ID is invalid")
+        for name, value in (
+            ("packet_hash", self.packet_hash),
+            ("claim_hash", self.claim_hash),
+            ("runtime_manifest_hash", self.runtime_manifest_hash),
+            ("review_receipt_hash", self.review_receipt_hash),
+            ("authorization_hash", self.authorization_hash),
+        ):
+            _sha(name, value)
+        _commit("source_commit", self.source_commit)
+        if self.review_state != "GO":
+            raise VBDJointReplicatedRunnerError("pre-execution review did not return GO")
+        if self.authorization_hash != sha256_json(self.body_without_hash()):
+            raise VBDJointReplicatedRunnerError("execution authorization hash is invalid")
+
+    def body_without_hash(self) -> dict:
+        return {
+            "slot_id": self.slot_id,
+            "packet_hash": self.packet_hash,
+            "claim_hash": self.claim_hash,
+            "runtime_manifest_hash": self.runtime_manifest_hash,
+            "source_commit": self.source_commit,
+            "review_state": self.review_state,
+            "review_receipt_hash": self.review_receipt_hash,
+        }
+
+
 def build_sampler_free_execution_packet(
     slot: VBDJointReplicatedValidationSlot,
     *,
@@ -472,6 +514,104 @@ def build_sampler_free_execution_packet(
         **body,
         packet_hash=sha256_json(body),
     )
+
+
+def authorize_reviewed_execution(
+    slot: VBDJointReplicatedValidationSlot,
+    *,
+    packet: VBDJointReplicatedExecutionPacket,
+    claim: VBDJointReplicatedValidationClaim,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+    review_state: str,
+    review_receipt_hash: str,
+) -> VBDJointReplicatedExecutionAuthorization:
+    """Bind an external GO receipt to one exact packet and immutable claim."""
+
+    slot = _require_canonical_slot(slot)
+    _require_observed_runtime_manifest(runtime_manifest)
+    expected_packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    if type(packet) is not VBDJointReplicatedExecutionPacket or packet != expected_packet:
+        raise VBDJointReplicatedRunnerError("execution packet is not the exact frozen packet")
+    plan = vbd_joint_replicated_validation_plan()
+    validate_claim_for_slot(claim, slot, plan.plan_hash)
+    _require_frozen_claim_deadline(claim)
+    _require_claim_runtime_provenance(claim, runtime_manifest)
+    if (
+        claim.slot_hash != packet.slot_hash
+        or claim.plan_hash != packet.plan_hash
+        or claim.scenario_id != packet.scenario_id
+        or claim.variant != packet.variant
+        or claim.dataset_seed != packet.dataset_seed
+        or claim.chain_seeds != packet.chain_seeds
+    ):
+        raise VBDJointReplicatedRunnerError("claim does not bind the execution packet")
+    body = {
+        "slot_id": slot.slot_id,
+        "packet_hash": packet.packet_hash,
+        "claim_hash": claim.claim_hash,
+        "runtime_manifest_hash": runtime_manifest.manifest_hash,
+        "source_commit": runtime_manifest.source_commit,
+        "review_state": review_state,
+        "review_receipt_hash": _sha("review_receipt_hash", review_receipt_hash),
+    }
+    return VBDJointReplicatedExecutionAuthorization(
+        **body,
+        authorization_hash=sha256_json(body),
+    )
+
+
+def validate_reviewed_execution_authorization(
+    slot: VBDJointReplicatedValidationSlot,
+    *,
+    prepared_dataset_hash: str,
+    packet: VBDJointReplicatedExecutionPacket,
+    claim: VBDJointReplicatedValidationClaim,
+    authorization: VBDJointReplicatedExecutionAuthorization,
+    runtime_manifest: VBDJointReplicatedRuntimeManifest,
+) -> None:
+    if type(packet) is not VBDJointReplicatedExecutionPacket:
+        raise VBDJointReplicatedRunnerError(
+            "execution packet must use the exact frozen type"
+        )
+    if type(claim) is not VBDJointReplicatedValidationClaim:
+        raise VBDJointReplicatedRunnerError(
+            "execution claim must use the exact frozen type"
+        )
+    if type(authorization) is not VBDJointReplicatedExecutionAuthorization:
+        raise VBDJointReplicatedRunnerError(
+            "execution authorization must use the exact frozen type"
+        )
+    if type(runtime_manifest) is not VBDJointReplicatedRuntimeManifest:
+        raise VBDJointReplicatedRunnerError(
+            "runtime manifest must use the exact frozen type"
+        )
+    expected = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state=authorization.review_state,
+        review_receipt_hash=authorization.review_receipt_hash,
+    )
+    if authorization != expected:
+        raise VBDJointReplicatedRunnerError(
+            "execution authorization does not bind the packet and claim"
+        )
+    if packet.dataset_hash != _sha("prepared_dataset_hash", prepared_dataset_hash):
+        raise VBDJointReplicatedRunnerError(
+            "prepared dataset does not bind the reviewed execution packet"
+        )
+    now = datetime.now(timezone.utc)
+    if not (
+        _timestamp("started_at", claim.started_at)
+        <= now
+        < _timestamp("deadline_at", claim.deadline_at)
+    ):
+        raise VBDJointReplicatedRunnerError(
+            "reviewed execution claim is not active at sampler initialization"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -718,6 +858,29 @@ def _observed_fit_count(summary: "VBDJointReplicatedNamespaceSummary") -> int:
     return summary.complete_count + summary.hold_count
 
 
+def dataset_regeneration_failure_case_hash(
+    claim: VBDJointReplicatedValidationClaim,
+) -> str:
+    """Return the deterministic receipt used when a claimed case cannot regenerate."""
+
+    if type(claim) is not VBDJointReplicatedValidationClaim:
+        raise VBDJointReplicatedRunnerError(
+            "dataset regeneration failure receipt requires the exact claim type"
+        )
+    return sha256_json(
+        {
+            "receipt_schema": "VBD_JOINT_REPLICATED_DATASET_REGENERATION_FAILURE_V1",
+            "namespace": claim.namespace,
+            "slot_id": claim.slot_id,
+            "scenario_id": claim.scenario_id,
+            "dataset_seed": claim.dataset_seed,
+            "slot_hash": claim.slot_hash,
+            "claim_hash": claim.claim_hash,
+            "failure_code": "DATASET_REGENERATION_FAILURE",
+        }
+    )
+
+
 def make_claim_for_slot(
     slot: VBDJointReplicatedValidationSlot,
     *,
@@ -932,12 +1095,15 @@ def combine_namespace(
                 "checkpoint completion is outside the claimed execution window"
             )
         dataset_identity = (claim.scenario_id, claim.dataset_seed)
-        expected_case_hash = expected_case_hashes.get(dataset_identity)
-        if expected_case_hash is None:
-            expected_case_hash = generate_vbd_joint_replicated_case_for_slot(
-                slot
-            ).content_hash()
-            expected_case_hashes[dataset_identity] = expected_case_hash
+        if disposition.failure_code == "DATASET_REGENERATION_FAILURE":
+            expected_case_hash = dataset_regeneration_failure_case_hash(claim)
+        else:
+            expected_case_hash = expected_case_hashes.get(dataset_identity)
+            if expected_case_hash is None:
+                expected_case_hash = generate_vbd_joint_replicated_case_for_slot(
+                    slot
+                ).content_hash()
+                expected_case_hashes[dataset_identity] = expected_case_hash
         if checkpoint.case_hash != expected_case_hash:
             raise VBDJointReplicatedRunnerError(
                 "checkpoint case provenance does not match deterministic regeneration"
@@ -1392,6 +1558,7 @@ __all__ = [
     "VBD_JOINT_REPLICATED_RUNTIME_PACKAGES",
     "VBDJointReplicatedRuntimeManifest",
     "VBDJointReplicatedExecutionPacket",
+    "VBDJointReplicatedExecutionAuthorization",
     "VBDJointReplicatedAttemptCheckpoint",
     "VBDJointReplicatedAttemptLedger",
     "VBDJointReplicatedNamespaceSummary",
@@ -1399,7 +1566,10 @@ __all__ = [
     "VBDJointReplicatedRunnerError",
     "observe_runtime_manifest",
     "build_sampler_free_execution_packet",
+    "authorize_reviewed_execution",
+    "validate_reviewed_execution_authorization",
     "make_claim_for_slot",
+    "dataset_regeneration_failure_case_hash",
     "make_checkpoint_for_disposition",
     "combine_namespace",
     "emit_sanitized_ensemble_artifact",

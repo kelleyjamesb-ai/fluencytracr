@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pytest
@@ -12,10 +13,19 @@ from fluencytracr_inference.vbd_joint_model import (
 from fluencytracr_inference.vbd_joint_replicated_bridge import (
     VBDJointReplicatedBridgeError,
     build_vbd_joint_replicated_fit_spec,
+    fit_vbd_joint_replicated_model,
     prepare_vbd_joint_replicated_dataset,
 )
 from fluencytracr_inference.vbd_joint_replicated_synthetic import (
     generate_vbd_joint_replicated_case_for_slot,
+)
+import fluencytracr_inference.vbd_joint_replicated_runner as replicated_runner
+from fluencytracr_inference.hashing import sha256_json
+from fluencytracr_inference.vbd_joint_replicated_runner import (
+    VBDJointReplicatedRuntimeManifest,
+    authorize_reviewed_execution,
+    build_sampler_free_execution_packet,
+    make_claim_for_slot,
 )
 from fluencytracr_inference.vbd_joint_replicated_validation_plan import (
     vbd_joint_replicated_validation_plan,
@@ -37,6 +47,29 @@ def _slot(cell_id, *, namespace="qualifying", variant="full"):
         slot
         for slot in slots
         if slot.cell_id == cell_id and slot.variant == variant
+    )
+
+
+def _runtime_manifest():
+    body = {
+        "python_version": replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_PYTHON,
+        "platform": replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_PLATFORM,
+        "lockfile_hash": replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_LOCKFILE_HASH,
+        "package_versions": [
+            list(item)
+            for item in sorted(
+                replicated_runner.VBD_JOINT_REPLICATED_RUNTIME_PACKAGES.items()
+            )
+        ],
+        "source_commit": "a" * 40,
+    }
+    return VBDJointReplicatedRuntimeManifest(
+        python_version=body["python_version"],
+        platform=body["platform"],
+        lockfile_hash=body["lockfile_hash"],
+        package_versions=tuple(tuple(item) for item in body["package_versions"]),
+        source_commit=body["source_commit"],
+        manifest_hash=sha256_json(body),
     )
 
 
@@ -141,6 +174,63 @@ def test_v4_fit_spec_wrong_type_fails_with_closed_bridge_error():
         build_vbd_joint_replicated_fit_spec(object(), slot=_slot("primary"))
 
 
+def test_exact_v4_slot_reaches_the_full_joint_model_sampler_boundary(monkeypatch):
+    slot = _slot("primary")
+    case = generate_vbd_joint_replicated_case_for_slot(slot)
+    prepared = prepare_vbd_joint_replicated_dataset(case, slot=slot)
+    runtime_manifest = _runtime_manifest()
+    monkeypatch.setattr(
+        replicated_runner, "observe_runtime_manifest", lambda: runtime_manifest
+    )
+    packet = build_sampler_free_execution_packet(
+        slot, runtime_manifest=runtime_manifest
+    )
+    started_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    deadline_at = started_at + timedelta(hours=2)
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=vbd_joint_replicated_validation_plan().plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=started_at.isoformat(),
+        deadline_at=deadline_at.isoformat(),
+    )
+    authorization = authorize_reviewed_execution(
+        slot,
+        packet=packet,
+        claim=claim,
+        runtime_manifest=runtime_manifest,
+        review_state="GO",
+        review_receipt_hash=sha256_json({"review": "external-go", "slot": slot.slot_id}),
+    )
+    captured = {}
+
+    class SamplerBoundaryReached(Exception):
+        pass
+
+    def capture_sampler(**kwargs):
+        captured.update(kwargs)
+        raise SamplerBoundaryReached
+
+    monkeypatch.setattr("fluencytracr_inference.vbd_joint_model.pm.sample", capture_sampler)
+
+    with pytest.raises(SamplerBoundaryReached):
+        fit_vbd_joint_replicated_model(
+            prepared,
+            slot=slot,
+            packet=packet,
+            claim=claim,
+            authorization=authorization,
+            runtime_manifest=runtime_manifest,
+        )
+
+    assert captured["draws"] == slot.draws
+    assert captured["tune"] == slot.tune
+    assert captured["chains"] == slot.chains
+    assert captured["random_seed"] == list(slot.chain_seeds)
+    assert captured["target_accept"] == slot.target_accept
+    assert captured["max_treedepth"] == slot.max_treedepth
+
+
 def test_v4_prepared_data_cannot_reach_existing_sampler_entry_points(monkeypatch):
     slot = _slot("primary")
     case = generate_vbd_joint_replicated_case_for_slot(slot)
@@ -157,7 +247,7 @@ def test_v4_prepared_data_cannot_reach_existing_sampler_entry_points(monkeypatch
             seed=VBD_JOINT_PRIMARY_SEED,
             mode="smoke",
         )
-    with pytest.raises(VBDJointStructureError, match="V3 sampler path"):
+    with pytest.raises(VBDJointStructureError, match="exact replicated sampler binding"):
         _fit_vbd_joint_model_with_settings(
             prepared,
             variant="full",
@@ -171,4 +261,21 @@ def test_v4_prepared_data_cannot_reach_existing_sampler_entry_points(monkeypatch
             ),
             chain_seeds=(7, 8),
             summary_seed=7,
+        )
+
+    with pytest.raises(VBDJointStructureError, match="execution packet"):
+        _fit_vbd_joint_model_with_settings(
+            prepared,
+            variant=slot.variant,
+            settings=VBDJointSamplerSettings(
+                mode="full",
+                chains=slot.chains,
+                draws=1,
+                tune=1,
+                target_accept=0.5,
+                max_treedepth=1,
+            ),
+            chain_seeds=slot.chain_seeds,
+            summary_seed=slot.sampler_seed_base,
+            replicated_slot=slot,
         )
