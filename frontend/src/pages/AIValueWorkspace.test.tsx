@@ -1066,6 +1066,14 @@ describe("AIValueWorkspace executive spine", () => {
     fireEvent.click(within(views).getByRole("button", { name: "Profile" }));
     expect(within(views).getByRole("button", { name: "Profile" })).toHaveAttribute("aria-pressed", "true");
     expect(within(evidence).getByRole("region", { name: /Five-factor profile view/i })).toBeInTheDocument();
+    expect(
+      within(evidence).getByRole("heading", {
+        name: /Five-factor instrument-derived readiness context/i
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(evidence).queryByRole("heading", { name: /Five-factor fluency profile/i })
+    ).not.toBeInTheDocument();
     expect(within(evidence).getByText("Confidence")).toBeInTheDocument();
     expect(within(evidence).getByText(/Aggregate result: 75%/i)).toBeInTheDocument();
     expect(within(evidence).getByText("Usage Quality")).toBeInTheDocument();

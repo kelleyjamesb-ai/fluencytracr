@@ -5987,3 +5987,13 @@
   execution, thread resolution, merge, deployment, or production proof
   occurred. The runner and ensemble artifact remain sampler-free and
   nonauthorizing; all study gates and authorization flags remain `HOLD`/false.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 positioning follow-up)
+
+- Closed the fresh exact-head wording finding in the imported instrument's
+  Profile lens. Its visible heading and navigation description now frame the
+  five-factor readout as instrument-derived readiness context rather than an
+  AI-fluency profiling surface.
+- Added an exact rendered-heading regression and proved the focused workspace
+  suite at `66/66`. This wording-only follow-up changes no measurement,
+  privacy, inference, schema, or execution behavior.

@@ -1047,7 +1047,7 @@ const aiFluencyEvidenceViews = [
   {
     key: "profile",
     label: "Profile",
-    description: "Five-factor fluency profile from the same instrument."
+    description: "Five-factor readiness context from the same instrument."
   },
   {
     key: "translation",
@@ -3683,7 +3683,7 @@ const ReadinessPage = ({
             >
               <div className="ai-fluency-evidence-view-head">
                 <span className="ai-value-map-label">Profile lens</span>
-                <h4>Five-factor fluency profile</h4>
+                <h4>Five-factor instrument-derived readiness context</h4>
                 <p>
                   The profile explains what capability the organization reports it
                   is building before observed behavior is interpreted.
