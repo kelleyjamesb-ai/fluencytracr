@@ -440,7 +440,7 @@ def test_v4_sampler_deadline_persists_a_durable_timeout_hold(monkeypatch, tmp_pa
     packet = build_sampler_free_execution_packet(
         slot, runtime_manifest=runtime_manifest
     )
-    deadline_at = datetime.now(timezone.utc) + timedelta(seconds=1.0)
+    deadline_at = datetime.now(timezone.utc) + timedelta(seconds=5.0)
     started_at = deadline_at - timedelta(hours=2)
     claim = make_claim_for_slot(
         slot,
@@ -459,7 +459,11 @@ def test_v4_sampler_deadline_persists_a_durable_timeout_hold(monkeypatch, tmp_pa
         review_receipt=review_receipt,
     )
     def timeout_worker(_arguments, *, claim):
-        time.sleep(1.05)
+        worker_deadline = datetime.fromisoformat(
+            claim.deadline_at.replace("Z", "+00:00")
+        )
+        remaining = (worker_deadline - datetime.now(timezone.utc)).total_seconds()
+        time.sleep(max(remaining, 0.0) + 0.05)
         raise replicated_bridge.VBDJointReplicatedSamplerTimeout(
             "frozen two-hour sampler deadline elapsed"
         )

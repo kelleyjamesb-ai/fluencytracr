@@ -6126,3 +6126,14 @@
   canary, qualifying study, customer or real data, merge, deployment, or
   production execution occurred. All study gates and output authorizations
   remain `HOLD`/false.
+
+## 2026-08-12 (America/Los_Angeles) - Codex (PR #485 narrow CI timing repair)
+
+- Corrected only the timing-sensitive durable-timeout regression that failed on
+  the slower GitHub x64 runner. The test now gives admission five seconds of
+  headroom and makes its fake worker wait until the immutable claim deadline,
+  preserving the production timeout path and runner behavior unchanged.
+- Local evidence before push: the exact timeout regression passed three
+  consecutive runs and the complete replicated bridge suite passed `25/25`.
+  Exact-head CI remains the next gate. No sampler, preflight, canary, study,
+  model-path change, merge, deployment, or additional runner hardening occurred.
