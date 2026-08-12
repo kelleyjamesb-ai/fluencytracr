@@ -151,7 +151,7 @@ checkpoint.
 | --- | --- |
 | `checkpoint_id`, `checkpoint_revision`, `record_hash` | Immutable identity and append-only correction chain. |
 | `window_start`, `window_end`, `cadence_policy_ref` | Exact half-open period and frozen cadence. |
-| `registry_ref`, `registry_hash`, `eligible_family_count` | Prospectively frozen Eligible universe. |
+| `registry_ref`, `registry_hash`, `eligible_family_count` | Prospectively frozen Eligible universe; the count must be greater than zero. |
 | `qualifying_activity_policy_ref`, `semantic_policy_hash` | Exact rule for Active qualification. |
 | `recurrence_policy_ref`, `recurrence_horizon` | Exact rule and contiguous-window horizon for Embedded qualification. |
 | `observable_source_universe_ref`, `source_coverage_receipt_hash` | Source adapters, revisions, governed surfaces, mappings, completeness, and window coverage. |
@@ -166,7 +166,12 @@ The checkpoint must satisfy:
 
 ```text
 0 <= Embedded <= Active <= Eligible
+Eligible > 0
 ```
+
+If `Eligible = 0`, Adoption Reach, Coverage, and every dependent transition
+velocity are unavailable. Implementations must not coerce an undefined ratio
+to zero.
 
 ### VBD transition record
 
@@ -317,6 +322,16 @@ Retention, new embedding, and lapse counts inform those states. They are not
 also added as independent outcome predictors. Adoption Reach, Persistence,
 Coverage, and Net Coverage Velocity remain deterministic product summaries of
 the admitted counts, not additional likelihood terms.
+
+For decimal Coverage values, the normalized velocity unit is defined exactly
+as:
+
+```text
+Net Coverage Velocity (pp/30d) =
+  (Coverage_current - Coverage_previous)
+  x 100
+  x (30 / actual_days_between_checkpoints)
+```
 
 ### 2. Stated-capability measurement component
 

@@ -41,8 +41,10 @@ window, cadence, finality state, qualifying-activity rule, recurrence rule,
 semantic-policy version, observable source universe, source-coverage receipt,
 gate-receipt root, evidence revision, and append-only record hash.
 
-For every checkpoint, `0 <= Embedded <= Active <= Eligible` SHALL hold. Every
-adjacent transition SHALL bind exact checkpoint hashes and authenticated
+For every checkpoint, `0 <= Embedded <= Active <= Eligible` and `Eligible > 0`
+SHALL hold. A zero Eligible count SHALL make Adoption Reach, Coverage, and every
+dependent velocity unavailable rather than zero. Every adjacent transition
+SHALL bind exact checkpoint hashes and authenticated
 aggregate intersection evidence proving:
 
 ```text
@@ -175,7 +177,9 @@ MAY predeclare the active-nonembedded state as the outcome predictors.
 #### Scenario: Derived ratios are offered together
 
 - **GIVEN** Coverage equals Adoption Reach multiplied by Persistence before
-  rounding and Net Coverage Velocity is derived from adjacent Coverage
+  rounding and Net Coverage Velocity in percentage points per 30 days is
+  derived from decimal Coverage as
+  `(Coverage_current - Coverage_previous) * 100 * (30 / actual_days)`
 - **WHEN** a plan offers all of those values as independent outcome predictors
 - **THEN** the plan SHALL HOLD for duplicated algebraic evidence
 - **AND** a post-result term-selection procedure SHALL NOT choose among them.

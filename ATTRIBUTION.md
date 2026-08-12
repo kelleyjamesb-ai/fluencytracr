@@ -47,6 +47,12 @@ not necessarily reviewed or approved FluencyTracr.
 - Empirical grounding: scio-prod 60-day velocity diagnostic across 1,553 internal Glean users and 13 workflow surfaces
 - Used in: V2 Velocity concept document, V2 canonical velocity events, and Velocity Index implementation
 
+### VBD Coverage Trajectory
+- Source: James Kelley, work-pattern-family adoption funnel and coverage-trajectory framing
+- Reported adjacent source: a separate local-first prototype whose repository, source bytes, and results are not available in FluencyTracr and are not independently verified here
+- Governance grounding: no code, data, thresholds, or execution evidence were imported from the reported prototype; its mention grants no runtime, model-qualification, or product authority
+- Used in: VBD Coverage Trajectory and the VBD human-behavior/outcome joint methodology
+
 ### Maturity as post-saturation depth
 - Source: James Kelley, post-saturation maturity framing for AI value realization
 - Empirical grounding: scio-prod dogfood diagnostics showing high adoption can still have emerging verification depth, workflow reuse, and agent relationship maturity
