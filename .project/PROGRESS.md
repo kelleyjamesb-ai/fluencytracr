@@ -5961,3 +5961,29 @@
   occurred. Namespace `COMPLETE` remains structural checkpoint completeness,
   not statistical qualification or execution authorization; all ensemble study
   gates and authorization flags remain `HOLD`/false.
+
+## 2026-08-11 (America/Los_Angeles) - Codex (PR #485 final review follow-up)
+
+- Closed the three findings returned by the fresh review of pushed commit
+  `83c09fab`. Aggregate hypothesis intake now holds Social Security, passport,
+  IPv4, and labeled IPv6 identifiers while allowing ordinary aggregate phrases
+  and dotted software version, release, and build numbers.
+- Made the frozen two-hour fit boundary deterministic: a non-timeout result
+  must complete strictly before the deadline, while `SAMPLER_TIMEOUT` is a
+  durable `HOLD` at or after the deadline. A timeout observed after the
+  fourteen-day study window remains append-only evidence and causes the study
+  combiner to add `INTERRUPTED_OR_AMBIGUOUS`; it is not dropped or replaced.
+- Sanitized ensemble emission and validation now count every checkpoint-backed
+  qualifying disposition in `observed_fit_count`, including diagnostic,
+  sampler-error, and timeout HOLDs, so the frozen 600-fit denominator cannot
+  silently shrink.
+- Exact local evidence: frontend `284/284`; exact `vbd-engine` shard `849/849`
+  in `1311.94s`; frontend production build and lint, V1 governance, strict
+  `implement-vbd-human-behavior-outcome-synthetic-proof` OpenSpec validation,
+  shard-manifest validation, compileall, queue JSON parsing, and
+  `git diff --check` passed. Independent adversarial review returned `GO` on
+  the final behavior.
+- No sampler, V4 preflight/canary/study, customer or real data, external
+  execution, thread resolution, merge, deployment, or production proof
+  occurred. The runner and ensemble artifact remain sampler-free and
+  nonauthorizing; all study gates and authorization flags remain `HOLD`/false.

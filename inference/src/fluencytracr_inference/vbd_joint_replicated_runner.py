@@ -602,11 +602,7 @@ class VBDJointReplicatedAttemptLedger:
         if checkpoint.result_hash != disposition.result_hash:
             raise VBDJointReplicatedRunnerError("checkpoint result does not bind disposition")
         completed_at = _timestamp("completed_at", checkpoint.completed_at)
-        if not (
-            _timestamp("started_at", claim.started_at)
-            <= completed_at
-            <= _timestamp("deadline_at", claim.deadline_at)
-        ):
+        if not _checkpoint_completion_matches_claim(disposition, claim, completed_at):
             raise VBDJointReplicatedRunnerError(
                 "checkpoint completion is outside the claimed execution window"
             )
@@ -700,6 +696,26 @@ def _attempt_within_frozen_study_timeout(
     return (
         attempt_end - attempt_start
     ).total_seconds() <= VBD_JOINT_REPLICATED_STUDY_TIMEOUT_SECONDS
+
+
+def _checkpoint_completion_matches_claim(
+    disposition: VBDJointReplicatedValidationDisposition,
+    claim: VBDJointReplicatedValidationClaim,
+    completed_at: datetime,
+) -> bool:
+    started_at = _timestamp("started_at", claim.started_at)
+    deadline_at = _timestamp("deadline_at", claim.deadline_at)
+    if completed_at < started_at:
+        return False
+    if disposition.failure_code == "SAMPLER_TIMEOUT":
+        return disposition.state == "HOLD" and completed_at >= deadline_at
+    return completed_at < deadline_at
+
+
+def _observed_fit_count(summary: "VBDJointReplicatedNamespaceSummary") -> int:
+    """Count every durable fit disposition, including protocol HOLDs."""
+
+    return summary.complete_count + summary.hold_count
 
 
 def make_claim_for_slot(
@@ -911,11 +927,7 @@ def combine_namespace(
                 "checkpoint does not bind the namespace disposition"
             )
         completed_at = _timestamp("completed_at", checkpoint.completed_at)
-        if not (
-            _timestamp("started_at", claim.started_at)
-            <= completed_at
-            <= _timestamp("deadline_at", claim.deadline_at)
-        ):
+        if not _checkpoint_completion_matches_claim(disposition, claim, completed_at):
             raise VBDJointReplicatedRunnerError(
                 "checkpoint completion is outside the claimed execution window"
             )
@@ -1139,7 +1151,7 @@ def emit_sanitized_ensemble_artifact(
         (name, "HOLD") for name in VBD_JOINT_REPLICATED_STUDY_GATE_NAMES
     )
     expected_fit_count = 600
-    observed_fit_count = summaries["qualifying"].complete_count
+    observed_fit_count = _observed_fit_count(summaries["qualifying"])
     expected_dataset_count = 400
     observed_dataset_count = summaries["qualifying"].observed_dataset_count
     body = {
@@ -1332,7 +1344,7 @@ def validate_sanitized_ensemble_artifact(
         "expected_dataset_count": 400,
         "observed_dataset_count": summaries["qualifying"].observed_dataset_count,
         "expected_fit_count": 600,
-        "observed_fit_count": summaries["qualifying"].complete_count,
+        "observed_fit_count": _observed_fit_count(summaries["qualifying"]),
         "namespace_states": [
             [namespace, summaries[namespace].state]
             for namespace in VBD_JOINT_REPLICATED_NAMESPACES

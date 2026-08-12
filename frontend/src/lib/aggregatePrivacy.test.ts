@@ -78,4 +78,26 @@ describe("aggregate hypothesis privacy gate", () => {
       )
     ).toBe(false);
   });
+
+  it("holds common direct identifiers", () => {
+    for (const identifier of [
+      "SSN 123-45-6789",
+      "social security number 123-45-6789",
+      "passport 123456789",
+      "IP 192.168.1.1",
+      "IP 2001:db8::1"
+    ]) {
+      expect(
+        containsPotentialOrganizationIdentifier(
+          `Customer Success will prepare QBRs faster for ${identifier}.`
+        ),
+        identifier
+      ).toBe(true);
+    }
+    expect(
+      containsPotentialOrganizationIdentifier(
+        "Customer Success will deploy software version 1.2.3.4 faster."
+      )
+    ).toBe(false);
+  });
 });

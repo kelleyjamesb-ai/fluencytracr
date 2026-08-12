@@ -367,6 +367,91 @@ def test_checkpoint_completion_must_be_inside_the_claimed_execution_window(
 
     with pytest.raises(VBDJointReplicatedRunnerError, match="execution window"):
         ledger.append_disposition(disposition, checkpoint)
+    with pytest.raises(VBDJointReplicatedRunnerError, match="execution window"):
+        ledger.append_disposition(
+            disposition,
+            make_checkpoint_for_disposition(
+                disposition,
+                case_hash=sha256_json({"case": slot.slot_id}),
+                completed_at=DEADLINE_AT,
+            ),
+        )
+
+
+def test_sampler_timeout_checkpoint_can_record_post_deadline_observation(
+    runtime_manifest,
+):
+    plan = vbd_joint_replicated_validation_plan()
+    slot = plan.preflight_slots[0]
+    claim = make_claim_for_slot(
+        slot,
+        plan_hash=plan.plan_hash,
+        runtime_manifest=runtime_manifest,
+        started_at=STARTED_AT,
+        deadline_at=DEADLINE_AT,
+    )
+    ledger = VBDJointReplicatedAttemptLedger().append_claim(
+        claim, slot, plan.plan_hash, runtime_manifest=runtime_manifest
+    )
+    disposition_body = {
+        "namespace": slot.namespace,
+        "slot_id": slot.slot_id,
+        "claim_hash": claim.claim_hash,
+        "state": "HOLD",
+        "failure_code": "SAMPLER_TIMEOUT",
+        "result_hash": sha256_json({"timeout": slot.slot_id}),
+    }
+    disposition = VBDJointReplicatedValidationDisposition(
+        **disposition_body,
+        disposition_hash=sha256_json(disposition_body),
+    )
+    with pytest.raises(VBDJointReplicatedRunnerError, match="execution window"):
+        ledger.append_disposition(
+            disposition,
+            make_checkpoint_for_disposition(
+                disposition,
+                case_hash=sha256_json({"case": slot.slot_id}),
+                completed_at=COMPLETED_AT,
+            ),
+        )
+    completed = ledger.append_disposition(
+        disposition,
+        make_checkpoint_for_disposition(
+            disposition,
+            case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
+                slot
+            ).content_hash(),
+            completed_at=DEADLINE_AT,
+        ),
+    )
+
+    summary = combine_namespace(
+        completed,
+        namespace="preflight",
+        plan=plan,
+        runtime_manifest=runtime_manifest,
+    )
+    assert summary.hold_count == 1
+    assert "SAMPLER_TIMEOUT" in summary.failure_codes
+
+    late = ledger.append_disposition(
+        disposition,
+        make_checkpoint_for_disposition(
+            disposition,
+            case_hash=replicated_runner.generate_vbd_joint_replicated_case_for_slot(
+                slot
+            ).content_hash(),
+            completed_at="2026-08-26T00:00:00+00:00",
+        ),
+    )
+    late_summary = combine_namespace(
+        late,
+        namespace="preflight",
+        plan=plan,
+        runtime_manifest=runtime_manifest,
+    )
+    assert "SAMPLER_TIMEOUT" in late_summary.failure_codes
+    assert "INTERRUPTED_OR_AMBIGUOUS" in late_summary.failure_codes
 
 
 def _append_complete(ledger, slot, plan, runtime_manifest):
@@ -560,6 +645,49 @@ def test_incomplete_namespaces_hold_and_sanitized_artifact_is_nonauthorizing(run
     assert artifact["state"] == "HOLD"
     assert artifact["authorization_flags"][-1] == ["runtime_integration_authorized", False]
     assert artifact["failure_codes"] == ["INTERRUPTED_OR_AMBIGUOUS"]
+
+
+def test_artifact_counts_durable_hold_dispositions_as_observed_fits(
+    runtime_manifest, monkeypatch
+):
+    ledger = VBDJointReplicatedAttemptLedger()
+    plan = vbd_joint_replicated_validation_plan()
+    summaries = {
+        namespace: combine_namespace(
+            ledger,
+            namespace=namespace,
+            plan=plan,
+            runtime_manifest=runtime_manifest,
+        )
+        for namespace in replicated_runner.VBD_JOINT_REPLICATED_NAMESPACES
+    }
+    qualifying = summaries["qualifying"]
+    held_body = {
+        **qualifying.body_without_hash(),
+        "observed_disposition_count": 1,
+        "hold_count": 1,
+        "failure_codes": ["DIAGNOSTIC_HOLD", "INTERRUPTED_OR_AMBIGUOUS"],
+    }
+    summaries["qualifying"] = replicated_runner.VBDJointReplicatedNamespaceSummary(
+        **{
+            **held_body,
+            "failure_codes": tuple(held_body["failure_codes"]),
+            "summary_hash": sha256_json(held_body),
+        }
+    )
+    monkeypatch.setattr(
+        replicated_runner,
+        "combine_namespace",
+        lambda _ledger, *, namespace, **_kwargs: summaries[namespace],
+    )
+
+    artifact = emit_sanitized_ensemble_artifact(
+        ledger,
+        runtime_manifest=runtime_manifest,
+        plan=plan,
+    )
+
+    assert artifact["observed_fit_count"] == 1
 
 
 def test_completed_ledgers_do_not_report_an_execution_interruption(

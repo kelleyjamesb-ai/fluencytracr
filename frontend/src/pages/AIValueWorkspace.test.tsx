@@ -611,11 +611,20 @@ describe("AIValueWorkspace executive spine", () => {
     }
   });
 
-  it("holds free text that includes an employee identifier before canonicalization", async () => {
+  it("holds free text that includes a direct identifier before canonicalization", async () => {
     renderWorkspace("/ai-value-workspace/value-case");
     const valueCase = await screen.findByRole("region", { name: /Value case definition/i });
     const hypothesis = within(valueCase).getByRole("textbox", { name: /Customer hypothesis/i });
-    for (const identifier of ["employee E12345", "employee ID 123", "employee #42"]) {
+    for (const identifier of [
+      "employee E12345",
+      "employee ID 123",
+      "employee #42",
+      "SSN 123-45-6789",
+      "social security number 123-45-6789",
+      "passport 123456789",
+      "IP 192.168.1.1",
+      "IP 2001:db8::1"
+    ]) {
       fireEvent.change(hypothesis, {
         target: {
           value: `Customer Success will prepare QBRs faster for ${identifier}.`
